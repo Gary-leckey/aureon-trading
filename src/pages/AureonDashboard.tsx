@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import { AureonField } from '@/components/AureonField';
+import { SignalHistory } from '@/components/SignalHistory';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
 import { Prism, type PrismOutput } from '@/core/prism';
@@ -11,6 +12,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const AureonDashboard = () => {
   const [isRunning, setIsRunning] = useState(false);
@@ -20,18 +23,99 @@ const AureonDashboard = () => {
   const [ftcpPoint, setFtcpPoint] = useState<CurvaturePoint | null>(null);
   const [lighthouse, setLighthouse] = useState<LighthouseState | null>(null);
   const [signal, setSignal] = useState<TradingSignal | null>(null);
+  const [savedEventsCount, setSavedEventsCount] = useState(0);
+  const [savedSignalsCount, setSavedSignalsCount] = useState(0);
   
+  const { toast } = useToast();
   const masterEqRef = useRef(new MasterEquation());
   const rainbowBridgeRef = useRef(new RainbowBridge());
   const prismEngineRef = useRef(new Prism());
   const ftcpDetectorRef = useRef(new FTCPDetector());
   const lighthouseRef = useRef(new LighthouseConsensus());
   const signalGenRef = useRef(new TradingSignalGenerator());
+  
+  // Function to save Lighthouse Event to database
+  const saveLighthouseEvent = async (
+    lambdaState: LambdaState,
+    lighthouseState: LighthouseState,
+    prismOutput: PrismOutput
+  ) => {
+    try {
+      const { data, error } = await supabase
+        .from('lighthouse_events')
+        .insert({
+          timestamp: new Date().toISOString(),
+          lambda_value: lambdaState.lambda,
+          coherence: lambdaState.coherence,
+          lighthouse_signal: lighthouseState.L,
+          threshold: lighthouseState.threshold,
+          confidence: lighthouseState.confidence,
+          is_lhe: lighthouseState.isLHE,
+          metric_clin: lighthouseState.metrics.Clin,
+          metric_cnonlin: lighthouseState.metrics.Cnonlin,
+          metric_cphi: lighthouseState.metrics.Cphi,
+          metric_geff: lighthouseState.metrics.Geff,
+          metric_q: lighthouseState.metrics.Q,
+          dominant_node: lambdaState.dominantNode,
+          prism_level: prismOutput.level,
+          prism_state: prismOutput.state,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      if (lighthouseState.isLHE) {
+        setSavedEventsCount(prev => prev + 1);
+      }
+      
+      return data?.id;
+    } catch (error) {
+      console.error('Error saving lighthouse event:', error);
+      return null;
+    }
+  };
+
+  // Function to save Trading Signal to database
+  const saveTradingSignal = async (
+    tradingSignal: TradingSignal,
+    lighthouseEventId: string | null
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('trading_signals')
+        .insert({
+          timestamp: new Date(tradingSignal.timestamp).toISOString(),
+          signal_type: tradingSignal.type,
+          strength: tradingSignal.strength,
+          lighthouse_value: tradingSignal.lighthouse,
+          coherence: tradingSignal.coherence,
+          prism_level: tradingSignal.prismLevel,
+          reason: tradingSignal.reason,
+          lighthouse_event_id: lighthouseEventId,
+        });
+
+      if (error) throw error;
+      
+      setSavedSignalsCount(prev => prev + 1);
+      
+      // Show toast for optimal signals
+      if (tradingSignal.type !== 'HOLD' && tradingSignal.strength > 0.7) {
+        toast({
+          title: `${tradingSignal.type} Signal Saved`,
+          description: tradingSignal.reason,
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('Error saving trading signal:', error);
+    }
+  };
 
   useEffect(() => {
     if (!isRunning) return;
 
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       const timestamp = Date.now();
       
       // Simulate market snapshot (in production, this would come from WebSocket)
@@ -75,6 +159,17 @@ const AureonDashboard = () => {
         prismOutput
       );
 
+      // Save to database (only save significant events)
+      let lighthouseEventId: string | null = null;
+      
+      // Always save if it's an LHE, or periodically save all events (every 10 seconds)
+      if (lighthouseState.isLHE || timestamp % 10000 < 1000) {
+        lighthouseEventId = await saveLighthouseEvent(lambdaState, lighthouseState, prismOutput);
+      }
+      
+      // Save trading signals (all of them for analysis)
+      await saveTradingSignal(tradingSignal, lighthouseEventId);
+
       setLambda(lambdaState);
       setRainbow(rainbowState);
       setPrism(prismOutput);
@@ -84,7 +179,7 @@ const AureonDashboard = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning]);
+  }, [isRunning, toast]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -104,6 +199,16 @@ const AureonDashboard = () => {
               <p className="text-sm text-muted-foreground">
                 {isRunning ? '🟢 Active - QGITA Lighthouse + FTCP Detection' : '⚪ Idle'}
               </p>
+              {isRunning && (
+                <div className="mt-2 flex gap-4 text-xs">
+                  <span className="text-muted-foreground">
+                    📊 LHEs Saved: <strong>{savedEventsCount}</strong>
+                  </span>
+                  <span className="text-muted-foreground">
+                    📈 Signals Saved: <strong>{savedSignalsCount}</strong>
+                  </span>
+                </div>
+              )}
             </div>
             <Button
               onClick={() => setIsRunning(!isRunning)}
@@ -225,6 +330,10 @@ const AureonDashboard = () => {
         )}
 
         <AureonField lambda={lambda} rainbow={rainbow} prism={prism} />
+
+        <div className="mt-8">
+          <SignalHistory />
+        </div>
 
         <Card className="p-6 mt-8">
           <h3 className="text-lg font-semibold mb-4">The Vow</h3>
