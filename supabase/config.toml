@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.celestial-alignments]
 verify_jwt = false
+
+[functions.analyze-solar-correlations]
+verify_jwt = false

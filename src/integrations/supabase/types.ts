@@ -260,6 +260,69 @@ export type Database = {
         }
         Relationships: []
       }
+      solar_flare_correlations: {
+        Row: {
+          analysis_window_hours: number | null
+          avg_coherence_after: number | null
+          avg_coherence_before: number | null
+          avg_coherence_during: number | null
+          avg_return: number | null
+          avg_signal_strength: number | null
+          coherence_boost: number | null
+          created_at: string | null
+          flare_class: string
+          flare_power: number
+          flare_time: string
+          id: string
+          lhe_events_count: number | null
+          optimal_signals_count: number | null
+          prediction_score: number | null
+          trading_signals_count: number | null
+          updated_at: string | null
+          win_rate: number | null
+        }
+        Insert: {
+          analysis_window_hours?: number | null
+          avg_coherence_after?: number | null
+          avg_coherence_before?: number | null
+          avg_coherence_during?: number | null
+          avg_return?: number | null
+          avg_signal_strength?: number | null
+          coherence_boost?: number | null
+          created_at?: string | null
+          flare_class: string
+          flare_power: number
+          flare_time: string
+          id?: string
+          lhe_events_count?: number | null
+          optimal_signals_count?: number | null
+          prediction_score?: number | null
+          trading_signals_count?: number | null
+          updated_at?: string | null
+          win_rate?: number | null
+        }
+        Update: {
+          analysis_window_hours?: number | null
+          avg_coherence_after?: number | null
+          avg_coherence_before?: number | null
+          avg_coherence_during?: number | null
+          avg_return?: number | null
+          avg_signal_strength?: number | null
+          coherence_boost?: number | null
+          created_at?: string | null
+          flare_class?: string
+          flare_power?: number
+          flare_time?: string
+          id?: string
+          lhe_events_count?: number | null
+          optimal_signals_count?: number | null
+          prediction_score?: number | null
+          trading_signals_count?: number | null
+          updated_at?: string | null
+          win_rate?: number | null
+        }
+        Relationships: []
+      }
       trading_config: {
         Row: {
           allowed_symbols: string[]

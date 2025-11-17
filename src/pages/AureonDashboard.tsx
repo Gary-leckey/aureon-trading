@@ -19,6 +19,7 @@ import { MultiSymbolForecastComparison } from '@/components/MultiSymbolForecastC
 import { StargateVisualization } from '@/components/StargateVisualization';
 import { StargateStatus } from '@/components/StargateStatus';
 import { CelestialAlignments } from '@/components/CelestialAlignments';
+import { SolarFlareCorrelation } from '@/components/SolarFlareCorrelation';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { useCelestialData } from '@/hooks/useCelestialData';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
@@ -519,6 +520,10 @@ const AureonDashboard = () => {
 
         <div className="mb-8">
           <CelestialAlignments />
+        </div>
+
+        <div className="mb-8">
+          <SolarFlareCorrelation />
         </div>
 
         <div className="mb-8">
