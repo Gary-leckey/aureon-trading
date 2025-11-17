@@ -113,6 +113,231 @@ export type Database = {
         }
         Relationships: []
       }
+      trading_config: {
+        Row: {
+          allowed_symbols: string[]
+          base_position_size_usdt: number
+          created_at: string
+          id: string
+          is_enabled: boolean
+          max_daily_loss_usdt: number
+          max_daily_trades: number
+          max_position_size_usdt: number
+          min_coherence: number
+          min_lighthouse_confidence: number
+          min_prism_level: number
+          position_size_mode: string
+          require_lhe: boolean
+          stop_loss_percentage: number
+          take_profit_percentage: number
+          trading_mode: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_symbols?: string[]
+          base_position_size_usdt?: number
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          max_daily_loss_usdt?: number
+          max_daily_trades?: number
+          max_position_size_usdt?: number
+          min_coherence?: number
+          min_lighthouse_confidence?: number
+          min_prism_level?: number
+          position_size_mode?: string
+          require_lhe?: boolean
+          stop_loss_percentage?: number
+          take_profit_percentage?: number
+          trading_mode?: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_symbols?: string[]
+          base_position_size_usdt?: number
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          max_daily_loss_usdt?: number
+          max_daily_trades?: number
+          max_position_size_usdt?: number
+          min_coherence?: number
+          min_lighthouse_confidence?: number
+          min_prism_level?: number
+          position_size_mode?: string
+          require_lhe?: boolean
+          stop_loss_percentage?: number
+          take_profit_percentage?: number
+          trading_mode?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      trading_executions: {
+        Row: {
+          coherence: number
+          created_at: string
+          error_message: string | null
+          exchange_order_id: string | null
+          executed_at: string | null
+          executed_price: number | null
+          id: string
+          lighthouse_confidence: number
+          lighthouse_event_id: string | null
+          lighthouse_value: number
+          order_type: string
+          position_size_usdt: number
+          price: number | null
+          prism_level: number
+          quantity: number
+          side: string
+          signal_id: string | null
+          signal_type: string
+          status: string
+          stop_loss_price: number | null
+          symbol: string
+          take_profit_price: number | null
+        }
+        Insert: {
+          coherence: number
+          created_at?: string
+          error_message?: string | null
+          exchange_order_id?: string | null
+          executed_at?: string | null
+          executed_price?: number | null
+          id?: string
+          lighthouse_confidence: number
+          lighthouse_event_id?: string | null
+          lighthouse_value: number
+          order_type?: string
+          position_size_usdt: number
+          price?: number | null
+          prism_level: number
+          quantity: number
+          side: string
+          signal_id?: string | null
+          signal_type: string
+          status?: string
+          stop_loss_price?: number | null
+          symbol: string
+          take_profit_price?: number | null
+        }
+        Update: {
+          coherence?: number
+          created_at?: string
+          error_message?: string | null
+          exchange_order_id?: string | null
+          executed_at?: string | null
+          executed_price?: number | null
+          id?: string
+          lighthouse_confidence?: number
+          lighthouse_event_id?: string | null
+          lighthouse_value?: number
+          order_type?: string
+          position_size_usdt?: number
+          price?: number | null
+          prism_level?: number
+          quantity?: number
+          side?: string
+          signal_id?: string | null
+          signal_type?: string
+          status?: string
+          stop_loss_price?: number | null
+          symbol?: string
+          take_profit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trading_executions_lighthouse_event_id_fkey"
+            columns: ["lighthouse_event_id"]
+            isOneToOne: false
+            referencedRelation: "lighthouse_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trading_executions_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "recent_optimal_signals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trading_executions_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "trading_signals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trading_positions: {
+        Row: {
+          close_reason: string | null
+          closed_at: string | null
+          current_price: number | null
+          entry_price: number
+          execution_id: string | null
+          id: string
+          opened_at: string
+          position_value_usdt: number
+          quantity: number
+          realized_pnl: number | null
+          side: string
+          status: string
+          stop_loss_price: number | null
+          symbol: string
+          take_profit_price: number | null
+          unrealized_pnl: number | null
+          updated_at: string
+        }
+        Insert: {
+          close_reason?: string | null
+          closed_at?: string | null
+          current_price?: number | null
+          entry_price: number
+          execution_id?: string | null
+          id?: string
+          opened_at?: string
+          position_value_usdt: number
+          quantity: number
+          realized_pnl?: number | null
+          side: string
+          status?: string
+          stop_loss_price?: number | null
+          symbol: string
+          take_profit_price?: number | null
+          unrealized_pnl?: number | null
+          updated_at?: string
+        }
+        Update: {
+          close_reason?: string | null
+          closed_at?: string | null
+          current_price?: number | null
+          entry_price?: number
+          execution_id?: string | null
+          id?: string
+          opened_at?: string
+          position_value_usdt?: number
+          quantity?: number
+          realized_pnl?: number | null
+          side?: string
+          status?: string
+          stop_loss_price?: number | null
+          symbol?: string
+          take_profit_price?: number | null
+          unrealized_pnl?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trading_positions_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "trading_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trading_signals: {
         Row: {
           coherence: number
