@@ -10,6 +10,7 @@ import { AIAnalysisPanel } from '@/components/AIAnalysisPanel';
 import { LighthouseMetricsPanel } from '@/components/LighthouseMetricsPanel';
 import { FTCPTimeline } from '@/components/FTCPTimeline';
 import { ResearchValidation } from '@/components/ResearchValidation';
+import { MasterEquationField3D } from '@/components/MasterEquationField3D';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
@@ -436,6 +437,10 @@ const AureonDashboard = () => {
 
         <div className="mb-8">
           <ResearchValidation />
+        </div>
+
+        <div className="mb-8">
+          <MasterEquationField3D lambda={lambda} />
         </div>
 
         <div className="mb-8">
