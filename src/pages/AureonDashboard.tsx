@@ -13,6 +13,7 @@ import { ResearchValidation } from '@/components/ResearchValidation';
 import { MasterEquationField3D } from '@/components/MasterEquationField3D';
 import { HarmonicRealityFramework } from '@/components/HarmonicRealityFramework';
 import { CoherenceTracker } from '@/components/CoherenceTracker';
+import { CoherenceHeatmap } from '@/components/CoherenceHeatmap';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
@@ -142,6 +143,32 @@ const AureonDashboard = () => {
     }
   };
 
+  // Function to save coherence history
+  const saveCoherenceHistory = async (
+    lambdaState: LambdaState,
+    timestamp: number
+  ) => {
+    try {
+      const date = new Date(timestamp);
+      const dayOfWeek = date.getDay(); // 0-6 (Sunday-Saturday)
+      const hourOfDay = date.getHours(); // 0-23
+
+      const { error } = await supabase
+        .from('coherence_history')
+        .insert({
+          timestamp: date.toISOString(),
+          coherence: lambdaState.coherence,
+          lambda_value: lambdaState.lambda,
+          day_of_week: dayOfWeek,
+          hour_of_day: hourOfDay,
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving coherence history:', error);
+    }
+  };
+
   // Initialize Binance WebSocket when symbol changes
   useEffect(() => {
     // Disconnect existing client if any
@@ -224,6 +251,11 @@ const AureonDashboard = () => {
     }
     
     await saveTradingSignal(tradingSignal, lighthouseEventId);
+
+    // Save coherence history (every 10 data points to avoid overwhelming the database)
+    if (marketData.timestamp % 10000 < 1000) {
+      await saveCoherenceHistory(lambdaState, marketData.timestamp);
+    }
 
     // Update UI state
     setLambda(lambdaState);
@@ -447,6 +479,10 @@ const AureonDashboard = () => {
 
         <div className="mb-8">
           <CoherenceTracker lambda={lambda} isRunning={isRunning} />
+        </div>
+
+        <div className="mb-8">
+          <CoherenceHeatmap />
         </div>
 
         <div className="mb-8">

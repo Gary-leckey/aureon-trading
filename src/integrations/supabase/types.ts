@@ -83,6 +83,36 @@ export type Database = {
         }
         Relationships: []
       }
+      coherence_history: {
+        Row: {
+          coherence: number
+          created_at: string
+          day_of_week: number
+          hour_of_day: number
+          id: string
+          lambda_value: number
+          timestamp: string
+        }
+        Insert: {
+          coherence: number
+          created_at?: string
+          day_of_week: number
+          hour_of_day: number
+          id?: string
+          lambda_value: number
+          timestamp?: string
+        }
+        Update: {
+          coherence?: number
+          created_at?: string
+          day_of_week?: number
+          hour_of_day?: number
+          id?: string
+          lambda_value?: number
+          timestamp?: string
+        }
+        Relationships: []
+      }
       lighthouse_events: {
         Row: {
           coherence: number
