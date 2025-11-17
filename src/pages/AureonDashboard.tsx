@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import { AureonField } from '@/components/AureonField';
 import { SignalHistory } from '@/components/SignalHistory';
+import { Watchlist } from '@/components/Watchlist';
 import { MasterEquation, type LambdaState } from '@/core/masterEquation';
 import { RainbowBridge, type RainbowState } from '@/core/rainbowBridge';
 import { Prism, type PrismOutput } from '@/core/prism';
@@ -406,6 +407,10 @@ const AureonDashboard = () => {
             </div>
           </Card>
         )}
+
+        <div className="mb-8">
+          <Watchlist />
+        </div>
 
         <AureonField lambda={lambda} rainbow={rainbow} prism={prism} />
 
