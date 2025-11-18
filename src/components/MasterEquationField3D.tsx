@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { LambdaState } from '@/core/masterEquation';
+import fieldCavitySpacetime from '@/assets/research/field-cavity-spacetime.png';
 
 interface MasterEquationField3DProps {
   lambda: LambdaState | null;
@@ -135,5 +136,69 @@ function Scene({ lambda }: { lambda: LambdaState }) {
 
 export const MasterEquationField3D = ({ lambda }: MasterEquationField3DProps) => {
   if (!lambda) return <Card className="p-6"><div className="text-center text-muted-foreground"><p>Start AUREON to visualize the Master Equation field</p></div></Card>;
-  return <div className="space-y-4"><Card className="p-6 bg-gradient-to-br from-primary/5 to-background border-2 border-primary/20"><div className="flex items-center justify-between mb-4"><div><h3 className="text-xl font-bold">Master Equation 3D Field</h3><p className="text-sm text-muted-foreground mt-1">Λ(t) = S(t) + O(t) + E(t) with energy flow</p></div><div className="flex gap-2"><Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">S: {lambda.substrate.toFixed(3)}</Badge><Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">O: {lambda.observer.toFixed(3)}</Badge><Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/20">E: {lambda.echo.toFixed(3)}</Badge></div></div><div className="h-[600px] rounded-lg overflow-hidden bg-black/20 border border-border"><Canvas camera={{ position: [0, 0, 15], fov: 60 }}><Scene lambda={lambda} /></Canvas></div><div className="grid grid-cols-3 gap-4 mt-4 text-sm"><div><div className="font-semibold text-green-500">🟢 S(t)</div><div className="text-xs text-muted-foreground mt-1">Green with trails - 9 Auris nodes</div></div><div><div className="font-semibold text-blue-500">🔵 O(t)</div><div className="text-xs text-muted-foreground mt-1">Blue with trails - Field awareness</div></div><div><div className="font-semibold text-purple-500">🟣 E(t)</div><div className="text-xs text-muted-foreground mt-1">Purple with trails - Memory</div></div></div><div className="mt-4 p-3 rounded-lg bg-muted/30 text-center"><div className="text-lg font-semibold text-primary">Λ(t) = {lambda.lambda.toFixed(4)}</div><div className="text-xs text-muted-foreground mt-1">Red core | White tubes show information flow</div></div></Card></div>;
+  return (
+    <div className="space-y-4">
+      <Card className="p-6 bg-gradient-to-br from-primary/5 to-background border-2 border-primary/20">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-xl font-bold">Master Equation 3D Field</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Λ(t) = S(t) + O(t) + E(t) with energy flow
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
+              S: {lambda.substrate.toFixed(3)}
+            </Badge>
+            <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+              O: {lambda.observer.toFixed(3)}
+            </Badge>
+            <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/20">
+              E: {lambda.echo.toFixed(3)}
+            </Badge>
+          </div>
+        </div>
+        
+        <div className="h-[600px] rounded-lg overflow-hidden bg-black/20 border border-border">
+          <Canvas camera={{ position: [0, 0, 15], fov: 60 }}>
+            <Scene lambda={lambda} />
+          </Canvas>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-4 mt-4 text-sm">
+          <div>
+            <div className="font-semibold text-green-500">🟢 S(t)</div>
+            <div className="text-xs text-muted-foreground mt-1">Green with trails - 9 Auris nodes</div>
+          </div>
+          <div>
+            <div className="font-semibold text-blue-500">🔵 O(t)</div>
+            <div className="text-xs text-muted-foreground mt-1">Blue with trails - Field awareness</div>
+          </div>
+          <div>
+            <div className="font-semibold text-purple-500">🟣 E(t)</div>
+            <div className="text-xs text-muted-foreground mt-1">Purple with trails - Memory</div>
+          </div>
+        </div>
+        
+        <div className="mt-4 p-3 rounded-lg bg-muted/30 text-center">
+          <div className="text-lg font-semibold text-primary">Λ(t) = {lambda.lambda.toFixed(4)}</div>
+          <div className="text-xs text-muted-foreground mt-1">Red core | White tubes show information flow</div>
+        </div>
+        
+        {/* Field Cavity Research */}
+        <div className="mt-4 border-t border-border/30 pt-4">
+          <h4 className="text-sm font-semibold mb-3 text-muted-foreground">Research: Field Cavity Spacetime Structure</h4>
+          <img 
+            src={fieldCavitySpacetime}
+            alt="Field cavity spacetime resonance geometry"
+            className="w-full rounded-lg border border-border/50"
+          />
+          <p className="text-xs text-muted-foreground mt-2">
+            Spacetime cavity resonance patterns showing how the Master Equation field creates standing waves in the temporal dimension. 
+            The cavity structure enables coherent echo formation and phase-locking across substrate nodes.
+          </p>
+        </div>
+      </Card>
+    </div>
+  );
 };

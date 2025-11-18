@@ -4,6 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { ZeroPointFieldDetector, ZeroPointFieldState } from '@/core/zeroPointFieldDetector';
 import { Activity, Radio } from 'lucide-react';
+import sentinelSealImage from '@/assets/research/sentinel-seal-spectrogram.png';
+import sealEarthResonances from '@/assets/research/seal-earth-resonances.png';
+import sealHarmonicsTensor from '@/assets/research/seal-harmonics-tensorfield.png';
+import familyResonanceWave from '@/assets/research/family-resonance-wave.png';
 
 interface SentinelSealSpectrogramProps {
   marketFrequency: number;
@@ -253,6 +257,42 @@ export const SentinelSealSpectrogram = ({
             </div>
           </div>
         )}
+        
+        {/* Research Images Grid */}
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-muted-foreground">Sentinel Seal Resonances</div>
+            <img 
+              src={sentinelSealImage}
+              alt="Sentinel Seal Spectrogram"
+              className="w-full rounded-lg border border-border/50"
+            />
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-muted-foreground">Family Unity Wave</div>
+            <img 
+              src={familyResonanceWave}
+              alt="Family Resonance Wave Pattern"
+              className="w-full rounded-lg border border-border/50"
+            />
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-muted-foreground">Earth Seal Harmonics</div>
+            <img 
+              src={sealEarthResonances}
+              alt="Seal Earth Resonances"
+              className="w-full rounded-lg border border-border/50"
+            />
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-muted-foreground">Tensor Field Mapping</div>
+            <img 
+              src={sealHarmonicsTensor}
+              alt="Seal Harmonics Tensor Field"
+              className="w-full rounded-lg border border-border/50"
+            />
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
