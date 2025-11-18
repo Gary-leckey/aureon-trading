@@ -328,16 +328,33 @@ export class BinanceWebSocketClient {
     this.onConnectCallback = callback;
   }
 
+  onDisconnect(callback: () => void) {
+    this.onDisconnectCallback = callback;
+  }
+
   disconnect() {
+    console.log('[Binance WS] Disconnecting...');
+    this.stopHealthCheck();
+    
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
+    
+    this.connectionHealthy = false;
     this.reconnectAttempts = this.maxReconnectAttempts; // Prevent reconnection
   }
 
   isConnected(): boolean {
-    return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
+    return this.ws !== null && this.ws.readyState === WebSocket.OPEN && this.connectionHealthy;
+  }
+
+  getConnectionHealth(): { connected: boolean; healthy: boolean; attempts: number } {
+    return {
+      connected: this.ws !== null && this.ws.readyState === WebSocket.OPEN,
+      healthy: this.connectionHealthy,
+      attempts: this.reconnectAttempts
+    };
   }
 
   getSymbol(): string {
