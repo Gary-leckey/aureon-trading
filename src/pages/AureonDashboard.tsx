@@ -28,6 +28,7 @@ import { MultiSymbolForecastComparison } from '@/components/MultiSymbolForecastC
 import { StargateVisualization } from '@/components/StargateVisualization';
 import { StargateStatus } from '@/components/StargateStatus';
 import { StargatePatternAnalysis } from '@/components/StargatePatternAnalysis';
+import { StargateNetworkAnalytics } from '@/components/StargateNetworkAnalytics';
 import { FrequencyHarmonizationPanel } from '@/components/FrequencyHarmonizationPanel';
 import { CelestialAlignments } from '@/components/CelestialAlignments';
 import { SolarFlareCorrelation } from '@/components/SolarFlareCorrelation';
@@ -644,6 +645,11 @@ const AureonDashboard = () => {
         {/* AI-Powered Stargate Pattern Analysis */}
         <div className="mb-8">
           <StargatePatternAnalysis />
+        </div>
+
+        {/* Stargate Network Historical Analytics */}
+        <div className="mb-8">
+          <StargateNetworkAnalytics />
         </div>
 
         {/* Primelines Multiversal Temporal Identity */}
