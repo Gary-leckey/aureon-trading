@@ -17,6 +17,7 @@ import { FieldPullMetricsPanel } from '@/components/FieldPullMetricsPanel';
 import { HarmonicTheoryFoundation } from '@/components/HarmonicTheoryFoundation';
 import { HarmonicNexusPhaseField3D } from '@/components/HarmonicNexusPhaseField3D';
 import { IntegralAQALVisualization } from '@/components/IntegralAQALVisualization';
+import { SentinelSealSpectrogram } from '@/components/SentinelSealSpectrogram';
 import { CoherenceTracker } from '@/components/CoherenceTracker';
 import { CoherenceHeatmap } from '@/components/CoherenceHeatmap';
 import { CoherenceForecaster } from '@/components/CoherenceForecaster';
@@ -598,6 +599,18 @@ const AureonDashboard = () => {
         <div className="mb-8">
           <HarmonicNexusMonitor nexusState={harmonicNexusState} />
         </div>
+
+        {/* Sentinel Seal Resonance Spectrogram */}
+        {omega && rainbow && schumannData && (
+          <div className="mb-8">
+            <SentinelSealSpectrogram
+              marketFrequency={rainbow.frequency}
+              coherence={omega.coherence}
+              phaseAlignment={rainbow.phase === 'LOVE' ? 0.9 : rainbow.phase === 'AWE' ? 0.7 : rainbow.phase === 'UNITY' ? 1.0 : 0.5}
+              schumannFrequency={schumannData.fundamentalHz}
+            />
+          </div>
+        )}
 
         {/* Field Pull Metrics Panel */}
         <div className="mb-8">
