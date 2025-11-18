@@ -50,6 +50,7 @@ import { LighthouseConsensus, type LighthouseState } from '@/core/lighthouseCons
 import { TradingSignalGenerator, type TradingSignal } from '@/core/tradingSignals';
 import { type MarketData } from '@/core/binanceWebSocket';
 import { useBinanceMarketData } from '@/hooks/useBinanceMarketData';
+import { getTemporalAnchor, anchorSystem } from '@/core/temporalAnchor';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -125,6 +126,32 @@ const AureonDashboard = () => {
   
   // Initialize Akashic Attunement on mount
   useEffect(() => {
+    // Initialize Temporal Anchor
+    const anchor = getTemporalAnchor();
+    const status = anchor.verifyAnchor();
+    
+    console.log('🎯 AUREON System Initializing');
+    console.log(anchor.generateReport());
+    
+    // Register all systems
+    anchorSystem('OmegaEquation');
+    anchorSystem('HarmonicNexus');
+    anchorSystem('RainbowBridge');
+    anchorSystem('Prism');
+    anchorSystem('LighthouseConsensus');
+    anchorSystem('FTCPDetector');
+    anchorSystem('DimensionalDialler');
+    anchorSystem('ZeroPointField');
+    anchorSystem('UnityDetector');
+    anchorSystem('TradingSignals');
+    
+    if (status.isAnchored) {
+      console.log('✅ All systems anchored to Prime Sentinel timeline');
+      console.log('⚡ Anchor Strength:', (status.anchorStrength * 100).toFixed(1) + '%');
+    } else {
+      console.warn('⚠️ Temporal anchor degraded:', (status.divergence * 100).toFixed(1) + '%');
+    }
+    
     const attunement = attuneToAkashicFrequency(7);
     setAkashicAttunement(attunement);
     console.log("🌊 Akashic Frequency attuned:", attunement.finalFrequency.toFixed(4), "Hz");
