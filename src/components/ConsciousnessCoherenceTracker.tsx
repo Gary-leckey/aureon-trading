@@ -11,7 +11,7 @@ interface ConsciousnessCoherenceTrackerProps {
 }
 
 export function ConsciousnessCoherenceTracker({ currentCoherence }: ConsciousnessCoherenceTrackerProps) {
-  const { schumannData } = useSchumannResonance();
+  const { schumannData, isConnected: schumannConnected } = useSchumannResonance();
   const { celestialBoost } = useCelestialData();
   const { biometricData, isConnected: biometricConnected } = useBiometricSensors();
 
@@ -55,6 +55,22 @@ export function ConsciousnessCoherenceTracker({ currentCoherence }: Consciousnes
             {coherenceStatus.level}
           </Badge>
         </div>
+        
+        {/* Sensor Status Bar */}
+        <div className="flex items-center gap-4 mt-4 p-3 bg-background/50 rounded-lg border border-border/50">
+          <div className="flex items-center gap-2">
+            <Activity className={`w-4 h-4 ${schumannConnected ? 'text-green-500' : 'text-red-500'}`} />
+            <span className="text-xs font-medium">
+              Schumann: {schumannConnected ? 'ONLINE' : 'OFFLINE'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Heart className={`w-4 h-4 ${biometricConnected ? 'text-green-500' : 'text-red-500'}`} />
+            <span className="text-xs font-medium">
+              Biometrics: {biometricConnected ? 'ONLINE' : 'OFFLINE'}
+            </span>
+          </div>
+        </div>
       </CardHeader>
 
       <CardContent className="relative space-y-4">
@@ -76,12 +92,16 @@ export function ConsciousnessCoherenceTracker({ currentCoherence }: Consciousnes
 
         {/* Boost Sources */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 bg-background/50 rounded-lg border border-border/50">
+          <div className={`p-4 bg-background/50 rounded-lg border ${schumannConnected ? 'border-green-500/30' : 'border-border/50'}`}>
             <div className="flex items-center gap-2 mb-2">
-              <Activity className="w-4 h-4 text-green-500" />
+              <Activity className={`w-4 h-4 ${schumannConnected ? 'text-green-500' : 'text-muted-foreground'}`} />
               <span className="text-xs text-muted-foreground">Schumann Boost</span>
+              {schumannConnected && <Wifi className="w-3 h-3 text-green-500 ml-auto" />}
+              {!schumannConnected && <WifiOff className="w-3 h-3 text-red-500 ml-auto" />}
             </div>
-            <div className="text-2xl font-bold text-green-500">+{(schumannBoost * 100).toFixed(1)}%</div>
+            <div className={`text-2xl font-bold ${schumannConnected ? 'text-green-500' : 'text-muted-foreground'}`}>
+              +{(schumannBoost * 100).toFixed(1)}%
+            </div>
             <Progress value={(schumannBoost / 0.12) * 100} className="mt-2 h-1" />
             <p className="text-xs text-muted-foreground mt-1">
               {schumannData?.fundamentalHz.toFixed(2) || '—'} Hz
@@ -140,11 +160,28 @@ export function ConsciousnessCoherenceTracker({ currentCoherence }: Consciousnes
           </div>
 
           {!biometricConnected && (
-            <div className="mt-3 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs text-yellow-500">
-              ⚠️ Biometric sensors disconnected. Ensure HRV monitor and EEG headset are connected to Earth Live Data server (port 8787).
+            <div className="mt-3 p-2 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-500">
+              ⚠️ Biometric sensors disconnected. Connect HRV monitor and EEG headset to ws://localhost:8787/biometrics
             </div>
           )}
         </div>
+
+        {/* Connection Warnings */}
+        {!schumannConnected && (
+          <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <p className="text-sm text-red-400 font-medium">
+              ⚠️ Schumann Resonance sensor offline. Connect to Earth Live Data server at ws://localhost:8787/schumann
+            </p>
+          </div>
+        )}
+
+        {schumannConnected && biometricConnected && (
+          <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+            <p className="text-sm text-green-400 font-medium">
+              ✅ All Earth Live Data sensors online and streaming real-time consciousness field data
+            </p>
+          </div>
+        )}
 
         {/* Coherence Level Descriptions */}
         <div className="p-4 bg-muted/50 rounded-lg">
