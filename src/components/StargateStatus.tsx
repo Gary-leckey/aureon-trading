@@ -19,6 +19,7 @@ export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: Stargat
   const [isLocating, setIsLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoInitialized, setAutoInitialized] = useState(false);
+  const [permissionState, setPermissionState] = useState<'prompt' | 'granted' | 'denied' | 'unknown'>('unknown');
 
   const requestLocation = () => {
     setIsLocating(true);
@@ -43,12 +44,50 @@ export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: Stargat
         }
       },
       (err) => {
-        setError('Location access denied');
+        let errorMessage = 'Location access error';
+        let instructions = '';
+        
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            errorMessage = 'Location access denied';
+            const userAgent = navigator.userAgent.toLowerCase();
+            if (userAgent.includes('chrome')) {
+              instructions = 'Chrome: Click the 🔒 icon in address bar → Site settings → Location → Allow';
+            } else if (userAgent.includes('firefox')) {
+              instructions = 'Firefox: Click the 🔒 icon → Connection secure → More information → Permissions → Allow Location';
+            } else if (userAgent.includes('safari')) {
+              instructions = 'Safari: Settings → Privacy & Security → Location Services → Enable for this site';
+            }
+            setPermissionState('denied');
+            break;
+          case err.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information unavailable - GPS may be disabled';
+            break;
+          case err.TIMEOUT:
+            errorMessage = 'Location request timed out - please try again';
+            break;
+        }
+        
+        setError(`${errorMessage}${instructions ? `\n\n${instructions}` : ''}`);
         setIsLocating(false);
         console.error('Geolocation error:', err);
       }
     );
   };
+
+  // Check permission status
+  useEffect(() => {
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'geolocation' as PermissionName }).then((result) => {
+        setPermissionState(result.state as 'prompt' | 'granted' | 'denied');
+        result.addEventListener('change', () => {
+          setPermissionState(result.state as 'prompt' | 'granted' | 'denied');
+        });
+      }).catch(() => {
+        setPermissionState('unknown');
+      });
+    }
+  }, []);
 
   // Auto-initialize with sentinel location
   useEffect(() => {
@@ -103,6 +142,42 @@ export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: Stargat
         {!influence ? (
           <div className="text-center py-8">
             <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50 animate-pulse" />
+            
+            {/* Location permission info */}
+            <div className="mb-4 p-4 rounded-lg border border-primary/20 bg-primary/5 text-left">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm">Why Location?</span>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">
+                AUREON uses your location to calculate Stargate Lattice influence and optimize trading signals based on geomagnetic field proximity.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                🔒 Your location data never leaves your device
+              </p>
+            </div>
+
+            {/* Permission status indicator */}
+            {permissionState !== 'unknown' && (
+              <div className="mb-4 flex items-center justify-center gap-2">
+                {permissionState === 'granted' && (
+                  <Badge variant="outline" className="border-green-500/50 text-green-600">
+                    ✓ Location Enabled
+                  </Badge>
+                )}
+                {permissionState === 'denied' && (
+                  <Badge variant="outline" className="border-red-500/50 text-red-600">
+                    ✗ Location Denied
+                  </Badge>
+                )}
+                {permissionState === 'prompt' && (
+                  <Badge variant="outline" className="border-yellow-500/50 text-yellow-600">
+                    ⚠ Permission Needed
+                  </Badge>
+                )}
+              </div>
+            )}
+
             <p className="text-sm text-muted-foreground mb-4">
               {config ? 'Auto-initializing Stargate at Belfast...' : 'Enable geolocation to activate Stargate Lattice influence'}
             </p>
@@ -115,7 +190,9 @@ export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: Stargat
               {isLocating ? 'Locating...' : 'Use Current Location'}
             </Button>
             {error && (
-              <p className="text-xs text-destructive mt-2">{error}</p>
+              <div className="mt-4 p-3 rounded-lg border border-destructive/50 bg-destructive/10">
+                <p className="text-xs text-destructive whitespace-pre-line">{error}</p>
+              </div>
             )}
           </div>
         ) : (

@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const NASA_API_KEY = 'DEMO_KEY';
+const NASA_API_KEY = Deno.env.get('NASA_API_KEY') || 'DEMO_KEY';
 
 type SolarFlare = {
   flrID: string;
