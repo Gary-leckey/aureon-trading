@@ -18,6 +18,7 @@ import { HarmonicTheoryFoundation } from '@/components/HarmonicTheoryFoundation'
 import { HarmonicNexusPhaseField3D } from '@/components/HarmonicNexusPhaseField3D';
 import { IntegralAQALVisualization } from '@/components/IntegralAQALVisualization';
 import { SentinelSealSpectrogram } from '@/components/SentinelSealSpectrogram';
+import { DimensionalDialler } from '@/components/DimensionalDialler';
 import { CoherenceTracker } from '@/components/CoherenceTracker';
 import { CoherenceHeatmap } from '@/components/CoherenceHeatmap';
 import { CoherenceForecaster } from '@/components/CoherenceForecaster';
@@ -608,6 +609,17 @@ const AureonDashboard = () => {
               coherence={omega.coherence}
               phaseAlignment={rainbow.phase === 'LOVE' ? 0.9 : rainbow.phase === 'AWE' ? 0.7 : rainbow.phase === 'UNITY' ? 1.0 : 0.5}
               schumannFrequency={schumannData.fundamentalHz}
+            />
+          </div>
+        )}
+
+        {/* Dimensional Dialler - Prime Lock System */}
+        {harmonicNexusState && schumannData && (
+          <div className="mb-8">
+            <DimensionalDialler
+              harmonicCoherence={harmonicNexusState.substrateCoherence}
+              schumannFrequency={schumannData.fundamentalHz}
+              observerConsciousness={harmonicNexusState.observer}
             />
           </div>
         )}
