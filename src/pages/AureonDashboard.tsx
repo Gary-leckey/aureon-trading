@@ -23,6 +23,7 @@ import { SolarFlareCorrelation } from '@/components/SolarFlareCorrelation';
 import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor';
 import { ConsciousnessCoherenceTracker } from '@/components/ConsciousnessCoherenceTracker';
 import { ConsciousnessHistoryChart } from '@/components/ConsciousnessHistoryChart';
+import { BinanceConnectionStatus } from '@/components/BinanceConnectionStatus';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { useCelestialData } from '@/hooks/useCelestialData';
 import { useSchumannResonance } from '@/hooks/useSchumannResonance';
@@ -396,6 +397,26 @@ const AureonDashboard = () => {
             </Button>
           </div>
         </Card>
+
+        {/* Binance Connection Status */}
+        <div className="mb-8">
+          <BinanceConnectionStatus
+            isConnected={isConnected}
+            isHealthy={connectionHealthy}
+            reconnectAttempts={reconnectAttempts}
+            lastError={lastConnectionError}
+            onReconnect={() => {
+              if (binanceClientRef.current) {
+                binanceClientRef.current.disconnect();
+                setTimeout(() => {
+                  if (binanceClientRef.current) {
+                    binanceClientRef.current.connect();
+                  }
+                }, 1000);
+              }
+            }}
+          />
+        </div>
 
         {/* Trading Signal Card */}
         {signal && (

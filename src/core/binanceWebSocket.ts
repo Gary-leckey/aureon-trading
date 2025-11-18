@@ -50,6 +50,8 @@ export class BinanceWebSocketClient {
   private pingInterval: NodeJS.Timeout | null = null;
   private lastPongTime = 0;
   private connectionHealthy = false;
+  private connectionStartTime = 0;
+  private reconnect24hTimer: NodeJS.Timeout | null = null;
   
   private priceHistory: number[] = [];
   private volumeHistory: number[] = [];
@@ -97,7 +99,9 @@ export class BinanceWebSocketClient {
         this.reconnectAttempts = 0;
         this.connectionHealthy = true;
         this.lastPongTime = Date.now();
+        this.connectionStartTime = Date.now();
         this.startHealthCheck();
+        this.schedule24HourReconnect();
         
         if (this.onConnectCallback) {
           this.onConnectCallback();
@@ -108,6 +112,16 @@ export class BinanceWebSocketClient {
         try {
           this.lastPongTime = Date.now(); // Update last activity time
           this.connectionHealthy = true;
+          
+          // Handle binary ping frames (Binance sends these)
+          if (event.data instanceof Blob) {
+            console.log('[Binance WS] Received binary ping, sending pong');
+            // Binary data is a ping, respond with pong
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+              this.ws.send(event.data); // Echo back as pong
+            }
+            return;
+          }
           
           const message = JSON.parse(event.data);
           this.handleMessage(message);
@@ -166,22 +180,51 @@ export class BinanceWebSocketClient {
     // Check connection health every 30 seconds
     this.pingInterval = setInterval(() => {
       const timeSinceLastPong = Date.now() - this.lastPongTime;
+      const connectionAge = Date.now() - this.connectionStartTime;
       
-      if (timeSinceLastPong > 60000) { // No data for 60 seconds
-        console.warn('⚠️ [Binance WS] Connection unhealthy, reconnecting...');
+      // Binance expects pong within 60 seconds of ping
+      if (timeSinceLastPong > 70000) { // 70 seconds to be safe
+        console.warn('⚠️ [Binance WS] No activity for 70s, reconnecting...');
         this.connectionHealthy = false;
         this.disconnect();
         this.connect();
       } else {
-        console.log('✅ [Binance WS] Connection healthy');
+        console.log('✅ [Binance WS] Connection healthy', {
+          lastActivity: `${Math.floor(timeSinceLastPong / 1000)}s ago`,
+          connectionAge: `${Math.floor(connectionAge / 1000 / 60)}min`
+        });
       }
     }, 30000);
+  }
+
+  private schedule24HourReconnect() {
+    // Clear any existing timer
+    if (this.reconnect24hTimer) {
+      clearTimeout(this.reconnect24hTimer);
+    }
+    
+    // Binance connections are only valid for 24 hours
+    // Reconnect after 23.5 hours to be safe
+    const reconnectTime = 23.5 * 60 * 60 * 1000; // 23.5 hours in ms
+    
+    console.log('[Binance WS] Scheduled 24-hour reconnect');
+    
+    this.reconnect24hTimer = setTimeout(() => {
+      console.log('🔄 [Binance WS] 24-hour limit reached, reconnecting...');
+      this.disconnect();
+      this.connect();
+    }, reconnectTime);
   }
 
   private stopHealthCheck() {
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
+    }
+    
+    if (this.reconnect24hTimer) {
+      clearTimeout(this.reconnect24hTimer);
+      this.reconnect24hTimer = null;
     }
   }
 
