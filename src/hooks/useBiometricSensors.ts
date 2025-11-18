@@ -23,7 +23,7 @@ export function useBiometricSensors() {
     const connect = () => {
       try {
         // Connect to Earth Live Data WebSocket server for biometric sensors
-        ws = new WebSocket('ws://localhost:8787/biometrics');
+        ws = new WebSocket('ws://localhost:8788/biometrics');
         
         ws.onopen = () => {
           console.log('💓 Connected to Earth Live Data - Biometric Sensors');

@@ -178,7 +178,7 @@ export function ConsciousnessCoherenceTracker({ currentCoherence }: Consciousnes
 
           {!biometricConnected && (
             <div className="mt-3 p-2 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-500">
-              ⚠️ Biometric sensors disconnected. Connect HRV monitor and EEG headset to ws://localhost:8787/biometrics
+              ⚠️ Biometric sensors disconnected. Connect HRV monitor and EEG headset to ws://localhost:8788/biometrics
             </div>
           )}
         </div>
