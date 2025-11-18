@@ -1,10 +1,18 @@
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sphere, Line, Text } from '@react-three/drei';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import * as THREE from 'three';
+
+interface PhaseLock {
+  nodes: number[];
+  strength: number;
+  resonanceFrequency: number;
+  timestamp: number;
+}
 
 interface FieldNode {
   position: [number, number, number];
@@ -16,10 +24,13 @@ interface FieldNode {
 interface PhaseFieldProps {
   amplitude: number;
   rotationSpeed: number;
+  phaseLocks: PhaseLock[];
+  onPhaseLockDetected: (lock: PhaseLock) => void;
 }
 
-function PhaseFieldVisualization({ amplitude, rotationSpeed }: PhaseFieldProps) {
+function PhaseFieldVisualization({ amplitude, rotationSpeed, phaseLocks, onPhaseLockDetected }: PhaseFieldProps) {
   const groupRef = useRef<THREE.Group>(null);
+  const [currentPhases, setCurrentPhases] = useState<number[]>(new Array(9).fill(0));
   
   // Define the 9 Auris nodes in 3D space arranged in a tandem pattern
   const nodes: FieldNode[] = useMemo(() => [
@@ -39,12 +50,61 @@ function PhaseFieldVisualization({ amplitude, rotationSpeed }: PhaseFieldProps) 
     { position: [-2, -3.464, 0], phase: 5 * Math.PI / 4, label: 'CargoShip', color: '#6366f1' },
   ], []);
 
-  // Auto-rotation
+  // Phase lock detection
   useFrame((state, delta) => {
     if (groupRef.current) {
       groupRef.current.rotation.y += delta * rotationSpeed;
     }
+
+    // Calculate current phases for all nodes
+    const phases = nodes.map((node, i) => 
+      (state.clock.elapsedTime * 2 + node.phase) % (2 * Math.PI)
+    );
+    setCurrentPhases(phases);
+
+    // Detect phase locks (when phases align within threshold)
+    const threshold = 0.3; // radians
+    const detected: PhaseLock[] = [];
+
+    // Check all pairs of nodes for phase alignment
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const phaseDiff = Math.abs(phases[i] - phases[j]);
+        const normalizedDiff = Math.min(phaseDiff, 2 * Math.PI - phaseDiff);
+        
+        if (normalizedDiff < threshold) {
+          // Check if this lock already exists
+          const existing = phaseLocks.find(lock => 
+            lock.nodes.includes(i) && lock.nodes.includes(j)
+          );
+          
+          if (!existing) {
+            const strength = 1 - (normalizedDiff / threshold);
+            detected.push({
+              nodes: [i, j],
+              strength,
+              resonanceFrequency: 528 * (1 + strength * 0.1), // Modulate around 528 Hz
+              timestamp: state.clock.elapsedTime
+            });
+          }
+        }
+      }
+    }
+
+    // Report new locks
+    detected.forEach(lock => onPhaseLockDetected(lock));
   });
+
+  // Check if a node is locked
+  const isNodeLocked = useCallback((nodeIndex: number) => {
+    return phaseLocks.some(lock => lock.nodes.includes(nodeIndex));
+  }, [phaseLocks]);
+
+  // Get lock strength for a node
+  const getNodeLockStrength = useCallback((nodeIndex: number) => {
+    const locks = phaseLocks.filter(lock => lock.nodes.includes(nodeIndex));
+    return locks.length > 0 ? Math.max(...locks.map(l => l.strength)) : 0;
+  }, [phaseLocks]);
 
   // Generate connections between nodes
   const connections = useMemo(() => {
@@ -87,18 +147,25 @@ function PhaseFieldVisualization({ amplitude, rotationSpeed }: PhaseFieldProps) 
             color={node.color} 
             phase={node.phase} 
             amplitude={amplitude}
+            isLocked={isNodeLocked(index)}
+            lockStrength={getNodeLockStrength(index)}
           />
           
           {/* Node label */}
           <Text
             position={[0, 0.8, 0]}
             fontSize={0.3}
-            color="#ffffff"
+            color={isNodeLocked(index) ? "#00FF88" : "#ffffff"}
             anchorX="center"
             anchorY="middle"
           >
             {node.label}
           </Text>
+
+          {/* Lock indicator ring */}
+          {isNodeLocked(index) && (
+            <LockIndicator lockStrength={getNodeLockStrength(index)} />
+          )}
         </group>
       ))}
 
@@ -114,6 +181,17 @@ function PhaseFieldVisualization({ amplitude, rotationSpeed }: PhaseFieldProps) 
         />
       ))}
 
+      {/* Resonance waves between locked nodes */}
+      {phaseLocks.map((lock, idx) => (
+        <ResonanceWave
+          key={idx}
+          start={nodes[lock.nodes[0]].position}
+          end={nodes[lock.nodes[1]].position}
+          strength={lock.strength}
+          frequency={lock.resonanceFrequency}
+        />
+      ))}
+
       {/* Phase field rings */}
       <PhaseRing radius={2} amplitude={amplitude} color="#0EA5E9" />
       <PhaseRing radius={4} amplitude={amplitude} color="#9b87f5" />
@@ -124,18 +202,23 @@ function PhaseFieldVisualization({ amplitude, rotationSpeed }: PhaseFieldProps) 
 function PulsingNode({ 
   color, 
   phase, 
-  amplitude 
+  amplitude,
+  isLocked = false,
+  lockStrength = 0
 }: { 
   color: string; 
   phase: number; 
   amplitude: number;
+  isLocked?: boolean;
+  lockStrength?: number;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   
   useFrame((state) => {
     if (meshRef.current) {
       const pulse = Math.sin(state.clock.elapsedTime * 2 + phase) * 0.2 * amplitude + 1;
-      meshRef.current.scale.setScalar(pulse);
+      const lockBoost = isLocked ? 1 + lockStrength * 0.3 : 1;
+      meshRef.current.scale.setScalar(pulse * lockBoost);
     }
   });
 
@@ -143,20 +226,86 @@ function PulsingNode({
     <>
       <Sphere ref={meshRef} args={[0.3, 16, 16]}>
         <meshStandardMaterial 
-          color={color} 
-          emissive={color}
-          emissiveIntensity={0.5}
+          color={isLocked ? "#00FF88" : color} 
+          emissive={isLocked ? "#00FF88" : color}
+          emissiveIntensity={isLocked ? 0.8 : 0.5}
         />
       </Sphere>
       {/* Glow effect */}
       <Sphere args={[0.4, 16, 16]}>
         <meshBasicMaterial 
-          color={color} 
-          opacity={0.3} 
+          color={isLocked ? "#00FF88" : color} 
+          opacity={isLocked ? 0.5 : 0.3} 
           transparent 
         />
       </Sphere>
     </>
+  );
+}
+
+function LockIndicator({ lockStrength }: { lockStrength: number }) {
+  const ringRef = useRef<THREE.Mesh>(null);
+  
+  useFrame((state) => {
+    if (ringRef.current) {
+      ringRef.current.rotation.z += 0.05;
+      const pulse = Math.sin(state.clock.elapsedTime * 4) * 0.1 + 1;
+      ringRef.current.scale.setScalar(pulse);
+    }
+  });
+
+  return (
+    <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
+      <torusGeometry args={[0.6, 0.03, 8, 32]} />
+      <meshStandardMaterial 
+        color="#00FF88" 
+        emissive="#00FF88"
+        emissiveIntensity={lockStrength}
+        transparent
+        opacity={0.7}
+      />
+    </mesh>
+  );
+}
+
+function ResonanceWave({ 
+  start, 
+  end, 
+  strength, 
+  frequency 
+}: { 
+  start: [number, number, number];
+  end: [number, number, number];
+  strength: number;
+  frequency: number;
+}) {
+  const [opacity, setOpacity] = useState(0.5);
+  
+  useFrame((state) => {
+    const newOpacity = Math.sin(state.clock.elapsedTime * 4) * 0.3 + 0.5;
+    setOpacity(newOpacity * strength);
+  });
+
+  // Create curved path
+  const curve = useMemo(() => {
+    const startVec = new THREE.Vector3(...start);
+    const endVec = new THREE.Vector3(...end);
+    const midVec = startVec.clone().lerp(endVec, 0.5);
+    midVec.y += 1; // Arc upward
+    
+    return new THREE.QuadraticBezierCurve3(startVec, midVec, endVec);
+  }, [start, end]);
+
+  const points = useMemo(() => curve.getPoints(50), [curve]);
+
+  return (
+    <Line
+      points={points}
+      color="#00FF88"
+      lineWidth={3}
+      transparent
+      opacity={opacity}
+    />
   );
 }
 
@@ -196,17 +345,52 @@ function PhaseRing({
 export function HarmonicNexusPhaseField3D() {
   const [amplitude, setAmplitude] = useState(1);
   const [rotationSpeed, setRotationSpeed] = useState(0.2);
+  const [phaseLocks, setPhaseLocks] = useState<PhaseLock[]>([]);
+  const [lockHistory, setLockHistory] = useState<PhaseLock[]>([]);
+
+  // Handle new phase lock detection
+  const handlePhaseLockDetected = useCallback((lock: PhaseLock) => {
+    setPhaseLocks(prev => {
+      // Add new lock
+      const updated = [...prev, lock];
+      // Keep only recent locks (last 3 seconds)
+      return updated.filter(l => lock.timestamp - l.timestamp < 3);
+    });
+    
+    // Add to history
+    setLockHistory(prev => [...prev, lock].slice(-10)); // Keep last 10
+  }, []);
+
+  // Clean up old locks
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhaseLocks(prev => {
+        const now = Date.now() / 1000;
+        return prev.filter(lock => now - lock.timestamp < 3);
+      });
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
+
+  const nodeNames = ['Observer', 'Tiger', 'Falcon', 'Dolphin', 'Hummingbird', 'Deer', 'Owl', 'Panda', 'CargoShip'];
 
   return (
     <Card className="p-6 bg-card border-border">
       <div className="space-y-4">
-        <div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">
-            🌀 Harmonic Nexus Phase Field (Tandem View)
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Interactive 3D visualization of the 9-node Auris substrate with real-time phase dynamics
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-semibold text-foreground mb-2">
+              🌀 Harmonic Nexus Phase Field (Tandem View)
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Interactive 3D visualization with phase lock detection
+            </p>
+          </div>
+          {phaseLocks.length > 0 && (
+            <Badge className="text-sm px-3 py-1" style={{ backgroundColor: '#00FF88' }}>
+              🔒 {phaseLocks.length} Active Lock{phaseLocks.length !== 1 ? 's' : ''}
+            </Badge>
+          )}
         </div>
 
         {/* 3D Canvas */}
@@ -219,6 +403,8 @@ export function HarmonicNexusPhaseField3D() {
             <PhaseFieldVisualization 
               amplitude={amplitude} 
               rotationSpeed={rotationSpeed}
+              phaseLocks={phaseLocks}
+              onPhaseLockDetected={handlePhaseLockDetected}
             />
             
             <OrbitControls 
@@ -229,6 +415,38 @@ export function HarmonicNexusPhaseField3D() {
             />
           </Canvas>
         </div>
+
+        {/* Active Phase Locks Display */}
+        {phaseLocks.length > 0 && (
+          <div className="border border-border rounded-lg p-4 bg-black/10">
+            <h4 className="text-sm font-semibold text-foreground mb-2">
+              🔒 Active Phase Locks
+            </h4>
+            <div className="space-y-2">
+              {phaseLocks.map((lock, idx) => (
+                <div key={idx} className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">
+                    {nodeNames[lock.nodes[0]]} ↔ {nodeNames[lock.nodes[1]]}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-primary font-mono">
+                      {lock.resonanceFrequency.toFixed(2)} Hz
+                    </span>
+                    <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary transition-all"
+                        style={{ width: `${lock.strength * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-muted-foreground font-mono">
+                      {(lock.strength * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Controls */}
         <div className="space-y-4 border-t border-border pt-4">
