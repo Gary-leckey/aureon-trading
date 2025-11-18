@@ -47,6 +47,9 @@ export class BinanceWebSocketClient {
   private maxReconnectAttempts = 10;
   private reconnectDelay = 1000;
   private isConnecting = false;
+  private pingInterval: NodeJS.Timeout | null = null;
+  private lastPongTime = 0;
+  private connectionHealthy = false;
   
   private priceHistory: number[] = [];
   private volumeHistory: number[] = [];
@@ -60,6 +63,7 @@ export class BinanceWebSocketClient {
   private onDataCallback: ((data: MarketData) => void) | null = null;
   private onErrorCallback: ((error: Error) => void) | null = null;
   private onConnectCallback: (() => void) | null = null;
+  private onDisconnectCallback: (() => void) | null = null;
 
   constructor(symbol: string = 'btcusdt') {
     this.symbol = symbol.toLowerCase();
@@ -72,23 +76,29 @@ export class BinanceWebSocketClient {
 
   connect() {
     if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.OPEN)) {
-      console.log('WebSocket already connected or connecting');
+      console.log('[Binance WS] Already connected or connecting');
       return;
     }
 
     this.isConnecting = true;
+    this.connectionHealthy = false;
     const streamNames = this.streams.join('/');
     const wsUrl = `wss://stream.binance.com:9443/stream?streams=${streamNames}`;
 
-    console.log('Connecting to Binance WebSocket:', wsUrl);
+    console.log('[Binance WS] Attempting connection to:', wsUrl);
+    console.log('[Binance WS] Attempt #', this.reconnectAttempts + 1);
 
     try {
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log('✅ Binance WebSocket connected');
+        console.log('✅ [Binance WS] Connected successfully');
         this.isConnecting = false;
         this.reconnectAttempts = 0;
+        this.connectionHealthy = true;
+        this.lastPongTime = Date.now();
+        this.startHealthCheck();
+        
         if (this.onConnectCallback) {
           this.onConnectCallback();
         }
@@ -96,33 +106,82 @@ export class BinanceWebSocketClient {
 
       this.ws.onmessage = (event) => {
         try {
+          this.lastPongTime = Date.now(); // Update last activity time
+          this.connectionHealthy = true;
+          
           const message = JSON.parse(event.data);
           this.handleMessage(message);
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          console.error('[Binance WS] Parse error:', error);
         }
       };
 
       this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.error('❌ [Binance WS] Connection error:', {
+          readyState: this.ws?.readyState,
+          error: error,
+          timestamp: new Date().toISOString()
+        });
         this.isConnecting = false;
+        this.connectionHealthy = false;
+        
         if (this.onErrorCallback) {
-          this.onErrorCallback(new Error('WebSocket connection error'));
+          this.onErrorCallback(new Error(`WebSocket connection error - ReadyState: ${this.ws?.readyState}`));
         }
       };
 
-      this.ws.onclose = () => {
-        console.log('WebSocket disconnected');
+      this.ws.onclose = (event) => {
+        console.log('🔌 [Binance WS] Disconnected:', {
+          code: event.code,
+          reason: event.reason,
+          wasClean: event.wasClean,
+          timestamp: new Date().toISOString()
+        });
+        
+        this.stopHealthCheck();
         this.isConnecting = false;
+        this.connectionHealthy = false;
         this.ws = null;
+        
+        if (this.onDisconnectCallback) {
+          this.onDisconnectCallback();
+        }
+        
         this.attemptReconnect();
       };
     } catch (error) {
-      console.error('Error creating WebSocket:', error);
+      console.error('❌ [Binance WS] Failed to create connection:', error);
       this.isConnecting = false;
+      this.connectionHealthy = false;
+      
       if (this.onErrorCallback) {
         this.onErrorCallback(error as Error);
       }
+    }
+  }
+
+  private startHealthCheck() {
+    this.stopHealthCheck();
+    
+    // Check connection health every 30 seconds
+    this.pingInterval = setInterval(() => {
+      const timeSinceLastPong = Date.now() - this.lastPongTime;
+      
+      if (timeSinceLastPong > 60000) { // No data for 60 seconds
+        console.warn('⚠️ [Binance WS] Connection unhealthy, reconnecting...');
+        this.connectionHealthy = false;
+        this.disconnect();
+        this.connect();
+      } else {
+        console.log('✅ [Binance WS] Connection healthy');
+      }
+    }, 30000);
+  }
+
+  private stopHealthCheck() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
     }
   }
 
