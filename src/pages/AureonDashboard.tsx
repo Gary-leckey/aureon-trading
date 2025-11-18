@@ -53,10 +53,13 @@ const AureonDashboard = () => {
   const [savedEventsCount, setSavedEventsCount] = useState(0);
   const [savedSignalsCount, setSavedSignalsCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionHealthy, setConnectionHealthy] = useState(false);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [currentSymbol, setCurrentSymbol] = useState('BTCUSDT');
   const [selectedSymbol, setSelectedSymbol] = useState('btcusdt');
   const [currentPrice, setCurrentPrice] = useState(0);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [lastConnectionError, setLastConnectionError] = useState<string | null>(null);
   
   const { toast } = useToast();
   const { celestialBoost } = useCelestialData();
@@ -207,23 +210,38 @@ const AureonDashboard = () => {
     binanceClientRef.current = client;
 
     client.onConnect(() => {
-      setIsConnected(true);
+      const health = client.getConnectionHealth();
+      setIsConnected(health.connected);
+      setConnectionHealthy(health.healthy);
+      setReconnectAttempts(health.attempts);
+      setLastConnectionError(null);
       setCurrentSymbol(client.getSymbol());
       toast({
-        title: '🌐 Connected to Binance',
-        description: `Live ${client.getSymbol()} market data streaming`,
+        title: '✅ Binance Connected',
+        description: `Live ${client.getSymbol().toUpperCase()} market data streaming`,
         duration: 3000,
       });
     });
 
+    client.onDisconnect(() => {
+      const health = client.getConnectionHealth();
+      setIsConnected(health.connected);
+      setConnectionHealthy(health.healthy);
+      setReconnectAttempts(health.attempts);
+    });
+
     client.onError((error) => {
       console.error('Binance WebSocket error:', error);
-      setIsConnected(false);
+      const health = client.getConnectionHealth();
+      setIsConnected(health.connected);
+      setConnectionHealthy(health.healthy);
+      setReconnectAttempts(health.attempts);
+      setLastConnectionError(error.message);
       toast({
         title: '⚠️ Connection Error',
-        description: 'Lost connection to Binance. Retrying...',
+        description: error.message,
         variant: 'destructive',
-        duration: 3000,
+        duration: 5000,
       });
     });
 
