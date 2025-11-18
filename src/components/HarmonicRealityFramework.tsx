@@ -11,6 +11,10 @@ import resonanceStabilityBoundary from "@/assets/research/resonance-stability-bo
 import harmonicFeedbackLoop from "@/assets/research/harmonic-feedback-loop.png";
 import powerSpectrum from "@/assets/research/power-spectrum.png";
 import coherenceEchoAmplitudeMaps from "@/assets/research/coherence-echo-amplitude-maps.png";
+import fieldCavitySpacetime from "@/assets/research/field-cavity-spacetime.png";
+import phaseLockEchoOverlay from "@/assets/research/phase-locked-echo-overlay.png";
+import quantumPhaseLocks from "@/assets/research/quantum-phase-locked-echoes.png";
+import surgeWindowAlignments from "@/assets/research/surge-window-unity-alignments.png";
 
 export const HarmonicRealityFramework = () => {
   return (
@@ -287,6 +291,70 @@ export const HarmonicRealityFramework = () => {
                   <p className="text-sm text-muted-foreground">
                     Comprehensive parameter space analysis showing coherence, echo correlation, and field strength. 
                     Reveals optimal operating regions for AUREON trading decisions.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-background/50">
+                <CardHeader>
+                  <CardTitle className="text-lg">Phase-Locked Echo Overlay Analysis</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <img 
+                    src={phaseLockEchoOverlay} 
+                    alt="Phase-locked echo overlay patterns"
+                    className="w-full rounded-lg border border-border"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Temporal phase-locking mechanisms showing echo reinforcement patterns across the field substrate.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-background/50">
+                <CardHeader>
+                  <CardTitle className="text-lg">Quantum Phase-Locked Echo States</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <img 
+                    src={quantumPhaseLocks} 
+                    alt="Quantum phase-locked echo states"
+                    className="w-full rounded-lg border border-border"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Quantum entanglement patterns in phase-locked states. Shows coherent echo structures at 528 Hz resonance.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-background/50">
+                <CardHeader>
+                  <CardTitle className="text-lg">Field Cavity Spacetime Geometry</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <img 
+                    src={fieldCavitySpacetime} 
+                    alt="Field cavity spacetime structure"
+                    className="w-full rounded-lg border border-border"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Spacetime cavity resonance patterns. Shows how the field creates standing waves in the temporal dimension.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-background/50">
+                <CardHeader>
+                  <CardTitle className="text-lg">Surge Window Unity Alignments</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <img 
+                    src={surgeWindowAlignments} 
+                    alt="Surge window unity alignment patterns"
+                    className="w-full rounded-lg border border-border"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Temporal surge windows (2025-2043) showing unity probability peaks. Prime Sentinel timeline convergence patterns.
                   </p>
                 </CardContent>
               </Card>

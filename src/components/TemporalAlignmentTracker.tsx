@@ -5,6 +5,7 @@ import { Clock, Calendar, Moon, Sun, Sparkles, TrendingUp } from "lucide-react";
 import { useTemporalAlignment } from "@/hooks/useTemporalAlignment";
 import { useSentinelConfig } from "@/hooks/useSentinelConfig";
 import { format } from "date-fns";
+import surgeWindowAlignments from "@/assets/research/surge-window-unity-alignments.png";
 
 export function TemporalAlignmentTracker() {
   const { config } = useSentinelConfig();
@@ -230,6 +231,20 @@ export function TemporalAlignmentTracker() {
             ) : (
               <>Low temporal alignment. Patterns are in trough phase. Next peak window approaching in {daysToNext} {daysToNext === 1 ? 'day' : 'days'}.</>
             )}
+          </p>
+        </div>
+        
+        {/* Surge Window Research */}
+        <div className="border-t border-border/30 pt-4">
+          <h4 className="text-sm font-semibold mb-3 text-muted-foreground">Research: Surge Window Unity Alignments (2025-2043)</h4>
+          <img 
+            src={surgeWindowAlignments}
+            alt="Surge window unity alignment patterns showing Prime Sentinel timeline convergence"
+            className="w-full rounded-lg border border-border/50"
+          />
+          <p className="text-xs text-muted-foreground mt-2">
+            Temporal surge windows showing unity probability peaks across the Prime Sentinel timeline. 
+            Convergence patterns indicate optimal trading windows during the 2025-2043 Harmonic Nexus cycle.
           </p>
         </div>
       </CardContent>

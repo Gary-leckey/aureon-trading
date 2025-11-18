@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { CasimirVacuumField } from '@/components/CasimirVacuumField';
 import { supabase } from '@/integrations/supabase/client';
 import type { HarmonicNexusState } from '@/core/harmonicNexusCore';
+import quantumPhaseLocks from '@/assets/research/quantum-phase-locked-echoes.png';
 import * as THREE from 'three';
 
 interface PhaseLock {
@@ -663,6 +664,16 @@ export function HarmonicNexusPhaseField3D() {
 
         {/* Controls */}
         <div className="space-y-4 border-t border-border pt-4">
+          {/* Quantum Phase Lock Research */}
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Research: Quantum Phase-Locked Echoes</h4>
+            <img 
+              src={quantumPhaseLocks}
+              alt="Quantum phase-locked echo states research"
+              className="w-full rounded-lg border border-border/50"
+            />
+          </div>
+          
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <Label htmlFor="amplitude" className="text-sm text-foreground">

@@ -6,6 +6,7 @@ import { TrendingUp, TrendingDown, Minus, Sparkles, Clock, Zap } from 'lucide-re
 import type { CurvaturePoint } from '@/core/ftcpDetector';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import fibonacciFtcpWindowing from '@/assets/research/fibonacci-ftcp-windowing.png';
 
 interface FTCPTimelineProps {
   ftcpPoint: CurvaturePoint | null;
@@ -366,7 +367,6 @@ export const FTCPTimeline = ({ ftcpPoint, currentPrice, currentSymbol }: FTCPTim
               curvature spikes coincide with near-golden-ratio (φ ≈ 1.618) spacing of temporal events.
             </p>
           </div>
-          
           <div>
             <h5 className="font-semibold mb-2">Detection Criteria</h5>
             <ul className="text-xs text-muted-foreground space-y-1">
@@ -375,6 +375,16 @@ export const FTCPTimeline = ({ ftcpPoint, currentPrice, currentSymbol }: FTCPTim
               <li>• Time intervals approach φ ratio</li>
             </ul>
           </div>
+        </div>
+        
+        {/* FTCP Windowing Research Image */}
+        <div className="mt-6 border-t border-border/30 pt-4">
+          <h5 className="text-sm font-semibold mb-3 text-muted-foreground">Research: Fibonacci Windowing</h5>
+          <img 
+            src={fibonacciFtcpWindowing}
+            alt="Fibonacci-Tightened Curvature Point Windowing Research"
+            className="w-full rounded-lg border border-border/50"
+          />
         </div>
       </Card>
     </div>
