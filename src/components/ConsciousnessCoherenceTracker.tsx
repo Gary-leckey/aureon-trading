@@ -5,6 +5,8 @@ import { Brain, Heart, Activity, Sparkles, Wifi, WifiOff } from "lucide-react";
 import { useSchumannResonance } from "@/hooks/useSchumannResonance";
 import { useCelestialData } from "@/hooks/useCelestialData";
 import { useBiometricSensors } from "@/hooks/useBiometricSensors";
+import { useConsciousnessHistory } from "@/hooks/useConsciousnessHistory";
+import { useEffect, useRef } from "react";
 
 interface ConsciousnessCoherenceTrackerProps {
   currentCoherence: number;
@@ -14,6 +16,8 @@ export function ConsciousnessCoherenceTracker({ currentCoherence }: Consciousnes
   const { schumannData, isConnected: schumannConnected } = useSchumannResonance();
   const { celestialBoost } = useCelestialData();
   const { biometricData, isConnected: biometricConnected } = useBiometricSensors();
+  const { saveDataPoint } = useConsciousnessHistory();
+  const lastSaveTime = useRef<number>(0);
 
   // Calculate total consciousness field coherence
   const schumannBoost = schumannData?.coherenceBoost || 0;
@@ -35,6 +39,17 @@ export function ConsciousnessCoherenceTracker({ currentCoherence }: Consciousnes
   };
 
   const coherenceStatus = getCoherenceLevel(enhancedCoherence);
+
+  // Save data point every 5 minutes
+  useEffect(() => {
+    const now = Date.now();
+    const fiveMinutes = 5 * 60 * 1000;
+    
+    if (schumannData && now - lastSaveTime.current >= fiveMinutes) {
+      saveDataPoint(schumannData, biometricData, celestialBoost, enhancedCoherence);
+      lastSaveTime.current = now;
+    }
+  }, [schumannData, biometricData, celestialBoost, enhancedCoherence, saveDataPoint]);
 
   return (
     <Card className="bg-card/50 backdrop-blur border-border/50 relative overflow-hidden">
