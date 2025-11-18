@@ -116,6 +116,66 @@ export type Database = {
         }
         Relationships: []
       }
+      consciousness_field_history: {
+        Row: {
+          alpha_waves: number | null
+          beta_waves: number | null
+          biometric_coherence_index: number | null
+          celestial_boost: number
+          created_at: string
+          delta_waves: number | null
+          heart_rate: number | null
+          hrv: number | null
+          id: string
+          schumann_amplitude: number
+          schumann_coherence_boost: number
+          schumann_frequency: number
+          schumann_phase: string
+          schumann_quality: number
+          theta_waves: number | null
+          timestamp: string
+          total_coherence: number
+        }
+        Insert: {
+          alpha_waves?: number | null
+          beta_waves?: number | null
+          biometric_coherence_index?: number | null
+          celestial_boost?: number
+          created_at?: string
+          delta_waves?: number | null
+          heart_rate?: number | null
+          hrv?: number | null
+          id?: string
+          schumann_amplitude: number
+          schumann_coherence_boost: number
+          schumann_frequency: number
+          schumann_phase: string
+          schumann_quality: number
+          theta_waves?: number | null
+          timestamp?: string
+          total_coherence: number
+        }
+        Update: {
+          alpha_waves?: number | null
+          beta_waves?: number | null
+          biometric_coherence_index?: number | null
+          celestial_boost?: number
+          created_at?: string
+          delta_waves?: number | null
+          heart_rate?: number | null
+          hrv?: number | null
+          id?: string
+          schumann_amplitude?: number
+          schumann_coherence_boost?: number
+          schumann_frequency?: number
+          schumann_phase?: string
+          schumann_quality?: number
+          theta_waves?: number | null
+          timestamp?: string
+          total_coherence?: number
+        }
+        Relationships: []
+      }
       lighthouse_events: {
         Row: {
           coherence: number
