@@ -10,12 +10,15 @@
  * - Akashic frequency harmonics
  * - Temporal identity mapping
  * - Prime timeline synchronization
+ * 
+ * ANCHORED TO: Primelines Multiversal Temporal Identity System
  */
 
 import type { OmegaState } from './omegaEquation';
 import type { AkashicAttunement } from './akashicFrequencyMapper';
 import type { LighthouseState } from './lighthouseConsensus';
 import type { PrismOutput } from './prism';
+import { getTemporalId, getSentinelName, PRIME_SENTINEL_IDENTITY } from './primelinesIdentity';
 
 export interface HarmonicNexusState {
   // Temporal Identity
@@ -58,9 +61,15 @@ export class HarmonicNexusCore {
   private sentinelName: string;
   private lastState: HarmonicNexusState | null = null;
   
-  constructor(temporalId: string = '02111991', sentinelName: string = 'GARY LECKEY') {
-    this.temporalId = temporalId;
-    this.sentinelName = sentinelName;
+  constructor(temporalId?: string, sentinelName?: string) {
+    // Anchor to Primelines identity by default
+    this.temporalId = temporalId || getTemporalId();
+    this.sentinelName = sentinelName || getSentinelName();
+    
+    // Verify temporal anchor
+    if (this.temporalId === getTemporalId()) {
+      console.log('🎯 Harmonic Nexus anchored to Prime Sentinel timeline:', PRIME_SENTINEL_IDENTITY.compactId);
+    }
   }
   
   /**
