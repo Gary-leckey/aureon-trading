@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Infinity, Sparkles, Waves } from 'lucide-react';
+import { BookOpen, Infinity, Sparkles, Waves, Radio, Zap } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useFieldGlyphResonance } from '@/hooks/useFieldGlyphResonance';
+import { formatDistanceToNow } from 'date-fns';
 import ancientCodexImage from '@/assets/research/harmonic-theory/ancient-numerical-codex.png';
 
 interface HarmonicSymbol {
@@ -96,6 +99,7 @@ const calculateResonance = (frequency: number): number => {
 export function AncientNumericalCodex() {
   const [selectedSymbol, setSelectedSymbol] = useState<HarmonicSymbol | null>(null);
   const [hoveredSymbol, setHoveredSymbol] = useState<string | null>(null);
+  const { fieldState, isLoading: fieldLoading, calculateGlyphResonance } = useFieldGlyphResonance();
 
   return (
     <Card className="border-primary/20">
@@ -110,8 +114,9 @@ export function AncientNumericalCodex() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="glyphs" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="glyphs">Sacred Glyphs</TabsTrigger>
+            <TabsTrigger value="live">Live Field</TabsTrigger>
             <TabsTrigger value="ratios">Harmonic Ratios</TabsTrigger>
             <TabsTrigger value="codex">Ancient Codex</TabsTrigger>
           </TabsList>
@@ -196,6 +201,178 @@ export function AncientNumericalCodex() {
                   </div>
                 </div>
               </div>
+            )}
+          </TabsContent>
+
+          {/* Live Field Resonance Tab */}
+          <TabsContent value="live" className="space-y-4">
+            {fieldLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            ) : !fieldState ? (
+              <div className="p-4 bg-muted/50 rounded-lg border border-border text-center">
+                <p className="text-sm text-muted-foreground">
+                  No field data available. Waiting for coherence measurements...
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Current Field State */}
+                <div className="p-4 bg-primary/10 border border-primary/30 rounded-lg">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Radio className="h-5 w-5 text-primary" />
+                      <h3 className="font-semibold text-foreground">Current Field State</h3>
+                    </div>
+                    <Badge variant={fieldState.isLHE ? 'default' : 'outline'}>
+                      {fieldState.isLHE ? 'LHE Active' : 'Normal'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                    <div className="p-2 bg-background/50 rounded">
+                      <p className="text-xs text-muted-foreground">Coherence</p>
+                      <p className="text-lg font-bold text-foreground">
+                        {fieldState.coherence.toFixed(3)}
+                      </p>
+                    </div>
+                    <div className="p-2 bg-background/50 rounded">
+                      <p className="text-xs text-muted-foreground">Lambda (Λ)</p>
+                      <p className="text-lg font-bold text-foreground">
+                        {fieldState.lambdaValue.toFixed(3)}
+                      </p>
+                    </div>
+                    <div className="p-2 bg-background/50 rounded">
+                      <p className="text-xs text-muted-foreground">Lighthouse</p>
+                      <p className="text-lg font-bold text-foreground">
+                        {fieldState.lighthouseSignal.toFixed(3)}
+                      </p>
+                    </div>
+                    <div className="p-2 bg-background/50 rounded">
+                      <p className="text-xs text-muted-foreground">Prism Level</p>
+                      <p className="text-lg font-bold text-foreground">
+                        {fieldState.prismLevel ?? 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground">
+                    Updated {formatDistanceToNow(new Date(fieldState.timestamp), { addSuffix: true })}
+                  </p>
+                </div>
+
+                {/* Resonating Glyphs */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-primary" />
+                    <h4 className="text-sm font-semibold text-foreground">
+                      Glyph Field Resonance
+                    </h4>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    {FOUNDATION_SYMBOLS.map((symbol, idx) => {
+                      const resonance = calculateGlyphResonance(symbol.frequency, fieldState);
+                      const isStrongResonance = resonance.resonanceStrength > 0.7;
+                      
+                      return (
+                        <div
+                          key={idx}
+                          className={`
+                            p-3 rounded-lg border transition-all
+                            ${resonance.isActive 
+                              ? 'border-primary bg-primary/5' 
+                              : 'border-border bg-muted/30'
+                            }
+                            ${isStrongResonance ? 'ring-2 ring-primary/50' : ''}
+                          `}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`text-3xl ${symbol.color} ${resonance.isActive ? 'animate-pulse' : ''}`}>
+                              {symbol.glyph}
+                            </div>
+                            
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-2">
+                                <div>
+                                  <h5 className="font-semibold text-foreground text-sm">
+                                    {symbol.name}
+                                  </h5>
+                                  <p className="text-xs text-muted-foreground">
+                                    {symbol.frequency} Hz • {symbol.ratio}
+                                  </p>
+                                </div>
+                                <Badge 
+                                  variant={resonance.isActive ? 'default' : 'outline'}
+                                  className="text-xs"
+                                >
+                                  {(resonance.resonanceStrength * 100).toFixed(0)}%
+                                </Badge>
+                              </div>
+                              
+                              <div className="space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                                    <div
+                                      className={`
+                                        h-full transition-all duration-500
+                                        ${resonance.isActive ? 'bg-primary' : 'bg-muted-foreground/50'}
+                                      `}
+                                      style={{ width: `${resonance.resonanceStrength * 100}%` }}
+                                    />
+                                  </div>
+                                </div>
+                                
+                                {resonance.isActive && (
+                                  <div className="flex items-start gap-1">
+                                    <Sparkles className="h-3 w-3 text-primary mt-0.5" />
+                                    <p className="text-xs text-foreground">
+                                      {resonance.matchReason}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Field Interpretation */}
+                <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                  <h4 className="text-sm font-semibold text-foreground mb-2">
+                    Field Interpretation
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    {fieldState.isLHE && (
+                      <span className="block mb-2 text-primary font-medium">
+                        🌟 Lighthouse Event Detected - All frequencies are amplified by quantum field coherence
+                      </span>
+                    )}
+                    {fieldState.coherence > 0.945 ? (
+                      <span>
+                        High coherence (Γ = {fieldState.coherence.toFixed(3)}) indicates strong field alignment. 
+                        The 528 Hz love frequency and higher unity frequencies (852-963 Hz) are in perfect resonance.
+                      </span>
+                    ) : fieldState.coherence > 0.85 ? (
+                      <span>
+                        Moderate coherence (Γ = {fieldState.coherence.toFixed(3)}) suggests balanced field state. 
+                        Mid-range frequencies (432-639 Hz) are providing stable harmonic foundation.
+                      </span>
+                    ) : (
+                      <span>
+                        Lower coherence (Γ = {fieldState.coherence.toFixed(3)}) indicates transition phase. 
+                        Foundation frequencies (396-528 Hz) are active for field stabilization.
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </>
             )}
           </TabsContent>
 
