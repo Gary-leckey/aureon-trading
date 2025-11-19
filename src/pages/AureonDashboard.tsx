@@ -44,6 +44,7 @@ import { BacktestingInterface } from '@/components/BacktestingInterface';
 import { TradeAnalyzer } from '@/components/TradeAnalyzer';
 import { NoaaSpaceWeatherDashboard } from '@/components/NoaaSpaceWeatherDashboard';
 import { SpaceWeatherCorrelationAnalyzer } from '@/components/SpaceWeatherCorrelationAnalyzer';
+import { EarthResonanceDashboard } from '@/components/EarthResonanceDashboard';
 import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor';
 import { SchumannSpectrograph } from '@/components/SchumannSpectrograph';
 import { ConsciousnessCoherenceTracker } from '@/components/ConsciousnessCoherenceTracker';
@@ -844,6 +845,11 @@ const AureonDashboard = () => {
         {/* Space Weather Correlation Analyzer */}
         <div className="mb-8">
           <SpaceWeatherCorrelationAnalyzer />
+        </div>
+
+        {/* Earth Resonance Dashboard */}
+        <div className="mb-8">
+          <EarthResonanceDashboard />
         </div>
 
         <div className="mb-8">
