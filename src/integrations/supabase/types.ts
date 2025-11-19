@@ -428,6 +428,48 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduler_history: {
+        Row: {
+          action: string
+          coherence_at_action: number
+          created_at: string
+          daily_activations: number
+          id: string
+          lighthouse_events_count: number
+          metadata: Json | null
+          reason: string
+          timestamp: string
+          trading_enabled_after: boolean
+          trading_enabled_before: boolean
+        }
+        Insert: {
+          action: string
+          coherence_at_action: number
+          created_at?: string
+          daily_activations?: number
+          id?: string
+          lighthouse_events_count?: number
+          metadata?: Json | null
+          reason: string
+          timestamp?: string
+          trading_enabled_after: boolean
+          trading_enabled_before: boolean
+        }
+        Update: {
+          action?: string
+          coherence_at_action?: number
+          created_at?: string
+          daily_activations?: number
+          id?: string
+          lighthouse_events_count?: number
+          metadata?: Json | null
+          reason?: string
+          timestamp?: string
+          trading_enabled_after?: boolean
+          trading_enabled_before?: boolean
+        }
+        Relationships: []
+      }
       sentinel_config: {
         Row: {
           auto_initialize: boolean | null

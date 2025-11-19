@@ -136,6 +136,24 @@ serve(async (req) => {
         throw updateError;
       }
 
+      // Log to scheduler history
+      await supabase
+        .from('scheduler_history')
+        .insert({
+          action,
+          reason,
+          coherence_at_action: currentWindowData.unifiedFieldCoherence,
+          lighthouse_events_count: currentWindowData.lighthouseEvents,
+          trading_enabled_before: currentlyEnabled,
+          trading_enabled_after: newTradingState,
+          daily_activations: dailyActivations,
+          metadata: {
+            hour: currentHour,
+            threshold: schedulerConfig.min_coherence_threshold,
+            require_lhe: schedulerConfig.require_lhe_in_window,
+          },
+        });
+
       console.log(`[auto-trading-scheduler] ${action.toUpperCase()} trading: ${reason}`);
     }
 
