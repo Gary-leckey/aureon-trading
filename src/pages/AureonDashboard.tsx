@@ -46,6 +46,7 @@ import { NoaaSpaceWeatherDashboard } from '@/components/NoaaSpaceWeatherDashboar
 import { SpaceWeatherCorrelationAnalyzer } from '@/components/SpaceWeatherCorrelationAnalyzer';
 import { EarthResonanceDashboard } from '@/components/EarthResonanceDashboard';
 import { UnifiedFieldTimeline } from '@/components/UnifiedFieldTimeline';
+import { AutoTradingScheduler } from '@/components/AutoTradingScheduler';
 import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor';
 import { SchumannSpectrograph } from '@/components/SchumannSpectrograph';
 import { ConsciousnessCoherenceTracker } from '@/components/ConsciousnessCoherenceTracker';
@@ -856,6 +857,11 @@ const AureonDashboard = () => {
         {/* Unified Field Timeline */}
         <div className="mb-8">
           <UnifiedFieldTimeline />
+        </div>
+
+        {/* Auto-Trading Scheduler */}
+        <div className="mb-8">
+          <AutoTradingScheduler />
         </div>
 
         <div className="mb-8">
