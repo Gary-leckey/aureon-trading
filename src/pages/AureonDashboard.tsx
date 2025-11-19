@@ -55,6 +55,7 @@ import { OmegaFieldVisualization } from '@/components/OmegaFieldVisualization';
 import { AkashicFrequencyVisualization } from '@/components/AkashicFrequencyVisualization';
 import { ConsciousnessHistoryChart } from '@/components/ConsciousnessHistoryChart';
 import { BinanceConnectionStatus } from '@/components/BinanceConnectionStatus';
+import { BinancePortfolioWidget } from '@/components/BinancePortfolioWidget';
 import { useAutoTrading } from '@/hooks/useAutoTrading';
 import { useCelestialData } from '@/hooks/useCelestialData';
 import { useSchumannResonance } from '@/hooks/useSchumannResonance';
@@ -515,8 +516,8 @@ const AureonDashboard = () => {
           </div>
         </Card>
 
-        {/* Binance Connection Status */}
-        <div className="mb-8">
+        {/* Binance Connection Status and Portfolio */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <BinanceConnectionStatus
             isConnected={isConnected}
             isHealthy={connectionHealthy}
@@ -527,6 +528,7 @@ const AureonDashboard = () => {
               window.location.reload();
             }}
           />
+          <BinancePortfolioWidget />
         </div>
 
         {/* Trading Signal Card */}
