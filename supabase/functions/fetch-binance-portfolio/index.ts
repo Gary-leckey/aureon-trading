@@ -43,17 +43,58 @@ serve(async (req) => {
     console.log('[fetch-binance-portfolio] API Key length:', apiKey.length);
     console.log('[fetch-binance-portfolio] API Key prefix:', apiKey.substring(0, 8) + '...');
 
+    // First, test with a simple unauthenticated endpoint to check connectivity
+    console.log('[fetch-binance-portfolio] Testing Binance connectivity...');
+    const pingResponse = await fetch('https://api.binance.com/api/v3/ping');
+    if (!pingResponse.ok) {
+      throw new Error(`Cannot reach Binance API: ${pingResponse.status}`);
+    }
+    console.log('[fetch-binance-portfolio] Binance API is reachable');
+
+    // Test authenticated endpoint with API key restrictions check
     const timestamp = Date.now();
     const recvWindow = 60000; // 60 seconds
-    const queryString = `timestamp=${timestamp}&recvWindow=${recvWindow}`;
     
-    // Create HMAC signature
-    const signature = await createSignature(apiSecret, queryString);
+    // Try api key check endpoint first (less restrictive)
+    console.log('[fetch-binance-portfolio] Testing API key validity...');
+    const apiKeyCheckUrl = `https://api.binance.com/api/v3/account/status?timestamp=${timestamp}&recvWindow=${recvWindow}`;
+    const checkSignature = await createSignature(apiSecret, `timestamp=${timestamp}&recvWindow=${recvWindow}`);
+    
+    const checkResponse = await fetch(`${apiKeyCheckUrl}&signature=${checkSignature}`, {
+      method: 'GET',
+      headers: {
+        'X-MBX-APIKEY': apiKey,
+      },
+    });
 
-    // Fetch account information
+    if (!checkResponse.ok) {
+      const errorText = await checkResponse.text();
+      console.error('[fetch-binance-portfolio] API key check failed:', errorText);
+      let errorJson;
+      try {
+        errorJson = JSON.parse(errorText);
+      } catch (e) {
+        throw new Error(`Binance API error: ${checkResponse.status}`);
+      }
+      
+      // Provide specific error guidance
+      if (errorJson.code === -2015) {
+        throw new Error('Binance API key has IP restrictions enabled. Please go to Binance API Management and set "IP access restrictions" to "Unrestricted (Less Secure)" or whitelist Lovable Cloud IPs');
+      } else if (errorJson.code === -2014) {
+        throw new Error('Binance API key invalid format or signature mismatch. Please regenerate your API keys');
+      } else if (errorJson.code === -1022) {
+        throw new Error('Binance API signature invalid. Please check your API secret is correct');
+      }
+      
+      throw new Error(`Binance API error: ${errorJson.msg || errorJson.code || checkResponse.status}`);
+    }
+
+    console.log('[fetch-binance-portfolio] API key is valid, fetching account data...');
+
+    // Now fetch the actual account information
+    const queryString = `timestamp=${timestamp}&recvWindow=${recvWindow}`;
+    const signature = await createSignature(apiSecret, queryString);
     const accountUrl = `https://api.binance.com/api/v3/account?${queryString}&signature=${signature}`;
-    
-    console.log('[fetch-binance-portfolio] Calling Binance API with timestamp:', timestamp);
 
     const response = await fetch(accountUrl, {
       method: 'GET',
