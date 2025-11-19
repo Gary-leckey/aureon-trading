@@ -41,6 +41,7 @@ import { PerformanceMetricsDashboard } from '@/components/PerformanceMetricsDash
 import { RiskManagementDashboard } from '@/components/RiskManagementDashboard';
 import { MonteCarloGrowthCurve } from '@/components/MonteCarloGrowthCurve';
 import { BacktestingInterface } from '@/components/BacktestingInterface';
+import { TradeAnalyzer } from '@/components/TradeAnalyzer';
 import { SchumannResonanceMonitor } from '@/components/SchumannResonanceMonitor';
 import { SchumannSpectrograph } from '@/components/SchumannSpectrograph';
 import { ConsciousnessCoherenceTracker } from '@/components/ConsciousnessCoherenceTracker';
@@ -826,6 +827,11 @@ const AureonDashboard = () => {
         {/* Backtesting Interface */}
         <div className="mb-8">
           <BacktestingInterface />
+        </div>
+
+        {/* Trade-by-Trade Analyzer */}
+        <div className="mb-8">
+          <TradeAnalyzer />
         </div>
 
         <div className="mb-8">
