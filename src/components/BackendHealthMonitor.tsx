@@ -2,11 +2,16 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useBackendHealth } from '@/hooks/useBackendHealth';
-import { AlertCircle, CheckCircle, RefreshCw, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { useHealthAlerts } from '@/hooks/useHealthAlerts';
+import { HealthAlertSettings } from '@/components/HealthAlertSettings';
+import { AlertCircle, CheckCircle, RefreshCw, XCircle, Clock, AlertTriangle, Settings } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useState } from 'react';
 
 export function BackendHealthMonitor() {
   const { healthReport, loading, lastChecked, refresh } = useBackendHealth(true, 60000);
+  const { config, updateConfig, clearAlertHistory } = useHealthAlerts(healthReport);
+  const [showSettings, setShowSettings] = useState(false);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -40,10 +45,11 @@ export function BackendHealthMonitor() {
   };
 
   return (
-    <Card className="p-6 bg-card/50 backdrop-blur border-primary/20">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold">Backend Health Monitor</h3>
+    <div className="space-y-4">
+      <Card className="p-6 bg-card/50 backdrop-blur border-primary/20">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <h3 className="text-lg font-semibold">Backend Health Monitor</h3>
           {healthReport && (
             <Badge
               variant={
@@ -66,6 +72,13 @@ export function BackendHealthMonitor() {
               {formatDistanceToNow(lastChecked, { addSuffix: true })}
             </div>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSettings(!showSettings)}
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -142,6 +155,15 @@ export function BackendHealthMonitor() {
           </div>
         </div>
       )}
-    </Card>
+      </Card>
+
+      {showSettings && (
+        <HealthAlertSettings
+          config={config}
+          onConfigChange={updateConfig}
+          onClearHistory={clearAlertHistory}
+        />
+      )}
+    </div>
   );
 }
