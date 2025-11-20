@@ -114,16 +114,34 @@ export const BinancePortfolioWidget = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {error && !portfolio && (
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-            <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-destructive">Portfolio Unavailable</p>
-              <p className="text-xs text-muted-foreground">{error}</p>
+          <div className="flex items-start gap-2 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+            <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0 space-y-2">
+              <p className="text-sm font-semibold text-destructive">
+                {error.includes('IP restriction') ? 'Binance IP Restriction Detected' : 'Portfolio Unavailable'}
+              </p>
+              
+              {error.includes('IP restriction') ? (
+                <div className="space-y-2 text-xs text-muted-foreground">
+                  <p className="font-medium text-foreground">Your Binance API key has IP restrictions enabled. Fix this in 3 steps:</p>
+                  <ol className="list-decimal list-inside space-y-1 ml-1">
+                    <li>Go to <a href="https://www.binance.com/en/my/settings/api-management" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">Binance API Management</a></li>
+                    <li>Click "Edit" on your API key</li>
+                    <li>Set "Restrict access to trusted IPs only" to <strong className="text-foreground">OFF (Unrestricted)</strong></li>
+                  </ol>
+                  <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border/50">
+                    Note: Lovable Cloud uses dynamic IPs, so IP whitelisting is not possible.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">{error}</p>
+              )}
+              
               {error.includes('credentials') && (
                 <Button 
                   variant="link" 
                   size="sm" 
-                  className="h-auto p-0 mt-1 text-xs"
+                  className="h-auto p-0 mt-2 text-xs"
                   onClick={() => window.location.href = '/settings'}
                 >
                   Add Binance API Credentials →
