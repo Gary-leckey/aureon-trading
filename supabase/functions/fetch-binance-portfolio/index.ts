@@ -60,8 +60,19 @@ serve(async (req) => {
       }
     });
 
-    if (credsError || !credsResponse) {
+    if (credsError) {
+      console.error('[fetch-binance-portfolio] Error invoking get-binance-credentials:', credsError);
       throw new Error('Failed to retrieve Binance credentials. Please add your API credentials in settings.');
+    }
+
+    // Check if the response contains an error (edge function returned error response)
+    if (credsResponse && credsResponse.error) {
+      console.error('[fetch-binance-portfolio] get-binance-credentials returned error:', credsResponse.error);
+      throw new Error(credsResponse.error);
+    }
+
+    if (!credsResponse) {
+      throw new Error('No response from credentials service. Please try again.');
     }
 
     const { apiKey, apiSecret } = credsResponse;
