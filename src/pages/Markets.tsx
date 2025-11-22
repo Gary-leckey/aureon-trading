@@ -6,8 +6,11 @@ import { QuickTrade } from "@/components/QuickTrade";
 import { BinancePortfolioWidget } from "@/components/BinancePortfolioWidget";
 import { QGITASignalPanel } from "@/components/QGITASignalPanel";
 import { QGITAConfigPanel } from "@/components/QGITAConfigPanel";
+import { QGITAAutoTradingControl } from "@/components/QGITAAutoTradingControl";
+import { useQGITAAutoTrading, useQGITAAutoTradingToggle } from "@/hooks/useQGITAAutoTrading";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQGITASignals } from "@/hooks/useQGITASignals";
 
 const marketsData = [
   { category: "Cryptocurrencies", assets: [
@@ -31,9 +34,20 @@ const marketsData = [
 ];
 
 const Markets = () => {
-  const [balances, setBalances] = useState<any[]>([]);
+  const [balances, setBalances] = useState<any>(null);
   const [canTrade, setCanTrade] = useState(false);
   const [isLoadingPortfolio, setIsLoadingPortfolio] = useState(true);
+  const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
+  
+  // QGITA Auto-Trading
+  const { isEnabled: autoTradingEnabled, setIsEnabled: setAutoTradingEnabled } = useQGITAAutoTradingToggle();
+  const { latestSignal } = useQGITASignals(selectedSymbol);
+  const { isExecuting: isAutoTrading } = useQGITAAutoTrading({
+    signal: latestSignal,
+    symbol: selectedSymbol,
+    currentPrice: balances?.prices?.[selectedSymbol] || 0,
+    enabled: autoTradingEnabled,
+  });
 
   useEffect(() => {
     fetchPortfolio();
@@ -132,8 +146,13 @@ const Markets = () => {
           {/* Right side - Quick Trade & QGITA */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
+              <QGITAAutoTradingControl
+                isEnabled={autoTradingEnabled}
+                onToggle={setAutoTradingEnabled}
+                isExecuting={isAutoTrading}
+              />
+              <QGITASignalPanel symbol={selectedSymbol} />
               <QGITAConfigPanel />
-              <QGITASignalPanel symbol="BTCUSDT" />
               <QuickTrade balances={balances} canTrade={canTrade} />
             </div>
           </div>
