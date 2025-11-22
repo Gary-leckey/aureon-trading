@@ -3,10 +3,12 @@ import { qgitaSignalGenerator, QGITASignal } from '@/core/qgitaSignalGenerator';
 import { useBinanceMarketData } from './useBinanceMarketData';
 import { MasterEquation } from '@/core/masterEquation';
 import { useQGITAConfig } from './useQGITAConfig';
+import { AureonDataPoint } from '@/components/AureonChart';
 
 export function useQGITASignals(symbol: string) {
   const [signals, setSignals] = useState<QGITASignal[]>([]);
   const [latestSignal, setLatestSignal] = useState<QGITASignal | null>(null);
+  const [aureonData, setAureonData] = useState<AureonDataPoint[]>([]);
   const [masterEq] = useState(() => new MasterEquation());
   const { config } = useQGITAConfig();
   
@@ -47,6 +49,22 @@ export function useQGITASignals(symbol: string) {
       
       setLatestSignal(signal);
       
+      // Collect Aureon chart data (G_eff, Q_sig, sentiment, data integrity)
+      const gEff = qgitaSignalGenerator['ftcpDetector'].computeGeff();
+      const dataPoint: AureonDataPoint = {
+        time: new Date().toLocaleTimeString(),
+        crystalCoherence: gEff, // Geometric Anomaly (G_eff)
+        inerchaVector: signal.anomalyPointer, // Anomaly Pointer (Q_sig)
+        sentiment: signal.coherence.linearCoherence, // Market Sentiment (using linear coherence as proxy)
+        dataIntegrity: signal.coherence.crossScaleCoherence, // Data Integrity (cross-scale coherence)
+      };
+      
+      setAureonData(prev => {
+        const updated = [...prev, dataPoint];
+        // Keep only last 50 data points for the chart
+        return updated.slice(-50);
+      });
+      
       // Only keep signals that are actionable (BUY/SELL with min confidence)
       if (signal.signalType !== 'HOLD' && signal.confidence >= config.minConfidenceForSignal) {
         setSignals(prev => {
@@ -74,6 +92,7 @@ export function useQGITASignals(symbol: string) {
   return {
     signals,
     latestSignal,
+    aureonData,
     stats,
   };
 }
