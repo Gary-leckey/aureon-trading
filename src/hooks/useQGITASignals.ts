@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { qgitaSignalGenerator, QGITASignal } from '@/core/qgitaSignalGenerator';
 import { useBinanceMarketData } from './useBinanceMarketData';
+import { useBinanceMarginData } from './useBinanceMarginData';
 import { MasterEquation } from '@/core/masterEquation';
 import { useQGITAConfig } from './useQGITAConfig';
 import { AureonDataPoint } from '@/components/AureonChart';
@@ -13,6 +14,7 @@ export function useQGITASignals(symbol: string) {
   const { config } = useQGITAConfig();
   
   const { marketData } = useBinanceMarketData(symbol);
+  const { marginData } = useBinanceMarginData(symbol.replace('USDT', ''));
   
   // Update signal generator config when it changes
   useEffect(() => {
@@ -36,7 +38,7 @@ export function useQGITASignals(symbol: string) {
       const lambdaState = masterEq.step(marketSnapshot);
       
       // Generate QGITA signal
-      const signal = qgitaSignalGenerator.generateSignal(
+      let signal = qgitaSignalGenerator.generateSignal(
         Date.now(),
         marketData.price,
         marketData.volume,
@@ -46,6 +48,28 @@ export function useQGITASignals(symbol: string) {
         lambdaState.observer,
         lambdaState.echo
       );
+      
+      // Apply margin sentiment adjustment
+      if (marginData) {
+        const { marketHealth, leverageRisk, liquidationPressure } = marginData.sentiment;
+        
+        // Boost confidence when market is healthy and low risk
+        if (marketHealth > 0.7 && leverageRisk < 0.3) {
+          signal = {
+            ...signal,
+            confidence: Math.min(100, signal.confidence * 1.1),
+            reasoning: signal.reasoning + ' [Margin boost: Healthy market conditions]'
+          };
+        }
+        // Reduce confidence when high risk or liquidation pressure
+        else if (marketHealth < 0.4 || leverageRisk > 0.7 || liquidationPressure > 0.6) {
+          signal = {
+            ...signal,
+            confidence: signal.confidence * 0.85,
+            reasoning: signal.reasoning + ' [Margin caution: Elevated risk detected]'
+          };
+        }
+      }
       
       setLatestSignal(signal);
       
