@@ -155,39 +155,95 @@ const Markets = () => {
           {/* Right side - Trading Controls */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              <Tabs defaultValue="hunt" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="hunt">🦁 Hunt</TabsTrigger>
-                  <TabsTrigger value="qgita">QGITA</TabsTrigger>
-                  <TabsTrigger value="hive">Hive</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="hunt" className="mt-6 space-y-6">
-                  <div className="grid grid-cols-1 gap-6">
-                    <AutomatedHuntControl />
-                    <TWAPMonitor />
-                    <MarginSentimentPanel symbol={selectedSymbol.replace('USDT', '')} />
-                  </div>
-                  <OMSQueueMonitor sessionId={hiveSession?.id || null} />
-                </TabsContent>
+              <Card className="bg-card shadow-card">
+                <CardHeader>
+                  <CardTitle>Trading Systems</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="hunt" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 mb-6">
+                      <TabsTrigger value="hunt">🦁 Hunt</TabsTrigger>
+                      <TabsTrigger value="qgita">⚡ QGITA</TabsTrigger>
+                      <TabsTrigger value="hive">👑 Hive</TabsTrigger>
+                    </TabsList>
+                    
+                    {/* HUNT TAB - Automated Market Scanning */}
+                    <TabsContent value="hunt" className="space-y-4 mt-0">
+                      <div className="space-y-4">
+                        <div className="border-l-4 border-primary pl-3">
+                          <h3 className="text-sm font-semibold mb-1">Automated Hunt</h3>
+                          <p className="text-xs text-muted-foreground">Scan 500+ pairs for opportunities</p>
+                        </div>
+                        <AutomatedHuntControl />
+                        
+                        <div className="border-l-4 border-accent pl-3 mt-6">
+                          <h3 className="text-sm font-semibold mb-1">Execution</h3>
+                          <p className="text-xs text-muted-foreground">TWAP & OMS routing</p>
+                        </div>
+                        <TWAPMonitor />
+                        <OMSQueueMonitor sessionId={hiveSession?.id || null} />
+                        
+                        <div className="border-l-4 border-secondary pl-3 mt-6">
+                          <h3 className="text-sm font-semibold mb-1">Market Sentiment</h3>
+                          <p className="text-xs text-muted-foreground">Margin data analysis</p>
+                        </div>
+                        <MarginSentimentPanel symbol={selectedSymbol.replace('USDT', '')} />
+                      </div>
+                    </TabsContent>
 
-                <TabsContent value="qgita" className="space-y-6 mt-6">
-                  <QGITAAutoTradingControl
-                    isEnabled={autoTradingEnabled}
-                    onToggle={setAutoTradingEnabled}
-                    isExecuting={isAutoTrading}
-                  />
-                  <QGITAOMSIntegrationStatus />
-                  <QGITASignalPanel symbol={selectedSymbol} />
-                  <QGITAConfigPanel />
-                  <QuickTrade balances={balances} canTrade={canTrade} />
-                </TabsContent>
-                
-                <TabsContent value="hive" className="mt-6 space-y-6">
-                  <QueenHiveControl />
-                  <OMSQueueMonitor sessionId={hiveSession?.id || null} />
-                </TabsContent>
-              </Tabs>
+                    {/* QGITA TAB - Quantum Signal Trading */}
+                    <TabsContent value="qgita" className="space-y-4 mt-0">
+                      <div className="space-y-4">
+                        <div className="border-l-4 border-primary pl-3">
+                          <h3 className="text-sm font-semibold mb-1">Auto-Trading</h3>
+                          <p className="text-xs text-muted-foreground">Enable automated execution</p>
+                        </div>
+                        <QGITAAutoTradingControl
+                          isEnabled={autoTradingEnabled}
+                          onToggle={setAutoTradingEnabled}
+                          isExecuting={isAutoTrading}
+                        />
+                        <QGITAOMSIntegrationStatus />
+                        
+                        <div className="border-l-4 border-accent pl-3 mt-6">
+                          <h3 className="text-sm font-semibold mb-1">Live Signals</h3>
+                          <p className="text-xs text-muted-foreground">AUREON quantum engine</p>
+                        </div>
+                        <QGITASignalPanel symbol={selectedSymbol} />
+                        
+                        <div className="border-l-4 border-secondary pl-3 mt-6">
+                          <h3 className="text-sm font-semibold mb-1">Configuration</h3>
+                          <p className="text-xs text-muted-foreground">Risk & position sizing</p>
+                        </div>
+                        <QGITAConfigPanel />
+                        
+                        <div className="border-l-4 border-primary pl-3 mt-6">
+                          <h3 className="text-sm font-semibold mb-1">Quick Trade</h3>
+                          <p className="text-xs text-muted-foreground">Manual execution</p>
+                        </div>
+                        <QuickTrade balances={balances} canTrade={canTrade} />
+                      </div>
+                    </TabsContent>
+                    
+                    {/* HIVE TAB - Multi-Agent System */}
+                    <TabsContent value="hive" className="space-y-4 mt-0">
+                      <div className="space-y-4">
+                        <div className="border-l-4 border-primary pl-3">
+                          <h3 className="text-sm font-semibold mb-1">Queen-Hive System</h3>
+                          <p className="text-xs text-muted-foreground">Multi-agent coordination</p>
+                        </div>
+                        <QueenHiveControl />
+                        
+                        <div className="border-l-4 border-accent pl-3 mt-6">
+                          <h3 className="text-sm font-semibold mb-1">Order Queue</h3>
+                          <p className="text-xs text-muted-foreground">OMS processing status</p>
+                        </div>
+                        <OMSQueueMonitor sessionId={hiveSession?.id || null} />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
