@@ -396,6 +396,7 @@ class SmokeTestPhaseValidator {
       'ftcp-detector': 'FTCPDetector',
       'qgita-signal': 'QGITASignal',
       'hnc-imperial': 'HNCImperial',
+      'hocus-pattern': 'HocusPattern',
       'smart-router': 'SmartRouter',
       'temporal-anchor': 'TemporalAnchor',
       'hive-controller': 'HiveController',
