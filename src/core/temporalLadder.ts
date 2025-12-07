@@ -37,7 +37,8 @@ export type SystemName =
   | 'prism'
   | '6d-harmonic'
   | 'probability-matrix'
-  | 'quantum-telescope';
+  | 'quantum-telescope'
+  | 'hocus-pattern';
 
 export interface SystemStatus {
   name: SystemName;
@@ -85,6 +86,7 @@ class TemporalLadderCore {
     'ftcp-detector',
     'qgita-signal',
     'hnc-imperial',
+    'hocus-pattern',
     'smart-router',
     'temporal-anchor',
     'hive-controller',
@@ -336,6 +338,7 @@ export const SYSTEMS = {
   FTCP_DETECTOR: 'ftcp-detector' as SystemName,
   QGITA_SIGNAL: 'qgita-signal' as SystemName,
   HNC_IMPERIAL: 'hnc-imperial' as SystemName,
+  HOCUS_PATTERN: 'hocus-pattern' as SystemName,
   SMART_ROUTER: 'smart-router' as SystemName,
   TEMPORAL_ANCHOR: 'temporal-anchor' as SystemName,
   HIVE_CONTROLLER: 'hive-controller' as SystemName,

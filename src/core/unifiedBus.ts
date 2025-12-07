@@ -29,7 +29,7 @@ export interface BusSnapshot {
 // Anchor (1x): Data ingestion systems
 
 const UNITY_SYSTEMS = ['MasterEquation', 'Lighthouse']; // 10x weight
-const FLOW_SYSTEMS = ['RainbowBridge', 'Prism', '6DHarmonic', 'DecisionFusion']; // 9x weight
+const FLOW_SYSTEMS = ['RainbowBridge', 'Prism', '6DHarmonic', 'DecisionFusion', 'HocusPattern']; // 9x weight
 const ANCHOR_SYSTEMS = ['DataIngestion', 'ElephantMemory', 'MultiExchange']; // 1x weight
 
 // Legacy weights (normalized) - used as sub-weights within each tier
@@ -41,7 +41,8 @@ const SYSTEM_WEIGHTS: Record<string, number> = {
   RainbowBridge: 0.25,
   DecisionFusion: 0.25,
   Prism: 0.20,
-  '6DHarmonic': 0.20,
+  '6DHarmonic': 0.18,
+  HocusPattern: 0.12,
   QGITASignal: 0.10,
   // Anchor tier (1x base)
   DataIngestion: 0.40,

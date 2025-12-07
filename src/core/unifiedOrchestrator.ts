@@ -15,6 +15,7 @@ import { fullEcosystemConnector } from './fullEcosystemConnector';
 import { multiExchangeClient } from './multiExchangeClient';
 import { smartOrderRouter, type RoutingDecision } from './smartOrderRouter';
 import { qgitaSignalGenerator, type QGITASignal } from './qgitaSignalGenerator';
+import { hocusPatternPipeline, type PipelineState } from './hocusPatternPipeline';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface TradeExecutionResult {
@@ -34,6 +35,7 @@ export interface OrchestrationResult {
   rainbowState: RainbowState | null;
   prismOutput: PrismOutput | null;
   ecosystemState: EcosystemState | null;
+  hocusPatternState: PipelineState | null;
   routingDecision: RoutingDecision | null;
   qgitaSignal: QGITASignal | null;
   positionSizing: {
@@ -83,6 +85,7 @@ export class UnifiedOrchestrator {
     
     // Register with Temporal Ladder
     temporalLadder.registerSystem(SYSTEMS.MASTER_EQUATION);
+    temporalLadder.registerSystem(SYSTEMS.HOCUS_PATTERN);
   }
   
   /**
@@ -171,6 +174,11 @@ export class UnifiedOrchestrator {
     // Step 6d: Publish Prism state to UnifiedBus
     this.publishPrism(prismOutput);
     
+    // Step 6e: Run Hocus→Pattern→Template Pipeline (background automation)
+    const hocusPatternState = hocusPatternPipeline.step(lambdaState.lambda);
+    this.publishHocusPattern(hocusPatternState);
+    temporalLadder.heartbeat(SYSTEMS.HOCUS_PATTERN, hocusPatternState.totalCoherence);
+    
     // Step 7: Get multi-exchange state and position sizing
     const exchangeState = multiExchangeClient.getState();
     const positionSizing = multiExchangeClient.calculatePositionSize(0.02, 'USDT');
@@ -233,6 +241,7 @@ export class UnifiedOrchestrator {
       rainbowState,
       prismOutput,
       ecosystemState,
+      hocusPatternState,
       routingDecision,
       qgitaSignal,
       positionSizing,
@@ -415,6 +424,40 @@ export class UnifiedOrchestrator {
         isLoveLocked: output.isLoveLocked,
         harmonicPurity: output.harmonicPurity,
         layers: output.layers,
+      },
+    });
+  }
+  
+  /**
+   * Publish Hocus→Pattern→Template Pipeline state to bus (background automation)
+   */
+  private publishHocusPattern(state: PipelineState): void {
+    // Determine signal based on pipeline stage and dominant template
+    let signal: SignalType = 'NEUTRAL';
+    if (state.pipelineStage === 'TEMPLATE' && state.totalCoherence > 0.7) {
+      // When templates are locked with high coherence, favor BUY (love frequency alignment)
+      const dominantMode = state.modes[state.dominantMode];
+      if (dominantMode && dominantMode.frequency >= 500 && dominantMode.frequency <= 600) {
+        signal = 'BUY'; // Love frequency band (528 Hz)
+      } else if (dominantMode && dominantMode.frequency < 100) {
+        signal = 'SELL'; // Low/fear frequency band
+      }
+    }
+    
+    unifiedBus.publish({
+      systemName: 'HocusPattern',
+      timestamp: Date.now(),
+      ready: state.activeTemplates > 0,
+      coherence: state.totalCoherence,
+      confidence: state.dominantCoherence,
+      signal,
+      data: {
+        pipelineStage: state.pipelineStage,
+        activeTemplates: state.activeTemplates,
+        dominantMode: state.dominantMode,
+        dominantEmotionalPhase: state.dominantEmotionalPhase,
+        harmonicResonance: state.harmonicResonance,
+        codexEnhanced: state.codexEnhanced,
       },
     });
   }
