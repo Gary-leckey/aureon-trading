@@ -17,6 +17,8 @@ import { smartOrderRouter, type RoutingDecision } from './smartOrderRouter';
 import { qgitaSignalGenerator, type QGITASignal } from './qgitaSignalGenerator';
 import { hocusPatternPipeline, type PipelineState } from './hocusPatternPipeline';
 import { hncProbabilityMatrix, type ProbabilityMatrix, type TradingSignal as ProbabilitySignal } from './hncProbabilityMatrix';
+import { quantumTelescope, type TelescopeObservation } from './quantumTelescope';
+import { imperialPredictability, type CosmicState, type ImperialPrediction } from './imperialPredictability';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface TradeExecutionResult {
@@ -39,6 +41,9 @@ export interface OrchestrationResult {
   hocusPatternState: PipelineState | null;
   probabilityMatrix: ProbabilityMatrix | null;
   probabilitySignal: ProbabilitySignal | null;
+  telescopeObservation: TelescopeObservation | null;
+  cosmicState: CosmicState | null;
+  imperialPrediction: ImperialPrediction | null;
   routingDecision: RoutingDecision | null;
   qgitaSignal: QGITASignal | null;
   positionSizing: {
@@ -55,6 +60,7 @@ export interface OrchestrationResult {
     positionSizeUsd?: number;
     qgitaTier?: 1 | 2 | 3;
     probabilityH1?: string;
+    cosmicPhase?: string;
   };
   tradeExecuted: boolean;
 }
@@ -205,11 +211,27 @@ export class UnifiedOrchestrator {
     this.publishProbabilityMatrix(probabilityMatrix, probabilitySignal);
     temporalLadder.heartbeat(SYSTEMS.PROBABILITY_MATRIX, probabilitySignal.confidence);
     
-    // Step 7: Get multi-exchange state and position sizing
+    // Step 7: Quantum Telescope - Geometric light analysis
+    const telescopeObservation = quantumTelescope.observe({
+      price: marketSnapshot.price,
+      volume: marketSnapshot.volume,
+      volatility: marketSnapshot.volatility,
+      momentum: marketSnapshot.momentum,
+    }, symbol);
+    quantumTelescope.registerAndPublish(telescopeObservation);
+    
+    // Step 8: Imperial Predictability - Cosmic synchronization
+    const { cosmicState, prediction: imperialPrediction } = imperialPredictability.runCycle(
+      lambdaState.coherence,
+      symbol,
+      marketSnapshot.momentum
+    );
+    
+    // Step 9: Get multi-exchange state and position sizing
     const exchangeState = multiExchangeClient.getState();
     const positionSizing = multiExchangeClient.calculatePositionSize(0.02, 'USDT');
     
-    // Step 8: Get Smart Order Router recommendation
+    // Step 10: Get Smart Order Router recommendation
     let routingDecision: RoutingDecision | null = null;
     try {
       routingDecision = await smartOrderRouter.getBestQuote(symbol, 'BUY', positionSizing.positionSizeUsd / marketSnapshot.price);
@@ -217,14 +239,14 @@ export class UnifiedOrchestrator {
       console.warn('[UnifiedOrchestrator] Smart routing failed, using default:', err);
     }
     
-    // Step 9: Check Elephant Memory for avoidance
+    // Step 11: Check Elephant Memory for avoidance
     const avoidance = elephantMemory.shouldAvoid(symbol);
     
-    // Step 10: Get bus consensus
+    // Step 12: Get bus consensus
     const busSnapshot = unifiedBus.snapshot();
     const consensus = unifiedBus.checkConsensus();
     
-    // Step 11: Make final decision with QGITA tier integration
+    // Step 13: Make final decision with QGITA tier integration
     const finalDecision = this.makeFinalDecision(
       consensus,
       lambdaState,
@@ -237,10 +259,11 @@ export class UnifiedOrchestrator {
       qgitaSignal
     );
     
-    // Step 12: Execute trade if conditions met
+    // Step 14: Execute trade if conditions met
     let tradeExecuted = false;
     let tradeResult: TradeExecutionResult | null = null;
-    if (finalDecision.action !== 'HOLD' && !this.config.dryRun) {
+    // Also check imperial should trade
+    if (finalDecision.action !== 'HOLD' && !this.config.dryRun && cosmicState.shouldTrade) {
       tradeResult = await this.executeTrade(
         finalDecision, 
         symbol, 
@@ -270,10 +293,16 @@ export class UnifiedOrchestrator {
       hocusPatternState,
       probabilityMatrix,
       probabilitySignal,
+      telescopeObservation,
+      cosmicState,
+      imperialPrediction,
       routingDecision,
       qgitaSignal,
       positionSizing,
-      finalDecision,
+      finalDecision: {
+        ...finalDecision,
+        cosmicPhase: cosmicState.phase,
+      },
       tradeExecuted,
     };
   }
