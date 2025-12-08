@@ -165,6 +165,11 @@ class EcosystemEnhancementsLoader {
    * Get symbolic compiler triggers for intent
    */
   getSymbolicTriggers(signal: 'BUY' | 'SELL' | 'HOLD'): SymbolicCompilerLayer | undefined {
+    // Defensive check - symbolicCompiler might be an object instead of array
+    if (!Array.isArray(this.enhancements.symbolicCompiler)) {
+      console.warn('⚠️ symbolicCompiler is not an array, skipping');
+      return undefined;
+    }
     return this.enhancements.symbolicCompiler.find(
       entry => entry.intent.toLowerCase() === signal.toLowerCase()
     );

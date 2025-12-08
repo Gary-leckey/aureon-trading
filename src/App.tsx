@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -46,11 +46,10 @@ const App = () => {
       });
       
       // Failsafe: force ready after 15 seconds no matter what
+      // Use a ref-based check since closure captures initial ready value
       const failsafe = setTimeout(() => {
-        if (!ready) {
-          console.warn('⚠️ App: Initialization failsafe triggered after 15s');
-          setReady(true);
-        }
+        console.warn('⚠️ App: Initialization failsafe triggered after 15s');
+        setReady(true);
       }, 15000);
       
       return () => clearTimeout(failsafe);
