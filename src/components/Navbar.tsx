@@ -14,7 +14,13 @@ import {
   FlaskConical,
   Activity,
   ChevronDown,
-  User
+  User,
+  Swords,
+  Atom,
+  Diamond,
+  Rainbow,
+  Globe,
+  Cog
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -22,17 +28,32 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-// Primary navigation - what traders actually need (4 items only)
+// Primary navigation - always visible
 const primaryNavItems = [
-  { path: "/", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/portfolio", label: "Portfolio", icon: Briefcase },
-  { path: "/analytics", label: "Performance", icon: BarChart3 },
-  { path: "/backtest", label: "Lab", icon: FlaskConical },
+  { path: "/", label: "Dashboard", icon: LayoutDashboard, emoji: "🏠" },
+  { path: "/war-room", label: "War Room", icon: Swords, emoji: "⚔️" },
+  { path: "/portfolio", label: "Portfolio", icon: Briefcase, emoji: "💼" },
+  { path: "/analytics", label: "Analytics", icon: BarChart3, emoji: "📊" },
+];
+
+// Systems dropdown items
+const systemsNavItems = [
+  { path: "/quantum", label: "Quantum", icon: Atom, emoji: "🔮" },
+  { path: "/prism", label: "Prism", icon: Diamond, emoji: "💎" },
+  { path: "/rainbow", label: "Rainbow", icon: Rainbow, emoji: "🌈" },
+  { path: "/earth", label: "Earth", icon: Globe, emoji: "🌍" },
+];
+
+// Tools dropdown items
+const toolsNavItems = [
+  { path: "/backtest", label: "Lab", icon: FlaskConical, emoji: "🧪" },
+  { path: "/systems", label: "Systems", icon: Cog, emoji: "⚙️" },
 ];
 
 const Navbar = () => {
@@ -77,6 +98,7 @@ const Navbar = () => {
   };
 
   const isActive = (path: string) => location.pathname === path;
+  const isInGroup = (items: typeof primaryNavItems) => items.some(item => isActive(item.path));
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
@@ -90,8 +112,9 @@ const Navbar = () => {
             <span className="text-lg font-bold text-foreground hidden sm:block">AUREON</span>
           </Link>
 
-          {/* Desktop Navigation - 4 Primary Items */}
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
+            {/* Primary Nav Items */}
             {primaryNavItems.map((item) => (
               <Link 
                 key={item.path}
@@ -103,10 +126,80 @@ const Navbar = () => {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
               >
-                <item.icon className="h-4 w-4" />
+                <span>{item.emoji}</span>
                 <span>{item.label}</span>
               </Link>
             ))}
+
+            {/* Systems Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={cn(
+                    "gap-1 px-3",
+                    isInGroup(systemsNavItems) && "bg-primary/10 text-primary"
+                  )}
+                >
+                  <span>🔮</span>
+                  <span>Systems</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-48">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">Quantum Systems</DropdownMenuLabel>
+                {systemsNavItems.map((item) => (
+                  <DropdownMenuItem key={item.path} asChild>
+                    <Link 
+                      to={item.path} 
+                      className={cn(
+                        "flex items-center gap-2 cursor-pointer",
+                        isActive(item.path) && "bg-primary/10 text-primary"
+                      )}
+                    >
+                      <span>{item.emoji}</span>
+                      {item.label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Tools Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={cn(
+                    "gap-1 px-3",
+                    isInGroup(toolsNavItems) && "bg-primary/10 text-primary"
+                  )}
+                >
+                  <span>🛠️</span>
+                  <span>Tools</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-48">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">Developer Tools</DropdownMenuLabel>
+                {toolsNavItems.map((item) => (
+                  <DropdownMenuItem key={item.path} asChild>
+                    <Link 
+                      to={item.path} 
+                      className={cn(
+                        "flex items-center gap-2 cursor-pointer",
+                        isActive(item.path) && "bg-primary/10 text-primary"
+                      )}
+                    >
+                      <span>{item.emoji}</span>
+                      {item.label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* User Menu (Desktop) */}
@@ -126,12 +219,6 @@ const Navbar = () => {
                   <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
                     <Settings className="h-4 w-4" />
                     Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/systems" className="flex items-center gap-2 cursor-pointer">
-                    <Activity className="h-4 w-4" />
-                    System Health
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin && (
@@ -167,8 +254,10 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border py-4">
-            <div className="flex flex-col gap-1">
+          <div className="md:hidden border-t border-border py-4 max-h-[80vh] overflow-y-auto">
+            {/* Primary Navigation */}
+            <div className="px-2 pb-2">
+              <p className="text-[10px] uppercase text-muted-foreground font-medium px-3 py-1">Navigation</p>
               {primaryNavItems.map((item) => (
                 <Link
                   key={item.path}
@@ -181,15 +270,63 @@ const Navbar = () => {
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
+                  <span>{item.emoji}</span>
                   <span>{item.label}</span>
                 </Link>
               ))}
             </div>
             
-            <div className="my-3 border-t border-border" />
+            <div className="my-2 border-t border-border" />
             
-            <div className="flex flex-col gap-1">
+            {/* Systems Section */}
+            <div className="px-2 pb-2">
+              <p className="text-[10px] uppercase text-muted-foreground font-medium px-3 py-1">🔮 Quantum Systems</p>
+              {systemsNavItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    isActive(item.path)
+                      ? "bg-primary/10 text-primary" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <span>{item.emoji}</span>
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+            
+            <div className="my-2 border-t border-border" />
+            
+            {/* Tools Section */}
+            <div className="px-2 pb-2">
+              <p className="text-[10px] uppercase text-muted-foreground font-medium px-3 py-1">🛠️ Tools</p>
+              {toolsNavItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    isActive(item.path)
+                      ? "bg-primary/10 text-primary" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <span>{item.emoji}</span>
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+            
+            <div className="my-2 border-t border-border" />
+            
+            {/* User Section */}
+            <div className="px-2">
+              <p className="text-[10px] uppercase text-muted-foreground font-medium px-3 py-1">👤 Account</p>
               <Link
                 to="/settings"
                 onClick={() => setMobileMenuOpen(false)}
@@ -197,14 +334,6 @@ const Navbar = () => {
               >
                 <Settings className="h-4 w-4" />
                 Settings
-              </Link>
-              <Link
-                to="/systems"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted"
-              >
-                <Activity className="h-4 w-4" />
-                System Health
               </Link>
               {isAdmin && (
                 <Link
@@ -221,7 +350,7 @@ const Navbar = () => {
                   setMobileMenuOpen(false);
                   handleSignOut();
                 }}
-                className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-destructive hover:bg-destructive/10 text-left"
+                className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-destructive hover:bg-destructive/10 text-left w-full"
               >
                 <LogOut className="h-4 w-4" />
                 Sign Out
