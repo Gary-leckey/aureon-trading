@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Activity, Zap, Brain, Radio, Database, Router, LogOut, Play, Square, Wifi, WifiOff } from 'lucide-react';
+import { Sparkles, Activity, Zap, Brain, Radio, Database, Router, Play, Square, Wifi, WifiOff } from 'lucide-react';
 import { DataSourceIndicator, DemoModeWarningBanner } from '@/components/DataSourceIndicator';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ import { UserAssetsPanel } from '@/components/warroom/UserAssetsPanel';
 import { SmartAlertBanner } from '@/components/SmartAlertBanner';
 import { FloatingAIButton } from '@/components/FloatingAIButton';
 import { ExchangeStatusSummary } from '@/components/ExchangeStatusSummary';
+import Navbar from '@/components/Navbar';
 // Import hooks for global state - NO MORE LOCAL INITIALIZATION
 import { 
   useGlobalState, 
@@ -69,11 +70,6 @@ export default function AureonDashboard() {
     }
   }, [isInitialized, isAuthenticated, navigate]);
 
-  const handleSignOut = async () => {
-    stopTrading();
-    await supabase.auth.signOut();
-    navigate('/auth');
-  };
 
   const winRate = totalTrades > 0 
     ? ((winningTrades / totalTrades) * 100).toFixed(0)
@@ -102,58 +98,40 @@ export default function AureonDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <Navbar />
+      
       {/* Demo Mode Warning Banner */}
       <DemoModeWarningBanner />
       
       {/* Smart Alert Banner - only shows when there are issues */}
       <SmartAlertBanner />
-      
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/90 backdrop-blur-xl">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-14">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-gradient-prism flex items-center justify-center love-pulse">
-                <Sparkles className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-prism">AUREON</h1>
-                <p className="text-[9px] text-muted-foreground tracking-widest uppercase -mt-0.5">528 Hz</p>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-3">
-              <DataSourceIndicator compact />
-              
-              {/* Ecosystem Health */}
-              <Badge 
-                variant={ecosystemHealth === 'connected' ? 'default' : ecosystemHealth === 'stale' ? 'secondary' : 'destructive'} 
-                className="gap-1"
-              >
-                {ecosystemHealth === 'connected' ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-                {ecosystemHealth === 'connected' ? 'OK' : ecosystemHealth === 'stale' ? 'STALE' : 'DOWN'}
-              </Badge>
-              
-              {/* Systems Summary */}
-              <Badge variant={activeSystemCount === totalSystemCount ? "default" : "secondary"} className="gap-1">
-                <Brain className="h-3 w-3" />
-                {activeSystemCount}/{totalSystemCount}
-              </Badge>
-              
-              <Badge variant={isActive ? "default" : "secondary"} className="gap-1">
-                <div className={cn("h-1.5 w-1.5 rounded-full", isActive ? "bg-green-400 animate-pulse" : "bg-muted-foreground")} />
-                {isActive ? 'ACTIVE' : 'IDLE'}
-              </Badge>
-              
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+      <main className="container mx-auto px-4 py-6 pt-20 space-y-6">
+        {/* Status Bar */}
+        <div className="flex flex-wrap items-center gap-2">
+          <DataSourceIndicator compact />
+          
+          {/* Ecosystem Health */}
+          <Badge 
+            variant={ecosystemHealth === 'connected' ? 'default' : ecosystemHealth === 'stale' ? 'secondary' : 'destructive'} 
+            className="gap-1"
+          >
+            {ecosystemHealth === 'connected' ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+            {ecosystemHealth === 'connected' ? 'OK' : ecosystemHealth === 'stale' ? 'STALE' : 'DOWN'}
+          </Badge>
+          
+          {/* Systems Summary */}
+          <Badge variant={activeSystemCount === totalSystemCount ? "default" : "secondary"} className="gap-1">
+            <Brain className="h-3 w-3" />
+            {activeSystemCount}/{totalSystemCount}
+          </Badge>
+          
+          <Badge variant={isActive ? "default" : "secondary"} className="gap-1">
+            <div className={cn("h-1.5 w-1.5 rounded-full", isActive ? "bg-green-400 animate-pulse" : "bg-muted-foreground")} />
+            {isActive ? 'ACTIVE' : 'IDLE'}
+          </Badge>
         </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Exchange Connection Status */}
         <ExchangeStatusSummary />
         
