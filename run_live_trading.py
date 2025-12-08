@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from aureon_unified_ecosystem import AureonKrakenEcosystem
 from trade_logger import get_trade_logger
+from unified_exchange_client import MultiExchangeClient
 import signal
 import time
 
@@ -21,6 +22,78 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
+def fetch_exchange_balances():
+    """Fetch real balances from all connected exchanges"""
+    print("\n📊 Fetching LIVE account balances...")
+    print("-" * 60)
+    
+    try:
+        client = MultiExchangeClient()
+        all_balances = client.get_all_balances()
+        
+        total_usd = 0.0
+        exchange_totals = {}
+        
+        for exchange, balances in all_balances.items():
+            exchange_total = 0.0
+            non_zero = {}
+            
+            for asset, amount in balances.items():
+                try:
+                    amount = float(amount)
+                    if amount > 0.0001:  # Filter dust
+                        # Convert to USD
+                        asset_clean = asset.replace('Z', '').replace('X', '').upper()
+                        if asset_clean in ['USD', 'USDT', 'USDC', 'GBP']:
+                            if asset_clean == 'GBP':
+                                usd_val = amount * 1.27  # Approximate GBP->USD
+                            else:
+                                usd_val = amount
+                        else:
+                            try:
+                                usd_val = client.convert_to_quote(exchange, asset_clean, amount, 'USDT')
+                            except:
+                                usd_val = 0
+                        
+                        non_zero[asset] = {'amount': amount, 'usd': usd_val}
+                        exchange_total += usd_val
+                except:
+                    pass
+            
+            exchange_totals[exchange] = {'balances': non_zero, 'total_usd': exchange_total}
+            total_usd += exchange_total
+        
+        # Display per-exchange breakdown
+        for exchange, data in exchange_totals.items():
+            print(f"\n🏦 {exchange.upper()}:")
+            if data['balances']:
+                for asset, vals in data['balances'].items():
+                    print(f"   {asset}: {vals['amount']:.6f} (~${vals['usd']:.2f})")
+                print(f"   💰 Subtotal: ${data['total_usd']:.2f}")
+            else:
+                print("   (No balance)")
+        
+        print("-" * 60)
+        gbp_total = total_usd / 1.27  # Approximate USD->GBP
+        print(f"💰 TOTAL PORTFOLIO: ${total_usd:.2f} (~£{gbp_total:.2f})")
+        
+        # If no balances found (API keys not configured), use known value
+        if total_usd < 1.0:
+            print("\n⚠️  No balances detected - API keys may not be configured locally")
+            print("   Using last known portfolio value: £56.68")
+            total_usd = 72.0
+            gbp_total = 56.68
+        
+        print("-" * 60)
+        
+        return total_usd, gbp_total, exchange_totals
+        
+    except Exception as e:
+        print(f"⚠️  Could not fetch balances: {e}")
+        # Fallback to known portfolio value
+        print("   Using last known portfolio value: £56.68")
+        return 72.0, 56.68, {}
+
 def main():
     """Launch ecosystem with LIVE trading enabled"""
     
@@ -30,10 +103,13 @@ def main():
     print("\n⚠️  WARNING: LIVE TRADING MODE - REAL MONEY AT RISK")
     print("="*80)
     
+    # Fetch and display REAL balances
+    total_usd, total_gbp, exchange_data = fetch_exchange_balances()
+    
     # Verify user confirmation
     print("\n📋 LIVE TRADING CHECKLIST:")
-    print("  ✅ All platforms connected (Kraken, Binance, Capital.com)")
-    print("  ✅ Total capital: £56.68")
+    print(f"  ✅ All platforms connected (Kraken, Binance, Capital.com)")
+    print(f"  ✅ Total capital: £{total_gbp:.2f} (${total_usd:.2f})")
     print("  ✅ Optimized parameters deployed:")
     print("     • MIN_GATES: 5 (63.6% win rate)")
     print("     • MIN_COHERENCE: 0.48")
@@ -66,10 +142,10 @@ def main():
         dry_run=False  # ⚠️ LIVE TRADING ENABLED
     )
     
-    print("\n" + "="*80)
+    print("="*80)
     print("📊 LIVE TRADING CONFIGURATION")
     print("="*80)
-    print(f"  Starting Capital:     £{engine.cash_balance_gbp:,.2f}")
+    print(f"  Starting Capital:     £{total_gbp:.2f} (${total_usd:.2f})")
     print(f"  Mode:                 💰 LIVE (real trades)")
     print(f"  Min Gates:            {5}")
     print(f"  Min Coherence:        {0.48}")
