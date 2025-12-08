@@ -1634,6 +1634,17 @@ class AureonUltimate:
             # Use client abstraction instead of hardcoded URL
             payload = self.client.get_24h_tickers()
 
+            if isinstance(payload, dict):
+                # Handle Binance error payloads (e.g. rate limit / IP ban)
+                error_code = payload.get('code')
+                message = payload.get('msg') or payload.get('message') or str(payload)
+                wait_seconds = 5.0
+                self.last_ticker_update = time.time() + wait_seconds
+                logger.warning(
+                    f"Ticker update returned error payload {error_code}: {message}. Backing off for {wait_seconds:.1f}s"
+                )
+                return
+
             filtered = {}
             for item in payload:
                 symbol = item.get('symbol') if isinstance(item, dict) else None
@@ -1653,19 +1664,6 @@ class AureonUltimate:
             self.last_ticker_update = time.time()
 
         except Exception as e:
-            if response is not None:
-                retry_after = response.headers.get('Retry-After')
-                if retry_after:
-                    try:
-                        wait_seconds = float(retry_after)
-                    except ValueError:
-                        wait_seconds = 5.0
-                    self.last_ticker_update = time.time() + wait_seconds
-                    logger.warning(
-                        f"Ticker update rate limited (Retry-After {wait_seconds:.1f}s): {e}"
-                    )
-                    return
-
             self.last_ticker_update = time.time()
             logger.error(f"Ticker update failed: {e}")
     
