@@ -6,8 +6,16 @@
  * Fee-aware routing for optimal trade execution
  */
 
-import { ExchangeType, ExchangeTicker, EXCHANGE_FEES } from './unifiedExchangeClient';
+import { ExchangeType, ExchangeTicker, EXCHANGE_FEES, EXCHANGE_FEE_DETAILS } from './unifiedExchangeClient';
 import { multiExchangeClient } from './multiExchangeClient';
+
+// Smart routing configuration - synced with Python CONFIG
+const ROUTING_CONFIG = {
+  slippagePct: 0.0010,        // 0.10% estimated slippage
+  spreadCostPct: 0.0005,      // 0.05% spread cost
+  exchangePriority: ['binance', 'kraken', 'capital', 'alpaca'] as ExchangeType[],
+  alpacaAnalyticsOnly: true,  // Alpaca for market data only (no trades)
+};
 
 export interface OrderQuote {
   exchange: ExchangeType;

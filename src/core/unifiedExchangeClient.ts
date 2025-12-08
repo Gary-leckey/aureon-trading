@@ -45,13 +45,41 @@ export interface ExchangeFees {
   taker: number;
 }
 
-// Exchange fee rates
+// Exchange fee rates - synced with Python aureon_unified_ecosystem.py CONFIG
 export const EXCHANGE_FEES: Record<ExchangeType, ExchangeFees> = {
-  binance: { maker: 0.0010, taker: 0.0010 }, // 0.10%
-  kraken: { maker: 0.0016, taker: 0.0026 }, // 0.16% / 0.26%
-  alpaca: { maker: 0.0000, taker: 0.0000 }, // Commission-free
-  capital: { maker: 0.0020, taker: 0.0020 }, // 0.20% spread
+  binance: { maker: 0.0010, taker: 0.0010 }, // 0.10% (with BNB discount: 0.075%)
+  kraken: { maker: 0.0016, taker: 0.0026 },  // 0.16% / 0.26% (Standard Kraken Pro)
+  alpaca: { maker: 0.0015, taker: 0.0025 },  // 0.15% / 0.25% crypto (stocks: $0)
+  capital: { maker: 0.0010, taker: 0.0010 }, // ~0.10% avg spread (CFD/spread betting)
 };
+
+// Extended fee info for analytics
+export const EXCHANGE_FEE_DETAILS = {
+  binance: {
+    maker: 0.0010,
+    taker: 0.0010,
+    bnbDiscount: 0.00075, // 0.075% with BNB payment
+    description: 'Binance UK Spot Trading',
+  },
+  kraken: {
+    maker: 0.0016,
+    taker: 0.0026,
+    proMaker: 0.0012, // Kraken Pro volume tiers
+    proTaker: 0.0022,
+    description: 'Kraken Pro Standard Tier',
+  },
+  alpaca: {
+    maker: 0.0015,
+    taker: 0.0025,
+    stocks: 0.0000, // Commission-free stocks!
+    description: 'Alpaca Crypto/Stocks',
+  },
+  capital: {
+    spread: 0.0010,
+    overnight: 0.0001, // Daily overnight financing
+    description: 'Capital.com CFD/Spread Betting',
+  },
+} as const;
 
 export interface UnifiedExchangeClientConfig {
   exchange: ExchangeType;
