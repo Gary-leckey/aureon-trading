@@ -132,28 +132,78 @@ async function fetchKrakenBalances(apiKey: string, apiSecret: string): Promise<E
     });
 
     const data = await response.json();
+    console.log('[get-user-balances] Kraken raw response:', JSON.stringify(data));
+    
     if (data.error && data.error.length > 0) {
       throw new Error(data.error[0]);
+    }
+
+    // Fetch Kraken ticker prices for USD conversion
+    const priceMap: Record<string, number> = {};
+    try {
+      // Get major pair prices from Kraken
+      const tickerRes = await fetch('https://api.kraken.com/0/public/Ticker?pair=XBTUSD,ETHUSD,SOLUSD,XXRPZUSD,ADAUSD,DOTUSD,LINKUSD,MATICUSD,AVAXUSD,ATOMUSD');
+      const tickerData = await tickerRes.json();
+      
+      if (tickerData.result) {
+        for (const [pair, ticker] of Object.entries(tickerData.result)) {
+          const t = ticker as any;
+          const price = parseFloat(t.c?.[0] || '0');
+          // Map Kraken pairs to asset names
+          // XXBTZUSD -> XBT, XETHZUSD -> ETH, etc.
+          const cleanPair = pair.replace('ZUSD', '').replace('USD', '').replace(/^X/, '').replace(/^Z/, '');
+          priceMap[cleanPair] = price;
+          priceMap[`X${cleanPair}`] = price; // Also store with X prefix
+          priceMap[`XX${cleanPair}`] = price; // Also store with XX prefix
+        }
+      }
+      console.log('[get-user-balances] Kraken prices fetched:', Object.keys(priceMap).length);
+    } catch (priceError) {
+      console.warn('[get-user-balances] Failed to fetch Kraken prices:', priceError);
     }
 
     const assets: ExchangeBalance['assets'] = [];
     let totalUsd = 0;
 
+    // Kraken asset name mapping
+    const assetToSymbol: Record<string, string> = {
+      'XXBT': 'XBT', 'XBT': 'XBT', 'BTC': 'XBT',
+      'XETH': 'ETH', 'ETH': 'ETH',
+      'XXRP': 'XRP', 'XRP': 'XRP',
+      'SOL': 'SOL', 'XSOL': 'SOL',
+      'ADA': 'ADA', 'XADA': 'ADA',
+      'DOT': 'DOT', 'XDOT': 'DOT',
+      'LINK': 'LINK', 'XLINK': 'LINK',
+      'MATIC': 'MATIC',
+      'AVAX': 'AVAX',
+      'ATOM': 'ATOM',
+    };
+
     for (const [asset, balance] of Object.entries(data.result || {})) {
       const amount = parseFloat(balance as string);
-      if (amount > 0) {
-        // Simplified USD conversion (Kraken uses different asset names)
+      if (amount > 0.00001) { // Filter dust
         let usdValue = 0;
-        if (asset === 'ZUSD' || asset === 'USD') {
+        const cleanAsset = asset.replace(/^Z/, '').replace(/^X/, '');
+        
+        // Check if it's a USD stablecoin
+        if (asset === 'ZUSD' || asset === 'USD' || cleanAsset === 'USD' || 
+            asset === 'USDT' || asset === 'USDC') {
           usdValue = amount;
         } else {
-          usdValue = amount * 1; // Would need ticker call for accurate conversion
+          // Try to find price in our price map
+          const symbol = assetToSymbol[asset] || assetToSymbol[cleanAsset] || cleanAsset;
+          const price = priceMap[symbol] || priceMap[cleanAsset] || priceMap[asset] || 0;
+          usdValue = amount * price;
         }
-        assets.push({ asset, free: amount, locked: 0, usdValue });
+        
+        const displayAsset = cleanAsset === 'XBT' ? 'BTC' : cleanAsset;
+        assets.push({ asset: displayAsset, free: amount, locked: 0, usdValue });
         totalUsd += usdValue;
+        console.log(`[get-user-balances] Kraken asset: ${displayAsset} = ${amount}, USD: $${usdValue.toFixed(2)}`);
       }
     }
 
+    console.log(`[get-user-balances] Kraken total: $${totalUsd.toFixed(2)} from ${assets.length} assets`);
     return { exchange: 'kraken', connected: true, assets, totalUsd };
   } catch (error) {
     console.error('[get-user-balances] Kraken error:', error);
