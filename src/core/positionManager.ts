@@ -273,7 +273,7 @@ class PositionManager {
     const isWin = realizedPnl > 0;
 
     // Update Elephant Memory
-    elephantMemory.recordTrade(position.symbol, realizedPnl);
+    elephantMemory.recordTrade(position.symbol, realizedPnl, position.side === 'LONG' ? 'BUY' : 'SELL');
 
     // Remove from active positions
     this.positions.delete(positionId);
@@ -306,6 +306,23 @@ class PositionManager {
     this.publishToUnifiedBus();
 
     return { ...position, unrealizedPnl: realizedPnl, unrealizedPnlPct: realizedPnlPct };
+  }
+
+  /**
+   * Check all positions for TP/SL exits
+   * Returns positions that should be closed
+   */
+  public checkAllPositions(): Position[] {
+    const toClose: Position[] = [];
+    
+    for (const position of this.positions.values()) {
+      const updated = this.updatePrice(position.symbol, position.currentPrice);
+      if (updated && this.shouldClose(updated, updated.currentPrice)) {
+        toClose.push(updated);
+      }
+    }
+    
+    return toClose;
   }
 
   /**

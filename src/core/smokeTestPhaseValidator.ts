@@ -411,6 +411,10 @@ class SmokeTestPhaseValidator {
       'market-pulse': 'MarketPulse',
       'anomaly-detector': 'AnomalyDetector',
       'enhancement-layer': 'EnhancementLayer',
+      'data-ingestion': 'DataIngestion',
+      'opportunity-scanner': 'OpportunityScanner',
+      'position-manager': 'PositionManager',
+      'ticker-cache': 'TickerCache',
     };
     return mapping[systemName] || systemName;
   }
