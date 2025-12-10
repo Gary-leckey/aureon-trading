@@ -83,9 +83,15 @@ export function TradingStatusPanel() {
           },
           {
             name: 'QGITA Tier',
-            passed: qgitaTier <= 2,
+            passed: qgitaTier <= 3, // All tiers allowed now
             value: `Tier ${qgitaTier}`,
-            threshold: 'Tier 1-2',
+            threshold: 'Any Tier',
+          },
+          {
+            name: 'Data Fresh',
+            passed: !!masterEq,
+            value: masterEq ? '✓' : '✗',
+            threshold: 'Live Data',
           },
         ]);
 
