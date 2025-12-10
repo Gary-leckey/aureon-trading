@@ -29,8 +29,12 @@ import { notificationManager } from './notificationManager';
 import { exchangeLearningTracker } from './exchangeLearningTracker';
 import { tradeLogger } from './tradeLogger';
 import { adaptiveLearningEngine } from './adaptiveLearningEngine';
+import { tickerCacheManager, type CachedTicker } from './tickerCacheManager';
+import { opportunityScanner, type ScoredOpportunity } from './opportunityScanner';
+import { positionManager, type Position } from './positionManager';
 import { supabase } from '@/integrations/supabase/client';
 import { getEarthStreams, earthStreamsMonitor, type SimpleEarthStreams } from '@/lib/earth-streams';
+
 
 export interface TradeExecutionResult {
   success: boolean;
@@ -1030,6 +1034,94 @@ export class UnifiedOrchestrator {
    */
   isLiveTrading(): boolean {
     return !this.config.dryRun;
+  }
+  
+  /**
+   * Run FULL trading cycle like Python aureon_unified_ecosystem
+   * 1. Refresh all tickers
+   * 2. Scan for opportunities
+   * 3. Find best opportunity 
+   * 4. Run full cycle on best symbol
+   * 5. Check existing positions for TP/SL
+   */
+  async runFullCycle(): Promise<{
+    tickersScanned: number;
+    opportunitiesFound: number;
+    bestOpportunity: ScoredOpportunity | null;
+    result: OrchestrationResult | null;
+    positionsChecked: number;
+    positionsClosed: number;
+  }> {
+    const startTime = Date.now();
+    
+    // Step 1: Refresh ticker cache (fetches all 500+ pairs)
+    console.log('[Orchestrator:FullCycle] 🔄 Refreshing ticker cache...');
+    await tickerCacheManager.refreshAll();
+    const allTickers = tickerCacheManager.getAllTickers();
+    const tickerCount = allTickers.length;
+    temporalLadder.heartbeat(SYSTEMS.TICKER_CACHE, 1.0);
+    
+    // Step 2: Get all tickers and scan for opportunities
+    console.log(`[Orchestrator:FullCycle] 📊 Scanning ${tickerCount} tickers for opportunities...`);
+    
+    // Update position manager current prices for all tickers
+    for (const ticker of allTickers) {
+      positionManager.updatePrice(ticker.symbol, ticker.price);
+    }
+    
+    // Scan for opportunities using async scanner
+    const scanResult = await opportunityScanner.scan();
+    const opportunities = scanResult.opportunities;
+    temporalLadder.heartbeat(SYSTEMS.OPPORTUNITY_SCANNER, opportunities.length > 0 ? 0.9 : 0.3);
+    
+    console.log(`[Orchestrator:FullCycle] 🎯 Found ${opportunities.length} opportunities`);
+    
+    // Step 3: Check existing positions for TP/SL exits
+    const positionsChecked = positionManager.getPositions().length;
+    const closedPositions = positionManager.checkAllPositions();
+    temporalLadder.heartbeat(SYSTEMS.POSITION_MANAGER, 1.0);
+    
+    if (closedPositions.length > 0) {
+      console.log(`[Orchestrator:FullCycle] 💰 Closed ${closedPositions.length} positions at TP/SL`);
+    }
+    
+    // Step 4: If we have opportunities, run full cycle on the best one
+    let result: OrchestrationResult | null = null;
+    const bestOpportunity = opportunities[0] || null;
+    
+    if (bestOpportunity) {
+      console.log(`[Orchestrator:FullCycle] 🎯 Best: ${bestOpportunity.symbol} Score=${bestOpportunity.score.toFixed(3)} ` +
+        `Tier=${bestOpportunity.tier} Dir=${bestOpportunity.direction}`);
+      
+      // Create market snapshot from ticker
+      const ticker = tickerCacheManager.getTicker(bestOpportunity.symbol);
+      if (ticker) {
+        const marketSnapshot: MarketSnapshot = {
+          price: ticker.price,
+          volume: ticker.volume,
+          volatility: ticker.volatility,
+          momentum: ticker.momentum,
+          spread: ticker.spread,
+          timestamp: ticker.timestamp,
+        };
+        
+        result = await this.runCycle(marketSnapshot, bestOpportunity.symbol);
+      }
+    } else {
+      console.log('[Orchestrator:FullCycle] ⚠️ No opportunities found above threshold');
+    }
+    
+    const elapsed = Date.now() - startTime;
+    console.log(`[Orchestrator:FullCycle] ✅ Complete in ${elapsed}ms | Tickers: ${tickerCount} | Opps: ${opportunities.length} | Positions: ${positionsChecked}`);
+    
+    return {
+      tickersScanned: tickerCount,
+      opportunitiesFound: opportunities.length,
+      bestOpportunity,
+      result,
+      positionsChecked,
+      positionsClosed: closedPositions.length,
+    };
   }
   
   /**
