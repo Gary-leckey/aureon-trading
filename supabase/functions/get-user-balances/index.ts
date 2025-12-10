@@ -481,65 +481,50 @@ serve(async (req) => {
     const balances: ExchangeBalance[] = [];
     const fetchPromises: Promise<ExchangeBalance>[] = [];
 
-    // Fetch Binance balances - wrapped in try/catch for decryption errors
-    if (session.binance_api_key_encrypted && session.binance_api_secret_encrypted && session.binance_iv) {
-      try {
-        const iv = Uint8Array.from(atob(session.binance_iv), c => c.charCodeAt(0));
-        const apiKey = await decryptCredential(session.binance_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
-        const apiSecret = await decryptCredential(session.binance_api_secret_encrypted, cryptoKey, legacyCryptoKey, iv);
-        fetchPromises.push(fetchBinanceBalances(apiKey, apiSecret));
-      } catch (e) {
-        console.warn('[get-user-balances] Binance decryption failed:', e);
-        balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0, error: 'Credentials need to be re-entered' });
-      }
+    // PRIORITY 1: Use ecosystem secrets (global API keys)
+    const binanceApiKey = Deno.env.get('BINANCE_API_KEY');
+    const binanceApiSecret = Deno.env.get('BINANCE_API_SECRET');
+    const krakenApiKey = Deno.env.get('KRAKEN_API_KEY');
+    const krakenApiSecret = Deno.env.get('KRAKEN_API_SECRET');
+    const alpacaApiKey = Deno.env.get('ALPACA_API_KEY');
+    const alpacaSecretKey = Deno.env.get('ALPACA_SECRET_KEY');
+    const capitalApiKey = Deno.env.get('CAPITAL_API_KEY');
+    const capitalPassword = Deno.env.get('CAPITAL_PASSWORD');
+    const capitalIdentifier = Deno.env.get('CAPITAL_IDENTIFIER');
+
+    console.log('[get-user-balances] Using ecosystem secrets:', {
+      binance: !!binanceApiKey,
+      kraken: !!krakenApiKey,
+      alpaca: !!alpacaApiKey,
+      capital: !!capitalApiKey
+    });
+
+    // Fetch Binance balances from ecosystem secrets
+    if (binanceApiKey && binanceApiSecret) {
+      fetchPromises.push(fetchBinanceBalances(binanceApiKey, binanceApiSecret));
     } else {
-      balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0 });
+      balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0, error: 'No ecosystem credentials' });
     }
 
-    // Fetch Kraken balances - wrapped in try/catch for decryption errors
-    if (session.kraken_api_key_encrypted && session.kraken_api_secret_encrypted && session.kraken_iv) {
-      try {
-        const iv = Uint8Array.from(atob(session.kraken_iv), c => c.charCodeAt(0));
-        const apiKey = await decryptCredential(session.kraken_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
-        const apiSecret = await decryptCredential(session.kraken_api_secret_encrypted, cryptoKey, legacyCryptoKey, iv);
-        fetchPromises.push(fetchKrakenBalances(apiKey, apiSecret));
-      } catch (e) {
-        console.warn('[get-user-balances] Kraken decryption failed:', e);
-        balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0, error: 'Credentials need to be re-entered' });
-      }
+    // Fetch Kraken balances from ecosystem secrets
+    if (krakenApiKey && krakenApiSecret) {
+      fetchPromises.push(fetchKrakenBalances(krakenApiKey, krakenApiSecret));
     } else {
-      balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0 });
+      balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0, error: 'No ecosystem credentials' });
     }
 
-    // Fetch Alpaca balances - wrapped in try/catch for decryption errors
-    if (session.alpaca_api_key_encrypted && session.alpaca_secret_key_encrypted && session.alpaca_iv) {
-      try {
-        const iv = Uint8Array.from(atob(session.alpaca_iv), c => c.charCodeAt(0));
-        const apiKey = await decryptCredential(session.alpaca_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
-        const secretKey = await decryptCredential(session.alpaca_secret_key_encrypted, cryptoKey, legacyCryptoKey, iv);
-        fetchPromises.push(fetchAlpacaBalances(apiKey, secretKey));
-      } catch (e) {
-        console.warn('[get-user-balances] Alpaca decryption failed:', e);
-        balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0, error: 'Credentials need to be re-entered' });
-      }
+    // Fetch Alpaca balances from ecosystem secrets
+    if (alpacaApiKey && alpacaSecretKey) {
+      fetchPromises.push(fetchAlpacaBalances(alpacaApiKey, alpacaSecretKey));
     } else {
-      balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0 });
+      balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0, error: 'No ecosystem credentials' });
     }
 
-    // Fetch Capital.com balances - wrapped in try/catch for decryption errors
-    if (session.capital_api_key_encrypted && session.capital_password_encrypted && session.capital_identifier_encrypted && session.capital_iv) {
-      try {
-        const iv = Uint8Array.from(atob(session.capital_iv), c => c.charCodeAt(0));
-        const apiKey = await decryptCredential(session.capital_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
-        const password = await decryptCredential(session.capital_password_encrypted, cryptoKey, legacyCryptoKey, iv);
-        const identifier = await decryptCredential(session.capital_identifier_encrypted, cryptoKey, legacyCryptoKey, iv);
-        fetchPromises.push(fetchCapitalBalances(apiKey, password, identifier));
-      } catch (e) {
-        console.warn('[get-user-balances] Capital.com decryption failed:', e);
-        balances.push({ exchange: 'capital', connected: false, assets: [], totalUsd: 0, error: 'Credentials need to be re-entered' });
-      }
+    // Fetch Capital.com balances from ecosystem secrets
+    if (capitalApiKey && capitalPassword && capitalIdentifier) {
+      fetchPromises.push(fetchCapitalBalances(capitalApiKey, capitalPassword, capitalIdentifier));
     } else {
-      balances.push({ exchange: 'capital', connected: false, assets: [], totalUsd: 0 });
+      balances.push({ exchange: 'capital', connected: false, assets: [], totalUsd: 0, error: 'No ecosystem credentials' });
     }
 
     // Wait for all fetches
