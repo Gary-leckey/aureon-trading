@@ -9,6 +9,11 @@ import { GasTankDisplay } from './warroom/GasTankDisplay';
 import { UnifiedBusStatus } from './warroom/UnifiedBusStatus';
 import { MultiExchangePanel } from './warroom/MultiExchangePanel';
 import { SystemHealthPanel } from './SystemHealthPanel';
+import { PrimeSealStatusPanel } from './warroom/PrimeSealStatusPanel';
+import { PrismFrequencyPanel } from './warroom/PrismFrequencyPanel';
+import { ProbabilityFusionPanel } from './warroom/ProbabilityFusionPanel';
+import { TemporalLadderStatus } from './warroom/TemporalLadderStatus';
+import { FullEcosystemStatus } from './warroom/FullEcosystemStatus';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,75 +46,82 @@ export default function WarRoomDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="bg-card/50 backdrop-blur border-primary/20 lg:col-span-2">
             <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Status</p>
-                    <p className="text-2xl font-bold">
-                      {state.status === 'idle' && '⏸️ IDLE'}
-                      {state.status === 'active' && '🔥 ACTIVE ASSAULT'}
-                      {state.status === 'emergency_stopped' && '🚨 EMERGENCY STOP'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Balance</p>
-                    <p className="text-2xl font-bold text-green-500">
-                      ${state.currentBalance.toFixed(2)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Trades</p>
-                    <p className="text-2xl font-bold text-blue-500">
-                      {state.tradesExecuted}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Net P&L</p>
-                    <p className={`text-2xl font-bold ${state.netPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      ${state.netPnL.toFixed(2)}
-                    </p>
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Status</p>
+                      <p className="text-2xl font-bold">
+                        {state.status === 'idle' && '⏸️ IDLE'}
+                        {state.status === 'active' && '🔥 ACTIVE ASSAULT'}
+                        {state.status === 'emergency_stopped' && '🚨 EMERGENCY STOP'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Balance</p>
+                      <p className="text-2xl font-bold text-green-500">
+                        ${state.currentBalance.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Trades</p>
+                      <p className="text-2xl font-bold text-blue-500">
+                        {state.tradesExecuted}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Net P&L</p>
+                      <p className={`text-2xl font-bold ${state.netPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        ${state.netPnL.toFixed(2)}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex gap-2">
-                {state.status === 'idle' && (
-                  <Button
-                    size="lg"
-                    onClick={launchAssault}
-                    className="bg-gradient-to-r from-destructive to-primary hover:from-destructive/90 hover:to-primary/90 text-white font-bold text-lg px-8"
-                  >
-                    🚀 LAUNCH ASSAULT
-                  </Button>
-                )}
-                {state.status === 'active' && (
-                  <Button
-                    size="lg"
-                    variant="destructive"
-                    onClick={emergencyStop}
-                    className="font-bold text-lg px-8"
-                  >
-                    🚨 EMERGENCY STOP
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {state.status === 'idle' && (
+                    <Button
+                      size="lg"
+                      onClick={launchAssault}
+                      className="bg-gradient-to-r from-destructive to-primary hover:from-destructive/90 hover:to-primary/90 text-white font-bold text-lg px-8"
+                    >
+                      🚀 LAUNCH ASSAULT
+                    </Button>
+                  )}
+                  {state.status === 'active' && (
+                    <Button
+                      size="lg"
+                      variant="destructive"
+                      onClick={emergencyStop}
+                      className="font-bold text-lg px-8"
+                    >
+                      🚨 EMERGENCY STOP
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Gas Tank Display */}
-        <GasTankDisplay 
-          userId="demo-user" 
-          onEmpty={emergencyStop}
-        />
-      </div>
+          {/* Gas Tank Display */}
+          <GasTankDisplay 
+            userId="demo-user" 
+            onEmpty={emergencyStop}
+          />
+        </div>
 
         {/* Quantum State */}
         <QuantumStatePanel 
           quantumState={state.quantumState} 
           hiveMindCoherence={state.hiveMindCoherence}
         />
+
+        {/* Prime Seal + Prism + Probability Fusion */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <PrimeSealStatusPanel />
+          <PrismFrequencyPanel />
+          <ProbabilityFusionPanel />
+        </div>
 
         {/* Historical + Live Feed */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -119,6 +131,12 @@ export default function WarRoomDashboard() {
 
         {/* Unified Bus Status */}
         <UnifiedBusStatus />
+
+        {/* Temporal Ladder + Full Ecosystem */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <TemporalLadderStatus />
+          <FullEcosystemStatus />
+        </div>
 
         {/* Multi-Exchange Panel */}
         <MultiExchangePanel />
