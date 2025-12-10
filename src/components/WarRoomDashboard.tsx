@@ -1,4 +1,5 @@
 import { useQuantumWarRoom } from '@/hooks/useQuantumWarRoom';
+import { useGlobalState } from '@/hooks/useGlobalState';
 import { QuantumStatePanel } from './warroom/QuantumStatePanel';
 import { HistoricalTimeline } from './warroom/HistoricalTimeline';
 import { LiveStrikeStream } from './warroom/LiveStrikeStream';
@@ -10,9 +11,11 @@ import { MultiExchangePanel } from './warroom/MultiExchangePanel';
 import { SystemHealthPanel } from './SystemHealthPanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 export default function WarRoomDashboard() {
   const { state, launchAssault, emergencyStop } = useQuantumWarRoom();
+  const globalState = useGlobalState();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
@@ -23,8 +26,13 @@ export default function WarRoomDashboard() {
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-destructive to-primary bg-clip-text text-transparent">
               🦆 QUANTUM QUACKERS WAR ROOM
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 flex items-center gap-2">
               Autonomous Trading • Real Quantum Data • Temporal Ladder Connected
+              {globalState.isRunning && (
+                <Badge variant="default" className="bg-green-500 animate-pulse">
+                  SYSTEMS ONLINE
+                </Badge>
+              )}
             </p>
           </div>
         </div>
