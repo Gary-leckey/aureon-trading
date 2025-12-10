@@ -131,6 +131,8 @@ class EarthLiveDataIntegration {
     }
   }
   
+  private lastPersistTime = 0;
+  
   private startHeartbeat(): void {
     if (this.heartbeatInterval) return;
     
@@ -138,6 +140,13 @@ class EarthLiveDataIntegration {
       this.update();
       this.publishToBus();
       this.sendHeartbeat();
+      
+      // Persist to database every 30 seconds
+      const now = Date.now();
+      if (now - this.lastPersistTime > 30000) {
+        this.lastPersistTime = now;
+        this.persistToDatabase();
+      }
     }, 1000);
   }
   
