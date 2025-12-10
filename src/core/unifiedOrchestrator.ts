@@ -32,6 +32,9 @@ import { adaptiveLearningEngine } from './adaptiveLearningEngine';
 import { tickerCacheManager, type CachedTicker } from './tickerCacheManager';
 import { opportunityScanner, type ScoredOpportunity } from './opportunityScanner';
 import { positionManager, type Position } from './positionManager';
+import { capitalPool, type CapitalState, type PositionSizeResult } from './capitalPool';
+import { gaiaLatticeEngine, type LatticeState } from './gaiaLatticeEngine';
+import { startupHarvester } from './startupHarvester';
 import { supabase } from '@/integrations/supabase/client';
 import { getEarthStreams, earthStreamsMonitor, type SimpleEarthStreams } from '@/lib/earth-streams';
 
@@ -1038,90 +1041,150 @@ export class UnifiedOrchestrator {
   
   /**
    * Run FULL trading cycle like Python aureon_unified_ecosystem
-   * 1. Refresh all tickers
-   * 2. Scan for opportunities
-   * 3. Find best opportunity 
-   * 4. Run full cycle on best symbol
-   * 5. Check existing positions for TP/SL
+   * 1. Update Capital Pool with latest equity
+   * 2. Refresh all tickers
+   * 3. Apply Gaia Lattice filtering
+   * 4. Scan for opportunities
+   * 5. Find best opportunity 
+   * 6. Run full cycle on best symbol
+   * 7. Check existing positions for TP/SL
+   * 8. Log market sweep
    */
   async runFullCycle(): Promise<{
     tickersScanned: number;
     opportunitiesFound: number;
+    filteredOpportunities: number;
     bestOpportunity: ScoredOpportunity | null;
     result: OrchestrationResult | null;
     positionsChecked: number;
     positionsClosed: number;
+    capitalState: { availableCapital: number; positionCount: number };
+    latticePhase: string;
   }> {
     const startTime = Date.now();
     
-    // Step 1: Refresh ticker cache (fetches all 500+ pairs)
+    // Step 1: Update Capital Pool with latest equity
+    const exchangeState = multiExchangeClient.getState();
+    capitalPool.updateEquity(exchangeState.totalEquityUsd || 1000, 0);
+    const capitalState = capitalPool.getState();
+    
+    // Step 2: Check if we can open new positions
+    const canOpen = capitalPool.canOpenPosition();
+    if (!canOpen.allowed) {
+      console.log(`[Orchestrator:FullCycle] ⚠️ Cannot open positions: ${canOpen.reason}`);
+    }
+    
+    // Step 3: Refresh ticker cache (fetches all 500+ pairs)
     console.log('[Orchestrator:FullCycle] 🔄 Refreshing ticker cache...');
     await tickerCacheManager.refreshAll();
     const allTickers = tickerCacheManager.getAllTickers();
     const tickerCount = allTickers.length;
     temporalLadder.heartbeat(SYSTEMS.TICKER_CACHE, 1.0);
     
-    // Step 2: Get all tickers and scan for opportunities
-    console.log(`[Orchestrator:FullCycle] 📊 Scanning ${tickerCount} tickers for opportunities...`);
+    // Step 4: Update Gaia Lattice with current market coherence
+    const avgMomentum = allTickers.reduce((s, t) => s + Math.abs(t.momentum), 0) / Math.max(allTickers.length, 1);
+    const marketCoherence = Math.max(0.3, Math.min(0.95, 1 - avgMomentum * 10));
+    const latticeState = gaiaLatticeEngine.update(marketCoherence);
     
-    // Update position manager current prices for all tickers
+    // Step 5: Update position manager current prices for all tickers
+    console.log(`[Orchestrator:FullCycle] 📊 Scanning ${tickerCount} tickers for opportunities...`);
     for (const ticker of allTickers) {
       positionManager.updatePrice(ticker.symbol, ticker.price);
     }
     
-    // Scan for opportunities using async scanner
+    // Step 6: Scan for opportunities
     const scanResult = await opportunityScanner.scan();
-    const opportunities = scanResult.opportunities;
+    let opportunities = scanResult.opportunities;
+    const preFilterCount = opportunities.length;
     temporalLadder.heartbeat(SYSTEMS.OPPORTUNITY_SCANNER, opportunities.length > 0 ? 0.9 : 0.3);
     
-    console.log(`[Orchestrator:FullCycle] 🎯 Found ${opportunities.length} opportunities`);
+    // Step 7: Apply Gaia Lattice filtering (Triadic Envelope Protocol)
+    opportunities = gaiaLatticeEngine.filterSignals(opportunities);
+    const filteredCount = opportunities.length;
     
-    // Step 3: Check existing positions for TP/SL exits
-    const positionsChecked = positionManager.getPositions().length;
-    const closedPositions = positionManager.checkAllPositions();
-    temporalLadder.heartbeat(SYSTEMS.POSITION_MANAGER, 1.0);
-    
-    if (closedPositions.length > 0) {
-      console.log(`[Orchestrator:FullCycle] 💰 Closed ${closedPositions.length} positions at TP/SL`);
+    if (preFilterCount !== filteredCount) {
+      console.log(`[Orchestrator:FullCycle] 🌍 Gaia Lattice filtered ${preFilterCount} → ${filteredCount}`);
     }
     
-    // Step 4: If we have opportunities, run full cycle on the best one
-    let result: OrchestrationResult | null = null;
-    const bestOpportunity = opportunities[0] || null;
+    console.log(`[Orchestrator:FullCycle] 🎯 Found ${filteredCount} valid opportunities`);
     
-    if (bestOpportunity) {
-      console.log(`[Orchestrator:FullCycle] 🎯 Best: ${bestOpportunity.symbol} Score=${bestOpportunity.score.toFixed(3)} ` +
-        `Tier=${bestOpportunity.tier} Dir=${bestOpportunity.direction}`);
+    // Step 8: Log market sweep
+    console.log(`[MarketSweep] 📊 ${tickerCount} tickers | ${preFilterCount}→${filteredCount} opps | Lattice: ${latticeState.phase} | Capital: $${capitalState.availableCapital.toFixed(2)}`);
+    
+    // Step 9: Check existing positions for TP/SL exits
+    const positionsChecked = positionManager.getPositions().length;
+    const positionsToClose = positionManager.checkAllPositions();
+    temporalLadder.heartbeat(SYSTEMS.POSITION_MANAGER, 1.0);
+    
+    // Release capital for closed positions
+    for (const pos of positionsToClose) {
+      capitalPool.release(pos.symbol, pos.unrealizedPnl);
+    }
+    
+    if (positionsToClose.length > 0) {
+      console.log(`[Orchestrator:FullCycle] 💰 Closed ${positionsToClose.length} positions`);
+    }
+    
+    // Step 10: Run full cycle on best opportunity
+    let result: OrchestrationResult | null = null;
+    const bestOpportunity = opportunities.find(o => !o.isBlacklisted && o.tier <= 2) || opportunities[0] || null;
+    
+    if (bestOpportunity && canOpen.allowed) {
+      console.log(`[Orchestrator:FullCycle] 🎯 Best: ${bestOpportunity.symbol} Score=${bestOpportunity.score.toFixed(3)} Tier=${bestOpportunity.tier}`);
       
-      // Create market snapshot from ticker
-      const ticker = tickerCacheManager.getTicker(bestOpportunity.symbol);
-      if (ticker) {
-        const marketSnapshot: MarketSnapshot = {
-          price: ticker.price,
-          volume: ticker.volume,
-          volatility: ticker.volatility,
-          momentum: ticker.momentum,
-          spread: ticker.spread,
-          timestamp: ticker.timestamp,
-        };
-        
-        result = await this.runCycle(marketSnapshot, bestOpportunity.symbol);
+      // Calculate position size using Capital Pool
+      const positionSize = capitalPool.calculatePositionSize(
+        bestOpportunity.score,
+        bestOpportunity.volatility,
+        bestOpportunity.tier
+      );
+      
+      if (positionSize.sizeUsd >= 10) {
+        const ticker = tickerCacheManager.getTicker(bestOpportunity.symbol);
+        if (ticker) {
+          const marketSnapshot: MarketSnapshot = {
+            price: ticker.price,
+            volume: ticker.volume,
+            volatility: ticker.volatility,
+            momentum: ticker.momentum,
+            spread: ticker.spread,
+            timestamp: ticker.timestamp,
+          };
+          
+          result = await this.runCycle(marketSnapshot, bestOpportunity.symbol);
+          
+          if (result.tradeExecuted) {
+            capitalPool.reserve(bestOpportunity.symbol, positionSize.sizeUsd);
+          }
+        }
       }
-    } else {
-      console.log('[Orchestrator:FullCycle] ⚠️ No opportunities found above threshold');
+    } else if (!bestOpportunity) {
+      console.log('[Orchestrator:FullCycle] ⚠️ No opportunities above threshold');
     }
     
     const elapsed = Date.now() - startTime;
-    console.log(`[Orchestrator:FullCycle] ✅ Complete in ${elapsed}ms | Tickers: ${tickerCount} | Opps: ${opportunities.length} | Positions: ${positionsChecked}`);
+    console.log(`[Orchestrator:FullCycle] ✅ ${elapsed}ms | Tickers:${tickerCount} | Opps:${filteredCount}/${preFilterCount} | Positions:${positionsChecked}`);
     
     return {
       tickersScanned: tickerCount,
-      opportunitiesFound: opportunities.length,
+      opportunitiesFound: preFilterCount,
+      filteredOpportunities: filteredCount,
       bestOpportunity,
       result,
       positionsChecked,
-      positionsClosed: closedPositions.length,
+      positionsClosed: positionsToClose.length,
+      capitalState: { availableCapital: capitalState.availableCapital, positionCount: capitalState.positionCount },
+      latticePhase: latticeState.phase,
     };
+  }
+  
+  /**
+   * Run startup harvest - scan existing positions and close profitable ones
+   */
+  async runStartupHarvest(dryRun: boolean = true): Promise<{ harvested: number; profit: number }> {
+    console.log('[Orchestrator] 🌾 Running startup harvest...');
+    const harvestResult = await startupHarvester.harvest(dryRun);
+    return { harvested: harvestResult.harvested, profit: harvestResult.totalProfit };
   }
   
   /**
