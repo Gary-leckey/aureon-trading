@@ -4,11 +4,14 @@
  * 
  * Fetches and caches ALL 800+ pairs from exchanges
  * Provides real-time ticker data for opportunity scanning
+ * 
+ * Gap Closure: Wired to Binance WebSocket for real-time updates
  */
 
 import { supabase } from '@/integrations/supabase/client';
 import { unifiedBus } from './unifiedBus';
 import { temporalLadder, SYSTEMS } from './temporalLadder';
+import { BinanceWebSocketClient, type MarketData } from './binanceWebSocket';
 
 export interface CachedTicker {
   symbol: string;
@@ -26,18 +29,20 @@ export interface CachedTicker {
   spread: number;
   timestamp: number;
   isValidated: boolean;
-  dataSource: 'live' | 'cached' | 'stale';
+  dataSource: 'live' | 'cached' | 'stale' | 'websocket';
 }
 
 export interface TickerCacheStats {
   totalTickers: number;
   liveTickers: number;
   staleTickers: number;
+  websocketTickers: number;
   lastFullRefresh: number;
   avgVolatility: number;
   topGainers: string[];
   topLosers: string[];
   highVolume: string[];
+  websocketConnected: boolean;
 }
 
 const REFRESH_INTERVAL_MS = 10000; // 10 seconds
@@ -51,29 +56,107 @@ class TickerCacheManager {
   private refreshInterval: ReturnType<typeof setInterval> | null = null;
   private listeners: Array<(tickers: CachedTicker[]) => void> = [];
   private isInitialized: boolean = false;
+  
+  // WebSocket client for real-time updates
+  private wsClient: BinanceWebSocketClient | null = null;
+  private wsConnected: boolean = false;
 
   constructor() {
     console.log('📊 Ticker Cache Manager initializing...');
   }
 
   /**
-   * Initialize and start automatic refresh
+   * Initialize and start automatic refresh + WebSocket connection
    */
   public async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
     temporalLadder.registerSystem(SYSTEMS.DATA_INGESTION);
 
-    // Initial fetch
+    // Initial fetch via REST
     await this.refreshAll();
 
-    // Start periodic refresh
+    // Start periodic refresh as backup
     this.refreshInterval = setInterval(() => {
       this.refreshAll().catch(console.error);
     }, REFRESH_INTERVAL_MS);
 
+    // Initialize WebSocket for real-time BTCUSDT updates
+    this.initializeWebSocket();
+
     this.isInitialized = true;
-    console.log(`📊 Ticker Cache Manager initialized with ${this.cache.size} pairs`);
+    console.log(`📊 Ticker Cache Manager initialized with ${this.cache.size} pairs + WebSocket`);
+  }
+
+  /**
+   * Initialize Binance WebSocket for real-time price updates
+   * Gap Closure: Wire WebSocket to orchestrator
+   */
+  private initializeWebSocket(): void {
+    this.wsClient = new BinanceWebSocketClient('btcusdt');
+    
+    this.wsClient.onConnect(() => {
+      console.log('📡 [TickerCache] WebSocket connected - real-time updates active');
+      this.wsConnected = true;
+    });
+    
+    this.wsClient.onDisconnect(() => {
+      console.log('📡 [TickerCache] WebSocket disconnected');
+      this.wsConnected = false;
+    });
+    
+    this.wsClient.onError((error) => {
+      console.warn('📡 [TickerCache] WebSocket error:', error.message);
+      this.wsConnected = false;
+    });
+    
+    this.wsClient.onData((data: MarketData) => {
+      this.updateFromWebSocket('BTCUSDT', data);
+    });
+    
+    // Connect
+    this.wsClient.connect();
+  }
+
+  /**
+   * Update ticker from WebSocket data
+   */
+  public updateFromWebSocket(symbol: string, data: MarketData): void {
+    const key = `binance:${symbol}`;
+    const existing = this.cache.get(key);
+    
+    const updated: CachedTicker = {
+      symbol,
+      exchange: 'binance',
+      price: data.price,
+      bidPrice: data.price * 0.9999, // Approximate from last trade
+      askPrice: data.price * 1.0001,
+      volume: existing?.volume || 0,
+      volumeUsd: existing?.volumeUsd || 0,
+      high24h: existing?.high24h || data.price,
+      low24h: existing?.low24h || data.price,
+      priceChange24h: existing?.priceChange24h || 0,
+      volatility: data.volatility,
+      momentum: data.momentum,
+      spread: data.spread,
+      timestamp: data.timestamp,
+      isValidated: true,
+      dataSource: 'websocket',
+    };
+    
+    this.cache.set(key, updated);
+    
+    // Log periodically (not every update to avoid spam)
+    if (Math.random() < 0.01) {
+      console.log(`📡 [TickerCache] WS Update: ${symbol} @ $${data.price.toFixed(2)}`);
+    }
+  }
+
+  /**
+   * Check if WebSocket is connected
+   */
+  public isWebSocketConnected(): boolean {
+    return this.wsConnected && this.wsClient?.isConnected() || false;
   }
 
   /**
@@ -202,6 +285,7 @@ class TickerCacheManager {
     
     const liveTickers = tickers.filter(t => t.dataSource === 'live').length;
     const staleTickers = tickers.filter(t => now - t.timestamp > STALE_THRESHOLD_MS).length;
+    const websocketTickers = tickers.filter(t => t.dataSource === 'websocket').length;
     
     const avgVolatility = tickers.length > 0 
       ? tickers.reduce((sum, t) => sum + t.volatility, 0) / tickers.length 
@@ -211,11 +295,13 @@ class TickerCacheManager {
       totalTickers: tickers.length,
       liveTickers,
       staleTickers,
+      websocketTickers,
       lastFullRefresh: this.lastRefresh,
       avgVolatility,
       topGainers: this.getTopGainers(5).map(t => t.symbol),
       topLosers: this.getTopLosers(5).map(t => t.symbol),
       highVolume: this.getHighVolumeTickers(1000000).slice(0, 10).map(t => t.symbol),
+      websocketConnected: this.wsConnected,
     };
   }
 
@@ -278,9 +364,17 @@ class TickerCacheManager {
       clearInterval(this.refreshInterval);
       this.refreshInterval = null;
     }
+    
+    // Disconnect WebSocket
+    if (this.wsClient) {
+      this.wsClient.disconnect();
+      this.wsClient = null;
+    }
+    
     this.cache.clear();
     this.listeners = [];
     this.isInitialized = false;
+    this.wsConnected = false;
   }
 }
 

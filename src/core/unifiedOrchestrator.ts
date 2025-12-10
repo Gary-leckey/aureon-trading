@@ -35,6 +35,7 @@ import { positionManager, type Position } from './positionManager';
 import { capitalPool, type CapitalState, type PositionSizeResult } from './capitalPool';
 import { gaiaLatticeEngine, type LatticeState } from './gaiaLatticeEngine';
 import { startupHarvester } from './startupHarvester';
+import { lotSizeValidator } from './lotSizeValidator';
 import { supabase } from '@/integrations/supabase/client';
 import { getEarthStreams, earthStreamsMonitor, type SimpleEarthStreams } from '@/lib/earth-streams';
 
@@ -956,6 +957,15 @@ export class UnifiedOrchestrator {
       const signalType = decision.action === 'BUY' ? 'LONG' : 'SHORT';
       const currentPrice = marketSnapshot?.price || 0;
       
+      // GAP CLOSURE: Validate lot size before execution
+      const quantity = positionSize / currentPrice;
+      const lotValidation = await lotSizeValidator.validate(symbol, quantity, currentPrice, exchange);
+      
+      if (!lotValidation.valid) {
+        console.warn(`[UnifiedOrchestrator] Lot size validation failed: ${lotValidation.error}`);
+        return { success: false, error: lotValidation.error };
+      }
+      
       const payload = {
         symbol,
         signalType,
@@ -963,10 +973,11 @@ export class UnifiedOrchestrator {
         lighthouseValue: lighthouseState?.L || 0,
         lighthouseConfidence: lighthouseState?.confidence || 0,
         prismLevel: prismOutput?.level || 1,
-        currentPrice,
-        price: currentPrice,
+        currentPrice: lotValidation.adjustedPrice,
+        price: lotValidation.adjustedPrice,
+        quantity: lotValidation.adjustedQuantity,
         recommendedExchange: exchange,
-        positionSizeUsd: positionSize,
+        positionSizeUsd: lotValidation.adjustedQuantity * lotValidation.adjustedPrice,
       };
 
       console.log('[UnifiedOrchestrator] Calling execute-trade edge function:', payload);
