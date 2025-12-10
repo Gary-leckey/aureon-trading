@@ -16,6 +16,8 @@ import { thePrism, type PrismOutput } from './thePrism';
 import { adaptiveLearningEngine } from './adaptiveLearningEngine';
 import { tickerCacheManager } from './tickerCacheManager';
 import { startupHarvester } from './startupHarvester';
+import { predictionAccuracyTracker } from './predictionAccuracyTracker';
+import { tradeLogger } from './tradeLogger';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface GlobalState {
@@ -400,7 +402,7 @@ class GlobalSystemsManager {
   /**
    * Start autonomous trading loop
    */
-  startTrading(): void {
+  async startTrading(): Promise<void> {
     if (this.state.isRunning) {
       console.log('[GlobalSystems] Already running');
       return;
@@ -408,11 +410,26 @@ class GlobalSystemsManager {
     
     console.log('🚀 GlobalSystemsManager: Starting autonomous trading...');
     
-    // Initialize ticker cache (800+ pairs like Python ecosystem)
-    tickerCacheManager.initialize().catch(console.error);
+    // Initialize ticker cache (800+ pairs like Python ecosystem) with WebSocket
+    await tickerCacheManager.initialize();
+    
+    // Load trade history for calibration
+    await tradeLogger.loadFromDatabase(500);
+    
+    // Initialize and start prediction accuracy tracker
+    await predictionAccuracyTracker.loadFromDatabase(100);
+    predictionAccuracyTracker.start();
     
     // Run startup harvest (scan existing holdings for profit opportunities)
-    startupHarvester.harvest(unifiedOrchestrator.getConfig().dryRun).catch(console.error);
+    // GAP CLOSURE: Execute startup harvest on login
+    const dryRun = unifiedOrchestrator.getConfig().dryRun;
+    console.log('🌾 [GlobalSystems] Running startup harvest...');
+    try {
+      const harvestResult = await startupHarvester.harvest(dryRun);
+      console.log(`🌾 [GlobalSystems] Startup harvest complete: ${harvestResult.harvested} positions harvested, $${harvestResult.totalProfit.toFixed(2)} profit`);
+    } catch (err) {
+      console.warn('⚠️ [GlobalSystems] Startup harvest failed:', err);
+    }
     
     // Initialize exchange client
     multiExchangeClient.initialize().catch(console.error);
@@ -454,7 +471,7 @@ class GlobalSystemsManager {
     // Run immediately
     this.runQuantumCycle();
     
-    console.log('✅ GlobalSystemsManager: Autonomous trading active with multi-symbol scanning');
+    console.log('✅ GlobalSystemsManager: Autonomous trading active with multi-symbol scanning + WebSocket');
   }
   
   /**
@@ -477,6 +494,12 @@ class GlobalSystemsManager {
       this.exchangeUnsubscribe();
       this.exchangeUnsubscribe = null;
     }
+    
+    // Stop prediction tracker
+    predictionAccuracyTracker.stop();
+    
+    // Destroy ticker cache (including WebSocket)
+    tickerCacheManager.destroy();
     
     // Unregister from Temporal Ladder
     temporalLadder.unregisterSystem(SYSTEMS.MASTER_EQUATION);
