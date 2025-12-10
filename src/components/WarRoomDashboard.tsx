@@ -18,6 +18,9 @@ import { TradeControlsHeader } from './warroom/TradeControlsHeader';
 import { CredentialStatusPanel } from './warroom/CredentialStatusPanel';
 import { ActivePositionsPanel } from './warroom/ActivePositionsPanel';
 import { TradingReadinessCheck } from './warroom/TradingReadinessCheck';
+import { TradingStatusPanel } from './warroom/TradingStatusPanel';
+import { LiveTradeStream } from './warroom/LiveTradeStream';
+import { LaunchButton } from './warroom/LaunchButton';
 import { Badge } from '@/components/ui/badge';
 
 export default function WarRoomDashboard() {
@@ -44,6 +47,13 @@ export default function WarRoomDashboard() {
           </div>
         </div>
 
+        {/* MAIN LAUNCH BUTTON */}
+        <LaunchButton 
+          onLaunch={launchAssault}
+          onStop={emergencyStop}
+          status={state.status}
+        />
+
         {/* Trade Controls Header with Mode Toggle */}
         <TradeControlsHeader
           onLaunchAssault={launchAssault}
@@ -54,8 +64,9 @@ export default function WarRoomDashboard() {
           currentBalance={state.currentBalance}
         />
 
-        {/* Readiness + Credentials + Gas Tank */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Trading Status + Readiness */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <TradingStatusPanel />
           <TradingReadinessCheck />
           <CredentialStatusPanel userId={globalState.userId} />
           <GasTankDisplay 
@@ -77,11 +88,14 @@ export default function WarRoomDashboard() {
           <ProbabilityFusionPanel />
         </div>
 
-        {/* Active Positions + Live Feed */}
+        {/* Active Positions + Live Trade Stream */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <ActivePositionsPanel />
-          <LiveStrikeStream />
+          <LiveTradeStream />
         </div>
+
+        {/* Live Strike Stream */}
+        <LiveStrikeStream />
 
         {/* Historical Timeline */}
         <HistoricalTimeline />
