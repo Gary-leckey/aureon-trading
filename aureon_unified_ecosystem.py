@@ -472,7 +472,7 @@ CONFIG = {
     'SPREAD_COST_PCT': 0.0005,      # 0.05% estimated spread cost
     'TAKE_PROFIT_PCT': 1.5,         # 1.5% profit target (was 1.2% - need more room to cover fees + slippage)
     'STOP_LOSS_PCT': 1.5,           # 1.5% stop loss (was 0.8% - give trades room to breathe)
-    'MAX_POSITIONS': 15,            # Fewer, higher quality positions
+    'MAX_POSITIONS': 30,            # 🔥 BEAST MODE: 30 positions - TRADE EVERYTHING!
     'MIN_TRADE_USD': 5.0,           # Minimum trade notional in base currency
     'BINANCE_MIN_NOTIONAL': 1.0,    # Refuse sells if notional < $1 to avoid LOT_SIZE noise
     'KRAKEN_MIN_NOTIONAL': 5.0,     # Kraken enforces ~$5 minimum notional on spot
@@ -1917,7 +1917,7 @@ class MultiExchangeOrchestrator:
                 'enabled': True,
                 'quote_currencies': ['USDC', 'USDT'],
                 'fee_rate': 0.001,
-                'max_positions': 5,
+                'max_positions': 15,  # 🔥 BEAST MODE: 15 positions per exchange!
                 'min_trade_usd': 10.0,
                 'asset_class': 'crypto'
             },
@@ -1925,7 +1925,7 @@ class MultiExchangeOrchestrator:
                 'enabled': True,  # ✅ ENABLED - Trading on Kraken with GBP
                 'quote_currencies': ['USD', 'GBP', 'EUR'],
                 'fee_rate': 0.0026,
-                'max_positions': 5,
+                'max_positions': 15,  # 🔥 BEAST MODE: 15 positions per exchange!
                 'min_trade_usd': 5.0,
                 'asset_class': 'crypto'
             },
@@ -1933,7 +1933,7 @@ class MultiExchangeOrchestrator:
                 'enabled': True,
                 'quote_currencies': ['USD', 'GBP'],
                 'fee_rate': 0.001,
-                'max_positions': 3,
+                'max_positions': 10,  # 🔥 BEAST MODE: 10 CFD positions!
                 'min_trade_usd': 10.0,
                 'asset_class': 'cfd'  # forex, indices, commodities
             },
@@ -1941,7 +1941,7 @@ class MultiExchangeOrchestrator:
                 'enabled': CONFIG.get('ALPACA_ANALYTICS_ONLY', True) == False,  # Trading disabled by default
                 'quote_currencies': ['USD'],
                 'fee_rate': 0.0025,
-                'max_positions': 3,
+                'max_positions': 10,  # 🔥 BEAST MODE: 10 stock positions!
                 'min_trade_usd': 1.0,  # Fractional shares
                 'asset_class': 'stocks'
             }
@@ -2019,7 +2019,8 @@ class MultiExchangeOrchestrator:
             
         # Sort by score
         opportunities.sort(key=lambda x: -x.get('score', 0))
-        return opportunities[:20]  # Top 20 per exchange
+        # 🔥 UNLEASHED: Return top 100 per exchange instead of 20!
+        return opportunities[:100]  # Top 100 per exchange - TRADE EVERYTHING!
         
     def _get_exchange_tickers(self, exchange: str, client, cfg: Dict) -> Dict[str, Dict]:
         """Get tickers from an exchange."""
@@ -11437,11 +11438,11 @@ class AureonKrakenEcosystem:
         
         self.save_state()
 
-    def run(self, interval: float = 5.0, target_profit_gbp: float = None, max_minutes: float = None):
-        """Main trading loop
+    def run(self, interval: float = 2.0, target_profit_gbp: float = None, max_minutes: float = None):
+        """Main trading loop - 🔥 BEAST MODE: 2 second cycles for MAXIMUM SPEED!
 
         Args:
-            interval: Seconds to sleep between cycles.
+            interval: Seconds to sleep between cycles. (DEFAULT NOW 2s - FASTER!)
             target_profit_gbp: If provided, stop when net P&L (current_equity - initial_equity) >= target.
             max_minutes: If provided, stop after this many minutes of runtime.
         """
@@ -11459,17 +11460,22 @@ class AureonKrakenEcosystem:
         
         # Find initial opportunities for WebSocket
         initial_opps = self.find_opportunities()
-        symbols_to_watch = [o['symbol'] for o in initial_opps[:15]]
+        # 🔥 UNLEASHED: Watch 100 pairs instead of 15 - MAXIMUM SIGNAL CAPTURE!
+        symbols_to_watch = [o['symbol'] for o in initial_opps[:100]]
         
-        # Add major pairs for base currency
+        # Add major pairs for base currency - EXPANDED LIST!
         base = CONFIG['BASE_CURRENCY']
-        major_bases = ['ETH', 'SOL', 'XBT', 'ADA', 'DOT', 'LINK']
+        # 🚀 ALL THE MAJORS - Two flies chasing shite? WE'LL TRADE THEM ALL!
+        major_bases = ['ETH', 'SOL', 'XBT', 'ADA', 'DOT', 'LINK', 'AVAX', 'MATIC', 'ATOM', 
+                       'UNI', 'AAVE', 'DOGE', 'SHIB', 'XRP', 'LTC', 'BCH', 'FIL', 'NEAR',
+                       'APT', 'ARB', 'OP', 'INJ', 'SEI', 'SUI', 'TIA', 'PEPE', 'WIF', 'BONK']
         for base_asset in major_bases:
-            pair = f"{base_asset}{base}"
-            if pair not in symbols_to_watch and pair in self.ticker_cache:
-                symbols_to_watch.append(pair)
+            for quote in ['USD', 'GBP', 'EUR', 'USDT', 'USDC']:
+                pair = f"{base_asset}{quote}"
+                if pair not in symbols_to_watch and pair in self.ticker_cache:
+                    symbols_to_watch.append(pair)
                 
-        print(f"\n🔴 Starting WebSocket for {len(symbols_to_watch)} pairs...")
+        print(f"\n🔴🔥 BEAST MODE: Starting WebSocket for {len(symbols_to_watch)} pairs!")
         self.start_websocket(symbols_to_watch)
         
         initial_equity = self.total_equity_gbp
