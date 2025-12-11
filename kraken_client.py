@@ -61,7 +61,8 @@ class KrakenClient:
         if not self.api_key or not self.api_secret:
             raise RuntimeError("Missing KRAKEN_API_KEY / KRAKEN_API_SECRET")
         data = dict(data)
-        data["nonce"] = str(int(time.time() * 1000))
+        # Use microseconds for nonce to avoid "invalid nonce" errors
+        data["nonce"] = str(int(time.time() * 1000000))
         headers = {
             "API-Key": self.api_key,
             "API-Sign": self._kraken_sign(path, data)
@@ -381,6 +382,94 @@ class KrakenClient:
         except Exception:
             pass
         return 0.0
+
+    def get_trades_history(self, start: int = None, end: int = None, ofs: int = 0) -> Dict[str, Any]:
+        """Get trade history from Kraken.
+        
+        Returns dict of trades with entry prices, quantities, fees etc.
+        Used to calculate real cost basis for positions.
+        
+        Kraken API: https://docs.kraken.com/rest/#tag/User-Data/operation/getTradeHistory
+        """
+        params = {"ofs": ofs}
+        if start:
+            params["start"] = start
+        if end:
+            params["end"] = end
+        
+        try:
+            result = self._private("/0/private/TradesHistory", params)
+            return result.get("trades", {})
+        except Exception as e:
+            print(f"⚠️ Failed to get Kraken trade history: {e}")
+            return {}
+    
+    def calculate_cost_basis(self, symbol: str) -> Dict[str, Any]:
+        """Calculate average cost basis for a symbol from trade history.
+        
+        Returns:
+            {
+                'symbol': str,
+                'avg_entry_price': float,
+                'total_quantity': float,
+                'total_cost': float,
+                'total_fees': float,
+                'trade_count': int
+            }
+        """
+        trades = self.get_trades_history()
+        if not trades:
+            return None
+        
+        # Kraken uses different pair naming, normalize
+        target_pairs = set()
+        # Try various Kraken naming conventions
+        base = symbol[:-3] if len(symbol) > 3 else symbol
+        for quote in ['USD', 'USDC', 'USDT', 'EUR', 'GBP']:
+            target_pairs.add(f"{base}{quote}")
+            target_pairs.add(f"X{base}Z{quote}")
+            target_pairs.add(f"XX{base}Z{quote}")
+        
+        total_qty = 0.0
+        total_cost = 0.0
+        total_fees = 0.0
+        buy_trades = 0
+        
+        for trade_id, trade in trades.items():
+            pair = trade.get('pair', '')
+            # Check if this trade matches our target symbol
+            if pair not in target_pairs and symbol not in pair:
+                continue
+            
+            trade_type = trade.get('type', '')  # 'buy' or 'sell'
+            qty = float(trade.get('vol', 0))
+            price = float(trade.get('price', 0))
+            fee = float(trade.get('fee', 0))
+            
+            if trade_type == 'buy':
+                total_qty += qty
+                total_cost += qty * price
+                total_fees += fee
+                buy_trades += 1
+            elif trade_type == 'sell':
+                total_qty -= qty
+                if total_qty > 0:
+                    avg_price = total_cost / (total_qty + qty) if (total_qty + qty) > 0 else 0
+                    total_cost = total_qty * avg_price
+        
+        if total_qty <= 0 or buy_trades == 0:
+            return None
+        
+        avg_entry = total_cost / total_qty if total_qty > 0 else 0
+        
+        return {
+            'symbol': symbol,
+            'avg_entry_price': avg_entry,
+            'total_quantity': total_qty,
+            'total_cost': total_cost,
+            'total_fees': total_fees,
+            'trade_count': buy_trades
+        }
 
     def compute_order_fees_in_quote(self, order: Dict[str, Any], primary_quote: str) -> float:
         # No fill info in dry-run; return 0 to let orchestrator use configured taker fee model if any

@@ -509,6 +509,110 @@ class BinanceClient:
             params["network"] = network
         return self._signed_request("GET", "/sapi/v1/capital/deposit/address", params)
 
+    def get_my_trades(self, symbol: str, limit: int = 500) -> list:
+        """Get trade history for a symbol.
+        
+        Returns list of trades with entry prices, quantities, fees etc.
+        Used to calculate real cost basis for positions.
+        """
+        params = {"symbol": symbol, "limit": limit}
+        try:
+            return self._signed_request("GET", "/api/v3/myTrades", params)
+        except Exception as e:
+            print(f"⚠️ Failed to get trade history for {symbol}: {e}")
+            return []
+    
+    def get_all_my_trades(self, symbols: list = None, limit_per_symbol: int = 100) -> Dict[str, list]:
+        """Get trade history for multiple symbols.
+        
+        Returns dict: {symbol: [trades]}
+        """
+        if not symbols:
+            # Get symbols from current balances
+            account = self.account()
+            balances = account.get('balances', [])
+            symbols = []
+            for b in balances:
+                if float(b.get('free', 0)) > 0 or float(b.get('locked', 0)) > 0:
+                    asset = b['asset']
+                    # Try common quote currencies
+                    for quote in ['USDC', 'USDT', 'EUR', 'GBP']:
+                        symbols.append(f"{asset}{quote}")
+        
+        all_trades = {}
+        for symbol in symbols:
+            try:
+                trades = self.get_my_trades(symbol, limit_per_symbol)
+                if trades:
+                    all_trades[symbol] = trades
+            except:
+                continue
+        return all_trades
+    
+    def calculate_cost_basis(self, symbol: str) -> Dict[str, Any]:
+        """Calculate average cost basis for a symbol from trade history.
+        
+        Returns:
+            {
+                'symbol': str,
+                'avg_entry_price': float,
+                'total_quantity': float,
+                'total_cost': float,
+                'total_fees': float,
+                'trade_count': int,
+                'first_trade': timestamp,
+                'last_trade': timestamp
+            }
+        """
+        trades = self.get_my_trades(symbol)
+        if not trades:
+            return None
+        
+        total_qty = 0.0
+        total_cost = 0.0
+        total_fees = 0.0
+        buy_trades = 0
+        first_trade = None
+        last_trade = None
+        
+        for trade in trades:
+            is_buyer = trade.get('isBuyer', False)
+            qty = float(trade.get('qty', 0))
+            price = float(trade.get('price', 0))
+            commission = float(trade.get('commission', 0))
+            timestamp = trade.get('time', 0)
+            
+            if is_buyer:
+                total_qty += qty
+                total_cost += qty * price
+                total_fees += commission
+                buy_trades += 1
+            else:
+                # Sell reduces position
+                total_qty -= qty
+                # Proportionally reduce cost basis
+                if total_qty > 0:
+                    avg_price = total_cost / (total_qty + qty) if (total_qty + qty) > 0 else 0
+                    total_cost = total_qty * avg_price
+            
+            if first_trade is None or timestamp < first_trade:
+                first_trade = timestamp
+            if last_trade is None or timestamp > last_trade:
+                last_trade = timestamp
+        
+        avg_entry = total_cost / total_qty if total_qty > 0 else 0
+        
+        return {
+            'symbol': symbol,
+            'avg_entry_price': avg_entry,
+            'total_quantity': total_qty,
+            'total_cost': total_cost,
+            'total_fees': total_fees,
+            'trade_count': buy_trades,
+            'first_trade': first_trade,
+            'last_trade': last_trade
+        }
+
 
 def position_size_from_balance(client: BinanceClient, symbol: str, fraction: float, max_usdt: float) -> float:
     # Assume quote asset is USDT for simplicity

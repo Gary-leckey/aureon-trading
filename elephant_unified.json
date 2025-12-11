@@ -90,22 +90,22 @@
     "blacklisted": false
   },
   "FARTCOINUSDC": {
-    "hunts": 7,
-    "trades": 4,
-    "wins": 2,
+    "hunts": 8,
+    "trades": 5,
+    "wins": 3,
     "losses": 2,
-    "profit": -1.3684967382627762,
-    "last_time": 1765307156.1700852,
-    "streak": 1,
+    "profit": -1.0982110049105371,
+    "last_time": 1765416671.5753925,
+    "streak": 0,
     "blacklisted": false
   },
   "ETHUSDC": {
-    "hunts": 2,
+    "hunts": 3,
     "trades": 1,
     "wins": 1,
     "losses": 0,
     "profit": 0.21412160608764735,
-    "last_time": 1765317783.9222658,
+    "last_time": 1765451837.2431543,
     "streak": 0,
     "blacklisted": false
   },
@@ -120,13 +120,13 @@
     "blacklisted": false
   },
   "SOLUSDC": {
-    "hunts": 3,
-    "trades": 0,
+    "hunts": 9,
+    "trades": 1,
     "wins": 0,
-    "losses": 0,
-    "profit": 0,
-    "last_time": 1765318640.050128,
-    "streak": 0,
+    "losses": 1,
+    "profit": -0.5838001599999999,
+    "last_time": 1765421340.5355444,
+    "streak": 1,
     "blacklisted": false
   },
   "ETHEUR": {
@@ -140,13 +140,13 @@
     "blacklisted": false
   },
   "DOGEUSDC": {
-    "hunts": 2,
-    "trades": 0,
+    "hunts": 9,
+    "trades": 1,
     "wins": 0,
-    "losses": 0,
-    "profit": 0,
-    "last_time": 1765317792.7335536,
-    "streak": 0,
+    "losses": 1,
+    "profit": -0.5841829619999998,
+    "last_time": 1765423873.9114356,
+    "streak": 1,
     "blacklisted": false
   },
   "ADAUSDC": {
@@ -170,12 +170,42 @@
     "blacklisted": false
   },
   "SUIUSDC": {
+    "hunts": 3,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765414817.7101824,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "XRPUSDC": {
+    "hunts": 5,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765415889.1224318,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "XDGUSDC": {
+    "hunts": 1,
+    "trades": 1,
+    "wins": 0,
+    "losses": 1,
+    "profit": -0.8702579683997773,
+    "last_time": 1765422471.755305,
+    "streak": 1,
+    "blacklisted": false
+  },
+  "SUIGBP": {
     "hunts": 1,
     "trades": 0,
     "wins": 0,
     "losses": 0,
     "profit": 0,
-    "last_time": 1765316495.9710007,
+    "last_time": 1765415890.2376137,
     "streak": 0,
     "blacklisted": false
   }

@@ -180,3 +180,80 @@ class AlpacaClient:
         asset_class = "crypto" if symbol.endswith("USD") or "/" in symbol else "us_equity"
         fees = self.compute_order_fees(order, asset_class)
         return fees['fee_usd']
+
+    def get_all_orders(self, status: str = "closed", limit: int = 500, symbols: str = None) -> List[Dict[str, Any]]:
+        """
+        Get all orders with optional filtering.
+        
+        Args:
+            status: 'open', 'closed', or 'all'
+            limit: Max orders to return (max 500)
+            symbols: Comma-separated symbols (e.g., "BTCUSD,ETHUSD")
+        """
+        params = {
+            "status": status,
+            "limit": limit
+        }
+        if symbols:
+            params["symbols"] = symbols
+        result = self._request("GET", "/v2/orders", params=params)
+        return result if isinstance(result, list) else []
+
+    def calculate_cost_basis(self, symbol: str) -> Dict[str, Any]:
+        """
+        Calculate cost basis for a symbol from filled orders.
+        
+        Returns dict with:
+        - symbol: The symbol
+        - total_quantity: Net quantity held
+        - total_cost: Total cost of buys
+        - avg_cost: Average cost per unit
+        - trades: Number of trades
+        """
+        # Get closed (filled) orders for this symbol
+        orders = self.get_all_orders(status="closed", symbols=symbol)
+        
+        if not orders:
+            return {
+                "symbol": symbol,
+                "total_quantity": 0.0,
+                "total_cost": 0.0,
+                "avg_cost": 0.0,
+                "trades": 0
+            }
+        
+        total_qty = 0.0
+        total_cost = 0.0
+        buy_qty = 0.0
+        buy_cost = 0.0
+        trade_count = 0
+        
+        for order in orders:
+            if order.get('status') != 'filled':
+                continue
+                
+            filled_qty = float(order.get('filled_qty', 0) or 0)
+            filled_price = float(order.get('filled_avg_price', 0) or 0)
+            side = order.get('side', '')
+            
+            if filled_qty <= 0 or filled_price <= 0:
+                continue
+            
+            trade_count += 1
+            
+            if side == 'buy':
+                total_qty += filled_qty
+                buy_qty += filled_qty
+                buy_cost += filled_qty * filled_price
+            elif side == 'sell':
+                total_qty -= filled_qty
+        
+        avg_cost = buy_cost / buy_qty if buy_qty > 0 else 0.0
+        
+        return {
+            "symbol": symbol,
+            "total_quantity": total_qty,
+            "total_cost": buy_cost,
+            "avg_cost": avg_cost,
+            "trades": trade_count
+        }

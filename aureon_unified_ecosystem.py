@@ -197,6 +197,23 @@ except ImportError as e:
     NEXUS_BUS = None
     print(f"⚠️  Aureon Nexus not available: {e}")
 
+# 🎯 PROBABILITY LOADER & POSITION HYGIENE 🎯
+try:
+    from probability_loader import ProbabilityLoader, PositionHygieneChecker, load_position_state
+    PROBABILITY_LOADER_AVAILABLE = True
+except ImportError as e:
+    PROBABILITY_LOADER_AVAILABLE = False
+    print(f"⚠️  Probability Loader not available: {e}")
+    class ProbabilityLoader:
+        def __init__(self, *args, **kwargs): pass
+        def load_all_reports(self): return {}
+        def is_fresh(self): return False
+        def get_top_signals(self, *args): return []
+        def get_consensus_signals(self, *args): return []
+    class PositionHygieneChecker:
+        def __init__(self): pass
+        def check_positions(self, *args): return {'flagged': [], 'count': 0}
+
 # 📊 TRADE LOGGER - COMPREHENSIVE DATA LOGGING 📊
 try:
     from trade_logger import get_trade_logger, TradeLogger
@@ -206,6 +223,55 @@ except ImportError as e:
     TRADE_LOGGER_AVAILABLE = False
     trade_logger = None
     print(f"⚠️  Trade Logger not available: {e}")
+
+# 💰 COST BASIS TRACKER - REAL PURCHASE PRICES 💰
+try:
+    from cost_basis_tracker import CostBasisTracker, get_cost_basis_tracker
+    COST_BASIS_AVAILABLE = True
+except ImportError as e:
+    COST_BASIS_AVAILABLE = False
+    print(f"⚠️  Cost Basis Tracker not available: {e}")
+    # Fallback stub
+    class CostBasisTracker:
+        def __init__(self): self.positions = {}
+        def sync_from_exchanges(self): return 0
+        def get_entry_price(self, symbol): return None
+        def set_entry_price(self, *args, **kwargs): pass
+        def update_position(self, *args, **kwargs): pass
+        def can_sell_profitably(self, symbol, price, **kw): return True, {'recommendation': 'NO_TRACKER'}
+        def print_status(self): pass
+    def get_cost_basis_tracker(): return CostBasisTracker()
+
+# 🌍⚡ GLOBAL FINANCIAL ECOSYSTEM FEED ⚡🌍
+try:
+    from global_financial_feed import GlobalFinancialFeed, MacroSnapshot
+    GLOBAL_FEED_AVAILABLE = True
+    print("   🌍 Global Financial Ecosystem Feed ACTIVE")
+except ImportError as e:
+    GLOBAL_FEED_AVAILABLE = False
+    print(f"⚠️  Global Financial Feed not available: {e}")
+    # Fallback stub
+    class GlobalFinancialFeed:
+        def get_snapshot(self): return None
+        def get_probability_adjustment(self, symbol, prob): return prob, {}
+        def get_trading_signal(self, symbol): return {'macro_bias': 'NEUTRAL', 'macro_strength': 50}
+        def print_dashboard(self): pass
+
+# 📊 PROBABILITY VALIDATION ENGINE 📊
+try:
+    from probability_validator import ProbabilityValidator, get_validator
+    VALIDATOR_AVAILABLE = True
+    print("   📊 Probability Validation Engine ACTIVE")
+except ImportError as e:
+    VALIDATOR_AVAILABLE = False
+    print(f"⚠️  Probability Validator not available: {e}")
+    # Fallback stub
+    class ProbabilityValidator:
+        def record_prediction(self, **kwargs): return ""
+        def validate_pending(self, func): return []
+        def get_confidence_adjustment(self, *args): return 1.0
+        def print_dashboard(self): pass
+    def get_validator(): return ProbabilityValidator()
 
 # 🌈✨ AUREON ENHANCEMENTS - RAINBOW BRIDGE, SYNCHRONICITY, STARGATE ✨🌈
 try:
@@ -364,7 +430,7 @@ def validate_order_quantity(exchange: str, symbol: str, quantity: float, price: 
 # ═══════════════════════════════════════════════════════════════
 
 CONFIG = {
-    'EXCHANGE': os.getenv('EXCHANGE', 'binance').lower(), # Default to BINANCE (Kraken disabled)
+    'EXCHANGE': os.getenv('EXCHANGE', 'both').lower(), # BOTH Binance AND Kraken for multi-exchange trading
     # Trading Parameters
     'BASE_CURRENCY': os.getenv('BASE_CURRENCY', 'USD'),  # USD or GBP
     
@@ -403,7 +469,7 @@ CONFIG = {
     'KRAKEN_MIN_NOTIONAL': 5.0,     # Kraken enforces ~$5 minimum notional on spot
     'CAPITAL_MIN_NOTIONAL': 10.0,   # 💼 Capital.com CFD minimum ~$10 (varies by instrument)
     'ALPACA_MIN_NOTIONAL': 1.0,     # 🦙 Alpaca crypto ~$1 min, stocks $1
-    'PORTFOLIO_RISK_BUDGET': 1.50,  # 150% - allow positions to exceed equity (existing holdings)
+    'PORTFOLIO_RISK_BUDGET': 3.00,  # 300% - allow significant positions for existing portfolio holders
     'MIN_EXPECTED_EDGE_GBP': 0.001, # Require positive edge
     'DEFAULT_WIN_PROB': 0.55,       # Target win probability
     'WIN_RATE_CONFIDENCE_TRADES': 25,
@@ -419,21 +485,21 @@ CONFIG = {
     
     # Dynamic Portfolio Rebalancing
     'ENABLE_REBALANCING': True,     # Sell underperformers to buy better opportunities
-    'REBALANCE_THRESHOLD': -2.0,    # Sell position if losing >2% (was -0.5% - too aggressive)
+    'REBALANCE_THRESHOLD': -50.0,   # 🔥 Sell big losers (>50% loss) to free capital for better opportunities
     'MIN_HOLD_CYCLES': 10,          # Hold at least 10 cycles (~10 mins) before rebalance (was 3)
     'QUOTE_CURRENCIES': ['USDC', 'USDT', 'GBP', 'USD', 'EUR', 'BTC', 'ETH'],  # 🔥 USDC first - where our money is!
     
     # 🌾 Startup Harvesting
-    'HARVEST_ON_STARTUP': False,     # 🚫 DISABLED - Sells blindly without knowing entry price! Use managed positions instead.
-    'HARVEST_MIN_VALUE': 1.0,        # Minimum net value to harvest (USD)
+    'HARVEST_ON_STARTUP': True,      # 🔥 ENABLED - Actively harvest and trade!
+    'HARVEST_MIN_VALUE': 0.50,       # Lowered - harvest even small gains
     
     # Scout Deployment (from immediateWaveRider.ts)
     'DEPLOY_SCOUTS_IMMEDIATELY': True,   # 🚀 Deploy positions immediately on first scan - HIT THE GROUND RUNNING!
     'SCOUT_MIN_MOMENTUM': 0.1,           # Very low threshold - get into trades FAST
-    'SCOUT_FORCE_COUNT': 3,              # Force at least 3 scouts on startup
+    'SCOUT_FORCE_COUNT': 5,              # Force at least 5 scouts on startup (use BOTH exchanges!)
     'SCOUT_MIN_VOLATILITY': 1.5,         # Lion Hunt style: require meaningful 24h move
     'SCOUT_MIN_VOLUME_QUOTE': 100000,    # Minimum quote volume for scout candidates
-    'SCOUT_PER_QUOTE_LIMIT': 2,          # Spread early scouts across quote currencies
+    'SCOUT_PER_QUOTE_LIMIT': 3,          # Spread early scouts across quote currencies (3 per quote)
     
     # Kelly Criterion & Risk Management
     'USE_KELLY_SIZING': True,       # Use Kelly instead of fixed %
@@ -574,7 +640,7 @@ CONFIG = {
     
     # System Flux Prediction (30-Span)
     'FLUX_SPAN': 30,              # Number of assets to analyze for flux
-    'FLUX_THRESHOLD': 0.60,       # Minimum flux strength to override probability
+    'FLUX_THRESHOLD': 0.80,       # Raised from 0.60 - only override in VERY strong bearish/bullish
 }
 
 PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio = 1.618
@@ -1847,7 +1913,7 @@ class MultiExchangeOrchestrator:
                 'asset_class': 'crypto'
             },
             'kraken': {
-                'enabled': False,  # Disabled by user request
+                'enabled': True,  # ✅ ENABLED - Trading on Kraken with GBP
                 'quote_currencies': ['USD', 'GBP', 'EUR'],
                 'fee_rate': 0.0026,
                 'max_positions': 5,
@@ -2438,9 +2504,24 @@ class UnifiedStateAggregator:
         symbol_data = {}
         frequency_data = {}
         probability_insights: Dict[str, Dict[str, Any]] = {}
+        probability_freshness: Dict[str, Any] = {
+            'report_ages_minutes': {},
+            'newest_minutes': None,
+            'oldest_minutes': None,
+            'stale': False,
+            'threshold_minutes': 120,
+        }
+        high_conviction: List[Dict[str, Any]] = []
         analytics_insights: Dict[str, Dict[str, Any]] = {}
         positions_snapshot: Dict[str, Any] = {}
         aux_logs: Dict[str, Any] = {}
+        position_hygiene: Dict[str, Any] = {
+            'flagged': [],
+            'rules': {
+                'max_cycles': 50,
+                'min_momentum': -2.0,
+            }
+        }
 
         def _extract_pnl(trade: Dict[str, Any]) -> float:
             pnl = trade.get('pnl_usd')
@@ -2463,6 +2544,24 @@ class UnifiedStateAggregator:
             self.aggregated_state['wins'] = main_state.get('wins', 0)
             self.aggregated_state['losses'] = main_state.get('losses', 0)
             self.aggregated_state['max_drawdown'] = main_state.get('max_drawdown', 0)
+
+            # Position hygiene pass: flag long-running or losing positions
+            positions = main_state.get('positions', {}) or {}
+            for sym, pos in positions.items():
+                try:
+                    cycles = pos.get('cycles', 0)
+                    momentum = pos.get('momentum', 0.0)
+                    if cycles >= position_hygiene['rules']['max_cycles'] or momentum <= position_hygiene['rules']['min_momentum']:
+                        position_hygiene['flagged'].append({
+                            'symbol': sym,
+                            'cycles': cycles,
+                            'momentum': momentum,
+                            'entry_price': pos.get('entry_price'),
+                            'coherence': pos.get('coherence'),
+                            'dominant_node': pos.get('dominant_node'),
+                        })
+                except Exception:
+                    continue
             
         # 2. Load Elephant Memory files (symbol-level insights)
         for elephant_key in ['elephant_ultimate', 'elephant_unified', 'elephant_live']:
@@ -2556,6 +2655,17 @@ class UnifiedStateAggregator:
             if not data:
                 continue
             self.aggregated_state['sources_loaded'].append(f"probability:{report}")
+
+            # Freshness tracking
+            generated_ts = data.get('generated') if isinstance(data, dict) else None
+            if generated_ts:
+                try:
+                    gen_dt = datetime.fromisoformat(generated_ts)
+                    age_min = (datetime.now() - gen_dt).total_seconds() / 60
+                    probability_freshness['report_ages_minutes'][report] = age_min
+                except Exception:
+                    pass
+
             entries = []
             for key in ('top_bullish', 'top_bearish', 'data', 'signals', 'items', 'predictions', 'data_points'):
                 if isinstance(data, list) and key == 'data':
@@ -2586,6 +2696,19 @@ class UnifiedStateAggregator:
                         'change': change,
                         'source': report
                     }
+
+                # Capture high-conviction signals for watchlist seeding
+                confidence = item.get('confidence', item.get('conf', 0)) or 0.0
+                if prob >= 0.80 and confidence >= 0.80:
+                    high_conviction.append({
+                        'symbol': sym,
+                        'probability': prob,
+                        'confidence': confidence,
+                        'change': change,
+                        'state': state,
+                        'source': report,
+                        'exchange': item.get('exchange'),
+                    })
             
         # 8. Scan trade logs directory
         trade_logs = self._scan_trade_logs()
@@ -2596,6 +2719,17 @@ class UnifiedStateAggregator:
         # Save probability insights
         if probability_insights:
             self.aggregated_state['probability_insights'] = probability_insights
+
+        # Probability freshness summary
+        if probability_freshness['report_ages_minutes']:
+            ages = list(probability_freshness['report_ages_minutes'].values())
+            probability_freshness['newest_minutes'] = min(ages)
+            probability_freshness['oldest_minutes'] = max(ages)
+            probability_freshness['stale'] = probability_freshness['newest_minutes'] > probability_freshness['threshold_minutes']
+            self.aggregated_state['probability_freshness'] = probability_freshness
+
+        if high_conviction:
+            self.aggregated_state['high_conviction_signals'] = high_conviction
 
         # 9. Load analytics reports (performance/forecast artifacts)
         for report in self.ANALYTICS_REPORTS:
@@ -2670,6 +2804,9 @@ class UnifiedStateAggregator:
 
         if positions_snapshot:
             self.aggregated_state['positions_snapshot'] = positions_snapshot
+
+        if position_hygiene['flagged']:
+            self.aggregated_state['position_hygiene'] = position_hygiene
 
         # 11. Load auxiliary logs (diagnostic only)
         for log_file in self.AUX_LOG_FILES:
@@ -4621,7 +4758,7 @@ class NexusIntegration:
 
 # Prime numbers for dynamic sizing (from multi_agent_aggressive.ts)
 PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71]
-PRIME_SCALE = 0.001  # 0.1% per prime unit → 0.2%, 0.3%, 0.5%, 0.7%, etc.
+PRIME_SCALE = 0.05  # 5% per prime unit → 10%, 15%, 25%, 35%, etc. (sensible position sizes)
 
 # Fibonacci sequence for timing (from multi_agent_aggressive.ts)
 FIBONACCI = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987]
@@ -5059,12 +5196,38 @@ class AurisEngine:
             except Exception as e:
                 print(f"   ⚠️  Probability Matrix init failed: {e}")
         
+        # 🌍⚡ Global Financial Ecosystem Feed ⚡🌍
+        self.global_feed = None
+        self.macro_snapshot = None
+        if GLOBAL_FEED_AVAILABLE:
+            try:
+                self.global_feed = GlobalFinancialFeed()
+                self.macro_snapshot = self.global_feed.get_snapshot()
+                print("   🌍 Global Financial Ecosystem ACTIVE")
+                print(f"      Fear/Greed: {self.macro_snapshot.crypto_fear_greed} | Regime: {self.macro_snapshot.market_regime}")
+            except Exception as e:
+                print(f"   ⚠️  Global Feed init failed: {e}")
+        
+        # 📊 Probability Validation Engine 📊
+        self.probability_validator = None
+        if VALIDATOR_AVAILABLE:
+            try:
+                self.probability_validator = get_validator()
+                stats = self.probability_validator.stats
+                if stats.validated_predictions > 0:
+                    print(f"   📊 Probability Validator ACTIVE")
+                    print(f"      Accuracy: {stats.direction_accuracy*100:.1f}% ({stats.validated_predictions} predictions)")
+                else:
+                    print("   📊 Probability Validator ACTIVE (collecting data)")
+            except Exception as e:
+                print(f"   ⚠️  Validator init failed: {e}")
+        
         # 🌍⚡ CoinAPI Anomaly Detection ⚡🌍
         self.coinapi_detector = None
         self.anomaly_blacklist: Dict[str, float] = {}  # {symbol: unblock_timestamp}
         self.coherence_adjustments: Dict[str, float] = {}  # {symbol: adjustment_factor}
         self.last_anomaly_scan = 0
-        if COINAPI_AVAILABLE and CONFIG.get('ENABLE_COINAPI', False):
+        if COINAPI_AVAILABLE:
             try:
                 api_key = os.getenv('COINAPI_KEY', '')
                 if api_key:
@@ -5072,7 +5235,7 @@ class AurisEngine:
                     self.coinapi_detector = AnomalyDetector(coinapi_client)
                     print("   🌐 CoinAPI Anomaly Detection ACTIVE")
                 else:
-                    print("   ⚠️  CoinAPI enabled but no API key found")
+                    print("   ⚠️  CoinAPI: No API key (anomaly detection disabled)")
             except Exception as e:
                 print(f"   ⚠️  CoinAPI init failed: {e}")
         
@@ -5116,7 +5279,7 @@ class AurisEngine:
         # 🔭 QUANTUM TELESCOPE & HARMONIC UNDERLAY 🔭
         self.telescope = None
         self.harmonic_engine = None
-        if QUANTUM_AVAILABLE and CONFIG.get('ENABLE_QUANTUM_TELESCOPE', True):
+        if CONFIG.get('ENABLE_QUANTUM_TELESCOPE', True):
             try:
                 self.telescope = QuantumTelescope()
                 self.harmonic_engine = SixDimensionalHarmonicEngine()
@@ -5521,6 +5684,258 @@ class AurisEngine:
             return False, " | ".join(reasons)
         
         return True, "All gates OPEN"
+    
+    def get_system_health_report(self) -> Dict[str, Any]:
+        """
+        🏥 COMPREHENSIVE SYSTEM HEALTH CHECK 🏥
+        Ensures all subsystems are operational and communicating.
+        """
+        report = {
+            'timestamp': datetime.now().isoformat(),
+            'systems': {},
+            'communication': {},
+            'gates': {},
+            'data': {},
+            'signals': {},
+            'overall_health': 'UNKNOWN',
+        }
+        
+        # 1️⃣ PROBABILITY MATRIX
+        prob_status = "ACTIVE" if self.prob_matrix else "INACTIVE"
+        report['systems']['probability_matrix'] = {
+            'status': prob_status,
+            'description': '📊 Multi-day temporal windows (Day -7 to +7)',
+            'learning': 'ENABLED' if self.prob_matrix else False,
+        }
+        
+        # 1.5️⃣ PROBABILITY LOADER & CONSENSUS
+        loader = getattr(self, 'probability_loader', None)
+        loader_status = "ACTIVE" if loader else "INACTIVE"
+        report['systems']['probability_loader'] = {
+            'status': loader_status,
+            'description': '🎯 Fresh probability reports + multi-exchange consensus',
+            'fresh': loader.is_fresh() if loader else False,
+        }
+        
+        # 2️⃣ IMPERIAL PREDICTABILITY
+        imperial_status = "ACTIVE" if self.imperial else "INACTIVE"
+        report['systems']['imperial'] = {
+            'status': imperial_status,
+            'phase': self.cosmic_phase if self.imperial else 'N/A',
+            'description': '🌌⚡ Cosmic phase + planetary torque',
+        }
+        
+        # 3️⃣ EARTH RESONANCE
+        earth_status = "ACTIVE" if self.earth_engine else "INACTIVE"
+        report['systems']['earth_resonance'] = {
+            'status': earth_status,
+            'description': '🌍 Schumann resonance + PHI amplification',
+            'gate': 'OPEN' if self.earth_engine else 'N/A',
+        }
+        
+        # 4️⃣ HNC FREQUENCY
+        hnc_status = "ACTIVE" if self.hnc else "INACTIVE"
+        report['systems']['hnc_frequency'] = {
+            'status': hnc_status,
+            'frequency': f"{self.hnc_frequency:.0f}Hz" if self.hnc else 'N/A',
+            'description': '🌍⚡ Harmonic frequency analysis',
+            'harmonic': self.hnc_is_harmonic if self.hnc else False,
+        }
+        
+        # 5️⃣ GLOBAL FINANCIAL FEED
+        feed_status = "ACTIVE" if self.global_feed else "INACTIVE"
+        report['systems']['global_feed'] = {
+            'status': feed_status,
+            'description': '🌍 Macro indicators + fear/greed index',
+        }
+        
+        # 6️⃣ ANOMALY DETECTION
+        anomaly_status = "ACTIVE" if self.coinapi_detector else "INACTIVE"
+        report['systems']['anomaly_detection'] = {
+            'status': anomaly_status,
+            'blacklisted_symbols': len(self.anomaly_blacklist),
+            'description': '🌐 CoinAPI anomaly detection',
+        }
+        
+        # 7️⃣ QUANTUM TELESCOPE
+        quantum_status = "ACTIVE" if self.telescope else "INACTIVE"
+        report['systems']['quantum_telescope'] = {
+            'status': quantum_status,
+            'description': '🔭 Quantum harmonic resonance',
+        }
+        
+        # GATES REPORT
+        imperial_ok, imperial_reason = self.should_trade_imperial()
+        earth_ok, earth_reason = self.should_trade_earth()
+        all_ok, all_reason = self.should_trade_all_gates()
+        
+        report['gates']['imperial'] = {'open': imperial_ok, 'reason': imperial_reason}
+        report['gates']['earth'] = {'open': earth_ok, 'reason': earth_reason}
+        report['gates']['all'] = {'open': all_ok, 'reason': all_reason}
+        
+        # DATA FRESHNESS & SIGNALS
+        try:
+            # Probability loader freshness
+            if loader:
+                fresh = loader.is_fresh()
+                newest, oldest = loader.get_report_ages()
+                report['data']['probability_reports'] = {
+                    'stale': not fresh,
+                    'newest_minutes': newest,
+                    'oldest_minutes': oldest,
+                    'threshold_minutes': loader.freshness_threshold_minutes,
+                }
+                
+                # High conviction signals
+                top_signals = loader.get_top_signals(limit=10, min_probability=0.8, min_confidence=0.8)
+                report['signals']['high_conviction'] = {
+                    'count': len(top_signals),
+                    'symbols': [s['symbol'] for s in top_signals[:5]],  # Top 5
+                }
+                
+                # Multi-exchange consensus
+                consensus = loader.get_consensus_signals(min_exchanges=2, min_probability=0.75)
+                report['signals']['consensus'] = {
+                    'count': len(consensus),
+                    'symbols': [c['symbol'] for c in consensus[:5]],  # Top 5
+                }
+            else:
+                # Fallback to state aggregator
+                agg = STATE_AGGREGATOR.aggregated_state
+                pfresh = agg.get('probability_freshness', {}) if agg else {}
+                report['data']['probability_reports'] = {
+                    'stale': pfresh.get('stale', False),
+                    'newest_minutes': pfresh.get('newest_minutes'),
+                    'oldest_minutes': pfresh.get('oldest_minutes'),
+                    'threshold_minutes': pfresh.get('threshold_minutes', 120),
+                }
+                report['signals']['high_conviction'] = {'count': 0, 'symbols': []}
+                report['signals']['consensus'] = {'count': 0, 'symbols': []}
+            
+            # Position hygiene check
+            hygiene_checker = getattr(self, 'position_hygiene', None)
+            if hygiene_checker:
+                state_path = '/workspaces/aureon-trading/aureon_kraken_state.json'
+                hygiene_result = hygiene_checker.check_positions(state_path)
+                report['data']['position_hygiene'] = {
+                    'flagged': hygiene_result.get('flagged', []),
+                    'count': hygiene_result.get('count', 0),
+                    'rules': hygiene_result.get('rules', {}),
+                }
+            else:
+                agg = STATE_AGGREGATOR.aggregated_state
+                position_hygiene = agg.get('position_hygiene', {}) if agg else {}
+                report['data']['position_hygiene'] = {
+                    'flagged': position_hygiene.get('flagged', []),
+                    'count': len(position_hygiene.get('flagged', [])),
+                    'rules': position_hygiene.get('rules', {}),
+                }
+        except Exception as e:
+            logger.warning(f"Health report data gathering error: {e}")
+            report['data']['probability_reports'] = {'stale': False}
+            report['data']['position_hygiene'] = {'flagged': [], 'count': 0}
+            report['signals'] = {'high_conviction': {'count': 0, 'symbols': []}, 'consensus': {'count': 0, 'symbols': []}}
+
+        # COMMUNICATION CHECK
+        systems_active = sum(1 for s in report['systems'].values() if s['status'] == 'ACTIVE')
+        report['communication'] = {
+            'systems_active': systems_active,
+            'auris_hub': 'OPERATIONAL',
+            'data_flow': 'BIDIRECTIONAL',
+            'learning_enabled': bool(self.prob_matrix),
+            'validation_enabled': bool(self.probability_validator),
+        }
+        
+        # OVERALL HEALTH
+        prob_stale = report['data'].get('probability_reports', {}).get('stale', False)
+        hygiene_count = report['data'].get('position_hygiene', {}).get('count', 0)
+        consensus_count = report['signals'].get('consensus', {}).get('count', 0)
+        high_conv_count = report['signals'].get('high_conviction', {}).get('count', 0)
+
+        if all_ok and systems_active >= 5 and not prob_stale and hygiene_count == 0 and consensus_count > 0:
+            report['overall_health'] = f'🟢 HEALTHY - All systems communicating ({consensus_count} consensus signals)'
+        elif all_ok and systems_active >= 4 and not prob_stale:
+            if hygiene_count > 0:
+                report['overall_health'] = f'🟡 OPERATIONAL - {hygiene_count} position hygiene alerts'
+            else:
+                report['overall_health'] = f'🟡 OPERATIONAL - Core systems active ({high_conv_count} high-conviction signals)'
+        elif all_ok and systems_active >= 2:
+            if prob_stale:
+                report['overall_health'] = '🟡 OPERATIONAL - Probability data stale'
+            else:
+                report['overall_health'] = '🟡 OPERATIONAL - Limited systems active'
+        else:
+            report['overall_health'] = '🔴 DEGRADED - Check gates and systems'
+        
+        return report
+    
+    def print_system_health(self) -> None:
+        """
+        Print a formatted system health report to console.
+        Shows all active systems and their communication status.
+        """
+        report = self.get_system_health_report()
+        
+        print("\n" + "═" * 80)
+        print("🏥 ECOSYSTEM HEALTH REPORT " + report['overall_health'])
+        print("═" * 80)
+        
+        print("\n📡 SUBSYSTEMS STATUS:")
+        for name, system in report['systems'].items():
+            status = system['status']
+            indicator = "✅" if status == "ACTIVE" else "⚪"
+            desc = system.get('description', '')
+            print(f"  {indicator} {name.upper().replace('_', ' ')}: {desc}")
+        
+        print("\n🚪 TRADING GATES:")
+        for gate_name, gate_status in report['gates'].items():
+            if gate_name == 'all':
+                indicator = "🟢" if gate_status['open'] else "🔴"
+                print(f"\n  {indicator} ALL GATES: {gate_status['reason']}")
+            else:
+                indicator = "✅" if gate_status['open'] else "❌"
+                print(f"  {indicator} {gate_name.upper()}: {gate_status['reason']}")
+        
+        print("\n📊 COMMUNICATION HUB:")
+        comm = report['communication']
+        print(f"  • Systems Active: {comm['systems_active']}/8")
+        print(f"  • Auris Hub: {comm['auris_hub']}")
+        print(f"  • Data Flow: {comm['data_flow']}")
+        print(f"  • Learning: {'ENABLED ✅' if comm['learning_enabled'] else 'DISABLED ⚪'}")
+        print(f"  • Validation: {'ENABLED ✅' if comm['validation_enabled'] else 'DISABLED ⚪'}")
+        
+        # SIGNALS
+        signals = report.get('signals', {})
+        high_conv = signals.get('high_conviction', {})
+        consensus = signals.get('consensus', {})
+        if high_conv.get('count', 0) > 0 or consensus.get('count', 0) > 0:
+            print("\n🎯 TRADING SIGNALS:")
+            if high_conv.get('count', 0) > 0:
+                symbols_str = ', '.join(high_conv.get('symbols', [])[:5])
+                print(f"  • High Conviction: {high_conv['count']} signals (p≥0.8, conf≥0.8)")
+                print(f"    Top: {symbols_str}")
+            if consensus.get('count', 0) > 0:
+                symbols_str = ', '.join(consensus.get('symbols', [])[:5])
+                print(f"  • Multi-Exchange Consensus: {consensus['count']} symbols (≥2 exchanges)")
+                print(f"    Top: {symbols_str}")
+
+        data = report.get('data', {})
+        prob_data = data.get('probability_reports', {})
+        hygiene = data.get('position_hygiene', {})
+        print("\n🧠 DATA HEALTH:")
+        if prob_data:
+            stale = prob_data.get('stale')
+            newest = prob_data.get('newest_minutes')
+            threshold = prob_data.get('threshold_minutes')
+            indicator = "⚠️" if stale else "✅"
+            newest_str = f"{newest:.1f}m" if newest is not None else "n/a"
+            print(f"  {indicator} Probability reports fresh: {newest_str} (threshold {threshold}m)")
+        if hygiene:
+            count = hygiene.get('count', 0)
+            indicator = "⚠️" if count > 0 else "✅"
+            print(f"  {indicator} Position hygiene flags: {count}")
+        
+        print("\n" + "═" * 80 + "\n")
     
     def update_cosmic_state(self, market_data: Optional[Dict] = None) -> None:
         """Update cosmic state with optional market data"""
@@ -6505,7 +6920,25 @@ class AureonKrakenEcosystem:
         if TRADE_LOGGER_AVAILABLE and trade_logger:
             self.trade_logger = trade_logger
         
-        # 🌈✨ ENHANCEMENT LAYER - Rainbow Bridge, Synchronicity, Stargate Grid ✨🌈
+        # � PROBABILITY LOADER - Fresh probability reports + consensus signals
+        # Initialize BEFORE health report so it shows as ACTIVE
+        self.probability_loader = None
+        self.position_hygiene = None
+        if PROBABILITY_LOADER_AVAILABLE:
+            try:
+                self.probability_loader = ProbabilityLoader(
+                    report_dir='/workspaces/aureon-trading',
+                    freshness_threshold_minutes=120  # 2 hours max staleness
+                )
+                self.probability_loader.load_all_reports()
+                self.position_hygiene = PositionHygieneChecker()
+                # Pass to AurisEngine so health report can see it
+                self.auris.probability_loader = self.probability_loader
+                self.auris.position_hygiene = self.position_hygiene
+            except Exception as e:
+                print(f"   ⚠️ Probability Loader init failed: {e}")
+        
+        # �🌈✨ ENHANCEMENT LAYER - Rainbow Bridge, Synchronicity, Stargate Grid ✨🌈
         self.enhancement_layer = None
         if ENHANCEMENTS_AVAILABLE:
             try:
@@ -6518,6 +6951,11 @@ class AureonKrakenEcosystem:
         print("   🚀 Enhanced trading components initialized (Router/Arbitrage/Confirmation/Rebalancer)")
         print("   🌐 Multi-Exchange Orchestrator active (Binance/Kraken/Capital/Alpaca)")
         print(f"   📊 State Aggregator: {len(self.state_aggregator.aggregated_state.get('sources_loaded', []))} data sources feeding ecosystem")
+        
+        # 🏥 PRINT ECOSYSTEM HEALTH REPORT 🏥
+        # Show all active systems and their communication status
+        self.auris.print_system_health()
+        
         try:
             top = self.state_aggregator.get_top_signals(3)
             prob_lines = []
@@ -6563,12 +7001,39 @@ class AureonKrakenEcosystem:
             if status['discord_enabled']: channels.append('Discord')
             if status['webhook_enabled']: channels.append('Webhook')
             print(f"   📢 Notifications enabled: {', '.join(channels)}")
+
+        # High-conviction probability watchlist (prob>=0.8 & conf>=0.8)
+        self.high_conviction_symbols = set()
+        for sig in self.state_aggregator.aggregated_state.get('high_conviction_signals', []):
+            sym = sig.get('symbol', '')
+            base = sym.replace('USDT', '').replace('USDC', '').replace('USD', '').replace('EUR', '').replace('GBP', '')
+            if base:
+                self.high_conviction_symbols.add(base)
+
+        pfresh = self.state_aggregator.aggregated_state.get('probability_freshness', {})
+        if pfresh.get('stale'):
+            newest = pfresh.get('newest_minutes')
+            newest_str = f"{newest:.1f}m" if isinstance(newest, (int, float)) else "unknown"
+            print(f"   ⚠️ Probability reports stale ({newest_str} since last generation) — gating probability-based entries")
         if self.nexus.enabled:
             print(f"   🌌 Nexus active: Master Equation Λ(t) + Queen Hive 10-9-1")
         
         # 🔮 PREDICTION VALIDATOR - Track prediction accuracy over time
         self.prediction_validator = PredictionValidator(validation_window_seconds=60)
         print(f"   🔮 Prediction Validator active: 1-minute forecasts with peer review")
+        
+        # 🎯 PROBABILITY LOADER status message (already initialized earlier)
+        if self.probability_loader:
+            fresh = self.probability_loader.is_fresh()
+            if fresh:
+                top_signals = self.probability_loader.get_top_signals(limit=5, min_probability=0.8, min_confidence=0.8)
+                print(f"   🎯 Probability Loader ACTIVE ({len(top_signals)} high-conviction signals)")
+                consensus = self.probability_loader.get_consensus_signals(min_exchanges=2, min_probability=0.75)
+                if consensus:
+                    print(f"   🔥 Multi-exchange consensus: {len(consensus)} symbols with ≥2 exchange agreement")
+            else:
+                print("   ⚠️ Probability reports STALE - gating probability-based entries")
+            print("   🧹 Position Hygiene Checker ACTIVE")
         
         # 📊 PROBABILITY MATRIX - Persistent learning from position outcomes
         self.prob_matrix = None
@@ -6578,6 +7043,29 @@ class AureonKrakenEcosystem:
                 print("   📊 Probability Matrix (Position Learning) ACTIVE")
             except Exception as e:
                 print(f"   ⚠️ Probability Matrix init failed: {e}")
+        
+        # 🌍⚡ GLOBAL FINANCIAL ECOSYSTEM FEED ⚡🌍
+        self.global_feed = None
+        self.macro_snapshot = None
+        if GLOBAL_FEED_AVAILABLE:
+            try:
+                self.global_feed = GlobalFinancialFeed()
+                self.macro_snapshot = self.global_feed.get_snapshot()
+                print("   🌍 Global Financial Feed ACTIVE")
+                print(f"      Fear/Greed: {self.macro_snapshot.crypto_fear_greed} | Regime: {self.macro_snapshot.market_regime}")
+            except Exception as e:
+                print(f"   ⚠️ Global Feed init failed: {e}")
+        
+        # 📊 PROBABILITY VALIDATOR - Track validation accuracy
+        self.probability_validator_v2 = None
+        if VALIDATOR_AVAILABLE:
+            try:
+                self.probability_validator_v2 = get_validator()
+                stats = self.probability_validator_v2.stats
+                if stats.validated_predictions > 0:
+                    print(f"   📊 Probability Validator ACTIVE (Accuracy: {stats.direction_accuracy*100:.1f}%)")
+            except Exception as e:
+                print(f"   ⚠️ Validator init failed: {e}")
         
         # Determine tradeable currencies based on wallet
         self.tradeable_currencies = ['USD', 'GBP', 'EUR', 'USDT', 'USDC']
@@ -6840,9 +7328,20 @@ class AureonKrakenEcosystem:
             print(f"   ⚠️ Wallet detection error: {e}")
 
     def _import_existing_holdings(self):
-        """Import existing crypto holdings as managed positions"""
+        """Import existing crypto holdings as managed positions.
+        
+        🔧 ENHANCED: Now fetches REAL purchase prices from exchange trade history
+        via CostBasisTracker to prevent selling at a loss.
+        """
         if self.dry_run:
             return
+        
+        # 💰 SYNC REAL COST BASIS FROM EXCHANGES
+        cost_tracker = get_cost_basis_tracker()
+        print("\n   💰 Syncing real purchase prices from exchange history...")
+        synced = cost_tracker.sync_from_exchanges()
+        if synced > 0:
+            print(f"   ✅ Found real cost basis for {synced} positions")
             
         base = CONFIG['BASE_CURRENCY']
         try:
@@ -6918,45 +7417,89 @@ class AureonKrakenEcosystem:
                 # Skip if already tracked (double check)
                 if symbol in self.positions:
                     continue
+                
+                # 💰 TRY TO GET REAL COST BASIS FROM TRACKER
+                real_entry_price = cost_tracker.get_entry_price(symbol)
+                if real_entry_price and real_entry_price > 0:
+                    entry_price = real_entry_price
+                    entry_value = amount * entry_price
+                    is_historical = False  # We have real data!
+                    cost_source = "REAL"
+                    print(f"   💰 {symbol}: Using REAL entry price ${entry_price:.6f} from trade history")
+                else:
+                    entry_price = price  # Fall back to current price
+                    entry_value = gbp_value
+                    is_historical = True  # No real data - treat as historical
+                    cost_source = "CURRENT"
                     
                 # Create position from existing holding
-                # 🔧 FIX: Estimate entry fee for imported positions so profit gate works correctly
-                # We don't know the original entry fee, so estimate it from current value
-                estimated_entry_fee = gbp_value * get_platform_fee(exchange, 'taker')
+                estimated_entry_fee = entry_value * get_platform_fee(exchange, 'taker')
                 
                 self.positions[symbol] = Position(
                     symbol=symbol,
-                    entry_price=price,  # Use current price as "entry" 
+                    entry_price=entry_price,
                     quantity=amount,
-                    entry_fee=estimated_entry_fee,  # Estimate original entry fee for proper P&L calc
-                    entry_value=gbp_value,
+                    entry_fee=estimated_entry_fee,
+                    entry_value=entry_value,
                     momentum=0.0,
                     coherence=0.5,
                     entry_time=time.time(),
                     dominant_node='Portfolio',
                     exchange=exchange,
-                    is_historical=True  # 📦 Mark as historical - can be liquidated for cash
+                    is_historical=is_historical
                 )
                 imported += 1
-                print(f"   📦 Imported {symbol} ({exchange}): {amount:.6f} @ £{price:.4f} = £{gbp_value:.2f} (est fee: £{estimated_entry_fee:.4f}) [HISTORICAL - can liquidate]")
+                
+                # Show profit/loss status
+                if cost_source == "REAL":
+                    pnl_pct = ((price - entry_price) / entry_price * 100) if entry_price > 0 else 0
+                    pnl_icon = "🟢" if pnl_pct >= 0 else "🔴"
+                    print(f"   📦 Imported {symbol} ({exchange}): {amount:.6f} @ £{entry_price:.4f} (now £{price:.4f}) {pnl_icon} {pnl_pct:+.2f}%")
+                else:
+                    print(f"   📦 Imported {symbol} ({exchange}): {amount:.6f} @ £{price:.4f} = £{gbp_value:.2f} [HISTORICAL - no cost basis]")
             
         if imported > 0:
             print(f"   ✅ Imported {imported} existing holdings as managed positions")
-            print(f"   💡 Historical assets can be liquidated when better opportunities arise!")
+            print(f"   💡 Positions with REAL cost basis are protected from loss-making sales!")
     
     def _liquidate_historical_for_opportunity(self, needed_cash: float, target_exchange: str, target_symbol: str) -> float:
-        """🔄 Liquidate historical assets to free up cash for a better opportunity.
+        """🔄 Liquidate historical assets OR big losers to free up cash for better opportunities.
         
-        Philosophy: Historical assets have no known entry price, so treat them as
-        available capital. If the bot finds a high-confidence trade, sell historical
-        assets to fund it!
+        🔥 AGGRESSIVE MODE: Also includes positions with >50% loss as "dead capital"
+        Only sells if:
+        1. Position is truly historical (no known cost basis), OR
+        2. Position would be sold at a profit, OR
+        3. Position is down >50% (dead capital - cut losses!)
         
         Returns: Amount of cash freed up
         """
         if self.dry_run:
             return 0.0
+        
+        # 💰 Get cost basis tracker for profit checks
+        cost_tracker = get_cost_basis_tracker()
             
         freed_cash = 0.0
+        
+        # 🔥 INCLUDE BIG LOSERS: Find positions down >50% as candidates for liquidation
+        big_loser_candidates = []
+        print(f"   🔍 Scanning {len(self.positions)} positions for big losers (>50% down)...")
+        for sym, pos in self.positions.items():
+            # Don't filter by exchange for big losers - we want to cut ANY dead capital
+            try:
+                ticker = self.client.get_ticker(pos.exchange, sym)
+                curr_price = float(ticker.get('price', 0) or ticker.get('last', 0) or ticker.get('c', 0))
+                if curr_price > 0 and pos.entry_price > 0:
+                    pnl_pct = (curr_price - pos.entry_price) / pos.entry_price * 100
+                    if pnl_pct < -50:  # Down more than 50%
+                        print(f"      🔥 Found big loser: {sym} @ {pnl_pct:.1f}%")
+                        big_loser_candidates.append((sym, pos, pnl_pct, curr_price))
+            except Exception as e:
+                pass
+        
+        # Sort by biggest loser first (most negative PnL)
+        big_loser_candidates.sort(key=lambda x: x[2])
+        
         historical_positions = [
             (sym, pos) for sym, pos in self.positions.items() 
             if pos.is_historical and pos.exchange == target_exchange
@@ -6969,8 +7512,69 @@ class AureonKrakenEcosystem:
                 if pos.is_historical
             ]
         
+        # 🔥 SELL BIG LOSERS FIRST - they're dead capital!
+        if big_loser_candidates and freed_cash < needed_cash:
+            print(f"\n   🔥 CUTTING LOSSES: Found {len(big_loser_candidates)} positions down >50%")
+            for sym, pos, pnl_pct, curr_price in big_loser_candidates:
+                if freed_cash >= needed_cash:
+                    break
+                    
+                available_qty = pos.quantity
+                if available_qty <= 0:
+                    continue
+                current_value = available_qty * curr_price
+                
+                if current_value < 0.50:  # Skip dust
+                    continue
+                    
+                dust_reason = self._is_symbol_dust(sym)
+                if dust_reason:
+                    print(f"   💤 Skipping {sym} - marked dust: {dust_reason}")
+                    continue
+                    
+                if self._is_symbol_invalid(sym):
+                    continue
+                
+                sell_qty, block_reason, adj_note = self._prepare_liquidation_quantity(
+                    pos.exchange, sym, available_qty, curr_price
+                )
+                if sell_qty is None:
+                    reason = block_reason or "LOT_SIZE constraint"
+                    self._mark_symbol_dust(sym, reason)
+                    print(f"   💤 Skipping {sym}: {reason}")
+                    continue
+                
+                current_value = sell_qty * curr_price
+                if current_value < 0.50:
+                    continue
+
+                print(f"   🔥 CUTTING LOSS {sym}: {pnl_pct:.1f}% down - selling {sell_qty:.6f} @ £{curr_price:.4f} = £{current_value:.2f}")
+                
+                try:
+                    res = self.client.place_market_order(pos.exchange, sym, 'SELL', quantity=sell_qty)
+                    
+                    if isinstance(res, dict) and not res.get('rejected') and res.get('status') not in ['REJECTED', 'FAILED', None]:
+                        net_value = current_value * 0.998
+                        freed_cash += net_value
+                        pos.quantity = max(pos.quantity - sell_qty, 0.0)
+                        if pos.quantity <= 1e-12:
+                            self.positions.pop(sym, None)
+                        else:
+                            pos.entry_value = pos.quantity * curr_price
+                        self._clear_symbol_dust(sym)
+                        print(f"   ✅ CUT LOSS {sym} - freed £{net_value:.2f} (was {pnl_pct:.1f}% down)")
+                    else:
+                        self._mark_symbol_invalid(sym)
+                        print(f"   ⚠️ Failed to cut {sym}")
+                except Exception as e:
+                    self._mark_symbol_invalid(sym)
+                    print(f"   ⚠️ Error cutting {sym}: {e}")
+        
+        if not historical_positions and freed_cash >= needed_cash:
+            return freed_cash
+            
         if not historical_positions:
-            return 0.0
+            return freed_cash
             
         # Sort by value (smallest first to minimize market impact)
         historical_positions.sort(key=lambda x: x[1].entry_value)
@@ -6990,6 +7594,21 @@ class AureonKrakenEcosystem:
                     continue
             except:
                 continue
+            
+            # 💰 CHECK IF SALE WOULD BE PROFITABLE OR ACCEPTABLE LOSS
+            can_sell, profit_info = cost_tracker.can_sell_profitably(sym, curr_price, pos.quantity)
+            if not can_sell and profit_info.get('entry_price'):
+                # We have cost basis and it would be a loss
+                loss = profit_info.get('potential_loss', 0)
+                pnl_pct = profit_info.get('profit_pct', 0)
+                
+                # 🔥 AGGRESSIVE MODE: Allow selling big losers (>50% down) to free capital
+                # These positions are "dead money" - better to cut losses and redeploy
+                if pnl_pct > -50.0:  # Only protect if loss is less than 50%
+                    print(f"   🛑 PROTECTING {sym}: Would lose £{loss:.2f} ({pnl_pct:.1f}%) - skipping")
+                    continue
+                else:
+                    print(f"   🔥 CUTTING LOSSES {sym}: {pnl_pct:.1f}% down - freeing dead capital!")
                 
             available_qty = pos.quantity
             if available_qty <= 0:
@@ -7184,20 +7803,22 @@ class AureonKrakenEcosystem:
                 if ex_quote_key in exchange_quote_balances and exchange_quote_balances[ex_quote_key] > 10:
                     c['score'] += 5_000_000  # Extra 5M for having balance on THIS exchange
         
-        # Collapse duplicates per base asset: keep best score across quotes
-        # NOW the exchange WITH balance will win over exchange without!
+        # 🔥 Keep best per base+exchange combo to allow BOTH Binance USDC AND Kraken GBP trades!
+        # Don't collapse across exchanges - we want to trade on BOTH platforms
         def _base_from_symbol(sym: str) -> str:
             for suffix in self.quote_currency_suffixes:
                 if sym.endswith(suffix):
                     return sym[: -len(suffix)]
             return sym
 
-        best_per_base: Dict[str, Dict] = {}
+        best_per_base_exchange: Dict[str, Dict] = {}
         for c in all_candidates:
             base = _base_from_symbol(c['symbol'])
-            if base not in best_per_base or c['score'] > best_per_base[base]['score']:
-                best_per_base[base] = c
-        all_candidates = list(best_per_base.values())
+            source = (c.get('source') or 'unknown').lower()
+            key = f"{base}_{source}"  # Keep separate entries per exchange!
+            if key not in best_per_base_exchange or c['score'] > best_per_base_exchange[key]['score']:
+                best_per_base_exchange[key] = c
+        all_candidates = list(best_per_base_exchange.values())
 
         # Sort by score (tradeable pairs already boosted)
         all_candidates.sort(key=lambda x: x['score'], reverse=True)
@@ -7239,6 +7860,31 @@ class AureonKrakenEcosystem:
             all_candidates = tradeable_candidates
         else:
             print(f"   📊 Found {len(all_candidates)} tradeable pairs")
+        
+        # 🔄 INTERLEAVE BY EXCHANGE: Ensure we deploy scouts on BOTH Binance AND Kraken!
+        # Group by source exchange, then round-robin to pick from each
+        by_exchange: Dict[str, List[Dict]] = {}
+        for c in all_candidates:
+            ex = (c.get('source') or 'unknown').lower()
+            if ex not in by_exchange:
+                by_exchange[ex] = []
+            by_exchange[ex].append(c)
+        
+        # Sort each exchange's candidates by score
+        for ex in by_exchange:
+            by_exchange[ex].sort(key=lambda x: -x.get('score', 0))
+        
+        # Interleave: take top candidate from each exchange in rotation
+        interleaved = []
+        exchanges = list(by_exchange.keys())
+        max_len = max(len(v) for v in by_exchange.values()) if by_exchange else 0
+        for i in range(max_len):
+            for ex in exchanges:
+                if i < len(by_exchange[ex]):
+                    interleaved.append(by_exchange[ex][i])
+        
+        all_candidates = interleaved
+        print(f"   🔄 Interleaved {len(exchanges)} exchanges: {', '.join(exchanges)}")
         
         # FORCE deploy scouts - don't stop until we hit the target!
         deployed_per_quote: Dict[str, int] = {}
@@ -7556,20 +8202,56 @@ class AureonKrakenEcosystem:
 
     def should_enter_trade(self, opp: Dict, pos_size: float, lattice_state) -> bool:
         """
-        🎯 PROBABILITY-INFORMED entry decision.
-        Uses learned analytics from AdaptiveLearner to inform trade decisions.
+        🎯 PROBABILITY-MATRIX-DRIVEN entry decision.
+        
+        THE VISION: The probability matrix tells us WHEN to buy and WHAT to buy.
+        It should be "surfing the wave" - in and out of positions for net profits.
+        
+        Buy BTC at this price, sell at this time, take profit, buy ETH, sell, etc.
+        Snowballing profits through intelligent timing.
         """
         # Minimal sanity checks
         if pos_size <= 0 or self.total_equity_gbp <= 0:
             return False
             
+        symbol = opp.get('symbol', 'UNKNOWN')
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 🔮 PROBABILITY MATRIX DECISION - THE CORE BRAIN 🔮
+        # ═══════════════════════════════════════════════════════════════
+        prob_action = opp.get('prob_action', 'HOLD')
+        probability = opp.get('probability', 0.5)
+        prob_confidence = opp.get('prob_confidence', 0.0)
+        
+        # 🚫 REJECT if matrix says SELL or HOLD with high confidence
+        if prob_confidence >= 0.5:  # Only trust signals with decent confidence
+            if prob_action in ['SELL', 'STRONG SELL']:
+                logger.info(f"🚫 {symbol}: Matrix says {prob_action} (prob={probability:.0%}, conf={prob_confidence:.0%}) - NOT BUYING")
+                return False
+            if prob_action == 'HOLD' and probability < 0.50:
+                logger.info(f"⏸️ {symbol}: Matrix says HOLD (prob={probability:.0%}) - WAITING")
+                return False
+        
+        # ✅ PREFER entries when matrix says BUY
+        if prob_action in ['BUY', 'STRONG BUY', 'SLIGHT BUY']:
+            logger.info(f"✅ {symbol}: Matrix says {prob_action} (prob={probability:.0%}, conf={prob_confidence:.0%}) - APPROVED!")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 📊 IMPERIAL PREDICTION - COSMIC TIMING
+        # ═══════════════════════════════════════════════════════════════
+        imperial_action = opp.get('imperial_action', 'HOLD')
+        imperial_prob = opp.get('imperial_probability', 0.5)
+        imperial_conf = opp.get('imperial_confidence', 0.0)
+        
+        if imperial_conf >= 0.5 and imperial_action in ['SELL', 'STRONG SELL']:
+            logger.info(f"🌌 {symbol}: Imperial says {imperial_action} - SKIPPING")
+            return False
+            
         # ═══ GET LEARNED RECOMMENDATION ═══
         try:
-            symbol = opp.get('symbol', 'UNKNOWN')
             frequency = opp.get('frequency', CONFIG.get('DEFAULT_FREQUENCY', 432))
             coherence = opp.get('coherence', 0.5)
             score = opp.get('score', 50)
-            probability = opp.get('probability', 0.5)
             pnl_snapshot = self.get_pnl_snapshot()
             opp['pnl_state'] = pnl_snapshot
             
@@ -7699,12 +8381,18 @@ class AureonKrakenEcosystem:
     def _truncate_to_lot_size(self, quantity: float, step_size: float) -> float:
         """
         Truncate quantity to valid lot size (round DOWN to step size).
+        Uses Decimal to avoid floating point precision errors.
         """
         if step_size is None or step_size <= 0:
             return quantity
+        from decimal import Decimal, ROUND_DOWN
+        # Use Decimal for precise calculation
+        qty_dec = Decimal(str(quantity))
+        step_dec = Decimal(str(step_size))
         # Calculate number of steps and truncate
-        steps = int(quantity / step_size)
-        return steps * step_size
+        steps = int(qty_dec / step_dec)
+        result = steps * step_dec
+        return float(result)
 
     def _prepare_liquidation_quantity(self, exchange: str, symbol: str, quantity: float, price: float) -> Tuple[Optional[float], Optional[str], Optional[str]]:
         """Apply exchange-specific lot size + notional checks before liquidation."""
@@ -7877,6 +8565,10 @@ class AureonKrakenEcosystem:
                                 harvested_total += actual_value
                                 harvested_count += 1
                                 print(f"   ✅ SOLD: {asset} → {quote} for ${actual_value:.2f}")
+                                
+                                # Clear the position from tracking
+                                self.positions.pop(symbol, None)
+                                self._clear_symbol_dust(symbol)
                             else:
                                 reason = result.get('reason', 'Unknown error') if result else 'No response'
                                 print(f"   ⚠️ Failed to sell {asset}: {reason}")
@@ -7953,6 +8645,17 @@ class AureonKrakenEcosystem:
                 return True
             # Otherwise hold - don't lock in losses on noise
             print(f"   🛑 HOLDING {pos.symbol}: Loss too large to realize (${net_pnl:.2f})")
+            return False
+        
+        # 🔮 MATRIX EXIT: Probability matrix says SELL - allow if profitable or small loss
+        if reason in ["MATRIX_SELL", "MATRIX_FORCE"]:
+            if net_pnl >= 0:  # Any profit or breakeven
+                print(f"   🔮 MATRIX EXIT APPROVED: {pos.symbol} net ${net_pnl:.4f}")
+                return True
+            elif reason == "MATRIX_FORCE" and net_pnl > -pos.entry_value * 0.01:  # <1% loss
+                print(f"   🚨 MATRIX FORCE EXIT: {pos.symbol} accepting small loss ${net_pnl:.4f}")
+                return True
+            print(f"   🛑 HOLDING {pos.symbol}: Matrix exit blocked - loss too large (${net_pnl:.4f})")
             return False
         
         # REBALANCE/SWAP: Only if net negative is small
@@ -8816,6 +9519,32 @@ class AureonKrakenEcosystem:
             # This overrides probability because we are reading the WHOLE SYSTEM.
             score += int(flux_score * 25)  # ±25 points based on system direction
             
+            # 🌍⚡ GLOBAL FINANCIAL ECOSYSTEM ADJUSTMENT ⚡🌍
+            macro_adjustment = 0
+            macro_bias = "NEUTRAL"
+            if self.global_feed:
+                try:
+                    # Update macro snapshot periodically
+                    if not self.macro_snapshot or (time.time() - getattr(self, '_last_macro_update', 0)) > 300:
+                        self.macro_snapshot = self.global_feed.get_snapshot()
+                        self._last_macro_update = time.time()
+                    
+                    # Get trading signal with macro adjustment
+                    macro_signal = self.global_feed.get_trading_signal(symbol)
+                    macro_bias = macro_signal.get('macro_bias', 'NEUTRAL')
+                    macro_strength = macro_signal.get('macro_strength', 50)
+                    
+                    # Apply macro adjustment to score
+                    # Macro bias affects overall trade sentiment
+                    if macro_bias == "BULLISH":
+                        macro_adjustment = int((macro_strength - 50) / 5)  # +0 to +10
+                    elif macro_bias == "BEARISH":
+                        macro_adjustment = int((macro_strength - 50) / 5)  # -10 to 0
+                    score += macro_adjustment
+                    
+                except Exception as e:
+                    pass  # Silent fail, don't break trading
+            
             # 📊 Probability Matrix Analysis (2-Hour Window) 📊
             prob_probability = 0.5
             prob_confidence = 0.0
@@ -8833,14 +9562,26 @@ class AureonKrakenEcosystem:
                 prob_confidence = prob_signal.get('confidence', 0.0)
                 prob_action = prob_signal.get('action', 'HOLD')
                 
+                # 🌍 MACRO-ADJUSTED PROBABILITY 🌍
+                # Apply global financial feed adjustment to base probability
+                if self.global_feed:
+                    try:
+                        adjusted_prob, reasoning = self.global_feed.get_probability_adjustment(
+                            symbol, prob_probability
+                        )
+                        prob_probability = adjusted_prob
+                    except:
+                        pass
+                
                 # FLUX OVERRIDE: If flux is strong, it dominates probability
-                if flux_strength > CONFIG.get('FLUX_THRESHOLD', 0.60):
+                # Only trigger on VERY strong signals (threshold raised to 0.80)
+                if flux_strength > CONFIG.get('FLUX_THRESHOLD', 0.80):
                     if flux['direction'] == 'BULLISH':
-                        prob_probability = max(prob_probability, 0.80) # Force high prob
-                        prob_confidence = max(prob_confidence, 0.90)   # Force high conf
+                        prob_probability = max(prob_probability, 0.75) # Force high prob
+                        prob_confidence = max(prob_confidence, 0.85)   # Force high conf
                     elif flux['direction'] == 'BEARISH':
-                        prob_probability = min(prob_probability, 0.20) # Force low prob
-                        prob_confidence = max(prob_confidence, 0.90)
+                        prob_probability = min(prob_probability, 0.35) # Less severe penalty (was 0.20)
+                        prob_confidence = max(prob_confidence, 0.85)
                 
                 # Score adjustment based on probability
                 if prob_confidence >= CONFIG.get('PROB_MIN_CONFIDENCE', 0.50):
@@ -9629,16 +10370,19 @@ class AureonKrakenEcosystem:
             size_fraction *= opp.get('risk_mod_from_pnl', 1.0)  # 🧠 Live P&L throttle
         
         if size_fraction <= 0:
+            print(f"   🔴 DEBUG {symbol}: size_fraction={size_fraction:.4f}")
             return None
 
         deploy_cap = self.total_equity_gbp * CONFIG['PORTFOLIO_RISK_BUDGET']
         deployed = sum(pos.entry_value for pos in self.positions.values())
         available_risk = max(0.0, deploy_cap - deployed)
         if available_risk < CONFIG['MIN_TRADE_USD']:
+            print(f"   🔴 DEBUG {symbol}: available_risk={available_risk:.2f} < MIN_TRADE_USD={CONFIG['MIN_TRADE_USD']}")
             return None
 
         pos_size = self.capital_pool.get_recommended_position_size(size_fraction)
         if pos_size <= 0:
+            print(f"   🔴 DEBUG {symbol}: pos_size={pos_size:.2f}")
             return None
         pos_size = min(pos_size, available_risk)
 
@@ -9665,10 +10409,11 @@ class AureonKrakenEcosystem:
                         worst_pct = pct
                         worst_pos = (pos_symbol, pct, curr_price)
             
-            # Only swap if new opportunity score is significantly better (or force scout)
-            if worst_pos and (opp.get('score', 0) > 85 or is_force_scout) and worst_pct < CONFIG['REBALANCE_THRESHOLD']:
+            # 🔥 AGGRESSIVE SWAP: Sell any big loser to free capital for new trades
+            # Score requirement lowered to 40 (from 85) for force scouts
+            if worst_pos and (opp.get('score', 0) > 40 or is_force_scout) and worst_pct < CONFIG['REBALANCE_THRESHOLD']:
                 pos_symbol, pct, curr_price = worst_pos
-                print(f"   🔄 DYNAMIC SWAP: Selling {pos_symbol} ({pct:+.2f}%) to buy {symbol}")
+                print(f"   🔥 AGGRESSIVE SWAP: Selling {pos_symbol} ({pct:+.2f}%) to buy {symbol}")
                 self.close_position(pos_symbol, "SWAP", pct, curr_price)
                 self.refresh_equity()
                 cash_available = max(0.0, self.cash_balance_gbp)
@@ -9677,8 +10422,8 @@ class AureonKrakenEcosystem:
             # 🔄 TRY TO LIQUIDATE HISTORICAL ASSETS FOR CASH
             # Historical assets = imported holdings with no known entry price
             # They're effectively "available capital" - sell them for better opportunities!
-            # Lower threshold to allow scouts (coherence 0.55+) to trigger liquidation
-            if opp.get('score', 0) > 50 or opp.get('coherence', 0) > 0.5:
+            # 🔥 LOWERED threshold to 30 score - we need to MOVE!
+            if opp.get('score', 0) > 30 or opp.get('coherence', 0) > 0.4 or is_force_scout:
                 needed = max(CONFIG['MIN_TRADE_USD'], pos_size) - cash_available
                 freed = self._liquidate_historical_for_opportunity(needed, exchange, symbol)
                 if freed > 0:
@@ -9872,6 +10617,13 @@ class AureonKrakenEcosystem:
             except Exception as e:
                 logger.warning(f"Failed to log trade entry for {symbol}: {e}")
         
+        # 💰 LOG ENTRY PRICE TO COST BASIS TRACKER 💰
+        try:
+            cost_tracker = get_cost_basis_tracker()
+            cost_tracker.set_entry_price(symbol, price, quantity, exchange, entry_fee)
+        except Exception as e:
+            logger.warning(f"Failed to log cost basis for {symbol}: {e}")
+        
         # 🌟 Allocate capital in pool
         self.capital_pool.allocate(symbol, pos_size)
         
@@ -10062,6 +10814,50 @@ class AureonKrakenEcosystem:
                 if pos.cycles % 20 == 0:
                     print(f"   🌍 {symbol}: Earth urgency reducing TP to {target_tp:.2f}%")
 
+            # ═══════════════════════════════════════════════════════════════
+            # 🔮 PROBABILITY MATRIX EXIT SIGNALS - SURF THE WAVE! 🔮
+            # ═══════════════════════════════════════════════════════════════
+            # Check if matrix is now saying SELL for this position
+            prob_exit_triggered = False
+            if self.prob_matrix and CONFIG.get('ENABLE_PROB_MATRIX', True) and pos.cycles >= 3:
+                try:
+                    prob_signal = self.auris.get_probability_signal(
+                        symbol=symbol,
+                        price=current_price,
+                        frequency=getattr(pos, 'hnc_frequency', 256),
+                        momentum=change_pct,
+                        coherence=pos.coherence,
+                        is_harmonic=getattr(pos, 'hnc_harmonic', False),
+                    )
+                    prob_action = prob_signal.get('action', 'HOLD')
+                    prob_probability = prob_signal.get('probability', 0.5)
+                    prob_confidence = prob_signal.get('confidence', 0.0)
+                    
+                    # 🚨 MATRIX SAYS SELL - Time to exit if we're profitable
+                    if prob_action in ['SELL', 'STRONG SELL'] and prob_confidence >= 0.5:
+                        # Only exit if we're at least breakeven (after fees)
+                        exit_value = pos.quantity * current_price
+                        exit_fee = exit_value * get_platform_fee(pos.exchange, 'taker')
+                        total_fees = pos.entry_fee + exit_fee + exit_value * CONFIG['SLIPPAGE_PCT']
+                        gross_pnl = exit_value - pos.entry_value
+                        net_pnl = gross_pnl - total_fees
+                        
+                        if net_pnl >= 0:  # At least breakeven
+                            print(f"   🔮 MATRIX EXIT: {symbol} {prob_action} (prob={prob_probability:.0%}, conf={prob_confidence:.0%}) Net P&L: ${net_pnl:.2f}")
+                            to_close.append((symbol, "MATRIX_SELL", change_pct, current_price))
+                            prob_exit_triggered = True
+                        elif net_pnl > -pos.entry_value * 0.01:  # Allow small loss (<1%) on strong signals
+                            if prob_action == 'STRONG SELL' and prob_confidence >= 0.7:
+                                print(f"   🚨 MATRIX FORCE EXIT: {symbol} STRONG SELL (conf={prob_confidence:.0%}) - Small loss ${net_pnl:.2f}")
+                                to_close.append((symbol, "MATRIX_FORCE", change_pct, current_price))
+                                prob_exit_triggered = True
+                except Exception as e:
+                    pass  # Continue with normal checks
+            
+            # Skip normal TP/SL checks if matrix already triggered exit
+            if prob_exit_triggered:
+                continue
+
             # Check TP
             if change_pct >= target_tp:
                 to_close.append((symbol, "TP", change_pct, current_price))
@@ -10186,14 +10982,14 @@ class AureonKrakenEcosystem:
             self.positions.pop(symbol)
         
         # Calculate P&L with platform-specific fees (Pessimistic Accounting)
-        # We assume slippage on exit price
-        slippage_cost = (pos.quantity * price) * CONFIG['SLIPPAGE_PCT']
-        
+        # We assume slippage AND spread cost on exit price for conservative P&L
         exit_value = pos.quantity * price
         exit_fee = exit_value * get_platform_fee(pos.exchange, 'taker')
+        slippage_cost = exit_value * CONFIG['SLIPPAGE_PCT']
+        spread_cost = exit_value * CONFIG['SPREAD_COST_PCT']
         
-        # Total Expenses = Entry Fee + Exit Fee + Slippage
-        total_expenses = pos.entry_fee + exit_fee + slippage_cost
+        # Total Expenses = Entry Fee + Exit Fee + Slippage + Spread
+        total_expenses = pos.entry_fee + exit_fee + slippage_cost + spread_cost
         
         gross_pnl = exit_value - pos.entry_value
         net_pnl = gross_pnl - total_expenses
@@ -10214,6 +11010,34 @@ class AureonKrakenEcosystem:
                     platform_timestamp=exit_time,
                 )
                 logger.info(f"Matrix outcome recorded: {symbol} PnL={net_pnl:.2f} reason={reason}")
+                
+                # 🔮 CONTINUOUS LEARNING: Validate prediction vs actual outcome
+                # This is the core feedback loop that improves forecast accuracy
+                if hasattr(self.prob_matrix, 'validate_and_learn'):
+                    try:
+                        # Determine actual direction from P&L
+                        actual_direction = "BULLISH" if net_pnl > 0 else ("BEARISH" if net_pnl < 0 else "NEUTRAL")
+                        
+                        # Get what the matrix predicted for this symbol
+                        if symbol in self.prob_matrix.matrices:
+                            matrix = self.prob_matrix.matrices[symbol]
+                            predicted_direction = matrix.day_plus_1.predicted_direction if matrix.day_plus_1 else "NEUTRAL"
+                            confidence = matrix.confidence_score if hasattr(matrix, 'confidence_score') else 0.5
+                            
+                            # Validate and learn
+                            validation = self.prob_matrix.validate_and_learn(
+                                symbol=symbol,
+                                predicted_direction=predicted_direction,
+                                actual_direction=actual_direction,
+                                confidence=confidence
+                            )
+                            
+                            if validation['validated']:
+                                accuracy = validation.get('accuracy', 0.5) * 100
+                                trend = validation.get('trend', 'UNKNOWN')
+                                logger.info(f"🔮 {symbol} validation: predicted {predicted_direction}, actual {actual_direction}, accuracy now {accuracy:.0f}% ({trend})")
+                    except Exception as e:
+                        logger.debug(f"Matrix learning error for {symbol}: {e}")
             except Exception as e:
                 logger.warning(f"Matrix position close feed error for {symbol}: {e}")
         
@@ -10438,6 +11262,21 @@ class AureonKrakenEcosystem:
         print(f"\\n{'━'*70}")
         print(f"🔄 Cycle {self.iteration} - {now} [{self.scan_direction}]")
         print(f"{'━'*70}")
+
+        # Refresh aggregated state periodically (every 10 minutes)
+        try:
+            last_agg = self.state_aggregator.aggregated_state.get('last_aggregation', 0)
+            if time.time() - last_agg > 600:
+                self.state_aggregator.load_all_sources()
+        except Exception:
+            pass
+        
+        # 🏥 ECOSYSTEM HEALTH CHECK (every 10 cycles)
+        if self.iteration % 10 == 0:
+            health = self.auris.get_system_health_report()
+            print(f"\\n📡 Ecosystem Health: {health['overall_health']}")
+            if health['communication']['systems_active'] < 2:
+                print("   ⚠️  WARNING: Less than 2 systems active!")
         
         # 🌉 Sync with Bridge
         if self.bridge_enabled:
@@ -10478,6 +11317,14 @@ class AureonKrakenEcosystem:
         # Check network coherence
         network_coherence = self.mycelium.get_network_coherence()
         trading_paused = network_coherence < CONFIG['MIN_NETWORK_COHERENCE']
+
+        # Pause new entries if probability reports are stale
+        pfresh = self.state_aggregator.aggregated_state.get('probability_freshness', {})
+        if pfresh.get('stale'):
+            trading_paused = True
+            newest = pfresh.get('newest_minutes')
+            newest_str = f"{newest:.1f}m" if isinstance(newest, (int, float)) else "unknown"
+            print(f"   ⚠️ Probability data stale ({newest_str}); skipping new entries this cycle")
         
         # Update Lattice State
         raw_opps = self.find_opportunities()

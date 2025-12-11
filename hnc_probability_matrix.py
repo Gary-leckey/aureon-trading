@@ -1,19 +1,30 @@
 #!/usr/bin/env python3
 """
-🌍⚡ HNC PROBABILITY MATRIX - TEMPORAL FREQUENCY ANALYSIS ⚡🌍
-═══════════════════════════════════════════════════════════════
+🌍⚡ HNC PROBABILITY MATRIX - MULTI-DAY TEMPORAL FREQUENCY ANALYSIS ⚡🌍
+═══════════════════════════════════════════════════════════════════════════
 
-2-HOUR PROBABILITY WINDOW:
-├─ HOUR -1 (LOOKBACK):  Base signal source - historical frequency patterns
-├─ HOUR  0 (NOW):       Current state calibration point
-├─ HOUR +1 (FORECAST):  High probability trading window (PRIMARY)
-└─ HOUR +2 (FINE-TUNE): Secondary window to refine Hour +1 predictions
+MULTI-DAY PROBABILITY WINDOW (Upgraded from 2-hour):
+├─ DAY -7 (WEEKLY):    Weekly trend baseline - major cycle patterns
+├─ DAY -3 (MID-WEEK):  Mid-term trend confirmation  
+├─ DAY -1 (YESTERDAY): Recent historical signal - immediate patterns
+├─ HOUR 0 (NOW):       Current state calibration point
+├─ DAY +1 (TOMORROW):  Primary forecast window (PRIMARY TRADING)
+├─ DAY +3 (MID-WEEK):  Secondary forecast - trend continuation
+└─ DAY +7 (WEEKLY):    Long-term outlook - cycle completion
 
-The base signal from Hour -1 establishes the frequency foundation.
-Hour +2 predictions are used ONLY to fine-tune Hour +1 high probability windows.
+The system continuously VALIDATES its predictions against actual outcomes
+and LEARNS from every trade to improve future forecasting accuracy.
 
-Gary Leckey & GitHub Copilot | November 2025
-"From Prime to Probability - The Frequency Unfolds"
+SELF-VALIDATION LOOP:
+1. Make prediction for Day +1
+2. Store prediction with timestamp
+3. When Day +1 becomes Day 0, compare prediction vs reality
+4. Adjust model weights based on accuracy
+5. Record outcome in learning history
+6. Use accumulated wisdom for future predictions
+
+Gary Leckey & GitHub Copilot | December 2025
+"From Prime to Probability - The Frequency Unfolds Across Time"
 """
 
 import os
@@ -69,6 +80,17 @@ PROB_THRESHOLDS = {
     'EXTREME_LOW': 0.10,    # <25%
 }
 
+# Day-of-week patterns (crypto markets run 24/7 but have patterns)
+DAY_PATTERNS = {
+    0: {'name': 'Monday', 'volatility': 1.1, 'trend_strength': 0.8},    # Week start - higher volatility
+    1: {'name': 'Tuesday', 'volatility': 1.0, 'trend_strength': 1.0},   # Normal
+    2: {'name': 'Wednesday', 'volatility': 0.95, 'trend_strength': 1.1}, # Mid-week stability
+    3: {'name': 'Thursday', 'volatility': 1.0, 'trend_strength': 1.0},   # Normal
+    4: {'name': 'Friday', 'volatility': 1.15, 'trend_strength': 0.9},   # Pre-weekend moves
+    5: {'name': 'Saturday', 'volatility': 0.85, 'trend_strength': 0.7}, # Weekend low vol
+    6: {'name': 'Sunday', 'volatility': 0.9, 'trend_strength': 0.75},   # Weekend recovery
+}
+
 
 class ProbabilityState(Enum):
     """Probability state classification"""
@@ -111,9 +133,9 @@ class FrequencySnapshot:
 
 
 @dataclass
-class HourlyProbabilityWindow:
-    """Probability analysis for a 1-hour window"""
-    hour_offset: int  # -1, 0, +1, +2
+class DailyProbabilityWindow:
+    """Probability analysis for a daily window (upgraded from hourly)"""
+    day_offset: int  # -7, -3, -1, 0, +1, +3, +7
     start_time: datetime
     end_time: datetime
     
@@ -138,6 +160,16 @@ class HourlyProbabilityWindow:
     noise_ratio: float = 0.0
     clarity: float = 0.0
     
+    # Daily cycle metrics
+    day_of_week: int = 0  # 0=Monday, 6=Sunday
+    volatility_factor: float = 1.0
+    trend_strength: float = 1.0
+    
+    # Prediction validation
+    predicted_direction: str = "NEUTRAL"  # BULLISH, BEARISH, NEUTRAL
+    actual_direction: str = ""  # Filled in when day completes
+    prediction_accuracy: float = 0.0  # How accurate was the prediction?
+    
     # State
     state: ProbabilityState = ProbabilityState.NEUTRAL
     
@@ -147,31 +179,53 @@ class HourlyProbabilityWindow:
         
         if net_prob > 0.4:
             self.state = ProbabilityState.EXTREME_BULLISH
+            self.predicted_direction = "BULLISH"
         elif net_prob > 0.25:
             self.state = ProbabilityState.BULLISH
+            self.predicted_direction = "BULLISH"
         elif net_prob > 0.10:
             self.state = ProbabilityState.SLIGHT_BULLISH
+            self.predicted_direction = "BULLISH"
         elif net_prob > -0.10:
             self.state = ProbabilityState.NEUTRAL
+            self.predicted_direction = "NEUTRAL"
         elif net_prob > -0.25:
             self.state = ProbabilityState.SLIGHT_BEARISH
+            self.predicted_direction = "BEARISH"
         elif net_prob > -0.40:
             self.state = ProbabilityState.BEARISH
+            self.predicted_direction = "BEARISH"
         else:
             self.state = ProbabilityState.EXTREME_BEARISH
+            self.predicted_direction = "BEARISH"
+
+
+# Keep HourlyProbabilityWindow for backward compatibility
+HourlyProbabilityWindow = DailyProbabilityWindow  # Alias
 
 
 @dataclass
 class ProbabilityMatrix:
-    """Complete 2-hour probability matrix with 4 windows"""
+    """Complete multi-day probability matrix with 7 windows"""
     symbol: str
     generated_at: datetime
     
-    # The 4 hourly windows
-    hour_minus_1: HourlyProbabilityWindow = None  # LOOKBACK (base signal)
-    hour_0: HourlyProbabilityWindow = None        # NOW (calibration)
-    hour_plus_1: HourlyProbabilityWindow = None   # FORECAST (primary)
-    hour_plus_2: HourlyProbabilityWindow = None   # FINE-TUNE (secondary)
+    # The 7 daily windows (upgraded from 4 hourly)
+    day_minus_7: DailyProbabilityWindow = None   # WEEKLY LOOKBACK
+    day_minus_3: DailyProbabilityWindow = None   # MID-WEEK LOOKBACK
+    day_minus_1: DailyProbabilityWindow = None   # YESTERDAY (base signal)
+    hour_0: DailyProbabilityWindow = None        # NOW (calibration)
+    day_plus_1: DailyProbabilityWindow = None    # TOMORROW (primary forecast)
+    day_plus_3: DailyProbabilityWindow = None    # MID-WEEK FORECAST
+    day_plus_7: DailyProbabilityWindow = None    # WEEKLY FORECAST
+    
+    # Backward compatibility aliases
+    @property
+    def hour_minus_1(self): return self.day_minus_1
+    @property
+    def hour_plus_1(self): return self.day_plus_1
+    @property
+    def hour_plus_2(self): return self.day_plus_3
     
     # Combined metrics
     combined_probability: float = 0.5
@@ -180,29 +234,41 @@ class ProbabilityMatrix:
     recommended_action: str = "HOLD"
     position_modifier: float = 1.0
     
+    # Multi-day trend analysis
+    weekly_trend: str = "NEUTRAL"  # BULLISH, BEARISH, NEUTRAL
+    trend_strength: float = 0.0
+    cycle_phase: str = "UNKNOWN"   # ACCUMULATION, MARKUP, DISTRIBUTION, MARKDOWN
+    
     # Fine-tuning results
     fine_tune_adjustment: float = 0.0
     fine_tune_reason: str = ""
+    
+    # Prediction validation metrics
+    total_predictions: int = 0
+    correct_predictions: int = 0
+    prediction_accuracy: float = 0.0
+    last_validated: datetime = None
 
 
 class TemporalFrequencyAnalyzer:
     """
-    Analyzes frequency patterns across time windows.
-    Uses Hour -1 as base signal, forecasts Hour +1, 
-    and uses Hour +2 to fine-tune Hour +1 predictions.
+    Analyzes frequency patterns across **daily** windows (upgraded from hourly).
+    Uses Day -1 as base signal, forecasts Day +1 primary window,
+    and uses Day +3/+7 to fine-tune and validate the Day +1 forecast.
     """
     
-    def __init__(self, lookback_minutes: int = 60, sample_interval_sec: int = 60):
+    def __init__(self, lookback_minutes: int = 1440, sample_interval_sec: int = 300):
+        # Default to 1-day lookback with 5-minute sampling; history stores ~2 weeks safely
         self.lookback_minutes = lookback_minutes
         self.sample_interval = sample_interval_sec
         
         # Historical data storage (keyed by symbol)
         self.history: Dict[str, deque] = {}
-        self.max_history = 180  # 3 hours of minute data
+        self.max_history = 10000  # ~14 days of 2-5min samples
         
         # Probability cache
         self.probability_cache: Dict[str, ProbabilityMatrix] = {}
-        self.cache_ttl = 60  # seconds
+        self.cache_ttl = 300  # seconds (less churn for daily cadence)
         
         # Pattern recognition
         self.pattern_memory: Dict[str, List[Dict]] = {}
@@ -214,43 +280,38 @@ class TemporalFrequencyAnalyzer:
             self.history[symbol] = deque(maxlen=self.max_history)
         self.history[symbol].append(snapshot)
         
-    def get_hourly_data(self, symbol: str, hour_offset: int) -> List[FrequencySnapshot]:
-        """Get data for a specific hour window relative to now"""
+    def get_daily_data(self, symbol: str, day_offset: int) -> List[FrequencySnapshot]:
+        """Get data for a specific **day** window relative to now."""
         if symbol not in self.history:
             return []
         
         now = datetime.now()
-        
-        if hour_offset < 0:
-            # Historical data
-            start = now + timedelta(hours=hour_offset)
-            end = now + timedelta(hours=hour_offset + 1)
-        elif hour_offset == 0:
-            # Current hour
-            start = now - timedelta(minutes=30)
-            end = now + timedelta(minutes=30)
+        if day_offset < 0:
+            start = (now + timedelta(days=day_offset)).replace(hour=0, minute=0, second=0, microsecond=0)
+            end = start + timedelta(days=1)
+        elif day_offset == 0:
+            # Current day centered around now (12h back/forward) to smooth intraday shifts
+            start = now - timedelta(hours=12)
+            end = now + timedelta(hours=12)
         else:
-            # Future - use recent patterns to project
-            return []  # Will be computed from patterns
+            # Future windows are projected, not sampled
+            return []
         
-        return [
-            s for s in self.history[symbol]
-            if start <= s.timestamp <= end
-        ]
+        return [s for s in self.history[symbol] if start <= s.timestamp <= end]
     
-    def compute_base_signal(self, symbol: str) -> HourlyProbabilityWindow:
+    def compute_day_signal(self, symbol: str, day_offset: int) -> HourlyProbabilityWindow:
         """
-        Compute base signal from Hour -1 (lookback).
-        This establishes the frequency foundation for forecasting.
+        Compute probability state for a **daily** window (e.g., Day -1, -3, -7).
+        Day -1 establishes the frequency foundation for forecasting.
         """
         now = datetime.now()
         window = HourlyProbabilityWindow(
-            hour_offset=-1,
-            start_time=now - timedelta(hours=1),
-            end_time=now,
+            hour_offset=day_offset,
+            start_time=now + timedelta(days=day_offset),
+            end_time=now + timedelta(days=day_offset) + timedelta(days=1),
         )
         
-        data = self.get_hourly_data(symbol, -1)
+        data = self.get_daily_data(symbol, day_offset)
         if not data:
             return window
         
@@ -323,15 +384,13 @@ class TemporalFrequencyAnalyzer:
         window.compute_state()
         return window
     
-    def compute_current_state(self, symbol: str, current_data: Dict) -> HourlyProbabilityWindow:
-        """
-        Compute current state (Hour 0) as calibration point.
-        """
+    def compute_current_day(self, symbol: str, current_data: Dict) -> HourlyProbabilityWindow:
+        """Compute current state (Day 0) as calibration point."""
         now = datetime.now()
         window = HourlyProbabilityWindow(
             hour_offset=0,
-            start_time=now - timedelta(minutes=30),
-            end_time=now + timedelta(minutes=30),
+            start_time=now - timedelta(hours=12),
+            end_time=now + timedelta(hours=12),
         )
         
         # Use current data directly
@@ -344,10 +403,8 @@ class TemporalFrequencyAnalyzer:
         momentum_signal = np.tanh(momentum / 10)
         
         # Volume impact on current state
-        # High volume increases confidence in the move
         volume_confidence = 1.0
         if volume > 0:
-            # Assuming volume is normalized or we just check for non-zero
             volume_confidence = 1.05
             
         window.bullish_probability = 0.5 + (momentum_signal * 0.35 * volume_confidence)
@@ -359,17 +416,17 @@ class TemporalFrequencyAnalyzer:
         window.compute_state()
         return window
     
-    def forecast_hour_plus_1(self, symbol: str, base_signal: HourlyProbabilityWindow, 
+    def forecast_day_plus_1(self, symbol: str, base_signal: HourlyProbabilityWindow, 
                               current: HourlyProbabilityWindow) -> HourlyProbabilityWindow:
         """
-        Forecast Hour +1 (PRIMARY trading window).
-        Uses base signal from Hour -1 and current state for calibration.
+        Forecast Day +1 (PRIMARY trading window).
+        Uses Day -1 (yesterday) and Day 0 (today) for calibration.
         """
         now = datetime.now()
         window = HourlyProbabilityWindow(
             hour_offset=1,
             start_time=now,
-            end_time=now + timedelta(hours=1),
+            end_time=now + timedelta(days=1),
         )
         
         # Project frequency based on trend
@@ -386,7 +443,7 @@ class TemporalFrequencyAnalyzer:
         window.frequency_trend = base_signal.frequency_trend
         
         # Probability projection with momentum continuation
-        # Weight: 40% base signal, 60% current state
+        # Weight: 40% Day -1, 60% Day 0
         base_weight = 0.4
         current_weight = 0.6
         
@@ -396,7 +453,6 @@ class TemporalFrequencyAnalyzer:
         )
         
         # Volume confirmation for forecast
-        # If base signal had rising volume, increase confidence in trend
         if base_signal.bullish_probability > 0.55 and base_signal.signal_strength > 0.6:
              projected_bullish *= 1.05
         
@@ -433,171 +489,219 @@ class TemporalFrequencyAnalyzer:
         window.compute_state()
         return window
     
-    def forecast_hour_plus_2(self, symbol: str, base_signal: HourlyProbabilityWindow,
-                              current: HourlyProbabilityWindow,
-                              hour_1: HourlyProbabilityWindow) -> HourlyProbabilityWindow:
+    def forecast_day_plus_3(self, symbol: str, day_minus_1: HourlyProbabilityWindow,
+                              day_0: HourlyProbabilityWindow,
+                              day_1: HourlyProbabilityWindow) -> HourlyProbabilityWindow:
         """
-        Forecast Hour +2 (FINE-TUNING window).
-        Used ONLY to refine Hour +1 predictions, not for direct trading.
+        Forecast Day +3 (mid-week fine-tuning window).
+        Used to refine Day +1 predictions.
         """
         now = datetime.now()
         window = HourlyProbabilityWindow(
-            hour_offset=2,
-            start_time=now + timedelta(hours=1),
-            end_time=now + timedelta(hours=2),
+            hour_offset=3,
+            start_time=now + timedelta(days=1),
+            end_time=now + timedelta(days=3),
         )
         
-        # Extended projection with decay
-        decay = 0.7  # Confidence decays further out
+        decay = 0.8  # Slight decay vs Day +1
         
-        # Frequency with momentum decay
-        if hour_1.frequency_trend == "RISING":
-            window.avg_frequency = hour_1.avg_frequency * 1.02 * decay + 256 * (1 - decay)
-        elif hour_1.frequency_trend == "FALLING":
-            window.avg_frequency = hour_1.avg_frequency * 0.98 * decay + 256 * (1 - decay)
+        # Frequency projection with trend carry
+        if day_1.frequency_trend == "RISING":
+            window.avg_frequency = day_1.avg_frequency * 1.01 * decay + 256 * (1 - decay)
+        elif day_1.frequency_trend == "FALLING":
+            window.avg_frequency = day_1.avg_frequency * 0.99 * decay + 256 * (1 - decay)
         else:
-            window.avg_frequency = hour_1.avg_frequency * decay + 256 * (1 - decay)
+            window.avg_frequency = day_1.avg_frequency * decay + 256 * (1 - decay)
         
         window.dominant_frequency = window.avg_frequency
-        window.frequency_trend = hour_1.frequency_trend
+        window.frequency_trend = day_1.frequency_trend
         
-        # Probability with reversion to mean
-        mean_reversion = 0.3
-        projected_bullish = hour_1.bullish_probability * (1 - mean_reversion) + 0.5 * mean_reversion
-        
+        # Probability with mild mean reversion
+        mean_reversion = 0.25
+        projected_bullish = day_1.bullish_probability * (1 - mean_reversion) + 0.5 * mean_reversion
         window.bullish_probability = projected_bullish
         window.bearish_probability = 1 - window.bullish_probability
         
-        # Lower confidence for extended forecast
-        window.confidence = hour_1.confidence * decay
-        window.harmonic_ratio = hour_1.harmonic_ratio * decay
+        window.confidence = day_1.confidence * decay
+        window.harmonic_ratio = day_1.harmonic_ratio * decay
         
-        # Pattern alignment decay
-        window.prime_alignment = hour_1.prime_alignment * decay
-        window.fibonacci_alignment = hour_1.fibonacci_alignment * decay
-        window.golden_ratio_proximity = hour_1.golden_ratio_proximity * decay
+        window.prime_alignment = day_1.prime_alignment * decay
+        window.fibonacci_alignment = day_1.fibonacci_alignment * decay
+        window.golden_ratio_proximity = day_1.golden_ratio_proximity * decay
         
-        window.signal_strength = hour_1.signal_strength * decay
-        window.clarity = hour_1.clarity * decay
+        window.signal_strength = day_1.signal_strength * decay
+        window.clarity = day_1.clarity * decay
         
         window.compute_state()
         return window
     
-    def fine_tune_forecast(self, hour_1: HourlyProbabilityWindow, 
-                           hour_2: HourlyProbabilityWindow) -> Tuple[float, float, str]:
+    def forecast_day_plus_7(self, symbol: str, day_1: HourlyProbabilityWindow,
+                              day_3: HourlyProbabilityWindow) -> HourlyProbabilityWindow:
         """
-        Use Hour +2 forecast to fine-tune Hour +1 predictions.
+        Forecast Day +7 (weekly outlook) to further validate the Day +1 call.
+        """
+        now = datetime.now()
+        window = HourlyProbabilityWindow(
+            hour_offset=7,
+            start_time=now + timedelta(days=3),
+            end_time=now + timedelta(days=7),
+        )
+        
+        decay = 0.6  # Stronger decay for long horizon
+        trend_source = day_3 if day_3 else day_1
+        
+        if trend_source.frequency_trend == "RISING":
+            window.avg_frequency = trend_source.avg_frequency * 1.005 * decay + 256 * (1 - decay)
+        elif trend_source.frequency_trend == "FALLING":
+            window.avg_frequency = trend_source.avg_frequency * 0.995 * decay + 256 * (1 - decay)
+        else:
+            window.avg_frequency = trend_source.avg_frequency * decay + 256 * (1 - decay)
+        
+        window.dominant_frequency = window.avg_frequency
+        window.frequency_trend = trend_source.frequency_trend
+        
+        mean_reversion = 0.35
+        projected_bullish = trend_source.bullish_probability * (1 - mean_reversion) + 0.5 * mean_reversion
+        window.bullish_probability = projected_bullish
+        window.bearish_probability = 1 - window.bullish_probability
+        
+        window.confidence = trend_source.confidence * decay
+        window.harmonic_ratio = trend_source.harmonic_ratio * decay
+        window.prime_alignment = trend_source.prime_alignment * decay
+        window.fibonacci_alignment = trend_source.fibonacci_alignment * decay
+        window.golden_ratio_proximity = trend_source.golden_ratio_proximity * decay
+        window.signal_strength = trend_source.signal_strength * decay
+        window.clarity = trend_source.clarity * decay
+        
+        window.compute_state()
+        return window
+    
+    def fine_tune_forecast(self, day_1: HourlyProbabilityWindow, 
+                           day_3: HourlyProbabilityWindow,
+                           day_7: HourlyProbabilityWindow) -> Tuple[float, float, str]:
+        """
+        Use Day +3 and Day +7 forecasts to fine-tune Day +1 predictions.
         Returns: (adjustment, fine_tuned_probability, reason)
         """
         adjustment = 0.0
         reasons = []
         
-        # Check for trend continuation vs reversal
-        h1_bullish = hour_1.bullish_probability > 0.5
-        h2_bullish = hour_2.bullish_probability > 0.5
+        # Trend continuation vs reversal using Day +3
+        d1_bullish = day_1.bullish_probability > 0.5
+        d3_bullish = day_3.bullish_probability > 0.5 if day_3 else d1_bullish
+        d7_bullish = day_7.bullish_probability > 0.5 if day_7 else d3_bullish
         
-        if h1_bullish and h2_bullish:
-            # Trend continuation - boost confidence
-            if hour_2.bullish_probability > hour_1.bullish_probability:
-                adjustment = 0.05  # Strengthen bullish signal
-                reasons.append("H+2 confirms bullish continuation")
+        if d1_bullish and d3_bullish:
+            if day_3.bullish_probability > day_1.bullish_probability:
+                adjustment = 0.05
+                reasons.append("D+3 confirms bullish continuation")
             else:
-                adjustment = -0.02  # Slight caution - momentum fading
-                reasons.append("H+2 shows momentum decay")
-                
-        elif h1_bullish and not h2_bullish:
-            # Potential reversal ahead - reduce position
+                adjustment = -0.02
+                reasons.append("D+3 shows momentum decay")
+        elif d1_bullish and not d3_bullish:
             adjustment = -0.10
-            reasons.append("H+2 signals potential reversal")
-            
-        elif not h1_bullish and not h2_bullish:
-            # Bearish continuation
-            if hour_2.bearish_probability > hour_1.bearish_probability:
-                adjustment = -0.05  # Strengthen bearish signal
-                reasons.append("H+2 confirms bearish continuation")
+            reasons.append("D+3 signals potential reversal")
+        elif (not d1_bullish) and (not d3_bullish):
+            if day_3 and day_3.bearish_probability > day_1.bearish_probability:
+                adjustment = -0.05
+                reasons.append("D+3 confirms bearish continuation")
             else:
-                adjustment = 0.02  # Slight recovery
-                reasons.append("H+2 shows bearish momentum decay")
-                
-        elif not h1_bullish and h2_bullish:
-            # Potential bullish reversal - opportunity
+                adjustment = 0.02
+                reasons.append("D+3 shows bearish momentum decay")
+        elif (not d1_bullish) and d3_bullish:
             adjustment = 0.08
-            reasons.append("H+2 signals potential bullish reversal")
+            reasons.append("D+3 signals potential bullish reversal")
         
-        # Frequency alignment check
-        if abs(hour_2.avg_frequency - 528) < 30:  # Near LOVE frequency
-            adjustment += 0.03
-            reasons.append("H+2 approaching 528Hz LOVE resonance")
-        elif abs(hour_2.avg_frequency - 440) < 10:  # Near DISTORTION
-            adjustment -= 0.05
-            reasons.append("H+2 approaching 440Hz distortion")
+        # Weekly (D+7) influence
+        if day_7:
+            if d7_bullish and not d1_bullish:
+                adjustment += 0.04
+                reasons.append("D+7 bullish pull forward")
+            if (not d7_bullish) and d1_bullish:
+                adjustment -= 0.04
+                reasons.append("D+7 bearish headwind")
+            if abs(day_7.avg_frequency - 528) < 30:
+                adjustment += 0.02
+                reasons.append("D+7 near 528Hz resonance")
+            if abs(day_7.avg_frequency - 440) < 10:
+                adjustment -= 0.03
+                reasons.append("D+7 near 440Hz distortion")
         
-        # Apply harmonic ratio influence
-        if hour_2.harmonic_ratio > hour_1.harmonic_ratio:
+        # Harmonic ratio influence
+        if day_3 and day_3.harmonic_ratio > day_1.harmonic_ratio:
             adjustment += 0.02
-            reasons.append("H+2 harmonic ratio improving")
-        elif hour_2.harmonic_ratio < hour_1.harmonic_ratio * 0.8:
+            reasons.append("D+3 harmonic improving")
+        elif day_3 and day_3.harmonic_ratio < day_1.harmonic_ratio * 0.8:
             adjustment -= 0.03
-            reasons.append("H+2 harmonic ratio degrading")
+            reasons.append("D+3 harmonic degrading")
         
-        # Calculate fine-tuned probability
-        fine_tuned = hour_1.bullish_probability + adjustment
+        fine_tuned = day_1.bullish_probability + adjustment
         fine_tuned = max(0.1, min(0.9, fine_tuned))
-        
-        reason = " | ".join(reasons) if reasons else "No significant H+2 adjustment"
+        reason = " | ".join(reasons) if reasons else "No significant D+3/D+7 adjustment"
         
         return adjustment, fine_tuned, reason
     
     def generate_probability_matrix(self, symbol: str, current_data: Dict) -> ProbabilityMatrix:
-        """
-        Generate complete 2-hour probability matrix for a symbol.
-        """
+        """Generate multi-day probability matrix for a symbol."""
         now = datetime.now()
         matrix = ProbabilityMatrix(
             symbol=symbol,
             generated_at=now,
         )
         
-        # Step 1: Compute base signal from Hour -1
-        matrix.hour_minus_1 = self.compute_base_signal(symbol)
+        # Historical anchors
+        matrix.day_minus_7 = self.compute_day_signal(symbol, -7)
+        matrix.day_minus_3 = self.compute_day_signal(symbol, -3)
+        matrix.day_minus_1 = self.compute_day_signal(symbol, -1)
         
-        # Step 2: Compute current state (Hour 0)
-        matrix.hour_0 = self.compute_current_state(symbol, current_data)
+        # Current day (calibration)
+        matrix.hour_0 = self.compute_current_day(symbol, current_data)
         
-        # Step 3: Forecast Hour +1 (PRIMARY)
-        matrix.hour_plus_1 = self.forecast_hour_plus_1(
-            symbol, matrix.hour_minus_1, matrix.hour_0
-        )
+        # Forecasts
+        matrix.day_plus_1 = self.forecast_day_plus_1(symbol, matrix.day_minus_1, matrix.hour_0)
+        matrix.day_plus_3 = self.forecast_day_plus_3(symbol, matrix.day_minus_1, matrix.hour_0, matrix.day_plus_1)
+        matrix.day_plus_7 = self.forecast_day_plus_7(symbol, matrix.day_plus_1, matrix.day_plus_3)
         
-        # Step 4: Forecast Hour +2 (FINE-TUNING)
-        matrix.hour_plus_2 = self.forecast_hour_plus_2(
-            symbol, matrix.hour_minus_1, matrix.hour_0, matrix.hour_plus_1
-        )
-        
-        # Step 5: Fine-tune Hour +1 using Hour +2
+        # Fine-tune Day +1 using Day +3/+7
         adjustment, fine_tuned, reason = self.fine_tune_forecast(
-            matrix.hour_plus_1, matrix.hour_plus_2
+            matrix.day_plus_1, matrix.day_plus_3, matrix.day_plus_7
         )
-        
         matrix.fine_tune_adjustment = adjustment
         matrix.fine_tuned_probability = fine_tuned
         matrix.fine_tune_reason = reason
         
-        # Combined probability (weighted average)
+        # Combined probability (weighted average across days)
         matrix.combined_probability = (
-            matrix.hour_minus_1.bullish_probability * 0.2 +
-            matrix.hour_0.bullish_probability * 0.3 +
-            matrix.hour_plus_1.bullish_probability * 0.5
+            matrix.day_minus_1.bullish_probability * 0.20 +
+            matrix.day_minus_3.bullish_probability * 0.10 +
+            matrix.hour_0.bullish_probability * 0.20 +
+            matrix.day_plus_1.bullish_probability * 0.30 +
+            matrix.day_plus_3.bullish_probability * 0.10 +
+            matrix.day_plus_7.bullish_probability * 0.10
         )
         
-        # Confidence score
+        # Confidence score (heavier weight on recent + primary forecast)
         matrix.confidence_score = (
-            matrix.hour_minus_1.confidence * 0.3 +
-            matrix.hour_0.confidence * 0.4 +
-            matrix.hour_plus_1.confidence * 0.3
+            matrix.day_minus_1.confidence * 0.20 +
+            matrix.hour_0.confidence * 0.25 +
+            matrix.day_plus_1.confidence * 0.25 +
+            matrix.day_plus_3.confidence * 0.15 +
+            matrix.day_plus_7.confidence * 0.10 +
+            matrix.day_minus_3.confidence * 0.05
         )
         
-        # Determine action
+        # Weekly trend summary
+        if matrix.day_plus_7.bullish_probability > matrix.day_plus_3.bullish_probability:
+            matrix.weekly_trend = "BULLISH"
+            matrix.trend_strength = matrix.day_plus_7.bullish_probability - 0.5
+        elif matrix.day_plus_7.bullish_probability < matrix.day_plus_3.bullish_probability:
+            matrix.weekly_trend = "BEARISH"
+            matrix.trend_strength = matrix.day_plus_7.bearish_probability - 0.5
+        else:
+            matrix.weekly_trend = "NEUTRAL"
+            matrix.trend_strength = 0.0
+        
+        # Determine action (same thresholds, now multi-day informed)
         if matrix.fine_tuned_probability >= 0.70:
             matrix.recommended_action = "STRONG BUY"
             matrix.position_modifier = 1.2
@@ -1001,6 +1105,100 @@ class HNCProbabilityIntegration:
                 'losses': len(all_outcomes) - wins,
                 'win_rate': wins / len(all_outcomes) if all_outcomes else 0.5,
             }
+    
+    def validate_and_learn(self, symbol: str, predicted_direction: str, 
+                          actual_direction: str, confidence: float = 0.5) -> Dict[str, Any]:
+        """
+        CONTINUOUS VALIDATION & LEARNING:
+        Validate Day +1 predictions against actual outcomes when Day +1 becomes Day 0.
+        
+        This is the core learning loop that improves forecast accuracy over time.
+        
+        Args:
+            symbol: Asset being tracked
+            predicted_direction: What the matrix predicted (BULLISH, BEARISH, NEUTRAL)
+            actual_direction: What actually happened
+            confidence: How confident was the prediction?
+        
+        Returns:
+            Validation metrics including accuracy, adjustment factors
+        """
+        was_correct = predicted_direction == actual_direction
+        
+        # Update learning metrics
+        if symbol not in self.matrices:
+            return {'validated': False, 'symbol': symbol}
+        
+        matrix = self.matrices[symbol]
+        matrix.total_predictions += 1
+        if was_correct:
+            matrix.correct_predictions += 1
+        
+        # Calculate new accuracy
+        matrix.prediction_accuracy = (
+            matrix.correct_predictions / matrix.total_predictions 
+            if matrix.total_predictions > 0 else 0.5
+        )
+        matrix.last_validated = datetime.now()
+        
+        # Determine confidence adjustment
+        # High confidence + correct = increase future forecast strength
+        # High confidence + wrong = decrease future forecast strength  
+        # Low confidence + correct = boost confidence
+        # Low confidence + wrong = reduce confidence (less damage)
+        
+        confidence_adjustment = 0.0
+        accuracy_trend = "NEUTRAL"
+        
+        if was_correct:
+            if confidence >= 0.7:
+                confidence_adjustment = +0.05  # Boost strong accurate predictions
+                accuracy_trend = "ACCURATE_STRONG"
+            elif confidence >= 0.5:
+                confidence_adjustment = +0.03  # Boost moderate accurate predictions
+                accuracy_trend = "ACCURATE_MODERATE"
+            else:
+                confidence_adjustment = +0.02  # Weak correct signals still help
+                accuracy_trend = "ACCURATE_WEAK"
+        else:
+            if confidence >= 0.7:
+                confidence_adjustment = -0.10  # Penalize strong wrong predictions
+                accuracy_trend = "WRONG_STRONG"
+            elif confidence >= 0.5:
+                confidence_adjustment = -0.05  # Penalize moderate wrong predictions
+                accuracy_trend = "WRONG_MODERATE"
+            else:
+                confidence_adjustment = -0.02  # Weak wrong signals have minimal impact
+                accuracy_trend = "WRONG_WEAK"
+        
+        # Log validation event
+        validation_record = {
+            'timestamp': datetime.now().isoformat(),
+            'symbol': symbol,
+            'predicted': predicted_direction,
+            'actual': actual_direction,
+            'was_correct': was_correct,
+            'confidence_input': confidence,
+            'confidence_adjustment': confidence_adjustment,
+            'trend': accuracy_trend,
+            'cumulative_accuracy': matrix.prediction_accuracy,
+            'total_predictions': matrix.total_predictions,
+            'correct': matrix.correct_predictions,
+        }
+        
+        if symbol not in self.position_history:
+            self.position_history = []
+        self.position_history.append(validation_record)
+        
+        return {
+            'validated': True,
+            'symbol': symbol,
+            'was_correct': was_correct,
+            'accuracy': matrix.prediction_accuracy,
+            'confidence_adjustment': confidence_adjustment,
+            'trend': accuracy_trend,
+            'predictions_count': matrix.total_predictions,
+        }
     
     def get_active_positions_summary(self) -> Dict[str, Any]:
         """

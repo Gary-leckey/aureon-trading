@@ -48,3 +48,31 @@
 {"ts": "2025-12-09T22:03:12.733595", "type": "hunt", "symbol": "DOGEUSDC", "volume": 61484483.09208, "change": 2.971}
 {"ts": "2025-12-09T22:03:22.223355", "type": "hunt", "symbol": "ADAUSDC", "volume": 21126365.07767, "change": 8.184}
 {"ts": "2025-12-09T22:17:20.050165", "type": "hunt", "symbol": "SOLUSDC", "volume": 126836872.31027, "change": 3.279}
+{"ts": "2025-12-10T17:44:11.197383", "type": "hunt", "symbol": "XRPUSDC", "volume": 57556716.25921, "change": -3.707}
+{"ts": "2025-12-10T22:48:18.929159", "type": "hunt", "symbol": "DOGEUSDC", "volume": 66858195.49987, "change": -3.251}
+{"ts": "2025-12-11T00:40:06.651671", "type": "hunt", "symbol": "SOLUSDC", "volume": 158308258.90044, "change": -2.207}
+{"ts": "2025-12-11T00:40:08.648770", "type": "hunt", "symbol": "DOGEUSDC", "volume": 67174601.67351, "change": -3.575}
+{"ts": "2025-12-11T00:40:21.061859", "type": "hunt", "symbol": "SUIUSDC", "volume": 55347268.63935, "change": -3.86}
+{"ts": "2025-12-11T00:46:55.751821", "type": "hunt", "symbol": "SOLUSDC", "volume": 159915000.8261, "change": -2.625}
+{"ts": "2025-12-11T00:46:57.760633", "type": "hunt", "symbol": "DOGEUSDC", "volume": 67405187.34641, "change": -3.832}
+{"ts": "2025-12-11T00:46:59.779216", "type": "hunt", "symbol": "XRPUSDC", "volume": 76951783.2312, "change": -3.071}
+{"ts": "2025-12-11T00:52:09.859359", "type": "hunt", "symbol": "SOLUSDC", "volume": 161123400.36652, "change": -2.763}
+{"ts": "2025-12-11T00:52:11.850579", "type": "hunt", "symbol": "DOGEUSDC", "volume": 67586364.69686, "change": -4.094}
+{"ts": "2025-12-11T00:52:13.839939", "type": "hunt", "symbol": "XRPUSDC", "volume": 77347356.93487, "change": -3.272}
+{"ts": "2025-12-11T01:00:13.704493", "type": "hunt", "symbol": "SOLUSDC", "volume": 161069864.76553, "change": -2.476}
+{"ts": "2025-12-11T01:00:15.705475", "type": "hunt", "symbol": "DOGEUSDC", "volume": 67552457.33175, "change": -3.707}
+{"ts": "2025-12-11T01:00:17.710242", "type": "hunt", "symbol": "SUIUSDC", "volume": 56151403.32916, "change": -4.064}
+{"ts": "2025-12-11T01:08:23.962321", "type": "hunt", "symbol": "SOLUSDC", "volume": 164162687.12128, "change": -2.462}
+{"ts": "2025-12-11T01:08:25.945696", "type": "hunt", "symbol": "DOGEUSDC", "volume": 67818926.39825, "change": -3.84}
+{"ts": "2025-12-11T01:08:27.947920", "type": "hunt", "symbol": "XRPUSDC", "volume": 77371839.7697, "change": -3.089}
+{"ts": "2025-12-11T01:17:58.702493", "type": "hunt", "symbol": "SOLUSDC", "volume": 164824862.10568, "change": -2.873}
+{"ts": "2025-12-11T01:18:01.907158", "type": "hunt", "symbol": "XDGUSDC", "volume": 252232.4743764348, "change": -2.1595262974573455}
+{"ts": "2025-12-11T01:18:03.899206", "type": "hunt", "symbol": "DOGEUSDC", "volume": 68023516.04572, "change": -4.246}
+{"ts": "2025-12-11T01:18:07.123485", "type": "hunt", "symbol": "FARTCOINUSDC", "volume": 167128.98676320698, "change": -2.9271038558964313}
+{"ts": "2025-12-11T01:18:09.122474", "type": "hunt", "symbol": "XRPUSDC", "volume": 77450826.83511, "change": -3.353}
+{"ts": "2025-12-11T01:18:10.237654", "type": "hunt", "symbol": "SUIGBP", "volume": 132327.493464756, "change": -2.9704613342183914}
+{"ts": "2025-12-11T01:31:11.575438", "type": "result", "symbol": "FARTCOINUSDC", "profit": 0.27028573335223904}
+{"ts": "2025-12-11T02:49:00.535581", "type": "result", "symbol": "SOLUSDC", "profit": -0.5838001599999999}
+{"ts": "2025-12-11T03:07:51.755344", "type": "result", "symbol": "XDGUSDC", "profit": -0.8702579683997773}
+{"ts": "2025-12-11T03:31:13.911472", "type": "result", "symbol": "DOGEUSDC", "profit": -0.5841829619999998}
+{"ts": "2025-12-11T11:17:17.243203", "type": "hunt", "symbol": "ETHUSDC", "volume": 502017054.32692, "change": -3.51}

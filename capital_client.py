@@ -349,3 +349,69 @@ class CapitalClient:
         """
         fees = self.compute_trade_fees(position)
         return fees['total_fees']
+
+    def calculate_cost_basis(self, symbol: str) -> Dict[str, Any]:
+        """
+        Calculate cost basis for a symbol from order history.
+        
+        Capital.com uses 'epic' for symbol names (e.g., 'BTCUSD', 'AAPL').
+        
+        Returns dict with:
+        - symbol: The symbol/epic
+        - total_quantity: Net quantity held
+        - total_cost: Total cost of buys
+        - avg_cost: Average cost per unit
+        - trades: Number of trades
+        """
+        history = self.get_order_history()
+        
+        if not history:
+            return {
+                "symbol": symbol,
+                "total_quantity": 0.0,
+                "total_cost": 0.0,
+                "avg_cost": 0.0,
+                "trades": 0
+            }
+        
+        total_qty = 0.0
+        buy_qty = 0.0
+        buy_cost = 0.0
+        trade_count = 0
+        
+        for activity in history:
+            # Capital.com activity structure varies by type
+            epic = activity.get('epic', '') or activity.get('details', {}).get('epic', '')
+            if epic.upper() != symbol.upper():
+                continue
+            
+            activity_type = activity.get('type', '')
+            
+            # Look for deal confirmed activities
+            if 'deal' in activity_type.lower() or 'position' in activity_type.lower():
+                size = float(activity.get('details', {}).get('size', 0) or 0)
+                level = float(activity.get('details', {}).get('level', 0) or 0)
+                direction = activity.get('details', {}).get('direction', '')
+                
+                if size <= 0 or level <= 0:
+                    continue
+                
+                trade_count += 1
+                
+                if direction.upper() == 'BUY':
+                    total_qty += size
+                    buy_qty += size
+                    buy_cost += size * level
+                elif direction.upper() == 'SELL':
+                    total_qty -= size
+        
+        avg_cost = buy_cost / buy_qty if buy_qty > 0 else 0.0
+        
+        return {
+            "symbol": symbol,
+            "total_quantity": total_qty,
+            "total_cost": buy_cost,
+            "avg_cost": avg_cost,
+            "trades": trade_count
+        }
+

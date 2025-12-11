@@ -1,0 +1,74 @@
+{
+  "outcomes": {
+    "FARTCOINUSDC": [
+      {
+        "timestamp": 1765416671.5534139,
+        "platform_timestamp": 1765416671.5534077,
+        "symbol": "FARTCOINUSDC",
+        "exit_price": 0.3513,
+        "realized_pnl": 0.27028573335223904,
+        "exit_reason": "HARVEST",
+        "entry_price": 0.3449,
+        "entry_time": 1765415887.1106915,
+        "hold_duration_mins": 13.061840629577636,
+        "was_historical": false,
+        "entry_momentum": 1.85561032183242,
+        "entry_coherence": 0.65,
+        "win": true
+      }
+    ],
+    "SOLUSDC": [
+      {
+        "timestamp": 1765421340.529713,
+        "platform_timestamp": 1765421340.5297065,
+        "symbol": "SOLUSDC",
+        "exit_price": 130.87,
+        "realized_pnl": -0.5838001599999999,
+        "exit_reason": "SL",
+        "entry_price": 133.58,
+        "entry_time": 1765415878.6979935,
+        "hold_duration_mins": 90.98684502840042,
+        "was_historical": false,
+        "entry_momentum": -2.028746818385992,
+        "entry_coherence": 0.65,
+        "win": false
+      }
+    ],
+    "XDGUSDC": [
+      {
+        "timestamp": 1765422471.751214,
+        "platform_timestamp": 1765422471.7512097,
+        "symbol": "XDGUSDC",
+        "exit_price": 0.13742,
+        "realized_pnl": -0.8702579683997773,
+        "exit_reason": "SL",
+        "entry_price": 0.14045,
+        "entry_time": 1765415881.9037325,
+        "hold_duration_mins": 109.82614152034124,
+        "was_historical": false,
+        "entry_momentum": -2.157351370594521,
+        "entry_coherence": 0.65,
+        "win": false
+      }
+    ],
+    "DOGEUSDC": [
+      {
+        "timestamp": 1765423873.9069157,
+        "platform_timestamp": 1765423873.9068916,
+        "symbol": "DOGEUSDC",
+        "exit_price": 0.13752,
+        "realized_pnl": -0.5841829619999998,
+        "exit_reason": "SL",
+        "entry_price": 0.14037519553072625,
+        "entry_time": 1765415883.895232,
+        "hold_duration_mins": 133.1487418572108,
+        "was_historical": false,
+        "entry_momentum": -2.033974392649221,
+        "entry_coherence": 0.65,
+        "win": false
+      }
+    ]
+  },
+  "last_updated": 1765423873.9069247,
+  "total_trades": 4
+}
