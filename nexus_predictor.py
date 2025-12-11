@@ -520,6 +520,143 @@ class NexusPredictor:
         
         return f"{strength} {direction}" if direction != 'NEUTRAL' else strength
 
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🧠 LIVE LEARNING - Update patterns from trade outcomes
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def record_trade_outcome(self, entry_prediction: Dict, was_profitable: bool, 
+                             pnl_pct: float = 0.0) -> None:
+        """
+        🧠 LEARN FROM TRADE - Update pattern probabilities based on outcome.
+        
+        Args:
+            entry_prediction: The prediction dict from when trade was opened
+            was_profitable: Whether the trade was profitable
+            pnl_pct: The P&L percentage (for weighted learning)
+        """
+        if not hasattr(self, 'learning_history'):
+            self.learning_history = []
+            self.pattern_outcomes = {}  # pattern -> [outcomes]
+        
+        # Get patterns that were triggered
+        patterns = entry_prediction.get('patterns_triggered', [])
+        if not patterns:
+            patterns = entry_prediction.get('factors', {}).get('reasons', [])
+        
+        # Record outcome for each pattern
+        for pattern in patterns:
+            # Extract base pattern name (remove values in parentheses)
+            base_pattern = pattern.split('(')[0].strip()
+            
+            if base_pattern not in self.pattern_outcomes:
+                self.pattern_outcomes[base_pattern] = {'wins': 0, 'losses': 0, 'pnl': 0.0}
+            
+            if was_profitable:
+                self.pattern_outcomes[base_pattern]['wins'] += 1
+            else:
+                self.pattern_outcomes[base_pattern]['losses'] += 1
+            self.pattern_outcomes[base_pattern]['pnl'] += pnl_pct
+        
+        # Store full outcome
+        self.learning_history.append({
+            'timestamp': datetime.now().isoformat(),
+            'prediction': entry_prediction.get('direction'),
+            'probability': entry_prediction.get('probability'),
+            'edge': entry_prediction.get('edge'),
+            'patterns': patterns,
+            'was_profitable': was_profitable,
+            'pnl_pct': pnl_pct,
+        })
+        
+        # Adaptive learning: Adjust pattern weights after enough samples
+        self._adapt_weights()
+        
+        # Save learning state periodically
+        if len(self.learning_history) % 10 == 0:
+            self._save_learning_state()
+    
+    def _adapt_weights(self, min_samples: int = 20) -> None:
+        """Adjust pattern weights based on accumulated outcomes."""
+        if not hasattr(self, 'pattern_outcomes'):
+            return
+        
+        for pattern, outcomes in self.pattern_outcomes.items():
+            total = outcomes['wins'] + outcomes['losses']
+            if total < min_samples:
+                continue
+            
+            # Calculate live win rate for this pattern
+            live_wr = outcomes['wins'] / total
+            
+            # Get original pattern probability
+            orig_prob = self.PATTERNS.get(pattern, 0.5)
+            
+            # Blend: 70% original validated + 30% live data
+            blended_prob = orig_prob * 0.7 + live_wr * 0.3
+            
+            # Update pattern if significantly different
+            if abs(blended_prob - orig_prob) > 0.03:  # >3% difference
+                self.PATTERNS[pattern] = blended_prob
+                print(f"   🧠 Nexus Learning: {pattern} updated {orig_prob:.1%} → {blended_prob:.1%}")
+    
+    def _save_learning_state(self) -> None:
+        """Save learning state to file."""
+        try:
+            state = {
+                'timestamp': datetime.now().isoformat(),
+                'total_trades': len(self.learning_history) if hasattr(self, 'learning_history') else 0,
+                'pattern_outcomes': self.pattern_outcomes if hasattr(self, 'pattern_outcomes') else {},
+                'adapted_patterns': {k: v for k, v in self.PATTERNS.items() 
+                                    if k in (self.pattern_outcomes if hasattr(self, 'pattern_outcomes') else {})},
+            }
+            with open('nexus_learning_state.json', 'w') as f:
+                json.dump(state, f, indent=2)
+        except Exception as e:
+            pass  # Silent fail
+    
+    def load_learning_state(self) -> bool:
+        """Load previous learning state."""
+        try:
+            with open('nexus_learning_state.json', 'r') as f:
+                state = json.load(f)
+            
+            self.pattern_outcomes = state.get('pattern_outcomes', {})
+            
+            # Apply adapted patterns
+            adapted = state.get('adapted_patterns', {})
+            for pattern, prob in adapted.items():
+                if pattern in self.PATTERNS:
+                    self.PATTERNS[pattern] = prob
+            
+            total = state.get('total_trades', 0)
+            if total > 0:
+                print(f"   🧠 Nexus: Loaded learning state ({total} trades)")
+            return True
+        except:
+            return False
+    
+    def get_learning_stats(self) -> Dict:
+        """Get current learning statistics."""
+        if not hasattr(self, 'learning_history'):
+            return {'total_trades': 0, 'patterns_adapted': 0}
+        
+        total = len(self.learning_history)
+        wins = sum(1 for t in self.learning_history if t['was_profitable'])
+        
+        adapted = 0
+        if hasattr(self, 'pattern_outcomes'):
+            for pattern, outcomes in self.pattern_outcomes.items():
+                if outcomes['wins'] + outcomes['losses'] >= 20:
+                    adapted += 1
+        
+        return {
+            'total_trades': total,
+            'wins': wins,
+            'live_win_rate': wins / total if total > 0 else 0,
+            'patterns_tracked': len(self.pattern_outcomes) if hasattr(self, 'pattern_outcomes') else 0,
+            'patterns_adapted': adapted,
+        }
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # QUICK TEST

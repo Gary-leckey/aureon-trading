@@ -6296,6 +6296,11 @@ class Position:
     learned_win_rate: Optional[float] = None  # Expected win rate based on similar trades
     learned_confidence: str = 'low'  # Confidence level of learned parameters
     
+    # 🔮 NEXUS PREDICTOR DATA - For learning feedback
+    nexus_prob: float = 0.5  # Nexus prediction probability at entry
+    nexus_edge: float = 0.0  # Nexus edge at entry
+    nexus_patterns: List[str] = field(default_factory=list)  # Patterns triggered at entry
+    
     # Generate unique ID for position
     id: str = field(default_factory=lambda: f"pos_{int(time.time()*1000)}_{random.randint(1000,9999)}")
     
@@ -10628,7 +10633,11 @@ class AureonKrakenEcosystem:
             learned_sl_pct=learned_rec.get('suggested_stop_loss'),
             learned_hold_cycles=learned_rec.get('suggested_hold_cycles'),
             learned_win_rate=learned_rec.get('expected_win_rate'),
-            learned_confidence=learned_rec.get('confidence', 'low')
+            learned_confidence=learned_rec.get('confidence', 'low'),
+            # 🔮 NEXUS PREDICTOR DATA - For learning feedback
+            nexus_prob=opp.get('nexus_prob', 0.5),
+            nexus_edge=opp.get('nexus_edge', 0.0),
+            nexus_patterns=opp.get('nexus_patterns', []),
         )
         
         # Log learned parameters if available
@@ -11164,6 +11173,23 @@ class AureonKrakenEcosystem:
             frequency=getattr(pos, 'frequency', 432),
             coherence=pos.coherence
         )
+        
+        # 🔮 NEXUS PREDICTOR LEARNING - Update patterns from trade outcome 🔮
+        if self.nexus_predictor is not None:
+            try:
+                entry_prediction = {
+                    'direction': 'LONG',  # We only go long currently
+                    'probability': getattr(pos, 'nexus_prob', 0.5),
+                    'edge': getattr(pos, 'nexus_edge', 0.0),
+                    'patterns_triggered': getattr(pos, 'nexus_patterns', []),
+                }
+                self.nexus_predictor.record_trade_outcome(
+                    entry_prediction=entry_prediction,
+                    was_profitable=(net_pnl > 0),
+                    pnl_pct=pnl_pct
+                )
+            except Exception as e:
+                pass  # Silent fail
         
         # 🌉 Record trade in bridge for cross-system tracking
         if self.bridge_enabled and self.bridge:

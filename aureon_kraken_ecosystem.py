@@ -711,6 +711,11 @@ class Position:
     last_signal_broadcast: float = 0.0  # Timestamp of last signal
     prime_size_multiplier: float = 1.0  # Prime-based sizing
     
+    # 🔮 NEXUS PREDICTOR DATA - For learning feedback
+    nexus_prob: float = 0.5  # Nexus prediction probability at entry
+    nexus_edge: float = 0.0  # Nexus edge at entry
+    nexus_patterns: List[str] = field(default_factory=list)  # Patterns triggered at entry
+    
     # Generate unique ID for position
     id: str = field(default_factory=lambda: f"pos_{int(time.time()*1000)}_{random.randint(1000,9999)}")
     
@@ -1743,7 +1748,11 @@ class AureonKrakenEcosystem:
             dominant_node=opp['dominant_node'],
             generation=0,
             is_scout=is_scout,
-            prime_size_multiplier=prime_multiplier
+            prime_size_multiplier=prime_multiplier,
+            # 🔮 NEXUS PREDICTOR DATA - For learning feedback
+            nexus_prob=opp.get('nexus_prob', 0.5),
+            nexus_edge=opp.get('nexus_edge', 0.0),
+            nexus_patterns=opp.get('nexus_patterns', []),
         )
         
         # 🌟 Allocate capital in pool
@@ -1959,6 +1968,24 @@ class AureonKrakenEcosystem:
         # Feed learning back to Mycelium Network
         # pct is the price change percentage. If positive, we reinforce.
         self.mycelium.learn(symbol, pct)
+        
+        # 🔮 NEXUS PREDICTOR LEARNING - Update patterns from trade outcome 🔮
+        if self.nexus is not None:
+            try:
+                pnl_pct = (net_pnl / pos.entry_value) * 100 if pos.entry_value > 0 else 0
+                entry_prediction = {
+                    'direction': 'LONG',
+                    'probability': pos.nexus_prob,
+                    'edge': pos.nexus_edge,
+                    'patterns_triggered': pos.nexus_patterns,
+                }
+                self.nexus.record_trade_outcome(
+                    entry_prediction=entry_prediction,
+                    was_profitable=(net_pnl > 0),
+                    pnl_pct=pnl_pct
+                )
+            except Exception as e:
+                pass  # Silent fail
         
         icon = "✅" if net_pnl > 0 else "❌"
         # Dynamic currency symbol
