@@ -162,7 +162,18 @@ class KrakenClient:
             return {}
         # Kraken expects internal pair names, not altnames; map
         self._load_asset_pairs()
-        internal_names = [self._alt_to_int.get(a, a) for a in altnames]
+        
+        internal_names = []
+        for a in altnames:
+            if a in self._alt_to_int:
+                internal_names.append(self._alt_to_int[a])
+            elif a in self._int_to_alt:
+                internal_names.append(a)
+            # Else skip unknown pair to prevent API error
+            
+        if not internal_names:
+            return {}
+
         # Batch request (Kraken accepts comma-separated list)
         pairs_param = ",".join(internal_names)
         r = self.session.get(f"{self.base}/0/public/Ticker", params={"pair": pairs_param}, timeout=20)

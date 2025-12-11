@@ -119,13 +119,14 @@ class NexusPredictor:
         'hour': 0.3,
     }
     
-    def __init__(self, min_edge: float = 0.20):
+    def __init__(self, min_edge: float = 0.05):
         """
         Initialize predictor.
         
         Args:
             min_edge: Minimum edge (distance from 50%) to recommend trade.
-                     Default 0.20 = 60%+ confidence = 75%+ win rate
+                     Default 0.05 = 55%+ probability (GREEDY HOE MODE!)
+                     Was 0.20 = 70%+ (too restrictive!)
         """
         self.min_edge = min_edge
         self.candle_history: deque = deque(maxlen=50)
@@ -159,20 +160,20 @@ class NexusPredictor:
         weights = []
         patterns = []
         
-        # PRICE POSITION (Most important!)
-        if pos >= 0.85:
+        # PRICE POSITION (Most important!) - 🤑 GREEDY HOE: Expanded ranges!
+        if pos >= 0.70:  # Was 0.85 - now catches top 30%!
             factors.append(self.PATTERNS['pos_very_high'])
             weights.append(self.WEIGHTS['pos_very_high'])
             patterns.append(f'pos_very_high({pos:.2f})')
-        elif pos >= 0.75:
+        elif pos >= 0.60:  # Was 0.75
             factors.append(self.PATTERNS['pos_high'])
             weights.append(self.WEIGHTS['pos_high'])
             patterns.append(f'pos_high({pos:.2f})')
-        elif pos <= 0.15:
+        elif pos <= 0.30:  # Was 0.15 - now catches bottom 30%!
             factors.append(self.PATTERNS['pos_very_low'])
             weights.append(self.WEIGHTS['pos_very_low'])
             patterns.append(f'pos_very_low({pos:.2f})')
-        elif pos <= 0.25:
+        elif pos <= 0.40:  # Was 0.25
             factors.append(self.PATTERNS['pos_low'])
             weights.append(self.WEIGHTS['pos_low'])
             patterns.append(f'pos_low({pos:.2f})')
@@ -180,21 +181,21 @@ class NexusPredictor:
             factors.append(self.PATTERNS['pos_mid'])
             weights.append(self.WEIGHTS['pos_mid'])
         
-        # MOMENTUM (from 24h change)
-        if momentum > 0.10:  # Strong bullish
+        # MOMENTUM (from 24h change) - 🤑 GREEDY HOE: Lower thresholds!
+        if momentum > 0.02:  # Was 0.10 - now 2% move is enough!
             factors.append(self.PATTERNS['mom6_high'])
             weights.append(self.WEIGHTS['mom6_high'])
             patterns.append(f'momentum_high({momentum:.1%})')
-        elif momentum < -0.10:  # Strong bearish
+        elif momentum < -0.02:  # Was -0.10
             factors.append(self.PATTERNS['mom6_low'])
             weights.append(self.WEIGHTS['mom6_low'])
             patterns.append(f'momentum_low({momentum:.1%})')
         
-        # COMBO PATTERNS
-        is_high_pos = pos >= 0.75
-        is_low_pos = pos <= 0.25
-        is_high_mom = momentum > 0.05
-        is_low_mom = momentum < -0.05
+        # COMBO PATTERNS - 🤑 GREEDY HOE: Expanded!
+        is_high_pos = pos >= 0.60  # Was 0.75
+        is_low_pos = pos <= 0.40   # Was 0.25
+        is_high_mom = momentum > 0.01  # Was 0.05
+        is_low_mom = momentum < -0.01  # Was -0.05
         
         if is_high_pos and is_low_mom:
             factors.append(self.PATTERNS['combo_high_price_low_mom'])

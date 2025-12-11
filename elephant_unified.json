@@ -30,12 +30,12 @@
     "blacklisted": false
   },
   "ZECUSDC": {
-    "hunts": 4,
+    "hunts": 9,
     "trades": 0,
     "wins": 0,
     "losses": 0,
     "profit": 0,
-    "last_time": 1765270820.9599802,
+    "last_time": 1765487486.1901991,
     "streak": 0,
     "blacklisted": false
   },
@@ -90,12 +90,12 @@
     "blacklisted": false
   },
   "FARTCOINUSDC": {
-    "hunts": 8,
+    "hunts": 9,
     "trades": 5,
     "wins": 3,
     "losses": 2,
     "profit": -1.0982110049105371,
-    "last_time": 1765416671.5753925,
+    "last_time": 1765487487.6806862,
     "streak": 0,
     "blacklisted": false
   },
@@ -110,22 +110,22 @@
     "blacklisted": false
   },
   "XBTUSDC": {
-    "hunts": 3,
+    "hunts": 5,
     "trades": 0,
     "wins": 0,
     "losses": 0,
     "profit": 0,
-    "last_time": 1765316078.203498,
+    "last_time": 1765485019.1754303,
     "streak": 0,
     "blacklisted": false
   },
   "SOLUSDC": {
-    "hunts": 9,
+    "hunts": 16,
     "trades": 1,
     "wins": 0,
     "losses": 1,
     "profit": -0.5838001599999999,
-    "last_time": 1765421340.5355444,
+    "last_time": 1765486876.8267963,
     "streak": 1,
     "blacklisted": false
   },
@@ -140,12 +140,12 @@
     "blacklisted": false
   },
   "DOGEUSDC": {
-    "hunts": 9,
+    "hunts": 10,
     "trades": 1,
     "wins": 0,
     "losses": 1,
     "profit": -0.5841829619999998,
-    "last_time": 1765423873.9114356,
+    "last_time": 1765483419.4760623,
     "streak": 1,
     "blacklisted": false
   },
@@ -170,12 +170,12 @@
     "blacklisted": false
   },
   "SUIUSDC": {
-    "hunts": 3,
+    "hunts": 6,
     "trades": 0,
     "wins": 0,
     "losses": 0,
     "profit": 0,
-    "last_time": 1765414817.7101824,
+    "last_time": 1765486044.8080297,
     "streak": 0,
     "blacklisted": false
   },
@@ -190,12 +190,12 @@
     "blacklisted": false
   },
   "XDGUSDC": {
-    "hunts": 1,
+    "hunts": 2,
     "trades": 1,
     "wins": 0,
     "losses": 1,
     "profit": -0.8702579683997773,
-    "last_time": 1765422471.755305,
+    "last_time": 1765486042.793848,
     "streak": 1,
     "blacklisted": false
   },
@@ -206,6 +206,26 @@
     "losses": 0,
     "profit": 0,
     "last_time": 1765415890.2376137,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "XDCUSDC": {
+    "hunts": 4,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765486875.6997392,
+    "streak": 0,
+    "blacklisted": false
+  },
+  "ATUSDC": {
+    "hunts": 1,
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0,
+    "last_time": 1765487489.292911,
     "streak": 0,
     "blacklisted": false
   }

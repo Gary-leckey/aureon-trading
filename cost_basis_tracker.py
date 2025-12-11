@@ -264,7 +264,7 @@ class CostBasisTracker:
         try:
             from capital_client import CapitalClient
             client = CapitalClient()
-            if not client.session_token:
+            if not client.enabled:
                 print("   ⚪ Capital.com not authenticated - skipping")
                 return 0
         except Exception as e:
@@ -447,26 +447,34 @@ class CostBasisTracker:
         gross_profit = gross_value - cost_basis
         
         # Account for fees (entry + exit)
-        entry_fee = cost_basis * fee_pct
+        # Use historical fees for entry (pro-rated)
+        total_pos_qty = pos.get('total_quantity', 0)
+        fraction = qty / total_pos_qty if total_pos_qty > 0 else 1.0
+        historical_fees = pos.get('total_fees', 0) * fraction
+        
+        # Estimate exit fee
         exit_fee = gross_value * fee_pct
-        total_fees = entry_fee + exit_fee + pos.get('total_fees', 0)
+        
+        total_fees = historical_fees + exit_fee
         
         net_profit = gross_profit - total_fees
-        profit_pct = (current_price - entry_price) / entry_price * 100 if entry_price > 0 else 0
         
-        # Minimum profit threshold (0.5% after fees)
-        min_profit_pct = 0.5
+        # Calculate NET profit percentage
+        net_profit_pct = (net_profit / cost_basis * 100) if cost_basis > 0 else 0
         
-        can_sell = profit_pct >= min_profit_pct
+        # Minimum NET profit threshold (0.2% pure profit after all fees)
+        min_net_profit_pct = 0.2
+        
+        can_sell = net_profit_pct >= min_net_profit_pct
         
         recommendation = ""
-        if profit_pct >= 2.0:
+        if net_profit_pct >= 2.0:
             recommendation = "🟢 STRONG SELL - Good profit"
-        elif profit_pct >= 0.5:
+        elif net_profit_pct >= 0.5:
             recommendation = "🟡 SELL - Modest profit"
-        elif profit_pct >= 0:
+        elif net_profit_pct >= 0:
             recommendation = "⚪ HOLD - Breakeven or small loss after fees"
-        elif profit_pct >= -2.0:
+        elif net_profit_pct >= -2.0:
             recommendation = "🔴 HOLD - Would realize loss"
         else:
             recommendation = "🔴 HOLD - Significant loss, wait for recovery"
@@ -480,7 +488,7 @@ class CostBasisTracker:
             'gross_profit': gross_profit,
             'total_fees': total_fees,
             'net_profit': net_profit,
-            'profit_pct': profit_pct,
+            'profit_pct': net_profit_pct, # Return NET profit pct
             'potential_loss': abs(net_profit) if net_profit < 0 else 0,
             'recommendation': recommendation
         }

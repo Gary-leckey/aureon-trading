@@ -468,9 +468,9 @@ CONFIG = {
     'CAPITAL_FEE': 0.0010,          # Default spread cost
     
     # General
-    'SLIPPAGE_PCT': 0.0010,         # 0.10% estimated slippage per trade
-    'SPREAD_COST_PCT': 0.0005,      # 0.05% estimated spread cost
-    'TAKE_PROFIT_PCT': 1.5,         # 1.5% profit target (was 1.2% - need more room to cover fees + slippage)
+    'SLIPPAGE_PCT': 0.0020,         # 0.20% estimated slippage per trade (increased for safety)
+    'SPREAD_COST_PCT': 0.0010,      # 0.10% estimated spread cost (increased for safety)
+    'TAKE_PROFIT_PCT': 1.8,         # 1.8% profit target (was 1.5% - need more room to cover fees + slippage)
     'STOP_LOSS_PCT': 1.5,           # 1.5% stop loss (was 0.8% - give trades room to breathe)
     'MAX_POSITIONS': 30,            # 🔥 BEAST MODE: 30 positions - TRADE EVERYTHING!
     'MIN_TRADE_USD': 5.0,           # Minimum trade notional in base currency
@@ -9449,14 +9449,15 @@ class AureonKrakenEcosystem:
                     nexus_pred_patterns = nexus_pred.get('patterns_triggered', [])
                     should_trade = nexus_pred.get('should_trade', True)
                     
-                    # Skip if Nexus says NO (validated 79.6% accuracy!)
-                    if not should_trade or nexus_pred_prob < 0.55:
+                    # 🤑 GREEDY HOE MODE: Lower threshold from 0.55 to 0.52!
+                    # Skip only if Nexus says NO AND probability is below 52%
+                    if not should_trade and nexus_pred_prob < 0.52:
                         continue
                 except Exception as e:
                     pass  # Continue without Nexus if error
 
-            # 6D harmonic gate: require minimal harmonic probability field when available
-            if harmonic_engine and harmonic_prob < CONFIG.get('HARMONIC_PROB_MIN', 0.52):
+            # 6D harmonic gate: 🤑 GREEDY HOE - lowered from 0.52 to 0.40!
+            if harmonic_engine and harmonic_prob < CONFIG.get('HARMONIC_PROB_MIN', 0.40):
                 continue
             
             # Propagate through Mycelium network for enhanced signal
@@ -11010,6 +11011,47 @@ class AureonKrakenEcosystem:
         if not self.should_exit_trade(pos, price, reason):
             return  # Hold position, don't sell at a loss
         
+        # 🧹 DUST PROTECTION: Check actual balance on exchange to prevent "Insufficient Balance" and clean dust
+        if not self.dry_run:
+            try:
+                # Infer base asset
+                base_asset = symbol
+                # Sort quotes by length desc to match longest first (e.g. FDUSD before USD)
+                sorted_quotes = sorted(CONFIG['QUOTE_CURRENCIES'], key=len, reverse=True)
+                for quote in sorted_quotes:
+                    if symbol.endswith(quote):
+                        base_asset = symbol[:-len(quote)]
+                        break
+                
+                # Get actual free balance from the specific exchange client
+                # We need to route this to the correct exchange client instance
+                free_balance = 0.0
+                if isinstance(self.client, MultiExchangeClient):
+                    if pos.exchange in self.client.clients:
+                        free_balance = self.client.clients[pos.exchange].get_balance(base_asset)
+                elif hasattr(self.client, 'get_balance'):
+                    free_balance = self.client.get_balance(base_asset)
+                
+                if free_balance > 0:
+                    # Case 1: Actual balance is LESS than tracked (e.g. fees deducted from asset)
+                    if free_balance < pos.quantity:
+                        # If it's within 10% (fees are small), assume it's fee deduction and adjust
+                        if free_balance > pos.quantity * 0.90:
+                            print(f"   🧹 Adjusting sell qty for {symbol}: {pos.quantity:.8f} -> {free_balance:.8f} (Fees/Dust)")
+                            pos.quantity = free_balance
+                        else:
+                            # Significant difference - safer to sell what we have to close the position
+                            print(f"   ⚠️ Balance mismatch for {symbol}: Tracked {pos.quantity:.8f}, Actual {free_balance:.8f}. Selling Actual.")
+                            pos.quantity = free_balance
+                    
+                    # Case 2: Actual balance is slightly MORE than tracked (leftover dust)
+                    # Clean it up if it's within 5% excess
+                    elif free_balance > pos.quantity and free_balance < pos.quantity * 1.05:
+                        print(f"   🧹 Cleaning dust for {symbol}: {pos.quantity:.8f} -> {free_balance:.8f}")
+                        pos.quantity = free_balance
+            except Exception as e:
+                print(f"   ⚠️ Failed to check balance for {symbol}: {e}")
+
         # EXECUTE TRADE - Use unified confirmation for all exchanges
         success = False
         if not self.dry_run:
@@ -11495,8 +11537,11 @@ class AureonKrakenEcosystem:
         for base_asset in major_bases:
             for quote in ['USD', 'GBP', 'EUR', 'USDT', 'USDC', 'BTC', 'ETH', 'BNB']:
                 pair = f"{base_asset}{quote}"
+                # Only add if it's a valid pair in our ticker cache
                 if pair not in symbols_to_watch and pair in self.ticker_cache:
                     symbols_to_watch.append(pair)
+                # Also try reverse for some pairs (though rare in standard naming)
+                # or alternative naming conventions if needed
                 
         print(f"\n🔴🤑 GREEDY HOE MODE: Starting WebSocket for {len(symbols_to_watch)} pairs!")
         self.start_websocket(symbols_to_watch)
