@@ -8922,12 +8922,6 @@ class AureonKrakenEcosystem:
             
         if tasks:
             await asyncio.gather(*tasks)
-            
-        if CONFIG['EXCHANGE'] in ['alpaca', 'both', 'all'] and alpaca_pairs:
-            tasks.append(connect_exchange('alpaca', 'wss://stream.data.alpaca.markets/v1beta3/crypto/us', alpaca_pairs))
-            
-        if tasks:
-            await asyncio.gather(*tasks)
         else:
             print("   ⚠️ No WebSocket tasks to run (no pairs or exchange disabled)")
                 
