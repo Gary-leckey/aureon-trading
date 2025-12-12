@@ -10426,7 +10426,8 @@ class AureonKrakenEcosystem:
             size_fraction = self.tracker.calculate_position_size(
                 opp['coherence'], symbol, hnc_modifier, imperial_modifier
             )
-            size_fraction *= lattice_state.risk_mod
+            risk_mod = lattice_state.get('risk_mod', 1.0) if isinstance(lattice_state, dict) else getattr(lattice_state, 'risk_mod', 1.0)
+            size_fraction *= risk_mod
             size_fraction *= freq_modifier  # 🔊 Apply frequency filtering modifier
             size_fraction *= opp.get('risk_mod_from_pnl', 1.0)  # 🧠 Live P&L throttle
         
