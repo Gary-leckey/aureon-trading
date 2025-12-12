@@ -11987,6 +11987,8 @@ def main():
     ║                                                           ║
     ║  Mining (optional):                                       ║
     ║    ENABLE_MINING=1 MINING_WORKER=bc1q... python ...       ║
+    ║    MINING_PLATFORM=braiins (or antpool, f2pool, nicehash) ║
+    ║    OR:                                                    ║
     ║    MINING_POOL_HOST=stratum.pool.com                      ║
     ║    MINING_POOL_PORT=3333 MINING_THREADS=2                 ║
     ╚═══════════════════════════════════════════════════════════╝
@@ -11995,10 +11997,19 @@ def main():
     # Start background miner if enabled
     if enable_mining:
         try:
-            from aureon_miner import AureonMiner
+            from aureon_miner import AureonMiner, resolve_pool_config
             
-            pool_host = os.getenv('MINING_POOL_HOST', 'stratum.slushpool.com')
-            pool_port = int(os.getenv('MINING_POOL_PORT', '3333'))
+            # Resolve pool configuration
+            platform = os.getenv('MINING_PLATFORM')
+            raw_host = os.getenv('MINING_POOL_HOST')
+            raw_port = os.getenv('MINING_POOL_PORT')
+            
+            pool_host, pool_port = resolve_pool_config(
+                platform=platform,
+                host=raw_host,
+                port=int(raw_port) if raw_port else None
+            )
+            
             worker = os.getenv('MINING_WORKER', '')
             password = os.getenv('MINING_PASSWORD', 'x')
             threads = int(os.getenv('MINING_THREADS', '1'))
@@ -12008,6 +12019,8 @@ def main():
                 print("    Set MINING_WORKER=your_btc_address.aureon")
             else:
                 print(f"    ⛏️ Starting background miner: {worker}")
+                print(f"       Pool: {pool_host}:{pool_port} ({platform or 'custom'})")
+                
                 miner = AureonMiner(pool_host, pool_port, worker, password, threads=threads)
                 if miner.start():
                     print(f"    ✅ Miner running on {threads} thread(s)")

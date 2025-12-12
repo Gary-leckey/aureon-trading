@@ -42,6 +42,32 @@ DEFAULT_NONCE_BATCH = 100_000  # Nonces per batch before checking for new job
 HASH_REPORT_INTERVAL = 10.0    # Seconds between hashrate reports
 MAX_NONCE = 0xFFFFFFFF         # Maximum 32-bit nonce value
 
+# Known Mining Platforms
+KNOWN_POOLS = {
+    'braiins': {'host': 'stratum.braiins.com', 'port': 3333, 'desc': 'Braiins Pool (formerly Slushpool)'},
+    'slushpool': {'host': 'stratum.slushpool.com', 'port': 3333, 'desc': 'Slushpool (Legacy)'},
+    'antpool': {'host': 'stratum.antpool.com', 'port': 3333, 'desc': 'AntPool'},
+    'f2pool': {'host': 'btc.f2pool.com', 'port': 3333, 'desc': 'F2Pool'},
+    'viabtc': {'host': 'btc.viabtc.com', 'port': 3333, 'desc': 'ViaBTC'},
+    'nicehash': {'host': 'sha256.auto.nicehash.com', 'port': 9200, 'desc': 'NiceHash Auto'},
+    'kano': {'host': 'stratum.kano.is', 'port': 3333, 'desc': 'KanoPool'},
+    'ckpool': {'host': 'solo.ckpool.org', 'port': 3333, 'desc': 'Solo CKPool (Solo Mining)'},
+    'binance': {'host': 'sha256.poolbinance.com', 'port': 8888, 'desc': 'Binance Pool'},
+    'luxor': {'host': 'btc.global.luxor.tech', 'port': 700, 'desc': 'Luxor Mining'},
+}
+
+def resolve_pool_config(platform: str = None, host: str = None, port: int = None) -> Tuple[str, int]:
+    """
+    Resolve pool connection details from platform name or explicit host/port.
+    Returns (host, port).
+    """
+    if platform and platform.lower() in KNOWN_POOLS:
+        config = KNOWN_POOLS[platform.lower()]
+        return config['host'], config['port']
+    
+    # Default fallback
+    return host or 'stratum.braiins.com', port or 3333
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # DATA STRUCTURES
@@ -947,8 +973,16 @@ def main():
     )
     
     # Configuration from environment
-    POOL_HOST = os.getenv('MINING_POOL_HOST', 'stratum.slushpool.com')
-    POOL_PORT = int(os.getenv('MINING_POOL_PORT', '3333'))
+    PLATFORM = os.getenv('MINING_PLATFORM')
+    RAW_HOST = os.getenv('MINING_POOL_HOST')
+    RAW_PORT = os.getenv('MINING_POOL_PORT')
+    
+    POOL_HOST, POOL_PORT = resolve_pool_config(
+        platform=PLATFORM,
+        host=RAW_HOST,
+        port=int(RAW_PORT) if RAW_PORT else None
+    )
+    
     WORKER = os.getenv('MINING_WORKER', 'your_btc_address.aureon')
     PASSWORD = os.getenv('MINING_PASSWORD', 'x')
     THREADS = int(os.getenv('MINING_THREADS', '1'))
@@ -957,6 +991,7 @@ def main():
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                         AUREON MINER CONFIGURATION                            ║
 ╠═══════════════════════════════════════════════════════════════════════════════╣
+║  Platform: {PLATFORM or 'Custom':<54}
 ║  Pool:     {POOL_HOST}:{POOL_PORT:<42}
 ║  Worker:   {WORKER:<54}
 ║  Threads:  {THREADS:<54}
