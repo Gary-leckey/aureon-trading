@@ -4464,9 +4464,28 @@ class MiningSession:
         self._extranonce2_counter = 0
         self._extranonce2_lock = threading.Lock()
         
+        # Binance Pool earnings tracking
+        self._binance_pool_api = None
+        self._is_binance_pool = "binance" in session_id.lower()
+        self._last_binance_check = 0.0
+        self._binance_earnings = {'today': 0.0, 'yesterday': 0.0, 'wallet': 0.0}
+        
+        if self._is_binance_pool:
+            self._init_binance_api()
+        
         # Wire callbacks
         self.stratum.on_share_result = self._on_share_result
         self.stratum.on_disconnect = self._on_disconnect
+    
+    def _init_binance_api(self):
+        """Initialize Binance Pool API client if this is a Binance pool"""
+        try:
+            from binance_client import BinancePoolAPI
+            self._binance_pool_api = BinancePoolAPI()
+            logger.info(f"[{self.session_id}] Binance Pool API connected")
+        except Exception as e:
+            logger.warning(f"[{self.session_id}] Could not init Binance Pool API: {e}")
+            self._binance_pool_api = None
     
     def start(self, num_threads: int) -> bool:
         """Start mining on this session"""
@@ -4601,9 +4620,61 @@ class MiningSession:
     def _on_share_result(self, accepted: bool, error: str):
         if accepted:
             self.stats.shares_accepted += 1
+            # Update Binance earnings cache on accepted share
+            if self._is_binance_pool and self._binance_pool_api:
+                self._update_binance_earnings()
         else:
             self.stats.shares_rejected += 1
             logger.warning(f"[{self.session_id}] Share REJECTED: {error}")
+    
+    def _update_binance_earnings(self):
+        """Update Binance Pool earnings (rate limited to once per minute)"""
+        now = time.time()
+        if now - self._last_binance_check < 60:  # Only check once per minute
+            return
+        
+        self._last_binance_check = now
+        
+        try:
+            # Detect algorithm and coin from pool host
+            algo = "sha256"
+            coin = "BTC"
+            
+            if "bch" in self.host:
+                coin = "BCH"
+            elif "ethw" in self.host:
+                algo = "ethash"
+                coin = "ETHW"
+            elif "zec" in self.host:
+                algo = "equihash"
+                coin = "ZEC"
+            elif "etc" in self.host:
+                algo = "etchash"
+                coin = "ETC"
+            elif "dash" in self.host:
+                algo = "x11"
+                coin = "DASH"
+            elif "kas" in self.host:
+                algo = "kheavyhash"
+                coin = "KAS"
+            
+            earnings = self._binance_pool_api.get_total_earnings(algo, coin)
+            wallet = self._binance_pool_api.get_wallet_balance(coin)
+            
+            self._binance_earnings = {
+                'today': earnings.get('today', 0.0),
+                'yesterday': earnings.get('yesterday', 0.0),
+                'wallet': wallet,
+                'coin': coin,
+                'algo': algo
+            }
+            
+        except Exception as e:
+            logger.debug(f"[{self.session_id}] Binance earnings check failed: {e}")
+    
+    def get_binance_earnings(self) -> dict:
+        """Get cached Binance earnings"""
+        return self._binance_earnings
 
     def _on_disconnect(self):
         if self._running:
@@ -4620,6 +4691,7 @@ class MiningSession:
 class AureonMiner:
     """
     Orchestrates mining across one or more pools.
+    Integrates with Binance Pool API for live earnings validation.
     """
     
     def __init__(self, pool_host: str = None, pool_port: int = None, 
@@ -4633,9 +4705,110 @@ class AureonMiner:
         self._running = False
         self._stats_thread: Optional[threading.Thread] = None
         
+        # Binance Pool Integration
+        self._binance_pool = None
+        self._binance_tracking_enabled = False
+        self._last_binance_balance = 0.0
+        self._session_start_balance = 0.0
+        self._earnings_this_session = 0.0
+        self._load_binance_pool()
+        
         # Backward compatibility: if host/port provided in init, add as first pool
         if pool_host and pool_port and worker:
             self.add_pool(pool_host, pool_port, worker, password, "default")
+    
+    def _load_binance_pool(self):
+        """Load Binance Pool client for live earnings tracking"""
+        try:
+            from binance_client import BinancePoolClient, BinanceClient
+            
+            # Check if Binance API keys are configured
+            api_key = os.getenv('BINANCE_API_KEY')
+            if api_key:
+                client = BinanceClient()
+                self._binance_pool = BinancePoolClient(client)
+                self._binance_tracking_enabled = True
+                
+                # Get starting balance
+                self._session_start_balance = self._binance_pool.get_wallet_balance("BTC")
+                self._last_binance_balance = self._session_start_balance
+                
+                logger.info("💰 Binance Pool API: CONNECTED")
+                logger.info(f"   Starting BTC Balance: {self._session_start_balance:.8f} BTC")
+            else:
+                logger.info("💰 Binance Pool API: Not configured (set BINANCE_API_KEY)")
+        except ImportError:
+            logger.debug("Binance client not available for pool tracking")
+        except Exception as e:
+            logger.warning(f"Binance Pool connection failed: {e}")
+    
+    def get_binance_earnings(self) -> Dict[str, Any]:
+        """Get current Binance Pool earnings"""
+        if not self._binance_pool:
+            return {'error': 'Binance Pool not connected'}
+        
+        try:
+            return self._binance_pool.get_total_earnings()
+        except Exception as e:
+            return {'error': str(e)}
+    
+    def get_session_profit(self) -> Dict[str, float]:
+        """Get profit earned during this mining session"""
+        if not self._binance_pool:
+            return {
+                'btc_earned': 0.0,
+                'usd_value': 0.0,
+                'start_balance': 0.0,
+                'current_balance': 0.0,
+                'connected': False
+            }
+        
+        try:
+            current_balance = self._binance_pool.get_wallet_balance("BTC")
+            btc_earned = current_balance - self._session_start_balance
+            
+            # Estimate USD value (would need price feed for accuracy)
+            btc_price = float(os.getenv('BTC_PRICE_USD', '100000'))
+            usd_value = btc_earned * btc_price
+            
+            return {
+                'btc_earned': btc_earned,
+                'usd_value': usd_value,
+                'start_balance': self._session_start_balance,
+                'current_balance': current_balance,
+                'connected': True
+            }
+        except Exception as e:
+            return {
+                'btc_earned': 0.0,
+                'usd_value': 0.0,
+                'error': str(e),
+                'connected': False
+            }
+    
+    def _check_binance_earnings(self):
+        """Check for new earnings from Binance Pool"""
+        if not self._binance_pool or not self._binance_tracking_enabled:
+            return
+        
+        try:
+            current_balance = self._binance_pool.get_wallet_balance("BTC")
+            
+            # Detect new earnings
+            if current_balance > self._last_binance_balance:
+                new_earnings = current_balance - self._last_binance_balance
+                self._earnings_this_session += new_earnings
+                
+                btc_price = float(os.getenv('BTC_PRICE_USD', '100000'))
+                usd_value = new_earnings * btc_price
+                
+                logger.info(f"💵 NEW EARNINGS DETECTED!")
+                logger.info(f"   +{new_earnings:.8f} BTC (${usd_value:.2f} USD)")
+                logger.info(f"   Session Total: {self._earnings_this_session:.8f} BTC")
+                
+                self._last_binance_balance = current_balance
+        except Exception as e:
+            logger.debug(f"Binance earnings check failed: {e}")
     
     def add_pool(self, host: str, port: int, worker: str, password: str = 'x', name: str = "pool"):
         """Add a mining pool configuration"""
@@ -4767,6 +4940,38 @@ class AureonMiner:
                 
                 # Display Quantum Mirror Array state (60-Second Profit)
                 logger.info(self.optimizer.mirror_array.format_display())
+                
+                # Display earnings from Binance Pool sessions
+                for session in self.sessions:
+                    if session._is_binance_pool and session._binance_pool_api:
+                        session._update_binance_earnings()
+                        earnings = session.get_binance_earnings()
+                        if earnings.get('coin'):
+                            coin = earnings['coin']
+                            logger.info(
+                                f"💰 [{session.session_id}] {coin}: "
+                                f"Today {earnings['today']:.8f} | "
+                                f"Wallet {earnings['wallet']:.8f} {coin}"
+                            )
+                
+                # Check Binance Pool earnings (every stats cycle)
+                self._check_binance_earnings()
+                
+                # Display earnings from Binance Pool sessions
+                for session in self.sessions:
+                    if session._is_binance_pool and session._binance_pool_api:
+                        earnings = session.get_binance_earnings()
+                        if earnings.get('coin'):
+                            coin = earnings['coin']
+                            logger.info(
+                                f"💰 [{session.session_id}] {coin}: "
+                                f"Today {earnings['today']:.8f} | "
+                                f"Wallet {earnings['wallet']:.8f} {coin}"
+                            )
+                        logger.info(
+                            f"💰 SESSION: +{profit['btc_earned']:.8f} BTC (${profit['usd_value']:.2f}) | "
+                            f"Wallet: {profit['current_balance']:.8f} BTC"
+                        )
 
     def _print_final_stats(self):
         print("\n╔════════════════════ FINAL MINING STATS ════════════════════╗")
@@ -4795,6 +5000,19 @@ class AureonMiner:
         print(f"║ P_in={lumina_stats.get('input_power', 0):.0f}W | P_out={lumina_stats.get('output_power', 0):.0f}W | "
               f"η={lumina_stats.get('efficiency', 0)*100:.1f}% | φ={lumina_stats.get('orthogonality_phi', 0):.3f} | "
               f"{threshold_icon} ║")
+        
+        # Show Binance Pool session earnings for each pool
+        binance_sessions = [s for s in self.sessions if s._is_binance_pool and s._binance_pool_api]
+        if binance_sessions:
+            print("╠═══════════════ BINANCE POOL EARNINGS ═════════════════════╣")
+            for session in binance_sessions:
+                earnings = session.get_binance_earnings()
+                if earnings.get('coin'):
+                    coin = earnings['coin']
+                    print(f"║ [{session.session_id}]")
+                    print(f"║   Today:  {earnings['today']:.8f} {coin}")
+                    print(f"║   Wallet: {earnings['wallet']:.8f} {coin}")
+        
         print("╚════════════════════════════════════════════════════════════╝\n")
 
 

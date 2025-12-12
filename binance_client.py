@@ -679,6 +679,241 @@ def load_risk_config() -> Dict[str, Any]:
     }
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# BINANCE POOL MINING API
+# ═══════════════════════════════════════════════════════════════════════════
+
+class BinancePoolClient:
+    """
+    Binance Pool Mining API Client
+    
+    Endpoints for tracking mining earnings, hashrate, and payouts.
+    https://binance-docs.github.io/apidocs/spot/en/#mining-endpoints
+    """
+    
+    def __init__(self, client: BinanceClient = None):
+        self.client = client or BinanceClient()
+        self.base = self.client.base
+        self.session = self.client.session
+    
+    def _signed_request(self, method: str, path: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Signed request using parent client's auth"""
+        return self.client._signed_request(method, path, params)
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # MINING ACCOUNT INFO
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def get_algo_list(self) -> Dict[str, Any]:
+        """Get list of mining algorithms (SAPI)"""
+        return self._signed_request("GET", "/sapi/v1/mining/pub/algoList", {})
+    
+    def get_coin_list(self) -> Dict[str, Any]:
+        """Get list of mineable coins (SAPI)"""
+        return self._signed_request("GET", "/sapi/v1/mining/pub/coinList", {})
+    
+    def get_miner_list(self, algo: str = "sha256", user_name: str = None) -> Dict[str, Any]:
+        """Get list of miners for account
+        
+        Args:
+            algo: Algorithm name (sha256, ethash, etc.)
+            user_name: Mining account username
+        """
+        params = {"algo": algo}
+        if user_name:
+            params["userName"] = user_name
+        return self._signed_request("GET", "/sapi/v1/mining/worker/list", params)
+    
+    def get_miner_detail(self, algo: str, worker_name: str, user_name: str = None) -> Dict[str, Any]:
+        """Get detailed miner/worker stats
+        
+        Args:
+            algo: Algorithm name
+            worker_name: Worker name (e.g., 'aureon')
+            user_name: Mining account username
+        """
+        params = {"algo": algo, "workerName": worker_name}
+        if user_name:
+            params["userName"] = user_name
+        return self._signed_request("GET", "/sapi/v1/mining/worker/detail", params)
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # EARNINGS & PAYOUTS
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def get_earnings_list(self, algo: str = "sha256", user_name: str = None, 
+                          coin: str = None, start_date: int = None, 
+                          end_date: int = None, page: int = 1, 
+                          page_size: int = 20) -> Dict[str, Any]:
+        """Get mining earnings history
+        
+        Args:
+            algo: Algorithm name
+            user_name: Mining account username
+            coin: Coin name (BTC, ETH, etc.)
+            start_date: Start timestamp (ms)
+            end_date: End timestamp (ms)
+            page: Page number
+            page_size: Results per page (max 200)
+        """
+        params = {"algo": algo, "page": page, "pageSize": min(page_size, 200)}
+        if user_name:
+            params["userName"] = user_name
+        if coin:
+            params["coin"] = coin
+        if start_date:
+            params["startDate"] = start_date
+        if end_date:
+            params["endDate"] = end_date
+        return self._signed_request("GET", "/sapi/v1/mining/payment/list", params)
+    
+    def get_extra_bonus(self, algo: str = "sha256", user_name: str = None,
+                        coin: str = None, start_date: int = None,
+                        end_date: int = None, page: int = 1,
+                        page_size: int = 20) -> Dict[str, Any]:
+        """Get extra mining bonus (referral, events, etc.)"""
+        params = {"algo": algo, "page": page, "pageSize": min(page_size, 200)}
+        if user_name:
+            params["userName"] = user_name
+        if coin:
+            params["coin"] = coin
+        if start_date:
+            params["startDate"] = start_date
+        if end_date:
+            params["endDate"] = end_date
+        return self._signed_request("GET", "/sapi/v1/mining/payment/other", params)
+    
+    def get_hashrate_resale_list(self, page: int = 1, page_size: int = 20) -> Dict[str, Any]:
+        """Get hashrate resale list (if selling hashpower)"""
+        params = {"page": page, "pageSize": min(page_size, 200)}
+        return self._signed_request("GET", "/sapi/v1/mining/hash-transfer/config/details/list", params)
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # STATISTICS
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def get_statistic_list(self, algo: str = "sha256", user_name: str = None) -> Dict[str, Any]:
+        """Get mining statistics (hashrate, earnings summary)
+        
+        Returns:
+            {
+                "code": 0,
+                "data": {
+                    "fifteenMinHashRate": "457.38",
+                    "dayHashRate": "450.12",
+                    "validNum": 5,
+                    "invalidNum": 0,
+                    "profitToday": {"BTC": "0.00012345"},
+                    "profitYesterday": {"BTC": "0.00011234"},
+                    "userName": "mining_account",
+                    "unit": "TH/s",
+                    "algo": "sha256"
+                }
+            }
+        """
+        params = {"algo": algo}
+        # userName is required by Binance Pool API
+        if user_name:
+            params["userName"] = user_name
+        else:
+            # Try to get from environment
+            params["userName"] = os.getenv("BINANCE_POOL_USERNAME", os.getenv("MINING_WORKER", "").split(".")[0])
+        
+        if not params["userName"]:
+            return {"code": -1, "msg": "userName required - set BINANCE_POOL_USERNAME env var", "data": {}}
+        
+        return self._signed_request("GET", "/sapi/v1/mining/statistics/user/status", params)
+    
+    def get_account_list(self, algo: str = "sha256", user_name: str = None) -> Dict[str, Any]:
+        """Get mining account earnings list"""
+        params = {"algo": algo}
+        if user_name:
+            params["userName"] = user_name
+        return self._signed_request("GET", "/sapi/v1/mining/statistics/user/list", params)
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # CONVENIENCE METHODS
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def get_total_earnings(self, algo: str = "sha256", coin: str = "BTC") -> Dict[str, float]:
+        """Get total earnings summary
+        
+        Returns:
+            {
+                'today': float,
+                'yesterday': float,
+                'total_paid': float,
+                'hashrate_15m': float,
+                'hashrate_24h': float,
+                'unit': str
+            }
+        """
+        try:
+            stats = self.get_statistic_list(algo)
+            data = stats.get('data', {})
+            
+            today = 0.0
+            yesterday = 0.0
+            
+            profit_today = data.get('profitToday', {})
+            profit_yesterday = data.get('profitYesterday', {})
+            
+            if isinstance(profit_today, dict):
+                today = float(profit_today.get(coin, 0))
+            if isinstance(profit_yesterday, dict):
+                yesterday = float(profit_yesterday.get(coin, 0))
+            
+            return {
+                'today': today,
+                'yesterday': yesterday,
+                'hashrate_15m': float(data.get('fifteenMinHashRate', 0)),
+                'hashrate_24h': float(data.get('dayHashRate', 0)),
+                'valid_workers': int(data.get('validNum', 0)),
+                'invalid_workers': int(data.get('invalidNum', 0)),
+                'unit': data.get('unit', 'H/s'),
+                'algo': algo,
+                'coin': coin
+            }
+        except Exception as e:
+            return {
+                'error': str(e),
+                'today': 0.0,
+                'yesterday': 0.0,
+                'hashrate_15m': 0.0,
+                'hashrate_24h': 0.0,
+                'valid_workers': 0,
+                'invalid_workers': 0,
+                'unit': 'H/s',
+                'algo': algo,
+                'coin': coin
+            }
+    
+    def get_wallet_balance(self, asset: str = "BTC") -> float:
+        """Get current wallet balance for mining payouts"""
+        try:
+            balance = self.client.get_free_balance(asset)
+            return float(balance)
+        except Exception:
+            return 0.0
+    
+    def format_earnings_display(self, algo: str = "sha256", coin: str = "BTC") -> str:
+        """Format earnings for display"""
+        earnings = self.get_total_earnings(algo, coin)
+        balance = self.get_wallet_balance(coin)
+        
+        if 'error' in earnings:
+            return f"⚠️ Mining API Error: {earnings['error']}"
+        
+        return (
+            f"💰 BINANCE POOL EARNINGS ({coin})\n"
+            f"   Today:     {earnings['today']:.8f} {coin}\n"
+            f"   Yesterday: {earnings['yesterday']:.8f} {coin}\n"
+            f"   Hashrate:  {earnings['hashrate_15m']:.2f} {earnings['unit']} (15m)\n"
+            f"   Workers:   {earnings['valid_workers']} active, {earnings['invalid_workers']} inactive\n"
+            f"   Wallet:    {balance:.8f} {coin}"
+        )
+
+
 def safe_trade(symbol: str = None, side: str = "BUY") -> Dict[str, Any]:
     symbol = symbol or os.getenv("BINANCE_SYMBOL", "BTCUSDT")
     client = BinanceClient()
