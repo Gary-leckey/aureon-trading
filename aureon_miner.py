@@ -1661,6 +1661,880 @@ class AstronomicalCoherenceSimulator:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# LUMINACELL v2 CONTACTLESS CORE ENGINE
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Implements: "The LuminaCell v2 Architecture: A High-Power Coherent Light 
+# Source Based on a Contactless Quantum Interference Core"
+# R&A Consulting White Paper (2025)
+#
+# Core Innovation: Replace physical mirrors with Quantum Interference Mirrors (QIMs)
+#
+# Key Components:
+#   - NV-Diamond Core: Nitrogen-Vacancy centers as room-temperature gain medium
+#   - QIM-Reflector: Constructive interference for photon trapping (high-Q)
+#   - QIM-Coupler: Controlled destructive interference for output extraction
+#   - Feedback Cavity: Closed optical loop with phase stabilization
+#
+# Key Equations:
+#   - Resonant Orthogonality: φ = 1 - |cos(θ)| (maximal at θ = π/2)
+#   - LSC Power: P_LSC(OD) = P_max(1 - e^(-k·OD))
+#   - LSC Refractive: P_LSC(n) = 0.20n + 0.46
+#   - Coherence Threshold: P_th ≈ 2000W
+#   - Slope Efficiency: η ≈ 25%
+#   - Output: P_out = η(P_in - P_th) for P_in ≥ P_th
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Physical Constants for LuminaCell
+NV_PUMP_WAVELENGTH = 532e-9      # Green pump laser wavelength (532nm)
+NV_EMISSION_WAVELENGTH = 637e-9  # Red emission wavelength (637nm)
+NV_SPIN_LIFETIME = 5e-3          # Spin coherence lifetime (~5ms at room temp)
+NV_QUANTUM_EFFICIENCY = 0.7      # Typical NV center quantum efficiency
+LUMINA_THRESHOLD_POWER = 2000.0  # Coherence Engine threshold (W)
+LUMINA_SLOPE_EFFICIENCY = 0.25   # 25% post-threshold efficiency
+LUMINA_Q_FACTOR_BASE = 1e6       # Base Q-factor for QIM resonator
+
+
+@dataclass
+class NVCenterState:
+    """
+    Nitrogen-Vacancy Diamond Center State
+    
+    From whitepaper Section 2.1: The NV center possesses a spin-triplet
+    ground state (³A₂) and a spin-triplet excited state (³E).
+    
+    Population dynamics:
+    - Optical pumping (532nm) promotes ground → excited
+    - Spin-selective ISC to singlet states
+    - Preferential decay to ms=0 ground state
+    - Creates population inversion for stimulated emission
+    """
+    # Population levels (normalized to 1.0)
+    ground_state_ms0: float = 0.33    # ³A₂, ms=0 sublevel
+    ground_state_ms1: float = 0.33    # ³A₂, ms=±1 sublevels
+    excited_state: float = 0.0        # ³E excited state population
+    singlet_state: float = 0.0        # Intermediate singlet states
+    
+    # Operational parameters
+    pump_power: float = 0.0           # Input pump power (W)
+    pump_rate: float = 0.0            # Optical pumping rate (s⁻¹)
+    emission_rate: float = 0.0        # Stimulated emission rate (s⁻¹)
+    
+    # Derived properties
+    @property
+    def total_ground(self) -> float:
+        """Total ground state population"""
+        return self.ground_state_ms0 + self.ground_state_ms1
+    
+    @property
+    def population_inversion(self) -> float:
+        """
+        Population inversion N = N_excited - N_ground
+        Positive value indicates gain condition
+        """
+        return self.excited_state - self.total_ground
+    
+    @property
+    def spin_polarization(self) -> float:
+        """
+        Spin polarization P = (N_ms0 - N_ms1) / (N_ms0 + N_ms1)
+        Range: -1 to +1, optimal is +1 (all in ms=0)
+        """
+        total = self.ground_state_ms0 + self.ground_state_ms1
+        if total < 0.001:
+            return 0.0
+        return (self.ground_state_ms0 - self.ground_state_ms1) / total
+    
+    @property
+    def gain_coefficient(self) -> float:
+        """
+        Effective gain coefficient for stimulated emission
+        Proportional to population inversion and quantum efficiency
+        """
+        if self.population_inversion <= 0:
+            return 0.0
+        return NV_QUANTUM_EFFICIENCY * self.population_inversion
+
+
+class NVDiamondCore:
+    """
+    💎 NV-DIAMOND CORE: Room-Temperature Gain Medium 💎
+    
+    Simulates the photophysics of Nitrogen-Vacancy centers in diamond,
+    serving as the gain medium for the LuminaCell v2 system.
+    
+    From whitepaper Section 2.1.1:
+    - Optical excitation at 532nm (green laser)
+    - Radiative relaxation emits 637nm (red photon)
+    - Spin-selective intersystem crossing (ISC) to singlet states
+    - ISC preferentially de-excites ms=±1 → ms=0
+    - Continuous pumping creates population inversion
+    
+    Key Features:
+    - Room temperature operation (no cryogenics needed)
+    - Long spin coherence time (~5ms)
+    - High quantum efficiency
+    - Exceptional photostability
+    """
+    
+    # Rate constants (s⁻¹)
+    RADIATIVE_DECAY = 1e7        # Radiative decay rate (³E → ³A₂)
+    ISC_RATE_MS1 = 3e7           # ISC rate from ms=±1 (preferential)
+    ISC_RATE_MS0 = 1e6           # ISC rate from ms=0 (suppressed)
+    SINGLET_DECAY = 1e6          # Singlet → ground state decay
+    
+    def __init__(self, nv_density: float = 1e17):
+        """
+        Initialize NV-Diamond core.
+        
+        Args:
+            nv_density: NV center density (cm⁻³), typical 10¹⁷ for high-power
+        """
+        self.nv_density = nv_density
+        self.state = NVCenterState()
+        
+        # Thermalization to equilibrium at room temperature
+        self._thermalize()
+        
+        # History tracking
+        self.pump_history: deque = deque(maxlen=100)
+        self.emission_history: deque = deque(maxlen=100)
+        
+        logger.info(f"💎 NV-Diamond Core initialized")
+        logger.info(f"   NV density: {nv_density:.2e} cm⁻³")
+        logger.info(f"   Spin lifetime: {NV_SPIN_LIFETIME*1000:.1f} ms")
+    
+    def _thermalize(self):
+        """Reset to thermal equilibrium (equal population in ground states)"""
+        self.state.ground_state_ms0 = 0.5
+        self.state.ground_state_ms1 = 0.5
+        self.state.excited_state = 0.0
+        self.state.singlet_state = 0.0
+    
+    def apply_optical_pump(self, pump_power: float, dt: float = 0.001) -> float:
+        """
+        Apply optical pumping at 532nm.
+        
+        Args:
+            pump_power: Pump laser power (W)
+            dt: Time step (s)
+            
+        Returns:
+            Achieved population inversion
+        """
+        self.state.pump_power = pump_power
+        
+        # Convert pump power to pumping rate
+        # Higher power → faster excitation
+        photon_energy = 6.626e-34 * 3e8 / NV_PUMP_WAVELENGTH  # E = hc/λ
+        photon_flux = pump_power / photon_energy
+        
+        # Absorption cross-section for NV centers (~1e-16 cm²)
+        sigma_abs = 1e-16
+        pump_rate = sigma_abs * photon_flux / self.nv_density
+        self.state.pump_rate = pump_rate
+        
+        # Rate equations for population dynamics
+        # Ground → Excited (optical pumping)
+        excitation = pump_rate * self.state.total_ground * dt
+        
+        # Excited → Ground (radiative decay, spin-conserving)
+        radiative_decay = self.RADIATIVE_DECAY * self.state.excited_state * dt
+        
+        # Excited → Singlet (ISC, spin-selective)
+        # ms=±1 has higher ISC rate (preferential pathway)
+        isc_ms1 = self.ISC_RATE_MS1 * self.state.excited_state * 0.67 * dt  # 2/3 from ms=±1
+        isc_ms0 = self.ISC_RATE_MS0 * self.state.excited_state * 0.33 * dt  # 1/3 from ms=0
+        
+        # Singlet → Ground (predominantly to ms=0)
+        singlet_decay = self.SINGLET_DECAY * self.state.singlet_state * dt
+        
+        # Update populations (simplified rate equations)
+        # Clamp to prevent numerical instability
+        excitation = min(excitation, self.state.total_ground * 0.5)
+        
+        # Ground state changes
+        self.state.ground_state_ms0 -= excitation * 0.5
+        self.state.ground_state_ms1 -= excitation * 0.5
+        
+        # Excited state changes
+        self.state.excited_state += excitation
+        self.state.excited_state -= radiative_decay
+        self.state.excited_state -= (isc_ms1 + isc_ms0)
+        
+        # Singlet state changes
+        self.state.singlet_state += (isc_ms1 + isc_ms0)
+        self.state.singlet_state -= singlet_decay
+        
+        # Singlet decays preferentially to ms=0 (key for population inversion!)
+        self.state.ground_state_ms0 += radiative_decay * 0.5 + singlet_decay * 0.9
+        self.state.ground_state_ms1 += radiative_decay * 0.5 + singlet_decay * 0.1
+        
+        # Normalize to conserve total population
+        total = (self.state.ground_state_ms0 + self.state.ground_state_ms1 + 
+                 self.state.excited_state + self.state.singlet_state)
+        if total > 0.001:
+            self.state.ground_state_ms0 /= total
+            self.state.ground_state_ms1 /= total
+            self.state.excited_state /= total
+            self.state.singlet_state /= total
+        
+        # Record history
+        self.pump_history.append({
+            'time': time.time(),
+            'pump_power': pump_power,
+            'inversion': self.state.population_inversion,
+            'polarization': self.state.spin_polarization
+        })
+        
+        return self.state.population_inversion
+    
+    def stimulated_emission(self, cavity_field: float) -> float:
+        """
+        Calculate stimulated emission rate given cavity field intensity.
+        
+        Args:
+            cavity_field: Intracavity field intensity (normalized)
+            
+        Returns:
+            Emission power (normalized)
+        """
+        if self.state.gain_coefficient <= 0:
+            return 0.0
+        
+        # Einstein B coefficient relation
+        # Rate ∝ gain × field intensity
+        emission = self.state.gain_coefficient * cavity_field * self.state.excited_state
+        self.state.emission_rate = emission
+        
+        self.emission_history.append({
+            'time': time.time(),
+            'emission': emission,
+            'gain': self.state.gain_coefficient
+        })
+        
+        return emission
+    
+    def get_display_stats(self) -> Dict:
+        """Get stats for display"""
+        return {
+            'inversion': self.state.population_inversion,
+            'polarization': self.state.spin_polarization,
+            'gain': self.state.gain_coefficient,
+            'pump_power': self.state.pump_power,
+            'ms0_pop': self.state.ground_state_ms0,
+            'excited_pop': self.state.excited_state
+        }
+
+
+@dataclass
+class QIMState:
+    """
+    Quantum Interference Mirror State
+    
+    From whitepaper Section 3: The QIM mechanism arises from engineered
+    interference between different emission pathways.
+    """
+    # Interference parameters
+    phase_angle: float = np.pi / 2      # θ (optimal at π/2 for quadrature)
+    orthogonality_phi: float = 1.0      # φ = 1 - |cos(θ)|
+    
+    # Resonator properties
+    q_factor: float = LUMINA_Q_FACTOR_BASE  # Quality factor
+    photon_lifetime: float = 0.0        # Trapped photon duration (s)
+    intracavity_power: float = 0.0      # Circulating power (W)
+    
+    # Fano resonance parameters
+    fano_q: float = 2.0                 # Fano asymmetry parameter
+    fano_shift: float = 0.0             # Resonance frequency shift
+    
+    @property
+    def reflectivity(self) -> float:
+        """Effective reflectivity from constructive interference"""
+        return self.orthogonality_phi * (1 - 1/self.q_factor)
+    
+    @property
+    def coupling_efficiency(self) -> float:
+        """Output coupling efficiency from controlled destructive interference"""
+        return 1 - self.orthogonality_phi
+
+
+class QIMReflector:
+    """
+    🔷 QIM-REFLECTOR: Quantum Interference Mirror for Photon Trapping 🔷
+    
+    From whitepaper Section 3.2:
+    The QIM-Reflector achieves high-reflectivity mirror function through
+    constructive interference. The Coherent Field Stabilizers adjust phase
+    and delay so the returning photon field interferes constructively with
+    the field being emitted by NV centers into the loop mode.
+    
+    This:
+    - Enhances emission probability into loop mode
+    - Suppresses emission into other modes
+    - Effectively traps photons
+    - Establishes high-Q resonance
+    - Creates standing wave of entangled photons
+    """
+    
+    def __init__(self):
+        """Initialize QIM-Reflector"""
+        self.state = QIMState()
+        self.state.phase_angle = np.pi / 2  # Start at quadrature
+        
+        # Phase stabilization parameters
+        self.target_phase = np.pi / 2  # Optimal quadrature
+        self.phase_lock_bandwidth = 0.1  # rad/s
+        
+        # Trapped photon tracking
+        self.trapped_photons = 0.0
+        self.photon_buildup_rate = 0.0
+        
+        logger.info(f"🔷 QIM-Reflector initialized (Q={self.state.q_factor:.2e})")
+    
+    def compute_orthogonality(self, theta: float) -> float:
+        """
+        Compute Resonant Orthogonality: φ = 1 - |cos(θ)|
+        
+        From whitepaper Section 4.2:
+        - φ = 1 at θ = π/2 (quadrature, maximum coherence)
+        - φ = 0 at θ = 0 or π (in-phase/anti-phase)
+        
+        Args:
+            theta: Phase angle between fields (radians)
+            
+        Returns:
+            Orthogonality index φ ∈ [0, 1]
+        """
+        return 1.0 - abs(np.cos(theta))
+    
+    def update_interference(self, incoming_field: float, emitted_field: float,
+                           dt: float = 0.001) -> float:
+        """
+        Update interference state for photon trapping.
+        
+        Args:
+            incoming_field: Returning field from feedback loop
+            emitted_field: Field being emitted by NV centers
+            dt: Time step
+            
+        Returns:
+            Net trapped field intensity
+        """
+        # Phase relationship determines interference type
+        # At quadrature (θ = π/2): Constructive for loop mode
+        
+        # Update orthogonality
+        self.state.orthogonality_phi = self.compute_orthogonality(self.state.phase_angle)
+        
+        # Constructive interference factor
+        # At φ = 1 (quadrature): Full constructive interference
+        # At φ = 0 (in-phase): Destructive, no trapping
+        constructive_factor = self.state.orthogonality_phi
+        
+        # Compute trapped field (superposition)
+        trapped_field = constructive_factor * (incoming_field + emitted_field)
+        
+        # Q-factor determines photon lifetime
+        # τ = Q / (2πf), for optical frequencies this is very short
+        optical_freq = 3e8 / NV_EMISSION_WAVELENGTH
+        self.state.photon_lifetime = self.state.q_factor / (2 * np.pi * optical_freq)
+        
+        # Photon buildup (resonator filling)
+        # dP/dt = gain - loss/Q
+        loss_rate = 1 / self.state.photon_lifetime if self.state.photon_lifetime > 0 else 1e15
+        self.trapped_photons += (trapped_field - self.trapped_photons / self.state.q_factor) * dt
+        self.trapped_photons = max(0, self.trapped_photons)
+        
+        self.state.intracavity_power = self.trapped_photons
+        
+        return trapped_field
+    
+    def apply_phase_lock(self, error_signal: float, dt: float = 0.001):
+        """
+        Apply phase-locked loop to maintain quadrature.
+        
+        The Coherent Field Stabilizers actively maintain θ = π/2.
+        """
+        # PLL feedback
+        correction = -self.phase_lock_bandwidth * error_signal * dt
+        self.state.phase_angle += correction
+        
+        # Keep phase in valid range
+        self.state.phase_angle = self.state.phase_angle % (2 * np.pi)
+    
+    def get_effective_q(self) -> float:
+        """Get effective Q-factor including interference enhancement"""
+        return self.state.q_factor * (1 + self.state.orthogonality_phi)
+
+
+class QIMCoupler:
+    """
+    🔶 QIM-COUPLER: Quantum Interference Mirror for Output Extraction 🔶
+    
+    From whitepaper Section 3.2:
+    The QIM-Coupler achieves output coupling through controlled destructive
+    interference for the internal loop mode. This simultaneously creates
+    constructive interference for the external output mode.
+    
+    Function:
+    - Locally tune feedback parameters to alter interference
+    - Partial destructive interference for internal mode
+    - Constructive interference for external output mode
+    - Extract precise fraction of coherent power
+    """
+    
+    def __init__(self, coupling_fraction: float = 0.05):
+        """
+        Initialize QIM-Coupler.
+        
+        Args:
+            coupling_fraction: Fraction of intracavity power to extract (0-1)
+        """
+        self.coupling_fraction = coupling_fraction
+        self.state = QIMState()
+        
+        # Coupler operates at slightly off-quadrature for extraction
+        self.coupling_phase_offset = np.arccos(1 - coupling_fraction)
+        
+        # Output tracking
+        self.output_power = 0.0
+        self.output_history: deque = deque(maxlen=100)
+        
+        logger.info(f"🔶 QIM-Coupler initialized (coupling={coupling_fraction*100:.1f}%)")
+    
+    def extract_output(self, intracavity_power: float, reflector_phi: float) -> float:
+        """
+        Extract coherent output from feedback loop.
+        
+        Args:
+            intracavity_power: Power circulating in feedback loop (W)
+            reflector_phi: Orthogonality of QIM-Reflector
+            
+        Returns:
+            Extracted output power (W)
+        """
+        # Coupling phase is offset from quadrature
+        coupler_theta = np.pi / 2 + self.coupling_phase_offset
+        self.state.phase_angle = coupler_theta
+        self.state.orthogonality_phi = 1.0 - abs(np.cos(coupler_theta))
+        
+        # Output coupling efficiency
+        # At perfect quadrature (φ=1): No output (all trapped)
+        # With offset: Partial destructive allows extraction
+        coupling_efficiency = self.coupling_fraction * (1 - reflector_phi * 0.5)
+        
+        # Extract power
+        self.output_power = intracavity_power * coupling_efficiency
+        
+        self.output_history.append({
+            'time': time.time(),
+            'intracavity': intracavity_power,
+            'output': self.output_power,
+            'efficiency': coupling_efficiency
+        })
+        
+        return self.output_power
+    
+    def get_transmission(self) -> float:
+        """Get effective transmission coefficient"""
+        return self.coupling_fraction * self.state.coupling_efficiency
+
+
+@dataclass
+class FeedbackCavityState:
+    """State of the closed optical feedback loop"""
+    round_trip_time: float = 1e-9       # Cavity round-trip time (s)
+    phase_accumulation: float = 0.0     # Total phase around loop (rad)
+    field_amplitude: float = 0.0        # Circulating field amplitude
+    entanglement_degree: float = 0.0    # Photon entanglement measure
+    stabilizer_correction: float = 0.0  # Active stabilization signal
+
+
+class FeedbackCavity:
+    """
+    🔄 FEEDBACK CAVITY: Closed Optical Loop with Phase Stabilization 🔄
+    
+    From whitepaper Section 4.1:
+    The feedback path is not merely a passive conduit but an active control
+    system. The Coherent Field Stabilizers are physical actuators that
+    implement coherent feedback control.
+    
+    Components:
+    - Tunable phase shifters
+    - Optical delay lines
+    - Low-loss passive elements
+    
+    Function:
+    - Precisely manipulate phase of returning quantum field
+    - Control temporal properties
+    - Maintain interference conditions at diamond core
+    - Ensure operation at desired setpoint (θ = π/2)
+    """
+    
+    def __init__(self, loop_length: float = 0.3):
+        """
+        Initialize Feedback Cavity.
+        
+        Args:
+            loop_length: Physical loop length in meters
+        """
+        self.loop_length = loop_length
+        self.state = FeedbackCavityState()
+        
+        # Calculate round-trip time
+        c = 3e8  # Speed of light
+        n_eff = 1.5  # Effective refractive index of loop
+        self.state.round_trip_time = (loop_length * n_eff) / c
+        
+        # Phase shifter state
+        self.phase_shifter_setting = 0.0
+        self.delay_line_setting = 0.0
+        
+        # Entangled photon tracking
+        self.photon_pairs: deque = deque(maxlen=1000)
+        self.coherent_state_amplitude = 0.0
+        
+        logger.info(f"🔄 Feedback Cavity initialized")
+        logger.info(f"   Loop length: {loop_length*100:.1f} cm")
+        logger.info(f"   Round-trip time: {self.state.round_trip_time*1e9:.2f} ns")
+    
+    def propagate_field(self, input_field: float, gain: float = 1.0) -> float:
+        """
+        Propagate field through feedback loop.
+        
+        Args:
+            input_field: Input field amplitude
+            gain: Net round-trip gain
+            
+        Returns:
+            Output field amplitude after round-trip
+        """
+        # Phase accumulation from propagation
+        wavelength = NV_EMISSION_WAVELENGTH
+        k = 2 * np.pi / wavelength
+        propagation_phase = k * self.loop_length
+        
+        # Add phase shifter and delay line contributions
+        total_phase = propagation_phase + self.phase_shifter_setting
+        self.state.phase_accumulation = total_phase % (2 * np.pi)
+        
+        # Field after round-trip (with gain/loss and phase)
+        output_field = input_field * gain * np.exp(1j * total_phase)
+        self.state.field_amplitude = abs(output_field)
+        
+        return self.state.field_amplitude
+    
+    def stabilize_phase(self, target_phase: float, current_phase: float,
+                       bandwidth: float = 1e6) -> float:
+        """
+        Active phase stabilization to maintain quadrature.
+        
+        Args:
+            target_phase: Desired phase (typically π/2)
+            current_phase: Measured phase
+            bandwidth: Control bandwidth (Hz)
+            
+        Returns:
+            Correction signal
+        """
+        # Phase error
+        error = target_phase - current_phase
+        
+        # Wrap to [-π, π]
+        while error > np.pi:
+            error -= 2 * np.pi
+        while error < -np.pi:
+            error += 2 * np.pi
+        
+        # Proportional control
+        correction = error * bandwidth * self.state.round_trip_time
+        self.state.stabilizer_correction = correction
+        
+        # Apply to phase shifter
+        self.phase_shifter_setting += correction
+        
+        return correction
+    
+    def track_entanglement(self, photon_count: float, coherence: float):
+        """
+        Track entangled photon state in cavity.
+        
+        From whitepaper: Photons circulating within the feedback loop
+        establish a coherent, phase-locked relationship through stimulated
+        emission, forming a macroscopic coherent state.
+        """
+        # Simplified entanglement metric
+        # Based on photon number and coherence
+        self.state.entanglement_degree = min(1.0, photon_count * coherence)
+        
+        self.photon_pairs.append({
+            'time': time.time(),
+            'count': photon_count,
+            'coherence': coherence,
+            'entanglement': self.state.entanglement_degree
+        })
+    
+    def get_display_stats(self) -> Dict:
+        """Get stats for display"""
+        return {
+            'round_trip_ns': self.state.round_trip_time * 1e9,
+            'phase_rad': self.state.phase_accumulation,
+            'field_amplitude': self.state.field_amplitude,
+            'entanglement': self.state.entanglement_degree
+        }
+
+
+class LuminaCellEngine:
+    """
+    💎☀️ LUMINACELL v2 CONTACTLESS CORE ENGINE ☀️💎
+    
+    Implements the complete LuminaCell v2 architecture from the R&A Consulting
+    white paper: "The LuminaCell v2 Architecture: A High-Power Coherent Light
+    Source Based on a Contactless Quantum Interference Core"
+    
+    Architecture:
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                     LUMINACELL v2 CORE                          │
+    │  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐       │
+    │  │   PRIMARY   │────▶│  NV-DIAMOND │────▶│    QIM      │       │
+    │  │    PUMP     │     │    CORE     │     │  REFLECTOR  │       │
+    │  │  (532nm)    │     │   (Gain)    │     │  (Trap)     │       │
+    │  └─────────────┘     └──────┬──────┘     └──────┬──────┘       │
+    │                             │                   │              │
+    │                             ▼                   ▼              │
+    │  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐       │
+    │  │  COHERENT   │◀────│  FEEDBACK   │◀────│    QIM      │──────▶│ OUTPUT
+    │  │   OUTPUT    │     │   CAVITY    │     │  COUPLER    │       │ (637nm)
+    │  │  (637nm)    │     │  (Loop)     │     │ (Extract)   │       │
+    │  └─────────────┘     └─────────────┘     └─────────────┘       │
+    └─────────────────────────────────────────────────────────────────┘
+    
+    Key Performance Metrics (from whitepaper Section 5.2):
+    - Threshold: P_th ≈ 2000W (contactless design trade-off for robustness)
+    - Slope Efficiency: η ≈ 25% (state-of-the-art wall-plug efficiency)
+    - Output: P_out = η(P_in - P_th) for P_in ≥ P_th
+    
+    Advantages over conventional resonators:
+    - No physical mirrors to align, damage, or contaminate
+    - Extreme robustness against vibration and thermal shock
+    - Room temperature operation (no cryogenics)
+    - Clear pathway to higher power scaling
+    """
+    
+    def __init__(self, nv_density: float = 1e17, coupling_fraction: float = 0.05):
+        """
+        Initialize LuminaCell v2 Engine.
+        
+        Args:
+            nv_density: NV center density in diamond core (cm⁻³)
+            coupling_fraction: Output coupling fraction (0-1)
+        """
+        # Core components
+        self.nv_core = NVDiamondCore(nv_density=nv_density)
+        self.qim_reflector = QIMReflector()
+        self.qim_coupler = QIMCoupler(coupling_fraction=coupling_fraction)
+        self.feedback_cavity = FeedbackCavity()
+        
+        # System state
+        self.input_power = 0.0           # Pump power (W)
+        self.output_power = 0.0          # Coherent output (W)
+        self.above_threshold = False     # Operating above lasing threshold
+        self.efficiency = 0.0            # Current wall-plug efficiency
+        
+        # Cascade contribution tracking
+        self.cascade_factor = 1.0
+        
+        # Solar pumping mode (Track H)
+        self.solar_mode = False
+        self.lsc_power = 0.0
+        
+        # History
+        self.power_history: deque = deque(maxlen=1000)
+        self.efficiency_history: deque = deque(maxlen=100)
+        
+        logger.info(f"💎☀️ LuminaCell v2 Engine initialized")
+        logger.info(f"   Threshold: {LUMINA_THRESHOLD_POWER:.0f} W")
+        logger.info(f"   Slope Efficiency: {LUMINA_SLOPE_EFFICIENCY*100:.0f}%")
+        logger.info(f"   Output Coupling: {coupling_fraction*100:.1f}%")
+    
+    def set_solar_mode(self, enabled: bool, optical_density: float = 0.35,
+                       refractive_index: float = 1.57):
+        """
+        Enable/disable solar pumping mode (Track H).
+        
+        Uses Luminescent Solar Concentrator for pump power.
+        
+        Args:
+            enabled: Enable solar mode
+            optical_density: LSC optical density (optimal ~0.3-0.4)
+            refractive_index: LSC waveguide refractive index
+        """
+        self.solar_mode = enabled
+        
+        if enabled:
+            # LSC power from whitepaper equations
+            # P_LSC(OD) = P_max × (1 - e^(-k×OD))
+            p_od = LSC_P_MAX * (1 - np.exp(-LSC_K * optical_density))
+            
+            # P_LSC(n) = 0.20×n + 0.46
+            p_n = 0.20 * refractive_index + 0.46
+            
+            # Combined LSC output
+            self.lsc_power = min(p_od, p_n)
+            
+            logger.info(f"☀️ Solar mode enabled: LSC power = {self.lsc_power:.2f} W")
+        else:
+            self.lsc_power = 0.0
+    
+    def update(self, input_power: float, external_coherence: float = 1.0,
+               dt: float = 0.001) -> Dict:
+        """
+        Update LuminaCell system state.
+        
+        Args:
+            input_power: Electrical input power to pump (W)
+            external_coherence: External coherence factor (from other engines)
+            dt: Time step (s)
+            
+        Returns:
+            Dictionary with system state and output
+        """
+        # Combine electrical and solar power if in solar mode
+        if self.solar_mode:
+            total_pump = input_power + self.lsc_power * 1000  # LSC in W, scale up
+        else:
+            total_pump = input_power
+        
+        self.input_power = total_pump
+        
+        # Step 1: Apply optical pumping to NV-Diamond core
+        inversion = self.nv_core.apply_optical_pump(total_pump, dt)
+        
+        # Step 2: Compute gain from population inversion
+        gain = self.nv_core.state.gain_coefficient
+        
+        # Step 3: Propagate field through feedback cavity
+        field = self.feedback_cavity.propagate_field(gain, gain)
+        
+        # Step 4: QIM-Reflector traps photons (constructive interference)
+        trapped = self.qim_reflector.update_interference(
+            incoming_field=field,
+            emitted_field=gain * external_coherence,
+            dt=dt
+        )
+        
+        # Step 5: Maintain quadrature phase lock
+        phase_error = np.pi/2 - self.qim_reflector.state.phase_angle
+        self.feedback_cavity.stabilize_phase(np.pi/2, 
+                                            self.qim_reflector.state.phase_angle)
+        self.qim_reflector.apply_phase_lock(phase_error, dt)
+        
+        # Step 6: Track entanglement in feedback cavity
+        self.feedback_cavity.track_entanglement(
+            trapped, 
+            self.qim_reflector.state.orthogonality_phi
+        )
+        
+        # Step 7: QIM-Coupler extracts coherent output
+        intracavity = self.qim_reflector.state.intracavity_power
+        output = self.qim_coupler.extract_output(
+            intracavity,
+            self.qim_reflector.state.orthogonality_phi
+        )
+        
+        # Step 8: Apply threshold behavior (whitepaper Section 5.2)
+        # P_out = 0 for P_in < P_th
+        # P_out = η(P_in - P_th) for P_in ≥ P_th
+        if total_pump < LUMINA_THRESHOLD_POWER:
+            self.above_threshold = False
+            self.output_power = 0.0
+            self.efficiency = 0.0
+        else:
+            self.above_threshold = True
+            theoretical_output = LUMINA_SLOPE_EFFICIENCY * (total_pump - LUMINA_THRESHOLD_POWER)
+            # Modulate by actual system performance
+            self.output_power = theoretical_output * self.qim_reflector.state.orthogonality_phi
+            self.efficiency = self.output_power / total_pump if total_pump > 0 else 0.0
+        
+        # Step 9: Compute cascade contribution for mining
+        # Based on orthogonality and output power
+        base_contribution = 1.0 + 0.1 * self.qim_reflector.state.orthogonality_phi
+        if self.above_threshold:
+            # Additional boost when operating above threshold
+            power_factor = min(1.0, self.output_power / 10000)  # Normalize to 10kW
+            base_contribution += 0.1 * power_factor
+        
+        self.cascade_factor = base_contribution
+        
+        # Record history
+        self.power_history.append({
+            'time': time.time(),
+            'input': total_pump,
+            'output': self.output_power,
+            'efficiency': self.efficiency,
+            'threshold': self.above_threshold,
+            'phi': self.qim_reflector.state.orthogonality_phi
+        })
+        
+        return {
+            'input_power': total_pump,
+            'output_power': self.output_power,
+            'efficiency': self.efficiency,
+            'above_threshold': self.above_threshold,
+            'orthogonality': self.qim_reflector.state.orthogonality_phi,
+            'q_factor': self.qim_reflector.get_effective_q(),
+            'inversion': self.nv_core.state.population_inversion,
+            'cascade_factor': self.cascade_factor
+        }
+    
+    def get_cascade_contribution(self) -> float:
+        """
+        Get cascade contribution for hash rate amplification.
+        
+        Returns:
+            Multiplicative factor for cascade (typically 1.0 - 1.2)
+        """
+        return self.cascade_factor
+    
+    def get_display_stats(self) -> Dict:
+        """Get comprehensive stats for display"""
+        nv_stats = self.nv_core.get_display_stats()
+        cavity_stats = self.feedback_cavity.get_display_stats()
+        
+        return {
+            'input_power': self.input_power,
+            'output_power': self.output_power,
+            'efficiency': self.efficiency,
+            'above_threshold': self.above_threshold,
+            'threshold_power': LUMINA_THRESHOLD_POWER,
+            'slope_efficiency': LUMINA_SLOPE_EFFICIENCY,
+            'orthogonality_phi': self.qim_reflector.state.orthogonality_phi,
+            'q_factor': self.qim_reflector.get_effective_q(),
+            'cascade_factor': self.cascade_factor,
+            'nv_inversion': nv_stats['inversion'],
+            'nv_polarization': nv_stats['polarization'],
+            'nv_gain': nv_stats['gain'],
+            'cavity_entanglement': cavity_stats['entanglement'],
+            'solar_mode': self.solar_mode,
+            'lsc_power': self.lsc_power
+        }
+    
+    def format_display(self) -> str:
+        """Format engine state for logging display"""
+        threshold_icon = "🟢" if self.above_threshold else "🔴"
+        mode_icon = "☀️" if self.solar_mode else "⚡"
+        
+        return (
+            f"💎 LUMINA: {mode_icon} P_in={self.input_power:.0f}W | "
+            f"P_out={self.output_power:.0f}W | "
+            f"η={self.efficiency*100:.1f}% | "
+            f"φ={self.qim_reflector.state.orthogonality_phi:.3f} | "
+            f"{threshold_icon} {'LASING' if self.above_threshold else 'SUB-TH'}"
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # COHERENCE ENGINE - DYNAMIC SYSTEMS MODEL (WHITEPAPER IMPLEMENTATION)
 # ═══════════════════════════════════════════════════════════════════════════
 # 
@@ -2661,6 +3535,9 @@ class HarmonicMiningOptimizer:
         # Astronomical Coherence Simulator (Full Chrono-Luminance Model)
         self.astro_sim = AstronomicalCoherenceSimulator(alpha=0.25)
         
+        # LuminaCell v2 Engine (Contactless Core - NV Diamond + QIM)
+        self.lumina = LuminaCellEngine(nv_density=1e17, coupling_fraction=0.05)
+        
         # Try to import Aureon systems
         self._probability_matrix = None
         self._earth_engine = None
@@ -2895,7 +3772,7 @@ class HarmonicMiningOptimizer:
         }
     
     def get_amplified_hashrate(self, base_hashrate: float) -> Tuple[float, str]:
-        """Get quantum-amplified effective hashrate (Lattice × Casimir × Coherence × QVEE × Astro)"""
+        """Get quantum-amplified effective hashrate (Lattice × Casimir × Coherence × QVEE × Astro × Lumina)"""
         lattice_rate, _ = self.lattice.amplify_hashrate(base_hashrate)
         
         # Apply Casimir cascade multiplier
@@ -2910,8 +3787,11 @@ class HarmonicMiningOptimizer:
         # Apply Astronomical Coherence Simulator contribution
         astro_mult = self.get_astronomical_contribution()
         
-        # Total: Lattice × Casimir × Coherence × QVEE × Astro
-        total_amplified = lattice_rate * casimir_mult * coherence_mult * qvee_mult * astro_mult
+        # Apply LuminaCell v2 (Contactless Core) contribution
+        lumina_mult = self.lumina.get_cascade_contribution()
+        
+        # Total: Lattice × Casimir × Coherence × QVEE × Astro × Lumina
+        total_amplified = lattice_rate * casimir_mult * coherence_mult * qvee_mult * astro_mult * lumina_mult
         
         # Format for display
         if total_amplified > 1e12:
@@ -3044,6 +3924,29 @@ class HarmonicMiningOptimizer:
             phase_mult = 1.0
         
         return base_contribution * phase_mult
+    
+    def update_lumina(self, hashrate: float):
+        """
+        Update LuminaCell v2 Engine with mining context.
+        
+        Maps hashrate to effective pump power for the NV-Diamond core.
+        The LuminaCell contributes to cascade when operating above threshold.
+        """
+        # Map hashrate to effective pump power
+        # Scale: 100 KH/s → ~1000W pump equivalent
+        effective_pump = hashrate * 0.01  # Scaling factor
+        
+        # Get external coherence from other engines
+        external_coherence = (
+            self.coherence.state.psi * 
+            self.qvee.state.orthogonality_phi *
+            self.astro_sim.P_t
+        )
+        
+        return self.lumina.update(
+            input_power=effective_pump,
+            external_coherence=external_coherence
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -3364,6 +4267,9 @@ class AureonMiner:
                 
                 # Display Astronomical Simulator state (Chrono-Luminance)
                 logger.info(self.optimizer.astro_sim.format_display())
+                
+                # Display LuminaCell v2 state (Contactless Core)
+                logger.info(self.optimizer.lumina.format_display())
 
     def _print_final_stats(self):
         print("\n╔════════════════════ FINAL MINING STATS ════════════════════╗")
@@ -3386,6 +4292,12 @@ class AureonMiner:
         mandala = self.optimizer.astro_sim.get_mandala_visualization()
         print(f"║ Ψ={mandala.get('psi_magnitude', 0.5):.3f} | Pt={mandala.get('P_t', 1.0):.3f} | "
               f"κt={mandala.get('kappa_t', 1.0):.2f} | {mandala.get('phase_icon', '🔴')} {mandala.get('phase_name', 'Unknown')} ║")
+        print("╠════════════════ LUMINACELL v2 CORE ════════════════════════╣")
+        lumina_stats = self.optimizer.lumina.get_display_stats()
+        threshold_icon = "🟢" if lumina_stats.get('above_threshold', False) else "🔴"
+        print(f"║ P_in={lumina_stats.get('input_power', 0):.0f}W | P_out={lumina_stats.get('output_power', 0):.0f}W | "
+              f"η={lumina_stats.get('efficiency', 0)*100:.1f}% | φ={lumina_stats.get('orthogonality_phi', 0):.3f} | "
+              f"{threshold_icon} ║")
         print("╚════════════════════════════════════════════════════════════╝\n")
 
 
