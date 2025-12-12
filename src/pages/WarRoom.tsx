@@ -2,20 +2,18 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGlobalState } from '@/hooks/useGlobalState';
 import Navbar from "@/components/Navbar";
-import WarRoomDashboard from "@/components/WarRoomDashboard";
+import LiveDataDashboard from "@/components/LiveDataDashboard";
 
 const WarRoom = () => {
   const navigate = useNavigate();
   const { isInitialized, isAuthenticated } = useGlobalState();
 
   useEffect(() => {
-    // Redirect to auth if initialized but not authenticated
     if (isInitialized && !isAuthenticated) {
       navigate('/auth');
     }
   }, [isInitialized, isAuthenticated, navigate]);
 
-  // Show loading while global systems initialize
   if (!isInitialized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -24,7 +22,6 @@ const WarRoom = () => {
     );
   }
 
-  // Not authenticated - will redirect
   if (!isAuthenticated) {
     return null;
   }
@@ -33,7 +30,7 @@ const WarRoom = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="pt-16">
-        <WarRoomDashboard />
+        <LiveDataDashboard />
       </main>
     </div>
   );

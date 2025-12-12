@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useBinanceCredentials } from './useBinanceCredentials';
+import { useState, useEffect } from 'react';
 
 export interface MarketData {
   symbol: string;
@@ -14,11 +13,9 @@ export interface MarketData {
 export const useBinanceWebSocket = (symbols: string[] = ['BTCUSDT', 'ETHUSDT']) => {
   const [marketData, setMarketData] = useState<Record<string, MarketData>>({});
   const [connected, setConnected] = useState(false);
-  const { hasCredentials } = useBinanceCredentials();
 
   useEffect(() => {
-    if (!hasCredentials) return;
-
+    // Public WebSocket - no credentials required for market data
     const streams = symbols.map(s => `${s.toLowerCase()}@ticker`).join('/');
     const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
 
@@ -63,7 +60,7 @@ export const useBinanceWebSocket = (symbols: string[] = ['BTCUSDT', 'ETHUSDT']) 
     return () => {
       ws.close();
     };
-  }, [symbols, hasCredentials]);
+  }, [symbols.join(',')]);
 
   return { marketData, connected };
 };
