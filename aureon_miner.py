@@ -1075,6 +1075,592 @@ class QVEEEngine:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# ASTRONOMICAL COHERENCE SIMULATOR - CHRONO-LUMINANCE MODEL
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Implements the full astronomical grounding from the whitepaper:
+# "A Dynamic Systems Model of Coherence Grounded in Astronomical Phenomena"
+#
+# Chrono-Luminance Input Vector: C_t = [Ambient, Point, Transient]
+#   - Ambient: Diffuse background light (twilight, airglow)
+#   - Point: Stable coherent sources (planets, bright stars)
+#   - Transient: Sporadic high-energy bursts (meteors)
+#
+# HRV-Based Parameters:
+#   - r_t (Resonance): Schumann Resonance power (~7.83 Hz)
+#   - λ_t (Constraint): Inverse of SDNN (HRV time-domain)
+#   - κ_t (Structuring): LF/HF ratio (HRV frequency-domain)
+#   - P_t (Purity): r_t / λ_t
+#
+# Three Simulation Phases:
+#   1. Self-Organization (Sunset → Deep Night)
+#   2. Oscillation (Mid-Night perturbation)
+#   3. Dissolution (Signal loss)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class ChronoLuminanceVector:
+    """
+    C_t = [Ambient, Point, Transient] - The light input vector
+    
+    From whitepaper Table 1: Values normalized to [0, 1]
+    """
+    ambient: float = 0.0      # Diffuse background (twilight, airglow)
+    point: float = 0.0        # Stable coherent sources (planets, stars)
+    transient: float = 0.0    # Sporadic bursts (meteors)
+    
+    timestamp: float = field(default_factory=time.time)
+    event_name: str = ""
+    
+    def to_array(self) -> np.ndarray:
+        """Convert to numpy array"""
+        return np.array([self.ambient, self.point, self.transient])
+    
+    @property
+    def total_luminance(self) -> float:
+        """Total light intensity"""
+        return self.ambient + self.point + self.transient
+    
+    @property
+    def coherence_ratio(self) -> float:
+        """Ratio of coherent (point) to total light"""
+        total = self.total_luminance
+        if total < 0.001:
+            return 0.0
+        return self.point / total
+
+
+@dataclass
+class HRVState:
+    """
+    Heart Rate Variability state for physiological grounding
+    
+    From whitepaper Section III:
+    - SDNN: Standard deviation of NN intervals (time-domain)
+    - LF: Low frequency power (0.04-0.15 Hz) - sympathetic
+    - HF: High frequency power (0.15-0.4 Hz) - parasympathetic
+    """
+    sdnn: float = 50.0           # ms - healthy baseline ~50-100ms
+    lf_power: float = 1000.0     # ms² - typical 400-2000
+    hf_power: float = 1000.0     # ms² - typical 400-2000
+    rmssd: float = 40.0          # ms - parasympathetic indicator
+    
+    # Derived
+    @property
+    def lf_hf_ratio(self) -> float:
+        """LF/HF ratio - sympathovagal balance"""
+        return self.lf_power / max(0.1, self.hf_power)
+    
+    @property
+    def normalized_sdnn(self) -> float:
+        """SDNN normalized to [0, 1] range (ref: 100ms = healthy)"""
+        return min(1.0, self.sdnn / 100.0)
+    
+    @property
+    def autonomic_state(self) -> str:
+        """Determine autonomic nervous system state"""
+        ratio = self.lf_hf_ratio
+        if ratio > 2.0:
+            return "sympathetic_dominant"  # Stress/arousal
+        elif ratio < 0.5:
+            return "parasympathetic_dominant"  # Relaxation
+        else:
+            return "balanced"  # Optimal coherence
+
+
+# Astronomical Event Schedule for Oban, Scotland (25-26 October 2025)
+# From whitepaper Table 1: Chrono-Luminance Input Schedule
+OBAN_ASTRONOMICAL_SCHEDULE = [
+    # (time_offset_hours, event_name, C_t=[ambient, point, transient])
+    (0.0, "Sunset", [0.8, 0.0, 0.0]),
+    (0.55, "Saturn Visible", [0.3, 0.4, 0.0]),
+    (1.35, "End of Twilight", [0.1, 0.4, 0.0]),
+    (4.4, "Jupiter Rise", [0.1, 0.9, 0.0]),
+    (6.05, "Orionids Active", [0.05, 0.7, 0.4]),
+    (9.6, "Saturn Set", [0.05, 0.3, 0.1]),
+    (10.05, "Orionids Wane", [0.05, 0.4, 0.15]),
+    (11.95, "Start of Twilight", [0.3, 0.2, 0.05]),
+    (13.33, "Sunrise", [0.8, 0.0, 0.0]),
+]
+
+
+class AstronomicalCoherenceSimulator:
+    """
+    🌌 ASTRONOMICAL COHERENCE SIMULATOR 🌌
+    
+    Simulates the Dynamic Systems Model of Coherence using astronomical
+    phenomena as the driving input. Integrates:
+    
+    1. Chrono-Luminance vectors from celestial events
+    2. Schumann Resonance for environmental resonance (r_t)
+    3. Simulated HRV for physiological grounding (λ_t, κ_t)
+    4. Full operator chain: R = ρ ◦ Ω ◦ L ◦ F ◦ Φ ◦ ℵ
+    
+    The model demonstrates three behaviors:
+    - Self-Organization: Stable signal → coherence convergence
+    - Oscillation: Transient perturbation with high κ_t → instability
+    - Dissolution: Signal loss → state decay
+    """
+    
+    # Schumann Resonance fundamental mode
+    SCHUMANN_FUNDAMENTAL = 7.83  # Hz
+    
+    def __init__(self, alpha: float = 0.25, location: str = "Oban"):
+        """
+        Initialize the astronomical coherence simulator.
+        
+        Args:
+            alpha: Learning rate (whitepaper suggests 0.25 for visible dynamics)
+            location: Observation location name
+        """
+        self.alpha = alpha
+        self.location = location
+        
+        # State vector Ψ_t (3D for ambient, point, transient processing)
+        self.psi = np.array([0.5, 0.5, 0.5])
+        
+        # Current input vector
+        self.C_t = ChronoLuminanceVector()
+        
+        # HRV state (simulated physiological observer)
+        self.hrv = HRVState()
+        
+        # Derived indices
+        self.r_t = 1.0      # Resonance (from Schumann)
+        self.lambda_t = 1.0  # Constraint (from SDNN)
+        self.kappa_t = 1.0   # Structuring (from LF/HF)
+        self.P_t = 1.0       # Purity = r_t / λ_t
+        
+        # Operator weights (saliency matrix for ℵ)
+        self.saliency_weights = np.array([0.2, 0.5, 0.3])  # [ambient, point, transient]
+        
+        # Pattern kernels for Φ operator
+        self.pattern_kernels = {
+            'steady': np.array([0.1, 0.8, 0.1]),   # Favor stable point sources
+            'dynamic': np.array([0.1, 0.3, 0.6]),  # Favor transients
+            'ambient': np.array([0.6, 0.2, 0.2])   # Favor diffuse
+        }
+        
+        # Simulation history
+        self.history: deque = deque(maxlen=1000)
+        self.simulation_time = 0.0  # Hours since sunset
+        
+        # Schumann phase
+        self.schumann_phase = 0.0
+        self.last_update = time.time()
+        
+        logger.info(f"🌌 Astronomical Coherence Simulator initialized")
+        logger.info(f"   Location: {location}")
+        logger.info(f"   α (learning rate): {alpha}")
+    
+    # ══════════════════════════════════════════════════════════════════
+    # SCHUMANN RESONANCE (r_t - Environmental Resonance)
+    # ══════════════════════════════════════════════════════════════════
+    
+    def compute_schumann_resonance(self) -> float:
+        """
+        Compute Schumann Resonance power for r_t.
+        
+        From whitepaper Section III.1:
+        r_t = normalized SR power at fundamental mode (~7.83 Hz)
+        
+        In mining context: Schumann alignment enhances coherence
+        """
+        now = time.time()
+        elapsed = now - self.last_update
+        self.last_update = now
+        
+        # Evolve Schumann phase
+        self.schumann_phase = (self.schumann_phase + elapsed * self.SCHUMANN_FUNDAMENTAL * 2 * np.pi) % (2 * np.pi)
+        
+        # Compute SR power (0.5 + 0.5*cos gives range [0, 1])
+        # Add harmonic components for richer signal
+        fundamental = 0.6 * (0.5 + 0.5 * np.cos(self.schumann_phase))
+        second_harmonic = 0.25 * (0.5 + 0.5 * np.cos(self.schumann_phase * 14.3 / 7.83))
+        third_harmonic = 0.15 * (0.5 + 0.5 * np.cos(self.schumann_phase * 20.8 / 7.83))
+        
+        sr_power = fundamental + second_harmonic + third_harmonic
+        
+        return sr_power
+    
+    # ══════════════════════════════════════════════════════════════════
+    # HRV SIMULATION (λ_t, κ_t - Physiological Grounding)
+    # ══════════════════════════════════════════════════════════════════
+    
+    def update_hrv_state(self, stress_event: bool = False, 
+                         relaxation_event: bool = False):
+        """
+        Update simulated HRV state.
+        
+        From whitepaper Section III:
+        - λ_t ∝ 1/SDNN (high HRV = low constraint, low HRV = high constraint)
+        - κ_t = LF/HF ratio (sympathovagal balance)
+        
+        Mining mapping:
+        - Share found → relaxation event (parasympathetic boost)
+        - High difficulty miss → stress event (sympathetic spike)
+        """
+        # Baseline drift (circadian-like rhythm)
+        circadian_factor = 0.5 + 0.5 * np.sin(self.simulation_time * np.pi / 12)
+        
+        if stress_event:
+            # Startle response: SDNN drops, LF spikes
+            self.hrv.sdnn *= 0.7
+            self.hrv.lf_power *= 1.5
+            self.hrv.hf_power *= 0.8
+        elif relaxation_event:
+            # Calm response: SDNN rises, HF increases
+            self.hrv.sdnn = min(100, self.hrv.sdnn * 1.1)
+            self.hrv.hf_power *= 1.2
+            self.hrv.lf_power *= 0.95
+        else:
+            # Natural recovery toward baseline
+            target_sdnn = 60 * circadian_factor + 40
+            self.hrv.sdnn += 0.1 * (target_sdnn - self.hrv.sdnn)
+            
+            target_lf_hf = 1.0
+            current_ratio = self.hrv.lf_hf_ratio
+            adjustment = 0.05 * (target_lf_hf - current_ratio)
+            self.hrv.lf_power *= (1 - adjustment * 0.1)
+            self.hrv.hf_power *= (1 + adjustment * 0.1)
+        
+        # Clamp to physiological ranges
+        self.hrv.sdnn = max(20, min(150, self.hrv.sdnn))
+        self.hrv.lf_power = max(100, min(5000, self.hrv.lf_power))
+        self.hrv.hf_power = max(100, min(5000, self.hrv.hf_power))
+    
+    def compute_lambda_t(self) -> float:
+        """
+        Compute constraint parameter λ_t from SDNN.
+        
+        λ_t ∝ 1/SDNN (inverse relationship)
+        High HRV → flexible, adaptive (low λ)
+        Low HRV → rigid, constrained (high λ)
+        """
+        # Normalize: SDNN=100ms → λ=1.0
+        normalized_sdnn = self.hrv.sdnn / 100.0
+        lambda_t = 1.0 / max(0.1, normalized_sdnn)
+        return min(3.0, lambda_t)  # Clamp to reasonable range
+    
+    def compute_kappa_t(self) -> float:
+        """
+        Compute structuring index κ_t from LF/HF ratio.
+        
+        From whitepaper Section III.2:
+        κ_t > 1: Over-structured (sympathetic dominant)
+        κ_t < 1: Under-resonant (parasympathetic dominant)
+        κ_t ≈ 1: Balanced, coherent
+        """
+        return self.hrv.lf_hf_ratio
+    
+    # ══════════════════════════════════════════════════════════════════
+    # OPERATORS: R = ρ ◦ Ω ◦ L ◦ F ◦ Φ ◦ ℵ
+    # ══════════════════════════════════════════════════════════════════
+    
+    def op_aleph_sieve(self, C: np.ndarray) -> np.ndarray:
+        """
+        ℵ (Aleph) - Saliency Operator
+        
+        Filtering matrix that attenuates/amplifies input components.
+        Acts as pre-attentive filter selecting relevant features.
+        """
+        return self.saliency_weights * C
+    
+    def op_phi_pattern(self, filtered: np.ndarray) -> np.ndarray:
+        """
+        Φ (Phi) - Pattern Recognition Operator
+        
+        Identifies patterns/structures in filtered signal.
+        Applies pattern-matching kernels.
+        """
+        # Determine which pattern kernel to apply based on signal composition
+        if filtered[2] > 0.3:  # High transient
+            kernel = self.pattern_kernels['dynamic']
+        elif filtered[1] > 0.5:  # High point
+            kernel = self.pattern_kernels['steady']
+        else:
+            kernel = self.pattern_kernels['ambient']
+        
+        # Convolution-like pattern matching
+        pattern_strength = np.dot(filtered, kernel)
+        return filtered * (1 + pattern_strength)
+    
+    def op_F_framing(self, pattern: np.ndarray, psi: np.ndarray) -> np.ndarray:
+        """
+        F (Framing) - Memory Integration Operator
+        
+        Contextualizes new pattern with previous state Ψ_t.
+        Provides temporal context and memory.
+        """
+        beta = 0.6  # Pattern weight
+        return beta * pattern + (1 - beta) * psi
+    
+    def op_L_living_node(self, framed: np.ndarray, kappa: float) -> np.ndarray:
+        """
+        L (Living Node - The Stag) - Non-linear Modulation
+        
+        The critical operator governed by κ_t.
+        κ > 1: Rigid, over-structured (sympathetic)
+        κ < 1: Receptive, under-structured (parasympathetic)
+        κ ≈ 1: Balanced, optimal coherence
+        """
+        # Gain function g(κ) from whitepaper
+        if kappa > 1:
+            # Over-structured: reduce sensitivity
+            gain = 1.0 / kappa
+        else:
+            # Under-structured: increase sensitivity
+            gain = 2.0 - kappa
+        
+        # Non-linear saturation
+        modulated = np.tanh(framed * gain)
+        
+        return modulated
+    
+    def op_omega_synthesis(self, modulated: np.ndarray) -> np.ndarray:
+        """
+        Ω (Omega) - Synthesis Operator
+        
+        Converges modulated signal into coherent gestalt.
+        Normalizes and integrates disparate elements.
+        """
+        norm = np.linalg.norm(modulated) + 0.001
+        return modulated / norm
+    
+    def op_rho_reflection(self, synthesized: np.ndarray) -> np.ndarray:
+        """
+        ρ (Rho) - Reflection Operator
+        
+        Prepares output for memory integration.
+        Ensures compatibility with next state vector.
+        """
+        # Smooth reflection with slight dampening
+        return synthesized * 0.95
+    
+    def compute_R(self, C: np.ndarray) -> np.ndarray:
+        """
+        Compute composite operator R = ρ ◦ Ω ◦ L ◦ F ◦ Φ ◦ ℵ
+        """
+        # ℵ: Saliency filtering
+        filtered = self.op_aleph_sieve(C)
+        
+        # Φ: Pattern recognition
+        pattern = self.op_phi_pattern(filtered)
+        
+        # F: Framing with memory
+        framed = self.op_F_framing(pattern, self.psi)
+        
+        # L: Living node modulation
+        modulated = self.op_L_living_node(framed, self.kappa_t)
+        
+        # Ω: Synthesis
+        synthesized = self.op_omega_synthesis(modulated)
+        
+        # ρ: Reflection
+        reflected = self.op_rho_reflection(synthesized)
+        
+        return reflected
+    
+    # ══════════════════════════════════════════════════════════════════
+    # STATE UPDATE: Ψ_{t+1} = (1-α)Ψ_t + α R(C_t; Ψ_t)
+    # ══════════════════════════════════════════════════════════════════
+    
+    def update(self, C_t: ChronoLuminanceVector = None, 
+               stress_event: bool = False,
+               relaxation_event: bool = False) -> dict:
+        """
+        Main state update implementing whitepaper Equation (1):
+        
+            Ψ_{t+1} = (1 - α) Ψ_t + α R(C_t; Ψ_t)
+        
+        This is the exponential moving average update where new information
+        is provided by composite operator R.
+        """
+        if C_t is None:
+            C_t = self.C_t
+        else:
+            self.C_t = C_t
+        
+        # Update HRV state
+        self.update_hrv_state(stress_event, relaxation_event)
+        
+        # Compute derived parameters
+        self.r_t = self.compute_schumann_resonance()
+        self.lambda_t = self.compute_lambda_t()
+        self.kappa_t = self.compute_kappa_t()
+        self.P_t = self.r_t / max(0.001, self.lambda_t)
+        
+        # Get input as array
+        C = C_t.to_array()
+        
+        # Compute composite operator R(C_t; Ψ_t)
+        R_output = self.compute_R(C)
+        
+        # ═══════════════════════════════════════════════════════════
+        # STATE UPDATE: Ψ_{t+1} = (1 - α) Ψ_t + α R(C_t; Ψ_t)
+        # ═══════════════════════════════════════════════════════════
+        self.psi = (1 - self.alpha) * self.psi + self.alpha * R_output
+        
+        # Determine behavior phase
+        if self.P_t > (1 - 1/PHI) and self.kappa_t < 2.0:
+            phase = "SELF_ORGANIZATION"
+        elif self.kappa_t >= 2.0:
+            phase = "OSCILLATION"
+        else:
+            phase = "DISSOLUTION"
+        
+        # Record history
+        self.history.append({
+            'time': time.time(),
+            'sim_time': self.simulation_time,
+            'event': C_t.event_name,
+            'C_t': C_t.to_array().tolist(),
+            'psi': self.psi.tolist(),
+            'r_t': self.r_t,
+            'lambda_t': self.lambda_t,
+            'kappa_t': self.kappa_t,
+            'P_t': self.P_t,
+            'phase': phase,
+            'hrv_sdnn': self.hrv.sdnn,
+            'hrv_lf_hf': self.hrv.lf_hf_ratio
+        })
+        
+        return {
+            'psi': self.psi,
+            'P_t': self.P_t,
+            'kappa_t': self.kappa_t,
+            'phase': phase,
+            'coherence_ratio': C_t.coherence_ratio
+        }
+    
+    def simulate_astronomical_night(self, duration_hours: float = 13.5,
+                                    time_step_minutes: float = 10.0) -> List[dict]:
+        """
+        Simulate an entire astronomical night using the Oban schedule.
+        
+        From whitepaper Section II: The simulation follows the natural
+        progression from sunset to sunrise.
+        """
+        results = []
+        schedule_idx = 0
+        time_step_hours = time_step_minutes / 60.0
+        
+        self.simulation_time = 0.0
+        
+        logger.info(f"🌙 Starting astronomical simulation: {self.location}")
+        logger.info(f"   Duration: {duration_hours} hours")
+        logger.info(f"   Time step: {time_step_minutes} minutes")
+        
+        while self.simulation_time < duration_hours:
+            # Find current astronomical event
+            current_event = OBAN_ASTRONOMICAL_SCHEDULE[0]
+            for i, (t, name, c) in enumerate(OBAN_ASTRONOMICAL_SCHEDULE):
+                if self.simulation_time >= t:
+                    current_event = (t, name, c)
+                    schedule_idx = i
+            
+            # Interpolate between events if possible
+            if schedule_idx < len(OBAN_ASTRONOMICAL_SCHEDULE) - 1:
+                next_event = OBAN_ASTRONOMICAL_SCHEDULE[schedule_idx + 1]
+                t0, name0, c0 = current_event
+                t1, name1, c1 = next_event
+                
+                if t1 > t0:
+                    interp = (self.simulation_time - t0) / (t1 - t0)
+                    interp = max(0, min(1, interp))
+                    c_interp = [
+                        c0[i] + interp * (c1[i] - c0[i])
+                        for i in range(3)
+                    ]
+                else:
+                    c_interp = c0
+            else:
+                _, name0, c_interp = current_event
+            
+            # Create input vector
+            C_t = ChronoLuminanceVector(
+                ambient=c_interp[0],
+                point=c_interp[1],
+                transient=c_interp[2],
+                event_name=current_event[1]
+            )
+            
+            # Add meteor perturbation during Orionids active period
+            stress = False
+            if 6.0 <= self.simulation_time <= 10.0:
+                # Random meteor with ~20% chance per step
+                if np.random.random() < 0.2:
+                    C_t.transient += np.random.uniform(0.2, 0.5)
+                    stress = True  # Startle response
+            
+            # Update state
+            result = self.update(C_t, stress_event=stress)
+            result['sim_time'] = self.simulation_time
+            results.append(result)
+            
+            self.simulation_time += time_step_hours
+        
+        return results
+    
+    def get_mandala_visualization(self) -> dict:
+        """
+        Generate mandala visualization parameters.
+        
+        From whitepaper Section V:
+        - Brightness = |P_t| (0=dim, 1=bright)
+        - Hue = f(κ_t): cool (κ<1), green (κ≈1), warm (κ>1)
+        """
+        # Brightness from Purity Index
+        brightness = min(1.0, max(0.0, self.P_t))
+        
+        # Hue from Structuring Index
+        if self.kappa_t < 0.7:
+            hue = "blue"  # Under-resonant, parasympathetic
+            hue_value = 0.6  # HSV blue
+        elif self.kappa_t < 1.3:
+            hue = "green"  # Balanced, coherent
+            hue_value = 0.33  # HSV green
+        elif self.kappa_t < 2.0:
+            hue = "yellow"  # Slightly over-structured
+            hue_value = 0.15  # HSV yellow
+        else:
+            hue = "red"  # Over-structured, sympathetic
+            hue_value = 0.0  # HSV red
+        
+        # Determine behavior phase for icon
+        if self.P_t > 0.382 and self.kappa_t < 2.0:
+            phase_icon = "🟢"
+            phase_name = "Self-Organization"
+        elif self.kappa_t >= 2.0:
+            phase_icon = "🟡"
+            phase_name = "Oscillation"
+        else:
+            phase_icon = "🔴"
+            phase_name = "Dissolution"
+        
+        return {
+            'brightness': brightness,
+            'hue': hue,
+            'hue_value': hue_value,
+            'phase_icon': phase_icon,
+            'phase_name': phase_name,
+            'psi_magnitude': float(np.linalg.norm(self.psi)),
+            'P_t': self.P_t,
+            'kappa_t': self.kappa_t
+        }
+    
+    def format_display(self) -> str:
+        """Format simulator state for logging"""
+        mandala = self.get_mandala_visualization()
+        return (
+            f"🌌 ASTRO: Ψ={np.linalg.norm(self.psi):.3f} | "
+            f"Pt={self.P_t:.3f} | "
+            f"κt={self.kappa_t:.2f} | "
+            f"{mandala['phase_icon']} {mandala['phase_name']}"
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # COHERENCE ENGINE - DYNAMIC SYSTEMS MODEL (WHITEPAPER IMPLEMENTATION)
 # ═══════════════════════════════════════════════════════════════════════════
 # 
@@ -2072,6 +2658,9 @@ class HarmonicMiningOptimizer:
         # QVEE Engine (Quantum Vacuum Energy Extraction - Leckey Equations)
         self.qvee = QVEEEngine()
         
+        # Astronomical Coherence Simulator (Full Chrono-Luminance Model)
+        self.astro_sim = AstronomicalCoherenceSimulator(alpha=0.25)
+        
         # Try to import Aureon systems
         self._probability_matrix = None
         self._earth_engine = None
@@ -2257,6 +2846,9 @@ class HarmonicMiningOptimizer:
             difficulty=difficulty
         )
         
+        # Update Astronomical Simulator (HRV relaxation response)
+        self.update_astronomical(share_found=True)
+        
         logger.debug(f"🎯 Share pattern recorded: nonce={nonce:08x}, coherence Ψ={self.coherence.state.psi:.3f}")
     
     def get_mining_insight(self) -> dict:
@@ -2303,7 +2895,7 @@ class HarmonicMiningOptimizer:
         }
     
     def get_amplified_hashrate(self, base_hashrate: float) -> Tuple[float, str]:
-        """Get quantum-amplified effective hashrate (Lattice × Casimir × Coherence × QVEE)"""
+        """Get quantum-amplified effective hashrate (Lattice × Casimir × Coherence × QVEE × Astro)"""
         lattice_rate, _ = self.lattice.amplify_hashrate(base_hashrate)
         
         # Apply Casimir cascade multiplier
@@ -2315,8 +2907,11 @@ class HarmonicMiningOptimizer:
         # Apply QVEE (Quantum Vacuum Energy Extraction) contribution
         qvee_mult = self.qvee.get_cascade_contribution()
         
-        # Total: Lattice × Casimir × Coherence × QVEE
-        total_amplified = lattice_rate * casimir_mult * coherence_mult * qvee_mult
+        # Apply Astronomical Coherence Simulator contribution
+        astro_mult = self.get_astronomical_contribution()
+        
+        # Total: Lattice × Casimir × Coherence × QVEE × Astro
+        total_amplified = lattice_rate * casimir_mult * coherence_mult * qvee_mult * astro_mult
         
         # Format for display
         if total_amplified > 1e12:
@@ -2378,6 +2973,77 @@ class HarmonicMiningOptimizer:
             casimir_force=self.casimir.total_casimir_force,
             lattice_cascade=self.lattice.cascade_factor
         )
+    
+    def update_astronomical(self, share_found: bool = False, share_rejected: bool = False):
+        """
+        Update Astronomical Coherence Simulator with mining events.
+        
+        Maps mining events to physiological responses:
+        - Share found → Relaxation (parasympathetic activation)
+        - Share rejected → Stress (sympathetic activation)
+        
+        The simulator tracks HRV-based parameters (λt, κt) and
+        Schumann Resonance (rt) to model coherence dynamics.
+        """
+        # Get current astronomical context from time
+        current_hour = (time.time() / 3600) % 24  # Hour of day
+        
+        # Estimate chrono-luminance based on time (simplified)
+        # In production, could integrate real astronomical data
+        if 6 <= current_hour <= 18:  # Daytime
+            ambient = 0.8
+            point = 0.1
+            transient = 0.0
+        elif 18 <= current_hour <= 21:  # Twilight
+            ambient = 0.3
+            point = 0.4
+            transient = 0.0
+        else:  # Night
+            ambient = 0.05
+            point = 0.6
+            transient = 0.05
+        
+        C_t = ChronoLuminanceVector(
+            ambient=ambient,
+            point=point,
+            transient=transient,
+            event_name="mining"
+        )
+        
+        return self.astro_sim.update(
+            C_t,
+            stress_event=share_rejected,
+            relaxation_event=share_found
+        )
+    
+    def get_astronomical_contribution(self) -> float:
+        """
+        Get cascade contribution from Astronomical Coherence Simulator.
+        
+        Based on Purity Index P_t and phase behavior:
+        - Self-Organization (P_t > 0.382, κ_t < 2): Boost 1.05-1.15x
+        - Oscillation (κ_t ≥ 2): Slight boost 1.0-1.05x
+        - Dissolution (P_t < 0.382): Neutral 1.0x
+        """
+        P_t = self.astro_sim.P_t
+        kappa_t = self.astro_sim.kappa_t
+        psi_mag = np.linalg.norm(self.astro_sim.psi)
+        
+        # Base contribution from Purity Index
+        base_contribution = 1.0 + 0.1 * min(1.0, P_t)
+        
+        # Determine phase and adjust
+        if P_t > (1 - 1/PHI) and kappa_t < 2.0:
+            # Self-Organization: Optimal coherence boost
+            phase_mult = 1.0 + 0.05 * psi_mag
+        elif kappa_t >= 2.0:
+            # Oscillation: Moderate boost
+            phase_mult = 1.0 + 0.02 * psi_mag
+        else:
+            # Dissolution: Neutral
+            phase_mult = 1.0
+        
+        return base_contribution * phase_mult
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -2695,6 +3361,9 @@ class AureonMiner:
                 
                 # Display QVEE state (Leckey Power Equations)
                 logger.info(self.optimizer.qvee.format_display())
+                
+                # Display Astronomical Simulator state (Chrono-Luminance)
+                logger.info(self.optimizer.astro_sim.format_display())
 
     def _print_final_stats(self):
         print("\n╔════════════════════ FINAL MINING STATS ════════════════════╗")
@@ -2713,6 +3382,10 @@ class AureonMiner:
         print("╠════════════════════ QVEE EXTRACTION ═══════════════════════╣")
         print(f"║ θ={insight.get('qvee_theta', 90):.1f}° | Φ={insight.get('qvee_orthogonality', 1.0):.3f} | "
               f"ΔM={insight.get('qvee_master_transform', 1.0):.3f}x | ZPE={insight.get('qvee_accumulated_zpe', 0):.4f} ║")
+        print("╠═══════════════ ASTRONOMICAL COHERENCE ═════════════════════╣")
+        mandala = self.optimizer.astro_sim.get_mandala_visualization()
+        print(f"║ Ψ={mandala.get('psi_magnitude', 0.5):.3f} | Pt={mandala.get('P_t', 1.0):.3f} | "
+              f"κt={mandala.get('kappa_t', 1.0):.2f} | {mandala.get('phase_icon', '🔴')} {mandala.get('phase_name', 'Unknown')} ║")
         print("╚════════════════════════════════════════════════════════════╝\n")
 
 
