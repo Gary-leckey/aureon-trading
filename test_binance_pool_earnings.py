@@ -3,7 +3,7 @@
 Test Binance Pool API earnings validation
 """
 import os
-from binance_client import BinancePoolAPI
+from binance_client import BinancePoolClient
 
 def main():
     print("╔════════════════════════════════════════════════════════════╗")
@@ -12,7 +12,7 @@ def main():
     
     # Initialize API
     try:
-        pool_api = BinancePoolAPI()
+        pool_api = BinancePoolClient()
         print("✅ Binance Pool API initialized")
     except Exception as e:
         print(f"❌ Failed to initialize: {e}")

@@ -1,2 +1,8 @@
 requests>=2.32.0
 python-dotenv>=1.0.0
+numpy
+pandas
+skyfield
+astroquery
+astropy
+scipy
