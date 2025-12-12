@@ -10861,8 +10861,8 @@ class AureonKrakenEcosystem:
             
             # 🧠 USE LEARNED TP/SL IF AVAILABLE (from probability matrix recommendations)
             # Handle lattice_state as dict or object
-            tp_mod = lattice_state.get('tp_mod') if isinstance(lattice_state, dict) else getattr(lattice_state, 'tp_mod', 1.0)
-            sl_mod = lattice_state.get('sl_mod') if isinstance(lattice_state, dict) else getattr(lattice_state, 'sl_mod', 1.0)
+            tp_mod = lattice_state.get('tp_mod', 1.0) if isinstance(lattice_state, dict) else getattr(lattice_state, 'tp_mod', 1.0)
+            sl_mod = lattice_state.get('sl_mod', 1.0) if isinstance(lattice_state, dict) else getattr(lattice_state, 'sl_mod', 1.0)
             
             if pos.learned_confidence in ('high', 'medium') and pos.learned_tp_pct is not None:
                 # Use learned parameters with lattice modifier
