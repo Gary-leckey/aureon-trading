@@ -11817,13 +11817,23 @@ class AureonKrakenEcosystem:
                 print(f"   🍄 Network Γ: {network_coherence:.2f} {'⚠️ PAUSED' if trading_paused else ''} | WS: {ws_health} ({rt_count})")
                 
                 # 🌍 GAIA LATTICE DISPLAY - HNC CARRIER WAVE DYNAMICS 🌍
-                gaia_icon = "💜" if l_state.phase == "GAIA_RESONANCE" else ("⚡" if l_state.phase == "CARRIER_ACTIVE" else "🔴")
-                carrier_str = f"Carrier: {l_state.carrier_strength:.2f}φ" if hasattr(l_state, 'carrier_strength') else ""
-                nullification_str = f"Nullify: {l_state.nullification_pct:.0%}" if hasattr(l_state, 'nullification_pct') else ""
-                emergent_str = f"432Hz: {l_state.emergent_432:.0%}" if hasattr(l_state, 'emergent_432') else ""
-                print(f"   🌐 Gaia Lattice: {l_state.phase} ({l_state.frequency}Hz) {gaia_icon} | Purity: {l_state.field_purity*100:.0f}% | {carrier_str} | {emergent_str}")
+                # Handle l_state as dict or object
+                phase = l_state.get('phase', 'UNKNOWN') if isinstance(l_state, dict) else getattr(l_state, 'phase', 'UNKNOWN')
+                frequency = l_state.get('frequency', 0) if isinstance(l_state, dict) else getattr(l_state, 'frequency', 0)
+                field_purity = l_state.get('field_purity', 0) if isinstance(l_state, dict) else getattr(l_state, 'field_purity', 0)
+                carrier_strength = l_state.get('carrier_strength') if isinstance(l_state, dict) else getattr(l_state, 'carrier_strength', None)
+                nullification_pct = l_state.get('nullification_pct') if isinstance(l_state, dict) else getattr(l_state, 'nullification_pct', None)
+                emergent_432 = l_state.get('emergent_432') if isinstance(l_state, dict) else getattr(l_state, 'emergent_432', None)
+                risk_mod_display = l_state.get('risk_mod', 1.0) if isinstance(l_state, dict) else getattr(l_state, 'risk_mod', 1.0)
+                tp_mod_display = l_state.get('tp_mod', 1.0) if isinstance(l_state, dict) else getattr(l_state, 'tp_mod', 1.0)
+                
+                gaia_icon = "💜" if phase == "GAIA_RESONANCE" else ("⚡" if phase == "CARRIER_ACTIVE" else "🔴")
+                carrier_str = f"Carrier: {carrier_strength:.2f}φ" if carrier_strength is not None else ""
+                nullification_str = f"Nullify: {nullification_pct:.0%}" if nullification_pct is not None else ""
+                emergent_str = f"432Hz: {emergent_432:.0%}" if emergent_432 is not None else ""
+                print(f"   🌐 Gaia Lattice: {phase} ({frequency}Hz) {gaia_icon} | Purity: {field_purity*100:.0f}% | {carrier_str} | {emergent_str}")
                 if nullification_str:
-                    print(f"   🌍 Carrier Wave: {nullification_str} | Risk: {l_state.risk_mod:.2f}x | TP: {l_state.tp_mod:.2f}x | {lambda_str}")
+                    print(f"   🌍 Carrier Wave: {nullification_str} | Risk: {risk_mod_display:.2f}x | TP: {tp_mod_display:.2f}x | {lambda_str}")
                 # 🌍⚡ HNC Frequency Status ⚡🌍
                 if CONFIG.get('ENABLE_HNC_FREQUENCY', True):
                     hnc_status = self.auris.get_hnc_status()
