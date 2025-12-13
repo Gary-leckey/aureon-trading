@@ -38,9 +38,25 @@ class SafeUTF8Formatter(logging.Formatter):
         # So we should try to ensure the stream handles it, or strip chars if needed.
         return msg
 
+# Custom StreamHandler that forces UTF-8 encoding on Windows
+class SafeStreamHandler(logging.StreamHandler):
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            stream = self.stream
+            # If on Windows and stream has a buffer, write bytes directly to bypass cp1252
+            if os.name == 'nt' and hasattr(stream, 'buffer'):
+                stream.buffer.write((msg + self.terminator).encode('utf-8'))
+                stream.flush()
+            else:
+                stream.write(msg + self.terminator)
+                self.flush()
+        except Exception:
+            self.handleError(record)
+
 # Use sys.stdout explicitly which should be wrapped by now if running from main
 import sys
-stream_handler = logging.StreamHandler(sys.stdout)
+stream_handler = SafeStreamHandler(sys.stdout)
 stream_handler.setFormatter(SafeUTF8Formatter('%(asctime)s [%(levelname)s] %(message)s'))
 
 logging.basicConfig(

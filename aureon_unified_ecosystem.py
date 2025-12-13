@@ -46,8 +46,28 @@ if sys.platform == 'win32':
         sys.stderr.reconfigure(encoding='utf-8')
     except AttributeError:
         # Fallback for older Python versions or if reconfigure is not available
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+        try:
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+        except AttributeError:
+            # If buffer is not available (e.g. pythonw), just pass
+            pass
+
+# Custom StreamHandler that forces UTF-8 encoding on Windows
+class SafeStreamHandler(logging.StreamHandler):
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            stream = self.stream
+            # If on Windows and stream has a buffer, write bytes directly to bypass cp1252
+            if sys.platform == 'win32' and hasattr(stream, 'buffer'):
+                stream.buffer.write((msg + self.terminator).encode('utf-8'))
+                stream.flush()
+            else:
+                stream.write(msg + self.terminator)
+                self.flush()
+        except Exception:
+            self.handleError(record)
 
 # Load environment variables from .env file FIRST before any other imports
 try:
@@ -86,7 +106,8 @@ from threading import Thread, Lock
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 if not logger.handlers:
-    handler = logging.StreamHandler()
+    # Use SafeStreamHandler instead of standard StreamHandler
+    handler = SafeStreamHandler(sys.stdout)
     handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     logger.addHandler(handler)
 
