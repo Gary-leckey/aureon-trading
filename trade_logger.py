@@ -29,12 +29,15 @@ from pathlib import Path
 import threading
 from collections import defaultdict
 
-# Configure logging
+# Configure logging with UTF-8 encoding for all handlers
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[
-        logging.StreamHandler(),
+        stream_handler,
         logging.FileHandler('trade_logger.log', encoding='utf-8')
     ]
 )

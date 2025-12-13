@@ -14,14 +14,25 @@ import sys
 import time
 import logging
 import threading
+import io
 from typing import Optional, Dict
 from threading import Thread, Event
 
-# Configure logger
+# ✅ FIX: Ensure UTF-8 encoding for stream output (Windows compatibility)
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except:
+        pass
+
+# Configure logger with UTF-8 handling
 logger = logging.getLogger("AureonOrchestrator")
 logger.setLevel(logging.INFO)
 if not logger.handlers:
     handler = logging.StreamHandler(sys.stdout)
+    # Ensure UTF-8 encoding in handler
+    if hasattr(handler, 'setEncoding'):
+        handler.setEncoding('utf-8')
     formatter = logging.Formatter('[%(asctime)s] %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
