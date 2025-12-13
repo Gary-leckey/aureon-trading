@@ -29,6 +29,13 @@ from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, Callable, List, Tuple
 from collections import deque
 
+# Load environment variables
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -340,6 +347,7 @@ class HarmonicMiningState:
     probability_confidence: float = 0.0  # Confidence of probability matrix
     probability_direction: str = "NEUTRAL"  # LONG/SHORT/NEUTRAL
     probability_intensity: float = 1.0  # Mining intensity multiplier from probability
+    adaptive_learning_gain: float = 1.0  # Fusion gain (probability × planetary)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -3705,6 +3713,12 @@ class PlatypusCoherenceEngine:
             logger.info("   📡 Using DE440 real ephemeris data")
         else:
             logger.info("   🔮 Using Keplerian approximation")
+
+    def tune_memory(self, alpha: float, beta: float):
+        """Adapt Platypus memory/observer coupling for learning feedback."""
+        self.ALPHA = max(0.05, min(0.35, alpha))
+        self.BETA = max(0.05, min(0.25, beta))
+        return self.ALPHA, self.BETA
     
     def _load_ephemeris(self):
         """Attempt to load real DE440 ephemeris data"""
@@ -4083,6 +4097,1857 @@ class PlatypusCoherenceEngine:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# QUANTUM PROCESSING BRAIN - UNIFIED ECOSYSTEM COORDINATOR
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class QuantumBrainState:
+    """State of the Quantum Processing Brain - Full Ecosystem Integration"""
+    # Unified coherence metrics
+    unified_coherence: float = 0.5       # Combined system coherence
+    probability_edge: float = 0.0        # Current probability matrix edge
+    planetary_gamma: float = 0.5         # Platypus Γ(t)
+    harmonic_resonance: float = 1.0      # Lattice resonance factor
+    vacuum_energy: float = 1.0           # Casimir contribution
+    
+    # Adaptive learning state
+    learning_rate: float = 0.15          # Current α for adaptation
+    memory_decay: float = 0.2            # Current β for echo
+    adaptation_gain: float = 1.0         # Computed gain multiplier
+    
+    # Nonce optimization
+    optimal_nonce_region: int = 0        # Best starting nonce
+    search_strategy: str = "balanced"    # 'focused', 'exploration', 'balanced'
+    prime_focus: int = 0                 # Prime-guided nonce bias
+    fib_focus: int = 0                   # Fibonacci-guided nonce bias
+    
+    # Timing optimization
+    is_optimal_window: bool = False      # True during high-Γ lighthouse events
+    window_intensity: float = 1.0        # Mining intensity multiplier
+    cascade_multiplier: float = 1.0      # Total cascade from all systems
+    
+    # Success tracking
+    shares_found: int = 0
+    shares_in_window: int = 0            # Shares found during optimal windows
+    window_success_rate: float = 0.0     # Historical success rate in windows
+    
+    # Quantum state vector (normalized)
+    psi_vector: List[float] = field(default_factory=lambda: [0.5]*8)
+    
+    # Last update
+    last_update: float = 0.0
+    
+    # ═══════════════════════════════════════════════════════════════
+    # ECOSYSTEM INTEGRATION FIELDS (v2)
+    # ═══════════════════════════════════════════════════════════════
+    
+    # Trading ecosystem signals
+    trading_coherence: float = 0.5        # From unified_live coherence
+    market_frequency: float = 432.0       # HNC frequency (Hz)
+    hnc_probability: float = 0.5          # HNC matrix probability
+    anomaly_score: float = 0.0            # CoinAPI anomaly detection
+    
+    # Cross-system state
+    bridge_capital: float = 0.0           # Total equity from bridge
+    bridge_win_rate: float = 0.5          # Win rate from trading
+    active_positions: int = 0             # Open trading positions
+    
+    # Auris node resonance
+    auris_coherence: float = 0.5          # 9 node consensus
+    schumann_lock: float = 0.0            # Lock to 7.83 Hz
+    prime_alignment: float = 0.0          # 10-9-1 concordance
+    
+    # Quantum field expansion
+    lambda_field: float = 0.5             # Λ(t) = S + O + E
+    observer_weight: float = 0.3          # Self-reference
+    echo_weight: float = 0.2              # Memory term
+    
+    # Broadcast metadata
+    broadcast_count: int = 0              # Messages sent to ecosystem
+    last_broadcast: float = 0.0           # Timestamp
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🍄 MYCELIUM NETWORK FIELDS (v3)
+    # ═══════════════════════════════════════════════════════════════
+    
+    mycelium_hive_count: int = 0          # Active hives in network
+    mycelium_agents: int = 0              # Total agents across hives
+    mycelium_coherence: float = 0.5       # Network-wide consensus
+    mycelium_signal: str = "HOLD"         # Queen neuron decision (BUY/SELL/HOLD)
+    mycelium_generation: int = 0          # Highest hive generation (budding depth)
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🌌 6D HARMONIC WAVEFORM FIELDS (v3)
+    # ═══════════════════════════════════════════════════════════════
+    
+    # The 6 dimensions
+    dim_price_wave: float = 0.5           # D1: Price Wave (φ-scaled)
+    dim_volume_pulse: float = 0.5         # D2: Volume Pulse (energy)
+    dim_temporal_phase: float = 0.5       # D3: Temporal Phase (cyclic)
+    dim_cross_resonance: float = 0.5      # D4: Cross-Market Resonance
+    dim_momentum_vortex: float = 0.5      # D5: Momentum Vortex
+    dim_harmonic_freq: float = 0.5        # D6: Harmonic Frequency (528Hz)
+    
+    # 6D composite state
+    wave_state: str = "BALANCED"          # CONVERGENT, DIVERGENT, RESONANT, CRYSTALLINE, etc.
+    dimensional_coherence: float = 0.5    # How aligned are all 6 dimensions
+    phase_alignment: float = 0.5          # Phase synchronization
+    energy_density: float = 0.5           # Total energy in 6D space
+    probability_field: float = 0.5        # Probability from 6D convergence
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🌍 STARGATE GRID FIELDS (v3)
+    # ═══════════════════════════════════════════════════════════════
+    
+    stargate_active_node: str = "STONEHENGE"  # Currently active grid node
+    stargate_frequency: float = 7.83      # Active node frequency (Hz)
+    stargate_element: str = "Earth"       # Active element influence
+    stargate_numerology: int = 1          # Numerological resonance
+    grid_coherence: float = 0.5           # Global grid coherence
+    leyline_activity: float = 0.5         # Active leyline strength
+    geomagnetic_modifier: float = 1.0     # Trading modifier from grid
+    
+    # ═══════════════════════════════════════════════════════════════
+    # ⏱️ TEMPORAL READER FIELDS (v3) - Past/Present/Future
+    # ═══════════════════════════════════════════════════════════════
+    
+    temporal_past: float = 0.5            # Historical momentum score
+    temporal_present: float = 0.5         # Current state score
+    temporal_future: float = 0.5          # Predicted direction score
+    temporal_harmony: float = 0.5         # Alignment of all 3 time dimensions
+    ladder_level: int = 0                 # Multiverse ladder position (0-7)
+    ladder_name: str = "Atom"             # Level name
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🎵 AURIS 9-NODE RESONANCE (v3)
+    # ═══════════════════════════════════════════════════════════════
+    
+    auris_tiger: float = 0.5              # 220 Hz - Disruption
+    auris_falcon: float = 0.5             # 285 Hz - Velocity
+    auris_hummingbird: float = 0.5        # 396 Hz - Stability
+    auris_dolphin: float = 0.5            # 528 Hz - Love
+    auris_deer: float = 0.5               # 639 Hz - Sensing
+    auris_owl: float = 0.5                # 741 Hz - Memory
+    auris_panda: float = 0.5              # 852 Hz - Heart
+    auris_cargoship: float = 0.5          # 936 Hz - Momentum
+    auris_clownfish: float = 0.5          # 963 Hz - Symbiosis
+    auris_dominant_node: str = "Dolphin"  # Highest resonance node
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🎹 PIANO MASTER EQUATION FIELDS (v4)
+    # ═══════════════════════════════════════════════════════════════
+    # Λ(t) = S(t) + α·O(t) + E(t)
+    # Where: S=Substrate, O=Observer, E=Echo
+    
+    piano_lambda: float = 1.0             # Λ(t) - Master field strength
+    piano_substrate: float = 0.5          # S(t) - 9-node waveform
+    piano_observer: float = 0.5           # O(t) - Conscious focus
+    piano_echo: float = 0.5               # E(t) - Temporal feedback
+    piano_coherence: float = 0.5          # Γ - Field coherence
+    piano_alpha: float = 1.2              # Observer coupling
+    piano_beta: float = 0.8               # Echo coupling
+    piano_tau: float = 3.0                # Echo delay (seconds)
+    
+    # Rainbow Bridge State (consciousness progression)
+    rainbow_state: str = "FORMING"        # FEAR→FORMING→RESONANCE→LOVE→AWE→UNITY
+    rainbow_frequency: float = 285.0      # Current rainbow Hz
+    
+    # Portfolio Harmonics
+    piano_keys_active: int = 0            # Active coins being played
+    portfolio_coherence: float = 0.5      # Cross-coin harmonic alignment
+    dominant_key: str = ""                # Strongest harmonic key (coin)
+    harmonic_signal: str = "HOLD"         # STRONG_BUY, BUY, HOLD, SELL, STRONG_SELL
+    signal_confidence: float = 0.5        # Confidence in signal
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🔮 UNIFIED MULTI-DIMENSIONAL STATE (v4)
+    # ═══════════════════════════════════════════════════════════════
+    
+    total_dimensions: int = 13            # Total integrated dimensions (now +1 for Piano)
+    ecosystem_sync: float = 0.5           # How synchronized all systems are
+    multiverse_cascade: float = 1.0       # Combined cascade from all systems
+    consciousness_level: str = "ATOM"     # Current consciousness ladder
+
+
+class QuantumProcessingBrain:
+    """
+    🧠⚛️ QUANTUM PROCESSING BRAIN ⚛️🧠
+    
+    The unified coordinator that orchestrates the ENTIRE Aureon ecosystem
+    to maximize hash-finding probability through intelligent timing and
+    nonce selection.
+    
+    Integrates:
+    - Probability Matrix (market patterns → nonce bias)
+    - Platypus Coherence (planetary geometry → timing windows)
+    - Coherence Engine (dynamic systems model → adaptation rate)
+    - Quantum Lattice (resonance cascade → amplification)
+    - Casimir Effect (vacuum energy → stability)
+    - QVEE (quantum vacuum extraction → power optimization)
+    - LuminaCell (NV-diamond → coherence boost)
+    - Mirror Array (60-second phase lock → cascade multiplication)
+    
+    The Brain computes:
+    1. WHEN to mine most intensely (lighthouse windows)
+    2. WHERE to start nonce search (probability-guided)
+    3. HOW FAST to adapt (learning rate tuning)
+    4. WHAT multiplier applies (unified cascade)
+    
+    While we cannot break SHA-256 cryptography, we CAN:
+    - Maximize probability of finding shares during optimal windows
+    - Guide nonce selection using mathematical patterns
+    - Adapt system parameters in real-time based on success feedback
+    - Compound all enhancement factors into unified cascade
+    """
+    
+    # Mathematical constants
+    PHI = (1 + math.sqrt(5)) / 2  # Golden ratio
+    E = math.e                     # Euler's number
+    PI = math.pi                   # Pi
+    
+    # Schumann modes (Hz)
+    SCHUMANN_MODES = [7.83, 14.3, 20.8, 27.3, 33.8]
+    
+    # Prime numbers for nonce patterns
+    PRIMES_EXTENDED = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 
+                       53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+    
+    # Fibonacci for harmonic patterns
+    FIBONACCI_EXTENDED = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 
+                          610, 987, 1597, 2584, 4181, 6765]
+    
+    def __init__(self):
+        """Initialize the Quantum Processing Brain"""
+        self.state = QuantumBrainState()
+        self.history: deque = deque(maxlen=1000)
+        
+        # Pattern memory for adaptive learning
+        self.success_nonces: deque = deque(maxlen=500)
+        self.window_successes: deque = deque(maxlen=100)
+        self.timing_patterns: Dict[int, float] = {}  # hour -> success rate
+        
+        # Quantum state evolution
+        self._psi_evolution: deque = deque(maxlen=100)
+        self._last_collapse_time = time.time()
+        
+        # Neural-like weight learning
+        self.weights = {
+            'probability': 0.25,
+            'planetary': 0.20,
+            'harmonic': 0.15,
+            'temporal': 0.15,
+            'casimir': 0.10,
+            'coherence': 0.10,
+            'memory': 0.05,
+        }
+        
+        # Success feedback for weight adaptation
+        self._weight_gradients = {k: 0.0 for k in self.weights}
+        
+        logger.info("🧠⚛️ Quantum Processing Brain initialized")
+        logger.info(f"   Components: Probability | Planetary | Harmonic | Temporal | Casimir | Coherence | Memory")
+        logger.info(f"   Weights: " + " | ".join(f"{k[:4]}={v:.2f}" for k, v in self.weights.items()))
+    
+    def compute_unified_state(self, 
+                              probability_matrix: Optional[Any] = None,
+                              platypus: Optional[PlatypusCoherenceEngine] = None,
+                              coherence: Optional[CoherenceEngine] = None,
+                              lattice: Optional[QuantumLatticeAmplifier] = None,
+                              casimir: Optional[CasimirEffectEngine] = None,
+                              qvee: Optional[QVEEEngine] = None,
+                              lumina: Optional[LuminaCellEngine] = None,
+                              mirrors: Optional[QuantumMirrorArray] = None) -> QuantumBrainState:
+        """
+        Compute unified brain state from all subsystem inputs.
+        
+        This is the core "thinking" function that synthesizes all signals
+        into optimal mining parameters.
+        """
+        now = time.time()
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE 1: GATHER ALL SUBSYSTEM STATES
+        # ═══════════════════════════════════════════════════════════════
+        
+        # Probability Matrix signal
+        prob_signal = 0.5
+        prob_edge = 0.0
+        prob_direction = "NEUTRAL"
+        if probability_matrix:
+            try:
+                pred = probability_matrix.predict() if hasattr(probability_matrix, 'predict') else None
+                if pred:
+                    prob_signal = getattr(pred, 'probability', 0.5)
+                    prob_edge = abs(prob_signal - 0.5)
+                    prob_direction = getattr(pred, 'direction', 'NEUTRAL')
+            except:
+                pass
+        
+        # Platypus planetary coherence
+        gamma = 0.5
+        Q_geom = 0.5
+        is_lighthouse = False
+        if platypus:
+            try:
+                gamma = platypus.state.Gamma_t
+                Q_geom = platypus.state.Q_t
+                is_lighthouse = platypus.state.is_lighthouse
+            except:
+                pass
+        
+        # Coherence engine state
+        psi = 0.5
+        coh_behavior = "BALANCED"
+        if coherence:
+            try:
+                psi = coherence.state.psi
+                coh_behavior = coherence.state.behavior.value if hasattr(coherence.state, 'behavior') else "BALANCED"
+            except:
+                pass
+        
+        # Lattice resonance
+        lattice_cascade = 1.0
+        lattice_resonance = 1.0
+        if lattice:
+            try:
+                lattice_cascade = lattice.cascade_factor
+                lattice_resonance = lattice.resonance_field
+            except:
+                pass
+        
+        # Casimir vacuum energy
+        casimir_force = 1.0
+        if casimir:
+            try:
+                casimir_force = casimir.total_casimir_force
+            except:
+                pass
+        
+        # QVEE accumulated energy
+        qvee_zpe = 0.0
+        if qvee:
+            try:
+                qvee_zpe = qvee.accumulated_zpe
+            except:
+                pass
+        
+        # LuminaCell contribution
+        lumina_mult = 1.0
+        if lumina:
+            try:
+                lumina_mult = lumina.get_cascade_contribution()
+            except:
+                pass
+        
+        # Mirror array cascade
+        mirror_cascade = 1.0
+        mirror_locked = False
+        if mirrors:
+            try:
+                mirror_cascade = mirrors.get_cascade_contribution()
+                mirror_locked = mirrors.phase_locked
+            except:
+                pass
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE 2: COMPUTE UNIFIED COHERENCE (Weighted Sum)
+        # ═══════════════════════════════════════════════════════════════
+        
+        unified = (
+            self.weights['probability'] * (0.5 + prob_edge) +
+            self.weights['planetary'] * gamma +
+            self.weights['harmonic'] * min(1.0, lattice_resonance) +
+            self.weights['temporal'] * self._get_temporal_factor() +
+            self.weights['casimir'] * min(1.0, casimir_force / 10.0) +
+            self.weights['coherence'] * psi +
+            self.weights['memory'] * self.state.unified_coherence  # Memory term
+        )
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE 3: COMPUTE OPTIMAL NONCE REGION
+        # ═══════════════════════════════════════════════════════════════
+        
+        # Strategy selection based on coherence
+        if gamma > 0.75 and prob_edge > 0.15:
+            strategy = "focused"
+            # High alignment + strong probability = narrow Fibonacci search
+            fib_idx = int(unified * len(self.FIBONACCI_EXTENDED))
+            primary_bias = self.FIBONACCI_EXTENDED[fib_idx % len(self.FIBONACCI_EXTENDED)] * 1_000_000
+        elif gamma < 0.3 or psi < 0.3:
+            strategy = "exploration"
+            # Low coherence = wide Prime-based exploration
+            prime_idx = int((1.0 - unified) * len(self.PRIMES_EXTENDED))
+            primary_bias = self.PRIMES_EXTENDED[prime_idx % len(self.PRIMES_EXTENDED)] * 10_000_000
+        else:
+            strategy = "balanced"
+            # Balanced = golden ratio guided
+            primary_bias = int(unified * MAX_NONCE * self.PHI) % MAX_NONCE
+        
+        # Add success pattern memory
+        if self.success_nonces:
+            avg_success = sum(self.success_nonces) / len(self.success_nonces)
+            memory_bias = int(avg_success * self.PHI) % MAX_NONCE
+            primary_bias = (primary_bias + memory_bias) // 2
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE 4: COMPUTE ADAPTIVE LEARNING RATE
+        # ═══════════════════════════════════════════════════════════════
+        
+        # Learning rate adapts based on signal strength
+        base_alpha = 0.12
+        alpha_boost = 0.15 * prob_edge + 0.10 * gamma + 0.05 * psi
+        learning_rate = max(0.08, min(0.35, base_alpha + alpha_boost))
+        
+        # Memory decay adapts to volatility
+        memory_decay = 0.15 + 0.10 * (1.0 - unified)
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE 5: COMPUTE TOTAL CASCADE MULTIPLIER
+        # ═══════════════════════════════════════════════════════════════
+        
+        # All multipliers compound
+        total_cascade = (
+            lattice_cascade *
+            (1.0 + psi * 0.2) *           # Coherence up to 20%
+            (1.0 + qvee_zpe * 0.1) *      # QVEE up to 10%
+            lumina_mult *                  # LuminaCell
+            mirror_cascade *               # Mirror array
+            (1.0 + gamma * 0.25)          # Planetary up to 25%
+        )
+        
+        # Lighthouse bonus (extra 10% during optimal windows)
+        if is_lighthouse:
+            total_cascade *= 1.10
+        
+        # Cap at reasonable maximum
+        total_cascade = min(25.0, total_cascade)
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE 6: COMPUTE WINDOW INTENSITY
+        # ═══════════════════════════════════════════════════════════════
+        
+        # Base intensity from unified coherence
+        intensity = 0.7 + unified * 0.6  # 0.7x to 1.3x
+        
+        # Boost during lighthouse windows
+        if is_lighthouse:
+            intensity *= 1.15
+        
+        # Probability direction modulation
+        if prob_direction == "LONG" and prob_edge > 0.1:
+            intensity *= 1.05  # Slight boost on bullish
+        elif prob_direction == "SHORT" and prob_edge > 0.1:
+            intensity *= 0.95  # Slight reduction on bearish
+        
+        intensity = max(0.5, min(1.5, intensity))
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE 7: UPDATE QUANTUM STATE VECTOR
+        # ═══════════════════════════════════════════════════════════════
+        
+        # Psi vector represents system state in 8 dimensions
+        psi_vector = [
+            prob_signal,           # Probability
+            gamma,                 # Planetary
+            psi,                   # Coherence
+            min(1.0, lattice_resonance),  # Harmonic
+            min(1.0, casimir_force / 10), # Vacuum
+            qvee_zpe,              # Energy
+            unified,               # Unified
+            self._get_temporal_factor()  # Temporal
+        ]
+        
+        # Normalize
+        psi_norm = math.sqrt(sum(p**2 for p in psi_vector))
+        if psi_norm > 0:
+            psi_vector = [p / psi_norm for p in psi_vector]
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE 8: UPDATE STATE
+        # ═══════════════════════════════════════════════════════════════
+        
+        self.state.unified_coherence = unified
+        self.state.probability_edge = prob_edge
+        self.state.planetary_gamma = gamma
+        self.state.harmonic_resonance = lattice_resonance
+        self.state.vacuum_energy = casimir_force
+        self.state.learning_rate = learning_rate
+        self.state.memory_decay = memory_decay
+        self.state.adaptation_gain = 1.0 + prob_edge * 0.2 + gamma * 0.15
+        self.state.optimal_nonce_region = primary_bias
+        self.state.search_strategy = strategy
+        self.state.prime_focus = self.PRIMES_EXTENDED[int(unified * 24) % 25] * 1_000_000
+        self.state.fib_focus = self.FIBONACCI_EXTENDED[int(gamma * 19) % 20] * 100_000
+        self.state.is_optimal_window = is_lighthouse
+        self.state.window_intensity = intensity
+        self.state.cascade_multiplier = total_cascade
+        self.state.psi_vector = psi_vector
+        self.state.last_update = now
+        
+        # Record history
+        self.history.append({
+            'time': now,
+            'unified': unified,
+            'gamma': gamma,
+            'prob_edge': prob_edge,
+            'cascade': total_cascade,
+            'strategy': strategy,
+            'lighthouse': is_lighthouse
+        })
+        
+        return self.state
+    
+    def record_share_success(self, nonce: int, in_window: bool):
+        """Record a successful share for pattern learning"""
+        self.state.shares_found += 1
+        self.success_nonces.append(nonce)
+        
+        if in_window:
+            self.state.shares_in_window += 1
+            self.window_successes.append(1)
+        else:
+            self.window_successes.append(0)
+        
+        # Update window success rate
+        if self.window_successes:
+            self.state.window_success_rate = sum(self.window_successes) / len(self.window_successes)
+        
+        # Adapt weights based on success (simple gradient)
+        if in_window:
+            self._weight_gradients['planetary'] += 0.01
+            self._weight_gradients['probability'] += 0.005
+        else:
+            self._weight_gradients['harmonic'] += 0.005
+        
+        # Periodically apply gradients
+        if self.state.shares_found % 10 == 0:
+            self._apply_weight_gradients()
+    
+    def _apply_weight_gradients(self):
+        """Apply accumulated gradients to weights (simple SGD)"""
+        lr = 0.01
+        total = sum(self.weights.values())
+        
+        for k in self.weights:
+            self.weights[k] += lr * self._weight_gradients[k]
+            self.weights[k] = max(0.05, min(0.40, self.weights[k]))
+            self._weight_gradients[k] *= 0.9  # Decay gradient
+        
+        # Renormalize to sum to 1.0
+        total = sum(self.weights.values())
+        for k in self.weights:
+            self.weights[k] /= total
+    
+    def _get_temporal_factor(self) -> float:
+        """Get temporal factor based on time of day (Schumann-aligned)"""
+        now = datetime.now()
+        hour = now.hour
+        
+        # Historical optimal hours (from analysis)
+        optimal_hours = {0: 0.7, 1: 0.65, 2: 0.6, 3: 0.55, 4: 0.5, 5: 0.55,
+                        6: 0.6, 7: 0.7, 8: 0.8, 9: 0.85, 10: 0.9, 11: 0.85,
+                        12: 0.8, 13: 0.75, 14: 0.7, 15: 0.75, 16: 0.8, 17: 0.85,
+                        18: 0.9, 19: 0.85, 20: 0.8, 21: 0.75, 22: 0.7, 23: 0.65}
+        
+        base = optimal_hours.get(hour, 0.7)
+        
+        # Minute-level Schumann modulation
+        minute_phase = (now.minute / 60.0) * 2 * math.pi
+        schumann_mod = 0.05 * math.sin(minute_phase * 7.83)  # 7.83 Hz scaled
+        
+        return max(0.4, min(1.0, base + schumann_mod))
+    
+    def get_nonce_guidance(self) -> Dict:
+        """Get unified nonce selection guidance for miners"""
+        return {
+            'primary_start': self.state.optimal_nonce_region,
+            'strategy': self.state.search_strategy,
+            'prime_bias': self.state.prime_focus,
+            'fib_bias': self.state.fib_focus,
+            'intensity': self.state.window_intensity,
+            'is_optimal': self.state.is_optimal_window,
+            'cascade': self.state.cascade_multiplier
+        }
+    
+    def get_display_stats(self) -> Dict:
+        """Get brain state for display"""
+        return {
+            'unified_coherence': self.state.unified_coherence,
+            'probability_edge': self.state.probability_edge,
+            'planetary_gamma': self.state.planetary_gamma,
+            'learning_rate': self.state.learning_rate,
+            'cascade': self.state.cascade_multiplier,
+            'strategy': self.state.search_strategy,
+            'is_optimal': self.state.is_optimal_window,
+            'shares_found': self.state.shares_found,
+            'window_success_rate': self.state.window_success_rate,
+            'psi_vector': self.state.psi_vector,
+            'weights': dict(self.weights),
+            # Ecosystem fields
+            'trading_coherence': self.state.trading_coherence,
+            'market_frequency': self.state.market_frequency,
+            'hnc_probability': self.state.hnc_probability,
+            'lambda_field': self.state.lambda_field,
+            'auris_coherence': self.state.auris_coherence,
+            'bridge_win_rate': self.state.bridge_win_rate,
+        }
+    
+    def format_display(self) -> str:
+        """Format brain state for logging"""
+        window_icon = "🔦" if self.state.is_optimal_window else "  "
+        strategy_icon = {"focused": "🎯", "exploration": "🔍", "balanced": "⚖️"}.get(
+            self.state.search_strategy, "⚖️"
+        )
+        
+        return (
+            f"🧠 BRAIN: ψ={self.state.unified_coherence:.3f} | "
+            f"Γ={self.state.planetary_gamma:.3f} | "
+            f"Edge={self.state.probability_edge:.3f} | "
+            f"α={self.state.learning_rate:.3f} | "
+            f"Cascade={self.state.cascade_multiplier:.2f}x | "
+            f"{strategy_icon} {window_icon}"
+        )
+    
+    # ═══════════════════════════════════════════════════════════════
+    # ECOSYSTEM INTEGRATION METHODS (v2)
+    # ═══════════════════════════════════════════════════════════════
+    
+    def connect_ecosystem(self, bridge=None, hnc_matrix=None, auris_metrics=None):
+        """
+        Connect to the broader Aureon trading ecosystem.
+        
+        Args:
+            bridge: AureonBridge instance for cross-system communication
+            hnc_matrix: HNC Probability Matrix for market signals
+            auris_metrics: Auris node metrics (from CSV or WebSocket)
+        """
+        self._bridge = bridge
+        self._hnc_matrix = hnc_matrix
+        self._auris_metrics = auris_metrics
+        
+        logger.info("🌐 Quantum Brain connected to ecosystem")
+        if bridge:
+            logger.info("   ├─ 🌉 Bridge: CONNECTED")
+        if hnc_matrix:
+            logger.info("   ├─ 📊 HNC Matrix: CONNECTED")
+        if auris_metrics:
+            logger.info("   └─ 🎵 Auris Nodes: CONNECTED")
+    
+    def sync_from_ecosystem(self):
+        """
+        Pull latest state from ecosystem components.
+        Call this periodically to keep Brain in sync with trading systems.
+        """
+        # Sync from Bridge
+        if hasattr(self, '_bridge') and self._bridge:
+            try:
+                capital = self._bridge.get_capital()
+                self.state.bridge_capital = capital.total_equity
+                self.state.bridge_win_rate = capital.win_rate
+                
+                positions = self._bridge.get_positions()
+                self.state.active_positions = len(positions)
+            except Exception as e:
+                logger.debug(f"Bridge sync error: {e}")
+        
+        # Sync from HNC Matrix
+        if hasattr(self, '_hnc_matrix') and self._hnc_matrix:
+            try:
+                if hasattr(self._hnc_matrix, 'get_current_probability'):
+                    prob = self._hnc_matrix.get_current_probability()
+                    self.state.hnc_probability = prob
+                if hasattr(self._hnc_matrix, 'get_frequency'):
+                    freq = self._hnc_matrix.get_frequency()
+                    self.state.market_frequency = freq
+            except Exception as e:
+                logger.debug(f"HNC sync error: {e}")
+        
+        # Sync from Auris metrics
+        if hasattr(self, '_auris_metrics') and self._auris_metrics:
+            try:
+                if isinstance(self._auris_metrics, dict):
+                    self.state.auris_coherence = self._auris_metrics.get('coherence_score', 0.5)
+                    self.state.schumann_lock = self._auris_metrics.get('schumann_lock', 0.0)
+                    self.state.prime_alignment = self._auris_metrics.get('prime_alignment', 0.0)
+            except Exception as e:
+                logger.debug(f"Auris sync error: {e}")
+        
+        # Compute Lambda field Λ(t) = S + O + E
+        S = self.state.unified_coherence
+        O = self.state.observer_weight * self.state.lambda_field  # Self-reference
+        E = self.state.echo_weight * self.state.bridge_win_rate   # Memory/echo
+        self.state.lambda_field = S + O + E
+    
+    def broadcast_state(self):
+        """
+        Broadcast Brain state to ecosystem via WebSocket/Bridge.
+        Other systems can consume this for trading decisions.
+        """
+        if not hasattr(self, '_bridge') or not self._bridge:
+            return
+        
+        try:
+            # Prepare brain state for broadcast
+            brain_data = {
+                'type': 'quantum_brain_state',
+                'timestamp': time.time(),
+                'unified_coherence': self.state.unified_coherence,
+                'cascade_multiplier': self.state.cascade_multiplier,
+                'is_optimal_window': self.state.is_optimal_window,
+                'planetary_gamma': self.state.planetary_gamma,
+                'probability_edge': self.state.probability_edge,
+                'learning_rate': self.state.learning_rate,
+                'strategy': self.state.search_strategy,
+                'lambda_field': self.state.lambda_field,
+                'psi_vector': self.state.psi_vector,
+                'shares_found': self.state.shares_found,
+                'window_success_rate': self.state.window_success_rate,
+                # 🎹 PIANO STATE 🎹
+                'piano_lambda': getattr(self.state, 'piano_lambda', 0.0),
+                'piano_coherence': getattr(self.state, 'piano_coherence', 0.0),
+                'rainbow_state': getattr(self.state, 'rainbow_state', 'UNKNOWN'),
+            }
+            
+            # Write to bridge data directory
+            brain_file = self._bridge.data_dir / 'brain_state.json'
+            with open(brain_file, 'w') as f:
+                json.dump(brain_data, f, indent=2)
+                
+            # 🎹 Write to shared system path for Unified Ecosystem 🎹
+            with open('/tmp/aureon_multidimensional_brain_output.json', 'w') as f:
+                json.dump(brain_data, f, indent=2)
+            
+            self.state.broadcast_count += 1
+            self.state.last_broadcast = time.time()
+            
+        except Exception as e:
+            logger.debug(f"Broadcast error: {e}")
+    
+    def get_trading_signal(self) -> Dict:
+        """
+        Generate trading signal from Brain state.
+        Can be consumed by aureon_unified_live or other traders.
+        
+        Returns:
+            Dict with trading guidance based on unified Brain state
+        """
+        # Base signal strength from unified state
+        signal_strength = self.state.unified_coherence * self.state.cascade_multiplier / 10.0
+        
+        # Directional bias from probability matrix
+        if self.state.probability_edge > 0.15:
+            direction = "LONG" if self.state.hnc_probability > 0.5 else "SHORT"
+            confidence = min(0.95, 0.5 + self.state.probability_edge)
+        else:
+            direction = "NEUTRAL"
+            confidence = 0.5
+        
+        # Timing guidance
+        timing = "OPTIMAL" if self.state.is_optimal_window else "NORMAL"
+        if self.state.planetary_gamma > 0.8:
+            timing = "LIGHTHOUSE"
+        
+        # Position sizing from Kelly-like computation
+        edge = self.state.probability_edge
+        win_rate = max(0.5, self.state.bridge_win_rate)
+        odds = 1.5  # Assume 1.5:1 reward/risk
+        kelly = max(0, (win_rate * odds - (1 - win_rate)) / odds)
+        kelly = min(0.25, kelly * 0.5)  # Half-Kelly, capped at 25%
+        
+        return {
+            'signal_strength': signal_strength,
+            'direction': direction,
+            'confidence': confidence,
+            'timing': timing,
+            'kelly_fraction': kelly,
+            'is_lighthouse': self.state.is_optimal_window,
+            'cascade': self.state.cascade_multiplier,
+            'coherence': self.state.unified_coherence,
+            'lambda': self.state.lambda_field,
+            'strategy': self.state.search_strategy,
+        }
+    
+    def compute_with_ecosystem(self,
+                               probability_matrix=None,
+                               platypus=None,
+                               coherence=None,
+                               lattice=None,
+                               casimir=None,
+                               qvee=None,
+                               lumina=None,
+                               mirrors=None) -> QuantumBrainState:
+        """
+        Enhanced unified computation that includes ecosystem sync.
+        Call this instead of compute_unified_state for full integration.
+        """
+        # First sync from ecosystem
+        self.sync_from_ecosystem()
+        
+        # Compute unified state with all subsystems
+        state = self.compute_unified_state(
+            probability_matrix=probability_matrix,
+            platypus=platypus,
+            coherence=coherence,
+            lattice=lattice,
+            casimir=casimir,
+            qvee=qvee,
+            lumina=lumina,
+            mirrors=mirrors
+        )
+        
+        # Enhance with ecosystem signals
+        if self.state.hnc_probability != 0.5:
+            # Boost edge with HNC
+            hnc_edge = abs(self.state.hnc_probability - 0.5)
+            self.state.probability_edge = max(self.state.probability_edge, hnc_edge)
+        
+        # Trading coherence influences cascade
+        if self.state.trading_coherence > 0.7:
+            self.state.cascade_multiplier *= (1.0 + (self.state.trading_coherence - 0.7) * 0.2)
+        
+        # Auris coherence boosts unified
+        if self.state.auris_coherence > 0.6:
+            self.state.unified_coherence = (
+                self.state.unified_coherence * 0.8 + 
+                self.state.auris_coherence * 0.2
+            )
+        
+        # Lambda field modulates learning rate
+        if self.state.lambda_field > 0.7:
+            self.state.learning_rate *= 1.1
+        elif self.state.lambda_field < 0.3:
+            self.state.learning_rate *= 0.9
+        
+        # Broadcast updated state to ecosystem
+        self.broadcast_state()
+        
+        return state
+    
+    def to_json(self) -> str:
+        """Serialize brain state to JSON for WebSocket broadcast"""
+        return json.dumps({
+            'type': 'brain_state',
+            'timestamp': time.time(),
+            'state': {
+                'unified_coherence': self.state.unified_coherence,
+                'probability_edge': self.state.probability_edge,
+                'planetary_gamma': self.state.planetary_gamma,
+                'harmonic_resonance': self.state.harmonic_resonance,
+                'cascade_multiplier': self.state.cascade_multiplier,
+                'learning_rate': self.state.learning_rate,
+                'strategy': self.state.search_strategy,
+                'is_optimal_window': self.state.is_optimal_window,
+                'window_intensity': self.state.window_intensity,
+                'shares_found': self.state.shares_found,
+                'lambda_field': self.state.lambda_field,
+                'psi_vector': self.state.psi_vector,
+            },
+            'ecosystem': {
+                'trading_coherence': self.state.trading_coherence,
+                'market_frequency': self.state.market_frequency,
+                'hnc_probability': self.state.hnc_probability,
+                'bridge_capital': self.state.bridge_capital,
+                'bridge_win_rate': self.state.bridge_win_rate,
+                'active_positions': self.state.active_positions,
+                'auris_coherence': self.state.auris_coherence,
+            },
+            'weights': dict(self.weights),
+        })
+
+    # ═══════════════════════════════════════════════════════════════
+    # 🌌 FULL MULTI-DIMENSIONAL ECOSYSTEM INTEGRATION (v3)
+    # ═══════════════════════════════════════════════════════════════
+    
+    def connect_full_ecosystem(self, 
+                               bridge=None, 
+                               hnc_matrix=None, 
+                               auris_metrics=None,
+                               mycelium_network=None,
+                               harmonic_6d=None,
+                               stargate_grid=None,
+                               temporal_reader=None,
+                               piano=None):
+        """
+        Connect to the FULL Aureon multi-dimensional ecosystem.
+        
+        🍄 Mycelium: Distributed agent intelligence (10-9-1 Hive consensus)
+        🌌 6D Harmonic: Price/Volume/Temporal/Resonance/Momentum/Frequency
+        🌍 Stargate: 12-node geomagnetic grid (sacred sites, leylines)
+        ⏱️ Temporal: Past/Present/Future synthesis (multiverse ladder)
+        🎹 Piano: Master Harmonic Equation Λ(t) = S(t) + O(t) + E(t)
+        
+        Args:
+            bridge: AureonBridge instance for cross-system communication
+            hnc_matrix: HNC Probability Matrix for market signals
+            auris_metrics: Auris 9-node frequency metrics
+            mycelium_network: MyceliumNetwork for distributed consensus
+            harmonic_6d: SixDimensionalHarmonicEngine for waveform analysis
+            stargate_grid: StargateGrid for geomagnetic timing
+            temporal_reader: TemporalReader for past/present/future synthesis
+            piano: AureonPiano for Master Equation harmonics
+        """
+        # Core ecosystem (v2)
+        self._bridge = bridge
+        self._hnc_matrix = hnc_matrix
+        self._auris_metrics = auris_metrics
+        
+        # Extended ecosystem (v3)
+        self._mycelium = mycelium_network
+        self._harmonic_6d = harmonic_6d
+        self._stargate = stargate_grid
+        self._temporal = temporal_reader
+        
+        # 🎹 THE PIANO - Master Harmonic Equation (v4)
+        self._piano = piano
+        
+        # Extended weights for ecosystem
+        self.weights.update({
+            'mycelium': 0.08,
+            'harmonic_6d': 0.08,
+            'stargate': 0.06,
+            'temporal': 0.08,
+            'piano': 0.12,  # Piano drives the MUSIC!
+        })
+        
+        # Renormalize weights
+        total = sum(self.weights.values())
+        for k in self.weights:
+            self.weights[k] /= total
+        
+        logger.info("🌌 Quantum Brain connected to FULL MULTI-DIMENSIONAL ecosystem")
+        logger.info("   ┌─────────────────────────────────────────────────────")
+        if bridge:
+            logger.info("   │ 🌉 Bridge................. CONNECTED")
+        if hnc_matrix:
+            logger.info("   │ 📊 HNC Matrix............. CONNECTED")
+        if auris_metrics:
+            logger.info("   │ 🎵 Auris 9-Nodes.......... CONNECTED")
+        if mycelium_network:
+            logger.info("   │ 🍄 Mycelium Network....... CONNECTED")
+        if harmonic_6d:
+            logger.info("   │ 🌌 6D Harmonic Engine..... CONNECTED")
+        if stargate_grid:
+            logger.info("   │ 🌍 Stargate Grid.......... CONNECTED")
+        if temporal_reader:
+            logger.info("   │ ⏱️  Temporal Reader........ CONNECTED")
+        logger.info("   └─────────────────────────────────────────────────────")
+        logger.info(f"   Total Dimensions: {self.state.total_dimensions}")
+    
+    def sync_mycelium(self):
+        """
+        🍄 Sync state from Mycelium Network.
+        
+        The Mycelium is a distributed agent network with:
+        - Hives: Independent agent clusters
+        - Synapses: Cross-hive communication channels
+        - Neurons: Individual trading agents
+        - Queen: Master consensus coordinator
+        """
+        if not hasattr(self, '_mycelium') or not self._mycelium:
+            return
+        
+        try:
+            # Get hive count and agent totals
+            if hasattr(self._mycelium, 'hives'):
+                self.state.mycelium_hive_count = len(self._mycelium.hives)
+                self.state.mycelium_agents = sum(
+                    len(h.neurons) for h in self._mycelium.hives 
+                    if hasattr(h, 'neurons')
+                )
+            
+            # Get network-wide coherence (from Queen)
+            if hasattr(self._mycelium, 'queen'):
+                queen = self._mycelium.queen
+                if hasattr(queen, 'coherence_score'):
+                    self.state.mycelium_coherence = queen.coherence_score
+                if hasattr(queen, 'get_consensus'):
+                    consensus = queen.get_consensus()
+                    self.state.mycelium_signal = consensus.get('signal', 'HOLD')
+            elif hasattr(self._mycelium, 'get_network_coherence'):
+                self.state.mycelium_coherence = self._mycelium.get_network_coherence()
+            
+            # Get highest generation (budding depth)
+            if hasattr(self._mycelium, 'get_max_generation'):
+                self.state.mycelium_generation = self._mycelium.get_max_generation()
+            
+            logger.debug(f"🍄 Mycelium sync: {self.state.mycelium_hive_count} hives, "
+                        f"{self.state.mycelium_agents} agents, coherence={self.state.mycelium_coherence:.3f}")
+        except Exception as e:
+            logger.debug(f"Mycelium sync error: {e}")
+    
+    def sync_6d_harmonic(self):
+        """
+        🌌 Sync state from 6D Harmonic Waveform Engine.
+        
+        The 6 dimensions of market analysis:
+        - D1: Price Wave (φ-scaled golden ratio patterns)
+        - D2: Volume Pulse (energy flow)
+        - D3: Temporal Phase (cyclic timing)
+        - D4: Cross-Market Resonance (correlation)
+        - D5: Momentum Vortex (trend strength)
+        - D6: Harmonic Frequency (528Hz/432Hz alignment)
+        """
+        if not hasattr(self, '_harmonic_6d') or not self._harmonic_6d:
+            return
+        
+        try:
+            engine = self._harmonic_6d
+            
+            # Get individual dimension values
+            if hasattr(engine, 'dimensions'):
+                dims = engine.dimensions
+                self.state.dim_price_wave = dims.get('price', 0.5)
+                self.state.dim_volume_pulse = dims.get('volume', 0.5)
+                self.state.dim_temporal_phase = dims.get('temporal', 0.5)
+                self.state.dim_cross_resonance = dims.get('resonance', 0.5)
+                self.state.dim_momentum_vortex = dims.get('momentum', 0.5)
+                self.state.dim_harmonic_freq = dims.get('frequency', 0.5)
+            elif hasattr(engine, 'get_dimension_states'):
+                dims = engine.get_dimension_states()
+                self.state.dim_price_wave = dims[0] if len(dims) > 0 else 0.5
+                self.state.dim_volume_pulse = dims[1] if len(dims) > 1 else 0.5
+                self.state.dim_temporal_phase = dims[2] if len(dims) > 2 else 0.5
+                self.state.dim_cross_resonance = dims[3] if len(dims) > 3 else 0.5
+                self.state.dim_momentum_vortex = dims[4] if len(dims) > 4 else 0.5
+                self.state.dim_harmonic_freq = dims[5] if len(dims) > 5 else 0.5
+            
+            # Get composite 6D state
+            if hasattr(engine, 'get_wave_state'):
+                self.state.wave_state = engine.get_wave_state()
+            if hasattr(engine, 'dimensional_coherence'):
+                self.state.dimensional_coherence = engine.dimensional_coherence
+            if hasattr(engine, 'phase_alignment'):
+                self.state.phase_alignment = engine.phase_alignment
+            if hasattr(engine, 'energy_density'):
+                self.state.energy_density = engine.energy_density
+            if hasattr(engine, 'probability_field'):
+                self.state.probability_field = engine.probability_field
+            
+            logger.debug(f"🌌 6D Harmonic sync: state={self.state.wave_state}, "
+                        f"coherence={self.state.dimensional_coherence:.3f}")
+        except Exception as e:
+            logger.debug(f"6D Harmonic sync error: {e}")
+    
+    def sync_stargate(self):
+        """
+        🌍 Sync state from Stargate Grid.
+        
+        The 12 sacred nodes:
+        - Stonehenge (UK) - Earth, 7.83 Hz
+        - Great Pyramid (Egypt) - Fire, 14.3 Hz
+        - Uluru (Australia) - Earth, 20.8 Hz
+        - Mt. Shasta (USA) - Air, 27.3 Hz
+        - Machu Picchu (Peru) - Water, 33.8 Hz
+        - Mt. Kailash (Tibet) - Ether, 40.0 Hz
+        - Sedona (USA) - Fire, 14.3 Hz
+        - Lake Titicaca (Bolivia) - Water, 7.83 Hz
+        - Table Mountain (S. Africa) - Earth, 20.8 Hz
+        - Glastonbury (UK) - Spirit, 27.3 Hz
+        - Mt. Fuji (Japan) - Air, 33.8 Hz
+        - Easter Island (Chile) - Water, 14.3 Hz
+        """
+        if not hasattr(self, '_stargate') or not self._stargate:
+            return
+        
+        try:
+            grid = self._stargate
+            
+            # Get active node
+            if hasattr(grid, 'active_node'):
+                node = grid.active_node
+                self.state.stargate_active_node = getattr(node, 'name', 'STONEHENGE')
+                self.state.stargate_frequency = getattr(node, 'frequency', 7.83)
+                self.state.stargate_element = getattr(node, 'element', 'Earth')
+                self.state.stargate_numerology = getattr(node, 'numerology', 1)
+            elif hasattr(grid, 'get_active_node'):
+                node_data = grid.get_active_node()
+                if isinstance(node_data, dict):
+                    self.state.stargate_active_node = node_data.get('name', 'STONEHENGE')
+                    self.state.stargate_frequency = node_data.get('frequency', 7.83)
+                    self.state.stargate_element = node_data.get('element', 'Earth')
+                    self.state.stargate_numerology = node_data.get('numerology', 1)
+            
+            # Get grid coherence
+            if hasattr(grid, 'grid_coherence'):
+                self.state.grid_coherence = grid.grid_coherence
+            elif hasattr(grid, 'get_grid_coherence'):
+                self.state.grid_coherence = grid.get_grid_coherence()
+            
+            # Get leyline activity
+            if hasattr(grid, 'leyline_activity'):
+                self.state.leyline_activity = grid.leyline_activity
+            elif hasattr(grid, 'get_leyline_strength'):
+                self.state.leyline_activity = grid.get_leyline_strength()
+            
+            # Get geomagnetic modifier
+            if hasattr(grid, 'geomagnetic_modifier'):
+                self.state.geomagnetic_modifier = grid.geomagnetic_modifier
+            elif hasattr(grid, 'get_trading_modifier'):
+                self.state.geomagnetic_modifier = grid.get_trading_modifier()
+            
+            logger.debug(f"🌍 Stargate sync: node={self.state.stargate_active_node}, "
+                        f"freq={self.state.stargate_frequency}Hz, "
+                        f"modifier={self.state.geomagnetic_modifier:.2f}x")
+        except Exception as e:
+            logger.debug(f"Stargate sync error: {e}")
+    
+    def sync_temporal(self):
+        """
+        ⏱️ Sync state from Temporal Reader (Past/Present/Future).
+        
+        The Multiverse Ladder (consciousness levels):
+        - Level 0: Atom (base matter)
+        - Level 1: Molecule (complexity)
+        - Level 2: Cell (life)
+        - Level 3: Organism (awareness)
+        - Level 4: Ecosystem (connection)
+        - Level 5: Planet (Gaia)
+        - Level 6: Star (cosmic)
+        - Level 7: Galaxy (universal consciousness)
+        """
+        if not hasattr(self, '_temporal') or not self._temporal:
+            return
+        
+        try:
+            reader = self._temporal
+            
+            # Get temporal scores
+            if hasattr(reader, 'past_score'):
+                self.state.temporal_past = reader.past_score
+            elif hasattr(reader, 'get_past'):
+                self.state.temporal_past = reader.get_past()
+            
+            if hasattr(reader, 'present_score'):
+                self.state.temporal_present = reader.present_score
+            elif hasattr(reader, 'get_present'):
+                self.state.temporal_present = reader.get_present()
+            
+            if hasattr(reader, 'future_score'):
+                self.state.temporal_future = reader.future_score
+            elif hasattr(reader, 'get_future'):
+                self.state.temporal_future = reader.get_future()
+            
+            # Compute temporal harmony (alignment of all 3 time dimensions)
+            if hasattr(reader, 'temporal_harmony'):
+                self.state.temporal_harmony = reader.temporal_harmony
+            else:
+                # Compute as geometric mean
+                p, pr, f = self.state.temporal_past, self.state.temporal_present, self.state.temporal_future
+                self.state.temporal_harmony = (p * pr * f) ** (1/3) if all([p, pr, f]) else 0.5
+            
+            # Get ladder position
+            if hasattr(reader, 'ladder_level'):
+                self.state.ladder_level = reader.ladder_level
+            elif hasattr(reader, 'get_consciousness_level'):
+                self.state.ladder_level = reader.get_consciousness_level()
+            
+            # Ladder names
+            ladder_names = ['Atom', 'Molecule', 'Cell', 'Organism', 'Ecosystem', 'Planet', 'Star', 'Galaxy']
+            self.state.ladder_name = ladder_names[min(7, max(0, self.state.ladder_level))]
+            
+            logger.debug(f"⏱️ Temporal sync: past={self.state.temporal_past:.2f}, "
+                        f"present={self.state.temporal_present:.2f}, "
+                        f"future={self.state.temporal_future:.2f}, "
+                        f"harmony={self.state.temporal_harmony:.3f}, "
+                        f"level={self.state.ladder_name}")
+        except Exception as e:
+            logger.debug(f"Temporal sync error: {e}")
+    
+    def sync_auris_nodes(self):
+        """
+        🎵 Sync state from Auris 9-Node Frequency Network.
+        
+        The 9 totem nodes:
+        - Tiger (220 Hz): Disruption, aggressive moves
+        - Falcon (285 Hz): Velocity, quick response
+        - Hummingbird (396 Hz): Stability, libration
+        - Dolphin (528 Hz): Love, harmony (DNA repair)
+        - Deer (639 Hz): Sensing, awareness
+        - Owl (741 Hz): Memory, pattern recognition
+        - Panda (852 Hz): Heart, intuition
+        - Cargoship (936 Hz): Momentum, heavy lifting
+        - Clownfish (963 Hz): Symbiosis, connection
+        """
+        if not hasattr(self, '_auris_metrics') or not self._auris_metrics:
+            return
+        
+        try:
+            metrics = self._auris_metrics
+            
+            if isinstance(metrics, dict):
+                # Map node values
+                node_map = {
+                    'tiger': ('auris_tiger', 220),
+                    'falcon': ('auris_falcon', 285),
+                    'hummingbird': ('auris_hummingbird', 396),
+                    'dolphin': ('auris_dolphin', 528),
+                    'deer': ('auris_deer', 639),
+                    'owl': ('auris_owl', 741),
+                    'panda': ('auris_panda', 852),
+                    'cargoship': ('auris_cargoship', 936),
+                    'clownfish': ('auris_clownfish', 963),
+                }
+                
+                max_val = 0
+                max_node = 'Dolphin'
+                
+                for node_name, (attr_name, freq) in node_map.items():
+                    val = metrics.get(node_name, metrics.get(f'{node_name}_score', 0.5))
+                    setattr(self.state, attr_name, val)
+                    if val > max_val:
+                        max_val = val
+                        max_node = node_name.capitalize()
+                
+                self.state.auris_dominant_node = max_node
+                
+                # Overall coherence
+                self.state.auris_coherence = metrics.get('coherence_score', 
+                    metrics.get('network_coherence', 0.5))
+            
+            logger.debug(f"🎵 Auris sync: dominant={self.state.auris_dominant_node}, "
+                        f"coherence={self.state.auris_coherence:.3f}")
+        except Exception as e:
+            logger.debug(f"Auris sync error: {e}")
+    
+    def sync_piano(self):
+        """
+        🎹 Sync state from Aureon Piano Player.
+        
+        THE MASTER EQUATION: Λ(t) = S(t) + α·O(t) + E(t)
+        
+        Where:
+        - S(t) = SUBSTRATE: 9-node Auris waveform (market reality)
+        - O(t) = OBSERVER: Conscious focus shapes the field
+        - E(t) = ECHO: Temporal feedback from τ seconds ago
+        - Λ(t) = LAMBDA: Reality field strength
+        - Γ = COHERENCE: Field alignment
+        
+        The Piano plays ALL coins simultaneously as harmonic keys.
+        At UNITY (963Hz), the entire portfolio resonates as ONE.
+        
+        Rainbow Bridge States:
+        - FEAR (110Hz) → FORMING (285Hz) → RESONANCE (396Hz) →
+        - LOVE (528Hz) → AWE (852Hz) → UNITY (963Hz)
+        """
+        if not hasattr(self, '_piano') or not self._piano:
+            return
+        
+        try:
+            piano = self._piano
+            
+            # Master Equation components
+            if hasattr(piano, 'global_lambda'):
+                self.state.piano_lambda = piano.global_lambda
+            if hasattr(piano, 'global_coherence'):
+                self.state.piano_coherence = piano.global_coherence
+            if hasattr(piano, 'global_rainbow'):
+                self.state.rainbow_state = piano.global_rainbow
+            
+            # Get Piano parameters
+            if hasattr(piano, 'alpha'):
+                self.state.piano_alpha = piano.alpha
+            if hasattr(piano, 'beta'):
+                self.state.piano_beta = piano.beta
+            if hasattr(piano, 'tau'):
+                self.state.piano_tau = piano.tau
+            
+            # Rainbow frequency mapping
+            rainbow_freqs = {
+                'FEAR': 110.0,
+                'FORMING': 285.0,
+                'RESONANCE': 396.0,
+                'LOVE': 528.0,
+                'AWE': 852.0,
+                'UNITY': 963.0
+            }
+            self.state.rainbow_frequency = rainbow_freqs.get(
+                self.state.rainbow_state, 285.0)
+            
+            # Portfolio harmonics from Piano keys
+            if hasattr(piano, 'keys') and piano.keys:
+                self.state.piano_keys_active = len(piano.keys)
+                
+                # Calculate portfolio-wide coherence
+                key_coherences = []
+                max_lambda = 0
+                dominant = ""
+                
+                for asset, key in piano.keys.items():
+                    if hasattr(key, 'coherence'):
+                        key_coherences.append(key.coherence)
+                    if hasattr(key, 'lambda_value') and key.lambda_value > max_lambda:
+                        max_lambda = key.lambda_value
+                        dominant = asset
+                        # Also sync individual components
+                        self.state.piano_substrate = getattr(key, 'substrate', 0.5)
+                        self.state.piano_observer = getattr(key, 'observer', 0.5)
+                        self.state.piano_echo = getattr(key, 'echo', 0.5)
+                
+                if key_coherences:
+                    self.state.portfolio_coherence = sum(key_coherences) / len(key_coherences)
+                self.state.dominant_key = dominant
+                
+                # Get strongest signal
+                if hasattr(piano, 'find_opportunities'):
+                    opps = piano.find_opportunities()
+                    if opps:
+                        self.state.harmonic_signal = opps[0][1]  # signal
+                        self.state.signal_confidence = opps[0][2]  # confidence
+                elif hasattr(piano, 'generate_signal') and dominant:
+                    sig, conf = piano.generate_signal(piano.keys[dominant])
+                    self.state.harmonic_signal = sig
+                    self.state.signal_confidence = conf
+            
+            logger.debug(f"🎹 Piano sync: Λ={self.state.piano_lambda:.3f}, "
+                        f"Γ={self.state.piano_coherence:.3f}, "
+                        f"rainbow={self.state.rainbow_state}, "
+                        f"keys={self.state.piano_keys_active}, "
+                        f"signal={self.state.harmonic_signal}")
+        except Exception as e:
+            logger.debug(f"Piano sync error: {e}")
+    
+    def sync_full_ecosystem(self):
+        """
+        Sync from ALL ecosystem components.
+        Master sync method that pulls from all connected systems.
+        """
+        # Core ecosystem sync (v2)
+        self.sync_from_ecosystem()
+        
+        # Extended ecosystem sync (v3)
+        self.sync_mycelium()
+        self.sync_6d_harmonic()
+        self.sync_stargate()
+        self.sync_temporal()
+        self.sync_auris_nodes()
+        
+        # 🎹 Piano sync (v4) - The MUSIC of the Brain!
+        self.sync_piano()
+        
+        # Compute unified ecosystem sync score
+        sync_scores = [
+            self.state.unified_coherence,
+            self.state.mycelium_coherence,
+            self.state.dimensional_coherence,
+            self.state.grid_coherence,
+            self.state.temporal_harmony,
+            self.state.auris_coherence,
+            self.state.piano_coherence,  # Now includes Piano!
+        ]
+        self.state.ecosystem_sync = sum(sync_scores) / len(sync_scores)
+        
+        # Compute multiverse cascade (combines ALL system cascades)
+        # 🎹 Now includes Piano's Lambda field!
+        cascades = [
+            self.state.cascade_multiplier,
+            1.0 + (self.state.mycelium_coherence - 0.5) * 0.3,
+            1.0 + (self.state.dimensional_coherence - 0.5) * 0.3,
+            self.state.geomagnetic_modifier,
+            1.0 + (self.state.temporal_harmony - 0.5) * 0.25,
+            # 🎹 Piano Lambda contribution - at UNITY state, max boost!
+            self.state.piano_lambda * (1.0 + (self.state.piano_coherence - 0.5) * 0.4),
+        ]
+        self.state.multiverse_cascade = 1.0
+        for c in cascades:
+            self.state.multiverse_cascade *= max(0.5, min(2.5, c))
+        
+        # Rainbow state bonus - UNITY gives extra cascade
+        rainbow_bonus = {
+            'FEAR': 0.8,
+            'FORMING': 0.9,
+            'RESONANCE': 1.0,
+            'LOVE': 1.15,
+            'AWE': 1.3,
+            'UNITY': 1.5  # Maximum alignment = maximum cascade!
+        }
+        self.state.multiverse_cascade *= rainbow_bonus.get(self.state.rainbow_state, 1.0)
+        
+        # Cap at reasonable maximum
+        self.state.multiverse_cascade = min(100.0, self.state.multiverse_cascade)
+        
+        # Update consciousness level based on ladder AND rainbow state
+        consciousness_levels = ['ATOM', 'MOLECULE', 'CELL', 'ORGANISM', 'ECOSYSTEM', 'PLANET', 'STAR', 'GALAXY']
+        # Rainbow state can elevate consciousness
+        rainbow_elevation = {'FEAR': 0, 'FORMING': 0, 'RESONANCE': 1, 'LOVE': 2, 'AWE': 3, 'UNITY': 4}
+        effective_level = min(7, self.state.ladder_level + rainbow_elevation.get(self.state.rainbow_state, 0))
+        self.state.consciousness_level = consciousness_levels[effective_level]
+    
+    def compute_multidimensional(self,
+                                 probability_matrix=None,
+                                 platypus=None,
+                                 coherence=None,
+                                 lattice=None,
+                                 casimir=None,
+                                 qvee=None,
+                                 lumina=None,
+                                 mirrors=None) -> QuantumBrainState:
+        """
+        🌌⚛️ MULTIDIMENSIONAL UNIFIED COMPUTATION ⚛️🌌
+        
+        The ultimate Brain computation that synthesizes ALL dimensions:
+        - 8 core mining subsystems
+        - 6D harmonic waveform
+        - 12 stargate nodes
+        - 9 auris frequencies
+        - 3 temporal dimensions (past/present/future)
+        - 🎹 Piano Master Equation Λ(t) = S(t) + O(t) + E(t)
+        - Mycelium distributed consensus
+        
+        Total: 12+ integrated dimensions
+        """
+        # First sync from full ecosystem
+        self.sync_full_ecosystem()
+        
+        # Compute base unified state
+        state = self.compute_unified_state(
+            probability_matrix=probability_matrix,
+            platypus=platypus,
+            coherence=coherence,
+            lattice=lattice,
+            casimir=casimir,
+            qvee=qvee,
+            lumina=lumina,
+            mirrors=mirrors
+        )
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE A: 6D HARMONIC ENHANCEMENT
+        # ═══════════════════════════════════════════════════════════════
+        
+        if self.state.dimensional_coherence > 0.6:
+            # High 6D coherence = crystalline state = boost
+            harmonic_boost = 1.0 + (self.state.dimensional_coherence - 0.6) * 0.25
+            self.state.cascade_multiplier *= harmonic_boost
+            
+            # Phase alignment improves timing precision
+            if self.state.phase_alignment > 0.7:
+                self.state.window_intensity *= (1.0 + self.state.phase_alignment * 0.1)
+        
+        # Wave state modifies strategy
+        if self.state.wave_state == "CRYSTALLINE":
+            self.state.search_strategy = "focused"
+        elif self.state.wave_state == "DIVERGENT":
+            self.state.search_strategy = "exploration"
+        elif self.state.wave_state == "CONVERGENT":
+            self.state.search_strategy = "balanced"
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE B: STARGATE GRID MODULATION
+        # ═══════════════════════════════════════════════════════════════
+        
+        # Apply geomagnetic modifier
+        self.state.cascade_multiplier *= self.state.geomagnetic_modifier
+        
+        # Element influence on strategy
+        element_strategies = {
+            'Earth': 'balanced',
+            'Fire': 'focused',
+            'Water': 'exploration',
+            'Air': 'focused',
+            'Ether': 'balanced',
+            'Spirit': 'focused',
+        }
+        if self.state.stargate_element in element_strategies:
+            # Blend with current strategy
+            geo_strategy = element_strategies[self.state.stargate_element]
+            if self.state.grid_coherence > 0.7:
+                self.state.search_strategy = geo_strategy
+        
+        # Schumann frequency alignment
+        schumann_diff = abs(self.state.stargate_frequency - 7.83)
+        if schumann_diff < 0.5:
+            # Close to Schumann = extra coherence
+            self.state.unified_coherence *= 1.05
+            self.state.schumann_lock = 1.0 - (schumann_diff / 0.5)
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE C: TEMPORAL SYNTHESIS
+        # ═══════════════════════════════════════════════════════════════
+        
+        # Temporal harmony boosts cascade
+        if self.state.temporal_harmony > 0.6:
+            temporal_boost = 1.0 + (self.state.temporal_harmony - 0.6) * 0.2
+            self.state.cascade_multiplier *= temporal_boost
+        
+        # Future score influences window detection
+        if self.state.temporal_future > 0.7:
+            # Strong future signal = potential lighthouse
+            self.state.is_optimal_window = True
+            self.state.window_intensity *= 1.1
+        elif self.state.temporal_future < 0.3:
+            # Weak future = reduce exposure
+            self.state.window_intensity *= 0.9
+        
+        # Ladder level influences learning rate
+        ladder_lr_mod = 1.0 + (self.state.ladder_level * 0.03)  # 0-21% boost
+        self.state.learning_rate *= ladder_lr_mod
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE D: MYCELIUM CONSENSUS
+        # ═══════════════════════════════════════════════════════════════
+        
+        # Network coherence boosts unified
+        if self.state.mycelium_coherence > 0.6:
+            mycelium_boost = 1.0 + (self.state.mycelium_coherence - 0.6) * 0.15
+            self.state.unified_coherence *= min(1.0, mycelium_boost)
+        
+        # Queen signal influences direction
+        if self.state.mycelium_signal == "BUY":
+            # Bullish consensus from network
+            self.state.probability_edge = max(self.state.probability_edge, 0.1)
+        elif self.state.mycelium_signal == "SELL":
+            # Bearish consensus
+            self.state.window_intensity *= 0.95
+        
+        # Generation depth (budding) indicates network maturity
+        if self.state.mycelium_generation >= 3:
+            # Mature network = stable signals
+            self.state.cascade_multiplier *= 1.05
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE E: AURIS FREQUENCY SYNTHESIS
+        # ═══════════════════════════════════════════════════════════════
+        
+        # Dominant node influences behavior
+        auris_modifiers = {
+            'Tiger': ('focused', 1.10),      # Aggressive
+            'Falcon': ('focused', 1.08),     # Fast
+            'Hummingbird': ('balanced', 1.02), # Stable
+            'Dolphin': ('balanced', 1.12),   # Harmonious (528Hz love)
+            'Deer': ('exploration', 1.04),   # Sensing
+            'Owl': ('balanced', 1.06),       # Memory
+            'Panda': ('exploration', 1.03),  # Intuition
+            'Cargoship': ('focused', 1.08),  # Momentum
+            'Clownfish': ('balanced', 1.05), # Symbiosis
+        }
+        
+        if self.state.auris_dominant_node in auris_modifiers:
+            strat, mult = auris_modifiers[self.state.auris_dominant_node]
+            if self.state.auris_coherence > 0.6:
+                self.state.search_strategy = strat
+                self.state.cascade_multiplier *= mult
+        
+        # 528Hz (Dolphin) alignment = love frequency
+        if self.state.auris_dolphin > 0.8:
+            self.state.cascade_multiplier *= 1.05
+            self.state.unified_coherence = min(1.0, self.state.unified_coherence * 1.03)
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE E2: 🎹 PIANO MASTER EQUATION - THE MUSIC OF THE BRAIN
+        # ═══════════════════════════════════════════════════════════════
+        # Λ(t) = S(t) + α·O(t) + E(t)
+        # The Piano harmonizes ALL coins simultaneously.
+        # At UNITY (963Hz), the portfolio resonates as ONE.
+        
+        # Piano's Lambda field directly boosts cascade
+        if self.state.piano_lambda > 1.5:
+            # Strong field = powerful reality shift
+            piano_boost = 1.0 + (self.state.piano_lambda - 1.0) * 0.15
+            self.state.cascade_multiplier *= piano_boost
+        
+        # Piano coherence = field alignment
+        if self.state.piano_coherence > 0.7:
+            coherence_boost = 1.0 + (self.state.piano_coherence - 0.5) * 0.1
+            self.state.cascade_multiplier *= coherence_boost
+        
+        # Rainbow Bridge state progression (FEAR→UNITY)
+        rainbow_boost = {
+            'FEAR': 0.8,        # Suppressed
+            'FORMING': 0.9,     # Weak
+            'RESONANCE': 1.0,   # Baseline
+            'LOVE': 1.05,       # Harmonious
+            'AWE': 1.10,        # Powerful
+            'UNITY': 1.20,      # Maximum alignment (963Hz)
+        }
+        rainbow_mult = rainbow_boost.get(self.state.rainbow_state, 1.0)
+        self.state.cascade_multiplier *= rainbow_mult
+        
+        # Portfolio harmonic alignment (multiple keys playing together)
+        if self.state.piano_keys_active > 0:
+            # More coins = more harmonics = more power
+            keys_boost = 1.0 + min(self.state.piano_keys_active / 20, 0.15)
+            self.state.cascade_multiplier *= keys_boost
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE F: FINAL UNIFICATION
+        # ═══════════════════════════════════════════════════════════════
+        
+        # Update total cascade with ecosystem multiplier
+        self.state.cascade_multiplier = self.state.multiverse_cascade
+        
+        # Cap cascade at maximum
+        self.state.cascade_multiplier = min(50.0, self.state.cascade_multiplier)
+        
+        # Ensure coherence stays in bounds
+        self.state.unified_coherence = max(0.0, min(1.0, self.state.unified_coherence))
+        
+        # Update psi vector with ecosystem dimensions
+        self.state.psi_vector = [
+            self.state.probability_edge,          # Market probability
+            self.state.planetary_gamma,           # Planetary coherence
+            self.state.dimensional_coherence,     # 6D waveform
+            self.state.mycelium_coherence,        # Network consensus
+            self.state.grid_coherence,            # Stargate grid
+            self.state.temporal_harmony,          # Time synthesis
+            self.state.auris_coherence,           # Frequency resonance
+            self.state.unified_coherence,         # Total unified
+        ]
+        
+        # Normalize psi vector
+        psi_norm = math.sqrt(sum(p**2 for p in self.state.psi_vector))
+        if psi_norm > 0:
+            self.state.psi_vector = [p / psi_norm for p in self.state.psi_vector]
+        
+        # Broadcast updated state
+        self.broadcast_multidimensional_state()
+        
+        return state
+    
+    def broadcast_multidimensional_state(self):
+        """
+        Broadcast full multi-dimensional brain state to ecosystem.
+        """
+        if not hasattr(self, '_bridge') or not self._bridge:
+            return
+        
+        try:
+            # Full multidimensional state
+            brain_data = {
+                'type': 'multidimensional_brain_state',
+                'version': 3,
+                'timestamp': time.time(),
+                
+                # Core state
+                'unified_coherence': self.state.unified_coherence,
+                'cascade_multiplier': self.state.cascade_multiplier,
+                'multiverse_cascade': self.state.multiverse_cascade,
+                'is_optimal_window': self.state.is_optimal_window,
+                'strategy': self.state.search_strategy,
+                
+                # 6D Harmonic
+                '6d_harmonic': {
+                    'price_wave': self.state.dim_price_wave,
+                    'volume_pulse': self.state.dim_volume_pulse,
+                    'temporal_phase': self.state.dim_temporal_phase,
+                    'cross_resonance': self.state.dim_cross_resonance,
+                    'momentum_vortex': self.state.dim_momentum_vortex,
+                    'harmonic_freq': self.state.dim_harmonic_freq,
+                    'wave_state': self.state.wave_state,
+                    'coherence': self.state.dimensional_coherence,
+                },
+                
+                # Stargate Grid
+                'stargate': {
+                    'active_node': self.state.stargate_active_node,
+                    'frequency': self.state.stargate_frequency,
+                    'element': self.state.stargate_element,
+                    'grid_coherence': self.state.grid_coherence,
+                    'leyline_activity': self.state.leyline_activity,
+                    'modifier': self.state.geomagnetic_modifier,
+                },
+                
+                # Temporal
+                'temporal': {
+                    'past': self.state.temporal_past,
+                    'present': self.state.temporal_present,
+                    'future': self.state.temporal_future,
+                    'harmony': self.state.temporal_harmony,
+                    'ladder_level': self.state.ladder_level,
+                    'consciousness': self.state.consciousness_level,
+                },
+                
+                # Mycelium
+                'mycelium': {
+                    'hive_count': self.state.mycelium_hive_count,
+                    'agents': self.state.mycelium_agents,
+                    'coherence': self.state.mycelium_coherence,
+                    'signal': self.state.mycelium_signal,
+                    'generation': self.state.mycelium_generation,
+                },
+                
+                # Auris
+                'auris': {
+                    'dominant_node': self.state.auris_dominant_node,
+                    'coherence': self.state.auris_coherence,
+                    'tiger': self.state.auris_tiger,
+                    'falcon': self.state.auris_falcon,
+                    'hummingbird': self.state.auris_hummingbird,
+                    'dolphin': self.state.auris_dolphin,
+                    'deer': self.state.auris_deer,
+                    'owl': self.state.auris_owl,
+                    'panda': self.state.auris_panda,
+                    'cargoship': self.state.auris_cargoship,
+                    'clownfish': self.state.auris_clownfish,
+                },
+                
+                # Psi vector (8D)
+                'psi_vector': self.state.psi_vector,
+                
+                # Ecosystem sync
+                'ecosystem_sync': self.state.ecosystem_sync,
+                'total_dimensions': self.state.total_dimensions,
+                
+                # Weights
+                'weights': dict(self.weights),
+            }
+            
+            # Write to bridge
+            brain_file = self._bridge.data_dir / 'brain_state.json'
+            with open(brain_file, 'w') as f:
+                json.dump(brain_data, f, indent=2)
+            
+            self.state.broadcast_count += 1
+            self.state.last_broadcast = time.time()
+            
+        except Exception as e:
+            logger.debug(f"Multidimensional broadcast error: {e}")
+    
+    def format_multidimensional_display(self) -> str:
+        """Format full multidimensional brain state for display"""
+        window_icon = "🔦" if self.state.is_optimal_window else "  "
+        strategy_icons = {"focused": "🎯", "exploration": "🔍", "balanced": "⚖️"}
+        strategy_icon = strategy_icons.get(self.state.search_strategy, "⚖️")
+        
+        # Rainbow state emoji
+        rainbow_emojis = {
+            'FEAR': '😨', 'FORMING': '🌱', 'RESONANCE': '🔊',
+            'LOVE': '💖', 'AWE': '✨', 'UNITY': '🌈'
+        }
+        rainbow_emoji = rainbow_emojis.get(self.state.rainbow_state, '🌱')
+        
+        lines = [
+            f"{'═'*60}",
+            f"🧠⚛️ MULTIDIMENSIONAL QUANTUM BRAIN v4 ⚛️🧠",
+            f"{'═'*60}",
+            f"  Unified ψ:      {self.state.unified_coherence:.4f}",
+            f"  Multiverse 🌌:  {self.state.multiverse_cascade:.2f}x cascade",
+            f"  Strategy:       {strategy_icon} {self.state.search_strategy.upper()} {window_icon}",
+            f"{'─'*60}",
+            f"  🎹 PIANO (Master Equation: Λ = S + αO + E):",
+            f"     Lambda Λ:    {self.state.piano_lambda:.3f} (field strength)",
+            f"     Substrate S: {self.state.piano_substrate:.3f} (9-node waveform)",
+            f"     Observer O:  {self.state.piano_observer:.3f} × α={self.state.piano_alpha:.1f}",
+            f"     Echo E:      {self.state.piano_echo:.3f} × β={self.state.piano_beta:.1f}",
+            f"     Coherence Γ: {self.state.piano_coherence:.3f}",
+            f"     Rainbow:     {rainbow_emoji} {self.state.rainbow_state} ({self.state.rainbow_frequency:.0f}Hz)",
+            f"     Keys:        {self.state.piano_keys_active} coins playing",
+            f"     Signal:      {self.state.harmonic_signal} ({self.state.signal_confidence:.0%})",
+            f"     Dominant:    {self.state.dominant_key or 'N/A'}",
+            f"{'─'*60}",
+            f"  🌌 6D HARMONIC:",
+            f"     Wave State:  {self.state.wave_state}",
+            f"     Coherence:   {self.state.dimensional_coherence:.3f}",
+            f"     Dimensions:  P={self.state.dim_price_wave:.2f} V={self.state.dim_volume_pulse:.2f} "
+            f"T={self.state.dim_temporal_phase:.2f}",
+            f"                  R={self.state.dim_cross_resonance:.2f} M={self.state.dim_momentum_vortex:.2f} "
+            f"F={self.state.dim_harmonic_freq:.2f}",
+            f"{'─'*60}",
+            f"  🌍 STARGATE GRID:",
+            f"     Active Node: {self.state.stargate_active_node} ({self.state.stargate_element})",
+            f"     Frequency:   {self.state.stargate_frequency:.2f} Hz",
+            f"     Grid Cohere: {self.state.grid_coherence:.3f}",
+            f"     Modifier:    {self.state.geomagnetic_modifier:.2f}x",
+            f"{'─'*60}",
+            f"  ⏱️ TEMPORAL:",
+            f"     Past:        {self.state.temporal_past:.3f}",
+            f"     Present:     {self.state.temporal_present:.3f}",
+            f"     Future:      {self.state.temporal_future:.3f}",
+            f"     Harmony:     {self.state.temporal_harmony:.3f}",
+            f"     Ladder:      Level {self.state.ladder_level} ({self.state.consciousness_level})",
+            f"{'─'*60}",
+            f"  🍄 MYCELIUM:",
+            f"     Hives:       {self.state.mycelium_hive_count}",
+            f"     Agents:      {self.state.mycelium_agents}",
+            f"     Coherence:   {self.state.mycelium_coherence:.3f}",
+            f"     Signal:      {self.state.mycelium_signal}",
+            f"{'─'*60}",
+            f"  🎵 AURIS ({self.state.auris_dominant_node}):",
+            f"     🐯 Tiger:     {self.state.auris_tiger:.2f}  🦅 Falcon:   {self.state.auris_falcon:.2f}",
+            f"     🐦 Hummingb:  {self.state.auris_hummingbird:.2f}  🐬 Dolphin:  {self.state.auris_dolphin:.2f}",
+            f"     🦌 Deer:      {self.state.auris_deer:.2f}  🦉 Owl:      {self.state.auris_owl:.2f}",
+            f"     🐼 Panda:     {self.state.auris_panda:.2f}  🚢 Cargo:    {self.state.auris_cargoship:.2f}",
+            f"     🐟 Clownfish: {self.state.auris_clownfish:.2f}",
+            f"{'═'*60}",
+            f"  📊 ECOSYSTEM SYNC: {self.state.ecosystem_sync:.3f}",
+            f"  🔢 TOTAL DIMENSIONS: {self.state.total_dimensions}",
+            f"{'═'*60}",
+        ]
+        return '\n'.join(lines)
+    
+    def to_json_multidimensional(self) -> str:
+        """Serialize full multidimensional state to JSON"""
+        return json.dumps({
+            'type': 'multidimensional_brain',
+            'version': 4,
+            'timestamp': time.time(),
+            'state': {
+                'unified_coherence': self.state.unified_coherence,
+                'multiverse_cascade': self.state.multiverse_cascade,
+                'cascade_multiplier': self.state.cascade_multiplier,
+                'strategy': self.state.search_strategy,
+                'is_optimal_window': self.state.is_optimal_window,
+                'consciousness_level': self.state.consciousness_level,
+                'ecosystem_sync': self.state.ecosystem_sync,
+                'total_dimensions': self.state.total_dimensions,
+            },
+            'piano': {
+                'lambda': self.state.piano_lambda,
+                'substrate': self.state.piano_substrate,
+                'observer': self.state.piano_observer,
+                'echo': self.state.piano_echo,
+                'coherence': self.state.piano_coherence,
+                'alpha': self.state.piano_alpha,
+                'beta': self.state.piano_beta,
+                'tau': self.state.piano_tau,
+                'rainbow_state': self.state.rainbow_state,
+                'rainbow_frequency': self.state.rainbow_frequency,
+                'keys_active': self.state.piano_keys_active,
+                'portfolio_coherence': self.state.portfolio_coherence,
+                'dominant_key': self.state.dominant_key,
+                'signal': self.state.harmonic_signal,
+                'signal_confidence': self.state.signal_confidence,
+            },
+            '6d_harmonic': {
+                'wave_state': self.state.wave_state,
+                'coherence': self.state.dimensional_coherence,
+                'dimensions': [
+                    self.state.dim_price_wave,
+                    self.state.dim_volume_pulse,
+                    self.state.dim_temporal_phase,
+                    self.state.dim_cross_resonance,
+                    self.state.dim_momentum_vortex,
+                    self.state.dim_harmonic_freq,
+                ],
+            },
+            'stargate': {
+                'node': self.state.stargate_active_node,
+                'frequency': self.state.stargate_frequency,
+                'element': self.state.stargate_element,
+                'modifier': self.state.geomagnetic_modifier,
+            },
+            'temporal': {
+                'past': self.state.temporal_past,
+                'present': self.state.temporal_present,
+                'future': self.state.temporal_future,
+                'harmony': self.state.temporal_harmony,
+                'ladder': self.state.ladder_level,
+            },
+            'mycelium': {
+                'hives': self.state.mycelium_hive_count,
+                'agents': self.state.mycelium_agents,
+                'coherence': self.state.mycelium_coherence,
+                'signal': self.state.mycelium_signal,
+            },
+            'auris': {
+                'dominant': self.state.auris_dominant_node,
+                'coherence': self.state.auris_coherence,
+            },
+            'psi_vector': self.state.psi_vector,
+            'weights': dict(self.weights),
+        })
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # STRATUM CLIENT
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -4420,6 +6285,7 @@ class HarmonicMiningOptimizer:
     - Timing windows (harmonic coherence)
     - Quantum Lattice Amplifier (ping-pong resonance)
     - Platypus/Song of the Sphaerae (planetary coherence)
+    - Quantum Processing Brain (unified ecosystem coordinator)
     """
     
     def __init__(self):
@@ -4450,6 +6316,9 @@ class HarmonicMiningOptimizer:
         
         # 🪐 Platypus/Song of the Sphaerae (Planetary Coherence)
         self.platypus = PlatypusCoherenceEngine()
+        
+        # 🧠 Quantum Processing Brain (Unified Ecosystem Coordinator)
+        self.brain = QuantumProcessingBrain()
         
         # Try to import Aureon systems
         self._probability_matrix = None
@@ -4490,6 +6359,16 @@ class HarmonicMiningOptimizer:
             logger.error(f"Enhancement Layer import failed: {e}")
         except Exception as e:
             logger.error(f"Enhancement Layer initialization failed: {e}")
+
+        try:
+            from aureon_piano import AureonPiano
+            self._piano = AureonPiano()
+            self.brain._piano = self._piano
+            logger.info("🎹 Aureon Piano: CONNECTED to miner")
+        except ImportError:
+            logger.debug("Aureon Piano not available for mining")
+        except Exception as e:
+            logger.error(f"Aureon Piano initialization failed: {e}")
     
     def update_state(self, solar_data: Optional[dict] = None, 
                      planetary_data: Optional[dict] = None):
@@ -4600,13 +6479,87 @@ class HarmonicMiningOptimizer:
         except Exception as e:
             logger.debug(f"Probability matrix update failed: {e}")
             return None
+
+    def apply_adaptive_learning_feedback(self):
+        """
+        Fuse probability matrix + Platypus coherence to adapt miner learning.
+        - Boost intensity when probability edge, confidence, and Γ are strong
+        - Tune Coherence α and Platypus α/β for faster/slower learning
+        """
+        prob = getattr(self.state, 'probability', 0.5)
+        conf = getattr(self.state, 'probability_confidence', 0.0)
+        edge = abs(prob - 0.5)
+
+        # Planetary coherence inputs
+        gamma = getattr(self.platypus.state, 'Gamma_t', 0.5)
+        q_geom = getattr(self.platypus.state, 'Q_t', 0.5)
+        lighthouse = getattr(self.platypus.state, 'L_t', False)
+
+        # Adaptive gain (caps to keep stable)
+        adaptive_gain = 1.0
+        adaptive_gain += 0.12 * edge * conf          # Probability edge with confidence
+        adaptive_gain += 0.08 * gamma                # Planetary coherence lift
+        adaptive_gain += 0.05 * q_geom               # Geometric quality support
+        if lighthouse:
+            adaptive_gain += 0.05                    # Beacon bonus during Γ spikes
+        adaptive_gain = max(0.85, min(1.4, adaptive_gain))
+        self.state.adaptive_learning_gain = adaptive_gain
+
+        # Tune learning rates
+        target_alpha = 0.12 + 0.15 * edge * conf + 0.08 * gamma
+        self.coherence.alpha = max(0.08, min(0.30, target_alpha))
+        try:
+            self.platypus.tune_memory(
+                alpha=0.18 + 0.20 * edge * conf,
+                beta=0.10 + 0.10 * gamma * conf
+            )
+        except Exception as e:
+            logger.debug(f"Adaptive Platypus tuning skipped: {e}")
+
+        # Recompute intensity baseline and apply adaptive gain (no runaway accumulation)
+        base_intensity = (
+            0.5 + 0.3 * self.state.coherence + 0.2 * self.state.planetary_alignment
+        ) * self.state.solar_forcing
+        base_intensity *= getattr(self.state, 'probability_intensity', 1.0)
+        self.state.intensity_multiplier = max(0.1, min(2.0, base_intensity * adaptive_gain))
+    
+    def update_brain(self):
+        """
+        Update the Quantum Processing Brain with all subsystem states.
+        This is the unified ecosystem coordinator.
+        """
+        self.brain.compute_unified_state(
+            probability_matrix=self._probability_matrix,
+            platypus=self.platypus,
+            coherence=self.coherence,
+            lattice=self.lattice,
+            casimir=self.casimir,
+            qvee=self.qvee,
+            lumina=self.lumina,
+            mirrors=self.mirror_array
+        )
+        
+        # Apply brain guidance to nonce bias
+        guidance = self.brain.get_nonce_guidance()
+        self.state.optimal_nonce_bias = guidance['primary_start']
+        
+        # Apply brain intensity to mining
+        brain_intensity = guidance['intensity']
+        self.state.intensity_multiplier = max(0.1, min(2.0, 
+            self.state.intensity_multiplier * brain_intensity
+        ))
     
     def get_nonce_bias(self) -> int:
         """
-        Get nonce starting offset based on probability matrix.
-        Uses Fibonacci/Prime patterns from Aureon's coherence logic.
+        Get nonce starting offset based on Quantum Brain + probability matrix.
+        Uses unified ecosystem guidance.
         """
-        # Use probability prediction if available
+        # First check Brain guidance (unified)
+        brain_bias = self.brain.state.optimal_nonce_region
+        if brain_bias > 0:
+            return brain_bias
+        
+        # Fallback to probability prediction if available
         if self._last_prediction:
             try:
                 pred = self._last_prediction
@@ -4637,6 +6590,12 @@ class HarmonicMiningOptimizer:
         fib_idx = int(self.state.coherence * len(FIBONACCI))
         bias = FIBONACCI[fib_idx % len(FIBONACCI)] * 100_000
         return bias % MAX_NONCE
+    
+    def record_share_success(self, nonce: int):
+        """Record successful share for Brain learning"""
+        self.share_nonces.append(nonce)
+        in_window = self.brain.state.is_optimal_window
+        self.brain.record_share_success(nonce, in_window)
     
     def should_mine(self) -> bool:
         """
@@ -5430,6 +7389,11 @@ class AureonMiner:
 
                 # Update Probability Matrix using mining context (hashrate + difficulty)
                 self.optimizer.update_probability_signal(total_hr, max(1.0, avg_difficulty))
+                # Fuse probability + planetary coherence for adaptive learning
+                self.optimizer.apply_adaptive_learning_feedback()
+                
+                # Update Quantum Processing Brain (unified ecosystem coordinator)
+                self.optimizer.update_brain()
                 
                 # Format total hashrate
                 unit = 'H/s'
@@ -5457,6 +7421,9 @@ class AureonMiner:
                     f"Cascade: {cascade:.2f}x | "
                     f"Prob: {prob_dir} {prob_val:.2f} (conf {prob_conf:.2f})"
                 )
+                
+                # Display Quantum Processing Brain state (Unified Coordinator)
+                logger.info(self.optimizer.brain.format_display())
                 
                 # Display Coherence state (Whitepaper Model)
                 logger.info(self.optimizer.coherence.format_display())

@@ -90,42 +90,42 @@
     "blacklisted": false
   },
   "FARTCOINUSDC": {
-    "hunts": 16,
+    "hunts": 22,
     "trades": 6,
     "wins": 3,
     "losses": 3,
     "profit": -1.9746467293308458,
-    "last_time": 1765553023.716022,
+    "last_time": 1765584070.182455,
     "streak": 1,
     "blacklisted": false
   },
   "ETHUSDC": {
-    "hunts": 4,
+    "hunts": 5,
     "trades": 2,
     "wins": 2,
     "losses": 0,
     "profit": 0.46929270985724564,
-    "last_time": 1765547365.385698,
+    "last_time": 1765578206.0500667,
     "streak": 0,
     "blacklisted": false
   },
   "XBTUSDC": {
-    "hunts": 5,
+    "hunts": 10,
     "trades": 0,
     "wins": 0,
     "losses": 0,
     "profit": 0,
-    "last_time": 1765485019.1754303,
+    "last_time": 1765583745.9886105,
     "streak": 0,
     "blacklisted": false
   },
   "SOLUSDC": {
-    "hunts": 23,
+    "hunts": 29,
     "trades": 1,
     "wins": 0,
     "losses": 1,
     "profit": -0.5838001599999999,
-    "last_time": 1765553019.6577227,
+    "last_time": 1765584069.3526962,
     "streak": 1,
     "blacklisted": false
   },
@@ -140,12 +140,12 @@
     "blacklisted": false
   },
   "DOGEUSDC": {
-    "hunts": 17,
+    "hunts": 23,
     "trades": 1,
     "wins": 0,
     "losses": 1,
     "profit": -0.5841829619999998,
-    "last_time": 1765553030.4960933,
+    "last_time": 1765584073.28766,
     "streak": 1,
     "blacklisted": false
   },
@@ -170,12 +170,12 @@
     "blacklisted": false
   },
   "SUIUSDC": {
-    "hunts": 13,
+    "hunts": 19,
     "trades": 0,
     "wins": 0,
     "losses": 0,
     "profit": 0,
-    "last_time": 1765553026.7824895,
+    "last_time": 1765584071.4158041,
     "streak": 0,
     "blacklisted": false
   },
@@ -210,12 +210,12 @@
     "blacklisted": false
   },
   "XDCUSDC": {
-    "hunts": 12,
+    "hunts": 18,
     "trades": 0,
     "wins": 0,
     "losses": 0,
     "profit": 0,
-    "last_time": 1765553021.3299344,
+    "last_time": 1765584072.1759531,
     "streak": 0,
     "blacklisted": false
   },

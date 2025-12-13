@@ -257,6 +257,52 @@ class AureonUnifiedLive:
         
         # v6: Peak price tracking for trailing stops
         self.peak_prices = {}  # symbol -> highest price since entry
+
+        # Stats
+        self.wins = 0
+        self.trades = 0
+        self.total_profit_usd = 0.0
+        self.rejections = []
+
+        # 🎹 Brain/Piano resonance cache
+        self.brain_state_path = "/tmp/aureon_multidimensional_brain_output.json"
+        self.brain_cache = {}
+        self.brain_cache_time = 0
+
+    def load_brain_state(self) -> Dict:
+        """Load cached Quantum Brain/Piano state if recently updated."""
+        try:
+            now = time.time()
+            if now - self.brain_cache_time < 10:  # reuse for 10 seconds
+                return self.brain_cache
+
+            if not os.path.exists(self.brain_state_path):
+                return {}
+
+            mtime = os.path.getmtime(self.brain_state_path)
+            if mtime <= 0:
+                return {}
+
+            with open(self.brain_state_path) as f:
+                data = json.load(f)
+
+            # Extract Piano + cascade fields when available
+            piano = data.get('piano', {}) if isinstance(data, dict) else {}
+            meta = data.get('meta', {}) if isinstance(data, dict) else {}
+            cascade = meta.get('multiverse_cascade') or data.get('multiverse_cascade')
+
+            self.brain_cache = {
+                'piano_lambda': piano.get('lambda'),
+                'piano_coherence': piano.get('coherence'),
+                'rainbow_state': piano.get('rainbow_state'),
+                'cascade': cascade,
+                'timestamp': data.get('timestamp') or meta.get('timestamp'),
+            }
+            self.brain_cache_time = now
+            return self.brain_cache
+        except Exception as e:
+            logger.debug(f"Brain state load failed: {e}")
+            return {}
         
         # v6: Rejection logging for analysis
         self.rejections = []  # List of rejected opportunities with reasons
@@ -397,6 +443,27 @@ class AureonUnifiedLive:
         """v4 Enhanced opportunity scanner with learned frequency filters"""
         opportunities = []
         PHI = (1 + 5**0.5) / 2  # Golden ratio
+
+        # 🎹 Brain/Piano resonance influence
+        brain = self.load_brain_state()
+        brain_mult = 1.0
+        piano_coh = brain.get('piano_coherence') if isinstance(brain, dict) else None
+        piano_lambda = brain.get('piano_lambda') if isinstance(brain, dict) else None
+        rainbow_state = (brain.get('rainbow_state') or '').upper() if isinstance(brain, dict) else ''
+
+        if piano_coh is not None:
+            brain_mult *= 1.0 + max(0.0, piano_coh - 0.5) * 0.2  # Up to +10% boost
+        if piano_lambda is not None and piano_lambda > 1.5:
+            brain_mult *= 1.0 + (piano_lambda - 1.0) * 0.05  # Mild lambda boost
+
+        rainbow_boost = {
+            'UNITY': 1.10,
+            'AWE': 1.07,
+            'LOVE': 1.05,
+            'RESONANCE': 1.03,
+        }
+        if rainbow_state in rainbow_boost:
+            brain_mult *= rainbow_boost[rainbow_state]
         
         allowed_quotes = tuple(CONFIG.get('ALLOWED_QUOTES', ['USDC']))
 
@@ -496,6 +563,7 @@ class AureonUnifiedLive:
                     freq_bonus = freq_score / 100  # 0-1 range
                     range_bonus = (1 - price_range_pct)  # Bonus for buying low in range
                     score = base_score * (1 + freq_bonus) * (1 + range_bonus * 0.5)
+                    score *= brain_mult  # 🎹 Piano resonance boost
                     
                     # v6: Symbol preference bonus (proven edge symbols)
                     if symbol in CONFIG.get('PREFERRED_SYMBOLS', []):
@@ -559,8 +627,28 @@ class AureonUnifiedLive:
         if symbol in CONFIG.get('PREFERRED_SYMBOLS', []):
             base_size_pct += 0.10  # +10% for proven winners
         
+        # 🎹 Brain/Piano resonance sizing boost
+        brain = self.load_brain_state()
+        brain_mult = 1.0
+        if isinstance(brain, dict):
+            piano_coh = brain.get('piano_coherence')
+            piano_lambda = brain.get('piano_lambda')
+            rainbow_state = (brain.get('rainbow_state') or '').upper()
+            if piano_coh is not None:
+                brain_mult *= 1.0 + max(0.0, piano_coh - 0.5) * 0.2  # up to +10%
+            if piano_lambda is not None and piano_lambda > 1.5:
+                brain_mult *= 1.0 + (piano_lambda - 1.0) * 0.05       # mild lambda boost
+            rainbow_boost = {
+                'UNITY': 1.10,
+                'AWE': 1.07,
+                'LOVE': 1.05,
+                'RESONANCE': 1.03,
+            }
+            if rainbow_state in rainbow_boost:
+                brain_mult *= rainbow_boost[rainbow_state]
+
         # Cap at 45% max position size
-        size_pct = min(0.45, base_size_pct)
+        size_pct = min(0.45, base_size_pct * brain_mult)
         
         size_usd = usdc_balance * size_pct
         if size_usd < CONFIG['MIN_TRADE_USD']:

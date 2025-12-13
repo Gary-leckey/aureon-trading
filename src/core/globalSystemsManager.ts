@@ -19,6 +19,7 @@ import { startupHarvester } from './startupHarvester';
 import { predictionAccuracyTracker } from './predictionAccuracyTracker';
 import { tradeLogger } from './tradeLogger';
 import { capitalPool } from './capitalPool';
+import { platypusEngine, type PlatypusState } from './platypusCoherenceEngine';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface GlobalState {
@@ -94,6 +95,13 @@ export interface GlobalState {
   ecosystemHealth: 'connected' | 'stale' | 'disconnected';
   lastDataReceived: number | null;
   
+  // 🦆🪐 Platypus Planetary Coherence State
+  platypusState: PlatypusState | null;
+  planetaryCoherence: number;       // Γ(t) value
+  planetaryCascade: number;         // Cascade multiplier
+  lighthouseActive: boolean;        // Lighthouse event flag
+  topAlignedPlanets: string[];      // Top 3 aligned planets
+  
   // Manager state
   isInitialized: boolean;
   isRunning: boolean;
@@ -154,6 +162,13 @@ const initialState: GlobalState = {
   
   ecosystemHealth: 'disconnected',
   lastDataReceived: null,
+  
+  // 🦆🪐 Platypus initial state
+  platypusState: null,
+  planetaryCoherence: 0.5,
+  planetaryCascade: 1.0,
+  lighthouseActive: false,
+  topAlignedPlanets: [],
   
   isInitialized: false,
   isRunning: false,
@@ -253,6 +268,19 @@ class GlobalSystemsManager {
     // 3b. Reset adaptive learning to permissive defaults for calibration trading
     adaptiveLearningEngine.reset();
     console.log('🧠 Adaptive learning reset to permissive defaults');
+    
+    // 3c. 🦆🪐 Start Platypus Coherence Engine
+    platypusEngine.start(1000);  // Update every second
+    platypusEngine.subscribe((platypusState) => {
+      this.updateState({
+        platypusState,
+        planetaryCoherence: platypusState.Gamma_t,
+        planetaryCascade: platypusState.cascadeContribution,
+        lighthouseActive: platypusState.L_t,
+        topAlignedPlanets: platypusState.topAligned,
+      });
+    });
+    console.log('🦆🪐 Platypus Coherence Engine started');
     
     // 4. Setup bus subscription
     this.busUnsubscribe = unifiedBus.subscribe((snapshot) => {

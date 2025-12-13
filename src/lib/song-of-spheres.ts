@@ -222,4 +222,82 @@ export class SongOfSpheresEngine {
     
     return states;
   }
+
+  /**
+   * 🦆🪐 PLATYPUS INTEGRATION - Get composite coherence Γ(t)
+   * 
+   * Computes a composite planetary coherence value similar to
+   * the Platypus process tree in aureon_miner.py.
+   * 
+   * Returns Γ in range [0, 1] where:
+   *   Γ ≥ 0.75 = LIGHTHOUSE event (excellent conditions)
+   *   Γ ≥ 0.50 = Good alignment
+   *   Γ < 0.50 = Moderate/low alignment
+   */
+  getPlatypusGamma(): number {
+    const PHI = (1 + Math.sqrt(5)) / 2;
+    
+    // Compute average modulation across all planets
+    let totalMod = 0;
+    let count = 0;
+    
+    this.planetaryData.forEach((planet, name) => {
+      const mod = this.getPlanetaryModulation(name);
+      totalMod += (mod + 1) / 2;  // Normalize from [-1,1] to [0,1]
+      count++;
+    });
+    
+    const avgMod = count > 0 ? totalMod / count : 0.5;
+    
+    // Add synodic contribution
+    const synodicBoost = (this.getSynodicModulation('jupiter_saturn') + 1) / 2 * 0.1;
+    
+    // Compute Gamma with golden ratio scaling
+    const rawGamma = avgMod * 0.8 + synodicBoost + this.getCoherenceNudge();
+    
+    // Apply PHI-based smoothing
+    return Math.min(1.0, Math.max(0, rawGamma * PHI / 2));
+  }
+
+  /**
+   * 🦆🪐 Check if lighthouse conditions are active
+   */
+  isLighthouseActive(): boolean {
+    return this.getPlatypusGamma() >= 0.75;
+  }
+
+  /**
+   * 🦆🪐 Get cascade contribution for trading decisions
+   * Returns a multiplier (1.0 to ~1.35)
+   */
+  getCascadeContribution(): number {
+    const gamma = this.getPlatypusGamma();
+    let cascade = 1.0 + gamma * 0.25;  // Base 25% max boost
+    
+    if (this.isLighthouseActive()) {
+      cascade += 0.10;  // Extra 10% during lighthouse
+    }
+    
+    return cascade;
+  }
+
+  /**
+   * 🦆🪐 Get top 3 aligned planets by modulation strength
+   */
+  getTopAlignedPlanets(): string[] {
+    const alignments: Array<{ name: string; strength: number }> = [];
+    
+    this.planetaryData.forEach((planet, name) => {
+      const mod = Math.abs(this.getPlanetaryModulation(name));
+      alignments.push({ name, strength: mod });
+    });
+
+    return alignments
+      .sort((a, b) => b.strength - a.strength)
+      .slice(0, 3)
+      .map(p => `${p.name}=${p.strength.toFixed(2)}`);
+  }
 }
+
+// Singleton instance
+export const songOfSpheresEngine = new SongOfSpheresEngine();

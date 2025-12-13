@@ -664,6 +664,68 @@ CONFIG = {
 
 PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio = 1.618
 
+# ═══════════════════════════════════════════════════════════════
+# 🎹 QUANTUM BRAIN / PIANO STATE BRIDGE
+# ═══════════════════════════════════════════════════════════════
+
+BRAIN_STATE_PATH = "/tmp/aureon_multidimensional_brain_output.json"
+_BRAIN_CACHE: Dict[str, Any] = {}
+_BRAIN_CACHE_TIME: float = 0.0
+
+
+def load_brain_state() -> Dict[str, Any]:
+    """Load cached Quantum Brain/Piano state if recently updated."""
+    global _BRAIN_CACHE, _BRAIN_CACHE_TIME
+    try:
+        now = time.time()
+        if now - _BRAIN_CACHE_TIME < 10:
+            return _BRAIN_CACHE
+        if not os.path.exists(BRAIN_STATE_PATH):
+            return {}
+        with open(BRAIN_STATE_PATH) as f:
+            data = json.load(f)
+        piano = data.get('piano', {}) if isinstance(data, dict) else {}
+        meta = data.get('meta', {}) if isinstance(data, dict) else {}
+        cascade = meta.get('multiverse_cascade') or data.get('multiverse_cascade')
+        _BRAIN_CACHE = {
+            'piano_lambda': piano.get('lambda'),
+            'piano_coherence': piano.get('coherence'),
+            'rainbow_state': piano.get('rainbow_state'),
+            'cascade': cascade,
+            'timestamp': data.get('timestamp') or meta.get('timestamp'),
+        }
+        _BRAIN_CACHE_TIME = now
+        return _BRAIN_CACHE
+    except Exception:
+        return {}
+
+
+def get_brain_multiplier() -> float:
+    """Compute a trading multiplier from Piano/Brain resonance."""
+    brain = load_brain_state()
+    if not isinstance(brain, dict):
+        return 1.0
+    mult = 1.0
+    piano_coh = brain.get('piano_coherence')
+    piano_lambda = brain.get('piano_lambda')
+    rainbow_state = (brain.get('rainbow_state') or '').upper()
+
+    if piano_coh is not None:
+        mult *= 1.0 + max(0.0, piano_coh - 0.5) * 0.2  # up to +10%
+    if piano_lambda is not None and piano_lambda > 1.5:
+        mult *= 1.0 + (piano_lambda - 1.0) * 0.05       # mild lambda boost
+
+    rainbow_boost = {
+        'UNITY': 1.10,
+        'AWE': 1.07,
+        'LOVE': 1.05,
+        'RESONANCE': 1.03,
+    }
+    if rainbow_state in rainbow_boost:
+        mult *= rainbow_boost[rainbow_state]
+
+    return mult
+
 
 # ═══════════════════════════════════════════════════════════════
 # 🌐 SMART ORDER ROUTER - Best execution across exchanges
@@ -849,6 +911,7 @@ class CrossExchangeArbitrageScanner:
         Scan for direct arbitrage: buy on exchange A, sell on exchange B.
         """
         opportunities = []
+        brain_mult = get_brain_multiplier()
         
         # Default symbols to scan
         if not symbols:
@@ -893,7 +956,7 @@ class CrossExchangeArbitrageScanner:
                     spread_2 = (prices[buy_ex]['bid'] - prices[sell_ex]['ask']) / prices[sell_ex]['ask'] * 100
                     
                     if spread_1 > self.min_spread_pct + self.fee_buffer:
-                        net_profit = spread_1 - self.fee_buffer
+                        net_profit = (spread_1 - self.fee_buffer) * brain_mult
                         opportunities.append({
                             'type': 'direct',
                             'symbol': symbol,
@@ -903,11 +966,12 @@ class CrossExchangeArbitrageScanner:
                             'sell_price': sell_price,
                             'spread_pct': spread_1,
                             'net_profit_pct': net_profit,
+                            'brain_mult': brain_mult,
                             'timestamp': time.time()
                         })
                         
                     if spread_2 > self.min_spread_pct + self.fee_buffer:
-                        net_profit = spread_2 - self.fee_buffer
+                        net_profit = (spread_2 - self.fee_buffer) * brain_mult
                         opportunities.append({
                             'type': 'direct',
                             'symbol': symbol,
@@ -917,6 +981,7 @@ class CrossExchangeArbitrageScanner:
                             'sell_price': prices[buy_ex]['bid'],
                             'spread_pct': spread_2,
                             'net_profit_pct': net_profit,
+                            'brain_mult': brain_mult,
                             'timestamp': time.time()
                         })
         
@@ -9571,7 +9636,12 @@ class AureonKrakenEcosystem:
             # This overrides probability because we are reading the WHOLE SYSTEM.
             score += int(flux_score * 25)  # ±25 points based on system direction
             
-            # 🌍⚡ GLOBAL FINANCIAL ECOSYSTEM ADJUSTMENT ⚡🌍
+            # � PIANO RESONANCE BOOST 🎹
+            brain_mult = get_brain_multiplier()
+            if brain_mult > 1.0:
+                score = int(score * brain_mult)
+            
+            # �🌍⚡ GLOBAL FINANCIAL ECOSYSTEM ADJUSTMENT ⚡🌍
             macro_adjustment = 0
             macro_bias = "NEUTRAL"
             if self.global_feed:
@@ -10430,6 +10500,12 @@ class AureonKrakenEcosystem:
             size_fraction *= risk_mod
             size_fraction *= freq_modifier  # 🔊 Apply frequency filtering modifier
             size_fraction *= opp.get('risk_mod_from_pnl', 1.0)  # 🧠 Live P&L throttle
+            
+            # 🎹 PIANO RESONANCE SIZING 🎹
+            brain_mult = get_brain_multiplier()
+            if brain_mult > 1.0:
+                size_fraction *= brain_mult
+                size_fraction = min(0.45, size_fraction)  # Cap at 45%
         
         if size_fraction <= 0:
             print(f"   🔴 DEBUG {symbol}: size_fraction={size_fraction:.4f}")

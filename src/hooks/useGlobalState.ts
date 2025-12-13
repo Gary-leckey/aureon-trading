@@ -73,6 +73,24 @@ export function useQuantumState() {
     observer: state.observer,
     echo: state.echo,
     prismOutput: state.prismOutput,
+    // 🦆🪐 Platypus Planetary Coherence
+    planetaryCoherence: state.planetaryCoherence,
+    planetaryCascade: state.planetaryCascade,
+    lighthouseActive: state.lighthouseActive,
+    topAlignedPlanets: state.topAlignedPlanets,
+  }));
+}
+
+/**
+ * 🦆🪐 Get Platypus planetary coherence state
+ */
+export function usePlatypusState() {
+  return useGlobalStateSelector((state) => ({
+    platypusState: state.platypusState,
+    planetaryCoherence: state.planetaryCoherence,
+    planetaryCascade: state.planetaryCascade,
+    lighthouseActive: state.lighthouseActive,
+    topAlignedPlanets: state.topAlignedPlanets,
   }));
 }
 

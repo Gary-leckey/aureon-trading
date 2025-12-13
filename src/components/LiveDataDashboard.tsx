@@ -1,15 +1,17 @@
 /**
  * Live Data Dashboard - Real-Time Trading View
  * Shows live trades, accounts, P&L using WebSocket and API data
+ * Now includes 🦆🪐 Platypus Planetary Coherence!
  */
 
-import { useGlobalState, useTradingState, useQuantumState } from '@/hooks/useGlobalState';
+import { useGlobalState, useTradingState, useQuantumState, usePlatypusState } from '@/hooks/useGlobalState';
 import { useUserBalances } from '@/hooks/useUserBalances';
 import { useStrikeFeed } from '@/hooks/useStrikeFeed';
 import { useBinanceWebSocket } from '@/hooks/useBinanceWebSocket';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import PlatypusCoherencePanel from '@/components/PlatypusCoherencePanel';
 import { 
   Activity, 
   TrendingUp, 
@@ -19,7 +21,8 @@ import {
   Clock,
   ArrowUpRight,
   ArrowDownRight,
-  RefreshCw
+  RefreshCw,
+  Orbit
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -27,6 +30,7 @@ export default function LiveDataDashboard() {
   const globalState = useGlobalState();
   const tradingState = useTradingState();
   const quantumState = useQuantumState();
+  const platypusState = usePlatypusState();
   const { events, executionCount } = useStrikeFeed(50);
   const { balances, totalEquityUsd, connectedExchanges, isLoading: balancesLoading, lastUpdated } = useUserBalances(true, 10000);
   const { marketData, connected: wsConnected } = useBinanceWebSocket(['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT']);
@@ -67,7 +71,7 @@ export default function LiveDataDashboard() {
       </div>
 
       {/* Main Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
         <StatCard 
           title="Total Equity" 
           value={`$${totalEquityUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
@@ -104,9 +108,16 @@ export default function LiveDataDashboard() {
           icon={<Zap className="w-4 h-4" />}
           status="neutral"
         />
+        <StatCard 
+          title="🪐 Planetary Γ" 
+          value={platypusState.planetaryCoherence.toFixed(3)}
+          icon={<Orbit className="w-4 h-4" />}
+          status={platypusState.lighthouseActive ? 'success' : platypusState.planetaryCoherence >= 0.5 ? 'warning' : 'neutral'}
+          extra={platypusState.lighthouseActive ? '🔦' : undefined}
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Left: Live Market Data */}
         <div className="space-y-4">
           <Card className="border-border/50 bg-card/50 backdrop-blur">
@@ -147,7 +158,12 @@ export default function LiveDataDashboard() {
             </CardContent>
           </Card>
 
-          {/* Account Balances */}
+          {/* 🦆🪐 Platypus Planetary Coherence Panel */}
+          <PlatypusCoherencePanel />
+        </div>
+
+        {/* Center-Left: Account Balances */}
+        <div className="space-y-4">
           <Card className="border-border/50 bg-card/50 backdrop-blur">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -157,7 +173,7 @@ export default function LiveDataDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[300px]">
+              <ScrollArea className="h-[500px]">
                 <div className="space-y-3">
                   {balances.length > 0 ? (
                     balances.map((exchange) => (
@@ -196,7 +212,7 @@ export default function LiveDataDashboard() {
           </Card>
         </div>
 
-        {/* Center: Live Trade Stream */}
+        {/* Right: Live Trade Stream (now spans 2 columns) */}
         <Card className="border-border/50 bg-card/50 backdrop-blur lg:col-span-2">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -268,12 +284,14 @@ function StatCard({
   title, 
   value, 
   icon, 
-  status 
+  status,
+  extra
 }: { 
   title: string; 
   value: string; 
   icon: React.ReactNode; 
   status: 'success' | 'error' | 'warning' | 'neutral';
+  extra?: string;
 }) {
   const statusColors = {
     success: 'text-green-400 border-green-500/30 bg-green-500/5',
@@ -288,6 +306,7 @@ function StatCard({
         <div className="flex items-center gap-2 text-muted-foreground mb-1">
           {icon}
           <span className="text-xs">{title}</span>
+          {extra && <span className="text-sm animate-pulse">{extra}</span>}
         </div>
         <div className="text-xl font-bold font-mono">{value}</div>
       </CardContent>

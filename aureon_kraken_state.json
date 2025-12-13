@@ -1,10 +1,10 @@
 {
-  "balance": 110.27466358016841,
+  "balance": 123.1198201086053,
   "peak_balance": 155.69962862831332,
   "total_trades": 6,
   "wins": 2,
   "losses": 4,
-  "total_fees": 2.3348358434372694,
+  "total_fees": 2.4170229017095397,
   "compounded": 0.0,
   "harvested": 0.0,
   "max_drawdown": 50.42967033293107,
@@ -16,154 +16,88 @@
       "entry_value": 11.552547084,
       "momentum": 0.0,
       "coherence": 0.5,
-      "entry_time": 1765547216.27201,
+      "entry_time": 1765583879.669423,
       "dominant_node": "Portfolio",
-      "cycles": 317
+      "cycles": 22
     },
     "BTCUSDC": {
-      "entry_price": 92330.38500000001,
+      "entry_price": 90252.815,
       "quantity": 6.74e-06,
-      "entry_fee": 0.0006223067949000001,
-      "entry_value": 0.6223067949000001,
+      "entry_fee": 0.0006083039730999999,
+      "entry_value": 0.6083039731,
       "momentum": 0.0,
       "coherence": 0.5,
-      "entry_time": 1765547216.5435598,
+      "entry_time": 1765583880.1791859,
       "dominant_node": "Portfolio",
-      "cycles": 317
-    },
-    "SOLUSDC": {
-      "entry_price": 139.14,
-      "quantity": 0.058,
-      "entry_fee": 0.007666613999999999,
-      "entry_value": 8.07012,
-      "momentum": 6.058,
-      "coherence": 0.65,
-      "entry_time": 1765547363.885186,
-      "dominant_node": "ForceScout",
-      "cycles": 317
-    },
-    "FARTCOINUSDC": {
-      "entry_price": 0.3863,
-      "quantity": 21.097203406471515,
-      "entry_fee": 0.03259939870367978,
-      "entry_value": 8.149849675919945,
-      "momentum": 6.6027397260274,
-      "coherence": 0.65,
-      "entry_time": 1765547364.2477276,
-      "dominant_node": "ForceScout",
-      "cycles": 317
+      "cycles": 22
     },
     "ETHUSDC": {
-      "entry_price": 3244.1299999999997,
-      "quantity": 0.0025,
-      "entry_fee": 0.007721029400000001,
-      "entry_value": 8.110325,
-      "momentum": 1.638,
-      "coherence": 0.65,
-      "entry_time": 1765547365.381565,
-      "dominant_node": "ForceScout",
-      "cycles": 317
+      "entry_price": 3091.6999999999994,
+      "quantity": 0.00247678,
+      "entry_fee": 0.0076574607259999984,
+      "entry_value": 7.657460725999998,
+      "momentum": 0.0,
+      "coherence": 0.5,
+      "entry_time": 1765583880.688492,
+      "dominant_node": "Portfolio",
+      "cycles": 22
     },
-    "XDCUSDC": {
-      "entry_price": 0.05159,
-      "quantity": 157.97343818414316,
-      "entry_fee": 0.03259939870367978,
-      "entry_value": 8.149849675919945,
-      "momentum": 5.793244626407368,
+    "SOLUSDC": {
+      "entry_price": 132.35,
+      "quantity": 0.057,
+      "entry_fee": 0.0071667525,
+      "entry_value": 7.54395,
+      "momentum": -3.054,
       "coherence": 0.65,
-      "entry_time": 1765547365.9145555,
+      "entry_time": 1765584069.1130135,
       "dominant_node": "ForceScout",
-      "cycles": 317
+      "cycles": 22
+    },
+    "FARTCOINUSDC": {
+      "entry_price": 0.372,
+      "quantity": 20.415211158938064,
+      "entry_fee": 0.030377834204499837,
+      "entry_value": 7.594458551124959,
+      "momentum": 1.83561643835616,
+      "coherence": 0.65,
+      "entry_time": 1765584069.9677587,
+      "dominant_node": "ForceScout",
+      "cycles": 22
     },
     "SUIUSDC": {
-      "entry_price": 1.657,
-      "quantity": 4.9,
-      "entry_fee": 0.007713335000000001,
-      "entry_value": 8.1193,
-      "momentum": 7.239,
+      "entry_price": 1.5592,
+      "quantity": 4.8,
+      "entry_fee": 0.007109951999999999,
+      "entry_value": 7.484159999999999,
+      "momentum": -3.298,
       "coherence": 0.65,
-      "entry_time": 1765547366.829318,
+      "entry_time": 1765584071.3026178,
       "dominant_node": "ForceScout",
-      "cycles": 317
+      "cycles": 22
     },
-    "XRPUSDC": {
-      "entry_price": 2.0413,
-      "quantity": 3.9,
-      "entry_fee": 0.0075630165,
-      "entry_value": 7.96107,
-      "momentum": 1.502,
+    "XDCUSDC": {
+      "entry_price": 0.04976,
+      "quantity": 152.60384630109948,
+      "entry_fee": 0.030374269567770843,
+      "entry_value": 7.5935673919427105,
+      "momentum": 2.0470829068577294,
       "coherence": 0.65,
-      "entry_time": 1765547368.4320235,
+      "entry_time": 1765584072.046057,
       "dominant_node": "ForceScout",
-      "cycles": 317
+      "cycles": 22
     },
     "DOGEUSDC": {
-      "entry_price": 0.14113,
-      "quantity": 57.0,
-      "entry_fee": 0.0076421894999999995,
-      "entry_value": 8.044410000000001,
-      "momentum": 2.312,
+      "entry_price": 0.137,
+      "quantity": 55.0,
+      "entry_fee": 0.0071582500000000005,
+      "entry_value": 7.535,
+      "momentum": -2.387,
       "coherence": 0.65,
-      "entry_time": 1765547369.3552454,
+      "entry_time": 1765584073.1951141,
       "dominant_node": "ForceScout",
-      "cycles": 317
-    },
-    "ATUSDC": {
-      "entry_price": 0.112,
-      "quantity": 72.7,
-      "entry_fee": 0.007735280000000001,
-      "entry_value": 8.1424,
-      "momentum": 5.66,
-      "coherence": 0.65,
-      "entry_time": 1765547370.4905498,
-      "dominant_node": "ForceScout",
-      "cycles": 317
-    },
-    "LINKUSDC": {
-      "entry_price": 14.34,
-      "quantity": 0.56,
-      "entry_fee": 0.00762888,
-      "entry_value": 8.0304,
-      "momentum": 5.364,
-      "coherence": 0.65,
-      "entry_time": 1765547371.410363,
-      "dominant_node": "ForceScout",
-      "cycles": 317
-    },
-    "AAVEUSDC": {
-      "entry_price": 204.55,
-      "quantity": 0.039,
-      "entry_fee": 0.0075785775,
-      "entry_value": 7.97745,
-      "momentum": 6.68,
-      "coherence": 0.65,
-      "entry_time": 1765547373.4604092,
-      "dominant_node": "ForceScout",
-      "cycles": 317
-    },
-    "LTCUSDC": {
-      "entry_price": 84.04,
-      "quantity": 0.096,
-      "entry_fee": 0.007664448000000001,
-      "entry_value": 8.06784,
-      "momentum": 3.933,
-      "coherence": 0.65,
-      "entry_time": 1765547374.5901606,
-      "dominant_node": "ForceScout",
-      "cycles": 317
-    },
-    "ADAUSDC": {
-      "entry_price": 0.4257000000000001,
-      "quantity": 19.1,
-      "entry_fee": 0.007724326500000001,
-      "entry_value": 8.130870000000002,
-      "momentum": 2.455,
-      "coherence": 0.65,
-      "entry_time": 1765547375.7225845,
-      "dominant_node": "ForceScout",
-      "cycles": 317
+      "cycles": 22
     }
   },
-  "timestamp": 1765552298.2913795,
-  "iteration": 317
+  "timestamp": 1765585078.3714013,
+  "iteration": 22
 }
