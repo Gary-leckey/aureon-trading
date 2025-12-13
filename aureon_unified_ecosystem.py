@@ -3847,7 +3847,7 @@ class CascadeAmplifier:
     def update_lighthouse(self, gamma: float):
         """Update Lighthouse Γ from external source (brain/platypus)."""
         self.lighthouse_gamma = gamma
-        self.lighthouse_active = gamma >= 0.75  # Lowered from 0.938 to match new threshold
+        self.lighthouse_active = gamma >= MIN_GAMMA_THRESHOLD  # Independent mode: 0.20 threshold from miner blueprint
         
     def get_signal_multiplier(self, base_coherence: float = 0.5) -> float:
         """
@@ -11383,6 +11383,16 @@ class AureonKrakenEcosystem:
         # Calculate hold time
         exit_time = time.time()
         hold_time_sec = exit_time - pos.entry_time
+        hold_time_min = hold_time_sec / 60.0
+        
+        # 🌊 RESONANCE HOLDING: Don't exit before MIN_HOLD_MINUTES unless emergency
+        # From miner blueprint: 50+ min hold times achieve best efficiency
+        if hold_time_min < MIN_HOLD_MINUTES:
+            pnl_pct = ((price - pos.entry_price) / pos.entry_price * 100) if pos.entry_price > 0 else 0
+            # Only exit early on stops (-5%) or massive gains (+20%)
+            if reason not in ['STOP_LOSS', 'CIRCUIT_BREAKER'] and abs(pnl_pct) < 20:
+                logger.debug(f"🌊 {symbol}: Holding for resonance ({hold_time_min:.1f}/{MIN_HOLD_MINUTES} min), PnL {pnl_pct:+.1f}%")
+                return  # Keep position open
         
         # 📊 FEED POSITION CLOSE TO PROBABILITY MATRIX 📊
         # This helps the matrix validate predictions and learn from outcomes
