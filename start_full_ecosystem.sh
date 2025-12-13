@@ -28,22 +28,22 @@ pkill -f "aureon_unified_ecosystem.py" 2>/dev/null || true
 pkill -f "aureon_miner.py" 2>/dev/null || true
 sleep 1
 
-# Start Piano Brain (writes quantum state)
-echo "🎹 Starting Piano Brain..."
-nohup python3 aureon_piano.py > piano_output.log 2>&1 &
-PIANO_PID=$!
-echo "   ✅ Piano Brain running (PID: $PIANO_PID)"
-sleep 2
+# Start Quantum Miner Brain (writes quantum state)
+echo "🧠 Starting Quantum Miner Brain..."
+nohup python3 aureon_miner.py > miner_output.log 2>&1 &
+MINER_PID=$!
+echo "   ✅ Quantum Miner Brain running (PID: $MINER_PID)"
+sleep 5
 
-# Verify Piano is writing state
+# Verify Brain is writing state
 if [ -f /tmp/aureon_multidimensional_brain_output.json ]; then
-    echo "   ✅ Piano state file detected: /tmp/aureon_multidimensional_brain_output.json"
+    echo "   ✅ Brain state file detected: /tmp/aureon_multidimensional_brain_output.json"
 else
-    echo "   ⚠️  Piano state file not yet created (will appear shortly)"
+    echo "   ⚠️  Brain state file not yet created (will appear shortly)"
 fi
 
 echo ""
-echo "⛏️  Starting Unified Ecosystem with Mining..."
+echo "⛏️  Starting Unified Ecosystem..."
 
 # Configuration
 export BINANCE_USE_TESTNET=false
@@ -65,8 +65,8 @@ echo "════════════════════════�
 echo "🚀 STARTING ECOSYSTEM..."
 echo "════════════════════════════════════════════════════════════════════════"
 echo ""
-echo "   🎹 Piano Brain: Generating quantum signals → /tmp/aureon_multidimensional_brain_output.json"
-echo "   🐙 Ecosystem: Reading Piano state + deploying scouts + managing positions"
+echo "   🧠 Quantum Brain: Generating quantum signals → /tmp/aureon_multidimensional_brain_output.json"
+echo "   🐙 Ecosystem: Reading Brain state + deploying scouts + managing positions"
 echo "   ⛏️  Miner: Running LuminaCell quantum laser mining to $MINING_WORKER"
 echo ""
 echo "   Press Ctrl+C to stop all components"
@@ -78,6 +78,6 @@ python3 aureon_unified_ecosystem.py
 # Cleanup on exit
 echo ""
 echo "🛑 Shutting down ecosystem..."
-kill $PIANO_PID 2>/dev/null || true
+kill $MINER_PID 2>/dev/null || true
 pkill -f "aureon_miner.py" 2>/dev/null || true
 echo "✅ Cleaned up"

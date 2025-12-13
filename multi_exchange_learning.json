@@ -9,16 +9,16 @@
   },
   "coherence_bands": {
     "low": {
-      "trades": 0,
-      "wins": 0
+      "trades": 11,
+      "wins": 8
     },
     "mid": {
-      "trades": 24,
-      "wins": 0
+      "trades": 15,
+      "wins": 5
     },
     "high": {
-      "trades": 23,
-      "wins": 14
+      "trades": 26,
+      "wins": 21
     }
   },
   "probability_insights": {
@@ -815,7 +815,7 @@
       "source": "probability_data.json"
     }
   },
-  "total_historical_trades": 47,
-  "combined_win_rate": 29.78723404255319,
-  "updated_at": "2025-12-13T00:17:58.418343"
+  "total_historical_trades": 52,
+  "combined_win_rate": 65.38461538461539,
+  "updated_at": "2025-12-13T13:43:14.864327"
 }
