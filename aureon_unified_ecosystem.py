@@ -73,26 +73,41 @@ class SafeStreamHandler(logging.StreamHandler):
 # 🛡️ CRITICAL: Configure Root Logger IMMEDIATELY with SafeStreamHandler
 # This ensures ALL subsequent loggers (including those from imported modules)
 # use this safe handler and don't crash on Windows when printing emojis.
-root_logger = logging.getLogger()
 
-# 🧹 AGGRESSIVE CLEANUP: Remove any existing StreamHandlers that are not SafeStreamHandler
-# This handles cases where basicConfig was called by an import, environment, or debugger
-handlers_removed = 0
-for h in list(root_logger.handlers):
-    if isinstance(h, logging.StreamHandler) and not isinstance(h, SafeStreamHandler):
-        root_logger.removeHandler(h)
-        handlers_removed += 1
+def sanitize_logging_environment():
+    """
+    Aggressively removes unsafe StreamHandlers from the root logger
+    and ensures only SafeStreamHandler is used.
+    """
+    root_logger = logging.getLogger()
+    handlers_removed = 0
+    
+    # Remove unsafe handlers
+    for h in list(root_logger.handlers):
+        if isinstance(h, logging.StreamHandler) and not isinstance(h, SafeStreamHandler):
+            try:
+                root_logger.removeHandler(h)
+                handlers_removed += 1
+            except Exception:
+                pass
+            
+    # Add SafeStreamHandler if missing
+    has_safe_handler = any(isinstance(h, SafeStreamHandler) for h in root_logger.handlers)
+    if not has_safe_handler:
+        safe_handler = SafeStreamHandler(sys.stdout)
+        safe_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        root_logger.addHandler(safe_handler)
+        root_logger.setLevel(logging.INFO)
+        
+    if sys.platform == 'win32' and handlers_removed > 0:
+        # Use safe print just in case
+        try:
+            sys.stdout.buffer.write(f"🛡️  Windows Unicode Protection: Removed {handlers_removed} unsafe handlers.\n".encode('utf-8'))
+        except Exception:
+            pass
 
-# Add SafeStreamHandler if missing
-has_safe_handler = any(isinstance(h, SafeStreamHandler) for h in root_logger.handlers)
-if not has_safe_handler:
-    safe_handler = SafeStreamHandler(sys.stdout)
-    safe_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-    root_logger.addHandler(safe_handler)
-    root_logger.setLevel(logging.INFO)
-
-if sys.platform == 'win32':
-    print(f"🛡️  Windows Unicode Protection Active: Root logger sanitized ({handlers_removed} unsafe handlers removed).")
+# Initial sanitization
+sanitize_logging_environment()
 
 
 
@@ -12349,6 +12364,10 @@ class AureonKrakenEcosystem:
 # ═══════════════════════════════════════════════════════════════
 
 def main():
+    # 🛡️ CRITICAL: Sanitize logging environment before starting
+    # This removes any handlers added by imports (e.g. alpaca-py, urllib3)
+    sanitize_logging_environment()
+
     # Configuration from environment
     dry_run = os.getenv('LIVE', '0') != '1'
     balance = float(os.getenv('BALANCE', 1000))
