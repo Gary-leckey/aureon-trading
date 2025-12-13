@@ -8990,6 +8990,40 @@ class AureonKrakenEcosystem:
         """Return the latest live P&L snapshot for downstream consumers."""
         return dict(self.pnl_state) if isinstance(self.pnl_state, dict) else {}
 
+    def should_trade_brain(self) -> Tuple[bool, str]:
+        """
+        🧠 BRAIN GATE: 7 Civilizations + Quantum Brain must approve trades.
+        Returns (should_trade, reason).
+        """
+        if not hasattr(self, 'brain_bridge') or not self.brain_bridge:
+            return True, "Brain Bridge not initialized - trading allowed"
+        
+        try:
+            # Get brain recommendation
+            rec = self.brain_bridge.get_trading_recommendation()
+            action = rec.get('action', 'HOLD')
+            civs_bullish = rec.get('civilizations_bullish', 0)
+            civs_total = rec.get('civilizations_total', 7)
+            confidence = rec.get('confidence', 0.5)
+            
+            # HARD BLOCK: If brain says REDUCE with high confidence
+            if action == 'REDUCE' and confidence > 0.65:
+                return False, f"Brain says REDUCE (conf={confidence:.0%}, {civs_bullish}/{civs_total} bullish)"
+            
+            # SOFT GATE: If BEARISH with moderate confidence
+            consensus = self.brain_bridge._brain_consensus if hasattr(self.brain_bridge, '_brain_consensus') else 'NEUTRAL'
+            if consensus == 'BEARISH' and confidence > 0.6:
+                return False, f"Brain BEARISH (conf={confidence:.0%}) - waiting for bullish signal"
+            
+            # APPROVED
+            if action == 'BUY':
+                return True, f"Brain APPROVED: {civs_bullish}/{civs_total} civilizations BULLISH"
+            
+            return True, f"Brain neutral - {consensus} (conf={confidence:.0%})"
+            
+        except Exception as e:
+            return True, f"Brain check error ({e}) - trading allowed"
+
     def should_enter_trade(self, opp: Dict, pos_size: float, lattice_state) -> bool:
         """
         🎯 PROBABILITY-MATRIX-DRIVEN entry decision.
