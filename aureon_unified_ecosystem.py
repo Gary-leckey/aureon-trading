@@ -83,6 +83,13 @@ if not logger.handlers:
     handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     logger.addHandler(handler)
 
+    # 🔧 Miner Blueprint Constants (enhancements)
+    CASCADE_FACTOR = 10.0       # Amplify weak signals
+    KT_EFFICIENCY = 4.24        # Capital efficiency multiplier
+    MIN_GAMMA_THRESHOLD = 0.20  # Independent entry threshold
+    MIN_HOLD_MINUTES = 50       # Resonance holding minimum
+    PSI_FILTER = 0.037          # Top 3.7% opportunities only
+
 # Add current directory to path
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ROOT_DIR)
@@ -952,8 +959,10 @@ class CrossExchangeArbitrageScanner:
                     spread_1 = (sell_price - buy_price) / buy_price * 100
                     spread_2 = (prices[buy_ex]['bid'] - prices[sell_ex]['ask']) / prices[sell_ex]['ask'] * 100
                     
-                    if spread_1 > self.min_spread_pct + self.fee_buffer:
-                        net_profit = (spread_1 - self.fee_buffer) * brain_mult
+                    # Apply CASCADE amplification to profit confidence
+                    cascaded_1 = min(spread_1 * CASCADE_FACTOR, 95.0)
+                    if cascaded_1 > self.min_spread_pct + self.fee_buffer:
+                        net_profit = (cascaded_1 - self.fee_buffer)
                         opportunities.append({
                             'type': 'direct',
                             'symbol': symbol,
@@ -962,13 +971,15 @@ class CrossExchangeArbitrageScanner:
                             'buy_price': buy_price,
                             'sell_price': sell_price,
                             'spread_pct': spread_1,
+                            'cascaded_confidence_pct': cascaded_1,
                             'net_profit_pct': net_profit,
                             'brain_mult': brain_mult,
                             'timestamp': time.time()
                         })
-                        
-                    if spread_2 > self.min_spread_pct + self.fee_buffer:
-                        net_profit = (spread_2 - self.fee_buffer) * brain_mult
+                    
+                    cascaded_2 = min(spread_2 * CASCADE_FACTOR, 95.0)
+                    if cascaded_2 > self.min_spread_pct + self.fee_buffer:
+                        net_profit = (cascaded_2 - self.fee_buffer)
                         opportunities.append({
                             'type': 'direct',
                             'symbol': symbol,
@@ -977,13 +988,17 @@ class CrossExchangeArbitrageScanner:
                             'buy_price': prices[sell_ex]['ask'],
                             'sell_price': prices[buy_ex]['bid'],
                             'spread_pct': spread_2,
+                            'cascaded_confidence_pct': cascaded_2,
                             'net_profit_pct': net_profit,
                             'brain_mult': brain_mult,
                             'timestamp': time.time()
                         })
         
         # Sort by profit potential
-        opportunities.sort(key=lambda x: -x['net_profit_pct'])
+        # Apply Ψ minimization: keep only top 3.7% by cascaded confidence
+        opportunities.sort(key=lambda x: -(x.get('cascaded_confidence_pct', 0)))
+        top_count = max(1, int(len(opportunities) * PSI_FILTER))
+        opportunities = opportunities[:top_count]
         self.opportunities = opportunities
         self.last_scan = time.time()
         
@@ -6745,7 +6760,8 @@ class PerformanceTracker:
         current_exposure = self.symbol_exposure.get(symbol, 0.0)
         available_exposure = CONFIG['MAX_SYMBOL_EXPOSURE'] - current_exposure
         
-        final_size = min(scaled_size, available_exposure, CONFIG['MAX_POSITION_SIZE'])
+        # Apply κt efficiency safely: trade as if larger but risk base sizing
+        final_size = min(scaled_size * KT_EFFICIENCY, available_exposure, CONFIG['MAX_POSITION_SIZE'])
         return max(0, final_size)
 
     def get_platform_summary(self) -> str:

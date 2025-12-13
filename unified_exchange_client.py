@@ -137,6 +137,36 @@ class MultiExchangeClient:
             return 0.0
         return self.clients[exchange].convert_to_quote(asset, amount, quote)
 
+        def normalize_symbol(self, exchange: str, symbol: str) -> str:
+            """Normalize canonical symbols to exchange-specific formats.
+            - Kraken: BTC→XBT, prefer USD/USDC/USDT variants
+            - Binance: prefer USDT quote
+            - Capital: use epic as-is (USD pairs)
+            """
+            s = symbol.upper()
+            if exchange == 'kraken':
+                # BTC/XBT and quote fallbacks
+                if s.startswith('BTC'):
+                    s = 'XBT' + s[3:]
+                # Kraken commonly lists USD/USDT/USDC; try USD first
+                for q in ['USD', 'USDC', 'USDT']:
+                    if s.endswith(q):
+                        base = s[:-len(q)]
+                        s = base + q
+                        break
+                return s
+            if exchange == 'binance':
+                # Prefer USDT on Binance
+                for q in ['USD', 'USDC']:
+                    if s.endswith(q):
+                        base = s[:-len(q)]
+                        s = base + 'USDT'
+                        break
+                return s
+            if exchange == 'capital':
+                # Use epic (symbol) as is; Capital.com search expects names like BTCUSD
+                return s
+            return s
 class UnifiedExchangeClient:
     """
     Unified interface for Kraken and Binance exchanges.
