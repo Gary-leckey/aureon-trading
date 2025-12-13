@@ -365,14 +365,24 @@ class PositionHygieneChecker:
         }
 
 
-def load_position_state(filepath: str = '/workspaces/aureon-trading/aureon_kraken_state.json') -> Optional[Dict]:
+def load_position_state(filepath: str = 'aureon_kraken_state.json') -> Optional[Dict]:
     """Helper to load position state JSON"""
     try:
+        # Handle relative paths correctly
+        if not os.path.isabs(filepath):
+            filepath = os.path.join(os.getcwd(), filepath)
+            
         if os.path.exists(filepath):
             with open(filepath, 'r') as f:
                 return json.load(f)
+        else:
+            # Try looking in current directory if full path fails
+            local_path = os.path.join(os.getcwd(), os.path.basename(filepath))
+            if os.path.exists(local_path):
+                with open(local_path, 'r') as f:
+                    return json.load(f)
     except Exception as e:
-        logger.error(f"Failed to load position state: {e}")
+        logger.error(f"Failed to load position state from {filepath}: {e}")
     return None
 
 

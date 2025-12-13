@@ -18,6 +18,10 @@ if (-not (Get-Command "python" -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
+# Set environment variables for UTF-8 encoding to prevent UnicodeEncodeError
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONLEGACYWINDOWSSTDIO = "utf-8"
+
 # 1. Start the Quantum Miner (Brain)
 Write-Host "🚀 Launching Quantum Miner (Brain)..." -ForegroundColor Yellow
 $minerProcess = Start-Process -FilePath "python" -ArgumentList "aureon_miner.py" -PassThru -WindowStyle Minimized
