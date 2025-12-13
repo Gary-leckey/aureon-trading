@@ -7188,6 +7188,10 @@ class AureonKrakenEcosystem:
         # Allows trading to read lighthouse Γ and κt during high-coherence windows
         self.miner_optimizer = getattr(self, 'miner_optimizer', None)
         
+        # Optional brain reference (set by global orchestrator for unified startup)
+        # Allows direct access to unified brain state during trading decisions
+        self.brain = getattr(self, 'brain', None)
+        
         # � PROBABILITY LOADER - Fresh probability reports + consensus signals
         # Initialize BEFORE health report so it shows as ACTIVE
         self.probability_loader = None
