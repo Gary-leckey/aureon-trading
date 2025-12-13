@@ -56,18 +56,29 @@ class SafeStreamHandler(logging.StreamHandler):
 
 # Use sys.stdout explicitly which should be wrapped by now if running from main
 import sys
-stream_handler = SafeStreamHandler(sys.stdout)
-stream_handler.setFormatter(SafeUTF8Formatter('%(asctime)s [%(levelname)s] %(message)s'))
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        stream_handler,
-        logging.FileHandler('trade_logger.log', encoding='utf-8')
-    ]
-)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Configure handlers if not already set
+if not logger.handlers:
+    # Console Handler (Safe for Windows)
+    stream_handler = SafeStreamHandler(sys.stdout)
+    stream_handler.setFormatter(SafeUTF8Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+    logger.addHandler(stream_handler)
+
+    # File Handler
+    try:
+        file_handler = logging.FileHandler('trade_logger.log', encoding='utf-8')
+        file_handler.setFormatter(SafeUTF8Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+        logger.addHandler(file_handler)
+    except Exception as e:
+        # Fallback if file cannot be written
+        sys.stderr.write(f"Warning: Could not set up file logging: {e}\n")
+
+# Prevent propagation to root to avoid double logging or using unsafe root handlers
+logger.propagate = False
+
 
 @dataclass
 class TradeEntry:

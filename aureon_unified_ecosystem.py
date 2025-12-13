@@ -36,6 +36,7 @@ import random
 import asyncio
 import io
 import tempfile
+import logging
 
 # 🪟 WINDOWS COMPATIBILITY: Force UTF-8 encoding for console output
 # This prevents "UnicodeEncodeError: 'charmap' codec can't encode character" crashes
@@ -68,6 +69,17 @@ class SafeStreamHandler(logging.StreamHandler):
                 self.flush()
         except Exception:
             self.handleError(record)
+
+# 🛡️ CRITICAL: Configure Root Logger IMMEDIATELY with SafeStreamHandler
+# This ensures ALL subsequent loggers (including those from imported modules)
+# use this safe handler and don't crash on Windows when printing emojis.
+root_logger = logging.getLogger()
+if not root_logger.handlers:
+    safe_handler = SafeStreamHandler(sys.stdout)
+    safe_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    root_logger.addHandler(safe_handler)
+    root_logger.setLevel(logging.INFO)
+
 
 # Load environment variables from .env file FIRST before any other imports
 try:
