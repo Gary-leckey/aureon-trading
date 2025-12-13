@@ -3814,7 +3814,10 @@ class PlatypusCoherenceEngine:
         
         Returns: {planet: (elongation_deg, distance_au)}
         """
-        now = datetime.utcnow()
+        try:
+            now = datetime.now(datetime.UTC)
+        except AttributeError:
+            now = datetime.utcnow()  # Fallback for older Python
         
         # Try real ephemeris first
         if self._ephemeris_loaded and self._ephemeris_df is not None:
@@ -4784,8 +4787,8 @@ class QuantumProcessingBrain:
         Broadcast Brain state to ecosystem via WebSocket/Bridge.
         Other systems can consume this for trading decisions.
         """
-        if not hasattr(self, '_bridge') or not self._bridge:
-            return
+        # if not hasattr(self, '_bridge') or not self._bridge:
+        #     return
         
         try:
             # Prepare brain state for broadcast
@@ -4809,12 +4812,17 @@ class QuantumProcessingBrain:
                 'rainbow_state': getattr(self.state, 'rainbow_state', 'UNKNOWN'),
             }
             
-            # Write to bridge data directory
-            brain_file = self._bridge.data_dir / 'brain_state.json'
-            with open(brain_file, 'w') as f:
-                json.dump(brain_data, f, indent=2)
+            # Write to bridge data directory IF bridge exists
+            if hasattr(self, '_bridge') and self._bridge:
+                try:
+                    brain_file = self._bridge.data_dir / 'brain_state.json'
+                    with open(brain_file, 'w') as f:
+                        json.dump(brain_data, f, indent=2)
+                except Exception as e:
+                    logger.debug(f"Bridge file write error: {e}")
                 
             # 🎹 Write to shared system path for Unified Ecosystem 🎹
+            # ALWAYS write this one
             brain_path = os.path.join(tempfile.gettempdir(), 'aureon_multidimensional_brain_output.json')
             with open(brain_path, 'w') as f:
                 json.dump(brain_data, f, indent=2)
@@ -6487,7 +6495,11 @@ class HarmonicMiningOptimizer:
         if not self._probability_matrix:
             return None
         try:
-            now = datetime.utcnow()
+            try:
+                now = datetime.now(datetime.UTC)
+            except AttributeError:
+                now = datetime.utcnow()  # Fallback for older Python
+                
             pseudo_price = max(0.0001, difficulty)
             candle = {
                 'timestamp': now,
