@@ -62,8 +62,8 @@ def main():
     # Create orchestrator with default balance (£1000)
     orchestrator = GlobalAureonOrchestrator(
         initial_balance_gbp=1000.0,
-        # Enable dry-run on Windows to validate decisions while API sessions fail
-        dry_run=True
+        # Live trading: dry_run disabled per user request
+        dry_run=False
     )
     
     try:
