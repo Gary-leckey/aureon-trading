@@ -1247,9 +1247,33 @@ class Advisor:
             return self._bullish_eval(data, context)
         elif self.bias == "bearish":
             return self._bearish_eval(data, context)
+        elif self.bias == "harvester":
+            return self._harvester_eval(data, context)
         else:
             return self._neutral_eval(data, context)
     
+    def _harvester_eval(self, data: Dict, context: str) -> Tuple[str, float, str]:
+        """The Harvester cares only about Net Profit."""
+        # Penny Profit Logic: We don't need home runs, just base hits.
+        # If market is choppy, we harvest. If market is trending, we harvest.
+        
+        fng = data.get("fear_greed", 50)
+        mcap_change = data.get("mcap_change", 0)
+        
+        # In high volatility, harvesting is safer than holding
+        if abs(mcap_change) > 3:
+            return ("HARVEST_NOW", 0.9, f"High volatility ({mcap_change:.1f}%) favors quick penny profits over long holds.")
+            
+        # In extreme fear, we harvest to protect capital
+        if fng < 20:
+            return ("PROTECT_CAPITAL", 0.8, "Extreme fear. Take any profit available, even pennies.")
+            
+        # In extreme greed, we harvest to lock in gains
+        if fng > 80:
+            return ("LOCK_GAINS", 0.8, "Extreme greed. Don't be a pig. Harvest the pennies.")
+            
+        return ("ACCUMULATE_VALUE", 0.6, "Conditions stable. Seek value, but be ready to harvest at $0.01 profit.")
+
     def _skeptic_eval(self, data: Dict, context: str) -> Tuple[str, float, str]:
         """The Skeptic questions everything."""
         # Look for manipulation signals
@@ -1309,6 +1333,7 @@ class TruthCouncil:
             Advisor("The Bull", "Opportunity Finder", "bullish", weight=1.0),
             Advisor("The Bear", "Risk Manager", "bearish", weight=1.0),
             Advisor("The Oracle", "Pattern Reader", "neutral", weight=1.2),
+            Advisor("The Harvester", "Profit Reaper", "harvester", weight=1.4), # High weight for Penny Profit
         ]
         self.debate_history: List[Dict] = []
     
@@ -1345,7 +1370,7 @@ class TruthCouncil:
             w = vote["weight"] / total_weight
             if vote["verdict"] in ["SUSPICIOUS", "SPOOF_DETECTED", "DANGER"]:
                 spoof_score += vote["confidence"] * w
-            elif vote["verdict"] in ["PLAUSIBLE", "OPPORTUNITY", "ALT_SEASON", "BALANCED"]:
+            elif vote["verdict"] in ["PLAUSIBLE", "OPPORTUNITY", "ALT_SEASON", "BALANCED", "HARVEST_NOW", "LOCK_GAINS", "ACCUMULATE_VALUE"]:
                 truth_score += vote["confidence"] * w
             else:
                 truth_score += 0.5 * w
@@ -4692,6 +4717,39 @@ class MinerBrain:
                 print("\n   ⚖️ QUANTUM INTERPRETATION: Balanced state")
                 print("      → Normal operations. Follow wisdom consensus.")
         
+        # ═══════════════════════════════════════════════════════════
+        # PHASE -0.5: UNITY AWARENESS (Thought Bus Integration)
+        # ═══════════════════════════════════════════════════════════
+        if self.external_context:
+            print("\n" + "🔗" * 35)
+            print("   PHASE -0.5: UNITY AWARENESS (THOUGHT BUS)")
+            print("🔗" * 35 + "\n")
+            
+            print("🔗 **UNITY CONSCIOUSNESS DETECTED**")
+            
+            if 'last_trade' in self.external_context:
+                trade = self.external_context['last_trade']
+                action = trade.get('action', 'UNKNOWN')
+                symbol = trade.get('symbol', 'UNKNOWN')
+                pnl = trade.get('pnl', 0.0)
+                print(f"   🛒 LAST TRADE: {action} {symbol} (PnL: ${pnl:.2f})")
+                
+            if 'nexus_state' in self.external_context:
+                nexus = self.external_context['nexus_state']
+                state = nexus.get('state', 'UNKNOWN')
+                print(f"   🌐 NEXUS STATE: {state}")
+                
+            if 'bridge_command' in self.external_context:
+                cmd = self.external_context['bridge_command']
+                print(f"   🌉 BRIDGE COMMAND: {cmd.get('command', 'UNKNOWN')}")
+                
+            # Clear transient events so we don't react to them forever
+            # But keep stateful things like nexus_state
+            if 'last_trade' in self.external_context:
+                # We acknowledge it, but maybe keep it for history? 
+                # For now, let's just keep it until overwritten.
+                pass
+
         # ═══════════════════════════════════════════════════════════
         # PHASE 0: LIVE MARKET PULSE
         # ═══════════════════════════════════════════════════════════

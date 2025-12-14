@@ -10012,6 +10012,20 @@ class AureonKrakenEcosystem:
                             pos.entry_value = pos.quantity * curr_price
                         self._clear_symbol_dust(sym)
                         print(f"   ✅ CUT LOSS {sym} - freed £{net_value:.2f} (was {pnl_pct:.1f}% down)")
+                        
+                        # 🧠 PUBLISH THOUGHT: HARVESTING DEAD CAPITAL 🧠
+                        if THOUGHT_BUS_AVAILABLE and THOUGHT_BUS:
+                            THOUGHT_BUS.publish(Thought(
+                                source="harvester",
+                                topic="execution.harvest.dead_capital",
+                                payload={
+                                    "symbol": sym,
+                                    "action": "SELL",
+                                    "reason": "DEAD_CAPITAL_CUT",
+                                    "pnl_pct": pnl_pct,
+                                    "freed_cash": net_value
+                                }
+                            ))
                     else:
                         self._mark_symbol_invalid(sym)
                         print(f"   ⚠️ Failed to cut {sym}")
@@ -10093,6 +10107,20 @@ class AureonKrakenEcosystem:
                 self._mark_symbol_dust(sym, reason)
                 print(f"   💤 Skipping {sym}: {reason}")
                 continue
+
+            # 🧠 PUBLISH THOUGHT: HARVESTING HISTORICAL ASSET 🧠
+            if THOUGHT_BUS_AVAILABLE and THOUGHT_BUS:
+                THOUGHT_BUS.publish(Thought(
+                    source="harvester",
+                    topic="execution.harvest.historical",
+                    payload={
+                        "symbol": sym,
+                        "action": "SELL",
+                        "reason": "FUNDING_OPPORTUNITY",
+                        "target_symbol": target_symbol,
+                        "value": current_value
+                    }
+                ))
 
             print(f"   📦→💵 Selling {sym}: {sell_qty:.6f} @ £{curr_price:.4f} = £{current_value:.2f}")
             if adj_note:
@@ -13027,6 +13055,20 @@ class AureonKrakenEcosystem:
             # Score requirement lowered to 40 (from 85) for force scouts
             if worst_pos and (opp.get('score', 0) > 40 or is_force_scout) and worst_pct < CONFIG['REBALANCE_THRESHOLD']:
                 pos_symbol, pct, curr_price = worst_pos
+                
+                # 🧠 PUBLISH THOUGHT: SCOUT SWAP 🧠
+                if THOUGHT_BUS_AVAILABLE and THOUGHT_BUS:
+                    THOUGHT_BUS.publish(Thought(
+                        source="scout",
+                        topic="execution.scout.swap",
+                        payload={
+                            "sell_symbol": pos_symbol,
+                            "buy_symbol": symbol,
+                            "reason": "BETTER_OPPORTUNITY",
+                            "pnl_pct": pct
+                        }
+                    ))
+
                 print(f"   🔥 AGGRESSIVE SWAP: Selling {pos_symbol} ({pct:+.2f}%) to buy {symbol}")
                 self.close_position(pos_symbol, "SWAP", pct, curr_price)
                 self.refresh_equity()

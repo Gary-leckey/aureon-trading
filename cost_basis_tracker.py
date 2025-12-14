@@ -462,18 +462,19 @@ class CostBasisTracker:
         # Calculate NET profit percentage
         net_profit_pct = (net_profit / cost_basis * 100) if cost_basis > 0 else 0
         
-        # Minimum NET profit threshold (0.2% pure profit after all fees)
-        min_net_profit_pct = 0.2
+        # 💰 PENNY PROFIT RULE: As long as we make $0.01 NET, we are good!
+        # Previously required 0.2% margin, but now we align with the Penny Profit Engine.
+        is_penny_profitable = net_profit >= 0.01
         
-        can_sell = net_profit_pct >= min_net_profit_pct
+        can_sell = is_penny_profitable
         
         recommendation = ""
         if net_profit_pct >= 2.0:
             recommendation = "🟢 STRONG SELL - Good profit"
         elif net_profit_pct >= 0.5:
             recommendation = "🟡 SELL - Modest profit"
-        elif net_profit_pct >= 0:
-            recommendation = "⚪ HOLD - Breakeven or small loss after fees"
+        elif is_penny_profitable:
+            recommendation = "⚪ HARVEST - Penny Profit Secured"
         elif net_profit_pct >= -2.0:
             recommendation = "🔴 HOLD - Would realize loss"
         else:
