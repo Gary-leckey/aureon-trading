@@ -487,20 +487,53 @@ def get_exchange_fee_rate(exchange: str) -> float:
     return DEFAULT_FEE_RATES.get(ex_lower, 0.002)
 
 
-def get_penny_threshold(exchange: str, trade_size: float) -> dict:
-    """🎯 DYNAMIC PENNY PROFIT - Calculates exact thresholds for ANY trade size!
+def required_price_increase(initial_usd: float, fee_rate: float, target_profit: float = 0.01) -> float:
+    """
+    📐 EXACT MATHEMATICAL FORMULA for required price increase to achieve target net profit.
     
-    Formula:
-        total_fees = 2 × fee_rate × trade_size  (entry + exit)
-        win_gte = target_net + total_fees       (covers fees + penny profit)
-        stop_lte = -(target_net × 1.5 + total_fees × 0.5)  (controlled loss)
+    Formula: r = ((1 + P/A) / (1 - f)²) - 1
+    
+    This accounts for fee compounding over both legs:
+    1. Buy: Spend A USD, receive crypto worth A×(1-f) after fee
+    2. Sell: Crypto sold at price×(1+r), then fee deducted again
+    3. Final USD = A × (1-f)² × (1+r) = A + P
+    
+    Args:
+        initial_usd (A): Position size in USD
+        fee_rate (f): Fee rate per leg (e.g., 0.001 for 0.1%)
+        target_profit (P): Target net profit in USD (default $0.01)
+    
+    Returns:
+        r: Required price increase as decimal (multiply by 100 for %)
+    """
+    if initial_usd <= 0 or fee_rate < 0 or target_profit <= 0:
+        return 0.0
+    
+    # Exact formula accounting for compounding fees
+    r = ((1 + target_profit / initial_usd) / ((1 - fee_rate) ** 2)) - 1
+    return r
+
+
+def get_penny_threshold(exchange: str, trade_size: float) -> dict:
+    """🎯 EXACT PENNY PROFIT - Uses precise mathematical formula for ANY trade size!
+    
+    📐 EXACT FORMULA (accounts for fee compounding):
+        r = ((1 + P/A) / (1 - f)²) - 1
+        
+    Where:
+        A = trade_size (initial USD)
+        P = target net profit ($0.01)
+        f = fee rate per leg
+        r = required price increase (decimal)
+    
+    The sell target price = buy_price × (1 + r)
     
     Args:
         exchange: Exchange name ('binance', 'kraken', 'alpaca', 'capital')
         trade_size: Entry value in dollars (ANY amount!)
     
     Returns:
-        dict with: cost, win_gte, stop_lte, fee_rate, trade_size, target_net
+        dict with: required_pct, win_gte, stop_lte, fee_rate, trade_size, target_net
     """
     if not PENNY_PROFIT_ENABLED or trade_size <= 0:
         return None
@@ -508,20 +541,25 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
     fee_rate = get_exchange_fee_rate(exchange)
     target_net = PENNY_TARGET_NET
     
-    # 🎯 DYNAMIC CALCULATION for exact trade size
-    total_fees = 2 * fee_rate * trade_size  # Entry + Exit fees
+    # 📐 EXACT CALCULATION using proper compounding formula
+    r = required_price_increase(trade_size, fee_rate, target_net)
     
-    # Take Profit: Must cover all fees plus target net profit
-    win_gte = target_net + total_fees
+    # win_gte is the gross P&L needed (price increase × position)
+    # Since gross_pnl = exit_value - entry_value = entry_value × r
+    win_gte = trade_size * r
     
-    # Stop Loss: Controlled loss - risk ~1.5x target + half fees
-    # This gives approximately 40% breakeven win rate (favorable!)
-    stop_lte = -(target_net * 1.5 + total_fees * 0.5)
+    # Approximate fee cost for reference (linear estimate)
+    approx_fees = 2 * fee_rate * trade_size
+    
+    # Stop Loss: Risk ~1.5x the win target (gives ~40% breakeven win rate)
+    stop_lte = -(win_gte * 1.5)
     
     return {
-        'cost': round(total_fees, 6),
-        'win_gte': round(win_gte, 6),
-        'stop_lte': round(stop_lte, 6),
+        'required_pct': round(r * 100, 4),  # As percentage
+        'required_r': r,                      # As decimal
+        'cost': round(approx_fees, 6),        # Approximate total fees
+        'win_gte': round(win_gte, 6),         # Gross P&L trigger for TP
+        'stop_lte': round(stop_lte, 6),       # Gross P&L trigger for SL
         'fee_rate': fee_rate,
         'trade_size': trade_size,
         'target_net': target_net,
