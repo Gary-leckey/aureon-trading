@@ -4769,15 +4769,22 @@ class MinerBrain:
         print("   PHASE 0: LIVE MARKET PULSE")
         print("🔴" * 35 + "\n")
         
-        pulse = self.live_stream.get_market_pulse()
-        print(f"🔴 **LIVE MARKET PULSE** ({len(pulse.get('snapshot', {}).get('tickers', {}))} assets tracked)")
+        pulse = self.live_stream.get_market_pulse() or {}
+        if not isinstance(pulse, dict):
+            pulse = {}
+
+        snapshot = pulse.get('snapshot', {}) if isinstance(pulse, dict) else {}
+        if not isinstance(snapshot, dict):
+            snapshot = {}
+        tickers = snapshot.get('tickers', {}) if isinstance(snapshot, dict) else {}
+        if not isinstance(tickers, dict):
+            tickers = {}
+
+        print(f"🔴 **LIVE MARKET PULSE** ({len(tickers)} assets tracked)")
         print(f"   Pulse: {pulse.get('pulse', 'UNKNOWN')}")
         print(f"   Avg 24h Change: {pulse.get('avg_change_24h', 0):+.2f}%")
         print(f"   Fear & Greed: {pulse.get('fear_greed', 'N/A')}")
         print(f"   BTC: ${pulse.get('btc_price', 0):,.2f}")
-        
-        snapshot = pulse.get('snapshot', {})
-        tickers = snapshot.get('tickers', {})
         
         # Show market breadth
         breadth = snapshot.get('breadth', {})
