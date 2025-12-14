@@ -24,11 +24,26 @@ import threading
 import time
 import logging
 import os
+import sys
 import tempfile
 from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, Callable, List, Tuple
 from collections import deque
+
+# ═══════════════════════════════════════════════════════════════════════════
+# WINDOWS UTF-8 FIX - Must be at top before any logging
+# ═══════════════════════════════════════════════════════════════════════════
+if sys.platform == 'win32':
+    try:
+        import io
+        # Force UTF-8 encoding for stdout/stderr to support emojis
+        if hasattr(sys.stdout, 'buffer'):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        if hasattr(sys.stderr, 'buffer'):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    except Exception:
+        pass  # Fall back to default if reconfiguration fails
 
 # Import Miner Brain - Unified Wisdom Cognition Engine
 try:
@@ -7890,30 +7905,13 @@ class AureonMiner:
 def main():
     """Run miner standalone (for testing)"""
     import signal
-    import sys
     
-    # Configure logging with UTF-8 encoding for Windows emoji support
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    
-    # Create UTF-8 stream handler for Windows compatibility
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.INFO)
-    handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s', datefmt='%H:%M:%S'))
-    
-    # Force UTF-8 encoding on Windows
-    if sys.platform == 'win32':
-        try:
-            import io
-            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
-            handler = logging.StreamHandler(sys.stdout)
-            handler.setLevel(logging.INFO)
-            handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s', datefmt='%H:%M:%S'))
-        except Exception:
-            pass  # Fall back to default if reconfiguration fails
-    
-    logger.addHandler(handler)
+    # Configure logging (UTF-8 already set at module level for Windows)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(message)s',
+        datefmt='%H:%M:%S'
+    )
     
     # Configuration
     PLATFORM = os.getenv('MINING_PLATFORM')

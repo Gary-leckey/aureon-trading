@@ -27,6 +27,7 @@ Gary Leckey & GitHub Copilot | December 2025
 """
 
 import os
+import sys
 import json
 import time
 import logging
@@ -37,6 +38,20 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict, field
 from collections import deque
+
+# ═══════════════════════════════════════════════════════════════════════════
+# WINDOWS UTF-8 FIX - Must be at top before any logging
+# ═══════════════════════════════════════════════════════════════════════════
+if sys.platform == 'win32':
+    try:
+        import io
+        # Force UTF-8 encoding for stdout/stderr to support emojis
+        if hasattr(sys.stdout, 'buffer'):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        if hasattr(sys.stderr, 'buffer'):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    except Exception:
+        pass  # Fall back to default if reconfiguration fails
 
 # Import existing feeds if available
 try:
