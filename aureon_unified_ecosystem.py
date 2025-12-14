@@ -413,74 +413,143 @@ except ImportError:
     print("⚠️  Knowledge Base module not available")
 
 # ═══════════════════════════════════════════════════════════════
-# 💰 PENNY PROFIT ENGINE - DOLLAR-BASED EXIT THRESHOLDS 💰
+# 💰 PENNY PROFIT ENGINE - DYNAMIC DOLLAR-BASED EXIT THRESHOLDS 💰
 # ═══════════════════════════════════════════════════════════════
-PENNY_PROFIT_CONFIG = {}  # Will hold loaded thresholds
-PENNY_PROFIT_ENABLED = False
+# 🎯 Calculates EXACT thresholds for ANY trade size dynamically!
+# No more preset lookup tables - formula calculates on-the-fly.
+
+PENNY_PROFIT_CONFIG = {}  # Optional overrides from JSON
+PENNY_PROFIT_ENABLED = True  # Always enabled - dynamic calculation works without config
+PENNY_TARGET_NET = 0.01  # Default target: $0.01 net profit per trade
+
+# Default fee rates by exchange (can be overridden by CONFIG or JSON)
+DEFAULT_FEE_RATES = {
+    'binance': 0.001,    # 0.10% taker
+    'kraken': 0.0026,    # 0.26% taker  
+    'capital': 0.0012,   # ~0.12% spread
+    'alpaca': 0.0025,    # 0.25% commission
+}
+
 
 def load_penny_profit_config():
-    """Load penny profit thresholds from JSON config"""
-    global PENNY_PROFIT_CONFIG, PENNY_PROFIT_ENABLED
+    """Load penny profit configuration (optional - for fee rate overrides).
+    
+    The engine works WITHOUT a config file using dynamic calculation.
+    Config file only needed to override default fee rates or target.
+    """
+    global PENNY_PROFIT_CONFIG, PENNY_PROFIT_ENABLED, PENNY_TARGET_NET
     config_path = os.path.join(ROOT_DIR, 'penny_profit_config.json')
     
     if os.path.exists(config_path):
         try:
             with open(config_path, 'r') as f:
                 PENNY_PROFIT_CONFIG = json.load(f)
-            PENNY_PROFIT_ENABLED = True
-            print(f"💰 Penny Profit Engine loaded - Target: +${PENNY_PROFIT_CONFIG.get('target_net_win', 0.01):.2f} net per trade")
+            PENNY_TARGET_NET = PENNY_PROFIT_CONFIG.get('target_net_win', 0.01)
+            print(f"💰 Penny Profit Engine - DYNAMIC (target: +${PENNY_TARGET_NET:.2f} net per trade)")
         except Exception as e:
-            print(f"⚠️  Failed to load penny profit config: {e}")
-            PENNY_PROFIT_ENABLED = False
+            print(f"⚠️  Penny config load error: {e} - using dynamic defaults")
     else:
-        print("⚠️  Penny profit config not found - using percentage-based exits")
+        print(f"💰 Penny Profit Engine - DYNAMIC MODE (target: +${PENNY_TARGET_NET:.2f} net)")
+    
+    PENNY_PROFIT_ENABLED = True  # Always enabled with dynamic calculation
+
+
+def get_exchange_fee_rate(exchange: str) -> float:
+    """Get fee rate for exchange - checks CONFIG, then JSON, then defaults.
+    
+    Priority order:
+    1. Global CONFIG (most accurate - actual observed rates)
+    2. penny_profit_config.json fee_rate
+    3. DEFAULT_FEE_RATES fallback
+    """
+    ex_lower = (exchange or 'binance').lower()
+    
+    # Priority 1: Check global CONFIG for actual observed fees
+    try:
+        if ex_lower == 'kraken':
+            return CONFIG.get('KRAKEN_FEE_TAKER', DEFAULT_FEE_RATES['kraken'])
+        elif ex_lower == 'binance':
+            return CONFIG.get('BINANCE_FEE_TAKER', DEFAULT_FEE_RATES['binance'])
+        elif ex_lower == 'alpaca':
+            return CONFIG.get('ALPACA_FEE_TAKER', DEFAULT_FEE_RATES['alpaca'])
+        elif ex_lower == 'capital':
+            return CONFIG.get('CAPITAL_FEE', DEFAULT_FEE_RATES['capital'])
+    except (NameError, KeyError):
+        pass  # CONFIG not loaded yet
+    
+    # Priority 2: Check penny_profit_config.json
+    if PENNY_PROFIT_CONFIG:
+        exchanges = PENNY_PROFIT_CONFIG.get('exchanges', {})
+        if ex_lower in exchanges:
+            return exchanges[ex_lower].get('fee_rate', DEFAULT_FEE_RATES.get(ex_lower, 0.002))
+    
+    # Priority 3: Default fallback
+    return DEFAULT_FEE_RATES.get(ex_lower, 0.002)
+
 
 def get_penny_threshold(exchange: str, trade_size: float) -> dict:
-    """Get penny profit thresholds for a given exchange and trade size.
+    """🎯 DYNAMIC PENNY PROFIT - Calculates exact thresholds for ANY trade size!
     
-    Returns dict with: cost, win_gte (TP threshold), stop_lte (SL threshold)
+    Formula:
+        total_fees = 2 × fee_rate × trade_size  (entry + exit)
+        win_gte = target_net + total_fees       (covers fees + penny profit)
+        stop_lte = -(target_net × 1.5 + total_fees × 0.5)  (controlled loss)
+    
+    Args:
+        exchange: Exchange name ('binance', 'kraken', 'alpaca', 'capital')
+        trade_size: Entry value in dollars (ANY amount!)
+    
+    Returns:
+        dict with: cost, win_gte, stop_lte, fee_rate, trade_size, target_net
     """
-    if not PENNY_PROFIT_ENABLED or not PENNY_PROFIT_CONFIG:
+    if not PENNY_PROFIT_ENABLED or trade_size <= 0:
         return None
     
-    ex_lower = exchange.lower()
-    exchanges = PENNY_PROFIT_CONFIG.get('exchanges', {})
+    fee_rate = get_exchange_fee_rate(exchange)
+    target_net = PENNY_TARGET_NET
     
-    if ex_lower not in exchanges:
-        return None
+    # 🎯 DYNAMIC CALCULATION for exact trade size
+    total_fees = 2 * fee_rate * trade_size  # Entry + Exit fees
     
-    thresholds = exchanges[ex_lower].get('thresholds', {})
+    # Take Profit: Must cover all fees plus target net profit
+    win_gte = target_net + total_fees
     
-    # Find closest trade size that's <= our trade size
-    sizes = sorted([float(s) for s in thresholds.keys()])
-    if not sizes:
-        return None
+    # Stop Loss: Controlled loss - risk ~1.5x target + half fees
+    # This gives approximately 40% breakeven win rate (favorable!)
+    stop_lte = -(target_net * 1.5 + total_fees * 0.5)
     
-    # Find best matching size
-    best_size = sizes[0]
-    for s in sizes:
-        if s <= trade_size:
-            best_size = s
-        else:
-            break
-    
-    return thresholds.get(str(best_size)) or thresholds.get(best_size)
+    return {
+        'cost': round(total_fees, 6),
+        'win_gte': round(win_gte, 6),
+        'stop_lte': round(stop_lte, 6),
+        'fee_rate': fee_rate,
+        'trade_size': trade_size,
+        'target_net': target_net,
+        'is_dynamic': True
+    }
+
 
 def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float) -> dict:
-    """Check if position should exit based on penny profit thresholds.
+    """Check if position should exit based on dynamically calculated thresholds.
     
-    Returns: {'should_tp': bool, 'should_sl': bool, 'threshold': dict}
+    Args:
+        exchange: Exchange name
+        entry_value: Position entry value in dollars (ANY size!)
+        gross_pnl: Current gross P&L (before fees)
+    
+    Returns:
+        {'should_tp': bool, 'should_sl': bool, 'threshold': dict, 'gross_pnl': float}
     """
     threshold = get_penny_threshold(exchange, entry_value)
     
     if not threshold:
-        return {'should_tp': False, 'should_sl': False, 'threshold': None}
+        return {'should_tp': False, 'should_sl': False, 'threshold': None, 'gross_pnl': gross_pnl}
     
     # Check Take Profit: gross P&L >= win threshold
-    should_tp = gross_pnl >= threshold.get('win_gte', float('inf'))
+    should_tp = gross_pnl >= threshold['win_gte']
     
-    # Check Stop Loss: gross P&L <= loss threshold
-    should_sl = gross_pnl <= threshold.get('stop_lte', float('-inf'))
+    # Check Stop Loss: gross P&L <= loss threshold  
+    should_sl = gross_pnl <= threshold['stop_lte']
     
     return {
         'should_tp': should_tp,
@@ -489,7 +558,8 @@ def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float) -> dic
         'gross_pnl': gross_pnl
     }
 
-# Load on import
+
+# Load on import (sets PENNY_PROFIT_ENABLED = True)
 load_penny_profit_config()
 
 # ═══════════════════════════════════════════════════════════════
