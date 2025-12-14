@@ -27,45 +27,52 @@ Gary Leckey & GitHub Copilot | November 2025
 "From Atom to Multiverse - We don't quit!"
 """
 
+# ═══════════════════════════════════════════════════════════════════════════
+# WINDOWS UTF-8 FIX - MUST BE AT VERY TOP BEFORE ALL OTHER IMPORTS
+# ═══════════════════════════════════════════════════════════════════════════
 import os
 import sys
+import io
+
+if sys.platform == 'win32':
+    # Set environment variable for Python's default encoding
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    
+    # Force UTF-8 encoding for stdout/stderr to support emojis
+    try:
+        # Check if not already wrapped to avoid double-wrapping
+        if hasattr(sys.stdout, 'buffer') and not isinstance(sys.stdout, io.TextIOWrapper):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        if hasattr(sys.stderr, 'buffer') and not isinstance(sys.stderr, io.TextIOWrapper):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 import json
 import time
 import math
 import random
 import asyncio
-import io
 import tempfile
 import logging
 
-# 🪟 WINDOWS COMPATIBILITY: Force UTF-8 encoding for console output
-# This prevents "UnicodeEncodeError: 'charmap' codec can't encode character" crashes
-if sys.platform == 'win32':
-    # Reconfigure stdout/stderr to use utf-8 if possible (Python 3.7+)
-    try:
-        sys.stdout.reconfigure(encoding='utf-8')
-        sys.stderr.reconfigure(encoding='utf-8')
-    except AttributeError:
-        # Fallback for older Python versions or if reconfigure is not available
-        try:
-            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
-        except AttributeError:
-            # If buffer is not available (e.g. pythonw), just pass
-            pass
-
 # Custom StreamHandler that forces UTF-8 encoding on Windows
 class SafeStreamHandler(logging.StreamHandler):
+    def __init__(self, stream=None):
+        super().__init__(stream or sys.stdout)
+    
     def emit(self, record):
         try:
             msg = self.format(record)
             stream = self.stream
-            # If on Windows and stream has a buffer, write bytes directly to bypass cp1252
-            if sys.platform == 'win32' and hasattr(stream, 'buffer'):
-                stream.buffer.write((msg + self.terminator).encode('utf-8'))
-                stream.flush()
-            else:
+            # Write with UTF-8 encoding, replace errors
+            try:
                 stream.write(msg + self.terminator)
+                self.flush()
+            except UnicodeEncodeError:
+                # If encoding fails, replace unencodable characters
+                msg_safe = msg.encode('utf-8', errors='replace').decode('utf-8')
+                stream.write(msg_safe + self.terminator)
                 self.flush()
         except Exception:
             self.handleError(record)
