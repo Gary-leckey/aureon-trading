@@ -551,7 +551,7 @@ class DreamEngine:
         try:
             resp = self.session.get(
                 "https://api.binance.com/api/v3/ticker/24hr",
-                timeout=10
+                timeout=(3.05, 5)  # (connect, read) - shorter to prevent hangs
             )
             if resp.status_code == 200:
                 all_tickers = {t['symbol']: t for t in resp.json()}
@@ -910,11 +910,19 @@ class LiveTickerStream:
     This is the "awake" state - always watching, always thinking.
     """
     
+    # Network timeout (connect, read) - shorter to prevent Windows hangs
+    TIMEOUT = (3.05, 5)  # (connect_timeout, read_timeout)
+    
     def __init__(self):
         self.session = requests.Session()
+        # Set default timeout at session level
+        self.session.request = lambda method, url, **kwargs: requests.Session.request(
+            self.session, method, url, timeout=kwargs.pop('timeout', self.TIMEOUT), **kwargs
+        )
         self.last_prices: Dict[str, float] = {}
         self.price_history: Dict[str, deque] = {}
         self.alerts: List[Dict] = []
+        self._network_available = True  # Track if network is working
         
     # Full market symbol list for comprehensive monitoring
     LIVE_SYMBOLS = [
@@ -952,11 +960,19 @@ class LiveTickerStream:
             'breadth': {}
         }
         
+        # Skip if network was previously unavailable (retry every 5 calls)
+        if not self._network_available:
+            self._network_retry_count = getattr(self, '_network_retry_count', 0) + 1
+            if self._network_retry_count < 5:
+                return snapshot
+            self._network_retry_count = 0
+            self._network_available = True  # Retry
+        
         # Fetch ALL tickers in one efficient API call
         try:
             resp = self.session.get(
                 "https://api.binance.com/api/v3/ticker/24hr",
-                timeout=10
+                timeout=self.TIMEOUT
             )
             if resp.status_code == 200:
                 all_tickers = {t['symbol']: t for t in resp.json()}
@@ -996,36 +1012,53 @@ class LiveTickerStream:
                 snapshot['sectors'] = self._calculate_sector_performance(snapshot['tickers'])
                 snapshot['breadth'] = self._calculate_market_breadth(snapshot['tickers'])
                 
+        except requests.exceptions.Timeout:
+            logger.warning("Network timeout fetching tickers - marking network unavailable")
+            self._network_available = False
+        except requests.exceptions.ConnectionError:
+            logger.warning("Network connection error - marking network unavailable")
+            self._network_available = False
         except Exception as e:
             logger.debug(f"Bulk ticker fetch error: {e}")
-            # Fallback to individual requests for critical assets
-            for binance_sym, sym in self.LIVE_SYMBOLS[:6]:
-                try:
-                    resp = self.session.get(
-                        f"https://api.binance.com/api/v3/ticker/24hr?symbol={binance_sym}",
-                        timeout=3
-                    )
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        snapshot['tickers'][sym] = {
-                            'price': float(data.get('lastPrice', 0)),
-                            'change_24h': float(data.get('priceChangePercent', 0)),
-                            'volume': float(data.get('quoteVolume', 0))
-                        }
-                except Exception as e:
-                    logger.debug(f"Ticker fetch error for {sym}: {e}")
+            # Fallback to individual requests for critical assets only if not a connection issue
+            if self._network_available:
+                for binance_sym, sym in self.LIVE_SYMBOLS[:3]:  # Only top 3 to reduce hang risk
+                    try:
+                        resp = self.session.get(
+                            f"https://api.binance.com/api/v3/ticker/24hr?symbol={binance_sym}",
+                            timeout=(2, 3)  # Even shorter for fallback
+                        )
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            snapshot['tickers'][sym] = {
+                                'price': float(data.get('lastPrice', 0)),
+                                'change_24h': float(data.get('priceChangePercent', 0)),
+                                'volume': float(data.get('quoteVolume', 0))
+                            }
+                    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+                        logger.warning(f"Network issue for {sym} - skipping remaining")
+                        self._network_available = False
+                        break
+                    except Exception as e:
+                        logger.debug(f"Ticker fetch error for {sym}: {e}")
         
-        # Fetch sentiment
-        try:
-            resp = self.session.get("https://api.alternative.me/fng/?limit=1", timeout=3)
-            if resp.status_code == 200:
-                fng_data = resp.json().get('data', [{}])[0]
-                snapshot['sentiment'] = {
-                    'fear_greed': int(fng_data.get('value', 50)),
-                    'classification': fng_data.get('value_classification', 'Neutral')
-                }
-        except:
-            snapshot['sentiment'] = {'fear_greed': 50, 'classification': 'Neutral'}
+        # Fetch sentiment (skip if network unavailable)
+        if self._network_available:
+            try:
+                resp = self.session.get("https://api.alternative.me/fng/?limit=1", timeout=(2, 3))
+                if resp.status_code == 200:
+                    fng_data = resp.json().get('data', [{}])[0]
+                    snapshot['sentiment'] = {
+                        'fear_greed': int(fng_data.get('value', 50)),
+                        'classification': fng_data.get('value_classification', 'Neutral')
+                    }
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+                self._network_available = False
+                snapshot['sentiment'] = {'fear_greed': 50, 'classification': 'Neutral (offline)'}
+            except:
+                snapshot['sentiment'] = {'fear_greed': 50, 'classification': 'Neutral'}
+        else:
+            snapshot['sentiment'] = {'fear_greed': 50, 'classification': 'Neutral (offline)'}
         
         return snapshot
     
@@ -1442,8 +1475,11 @@ class SpeculationEngine:
 class WebKnowledgeMiner:
     """
     Searches and retrieves financial metadata from multiple sources.
-    Now with cross-validation capabilities.
+    Now with cross-validation capabilities and timeout protection.
     """
+    
+    # Network timeout (connect, read) - shorter to prevent Windows hangs
+    TIMEOUT = (3.05, 5)
     
     SOURCES = [
         {"name": "CoinGecko Global", "url": "https://api.coingecko.com/api/v3/global", "type": "json"},
@@ -1455,26 +1491,54 @@ class WebKnowledgeMiner:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({'User-Agent': 'AureonMinerBrain/2.0'})
+        self._network_available = True
 
     def gather_intelligence(self) -> Dict[str, Any]:
-        """Scours sources for metadata with cross-validation."""
+        """Scours sources for metadata with cross-validation and timeout protection."""
         intelligence = {"raw": {}, "processed": {}}
         logger.info("🌐 Miner Brain searching the internet...")
         
+        if not self._network_available:
+            # Quick retry check
+            self._network_retry_count = getattr(self, '_network_retry_count', 0) + 1
+            if self._network_retry_count < 3:
+                logger.info("   ⚠️ Network unavailable, using cached/default data")
+                intelligence["processed"] = self._get_default_processed()
+                return intelligence
+            self._network_retry_count = 0
+            self._network_available = True
+        
         for source in self.SOURCES:
             try:
-                response = self.session.get(source["url"], timeout=10)
+                response = self.session.get(source["url"], timeout=self.TIMEOUT)
                 if response.status_code == 200:
                     intelligence["raw"][source["name"]] = response.json()
-                    logger.info(f"   ✅ {source['name']}")
+                    logger.info(f"   [OK] {source['name']}")
                 else:
-                    logger.warning(f"   ❌ {source['name']}: {response.status_code}")
+                    logger.warning(f"   [!] {source['name']}: {response.status_code}")
+            except requests.exceptions.Timeout:
+                logger.warning(f"   [TIMEOUT] {source['name']} - marking network slow")
+            except requests.exceptions.ConnectionError:
+                logger.warning(f"   [CONN ERR] {source['name']} - network may be unavailable")
+                self._network_available = False
             except Exception as e:
-                logger.error(f"   ⚠️ {source['name']}: {e}")
+                logger.error(f"   [!] {source['name']}: {e}")
         
         # Process into unified format
         intelligence["processed"] = self._process_raw(intelligence["raw"])
         return intelligence
+    
+    def _get_default_processed(self) -> Dict:
+        """Return default values when network is unavailable."""
+        return {
+            "fear_greed": 50,
+            "fng_class": "Neutral (offline)",
+            "mcap_change": 0,
+            "btc_dominance": 50,
+            "eth_dominance": 15,
+            "btc_price": 0,
+            "eth_price": 0
+        }
     
     def _process_raw(self, raw: Dict) -> Dict:
         """Extract key metrics into a clean format."""
@@ -2011,8 +2075,8 @@ class StrategicWarfareLibrary:
     def fetch_sun_tzu_text(self) -> str:
         """Fetch the full Art of War text from Project Gutenberg."""
         try:
-            logger.info("📜 Fetching Sun Tzu's Art of War from Project Gutenberg...")
-            response = requests.get(self.SUN_TZU_URL, timeout=30)
+            logger.info("[scroll] Fetching Sun Tzu's Art of War from Project Gutenberg...")
+            response = requests.get(self.SUN_TZU_URL, timeout=(3.05, 10))  # (connect, read)
             if response.status_code == 200:
                 self.full_sun_tzu_text = response.text
                 logger.info(f"   ✅ Loaded {len(self.full_sun_tzu_text):,} characters of ancient wisdom")
