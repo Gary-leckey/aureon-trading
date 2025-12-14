@@ -13590,7 +13590,12 @@ class AureonKrakenEcosystem:
                         penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl)
                         penny_threshold = penny_check.get('threshold')
                         
-                        if penny_threshold:
+                        # 💰 PENNY PROFIT OVERRIDE: If net profit >= $0.01, take it regardless of matrix!
+                        if net_pnl >= 0.01:
+                             print(f"   🔮 MATRIX EXIT (PENNY SECURED): {symbol} {prob_action} (prob={prob_probability:.0%}, conf={prob_confidence:.0%}) Net: ${net_pnl:.4f} >= $0.01")
+                             to_close.append((symbol, "MATRIX_SELL", change_pct, current_price))
+                             prob_exit_triggered = True
+                        elif penny_threshold:
                             min_gross_win = penny_threshold.get('win_gte', 0.01)
                             if gross_pnl >= min_gross_win:
                                 print(f"   🔮 MATRIX EXIT (PENNY SECURED): {symbol} {prob_action} (prob={prob_probability:.0%}, conf={prob_confidence:.0%}) Gross: ${gross_pnl:.4f} >= ${min_gross_win:.4f}")
@@ -13640,7 +13645,8 @@ class AureonKrakenEcosystem:
                 elif penny_check['should_sl']:
                     # Hit penny stop loss
                     to_close.append((symbol, "SL", change_pct, current_price))
-                elif gross_pnl > 0 and pos.cycles >= min_hold:
+                elif gross_pnl > 0:
+                    # 💰 PENNY PROFIT OVERRIDE: Ignore min_hold if we have profit!
                     # Check if we're at penny harvest level
                     min_gross_win = penny_threshold.get('win_gte', 0.01)
                     if gross_pnl >= min_gross_win:
@@ -13652,7 +13658,8 @@ class AureonKrakenEcosystem:
                     to_close.append((symbol, "TP", change_pct, current_price))
                 elif change_pct <= -target_sl:
                     to_close.append((symbol, "SL", change_pct, current_price))
-                elif change_pct > 0 and pos.cycles >= min_hold:
+                elif change_pct > 0:
+                    # 💰 PENNY PROFIT OVERRIDE: Ignore min_hold if we have profit!
                     # Legacy harvest check
                     exit_fee = exit_value * get_platform_fee(pos.exchange, 'taker')
                     slippage_cost = exit_value * CONFIG['SLIPPAGE_PCT']
@@ -13661,7 +13668,12 @@ class AureonKrakenEcosystem:
                     net_pnl = gross_pnl - total_expenses
                     min_profit = pos.entry_value * CONFIG['MIN_NET_PROFIT_PCT']
                     
-                    if net_pnl >= min_profit:
+                    # 💰 PENNY PROFIT OVERRIDE: If net profit >= $0.01, take it!
+                    if net_pnl >= 0.01:
+                        net_pnl_pct = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
+                        print(f"   🌾 PENNY HARVEST: {symbol} net profit ${net_pnl:.4f} ({net_pnl_pct:.2f}%)")
+                        to_close.append((symbol, "HARVEST", change_pct, current_price))
+                    elif net_pnl >= min_profit and pos.cycles >= min_hold:
                         net_pnl_pct = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
                         print(f"   🌾 HARVEST: {symbol} net profit ${net_pnl:.4f} ({net_pnl_pct:.2f}%)")
                         to_close.append((symbol, "HARVEST", change_pct, current_price))
@@ -13847,7 +13859,10 @@ class AureonKrakenEcosystem:
         
         # 🌊 RESONANCE HOLDING: Don't exit before MIN_HOLD_MINUTES unless emergency
         # From miner blueprint: 50+ min hold times achieve best efficiency
-        if hold_time_min < MIN_HOLD_MINUTES:
+        # 💰 PENNY PROFIT OVERRIDE: If we have a penny profit, we take it regardless of time!
+        is_penny_profitable = net_pnl >= 0.01
+        
+        if hold_time_min < MIN_HOLD_MINUTES and not is_penny_profitable:
             pnl_pct = ((price - pos.entry_price) / pos.entry_price * 100) if pos.entry_price > 0 else 0
             # Only exit early on stops (-5%) or massive gains (+20%)
             if reason not in ['STOP_LOSS', 'CIRCUIT_BREAKER'] and abs(pnl_pct) < 20:
