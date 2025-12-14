@@ -11,7 +11,7 @@
     5. Starts aureon_unified_ecosystem.py in the current window.
 #>
 
-Write-Host "🐙🌌 AUREON ECOSYSTEM LAUNCHER (WINDOWS) 🌌🐙" -ForegroundColor Cyan
+Write-Host "[*] AUREON ECOSYSTEM LAUNCHER (WINDOWS) [*]" -ForegroundColor Cyan
 Write-Host "===================================================" -ForegroundColor Cyan
 
 # Check for Git
@@ -30,64 +30,64 @@ if (-not (Get-Command "python" -ErrorAction SilentlyContinue)) {
 # GIT: Pull latest and restore stash
 # ============================================
 Write-Host ""
-Write-Host "📥 Getting latest code from main..." -ForegroundColor Yellow
+Write-Host "[>>] Getting latest code from main..." -ForegroundColor Yellow
 
 try {
     # First, stash any local changes (secrets, config)
-    Write-Host "   💾 Saving local changes..." -ForegroundColor Gray
+    Write-Host "   [>] Saving local changes..." -ForegroundColor Gray
     $hasChanges = git status --porcelain 2>&1
     if ($hasChanges) {
         git stash push -m "auto-stash before pull" 2>&1 | Out-Null
-        Write-Host "   ✅ Local changes stashed" -ForegroundColor Green
+        Write-Host "   [OK] Local changes stashed" -ForegroundColor Green
         $didStash = $true
     } else {
-        Write-Host "   📌 No local changes to stash" -ForegroundColor Gray
+        Write-Host "   [--] No local changes to stash" -ForegroundColor Gray
         $didStash = $false
     }
     
     # Fetch and reset to latest main
-    Write-Host "   🔄 Fetching latest from origin..." -ForegroundColor Gray
+    Write-Host "   [>] Fetching latest from origin..." -ForegroundColor Gray
     git fetch origin main 2>&1 | Out-Null
     
     # Reset to origin/main to get clean latest
     git reset --hard origin/main 2>&1 | Out-Null
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "   ✅ Code updated to latest main" -ForegroundColor Green
+        Write-Host "   [OK] Code updated to latest main" -ForegroundColor Green
     } else {
-        Write-Warning "   ⚠️ Reset had issues"
+        Write-Warning "   [!] Reset had issues"
     }
 } catch {
-    Write-Warning "   ⚠️ Could not update: $_"
+    Write-Warning "   [!] Could not update: $_"
 }
 
 # Restore stashed changes (contains secrets/local config)
 Write-Host ""
-Write-Host "🔐 Restoring local configuration..." -ForegroundColor Yellow
+Write-Host "[>>] Restoring local configuration..." -ForegroundColor Yellow
 
 try {
     # Check if there are any stashes
     $stashList = git stash list 2>&1
     
     if ($stashList) {
-        Write-Host "   Found stash: $($stashList.Split("`n")[0])" -ForegroundColor Gray
+        Write-Host "   Found stash: $($stashList.Split([char]10)[0])" -ForegroundColor Gray
         
         # Apply the latest stash (stash@{0})
         $stashResult = git stash pop 2>&1
         
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "   ✅ Stash applied successfully" -ForegroundColor Green
+            Write-Host "   [OK] Stash applied successfully" -ForegroundColor Green
         } else {
             # If pop fails due to conflicts, try apply instead
-            Write-Warning "   ⚠️ Stash pop had conflicts, trying apply..."
+            Write-Warning "   [!] Stash pop had conflicts, trying apply..."
             git stash apply 2>&1 | Out-Null
-            Write-Host "   ✅ Stash applied (may need manual merge)" -ForegroundColor Yellow
+            Write-Host "   [OK] Stash applied (may need manual merge)" -ForegroundColor Yellow
         }
     } else {
-        Write-Host "   📌 No stash found (using repo config)" -ForegroundColor Gray
+        Write-Host "   [--] No stash found (using repo config)" -ForegroundColor Gray
     }
 } catch {
-    Write-Warning "   ⚠️ Could not apply stash: $_"
+    Write-Warning "   [!] Could not apply stash: $_"
     Write-Host "   Continuing without stash..." -ForegroundColor Gray
 }
 
@@ -99,19 +99,19 @@ $env:PYTHONIOENCODING = "utf-8"
 $env:PYTHONLEGACYWINDOWSSTDIO = "utf-8"
 
 # 1. Start the Quantum Miner (Brain)
-Write-Host "🚀 Launching Quantum Miner (Brain)..." -ForegroundColor Yellow
+Write-Host "[>>] Launching Quantum Miner (Brain)..." -ForegroundColor Yellow
 $minerProcess = Start-Process -FilePath "python" -ArgumentList "aureon_miner.py" -PassThru -WindowStyle Minimized
 
 if ($minerProcess.Id) {
-    Write-Host "   ✅ Miner started with PID: $($minerProcess.Id)" -ForegroundColor Green
+    Write-Host "   [OK] Miner started with PID: $($minerProcess.Id)" -ForegroundColor Green
 } else {
-    Write-Error "   ❌ Failed to start Miner."
+    Write-Error "   [FAIL] Failed to start Miner."
     exit 1
 }
 
 # 2. Wait for Brain State
 $brainFile = Join-Path $env:TEMP "aureon_multidimensional_brain_output.json"
-Write-Host "⏳ Waiting for Quantum Brain initialization..." -ForegroundColor Yellow
+Write-Host "[..] Waiting for Quantum Brain initialization..." -ForegroundColor Yellow
 Write-Host "   Looking for: $brainFile" -ForegroundColor Gray
 
 $timeout = 60
@@ -121,16 +121,18 @@ while (-not (Test-Path $brainFile)) {
     $elapsed++
     Write-Host -NoNewline "."
     if ($elapsed -ge $timeout) {
-        Write-Error "`n❌ Timeout waiting for Brain State file. Check miner logs."
+        Write-Host ""
+        Write-Error "[FAIL] Timeout waiting for Brain State file. Check miner logs."
         Stop-Process -Id $minerProcess.Id -ErrorAction SilentlyContinue
         exit 1
     }
 }
 
-Write-Host "`n✅ Brain State Detected!" -ForegroundColor Green
+Write-Host ""
+Write-Host "[OK] Brain State Detected!" -ForegroundColor Green
 
 # 3. Start the Unified Trader
-Write-Host "🚀 Launching Unified Ecosystem Trader..." -ForegroundColor Cyan
+Write-Host "[>>] Launching Unified Ecosystem Trader..." -ForegroundColor Cyan
 Write-Host "===================================================" -ForegroundColor Cyan
 
 try {
@@ -138,7 +140,8 @@ try {
 }
 finally {
     # Cleanup on exit
-    Write-Host "`n🛑 Shutting down ecosystem..." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "[XX] Shutting down ecosystem..." -ForegroundColor Yellow
     Stop-Process -Id $minerProcess.Id -ErrorAction SilentlyContinue
-    Write-Host "   ✅ Miner stopped." -ForegroundColor Green
+    Write-Host "   [OK] Miner stopped." -ForegroundColor Green
 }
