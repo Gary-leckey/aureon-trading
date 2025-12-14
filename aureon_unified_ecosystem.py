@@ -843,6 +843,218 @@ def get_brain_multiplier() -> float:
 
 
 # ═══════════════════════════════════════════════════════════════
+# 🔗 MINER STATE CONNECTOR - AUTO-DETECT RUNNING MINER
+# ═══════════════════════════════════════════════════════════════
+
+class MinerStateConnector:
+    """
+    🔗 MINER STATE CONNECTOR 🔗
+    
+    Automatically detects and connects to a running miner by monitoring
+    the shared state file. This enables the ecosystem to receive live
+    quantum state even when running standalone (without orchestrator).
+    
+    The miner writes to: /tmp/aureon_multidimensional_brain_output.json
+    We read this file periodically to get:
+    - Unified Coherence (Ψ)
+    - Planetary Gamma (Γ)
+    - Cascade Multiplier
+    - Lighthouse Window status
+    - Piano Lambda (Λ)
+    - Rainbow State
+    """
+    
+    # State file path (same as miner writes to)
+    STATE_FILE = os.path.join(tempfile.gettempdir(), 'aureon_multidimensional_brain_output.json')
+    
+    # Alternative paths to check
+    ALT_PATHS = [
+        os.path.join(tempfile.gettempdir(), 'aureon_brain_state.json'),
+        os.path.join(os.path.dirname(__file__), 'aureon_brain_state.json'),
+        'aureon_brain_state.json',
+    ]
+    
+    # How fresh the state must be to consider miner "connected" (seconds)
+    FRESHNESS_THRESHOLD = 30  
+    
+    def __init__(self):
+        self._state_file: Optional[str] = None
+        self._last_state: Dict[str, Any] = {}
+        self._last_read_time: float = 0
+        self._read_interval: float = 2.0  # Check every 2 seconds
+        self._miner_connected: bool = False
+        self._connection_time: Optional[float] = None
+        
+        # Cached quantum values
+        self.unified_coherence: float = 0.5
+        self.planetary_gamma: float = 0.5
+        self.cascade_multiplier: float = 1.0
+        self.is_lighthouse: bool = False
+        self.piano_lambda: float = 1.0
+        self.piano_coherence: float = 0.0
+        self.rainbow_state: str = "UNKNOWN"
+        self.probability_edge: float = 0.0
+        self.harmonic_signal: str = "HOLD"
+        self.hnc_probability: float = 0.5
+        
+        # Statistics
+        self._successful_reads: int = 0
+        self._failed_reads: int = 0
+        
+        logger.info("🔗 Miner State Connector initialized - will auto-detect running miner")
+        
+    def _find_state_file(self) -> Optional[str]:
+        """Find the miner state file from possible locations."""
+        # Check primary path first
+        if os.path.exists(self.STATE_FILE):
+            return self.STATE_FILE
+        
+        # Check alternatives
+        for path in self.ALT_PATHS:
+            if os.path.exists(path):
+                return path
+        
+        return None
+    
+    def _is_state_fresh(self, state: Dict) -> bool:
+        """Check if the state file is fresh enough to be from a running miner."""
+        timestamp = state.get('timestamp', 0)
+        if timestamp == 0:
+            # Try last_broadcast as alternative timestamp
+            timestamp = state.get('last_broadcast', 0)
+        
+        if timestamp == 0:
+            return False
+        
+        age = time.time() - timestamp
+        return age < self.FRESHNESS_THRESHOLD
+    
+    def check_connection(self) -> bool:
+        """
+        Check if a miner is currently running and connected.
+        Updates cached quantum state if connected.
+        
+        Returns:
+            True if miner is connected and sending fresh data
+        """
+        now = time.time()
+        
+        # Rate limit reads
+        if (now - self._last_read_time) < self._read_interval:
+            return self._miner_connected
+        
+        self._last_read_time = now
+        
+        try:
+            # Find state file
+            state_file = self._find_state_file()
+            if not state_file:
+                if self._miner_connected:
+                    logger.info("🔗❌ Miner disconnected - state file not found")
+                self._miner_connected = False
+                return False
+            
+            # Read state file
+            with open(state_file, 'r') as f:
+                state = json.load(f)
+            
+            # Check freshness
+            if not self._is_state_fresh(state):
+                if self._miner_connected:
+                    logger.info("🔗⚠️ Miner state stale - last update too old")
+                self._miner_connected = False
+                return False
+            
+            # Update cached values
+            self._update_from_state(state)
+            self._last_state = state
+            self._successful_reads += 1
+            
+            # Log connection if newly connected
+            if not self._miner_connected:
+                self._miner_connected = True
+                self._connection_time = now
+                logger.info(f"🔗✅ MINER CONNECTED! Live quantum state detected")
+                logger.info(f"   Ψ={self.unified_coherence:.3f} | Γ={self.planetary_gamma:.3f} | "
+                          f"Cascade={self.cascade_multiplier:.2f}x | Lighthouse={'🌟' if self.is_lighthouse else '⬜'}")
+            
+            return True
+            
+        except json.JSONDecodeError as e:
+            logger.debug(f"Miner state JSON error: {e}")
+            self._failed_reads += 1
+            return self._miner_connected
+        except Exception as e:
+            logger.debug(f"Miner state read error: {e}")
+            self._failed_reads += 1
+            return self._miner_connected
+    
+    def _update_from_state(self, state: Dict):
+        """Update cached quantum values from miner state."""
+        # Core quantum values
+        self.unified_coherence = float(state.get('unified_coherence', state.get('psi', 0.5)) or 0.5)
+        self.planetary_gamma = float(state.get('planetary_gamma', state.get('gamma', 0.5)) or 0.5)
+        self.cascade_multiplier = float(state.get('cascade_multiplier', state.get('cascade', 1.0)) or 1.0)
+        self.is_lighthouse = bool(state.get('is_lighthouse', state.get('is_optimal_window', False)))
+        
+        # Piano/Rainbow state
+        self.piano_lambda = float(state.get('piano_lambda', state.get('lambda_field', 1.0)) or 1.0)
+        self.piano_coherence = float(state.get('piano_coherence', 0.0) or 0.0)
+        self.rainbow_state = str(state.get('rainbow_state', 'UNKNOWN') or 'UNKNOWN')
+        
+        # Probability/Signal
+        self.probability_edge = float(state.get('probability_edge', 0.0) or 0.0)
+        self.harmonic_signal = str(state.get('harmonic_signal', 'HOLD') or 'HOLD')
+        self.hnc_probability = float(state.get('hnc_probability', 0.5) or 0.5)
+    
+    def get_quantum_context(self) -> Dict[str, Any]:
+        """
+        Get quantum context dict suitable for MinerBrain.run_cycle().
+        
+        Returns:
+            Dict with quantum state from miner (or defaults if not connected)
+        """
+        # Always check connection first
+        self.check_connection()
+        
+        return {
+            'quantum_coherence': self.unified_coherence,
+            'planetary_gamma': self.planetary_gamma,
+            'cascade_multiplier': self.cascade_multiplier,
+            'is_lighthouse': self.is_lighthouse,
+            'piano_lambda': self.piano_lambda,
+            'piano_coherence': self.piano_coherence,
+            'rainbow_state': self.rainbow_state,
+            'probability_edge': self.probability_edge,
+            'harmonic_signal': self.harmonic_signal,
+            'hnc_probability': self.hnc_probability,
+            'miner_connected': self._miner_connected,
+            'signal_confidence': min(0.95, 0.5 + self.probability_edge),
+        }
+    
+    def get_status(self) -> Dict[str, Any]:
+        """Get connector status for display."""
+        return {
+            'connected': self._miner_connected,
+            'connection_time': self._connection_time,
+            'uptime': time.time() - self._connection_time if self._connection_time else 0,
+            'successful_reads': self._successful_reads,
+            'failed_reads': self._failed_reads,
+            'last_state_age': time.time() - self._last_state.get('timestamp', 0) if self._last_state else float('inf'),
+            'state_file': self._state_file,
+        }
+    
+    @property
+    def is_connected(self) -> bool:
+        """Property to check if miner is currently connected."""
+        return self._miner_connected
+
+
+# Global miner connector instance
+MINER_CONNECTOR = MinerStateConnector()
+
+
+# ═══════════════════════════════════════════════════════════════
 # 🧠🌍 ECOSYSTEM BRAIN BRIDGE - UNIFIED INTELLIGENCE HUB
 # ═══════════════════════════════════════════════════════════════
 
@@ -889,13 +1101,19 @@ class EcosystemBrainBridge:
         
         logger.info("🧠🌍 Ecosystem Brain Bridge initialized - AUTONOMOUS MODE (1s cycles)")
         
+        # Reference to global miner connector for auto-detection
+        self._miner_connector = MINER_CONNECTOR
+        
     def run_wisdom_cycle(self, brain: 'MinerBrain', quantum_context: Dict = None) -> Dict[str, Any]:
         """
         Run a full wisdom cycle with bidirectional brain sync.
         
+        Automatically connects to a running miner if available, pulling live
+        quantum state (Γ, cascade, lighthouse) from the shared state file.
+        
         Args:
             brain: MinerBrain instance
-            quantum_context: Optional quantum state from miner optimizer
+            quantum_context: Optional quantum state from miner optimizer (auto-detected if not provided)
         
         Returns:
             Full wisdom result with trading recommendations
@@ -910,18 +1128,36 @@ class EcosystemBrainBridge:
         try:
             logger.info("🧠⚡ Ecosystem Brain Cycle starting...")
             
-            # Build quantum context if not provided
+            # Build quantum context - prefer live miner data if available
             if not quantum_context:
-                brain_state = load_brain_state()
-                quantum_context = {
-                    'quantum_coherence': self._quantum_coherence or 0.5,
-                    'planetary_gamma': self._planetary_gamma or 0.5,
-                    'cascade_multiplier': self._cascade_multiplier or 1.0,
-                    'is_lighthouse': self._is_lighthouse,
-                    'piano_lambda': brain_state.get('piano_lambda') or 1.0,
-                    'harmonic_signal': 'HOLD',
-                    'signal_confidence': 0.5,
-                }
+                # 🔗 AUTO-DETECT: Check if miner is running and get live quantum state
+                miner_context = self._miner_connector.get_quantum_context()
+                
+                if miner_context.get('miner_connected'):
+                    # Live miner data available!
+                    quantum_context = miner_context
+                    
+                    # Update our cached state from live miner
+                    self._quantum_coherence = miner_context['quantum_coherence']
+                    self._planetary_gamma = miner_context['planetary_gamma']
+                    self._cascade_multiplier = miner_context['cascade_multiplier']
+                    self._is_lighthouse = miner_context['is_lighthouse']
+                    
+                    logger.info(f"🔗🌟 Live miner data: Ψ={self._quantum_coherence:.3f} | "
+                              f"Γ={self._planetary_gamma:.3f} | Cascade={self._cascade_multiplier:.2f}x")
+                else:
+                    # Fallback to stored brain state
+                    brain_state = load_brain_state()
+                    quantum_context = {
+                        'quantum_coherence': self._quantum_coherence or 0.5,
+                        'planetary_gamma': self._planetary_gamma or 0.5,
+                        'cascade_multiplier': self._cascade_multiplier or 1.0,
+                        'is_lighthouse': self._is_lighthouse,
+                        'piano_lambda': brain_state.get('piano_lambda') or 1.0,
+                        'harmonic_signal': 'HOLD',
+                        'signal_confidence': 0.5,
+                        'miner_connected': False,
+                    }
             
             # Run brain cycle with quantum context
             result = brain.run_cycle(quantum_context=quantum_context)
@@ -14373,6 +14609,14 @@ class AureonKrakenEcosystem:
                 print(f"   {cycle_icon} Cycle P&L: {curr_sym}{cycle_pnl:+.2f} ({cycle_pnl_pct:+.2f}%)")
                 print(f"   📈 Trades: {self.tracker.total_trades} | Wins: {self.tracker.wins} | WR: {self.tracker.win_rate:.1f}% | Avg Hold: {avg_hold_min:.1f}m")
                 print(f"   🍄 Network Γ: {network_coherence:.2f} {'⚠️ PAUSED' if trading_paused else ''} | WS: {ws_health} ({rt_count})")
+                
+                # 🔗 MINER CONNECTION STATUS
+                miner_status = MINER_CONNECTOR.get_status()
+                if miner_status['connected']:
+                    miner_uptime = miner_status['uptime']
+                    miner_icon = "🌟" if MINER_CONNECTOR.is_lighthouse else "🔗"
+                    print(f"   {miner_icon} Miner: CONNECTED ({miner_uptime:.0f}s) | Γ={MINER_CONNECTOR.planetary_gamma:.3f} | "
+                          f"Ψ={MINER_CONNECTOR.unified_coherence:.3f} | Cascade={MINER_CONNECTOR.cascade_multiplier:.2f}x")
                 
                 # 🌍 GAIA LATTICE DISPLAY - HNC CARRIER WAVE DYNAMICS 🌍
                 # Handle l_state as dict or object

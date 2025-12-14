@@ -4835,8 +4835,14 @@ class QuantumProcessingBrain:
                 'unified_coherence': self.state.unified_coherence,
                 'cascade_multiplier': self.state.cascade_multiplier,
                 'is_optimal_window': self.state.is_optimal_window,
+                'is_lighthouse': self.state.is_optimal_window,  # Alias for ecosystem
                 'planetary_gamma': self.state.planetary_gamma,
+                'gamma': self.state.planetary_gamma,  # Alias for ecosystem
+                'psi': self.state.unified_coherence,  # Alias for ecosystem
+                'cascade': self.state.cascade_multiplier,  # Alias for ecosystem
                 'probability_edge': self.state.probability_edge,
+                'hnc_probability': getattr(self.state, 'hnc_probability', 0.5),
+                'harmonic_signal': getattr(self.state, 'harmonic_signal', 'HOLD'),
                 'learning_rate': self.state.learning_rate,
                 'strategy': self.state.search_strategy,
                 'lambda_field': self.state.lambda_field,
