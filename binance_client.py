@@ -5,7 +5,7 @@ try:
     load_dotenv()
 except Exception:
     pass
-from typing import Dict, Any, Set
+from typing import Dict, Any, Set, List, Optional, Tuple
 
 BINANCE_MAINNET = "https://api.binance.com"
 BINANCE_TESTNET = "https://testnet.binance.vision"
