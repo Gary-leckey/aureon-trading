@@ -30,31 +30,40 @@ if (-not (Get-Command "python" -ErrorAction SilentlyContinue)) {
 # GIT: Pull latest and restore stash
 # ============================================
 Write-Host ""
-Write-Host "📥 Pulling latest code from main..." -ForegroundColor Yellow
+Write-Host "📥 Getting latest code from main..." -ForegroundColor Yellow
 
 try {
-    # Fetch and pull latest
+    # First, stash any local changes (secrets, config)
+    Write-Host "   💾 Saving local changes..." -ForegroundColor Gray
+    $hasChanges = git status --porcelain 2>&1
+    if ($hasChanges) {
+        git stash push -m "auto-stash before pull" 2>&1 | Out-Null
+        Write-Host "   ✅ Local changes stashed" -ForegroundColor Green
+        $didStash = $true
+    } else {
+        Write-Host "   📌 No local changes to stash" -ForegroundColor Gray
+        $didStash = $false
+    }
+    
+    # Fetch and reset to latest main
+    Write-Host "   🔄 Fetching latest from origin..." -ForegroundColor Gray
     git fetch origin main 2>&1 | Out-Null
-    $pullResult = git pull origin main 2>&1
+    
+    # Reset to origin/main to get clean latest
+    git reset --hard origin/main 2>&1 | Out-Null
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "   ✅ Code updated successfully" -ForegroundColor Green
-        if ($pullResult -match "Already up to date") {
-            Write-Host "   📌 Already up to date" -ForegroundColor Gray
-        } else {
-            Write-Host "   📦 New changes pulled" -ForegroundColor Cyan
-        }
+        Write-Host "   ✅ Code updated to latest main" -ForegroundColor Green
     } else {
-        Write-Warning "   ⚠️ Pull had issues (may have local changes)"
-        Write-Host "   Attempting to continue..." -ForegroundColor Gray
+        Write-Warning "   ⚠️ Reset had issues"
     }
 } catch {
-    Write-Warning "   ⚠️ Could not pull: $_"
+    Write-Warning "   ⚠️ Could not update: $_"
 }
 
-# Apply latest stash (contains secrets/local config)
+# Restore stashed changes (contains secrets/local config)
 Write-Host ""
-Write-Host "🔐 Restoring local configuration from stash..." -ForegroundColor Yellow
+Write-Host "🔐 Restoring local configuration..." -ForegroundColor Yellow
 
 try {
     # Check if there are any stashes
