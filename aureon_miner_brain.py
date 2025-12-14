@@ -4692,29 +4692,30 @@ class MinerBrain:
         print("   \"Your feet are for dancing, your brain is for cutting out the BS!\"")
         print("🧠" * 35 + "\n")
         
-        # Store quantum context for use throughout cycle
-        self._quantum_context = quantum_context or {}
+        # Store quantum context for use throughout cycle; force dict for safety
+        self._quantum_context = quantum_context if isinstance(quantum_context, dict) else {}
+        qc_ctx = self._quantum_context
         
         # ═══════════════════════════════════════════════════════════
         # PHASE -1: QUANTUM BRAIN INTEGRATION (if available)
         # ═══════════════════════════════════════════════════════════
-        if quantum_context:
+        if qc_ctx:
             print("🔮" * 35)
             print("   PHASE -1: QUANTUM BRAIN COMMUNION")
             print("🔮" * 35 + "\n")
             
             print("🔮 **QUANTUM BRAIN SPEAKS**")
-            print(f"   Unified Coherence (Ψ): {(quantum_context.get('quantum_coherence') or 0.5):.3f}")
-            print(f"   Planetary Gamma (Γ): {(quantum_context.get('planetary_gamma') or 0.5):.3f}")
-            print(f"   Probability Edge: {(quantum_context.get('probability_edge') or 0.0):.3f}")
-            print(f"   Cascade Multiplier: {(quantum_context.get('cascade_multiplier') or 1.0):.2f}x")
-            print(f"   Lighthouse Window: {'🌟 ACTIVE' if quantum_context.get('is_lighthouse') else '⬜ Inactive'}")
-            print(f"   Piano Lambda (Λ): {(quantum_context.get('piano_lambda') or 1.0):.3f}")
-            print(f"   Harmonic Signal: {quantum_context.get('harmonic_signal') or 'N/A'}")
+            print(f"   Unified Coherence (Ψ): {(qc_ctx.get('quantum_coherence') or 0.5):.3f}")
+            print(f"   Planetary Gamma (Γ): {(qc_ctx.get('planetary_gamma') or 0.5):.3f}")
+            print(f"   Probability Edge: {(qc_ctx.get('probability_edge') or 0.0):.3f}")
+            print(f"   Cascade Multiplier: {(qc_ctx.get('cascade_multiplier') or 1.0):.2f}x")
+            print(f"   Lighthouse Window: {'🌟 ACTIVE' if qc_ctx.get('is_lighthouse') else '⬜ Inactive'}")
+            print(f"   Piano Lambda (Λ): {(qc_ctx.get('piano_lambda') or 1.0):.3f}")
+            print(f"   Harmonic Signal: {qc_ctx.get('harmonic_signal') or 'N/A'}")
             
             # Interpret quantum state for wisdom consideration
-            qc = quantum_context.get('quantum_coherence', 0.5)
-            gamma = quantum_context.get('planetary_gamma', 0.5)
+            qc = qc_ctx.get('quantum_coherence', 0.5)
+            gamma = qc_ctx.get('planetary_gamma', 0.5)
             if qc > 0.7 and gamma > 0.6:
                 print("\n   🌟 QUANTUM INTERPRETATION: High coherence + strong planetary alignment")
                 print("      → The cosmos is synchronized. Bold action favored.")
@@ -4728,39 +4729,38 @@ class MinerBrain:
         # ═══════════════════════════════════════════════════════════
         # PHASE -0.5: UNITY AWARENESS (Thought Bus Integration)
         # ═══════════════════════════════════════════════════════════
-        if self.external_context:
-            print("\n" + "🔗" * 35)
-            print("   PHASE -0.5: UNITY AWARENESS (THOUGHT BUS)")
-            print("🔗" * 35 + "\n")
-            
-            print("🔗 **UNITY CONSCIOUSNESS DETECTED**")
-            
-            # Check each external context item (values can be None even if key exists)
-            trade = self.external_context.get('last_trade')
-            if trade and isinstance(trade, dict):
-                action = trade.get('action', 'UNKNOWN') or 'UNKNOWN'
-                symbol = trade.get('symbol', 'UNKNOWN') or 'UNKNOWN'
-                pnl = trade.get('pnl') or 0.0
-                try:
-                    print(f"   🛒 LAST TRADE: {action} {symbol} (PnL: ${float(pnl):.2f})")
-                except (TypeError, ValueError):
-                    print(f"   🛒 LAST TRADE: {action} {symbol} (PnL: $0.00)")
+        # Unity awareness (Thought Bus) — fully defensive to avoid NoneType errors
+        try:
+            ctx = self.external_context if isinstance(self.external_context, dict) else {}
+            if ctx:
+                print("\n" + "🔗" * 35)
+                print("   PHASE -0.5: UNITY AWARENESS (THOUGHT BUS)")
+                print("🔗" * 35 + "\n")
                 
-            nexus = self.external_context.get('nexus_state')
-            if nexus and isinstance(nexus, dict):
-                state = nexus.get('state', 'UNKNOWN') or 'UNKNOWN'
-                print(f"   🌐 NEXUS STATE: {state}")
+                print("🔗 **UNITY CONSCIOUSNESS DETECTED**")
                 
-            cmd = self.external_context.get('bridge_command')
-            if cmd and isinstance(cmd, dict):
-                print(f"   🌉 BRIDGE COMMAND: {cmd.get('command', 'UNKNOWN') or 'UNKNOWN'}")
+                trade = ctx.get('last_trade') if isinstance(ctx, dict) else None
+                if isinstance(trade, dict):
+                    action = trade.get('action') or 'UNKNOWN'
+                    symbol = trade.get('symbol') or 'UNKNOWN'
+                    pnl = trade.get('pnl') or 0.0
+                    try:
+                        print(f"   🛒 LAST TRADE: {action} {symbol} (PnL: ${float(pnl):.2f})")
+                    except Exception:
+                        print(f"   🛒 LAST TRADE: {action} {symbol} (PnL: $0.00)")
                 
-            # Clear transient events so we don't react to them forever
-            # But keep stateful things like nexus_state
-            if 'last_trade' in self.external_context:
-                # We acknowledge it, but maybe keep it for history? 
-                # For now, let's just keep it until overwritten.
-                pass
+                nexus = ctx.get('nexus_state') if isinstance(ctx, dict) else None
+                if isinstance(nexus, dict):
+                    state = nexus.get('state') or 'UNKNOWN'
+                    print(f"   🌐 NEXUS STATE: {state}")
+                
+                cmd = ctx.get('bridge_command') if isinstance(ctx, dict) else None
+                if isinstance(cmd, dict):
+                    print(f"   🌉 BRIDGE COMMAND: {cmd.get('command') or 'UNKNOWN'}")
+        except Exception as e:
+            import traceback
+            print(f"   ⚠️ Unity context decode failed: {e}")
+            print(traceback.format_exc())
 
         # ═══════════════════════════════════════════════════════════
         # PHASE 0: LIVE MARKET PULSE
