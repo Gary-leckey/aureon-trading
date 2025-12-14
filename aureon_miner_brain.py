@@ -1193,8 +1193,16 @@ class LiveTickerStream:
         """Get overall market pulse from all tickers."""
         snapshot = self.get_live_snapshot()
         
+        # Always return a complete dict with all expected keys
         if not snapshot['tickers']:
-            return {'pulse': 'UNKNOWN', 'strength': 0}
+            return {
+                'pulse': 'UNKNOWN',
+                'strength': 0,
+                'avg_change_24h': 0.0,
+                'fear_greed': snapshot.get('sentiment', {}).get('fear_greed', 50),
+                'btc_price': 0.0,
+                'snapshot': snapshot
+            }
         
         # Calculate average 24h change
         changes = [t['change_24h'] for t in snapshot['tickers'].values()]
@@ -1217,8 +1225,8 @@ class LiveTickerStream:
         return {
             'pulse': pulse,
             'avg_change_24h': avg_change,
-            'fear_greed': snapshot['sentiment'].get('fear_greed', 50),
-            'btc_price': snapshot['tickers'].get('BTC', {}).get('price', 0),
+            'fear_greed': snapshot.get('sentiment', {}).get('fear_greed', 50),
+            'btc_price': snapshot.get('tickers', {}).get('BTC', {}).get('price', 0),
             'snapshot': snapshot
         }
 
@@ -4727,20 +4735,21 @@ class MinerBrain:
             
             print("🔗 **UNITY CONSCIOUSNESS DETECTED**")
             
-            if 'last_trade' in self.external_context:
-                trade = self.external_context['last_trade']
+            # Check each external context item (values can be None even if key exists)
+            trade = self.external_context.get('last_trade')
+            if trade:
                 action = trade.get('action', 'UNKNOWN')
                 symbol = trade.get('symbol', 'UNKNOWN')
                 pnl = trade.get('pnl', 0.0)
                 print(f"   🛒 LAST TRADE: {action} {symbol} (PnL: ${pnl:.2f})")
                 
-            if 'nexus_state' in self.external_context:
-                nexus = self.external_context['nexus_state']
+            nexus = self.external_context.get('nexus_state')
+            if nexus:
                 state = nexus.get('state', 'UNKNOWN')
                 print(f"   🌐 NEXUS STATE: {state}")
                 
-            if 'bridge_command' in self.external_context:
-                cmd = self.external_context['bridge_command']
+            cmd = self.external_context.get('bridge_command')
+            if cmd:
                 print(f"   🌉 BRIDGE COMMAND: {cmd.get('command', 'UNKNOWN')}")
                 
             # Clear transient events so we don't react to them forever
@@ -4759,8 +4768,8 @@ class MinerBrain:
         
         pulse = self.live_stream.get_market_pulse()
         print(f"🔴 **LIVE MARKET PULSE** ({len(pulse.get('snapshot', {}).get('tickers', {}))} assets tracked)")
-        print(f"   Pulse: {pulse['pulse']}")
-        print(f"   Avg 24h Change: {pulse['avg_change_24h']:+.2f}%")
+        print(f"   Pulse: {pulse.get('pulse', 'UNKNOWN')}")
+        print(f"   Avg 24h Change: {pulse.get('avg_change_24h', 0):+.2f}%")
         print(f"   Fear & Greed: {pulse.get('fear_greed', 'N/A')}")
         print(f"   BTC: ${pulse.get('btc_price', 0):,.2f}")
         
