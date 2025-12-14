@@ -672,8 +672,8 @@ CONFIG = {
     # General
     'SLIPPAGE_PCT': 0.0020,         # 0.20% estimated slippage per trade (increased for safety)
     'SPREAD_COST_PCT': 0.0010,      # 0.10% estimated spread cost (increased for safety)
-    'TAKE_PROFIT_PCT': 1.8,         # 1.8% profit target (was 1.5% - need more room to cover fees + slippage)
-    'STOP_LOSS_PCT': 1.5,           # 1.5% stop loss (was 0.8% - give trades room to breathe)
+    'TAKE_PROFIT_PCT': 1.8,         # FALLBACK: 1.8% (penny profit uses dollar thresholds instead)
+    'STOP_LOSS_PCT': 1.5,           # FALLBACK: 1.5% (penny profit uses dollar thresholds instead)
     'MAX_POSITIONS': 30,            # 🔥 BEAST MODE: 30 positions - TRADE EVERYTHING!
     'MIN_TRADE_USD': 1.44,          # Minimum trade notional in base currency
     'BINANCE_MIN_NOTIONAL': 1.0,    # Refuse sells if notional < $1 to avoid LOT_SIZE noise
@@ -699,10 +699,12 @@ CONFIG = {
     'PREFER_LIMIT_ORDERS': os.getenv('PREFER_LIMIT_ORDERS', '1') == '1',        # 💰 USE LIMIT ORDERS for maker fees (0.1% vs 0.2%!)
     'USE_TRAILING_STOP_ORDERS': os.getenv('USE_TRAILING_STOP_ORDERS', '0') == '1',  # Native trailing stops
     
-    # 💰 PROFIT GATES - Don't exit unless profit overcomes fees!
-    'MIN_NET_PROFIT_PCT': 0.008,    # 0.8% minimum NET profit required to exit (overcomes ~0.4% round-trip fees)
-    'SERVER_SIDE_TP_PCT': 1.8,              # Take profit % for server-side orders
-    'SERVER_SIDE_SL_PCT': 1.5,              # Stop loss % for server-side orders
+    # 💰 PROFIT GATES - PENNY PROFIT MODE!
+    # Target: +$0.01 net profit per trade. Dollar thresholds loaded from penny_profit_config.json
+    # These percentages are FALLBACK only when penny profit config not available
+    'MIN_NET_PROFIT_PCT': 0.008,    # 0.8% fallback if penny config missing
+    'SERVER_SIDE_TP_PCT': 1.8,              # Take profit % for server-side orders (fallback)
+    'SERVER_SIDE_SL_PCT': 1.5,              # Stop loss % for server-side orders (fallback)
     'SERVER_TRAILING_PCT': 2.0,             # Trailing stop distance % for native trailing
     
     # Dynamic Portfolio Rebalancing
@@ -13396,33 +13398,50 @@ class AureonKrakenEcosystem:
             if prob_exit_triggered:
                 continue
 
-            # Check TP
-            if change_pct >= target_tp:
-                to_close.append((symbol, "TP", change_pct, current_price))
-            # Check SL
-            elif change_pct <= -target_sl:
-                to_close.append((symbol, "SL", change_pct, current_price))
-            # 🌾 HARVEST CHECK: Actively look for net profit opportunities
-            # Even if we haven't hit TP%, check if we're net profitable after fees
-            elif change_pct > 0 and pos.cycles >= min_hold:  # Use learned min_hold
-                # Calculate actual net profit
-                exit_value = pos.quantity * current_price
-                exit_fee = exit_value * get_platform_fee(pos.exchange, 'taker')
-                slippage_cost = exit_value * CONFIG['SLIPPAGE_PCT']
-                spread_cost = exit_value * CONFIG['SPREAD_COST_PCT']
-                
-                total_expenses = pos.entry_fee + exit_fee + slippage_cost + spread_cost
-                gross_pnl = exit_value - pos.entry_value
-                net_pnl = gross_pnl - total_expenses
-                
-                # 💰 PROFIT GATE: Use CONFIG minimum NET profit!
-                min_profit = pos.entry_value * CONFIG['MIN_NET_PROFIT_PCT']
-                
-                # 🌾 If we're REALLY net profitable (not just breakeven), harvest it!
-                if net_pnl >= min_profit:
-                    net_pnl_pct = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
-                    print(f"   🌾 HARVEST OPPORTUNITY: {symbol} net profit ${net_pnl:.4f} ({net_pnl_pct:.2f}%)")
-                    to_close.append((symbol, "HARVEST", change_pct, current_price))
+            # ═══════════════════════════════════════════════════════════════
+            # 💰 PENNY PROFIT TP/SL - DOLLAR-BASED EXIT LOGIC 💰
+            # ═══════════════════════════════════════════════════════════════
+            # Calculate gross P&L for penny profit check
+            exit_value = pos.quantity * current_price
+            gross_pnl = exit_value - pos.entry_value
+            
+            # Check penny profit thresholds
+            penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl)
+            penny_threshold = penny_check.get('threshold')
+            
+            if penny_threshold:
+                # 💰 PENNY PROFIT MODE - Use dollar thresholds
+                if penny_check['should_tp']:
+                    # Hit penny profit target!
+                    to_close.append((symbol, "TP", change_pct, current_price))
+                elif penny_check['should_sl']:
+                    # Hit penny stop loss
+                    to_close.append((symbol, "SL", change_pct, current_price))
+                elif gross_pnl > 0 and pos.cycles >= min_hold:
+                    # Check if we're at penny harvest level
+                    min_gross_win = penny_threshold.get('win_gte', 0.01)
+                    if gross_pnl >= min_gross_win:
+                        print(f"   🌾 PENNY HARVEST: {symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f}")
+                        to_close.append((symbol, "HARVEST", change_pct, current_price))
+            else:
+                # Fallback to percentage-based TP/SL
+                if change_pct >= target_tp:
+                    to_close.append((symbol, "TP", change_pct, current_price))
+                elif change_pct <= -target_sl:
+                    to_close.append((symbol, "SL", change_pct, current_price))
+                elif change_pct > 0 and pos.cycles >= min_hold:
+                    # Legacy harvest check
+                    exit_fee = exit_value * get_platform_fee(pos.exchange, 'taker')
+                    slippage_cost = exit_value * CONFIG['SLIPPAGE_PCT']
+                    spread_cost = exit_value * CONFIG['SPREAD_COST_PCT']
+                    total_expenses = pos.entry_fee + exit_fee + slippage_cost + spread_cost
+                    net_pnl = gross_pnl - total_expenses
+                    min_profit = pos.entry_value * CONFIG['MIN_NET_PROFIT_PCT']
+                    
+                    if net_pnl >= min_profit:
+                        net_pnl_pct = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
+                        print(f"   🌾 HARVEST: {symbol} net profit ${net_pnl:.4f} ({net_pnl_pct:.2f}%)")
+                        to_close.append((symbol, "HARVEST", change_pct, current_price))
                 
         for symbol, reason, pct, price in to_close:
             self.close_position(symbol, reason, pct, price)
