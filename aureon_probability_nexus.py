@@ -17,6 +17,23 @@ TARGET: 80%+ WIN RATE ON HIGH-CONFIDENCE SETUPS
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
+import sys
+import os
+
+# ═══════════════════════════════════════════════════════════════════════════
+# WINDOWS UTF-8 FIX - MUST BE BEFORE OTHER IMPORTS
+# ═══════════════════════════════════════════════════════════════════════════
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    try:
+        import io
+        if hasattr(sys.stdout, 'buffer') and not isinstance(sys.stdout, io.TextIOWrapper):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        if hasattr(sys.stderr, 'buffer') and not isinstance(sys.stderr, io.TextIOWrapper):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 import json
 import math
 import random

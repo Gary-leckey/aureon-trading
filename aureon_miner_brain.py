@@ -43,12 +43,14 @@ from collections import deque
 # WINDOWS UTF-8 FIX - Must be at top before any logging
 # ═══════════════════════════════════════════════════════════════════════════
 if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
     try:
         import io
         # Force UTF-8 encoding for stdout/stderr to support emojis
-        if hasattr(sys.stdout, 'buffer'):
+        # Check if not already wrapped to avoid double-wrapping
+        if hasattr(sys.stdout, 'buffer') and not isinstance(sys.stdout, io.TextIOWrapper):
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-        if hasattr(sys.stderr, 'buffer'):
+        if hasattr(sys.stderr, 'buffer') and not isinstance(sys.stderr, io.TextIOWrapper):
             sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
     except Exception:
         pass  # Fall back to default if reconfiguration fails
@@ -61,15 +63,44 @@ except ImportError:
     CoinbaseHistoricalFeed = None
     GlobalFinancialFeed = None
 
-# Configure Logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("miner_brain.log"),
-        logging.StreamHandler()
-    ]
-)
+# ═══════════════════════════════════════════════════════════════════════════
+# CONFIGURE LOGGING WITH UTF-8 HANDLER (Windows fix)
+# ═══════════════════════════════════════════════════════════════════════════
+class UTF8StreamHandler(logging.StreamHandler):
+    """Custom handler that handles Unicode properly on Windows"""
+    def __init__(self):
+        super().__init__(stream=sys.stdout)
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            self.stream.write(msg + self.terminator)
+            self.flush()
+        except UnicodeEncodeError:
+            msg = self.format(record).encode('utf-8', errors='replace').decode('utf-8')
+            self.stream.write(msg + self.terminator)
+            self.flush()
+        except Exception:
+            self.handleError(record)
+
+# Configure Logging with UTF-8 support
+if sys.platform == 'win32':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler("miner_brain.log", encoding='utf-8'),
+            UTF8StreamHandler()
+        ]
+    )
+else:
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler("miner_brain.log"),
+            logging.StreamHandler()
+        ]
+    )
 logger = logging.getLogger("MinerBrain")
 
 PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio

@@ -16,25 +16,15 @@ Gary Leckey & GitHub Copilot | December 2025
 "From trading to mining - one unified system"
 """
 
-import hashlib
-import struct
-import socket
-import json
-import threading
-import time
-import logging
-import os
+# ═══════════════════════════════════════════════════════════════════════════
+# WINDOWS UTF-8 FIX - MUST BE BEFORE ALL OTHER IMPORTS
+# ═══════════════════════════════════════════════════════════════════════════
 import sys
-import tempfile
-from datetime import datetime
-from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, Callable, List, Tuple
-from collections import deque
+import os
 
-# ═══════════════════════════════════════════════════════════════════════════
-# WINDOWS UTF-8 FIX - Must be at top before any logging
-# ═══════════════════════════════════════════════════════════════════════════
 if sys.platform == 'win32':
+    # Set environment variable for Python's default encoding
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
     try:
         import io
         # Force UTF-8 encoding for stdout/stderr to support emojis
@@ -45,12 +35,45 @@ if sys.platform == 'win32':
     except Exception:
         pass  # Fall back to default if reconfiguration fails
 
+import hashlib
+import struct
+import socket
+import json
+import threading
+import time
+import logging
+import tempfile
+from datetime import datetime
+from dataclasses import dataclass, field
+from typing import Optional, Dict, Any, Callable, List, Tuple
+from collections import deque
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CONFIGURE LOGGING WITH UTF-8 HANDLER (Windows fix)
+# ═══════════════════════════════════════════════════════════════════════════
+if sys.platform == 'win32':
+    # Create a custom handler that uses UTF-8
+    class UTF8StreamHandler(logging.StreamHandler):
+        def __init__(self):
+            super().__init__(stream=sys.stdout)
+        def emit(self, record):
+            try:
+                msg = self.format(record)
+                self.stream.write(msg + self.terminator)
+                self.flush()
+            except UnicodeEncodeError:
+                # Replace unencodable characters
+                msg = self.format(record).encode('utf-8', errors='replace').decode('utf-8')
+                self.stream.write(msg + self.terminator)
+                self.flush()
+            except Exception:
+                self.handleError(record)
+
 # Import Miner Brain - Unified Wisdom Cognition Engine
 try:
     from aureon_miner_brain import MinerBrain
     BRAIN_AVAILABLE = True
 except ImportError:
-    logger.warning("Could not import aureon_miner_brain. Brain functions disabled.")
     MinerBrain = None
     BRAIN_AVAILABLE = False
 
@@ -61,7 +84,23 @@ try:
 except ImportError:
     pass
 
+# Configure logger with UTF-8 support on Windows
 logger = logging.getLogger(__name__)
+if sys.platform == 'win32':
+    # Remove any existing handlers
+    logger.handlers = []
+    # Add UTF-8 safe handler
+    handler = UTF8StreamHandler()
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    # Also fix the root logger
+    root_logger = logging.getLogger()
+    root_logger.handlers = []
+    root_handler = UTF8StreamHandler()
+    root_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    root_logger.addHandler(root_handler)
+    root_logger.setLevel(logging.INFO)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # CONSTANTS
