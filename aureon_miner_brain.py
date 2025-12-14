@@ -39,6 +39,13 @@ from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict, field
 from collections import deque
 
+# Import Thought Bus for Unity
+try:
+    from aureon_thought_bus import ThoughtBus, Thought
+except ImportError:
+    ThoughtBus = None
+    Thought = None
+
 # ═══════════════════════════════════════════════════════════════════════════
 # WINDOWS UTF-8 FIX - Must be at top before any logging
 # ═══════════════════════════════════════════════════════════════════════════
@@ -4543,7 +4550,7 @@ class MinerBrain:
     Wires the brain into every system.
     """
     
-    def __init__(self):
+    def __init__(self, thought_bus=None):
         # Initialize components
         self.miner = WebKnowledgeMiner()
         self.cortex = CoinbaseCortex()
@@ -4552,6 +4559,18 @@ class MinerBrain:
         self.council = TruthCouncil()
         self.narrator = NarrativeEngine()
         self.memory = MemoryCore()
+        
+        # Unity Connection
+        self.bus = thought_bus
+        self.external_context = {
+            'last_trade': None,
+            'nexus_state': None,
+            'bridge_command': None,
+            'market_pulse': None
+        }
+        
+        if self.bus and ThoughtBus:
+            self._connect_to_unity()
         
         # Cognitive Circle Components
         self.cognitive = CognitiveCircle()
@@ -4587,6 +4606,37 @@ class MinerBrain:
         
         self.latest_prediction = None
         self.latest_analysis = None
+
+    def _connect_to_unity(self):
+        """Connect to the Thought Bus to hear other parts of the system."""
+        if not self.bus:
+            return
+            
+        logger.info("🧠 Brain connecting to Thought Bus for Unity...")
+        
+        # Subscribe to everything relevant
+        self.bus.subscribe("execution.*", self._on_execution_thought)
+        self.bus.subscribe("nexus.*", self._on_nexus_thought)
+        self.bus.subscribe("bridge.*", self._on_bridge_thought)
+        self.bus.subscribe("market.*", self._on_market_thought)
+        
+    def _on_execution_thought(self, thought):
+        """Hear what the hands are doing (trading)."""
+        self.external_context['last_trade'] = thought.payload
+        logger.info(f"🧠 Brain heard execution: {thought.topic}")
+        
+    def _on_nexus_thought(self, thought):
+        """Hear what the nervous system feels (coherence)."""
+        self.external_context['nexus_state'] = thought.payload
+        
+    def _on_bridge_thought(self, thought):
+        """Hear commands from the bridge."""
+        self.external_context['bridge_command'] = thought.payload
+        logger.info(f"🧠 Brain heard bridge command: {thought.topic}")
+        
+    def _on_market_thought(self, thought):
+        """Hear raw market data."""
+        self.external_context['market_pulse'] = thought.payload
 
     def run_cycle(self, quantum_context: dict = None):
         """

@@ -78,6 +78,13 @@ from dataclasses import dataclass, field, asdict
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+# Import Thought Bus for Unity
+try:
+    from aureon_thought_bus import ThoughtBus, Thought
+except ImportError:
+    ThoughtBus = None
+    Thought = None
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # IMPORTS FROM OUR MODULES
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -177,6 +184,7 @@ class NexusBus:
         self.states: Dict[str, ModuleState] = {}
         self.history: deque = deque(maxlen=1000)
         self._lock = threading.Lock()
+        self.thought_bus = None  # Will be injected by main system
     
     def publish(self, state: ModuleState):
         """Publish state from a module"""
@@ -187,6 +195,17 @@ class NexusBus:
                 "module": state.module_name,
                 "state": asdict(state)
             })
+            
+        # 🧠 UNITY: Publish to Thought Bus if connected
+        if self.thought_bus and Thought:
+            try:
+                self.thought_bus.publish(Thought(
+                    source=f"nexus.{state.module_name}",
+                    topic=f"nexus.state.{state.module_name}",
+                    payload=asdict(state)
+                ))
+            except Exception as e:
+                logger.warning(f"Failed to publish thought: {e}")
     
     def get_state(self, module_name: str) -> Optional[ModuleState]:
         """Get current state of a module"""

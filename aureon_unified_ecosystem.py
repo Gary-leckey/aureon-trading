@@ -56,6 +56,16 @@ import asyncio
 import tempfile
 import logging
 
+# 🧠 THOUGHT BUS - UNITY CONSCIOUSNESS 🧠
+try:
+    from aureon_thought_bus import ThoughtBus, Thought
+    THOUGHT_BUS = ThoughtBus(persist_path="thoughts.jsonl")
+    THOUGHT_BUS_AVAILABLE = True
+except ImportError:
+    THOUGHT_BUS = None
+    THOUGHT_BUS_AVAILABLE = False
+    print("⚠️  Thought Bus not available - Brain running in isolation")
+
 # Custom StreamHandler that forces UTF-8 encoding on Windows
 class SafeStreamHandler(logging.StreamHandler):
     def __init__(self, stream=None):
@@ -303,6 +313,10 @@ except ImportError as e:
 try:
     from aureon_nexus import NexusBus, MasterEquation, QueenHive, AureonNexus, NEXUS as NEXUS_BUS
     NEXUS_AVAILABLE = True
+    # 🧠 UNITY: Connect Nexus to Thought Bus
+    if NEXUS_BUS and THOUGHT_BUS_AVAILABLE:
+        NEXUS_BUS.thought_bus = THOUGHT_BUS
+        print("   🧠 Nexus connected to Thought Bus")
 except ImportError as e:
     NEXUS_AVAILABLE = False
     NEXUS_BUS = None
@@ -9187,8 +9201,12 @@ class AureonKrakenEcosystem:
             
         # 🧠 MINER BRAIN - COGNITIVE INTELLIGENCE 🧠
         if BRAIN_AVAILABLE:
-            self.brain = MinerBrain()
-            print("   🧠 Miner Brain initialized (Cognitive Circle Active)")
+            if THOUGHT_BUS_AVAILABLE:
+                self.brain = MinerBrain(thought_bus=THOUGHT_BUS)
+                print("   🧠 Miner Brain initialized (Connected to Thought Bus)")
+            else:
+                self.brain = MinerBrain()
+                print("   🧠 Miner Brain initialized (Cognitive Circle Active)")
         else:
             self.brain = None
         
@@ -11170,7 +11188,23 @@ class AureonKrakenEcosystem:
         
         # 🔮 MATRIX EXIT: Probability matrix says SELL - allow if profitable
         if reason in ["MATRIX_SELL", "MATRIX_FORCE"]:
-            if gross_pnl >= 0:
+            # Enforce Penny Profit even for Matrix exits (unless FORCE)
+            if penny_threshold:
+                min_gross_win = penny_threshold.get('win_gte', 0.01)
+                if gross_pnl >= min_gross_win:
+                    print(f"   🔮 MATRIX EXIT (PENNY SECURED): {pos.symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f}")
+                    return True
+                elif reason == "MATRIX_FORCE":
+                    # Force exit allows small loss if absolutely necessary
+                    if gross_pnl > -pos.entry_value * 0.01:
+                        print(f"   🚨 MATRIX FORCE: {pos.symbol} small loss ${gross_pnl:.4f}")
+                        return True
+                else:
+                    print(f"   🛑 HOLDING {pos.symbol}: Matrix signal ignored - Penny Profit not met (${gross_pnl:.4f} < ${min_gross_win:.4f})")
+                    return False
+            
+            # Fallback if penny profit not enabled
+            elif gross_pnl >= 0:
                 print(f"   🔮 MATRIX EXIT: {pos.symbol} gross ${gross_pnl:.4f}")
                 return True
             elif reason == "MATRIX_FORCE" and gross_pnl > -pos.entry_value * 0.01:
@@ -13207,6 +13241,26 @@ class AureonKrakenEcosystem:
             cost_tracker.set_entry_price(symbol, price, quantity, exchange, entry_fee)
         except Exception as e:
             logger.warning(f"Failed to log cost basis for {symbol}: {e}")
+            
+        # 🧠 PUBLISH THOUGHT: TRADE OPENED 🧠
+        if THOUGHT_BUS_AVAILABLE and THOUGHT_BUS:
+            try:
+                THOUGHT_BUS.publish(Thought(
+                    source="unified_ecosystem",
+                    topic="execution.order.open",
+                    payload={
+                        "symbol": symbol,
+                        "side": "BUY",
+                        "price": price,
+                        "quantity": quantity,
+                        "value": pos_size,
+                        "exchange": exchange,
+                        "coherence": opp.get('coherence', 0),
+                        "score": opp.get('score', 0)
+                    }
+                ))
+            except Exception as e:
+                logger.warning(f"Failed to publish open thought: {e}")
         
         # 🚀 PLACE SERVER-SIDE TP/SL ORDERS (Kraken & Alpaca - executes even if bot offline!)
         if CONFIG.get('USE_SERVER_SIDE_ORDERS', True) and exchange.lower() in ['kraken', 'alpaca'] and not self.dry_run:
@@ -13490,7 +13544,26 @@ class AureonKrakenEcosystem:
                         gross_pnl = exit_value - pos.entry_value
                         net_pnl = gross_pnl - total_fees
                         
-                        if net_pnl >= 0:  # At least breakeven
+                        # 💰 PENNY PROFIT CHECK FOR MATRIX EXITS
+                        penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl)
+                        penny_threshold = penny_check.get('threshold')
+                        
+                        if penny_threshold:
+                            min_gross_win = penny_threshold.get('win_gte', 0.01)
+                            if gross_pnl >= min_gross_win:
+                                print(f"   🔮 MATRIX EXIT (PENNY SECURED): {symbol} {prob_action} (prob={prob_probability:.0%}, conf={prob_confidence:.0%}) Gross: ${gross_pnl:.4f} >= ${min_gross_win:.4f}")
+                                to_close.append((symbol, "MATRIX_SELL", change_pct, current_price))
+                                prob_exit_triggered = True
+                            elif prob_action == 'STRONG SELL' and prob_confidence >= 0.7 and gross_pnl > -pos.entry_value * 0.01:
+                                # Allow small loss (<1%) on STRONG SELL signals only
+                                print(f"   🚨 MATRIX FORCE EXIT: {symbol} STRONG SELL (conf={prob_confidence:.0%}) - Small loss ${net_pnl:.2f}")
+                                to_close.append((symbol, "MATRIX_FORCE", change_pct, current_price))
+                                prob_exit_triggered = True
+                            else:
+                                print(f"   🛑 HOLDING {symbol}: Matrix signal ignored - Penny Profit not met (${gross_pnl:.4f} < ${min_gross_win:.4f})")
+                        
+                        # Fallback if penny profit not enabled
+                        elif net_pnl >= 0:  # At least breakeven
                             print(f"   🔮 MATRIX EXIT: {symbol} {prob_action} (prob={prob_probability:.0%}, conf={prob_confidence:.0%}) Net P&L: ${net_pnl:.2f}")
                             to_close.append((symbol, "MATRIX_SELL", change_pct, current_price))
                             prob_exit_triggered = True
@@ -13751,6 +13824,22 @@ class AureonKrakenEcosystem:
                     platform_timestamp=exit_time,
                 )
                 logger.info(f"Matrix outcome recorded: {symbol} PnL={net_pnl:.2f} reason={reason}")
+                
+                # 🧠 PUBLISH THOUGHT: TRADE CLOSED 🧠
+                if THOUGHT_BUS_AVAILABLE and THOUGHT_BUS:
+                    THOUGHT_BUS.publish(Thought(
+                        source="unified_ecosystem",
+                        topic="execution.order.close",
+                        payload={
+                            "symbol": symbol,
+                            "side": "SELL",
+                            "price": price,
+                            "quantity": pos.quantity,
+                            "pnl": net_pnl,
+                            "reason": reason,
+                            "hold_time_min": hold_time_min
+                        }
+                    ))
                 
                 # 🔮 CONTINUOUS LEARNING: Validate prediction vs actual outcome
                 # This is the core feedback loop that improves forecast accuracy
