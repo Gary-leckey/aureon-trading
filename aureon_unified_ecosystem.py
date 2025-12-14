@@ -413,6 +413,86 @@ except ImportError:
     print("⚠️  Knowledge Base module not available")
 
 # ═══════════════════════════════════════════════════════════════
+# 💰 PENNY PROFIT ENGINE - DOLLAR-BASED EXIT THRESHOLDS 💰
+# ═══════════════════════════════════════════════════════════════
+PENNY_PROFIT_CONFIG = {}  # Will hold loaded thresholds
+PENNY_PROFIT_ENABLED = False
+
+def load_penny_profit_config():
+    """Load penny profit thresholds from JSON config"""
+    global PENNY_PROFIT_CONFIG, PENNY_PROFIT_ENABLED
+    config_path = os.path.join(ROOT_DIR, 'penny_profit_config.json')
+    
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r') as f:
+                PENNY_PROFIT_CONFIG = json.load(f)
+            PENNY_PROFIT_ENABLED = True
+            print(f"💰 Penny Profit Engine loaded - Target: +${PENNY_PROFIT_CONFIG.get('target_net_win', 0.01):.2f} net per trade")
+        except Exception as e:
+            print(f"⚠️  Failed to load penny profit config: {e}")
+            PENNY_PROFIT_ENABLED = False
+    else:
+        print("⚠️  Penny profit config not found - using percentage-based exits")
+
+def get_penny_threshold(exchange: str, trade_size: float) -> dict:
+    """Get penny profit thresholds for a given exchange and trade size.
+    
+    Returns dict with: cost, win_gte (TP threshold), stop_lte (SL threshold)
+    """
+    if not PENNY_PROFIT_ENABLED or not PENNY_PROFIT_CONFIG:
+        return None
+    
+    ex_lower = exchange.lower()
+    exchanges = PENNY_PROFIT_CONFIG.get('exchanges', {})
+    
+    if ex_lower not in exchanges:
+        return None
+    
+    thresholds = exchanges[ex_lower].get('thresholds', {})
+    
+    # Find closest trade size that's <= our trade size
+    sizes = sorted([float(s) for s in thresholds.keys()])
+    if not sizes:
+        return None
+    
+    # Find best matching size
+    best_size = sizes[0]
+    for s in sizes:
+        if s <= trade_size:
+            best_size = s
+        else:
+            break
+    
+    return thresholds.get(str(best_size)) or thresholds.get(best_size)
+
+def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float) -> dict:
+    """Check if position should exit based on penny profit thresholds.
+    
+    Returns: {'should_tp': bool, 'should_sl': bool, 'threshold': dict}
+    """
+    threshold = get_penny_threshold(exchange, entry_value)
+    
+    if not threshold:
+        return {'should_tp': False, 'should_sl': False, 'threshold': None}
+    
+    # Check Take Profit: gross P&L >= win threshold
+    should_tp = gross_pnl >= threshold.get('win_gte', float('inf'))
+    
+    # Check Stop Loss: gross P&L <= loss threshold
+    should_sl = gross_pnl <= threshold.get('stop_lte', float('-inf'))
+    
+    return {
+        'should_tp': should_tp,
+        'should_sl': should_sl,
+        'threshold': threshold,
+        'gross_pnl': gross_pnl
+    }
+
+# Load on import
+load_penny_profit_config()
+
+# ═══════════════════════════════════════════════════════════════
 # MODULE-LEVEL LOT SIZE CACHE - Used by UnifiedTradeConfirmation
 # ═══════════════════════════════════════════════════════════════
 _MODULE_LOT_SIZE_CACHE: Dict[str, Tuple[Optional[float], Optional[float]]] = {}
@@ -10894,7 +10974,8 @@ class AureonKrakenEcosystem:
         Smart exit gate - only sell if we're making NET PROFIT after fees.
         This ensures every closed trade is profitable.
         
-        🔥 MINIMUM PROFIT REQUIREMENT: Must cover fees + spread + buffer
+        🔥 PENNY PROFIT MODE: Exit when gross P&L hits exact dollar threshold
+        💰 Target: +$0.01 net profit per trade (scales through volume!)
         """
         change_pct = (current_price - pos.entry_price) / pos.entry_price
         
@@ -10908,64 +10989,96 @@ class AureonKrakenEcosystem:
         gross_pnl = exit_value - pos.entry_value
         net_pnl = gross_pnl - total_expenses
         
-        # Calculate minimum required profit using CONFIG
-        # CRITICAL: Don't exit unless profit overcomes all fees!
-        min_profit_buffer = pos.entry_value * CONFIG['MIN_NET_PROFIT_PCT']  # From config
-        min_net_profit = min_profit_buffer
+        # 💰 PENNY PROFIT THRESHOLDS - Dollar-based exit logic
+        penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl)
+        penny_threshold = penny_check.get('threshold')
         
-        # TAKE PROFIT: Only if we're making REAL profit (covering all fees + buffer)
-        if reason == "TP":
-            if net_pnl >= min_net_profit:
-                print(f"   ✅ EXIT APPROVED: {pos.symbol} net profit ${net_pnl:.4f} >= min ${min_net_profit:.4f}")
-                return True
-            else:
-                print(f"   🛑 HOLDING {pos.symbol}: Net profit ${net_pnl:.4f} < min required ${min_net_profit:.4f}")
+        if penny_threshold:
+            # Use penny profit dollar thresholds
+            min_gross_win = penny_threshold.get('win_gte', 0.01)
+            max_gross_loss = penny_threshold.get('stop_lte', -0.02)
+            
+            # TAKE PROFIT: Hit penny profit target
+            if reason == "TP":
+                if gross_pnl >= min_gross_win:
+                    estimated_net = gross_pnl - total_expenses
+                    print(f"   💰 PENNY TP: {pos.symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f} -> net ~${estimated_net:.4f}")
+                    return True
+                else:
+                    print(f"   🛑 HOLDING {pos.symbol}: Gross ${gross_pnl:.4f} < penny target ${min_gross_win:.4f}")
+                    return False
+            
+            # STOP LOSS: Cut losses at penny stop
+            if reason == "SL":
+                if gross_pnl <= max_gross_loss:
+                    print(f"   🛑 PENNY SL: {pos.symbol} gross ${gross_pnl:.4f} <= ${max_gross_loss:.4f} - CUTTING LOSS!")
+                    return True
+                else:
+                    # Don't stop out early if loss is still manageable
+                    print(f"   ⏳ HOLDING {pos.symbol}: Gross ${gross_pnl:.4f} > stop ${max_gross_loss:.4f} - giving it room")
+                    return False
+            
+            # 🌾 HARVEST: Use penny threshold for harvest too
+            if reason in ("HARVEST", "bridge_harvest"):
+                if gross_pnl >= min_gross_win:
+                    print(f"   🌾 PENNY HARVEST: {pos.symbol} gross ${gross_pnl:.4f} - LOCKING IN PENNY!")
+                    return True
+                print(f"   🛑 HOLDING {pos.symbol}: Harvest blocked - gross ${gross_pnl:.4f} < ${min_gross_win:.4f}")
+                return False
+        else:
+            # Fallback to percentage-based when penny profit not available
+            min_profit_buffer = pos.entry_value * CONFIG['MIN_NET_PROFIT_PCT']
+            min_net_profit = min_profit_buffer
+            
+            if reason == "TP":
+                if net_pnl >= min_net_profit:
+                    print(f"   ✅ EXIT APPROVED: {pos.symbol} net profit ${net_pnl:.4f} >= min ${min_net_profit:.4f}")
+                    return True
+                else:
+                    print(f"   🛑 HOLDING {pos.symbol}: Net profit ${net_pnl:.4f} < min required ${min_net_profit:.4f}")
+                    return False
+            
+            if reason in ("HARVEST", "bridge_harvest"):
+                if net_pnl >= min_net_profit:
+                    print(f"   🌾 HARVEST APPROVED: {pos.symbol} net profit ${net_pnl:.4f}")
+                    return True
+                print(f"   🛑 HOLDING {pos.symbol}: Harvest blocked - net ${net_pnl:.4f} < min ${min_net_profit:.4f}")
+                return False
+            
+            if reason == "SL":
+                loss_pct = abs(net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
+                if loss_pct < 1.0 or abs(change_pct * 100) > 2.0:
+                    return True
+                print(f"   🛑 HOLDING {pos.symbol}: Loss too large (${net_pnl:.2f})")
                 return False
         
-        # 🌾 HARVEST: Already verified net profitable in the check loop
-        # Include bridge_harvest for bridge command harvesting
-        if reason in ("HARVEST", "bridge_harvest"):
-            if net_pnl >= min_net_profit:
-                print(f"   🌾 HARVEST APPROVED: {pos.symbol} net profit ${net_pnl:.4f} - LOCKING IN PROFIT!")
-                return True
-            print(f"   🛑 HOLDING {pos.symbol}: Harvest blocked - net profit ${net_pnl:.4f} < min ${min_net_profit:.4f}")
-            return False
-        
-        # BRIDGE FORCE EXIT: Allow with warning if losing money
+        # BRIDGE FORCE EXIT: Always allow (emergency exit)
         if reason == "bridge_force_exit":
             if net_pnl < 0:
                 print(f"   ⚠️ FORCE EXIT {pos.symbol}: Bridge command - LOSS ${net_pnl:.4f}")
-            return True  # Force exits always allowed
+            return True
         
-        # STOP LOSS: Only allow if loss is small OR we must cut losses
-        if reason == "SL":
-            # Allow SL if loss is less than 1% or if change is catastrophic (>2%)
-            loss_pct = abs(net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
-            if loss_pct < 1.0 or abs(change_pct * 100) > 2.0:
-                return True
-            # Otherwise hold - don't lock in losses on noise
-            print(f"   🛑 HOLDING {pos.symbol}: Loss too large to realize (${net_pnl:.2f})")
-            return False
-        
-        # 🔮 MATRIX EXIT: Probability matrix says SELL - allow if profitable or small loss
+        # 🔮 MATRIX EXIT: Probability matrix says SELL - allow if profitable
         if reason in ["MATRIX_SELL", "MATRIX_FORCE"]:
-            if net_pnl >= 0:  # Any profit or breakeven
-                print(f"   🔮 MATRIX EXIT APPROVED: {pos.symbol} net ${net_pnl:.4f}")
+            if gross_pnl >= 0:
+                print(f"   🔮 MATRIX EXIT: {pos.symbol} gross ${gross_pnl:.4f}")
                 return True
-            elif reason == "MATRIX_FORCE" and net_pnl > -pos.entry_value * 0.01:  # <1% loss
-                print(f"   🚨 MATRIX FORCE EXIT: {pos.symbol} accepting small loss ${net_pnl:.4f}")
+            elif reason == "MATRIX_FORCE" and gross_pnl > -pos.entry_value * 0.01:
+                print(f"   🚨 MATRIX FORCE: {pos.symbol} small loss ${gross_pnl:.4f}")
                 return True
-            print(f"   🛑 HOLDING {pos.symbol}: Matrix exit blocked - loss too large (${net_pnl:.4f})")
+            print(f"   🛑 HOLDING {pos.symbol}: Matrix blocked - loss too large")
             return False
         
         # REBALANCE/SWAP: Only if net negative is small
         if reason in ["REBALANCE", "SWAP"]:
-            if net_pnl > -0.10:  # Allow up to 10p loss for rebalancing
+            if net_pnl > -0.10:
                 return True
             return False
         
-        # Default: require minimum profit
-        if net_pnl >= min_net_profit:
+        # Default: require penny profit threshold or min net profit
+        if penny_threshold and gross_pnl >= penny_threshold.get('win_gte', 0.01):
+            return True
+        elif not penny_threshold and net_pnl >= pos.entry_value * CONFIG['MIN_NET_PROFIT_PCT']:
             return True
         return False
     

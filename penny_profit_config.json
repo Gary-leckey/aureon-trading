@@ -1,0 +1,133 @@
+{
+  "version": "2.0",
+  "strategy": "PENNY_PROFIT",
+  "target_net_win": 0.01,
+  "description": "Penny profit with scaled stops. TP when gross >= win_gte, SL when gross <= stop_lte",
+  "exchanges": {
+    "binance": {
+      "fee_rate": 0.001,
+      "thresholds": {
+        "5.0": {
+          "cost": 0.025,
+          "win_gte": 0.035,
+          "stop_lte": -0.015
+        },
+        "7.5": {
+          "cost": 0.038,
+          "win_gte": 0.048,
+          "stop_lte": -0.02
+        },
+        "10.0": {
+          "cost": 0.05,
+          "win_gte": 0.06,
+          "stop_lte": -0.025
+        },
+        "15.0": {
+          "cost": 0.075,
+          "win_gte": 0.085,
+          "stop_lte": -0.035
+        },
+        "20.0": {
+          "cost": 0.1,
+          "win_gte": 0.11,
+          "stop_lte": -0.045
+        },
+        "50.0": {
+          "cost": 0.25,
+          "win_gte": 0.26,
+          "stop_lte": -0.1
+        }
+      }
+    },
+    "kraken": {
+      "fee_rate": 0.0026,
+      "thresholds": {
+        "5.0": {
+          "cost": 0.041,
+          "win_gte": 0.051,
+          "stop_lte": -0.025
+        },
+        "7.5": {
+          "cost": 0.062,
+          "win_gte": 0.072,
+          "stop_lte": -0.035
+        },
+        "10.0": {
+          "cost": 0.082,
+          "win_gte": 0.092,
+          "stop_lte": -0.045
+        },
+        "15.0": {
+          "cost": 0.123,
+          "win_gte": 0.133,
+          "stop_lte": -0.06
+        },
+        "20.0": {
+          "cost": 0.164,
+          "win_gte": 0.174,
+          "stop_lte": -0.08
+        },
+        "50.0": {
+          "cost": 0.41,
+          "win_gte": 0.42,
+          "stop_lte": -0.18
+        }
+      }
+    },
+    "capital": {
+      "fee_rate": 0.0012,
+      "thresholds": {
+        "10.0": {
+          "cost": 0.044,
+          "win_gte": 0.054,
+          "stop_lte": -0.025
+        },
+        "15.0": {
+          "cost": 0.066,
+          "win_gte": 0.076,
+          "stop_lte": -0.035
+        },
+        "20.0": {
+          "cost": 0.088,
+          "win_gte": 0.098,
+          "stop_lte": -0.045
+        },
+        "50.0": {
+          "cost": 0.22,
+          "win_gte": 0.23,
+          "stop_lte": -0.1
+        }
+      }
+    },
+    "alpaca": {
+      "fee_rate": 0.0025,
+      "thresholds": {
+        "5.0": {
+          "cost": 0.035,
+          "win_gte": 0.045,
+          "stop_lte": -0.02
+        },
+        "7.5": {
+          "cost": 0.053,
+          "win_gte": 0.063,
+          "stop_lte": -0.03
+        },
+        "10.0": {
+          "cost": 0.07,
+          "win_gte": 0.08,
+          "stop_lte": -0.04
+        },
+        "20.0": {
+          "cost": 0.14,
+          "win_gte": 0.15,
+          "stop_lte": -0.07
+        },
+        "50.0": {
+          "cost": 0.35,
+          "win_gte": 0.36,
+          "stop_lte": -0.16
+        }
+      }
+    }
+  }
+}
