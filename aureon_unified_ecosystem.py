@@ -7755,10 +7755,10 @@ class Position:
     nexus_edge: float = 0.0  # Nexus edge at entry
     nexus_patterns: List[str] = field(default_factory=list)  # Patterns triggered at entry
     
-    # 🚀 SERVER-SIDE ORDER IDs (Kraken native TP/SL - execute even if bot offline)
-    server_sl_order_id: Optional[str] = None  # Kraken stop-loss order ID
+    # 🚀 SERVER-SIDE ORDER IDs (Kraken/Alpaca native TP/SL - execute even if bot offline)
+    server_sl_order_id: Optional[str] = None  # Kraken/Alpaca stop-loss order ID (or OCO ID for Alpaca)
     server_tp_order_id: Optional[str] = None  # Kraken take-profit order ID
-    server_trailing_order_id: Optional[str] = None  # Kraken trailing stop order ID
+    server_trailing_order_id: Optional[str] = None  # Kraken/Alpaca trailing stop order ID
     
     # Generate unique ID for position
     id: str = field(default_factory=lambda: f"pos_{int(time.time()*1000)}_{random.randint(1000,9999)}")
@@ -12330,8 +12330,8 @@ class AureonKrakenEcosystem:
         except Exception as e:
             logger.warning(f"Failed to log cost basis for {symbol}: {e}")
         
-        # 🚀 PLACE SERVER-SIDE TP/SL ORDERS (Kraken only - executes even if bot offline!)
-        if CONFIG.get('USE_SERVER_SIDE_ORDERS', True) and exchange.lower() == 'kraken' and not self.dry_run:
+        # 🚀 PLACE SERVER-SIDE TP/SL ORDERS (Kraken & Alpaca - executes even if bot offline!)
+        if CONFIG.get('USE_SERVER_SIDE_ORDERS', True) and exchange.lower() in ['kraken', 'alpaca'] and not self.dry_run:
             try:
                 # Calculate TP/SL prices
                 tp_pct = learned_rec.get('suggested_take_profit') or CONFIG.get('SERVER_SIDE_TP_PCT', 1.8) / 100
@@ -12348,23 +12348,42 @@ class AureonKrakenEcosystem:
                     )
                     if trail_res and not trail_res.get('error'):
                         print(f"   🎯 Server trailing stop: {trailing_pct}% below peak")
-                        self.positions[symbol].server_trailing_order_id = trail_res.get('orderId')
+                        self.positions[symbol].server_trailing_order_id = trail_res.get('orderId') or trail_res.get('id')
                 else:
-                    # Place stop-loss order (server-side)
-                    sl_res = self.client.place_stop_loss_order(
-                        exchange, symbol, 'sell', quantity, stop_loss_price
-                    )
-                    if sl_res and not sl_res.get('error'):
-                        self.positions[symbol].server_sl_order_id = sl_res.get('orderId')
-                        print(f"   🛡️ Server stop-loss @ ${stop_loss_price:.6f} (-{sl_pct*100:.1f}%)")
-                    
-                    # Place take-profit order (server-side)  
-                    tp_res = self.client.place_take_profit_order(
-                        exchange, symbol, 'sell', quantity, take_profit_price
-                    )
-                    if tp_res and not tp_res.get('error'):
-                        self.positions[symbol].server_tp_order_id = tp_res.get('orderId')
-                        print(f"   💰 Server take-profit @ ${take_profit_price:.6f} (+{tp_pct*100:.1f}%)")
+                    # 🦙 Alpaca: Use OCO (one-cancels-other) for existing position TP+SL
+                    if exchange.lower() == 'alpaca':
+                        # For Alpaca, after entry filled, place OCO with TP+SL
+                        try:
+                            # Get proper symbol format for Alpaca (BTC/USD)
+                            alpaca_symbol = symbol if '/' in symbol else f"{symbol[:3]}/{symbol[3:]}" if len(symbol) >= 6 else symbol
+                            
+                            oco_res = self.client.clients['alpaca'].place_oco_order(
+                                alpaca_symbol, quantity, 'sell',
+                                take_profit_limit=take_profit_price,
+                                stop_loss_stop=stop_loss_price
+                            )
+                            if oco_res and not oco_res.get('error'):
+                                self.positions[symbol].server_sl_order_id = oco_res.get('id')
+                                print(f"   🦙 Alpaca OCO: TP @ ${take_profit_price:.6f} (+{tp_pct*100:.1f}%) | SL @ ${stop_loss_price:.6f} (-{sl_pct*100:.1f}%)")
+                        except Exception as e:
+                            logger.warning(f"Failed to place Alpaca OCO for {symbol}: {e}")
+                    else:
+                        # 🦑 Kraken: Place separate TP and SL orders
+                        # Place stop-loss order (server-side)
+                        sl_res = self.client.place_stop_loss_order(
+                            exchange, symbol, 'sell', quantity, stop_loss_price
+                        )
+                        if sl_res and not sl_res.get('error'):
+                            self.positions[symbol].server_sl_order_id = sl_res.get('orderId')
+                            print(f"   🛡️ Server stop-loss @ ${stop_loss_price:.6f} (-{sl_pct*100:.1f}%)")
+                        
+                        # Place take-profit order (server-side)  
+                        tp_res = self.client.place_take_profit_order(
+                            exchange, symbol, 'sell', quantity, take_profit_price
+                        )
+                        if tp_res and not tp_res.get('error'):
+                            self.positions[symbol].server_tp_order_id = tp_res.get('orderId')
+                            print(f"   💰 Server take-profit @ ${take_profit_price:.6f} (+{tp_pct*100:.1f}%)")
                         
             except Exception as e:
                 logger.warning(f"Failed to place server-side TP/SL for {symbol}: {e}")
@@ -12700,15 +12719,15 @@ class AureonKrakenEcosystem:
             
         pos = self.positions[symbol]
         
-        # 🚀 CANCEL SERVER-SIDE ORDERS (Kraken native TP/SL) before manual close
-        if not self.dry_run and pos.exchange.lower() == 'kraken':
+        # 🚀 CANCEL SERVER-SIDE ORDERS (Kraken/Alpaca native TP/SL) before manual close
+        if not self.dry_run and pos.exchange.lower() in ['kraken', 'alpaca']:
             try:
-                # Cancel stop-loss order if exists
+                # Cancel stop-loss order if exists (for Alpaca, this might be OCO ID)
                 if pos.server_sl_order_id:
                     self.client.cancel_order(pos.exchange, pos.server_sl_order_id)
                     logger.info(f"Cancelled server SL order {pos.server_sl_order_id} for {symbol}")
                 
-                # Cancel take-profit order if exists
+                # Cancel take-profit order if exists (Kraken only, Alpaca uses OCO)
                 if pos.server_tp_order_id:
                     self.client.cancel_order(pos.exchange, pos.server_tp_order_id)
                     logger.info(f"Cancelled server TP order {pos.server_tp_order_id} for {symbol}")

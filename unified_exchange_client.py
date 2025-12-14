@@ -763,6 +763,15 @@ class UnifiedExchangeClient:
                 except Exception as e:
                     logger.error(f"Error placing Kraken limit order: {e}")
                     return {}
+        elif self.exchange_id == "alpaca":
+            if hasattr(self.client, 'place_limit_order'):
+                try:
+                    # Alpaca uses lowercase tif: 'gtc', 'day', 'ioc'
+                    tif = time_in_force.lower() if time_in_force else 'gtc'
+                    return self.client.place_limit_order(symbol, quantity, side, price, time_in_force=tif)
+                except Exception as e:
+                    logger.error(f"Error placing Alpaca limit order: {e}")
+                    return {}
         
         # Fallback to market order for exchanges without limit order support
         logger.warning(f"{self.exchange_id} doesn't support limit orders, using market")
@@ -780,6 +789,13 @@ class UnifiedExchangeClient:
                 except Exception as e:
                     logger.error(f"Error placing Kraken stop-loss: {e}")
                     return {}
+        elif self.exchange_id == "alpaca":
+            if hasattr(self.client, 'place_stop_loss_order'):
+                try:
+                    return self.client.place_stop_loss_order(symbol, side, quantity, stop_price, limit_price)
+                except Exception as e:
+                    logger.error(f"Error placing Alpaca stop-loss: {e}")
+                    return {}
         
         logger.warning(f"{self.exchange_id} doesn't support native stop-loss orders")
         return {'error': 'Not supported', 'exchange': self.exchange_id}
@@ -796,6 +812,13 @@ class UnifiedExchangeClient:
                 except Exception as e:
                     logger.error(f"Error placing Kraken take-profit: {e}")
                     return {}
+        elif self.exchange_id == "alpaca":
+            if hasattr(self.client, 'place_take_profit_order'):
+                try:
+                    return self.client.place_take_profit_order(symbol, side, quantity, take_profit_price, limit_price)
+                except Exception as e:
+                    logger.error(f"Error placing Alpaca take-profit: {e}")
+                    return {}
         
         logger.warning(f"{self.exchange_id} doesn't support native take-profit orders")
         return {'error': 'Not supported', 'exchange': self.exchange_id}
@@ -811,6 +834,17 @@ class UnifiedExchangeClient:
                     return self.client.place_trailing_stop_order(symbol, side, quantity, trailing_offset, offset_type)
                 except Exception as e:
                     logger.error(f"Error placing Kraken trailing stop: {e}")
+                    return {}
+        elif self.exchange_id == "alpaca":
+            if hasattr(self.client, 'place_trailing_stop_order'):
+                try:
+                    # Alpaca uses trail_percent or trail_price
+                    if offset_type == '+%':
+                        return self.client.place_trailing_stop_order(symbol, quantity, side, trail_percent=trailing_offset)
+                    else:
+                        return self.client.place_trailing_stop_order(symbol, quantity, side, trail_price=trailing_offset)
+                except Exception as e:
+                    logger.error(f"Error placing Alpaca trailing stop: {e}")
                     return {}
         
         logger.warning(f"{self.exchange_id} doesn't support trailing stop orders")
@@ -830,6 +864,15 @@ class UnifiedExchangeClient:
                     )
                 except Exception as e:
                     logger.error(f"Error placing Kraken order with TP/SL: {e}")
+                    return {}
+        elif self.exchange_id == "alpaca":
+            if hasattr(self.client, 'place_order_with_tp_sl'):
+                try:
+                    return self.client.place_order_with_tp_sl(
+                        symbol, side, quantity, order_type, price, take_profit, stop_loss
+                    )
+                except Exception as e:
+                    logger.error(f"Error placing Alpaca order with TP/SL: {e}")
                     return {}
         
         # Fallback: place entry order, then place separate TP/SL orders
@@ -854,6 +897,13 @@ class UnifiedExchangeClient:
                 except Exception as e:
                     logger.error(f"Error getting Kraken open orders: {e}")
                     return []
+        elif self.exchange_id == "alpaca":
+            if hasattr(self.client, 'get_open_orders'):
+                try:
+                    return self.client.get_open_orders(symbol)
+                except Exception as e:
+                    logger.error(f"Error getting Alpaca open orders: {e}")
+                    return []
         return []
 
     def cancel_order(self, order_id: str) -> Dict[str, Any]:
@@ -864,6 +914,13 @@ class UnifiedExchangeClient:
                     return self.client.cancel_order(order_id)
                 except Exception as e:
                     logger.error(f"Error cancelling Kraken order: {e}")
+                    return {}
+        elif self.exchange_id == "alpaca":
+            if hasattr(self.client, 'cancel_order'):
+                try:
+                    return self.client.cancel_order(order_id)
+                except Exception as e:
+                    logger.error(f"Error cancelling Alpaca order: {e}")
                     return {}
         return {}
 
@@ -876,6 +933,14 @@ class UnifiedExchangeClient:
                 except Exception as e:
                     logger.error(f"Error cancelling all Kraken orders: {e}")
                     return {}
+        elif self.exchange_id == "alpaca":
+            if hasattr(self.client, 'cancel_all_orders'):
+                try:
+                    return self.client.cancel_all_orders()  # Alpaca doesn't filter by symbol
+                except Exception as e:
+                    logger.error(f"Error cancelling all Alpaca orders: {e}")
+                    return {}
+        return {}
         return {}
 
     def get_standardized_pair(self, base: str, quote: str) -> str:

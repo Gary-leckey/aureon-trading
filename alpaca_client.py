@@ -257,3 +257,700 @@ class AlpacaClient:
             "avg_cost": avg_cost,
             "trades": trade_count
         }
+
+    # ══════════════════════════════════════════════════════════════════════
+    # ADVANCED ORDER TYPES - Limit, Stop, Trailing Stop, Bracket, OCO
+    # ══════════════════════════════════════════════════════════════════════
+
+    def place_limit_order(
+        self,
+        symbol: str,
+        qty: float,
+        side: str,
+        limit_price: float,
+        time_in_force: str = "gtc",
+        extended_hours: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Place a limit order on Alpaca.
+        
+        Args:
+            symbol: Trading pair (e.g., 'BTC/USD', 'AAPL')
+            qty: Quantity to buy/sell
+            side: 'buy' or 'sell'
+            limit_price: Maximum buy price or minimum sell price
+            time_in_force: 'day', 'gtc', 'ioc' (crypto only supports gtc, ioc)
+            extended_hours: If True, order can execute in extended hours (stocks only)
+            
+        Returns:
+            Order response
+            
+        Benefit: Better price control, may get better fills
+        """
+        if self.dry_run:
+            logger.info(f"[DRY RUN] Alpaca Limit Order: {side} {qty} {symbol} @ {limit_price}")
+            return {"id": "dry_run_id", "status": "accepted", "type": "limit"}
+
+        data = {
+            "symbol": symbol,
+            "qty": str(qty),
+            "side": side,
+            "type": "limit",
+            "limit_price": str(limit_price),
+            "time_in_force": time_in_force
+        }
+        
+        if extended_hours:
+            data["extended_hours"] = True
+            
+        return self._request("POST", "/v2/orders", data=data)
+
+    def place_stop_order(
+        self,
+        symbol: str,
+        qty: float,
+        side: str,
+        stop_price: float,
+        time_in_force: str = "gtc"
+    ) -> Dict[str, Any]:
+        """
+        Place a stop order on Alpaca.
+        
+        Args:
+            symbol: Trading pair
+            qty: Quantity
+            side: 'buy' or 'sell'
+            stop_price: Price at which to trigger the order
+            time_in_force: 'day', 'gtc'
+            
+        Returns:
+            Order response
+            
+        Note: For crypto, use stop_limit instead (stop not supported directly)
+        """
+        if self.dry_run:
+            logger.info(f"[DRY RUN] Alpaca Stop Order: {side} {qty} {symbol} @ stop={stop_price}")
+            return {"id": "dry_run_id", "status": "accepted", "type": "stop"}
+
+        data = {
+            "symbol": symbol,
+            "qty": str(qty),
+            "side": side,
+            "type": "stop",
+            "stop_price": str(stop_price),
+            "time_in_force": time_in_force
+        }
+        return self._request("POST", "/v2/orders", data=data)
+
+    def place_stop_limit_order(
+        self,
+        symbol: str,
+        qty: float,
+        side: str,
+        stop_price: float,
+        limit_price: float,
+        time_in_force: str = "gtc"
+    ) -> Dict[str, Any]:
+        """
+        Place a stop-limit order on Alpaca.
+        
+        Args:
+            symbol: Trading pair
+            qty: Quantity
+            side: 'buy' or 'sell'
+            stop_price: Price at which to trigger
+            limit_price: Price limit for execution after trigger
+            time_in_force: 'day', 'gtc'
+            
+        Returns:
+            Order response
+            
+        For crypto: This is the primary way to do stop-loss (stop orders not supported)
+        """
+        if self.dry_run:
+            logger.info(f"[DRY RUN] Alpaca Stop-Limit: {side} {qty} {symbol} @ stop={stop_price} limit={limit_price}")
+            return {"id": "dry_run_id", "status": "accepted", "type": "stop_limit"}
+
+        data = {
+            "symbol": symbol,
+            "qty": str(qty),
+            "side": side,
+            "type": "stop_limit",
+            "stop_price": str(stop_price),
+            "limit_price": str(limit_price),
+            "time_in_force": time_in_force
+        }
+        return self._request("POST", "/v2/orders", data=data)
+
+    def place_trailing_stop_order(
+        self,
+        symbol: str,
+        qty: float,
+        side: str,
+        trail_percent: float = None,
+        trail_price: float = None,
+        time_in_force: str = "day"
+    ) -> Dict[str, Any]:
+        """
+        Place a trailing stop order on Alpaca.
+        
+        Args:
+            symbol: Trading pair
+            qty: Quantity
+            side: 'buy' or 'sell'
+            trail_percent: Percentage to trail (e.g., 2.0 = 2%)
+            trail_price: Dollar amount to trail (alternative to percent)
+            time_in_force: 'day' or 'gtc'
+            
+        Returns:
+            Order response
+            
+        Example: 2% trailing stop on AAPL at $200 -> stop at $196
+                 If AAPL rises to $210 -> stop auto-adjusts to $205.80
+                 
+        Note: Trailing stop only triggers during regular market hours
+        """
+        if self.dry_run:
+            trail = f"{trail_percent}%" if trail_percent else f"${trail_price}"
+            logger.info(f"[DRY RUN] Alpaca Trailing Stop: {side} {qty} {symbol} trail={trail}")
+            return {"id": "dry_run_id", "status": "accepted", "type": "trailing_stop"}
+
+        data = {
+            "symbol": symbol,
+            "qty": str(qty),
+            "side": side,
+            "type": "trailing_stop",
+            "time_in_force": time_in_force
+        }
+        
+        if trail_percent is not None:
+            data["trail_percent"] = str(trail_percent)
+        elif trail_price is not None:
+            data["trail_price"] = str(trail_price)
+        else:
+            raise ValueError("Must provide either trail_percent or trail_price")
+            
+        return self._request("POST", "/v2/orders", data=data)
+
+    def place_bracket_order(
+        self,
+        symbol: str,
+        qty: float,
+        side: str,
+        entry_type: str = "market",
+        entry_limit_price: float = None,
+        take_profit_limit: float = None,
+        stop_loss_stop: float = None,
+        stop_loss_limit: float = None,
+        time_in_force: str = "gtc"
+    ) -> Dict[str, Any]:
+        """
+        Place a bracket order (entry + take-profit + stop-loss) on Alpaca.
+        
+        This is atomic - if entry fills, both TP and SL orders activate.
+        One cancels the other when either fills.
+        
+        Args:
+            symbol: Trading pair
+            qty: Quantity for all legs
+            side: 'buy' or 'sell' for entry
+            entry_type: 'market' or 'limit' for entry order
+            entry_limit_price: Required if entry_type is 'limit'
+            take_profit_limit: Limit price for take-profit (required)
+            stop_loss_stop: Stop trigger price for stop-loss (required)
+            stop_loss_limit: Optional limit price for stop-loss (creates stop-limit)
+            time_in_force: 'day' or 'gtc'
+            
+        Returns:
+            Order response with legs array
+            
+        Example:
+            place_bracket_order('AAPL', 100, 'buy',
+                               take_profit_limit=210,
+                               stop_loss_stop=195,
+                               stop_loss_limit=194)
+        """
+        if self.dry_run:
+            logger.info(f"[DRY RUN] Alpaca Bracket: {side} {qty} {symbol} TP={take_profit_limit} SL={stop_loss_stop}")
+            return {"id": "dry_run_id", "status": "accepted", "order_class": "bracket"}
+
+        if take_profit_limit is None or stop_loss_stop is None:
+            raise ValueError("Bracket orders require both take_profit_limit and stop_loss_stop")
+
+        data = {
+            "symbol": symbol,
+            "qty": str(qty),
+            "side": side,
+            "type": entry_type,
+            "time_in_force": time_in_force,
+            "order_class": "bracket",
+            "take_profit": {
+                "limit_price": str(take_profit_limit)
+            },
+            "stop_loss": {
+                "stop_price": str(stop_loss_stop)
+            }
+        }
+        
+        if entry_type == "limit" and entry_limit_price:
+            data["limit_price"] = str(entry_limit_price)
+            
+        if stop_loss_limit:
+            data["stop_loss"]["limit_price"] = str(stop_loss_limit)
+            
+        return self._request("POST", "/v2/orders", data=data)
+
+    def place_oco_order(
+        self,
+        symbol: str,
+        qty: float,
+        side: str,
+        take_profit_limit: float,
+        stop_loss_stop: float,
+        stop_loss_limit: float = None,
+        time_in_force: str = "gtc"
+    ) -> Dict[str, Any]:
+        """
+        Place an OCO (One-Cancels-Other) order on Alpaca.
+        
+        Use this for existing positions to add TP and SL.
+        When one fills, the other is automatically cancelled.
+        
+        Args:
+            symbol: Trading pair
+            qty: Quantity to close
+            side: 'sell' for long positions, 'buy' for short positions
+            take_profit_limit: Limit price for take-profit
+            stop_loss_stop: Stop trigger price for stop-loss
+            stop_loss_limit: Optional limit price after stop triggers
+            time_in_force: 'day' or 'gtc'
+            
+        Returns:
+            Order response
+        """
+        if self.dry_run:
+            logger.info(f"[DRY RUN] Alpaca OCO: {side} {qty} {symbol} TP={take_profit_limit} SL={stop_loss_stop}")
+            return {"id": "dry_run_id", "status": "accepted", "order_class": "oco"}
+
+        data = {
+            "symbol": symbol,
+            "qty": str(qty),
+            "side": side,
+            "type": "limit",  # OCO requires limit type
+            "time_in_force": time_in_force,
+            "order_class": "oco",
+            "take_profit": {
+                "limit_price": str(take_profit_limit)
+            },
+            "stop_loss": {
+                "stop_price": str(stop_loss_stop)
+            }
+        }
+        
+        if stop_loss_limit:
+            data["stop_loss"]["limit_price"] = str(stop_loss_limit)
+            
+        return self._request("POST", "/v2/orders", data=data)
+
+    def place_oto_order(
+        self,
+        symbol: str,
+        qty: float,
+        side: str,
+        entry_type: str = "market",
+        entry_limit_price: float = None,
+        take_profit_limit: float = None,
+        stop_loss_stop: float = None,
+        stop_loss_limit: float = None,
+        time_in_force: str = "gtc"
+    ) -> Dict[str, Any]:
+        """
+        Place an OTO (One-Triggers-Other) order on Alpaca.
+        
+        Entry order triggers a single exit order (either TP or SL, not both).
+        Use this when you only want one exit condition.
+        
+        Args:
+            symbol: Trading pair
+            qty: Quantity
+            side: 'buy' or 'sell' for entry
+            entry_type: 'market' or 'limit'
+            entry_limit_price: Required if entry_type is 'limit'
+            take_profit_limit: Limit price for TP (provide this OR stop_loss)
+            stop_loss_stop: Stop price for SL (provide this OR take_profit)
+            stop_loss_limit: Optional limit price for SL
+            time_in_force: 'day' or 'gtc'
+            
+        Returns:
+            Order response
+        """
+        if self.dry_run:
+            exit_type = f"TP={take_profit_limit}" if take_profit_limit else f"SL={stop_loss_stop}"
+            logger.info(f"[DRY RUN] Alpaca OTO: {side} {qty} {symbol} {exit_type}")
+            return {"id": "dry_run_id", "status": "accepted", "order_class": "oto"}
+
+        if not take_profit_limit and not stop_loss_stop:
+            raise ValueError("OTO orders require either take_profit_limit or stop_loss_stop")
+
+        data = {
+            "symbol": symbol,
+            "qty": str(qty),
+            "side": side,
+            "type": entry_type,
+            "time_in_force": time_in_force,
+            "order_class": "oto"
+        }
+        
+        if entry_type == "limit" and entry_limit_price:
+            data["limit_price"] = str(entry_limit_price)
+            
+        if take_profit_limit:
+            data["take_profit"] = {"limit_price": str(take_profit_limit)}
+        elif stop_loss_stop:
+            data["stop_loss"] = {"stop_price": str(stop_loss_stop)}
+            if stop_loss_limit:
+                data["stop_loss"]["limit_price"] = str(stop_loss_limit)
+                
+        return self._request("POST", "/v2/orders", data=data)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # ORDER MANAGEMENT - Query, Cancel, Replace
+    # ══════════════════════════════════════════════════════════════════════
+
+    def get_open_orders(self, symbol: str = None) -> List[Dict[str, Any]]:
+        """
+        Get all open orders, optionally filtered by symbol.
+        
+        Args:
+            symbol: If provided, filter to this symbol only
+            
+        Returns:
+            List of open orders
+        """
+        params = {"status": "open"}
+        if symbol:
+            params["symbols"] = symbol
+        result = self._request("GET", "/v2/orders", params=params)
+        return result if isinstance(result, list) else []
+
+    def cancel_order(self, order_id: str) -> Dict[str, Any]:
+        """
+        Cancel a specific order by ID.
+        
+        Args:
+            order_id: The Alpaca order ID
+            
+        Returns:
+            Empty dict on success, error on failure
+        """
+        if self.dry_run:
+            logger.info(f"[DRY RUN] Cancel order: {order_id}")
+            return {"status": "canceled"}
+            
+        return self._request("DELETE", f"/v2/orders/{order_id}")
+
+    def cancel_all_orders(self) -> Dict[str, Any]:
+        """
+        Cancel all open orders.
+        
+        Returns:
+            Response with count of cancelled orders
+        """
+        if self.dry_run:
+            logger.info("[DRY RUN] Cancel all orders")
+            return {"status": "canceled", "count": 0}
+            
+        return self._request("DELETE", "/v2/orders")
+
+    def replace_order(
+        self,
+        order_id: str,
+        qty: float = None,
+        limit_price: float = None,
+        stop_price: float = None,
+        trail: float = None,
+        time_in_force: str = None
+    ) -> Dict[str, Any]:
+        """
+        Replace/modify an existing order.
+        
+        Args:
+            order_id: The order to replace
+            qty: New quantity (optional)
+            limit_price: New limit price (optional)
+            stop_price: New stop price (optional)
+            trail: New trail value for trailing stop (optional)
+            time_in_force: New TIF (optional)
+            
+        Returns:
+            New order response (replacement creates new order ID)
+        """
+        if self.dry_run:
+            logger.info(f"[DRY RUN] Replace order: {order_id}")
+            return {"id": "dry_run_replaced", "status": "accepted"}
+
+        data = {}
+        if qty is not None:
+            data["qty"] = str(qty)
+        if limit_price is not None:
+            data["limit_price"] = str(limit_price)
+        if stop_price is not None:
+            data["stop_price"] = str(stop_price)
+        if trail is not None:
+            data["trail"] = str(trail)
+        if time_in_force is not None:
+            data["time_in_force"] = time_in_force
+            
+        return self._request("PATCH", f"/v2/orders/{order_id}", data=data)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # CONVENIENCE METHODS - Kraken-compatible interface
+    # ══════════════════════════════════════════════════════════════════════
+
+    def place_market_order(self, symbol: str, side: str, quantity: float = None, quote_qty: float = None) -> Dict[str, Any]:
+        """
+        Place a market order (Kraken-compatible interface).
+        
+        Args:
+            symbol: Trading pair
+            side: 'buy' or 'sell'
+            quantity: Amount of base asset
+            quote_qty: Amount of quote asset (converted to quantity)
+            
+        Returns:
+            Order response
+        """
+        if quote_qty and not quantity:
+            # Need to estimate quantity from quote
+            try:
+                quotes = self.get_latest_crypto_quotes([symbol])
+                if symbol in quotes:
+                    q = quotes[symbol]
+                    mid_price = (float(q.get('bp', 0)) + float(q.get('ap', 0))) / 2
+                    if mid_price > 0:
+                        quantity = quote_qty / mid_price
+            except:
+                pass
+                
+        if not quantity:
+            logger.error(f"Cannot place market order without quantity for {symbol}")
+            return {}
+            
+        return self.place_order(symbol, quantity, side, type="market")
+
+    def place_stop_loss_order(self, symbol: str, side: str, quantity: float, stop_price: float, limit_price: float = None) -> Dict[str, Any]:
+        """
+        Place a stop-loss order (Kraken-compatible interface).
+        For crypto, uses stop_limit since stop orders aren't supported.
+        
+        Args:
+            symbol: Trading pair
+            side: 'sell' for long positions
+            quantity: Amount to sell when triggered
+            stop_price: Price at which to trigger
+            limit_price: Optional limit price after trigger
+            
+        Returns:
+            Order response
+        """
+        # For crypto, stop orders aren't supported - use stop_limit
+        is_crypto = "/" in symbol or symbol.endswith("USD") and len(symbol) > 5
+        
+        if is_crypto or limit_price:
+            # Use stop_limit for crypto (required) or if limit specified
+            lp = limit_price if limit_price else stop_price * 0.995  # 0.5% below stop
+            return self.place_stop_limit_order(symbol, quantity, side, stop_price, lp)
+        else:
+            return self.place_stop_order(symbol, quantity, side, stop_price)
+
+    def place_take_profit_order(self, symbol: str, side: str, quantity: float, take_profit_price: float, limit_price: float = None) -> Dict[str, Any]:
+        """
+        Place a take-profit order (Kraken-compatible interface).
+        Uses limit order at the take-profit price.
+        
+        Args:
+            symbol: Trading pair
+            side: 'sell' for long positions
+            quantity: Amount to sell
+            take_profit_price: Price at which to take profit
+            limit_price: Optional different limit price
+            
+        Returns:
+            Order response
+        """
+        price = limit_price if limit_price else take_profit_price
+        return self.place_limit_order(symbol, quantity, side, price)
+
+    def place_order_with_tp_sl(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        order_type: str = "market",
+        price: float = None,
+        take_profit: float = None,
+        stop_loss: float = None
+    ) -> Dict[str, Any]:
+        """
+        Place an order with attached Take-Profit and/or Stop-Loss (Kraken-compatible).
+        Uses Alpaca's bracket order for atomic TP+SL, or OTO for single exit.
+        
+        Args:
+            symbol: Trading pair
+            side: 'buy' or 'sell' for entry
+            quantity: Amount
+            order_type: 'market' or 'limit'
+            price: Required if order_type is 'limit'
+            take_profit: Take-profit price
+            stop_loss: Stop-loss price
+            
+        Returns:
+            Order response
+        """
+        if take_profit and stop_loss:
+            # Both TP and SL -> use bracket order
+            return self.place_bracket_order(
+                symbol, quantity, side,
+                entry_type=order_type,
+                entry_limit_price=price,
+                take_profit_limit=take_profit,
+                stop_loss_stop=stop_loss
+            )
+        elif take_profit or stop_loss:
+            # Single exit -> use OTO order
+            return self.place_oto_order(
+                symbol, quantity, side,
+                entry_type=order_type,
+                entry_limit_price=price,
+                take_profit_limit=take_profit,
+                stop_loss_stop=stop_loss
+            )
+        else:
+            # No exits -> regular order
+            if order_type == "limit" and price:
+                return self.place_limit_order(symbol, quantity, side, price)
+            else:
+                return self.place_order(symbol, quantity, side)
+
+    def get_free_balance(self, asset: str) -> float:
+        """
+        Get free balance for an asset (Kraken-compatible interface).
+        
+        Args:
+            asset: Asset symbol (e.g., 'BTC', 'USD')
+            
+        Returns:
+            Free balance amount
+        """
+        try:
+            if asset.upper() in ['USD', 'USDT', 'USDC']:
+                acct = self.get_account()
+                return float(acct.get('cash', 0) or 0)
+            
+            positions = self.get_positions()
+            for pos in positions:
+                sym = pos.get('symbol', '').replace('/', '')
+                base = sym[:-3] if sym.endswith('USD') else sym
+                if base.upper() == asset.upper():
+                    return float(pos.get('qty', 0) or 0)
+            return 0.0
+        except:
+            return 0.0
+
+    def get_account_balance(self) -> Dict[str, float]:
+        """
+        Get all balances (Kraken-compatible interface).
+        
+        Returns:
+            Dict of asset -> amount
+        """
+        balances = {}
+        try:
+            acct = self.get_account()
+            cash = float(acct.get('cash', 0) or 0)
+            if cash > 0:
+                balances['USD'] = cash
+            
+            positions = self.get_positions()
+            for pos in positions:
+                qty = float(pos.get('qty', 0) or 0)
+                if qty > 0:
+                    sym = pos.get('symbol', '')
+                    base = sym.replace('/', '').replace('USD', '')
+                    balances[base] = qty
+        except:
+            pass
+        return balances
+
+    def get_24h_tickers(self) -> List[Dict[str, Any]]:
+        """
+        Get 24h ticker data for crypto assets (Kraken-compatible interface).
+        
+        Returns:
+            List of ticker dicts with symbol, lastPrice, priceChangePercent, quoteVolume
+        """
+        try:
+            # Get active crypto assets
+            assets = self.get_assets(status='active', asset_class='crypto')
+            symbols = [a['symbol'] for a in assets if a.get('tradable')]
+            
+            # Filter to USD pairs
+            relevant = [s for s in symbols if s.endswith('/USD')][:50]
+            
+            if not relevant:
+                return []
+            
+            # Get 1-day bars for 24h change calculation
+            bars = self.get_crypto_bars(relevant, timeframe="1Day", limit=2)
+            
+            tickers = []
+            for sym, data in bars.get('bars', {}).items():
+                if not data:
+                    continue
+                latest = data[-1]
+                prev_close = data[-2]['c'] if len(data) > 1 else latest['o']
+                
+                close = float(latest['c'])
+                change_pct = ((close - prev_close) / prev_close * 100) if prev_close > 0 else 0
+                volume = float(latest['v']) * close
+                
+                tickers.append({
+                    'symbol': sym.replace('/', ''),  # Convert BTC/USD to BTCUSD
+                    'lastPrice': str(close),
+                    'priceChangePercent': str(change_pct),
+                    'quoteVolume': str(volume)
+                })
+            
+            return tickers
+        except Exception as e:
+            logger.error(f"Error getting Alpaca tickers: {e}")
+            return []
+
+    def convert_to_quote(self, asset: str, amount: float, quote: str) -> float:
+        """
+        Convert asset amount to quote currency (Kraken-compatible interface).
+        
+        Args:
+            asset: Source asset (e.g., 'BTC')
+            amount: Amount to convert
+            quote: Target currency (e.g., 'USD')
+            
+        Returns:
+            Value in quote currency
+        """
+        if asset.upper() == quote.upper():
+            return amount
+        if amount <= 0:
+            return 0.0
+        
+        try:
+            symbol = f"{asset}/{quote}"
+            quotes = self.get_latest_crypto_quotes([symbol])
+            if symbol in quotes:
+                q = quotes[symbol]
+                mid = (float(q.get('bp', 0)) + float(q.get('ap', 0))) / 2
+                if mid > 0:
+                    return amount * mid
+        except:
+            pass
+        return 0.0
