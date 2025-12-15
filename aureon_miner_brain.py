@@ -115,7 +115,153 @@ PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio
 # Adaptive Learning Integration
 ADAPTIVE_LEARNING_FILE = "adaptive_learning_history.json"
 BRAIN_PREDICTIONS_FILE = "brain_predictions_history.json"
+SANDBOX_LEARNING_FILE = "sandbox_brain_learning.json"
 WISDOM_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wisdom_data")
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🧬 SANDBOX EVOLVED PARAMETERS - Learned Through 454 Generations
+# ═══════════════════════════════════════════════════════════════
+
+class SandboxEvolution:
+    """
+    Parameters evolved through genetic algorithm in sandboxed simulation.
+    The brain learned these values through trial and error, NOT given answers.
+    
+    454 generations of learning discovered:
+    - Optimal coherence thresholds
+    - Position sizing
+    - Profit taking & stop loss levels
+    - Market volatility sweet spots
+    
+    These parameters are LIVE LOADED from the sandbox learning file,
+    so the brain continuously improves as more simulations run.
+    """
+    
+    # Default parameters (from 454 generations of evolution)
+    DEFAULT_PARAMS = {
+        "min_coherence": 0.73,          # Only trade when market quality > 73%
+        "min_volatility": 0.80,          # Need 0.8% minimum volatility
+        "max_volatility": 1.63,          # Avoid chaos above 1.63%
+        "position_size_pct": 0.122,      # 12.2% of capital per trade
+        "take_profit_pct": 1.82,         # Let winners run to 1.82%
+        "stop_loss_pct": 1.43,           # Wide stop at 1.43%
+        "hold_cycles_max": 64,           # Patience - hold up to 64 cycles
+        "use_maker_orders": False,       # Taker orders (evolved preference)
+    }
+    
+    def __init__(self):
+        self.params = self.DEFAULT_PARAMS.copy()
+        self.best_win_rate = 0.0
+        self.generations = 0
+        self.lessons = []
+        self._load_from_sandbox()
+    
+    def _load_from_sandbox(self):
+        """Load evolved parameters from sandbox learning file."""
+        try:
+            if os.path.exists(SANDBOX_LEARNING_FILE):
+                with open(SANDBOX_LEARNING_FILE, 'r') as f:
+                    data = json.load(f)
+                    
+                    # Load best parameters
+                    if 'best_parameters' in data and data['best_parameters']:
+                        for key, value in data['best_parameters'].items():
+                            if key in self.params:
+                                self.params[key] = value
+                    
+                    self.best_win_rate = data.get('best_win_rate', 0)
+                    self.generations = data.get('generation', 0)
+                    self.lessons = data.get('lessons', [])[-10:]  # Keep last 10
+                    
+                    logger.info(f"🧬 Loaded sandbox evolution: Gen {self.generations}, "
+                               f"Best {self.best_win_rate:.1f}% win rate")
+        except Exception as e:
+            logger.warning(f"Could not load sandbox learning: {e}")
+    
+    def get_entry_filter(self, volatility: float, coherence: float) -> Tuple[bool, str]:
+        """
+        Apply evolved entry filter.
+        Returns (should_enter, reason)
+        """
+        if coherence < self.params['min_coherence']:
+            return False, f"Coherence {coherence:.2f} < evolved minimum {self.params['min_coherence']:.2f}"
+        
+        if volatility < self.params['min_volatility']:
+            return False, f"Volatility {volatility:.2f}% < evolved minimum {self.params['min_volatility']:.2f}%"
+        
+        if volatility > self.params['max_volatility']:
+            return False, f"Volatility {volatility:.2f}% > evolved maximum {self.params['max_volatility']:.2f}%"
+        
+        return True, "✅ All evolved filters passed"
+    
+    def get_exit_targets(self, entry_price: float) -> Dict[str, float]:
+        """
+        Calculate exit targets based on evolved parameters.
+        """
+        return {
+            'take_profit_price': entry_price * (1 + self.params['take_profit_pct'] / 100),
+            'stop_loss_price': entry_price * (1 - self.params['stop_loss_pct'] / 100),
+            'take_profit_pct': self.params['take_profit_pct'],
+            'stop_loss_pct': self.params['stop_loss_pct'],
+        }
+    
+    def get_position_size(self, capital: float) -> float:
+        """
+        Calculate position size based on evolved optimal percentage.
+        """
+        return capital * self.params['position_size_pct']
+    
+    def get_evolved_confidence_boost(self, base_confidence: float) -> float:
+        """
+        Boost confidence based on evolved win rate.
+        If sandbox achieved >60% win rate, brain trusts itself more.
+        """
+        if self.best_win_rate > 70:
+            return min(100, base_confidence * 1.15)  # 15% boost
+        elif self.best_win_rate > 60:
+            return min(100, base_confidence * 1.08)  # 8% boost
+        elif self.best_win_rate > 50:
+            return min(100, base_confidence * 1.03)  # 3% boost
+        else:
+            return base_confidence  # No boost until proven
+    
+    def get_trading_guidance(self) -> Dict:
+        """
+        Get comprehensive trading guidance from evolved parameters.
+        """
+        return {
+            'evolved_generation': self.generations,
+            'evolved_win_rate': self.best_win_rate,
+            'entry_coherence_min': self.params['min_coherence'],
+            'volatility_range': (self.params['min_volatility'], self.params['max_volatility']),
+            'position_size_pct': self.params['position_size_pct'] * 100,
+            'take_profit_pct': self.params['take_profit_pct'],
+            'stop_loss_pct': self.params['stop_loss_pct'],
+            'max_hold_cycles': self.params['hold_cycles_max'],
+            'prefer_maker': self.params['use_maker_orders'],
+            'latest_lessons': self.lessons[-5:] if self.lessons else [],
+        }
+    
+    def __str__(self) -> str:
+        return (f"🧬 Sandbox Evolution (Gen {self.generations})\n"
+                f"   Win Rate: {self.best_win_rate:.1f}%\n"
+                f"   Coherence: >{self.params['min_coherence']:.0%}\n"
+                f"   Volatility: {self.params['min_volatility']:.2f}%-{self.params['max_volatility']:.2f}%\n"
+                f"   Position: {self.params['position_size_pct']:.1%}\n"
+                f"   Take Profit: {self.params['take_profit_pct']:.2f}%\n"
+                f"   Stop Loss: {self.params['stop_loss_pct']:.2f}%")
+
+
+# Global sandbox evolution instance
+_sandbox_evolution: Optional[SandboxEvolution] = None
+
+def get_sandbox_evolution() -> SandboxEvolution:
+    """Get or create the global sandbox evolution instance."""
+    global _sandbox_evolution
+    if _sandbox_evolution is None:
+        _sandbox_evolution = SandboxEvolution()
+    return _sandbox_evolution
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -4908,6 +5054,9 @@ class MinerBrain:
         # NEW: Unified Wisdom Cognition Engine - All civilizations united
         self.wisdom_engine = WisdomCognitionEngine()
         
+        # NEW: Sandbox Evolved Parameters - 454 generations of learning
+        self.sandbox_evolution = get_sandbox_evolution()
+        
         self.latest_prediction = None
         self.latest_analysis = None
 
@@ -4958,14 +5107,39 @@ class MinerBrain:
                 - signal_confidence: Confidence in harmonic signal
         """
         print("\n" + "🧠" * 35)
-        print("   AUREON MINER BRAIN v5.4 - UNIFIED WISDOM COGNITION")
-        print("   7 Civilizations + 5000 Years + 300+ Data Points = Universal Truth")
+        print("   AUREON MINER BRAIN v5.5 - SANDBOX EVOLVED INTELLIGENCE")
+        print("   7 Civilizations + 5000 Years + 454 Generations = Universal Truth")
         print("   \"Your feet are for dancing, your brain is for cutting out the BS!\"")
         print("🧠" * 35 + "\n")
         
         # Store quantum context for use throughout cycle; force dict for safety
         self._quantum_context = quantum_context if isinstance(quantum_context, dict) else {}
         qc_ctx = self._quantum_context
+        
+        # ═══════════════════════════════════════════════════════════
+        # PHASE -2: SANDBOX EVOLUTION INTEGRATION (NEW!)
+        # ═══════════════════════════════════════════════════════════
+        print("🧬" * 35)
+        print("   PHASE -2: SANDBOX EVOLVED INTELLIGENCE")
+        print("🧬" * 35 + "\n")
+        
+        sandbox = self.sandbox_evolution
+        guidance = sandbox.get_trading_guidance()
+        
+        print(f"🧬 **SANDBOX EVOLUTION STATUS** (Generation {guidance['evolved_generation']})")
+        print(f"   Best Win Rate Achieved: {guidance['evolved_win_rate']:.1f}%")
+        print(f"   Entry Coherence Min: {guidance['entry_coherence_min']:.0%}")
+        print(f"   Volatility Sweet Spot: {guidance['volatility_range'][0]:.2f}% - {guidance['volatility_range'][1]:.2f}%")
+        print(f"   Position Size: {guidance['position_size_pct']:.1f}% of capital")
+        print(f"   Take Profit Target: {guidance['take_profit_pct']:.2f}%")
+        print(f"   Stop Loss Limit: {guidance['stop_loss_pct']:.2f}%")
+        print(f"   Max Hold Cycles: {guidance['max_hold_cycles']}")
+        print(f"   Prefer Maker Orders: {'Yes' if guidance['prefer_maker'] else 'No'}")
+        
+        if guidance['latest_lessons']:
+            print(f"\n   📚 Latest Lessons from {guidance['evolved_generation']} Generations:")
+            for lesson in guidance['latest_lessons'][-3:]:
+                print(f"      • {lesson}")
         
         # ═══════════════════════════════════════════════════════════
         # PHASE -1: QUANTUM BRAIN INTEGRATION (if available)
@@ -5758,13 +5932,14 @@ class MinerBrain:
         print(f"   ✅ Platonic solids ({len(self.pythagorean_library.PLATONIC_SOLIDS)} universal forms)")
         print(f"   ✅ Pythagorean maxims ({len(self.pythagorean_library.MAXIMS)} golden sayings)")
         print(f"   ✅ Unified Wisdom Engine ({self.wisdom_engine.wisdom_stats['total_civilizations']} civilizations)")
+        print(f"   ✅ Sandbox Evolution ({self.sandbox_evolution.generations} generations, {self.sandbox_evolution.best_win_rate:.1f}% win rate)")
         print(f"   ✅ Analyzed own output for {len(reflection_result.get('blind_spots', []))} blind spots")
         print(f"   ✅ Validated {len(validated)} past predictions")
         print(f"   ✅ Generated {len(critiques)} self-critiques")
         print(f"   ✅ Recorded prediction for future validation")
         print(f"   ✅ Fed insights to Adaptive Learning system")
         print("=" * 70)
-        print("🧠🌍 \"7 Civilizations, 5000 Years, One Truth - All is Number, The Spheres Sing.\"")
+        print("🧠🌍 \"7 Civilizations, 5000 Years, 454 Generations - Evolution Never Stops.\"")
         print("=" * 70 + "\n")
         
         # Get unified wisdom consensus (7 civilizations)
@@ -5793,12 +5968,52 @@ class MinerBrain:
             
             print(f"\n🔮 QUANTUM INFLUENCE: Confidence adjusted from {unified_consensus.get('confidence', 50):.1f}% → {quantum_influenced_confidence:.1f}%")
         
+        # ═══════════════════════════════════════════════════════════
+        # SANDBOX EVOLUTION CONFIDENCE BOOST
+        # ═══════════════════════════════════════════════════════════
+        pre_sandbox_confidence = quantum_influenced_confidence
+        sandbox_evolved_confidence = self.sandbox_evolution.get_evolved_confidence_boost(quantum_influenced_confidence)
+        
+        if sandbox_evolved_confidence != pre_sandbox_confidence:
+            print(f"🧬 SANDBOX EVOLUTION: Confidence adjusted from {pre_sandbox_confidence:.1f}% → {sandbox_evolved_confidence:.1f}%")
+            print(f"   (Based on {self.sandbox_evolution.best_win_rate:.1f}% win rate from {self.sandbox_evolution.generations} generations)")
+        
+        # Final confidence uses sandbox-evolved value
+        final_confidence = sandbox_evolved_confidence
+        
+        # ═══════════════════════════════════════════════════════════
+        # SANDBOX EVOLVED ENTRY FILTER CHECK
+        # ═══════════════════════════════════════════════════════════
+        # Estimate current market coherence from pulse
+        pulse_dict = pulse if isinstance(pulse, dict) else {}
+        market_sentiment = pulse_dict.get('pulse', 'NEUTRAL')
+        btc_vol = abs(pulse_dict.get('btc_24h_change', 0))
+        
+        # Map sentiment to coherence estimate
+        coherence_map = {
+            'EUPHORIC': 0.85, 'BULLISH': 0.75, 'NEUTRAL': 0.55,
+            'CAUTIOUS': 0.45, 'FEARFUL': 0.35, 'PANICKED': 0.25
+        }
+        estimated_coherence = coherence_map.get(market_sentiment, 0.5)
+        
+        # Apply sandbox entry filter
+        should_trade, filter_reason = self.sandbox_evolution.get_entry_filter(btc_vol, estimated_coherence)
+        
+        print(f"\n🧬 SANDBOX ENTRY FILTER:")
+        print(f"   Market Coherence: {estimated_coherence:.0%} (from '{market_sentiment}')")
+        print(f"   24h Volatility: {btc_vol:.2f}%")
+        print(f"   Filter Result: {filter_reason}")
+        if should_trade:
+            targets = self.sandbox_evolution.get_exit_targets(pulse_dict.get('btc_price', 100000))
+            print(f"   → Take Profit Target: ${targets['take_profit_price']:,.2f} (+{targets['take_profit_pct']:.2f}%)")
+            print(f"   → Stop Loss Target: ${targets['stop_loss_price']:,.2f} (-{targets['stop_loss_pct']:.2f}%)")
+        
         return {
             "talk": talk,
             "consensus": council_result.get("consensus"),
             "unified_consensus": unified_consensus.get("sentiment", "NEUTRAL"),
             "unified_action": unified_consensus.get("action", "HOLD"),
-            "unified_confidence": quantum_influenced_confidence,
+            "unified_confidence": final_confidence,  # Now uses sandbox-evolved confidence
             "manipulation_probability": skeptic_result.get("manipulation_probability"),
             "speculations": speculations,
             "reflection": reflection_result,
@@ -5808,7 +6023,17 @@ class MinerBrain:
             "live_pulse": pulse,
             "unified_reading": unified_reading,
             "civilization_actions": civilization_actions,
-            "quantum_context_received": hasattr(self, '_quantum_context') and bool(self._quantum_context)
+            "quantum_context_received": hasattr(self, '_quantum_context') and bool(self._quantum_context),
+            # NEW: Sandbox Evolution Data
+            "sandbox_evolution": {
+                "generation": self.sandbox_evolution.generations,
+                "best_win_rate": self.sandbox_evolution.best_win_rate,
+                "should_trade": should_trade,
+                "entry_filter_reason": filter_reason,
+                "evolved_params": self.sandbox_evolution.params,
+                "exit_targets": self.sandbox_evolution.get_exit_targets(pulse_dict.get('btc_price', 100000)) if should_trade else None,
+                "position_size_pct": self.sandbox_evolution.params['position_size_pct'] * 100,
+            }
         }
 
     def get_latest_prediction(self):
