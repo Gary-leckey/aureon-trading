@@ -99,5 +99,8 @@
     }
   },
   "timestamp": 1765717231.5139668,
-  "iteration": 37
+  "iteration": 37,
+  "first_start_balance": 111.4954282039699,
+  "first_start_time": 1765798489.4154055,
+  "initial_balance": 111.4954282039699
 }

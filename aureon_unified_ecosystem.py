@@ -3551,6 +3551,11 @@ class UnifiedStateAggregator:
             self.aggregated_state['wins'] = main_state.get('wins', 0)
             self.aggregated_state['losses'] = main_state.get('losses', 0)
             self.aggregated_state['max_drawdown'] = main_state.get('max_drawdown', 0)
+            
+            # 🎯 TRUE STARTING BALANCE - shared across all subsystems!
+            self.aggregated_state['first_start_balance'] = main_state.get('first_start_balance', main_state.get('initial_balance', 0))
+            self.aggregated_state['first_start_time'] = main_state.get('first_start_time', 0)
+            self.aggregated_state['initial_balance'] = main_state.get('initial_balance', 0)
 
             # Position hygiene pass: flag long-running or losing positions
             positions = main_state.get('positions', {}) or {}
@@ -4125,6 +4130,15 @@ class UnifiedStateAggregator:
     def get_summary(self) -> str:
         """Get formatted summary of aggregated state."""
         state = self.aggregated_state
+        
+        # Calculate TRUE P&L
+        first_start = state.get('first_start_balance', 0)
+        current = state.get('current_balance', 0)
+        true_pnl = current - first_start if first_start > 0 else 0
+        true_pct = (true_pnl / first_start * 100) if first_start > 0 else 0
+        first_start_time = state.get('first_start_time', 0)
+        start_str = time.strftime('%Y-%m-%d %H:%M', time.localtime(first_start_time)) if first_start_time > 0 else 'Unknown'
+        
         lines = [
             "═══════════════════════════════════════",
             "📊 UNIFIED STATE AGGREGATOR SUMMARY",
@@ -4132,6 +4146,12 @@ class UnifiedStateAggregator:
             f"Sources Loaded: {', '.join(state.get('sources_loaded', []))}",
             f"Historical Trades: {state.get('total_historical_trades', 0)}",
             f"Combined Win Rate: {state.get('combined_win_rate', 0):.1f}%",
+            "",
+            "💵 PORTFOLIO (TRUE from first run):",
+            f"   First Started: {start_str}",
+            f"   TRUE Starting: £{first_start:.2f}",
+            f"   Current: £{current:.2f}",
+            f"   TRUE P&L: £{true_pnl:+.2f} ({true_pct:+.1f}%)",
             "",
             "Frequency Performance:"
         ]
@@ -8655,6 +8675,8 @@ class PerformanceTracker:
     
     def __init__(self, initial_balance: float):
         self.initial_balance = initial_balance
+        self.first_start_balance = initial_balance  # TRUE starting balance - survives restarts!
+        self.first_start_time = time.time()  # When the system FIRST started
         self.balance = initial_balance
         self.peak_balance = initial_balance
         self.total_trades = 0
@@ -11331,6 +11353,9 @@ class AureonKrakenEcosystem:
         """Save current state to file for recovery"""
         try:
             state = {
+                'first_start_balance': self.tracker.first_start_balance,  # TRUE starting balance!
+                'first_start_time': self.tracker.first_start_time,  # When we first started
+                'initial_balance': self.tracker.initial_balance,
                 'balance': self.tracker.balance,
                 'peak_balance': self.tracker.peak_balance,
                 'total_trades': self.tracker.total_trades,
@@ -11375,7 +11400,10 @@ class AureonKrakenEcosystem:
             with open(CONFIG['STATE_FILE'], 'r') as f:
                 state = json.load(f)
             
-            # Restore tracker state
+            # Restore tracker state - including the TRUE starting balance!
+            self.tracker.first_start_balance = state.get('first_start_balance', state.get('initial_balance', self.tracker.initial_balance))
+            self.tracker.first_start_time = state.get('first_start_time', time.time())
+            self.tracker.initial_balance = state.get('initial_balance', self.tracker.initial_balance)
             self.tracker.balance = state.get('balance', self.tracker.balance)
             self.tracker.peak_balance = state.get('peak_balance', self.tracker.peak_balance)
             self.tracker.total_trades = state.get('total_trades', 0)
@@ -11385,6 +11413,8 @@ class AureonKrakenEcosystem:
             self.tracker.compounded = state.get('compounded', 0.0)
             self.tracker.harvested = state.get('harvested', 0.0)
             self.tracker.max_drawdown = state.get('max_drawdown', 0.0)
+            
+            print(f"   📊 Restored TRUE starting balance: £{self.tracker.first_start_balance:.2f} (from {time.strftime('%Y-%m-%d %H:%M', time.localtime(self.tracker.first_start_time))})")
             
             # Restore positions (optional - might be stale)
             saved_positions = state.get('positions', {})
