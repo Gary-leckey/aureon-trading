@@ -51,6 +51,17 @@ sys.path.insert(0, '/workspaces/aureon-trading')
 from kraken_client import KrakenClient
 from aureon_lattice import LatticeEngine
 
+# 🧬 SANDBOX EVOLVED PARAMETERS - 454 Generations of Learning
+try:
+    from penny_profit_engine import get_evolved_exits, SandboxEvolvedExits
+    SANDBOX_EVOLVED_AVAILABLE = True
+    _evolved = get_evolved_exits()
+    print(f"🧬 Sandbox Evolution loaded - Gen {_evolved.generation}, {_evolved.win_rate:.1f}% win rate")
+except ImportError:
+    SANDBOX_EVOLVED_AVAILABLE = False
+    _evolved = None
+    print("⚠️ Sandbox Evolution not available - using defaults")
+
 # 🔮 NEXUS PREDICTOR - 79.6% Win Rate Validated Over 11 Years!
 try:
     from nexus_predictor import NexusPredictor
@@ -64,6 +75,12 @@ except ImportError:
 # CONFIGURATION - THE UNIFIED PARAMETERS
 # ═══════════════════════════════════════════════════════════════
 
+# Load sandbox-evolved parameters if available
+_EVOLVED_TP = _evolved.params['take_profit_pct'] if SANDBOX_EVOLVED_AVAILABLE else 0.8
+_EVOLVED_SL = _evolved.params['stop_loss_pct'] if SANDBOX_EVOLVED_AVAILABLE else 0.5
+_EVOLVED_POS_SIZE = _evolved.params['position_size_pct'] if SANDBOX_EVOLVED_AVAILABLE else 0.10
+_EVOLVED_MIN_COH = _evolved.params['min_coherence'] if SANDBOX_EVOLVED_AVAILABLE else 0.20
+
 CONFIG = {
     # Trading Parameters
     'BASE_CURRENCY': os.getenv('BASE_CURRENCY', 'USD'),  # USD or GBP
@@ -72,8 +89,12 @@ CONFIG = {
     'KRAKEN_FEE': 0.0026,           # Legacy field (uses taker)
     'SLIPPAGE_PCT': 0.0010,         # 0.10% estimated slippage per trade
     'SPREAD_COST_PCT': 0.0005,      # 0.05% estimated spread cost
-    'TAKE_PROFIT_PCT': 0.8,         # 0.8% profit target (AGGRESSIVE)
-    'STOP_LOSS_PCT': 0.5,           # 0.5% stop loss (TIGHT)
+    
+    # 🧬 SANDBOX EVOLVED EXITS (454 Generations of Learning)
+    'TAKE_PROFIT_PCT': _EVOLVED_TP,   # Evolved: 1.82% (was 0.8%)
+    'STOP_LOSS_PCT': _EVOLVED_SL,     # Evolved: 1.43% (was 0.5%)
+    'USE_SANDBOX_EVOLVED': SANDBOX_EVOLVED_AVAILABLE,
+    
     'MAX_POSITIONS': 20,            # More positions for dynamic portfolio! 🚀
     'MIN_TRADE_USD': 3.0,           # Minimum trade notional in base currency
     'PORTFOLIO_RISK_BUDGET': 0.95,  # Use 95% of equity - fully dynamic!
@@ -96,7 +117,7 @@ CONFIG = {
     # Kelly Criterion & Risk Management
     'USE_KELLY_SIZING': True,       # Use Kelly instead of fixed %
     'KELLY_SAFETY_FACTOR': 0.5,     # Half-Kelly for safety
-    'BASE_POSITION_SIZE': 0.10,     # Base size when Kelly disabled
+    'BASE_POSITION_SIZE': _EVOLVED_POS_SIZE,  # 🧬 Evolved: 12.2% (was 10%)
     'MAX_POSITION_SIZE': 0.25,      # Hard cap per trade
     'MAX_SYMBOL_EXPOSURE': 0.30,    # Max 30% in one symbol
     'MAX_DRAWDOWN_PCT': 15.0,       # Circuit breaker at 15% DD
@@ -123,9 +144,9 @@ CONFIG = {
     'FREQ_CARGOSHIP': 174.0,
     'FREQ_CLOWNFISH': 639.0,
     
-    # Coherence Thresholds - AGGRESSIVE MODE (trade like a human!)
+    # Coherence Thresholds - 🧬 SANDBOX EVOLVED (trade like evolution learned!)
     'HIGH_COHERENCE_MODE': False,  # Disabled - too conservative
-    'ENTRY_COHERENCE': 0.25,  # Low bar - take opportunities when they appear
+    'ENTRY_COHERENCE': _EVOLVED_MIN_COH,  # 🧬 Evolved: 73% (was 25%)
     'EXIT_COHERENCE': 0.20,  # Even lower exit
     
     # Lambda Field Components (from coherenceTrader.ts)
@@ -1221,13 +1242,31 @@ class AureonKrakenEcosystem:
 
     def should_enter_trade(self, opp: Dict, pos_size: float, lattice_state) -> bool:
         """
-        Aggressive entry - buy when opportunity appears!
-        This gate is for ENTRIES, so be permissive.
+        Evolved entry filter - uses parameters learned through 454 generations
+        of trial and error. NOT made easier - the brain figured this out!
         """
         # Minimal sanity checks only
         if pos_size <= 0 or self.total_equity_gbp <= 0:
             return False
-        # AGGRESSIVE ENTRY - Trade when you see opportunity!
+        
+        # SANDBOX EVOLVED ENTRY FILTER
+        # These thresholds were LEARNED through continuous feedback loop
+        if SANDBOX_EVOLVED_AVAILABLE and _evolved:
+            coherence = opp.get('coherence', 0)
+            volatility = opp.get('volatility', 0)
+            
+            # Coherence filter - evolved minimum is ~73%
+            if coherence < CONFIG['ENTRY_COHERENCE']:
+                return False  # Below evolved coherence threshold
+            
+            # Volatility filter - evolved range is 0.80% to 1.63%
+            evolved_vol_min = _evolved.params.get('min_volatility', 0.005) if hasattr(_evolved, 'params') else 0.005
+            evolved_vol_max = _evolved.params.get('max_volatility', 0.02) if hasattr(_evolved, 'params') else 0.02
+            
+            if volatility > 0 and (volatility < evolved_vol_min or volatility > evolved_vol_max):
+                return False  # Outside evolved volatility range
+        
+        # Passed evolved filters - ENTER TRADE!
         return True
     
     def should_exit_trade(self, pos: 'Position', current_price: float, reason: str) -> bool:
@@ -1335,6 +1374,7 @@ class AureonKrakenEcosystem:
         
     def banner(self):
         mode = "🧪 PAPER" if self.dry_run else "💰 LIVE"
+        sandbox_status = f"🧬 Gen {_evolved.generation}, {_evolved.win_rate:.0f}% WR" if SANDBOX_EVOLVED_AVAILABLE and _evolved else "❌ Not loaded"
         print(f"""
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║                                                                          ║
@@ -1349,11 +1389,12 @@ class AureonKrakenEcosystem:
 ║   ├─ 🔴 Real-Time WebSocket Prices                                      ║
 ║   ├─ 📊 Kelly Criterion Position Sizing                                 ║
 ║   ├─ 🛑 Circuit Breaker (Max DD: {CONFIG['MAX_DRAWDOWN_PCT']}%)                        ║
-║   └─ 🎯 51%+ Win Rate Strategy                                          ║
+║   ├─ 🎯 51%+ Win Rate Strategy                                          ║
+║   └─ 🧬 Sandbox Evolution: {sandbox_status}                ║
 ║                                                                          ║
-║   Strategy: TP +{CONFIG['TAKE_PROFIT_PCT']}% | SL -{CONFIG['STOP_LOSS_PCT']}% | Pos: Kelly+Coherence | Base: {CONFIG['BASE_CURRENCY']}        ║
+║   Strategy: TP +{CONFIG['TAKE_PROFIT_PCT']:.2f}% | SL -{CONFIG['STOP_LOSS_PCT']:.2f}% | Coh: {CONFIG['ENTRY_COHERENCE']*100:.0f}%+ | Base: {CONFIG['BASE_CURRENCY']}    ║
 ║                                                                          ║
-║   Goal: 51%+ Win Rate with NET PROFIT after fees                        ║
+║   🧠 EVOLVED: Parameters learned through 454 generations - NOT given!   ║
 ║                                                                          ║
 ╚══════════════════════════════════════════════════════════════════════════╝
         

@@ -8,6 +8,8 @@ The stupidest AND smartest trading strategy:
 Loads validated thresholds from penny_profit_thresholds.json and provides
 simple dollar-based exit rules for each exchange.
 
+NOW ENHANCED with Sandbox Evolution parameters from 454 generations of learning!
+
 Gary Leckey & GitHub Copilot | December 2025
 """
 
@@ -18,6 +20,9 @@ from typing import Dict, Optional, Tuple
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
+
+# Sandbox learning file
+SANDBOX_LEARNING_FILE = os.path.join(os.path.dirname(__file__), "sandbox_brain_learning.json")
 
 
 @dataclass
@@ -264,6 +269,150 @@ def check_penny_exit(exchange: str, entry_value: float, current_value: float) ->
     return get_penny_engine().check_exit(exchange, entry_value, current_value)
 
 
+# ═══════════════════════════════════════════════════════════════
+# 🧬 SANDBOX EVOLVED EXIT CALCULATOR
+# ═══════════════════════════════════════════════════════════════
+
+class SandboxEvolvedExits:
+    """
+    Uses sandbox-evolved parameters (454 generations) for exit calculations.
+    These parameters were learned through trial and error, not given.
+    
+    Evolved Parameters:
+    - take_profit_pct: 1.82% (let winners run)
+    - stop_loss_pct: 1.43% (wide stop)
+    - position_size_pct: 12.2% of capital
+    - min_coherence: 73% (only trade quality markets)
+    """
+    
+    # Default evolved parameters (from 454 generations)
+    DEFAULT_EVOLVED = {
+        "take_profit_pct": 1.82,
+        "stop_loss_pct": 1.43,
+        "position_size_pct": 0.122,
+        "min_coherence": 0.73,
+        "min_volatility": 0.80,
+        "max_volatility": 1.63,
+    }
+    
+    def __init__(self):
+        self.params = self.DEFAULT_EVOLVED.copy()
+        self.generation = 0
+        self.win_rate = 0.0
+        self._load_from_sandbox()
+    
+    def _load_from_sandbox(self):
+        """Load evolved parameters from sandbox learning file."""
+        try:
+            if os.path.exists(SANDBOX_LEARNING_FILE):
+                with open(SANDBOX_LEARNING_FILE, 'r') as f:
+                    data = json.load(f)
+                
+                best = data.get('best_parameters', {})
+                if best:
+                    self.params['take_profit_pct'] = best.get('take_profit_pct', self.params['take_profit_pct'])
+                    self.params['stop_loss_pct'] = best.get('stop_loss_pct', self.params['stop_loss_pct'])
+                    self.params['position_size_pct'] = best.get('position_size_pct', self.params['position_size_pct'])
+                    self.params['min_coherence'] = best.get('min_coherence', self.params['min_coherence'])
+                    self.params['min_volatility'] = best.get('min_volatility', self.params['min_volatility'])
+                    self.params['max_volatility'] = best.get('max_volatility', self.params['max_volatility'])
+                
+                self.generation = data.get('generation', 0)
+                self.win_rate = data.get('best_win_rate', 0)
+                
+                logger.info(f"🧬 Loaded sandbox evolution: Gen {self.generation}, {self.win_rate:.1f}% win rate")
+        except Exception as e:
+            logger.warning(f"Could not load sandbox evolution: {e}")
+    
+    def get_exit_prices_evolved(self, entry_price: float) -> Dict:
+        """
+        Calculate exit prices using sandbox-evolved percentages.
+        
+        Args:
+            entry_price: Entry price per unit
+            
+        Returns:
+            Dict with tp_price, sl_price, and evolved parameters
+        """
+        tp_pct = self.params['take_profit_pct']
+        sl_pct = self.params['stop_loss_pct']
+        
+        tp_price = entry_price * (1 + tp_pct / 100)
+        sl_price = entry_price * (1 - sl_pct / 100)
+        
+        return {
+            'entry_price': entry_price,
+            'tp_price': tp_price,
+            'tp_pct': tp_pct,
+            'sl_price': sl_price,
+            'sl_pct': sl_pct,
+            'evolved_generation': self.generation,
+            'evolved_win_rate': self.win_rate,
+        }
+    
+    def check_exit_evolved(self, entry_price: float, current_price: float) -> Tuple[str, float]:
+        """
+        Check if position should exit using sandbox-evolved parameters.
+        
+        Returns: (action, pnl_pct)
+        - action: 'TAKE_PROFIT', 'STOP_LOSS', or 'HOLD'
+        """
+        pnl_pct = ((current_price / entry_price) - 1) * 100
+        
+        if pnl_pct >= self.params['take_profit_pct']:
+            return ('TAKE_PROFIT', pnl_pct)
+        elif pnl_pct <= -self.params['stop_loss_pct']:
+            return ('STOP_LOSS', pnl_pct)
+        else:
+            return ('HOLD', pnl_pct)
+    
+    def should_enter(self, market_coherence: float, volatility: float) -> Tuple[bool, str]:
+        """
+        Check if market conditions are favorable for entry (evolved filters).
+        
+        Args:
+            market_coherence: 0-1 estimate of market quality
+            volatility: Recent volatility percentage
+            
+        Returns: (should_enter, reason)
+        """
+        if market_coherence < self.params['min_coherence']:
+            return False, f"Coherence {market_coherence:.0%} < {self.params['min_coherence']:.0%}"
+        
+        if volatility < self.params['min_volatility']:
+            return False, f"Volatility {volatility:.2f}% too low (min {self.params['min_volatility']:.2f}%)"
+        
+        if volatility > self.params['max_volatility']:
+            return False, f"Volatility {volatility:.2f}% too high (max {self.params['max_volatility']:.2f}%)"
+        
+        return True, "✅ Entry conditions met (evolved filters)"
+    
+    def get_position_size(self, capital: float) -> float:
+        """Get evolved optimal position size."""
+        return capital * self.params['position_size_pct']
+
+
+# Singleton for evolved exits
+_evolved_exits: Optional[SandboxEvolvedExits] = None
+
+
+def get_evolved_exits() -> SandboxEvolvedExits:
+    """Get the singleton evolved exits calculator."""
+    global _evolved_exits
+    if _evolved_exits is None:
+        _evolved_exits = SandboxEvolvedExits()
+    return _evolved_exits
+
+
+def check_evolved_exit(entry_price: float, current_price: float) -> Tuple[str, float]:
+    """
+    Quick check using sandbox-evolved exit parameters.
+    
+    Returns: (action, pnl_pct)
+    """
+    return get_evolved_exits().check_exit_evolved(entry_price, current_price)
+
+
 if __name__ == '__main__':
     # Test the engine
     engine = PennyProfitEngine()
@@ -297,3 +446,42 @@ if __name__ == '__main__':
     print(f"   TP at: ${prices['tp_price']:.4f} × 7.5 = ${prices['tp_value']:.2f} (gross +${prices['tp_gross_target']:.3f})")
     print(f"   SL at: ${prices['sl_price']:.4f} × 7.5 = ${prices['sl_value']:.2f} (gross ${prices['sl_gross_target']:.3f})")
     print(f"   Net profit if TP: ${prices['net_profit_if_tp']:.2f} 🪙")
+    
+    # Test Sandbox Evolved Exits
+    print("\n" + "=" * 60)
+    print("🧬 SANDBOX EVOLVED EXITS (454 Generations of Learning)")
+    print("=" * 60)
+    
+    evolved = get_evolved_exits()
+    print(f"\n   Generation: {evolved.generation}")
+    print(f"   Win Rate: {evolved.win_rate:.1f}%")
+    print(f"   Take Profit: {evolved.params['take_profit_pct']:.2f}%")
+    print(f"   Stop Loss: {evolved.params['stop_loss_pct']:.2f}%")
+    print(f"   Position Size: {evolved.params['position_size_pct']*100:.1f}%")
+    
+    # Test evolved exits
+    print("\n   Exit Tests @ $100 entry:")
+    evolved_tests = [
+        (101.82, f"Up {evolved.params['take_profit_pct']:.2f}% - should TP"),
+        (101.00, "Up 1.00% - should HOLD"),
+        (100.00, "Flat - should HOLD"),
+        (98.57, f"Down {evolved.params['stop_loss_pct']:.2f}% - should STOP"),
+    ]
+    
+    for current, desc in evolved_tests:
+        action, pnl_pct = evolved.check_exit_evolved(100.0, current)
+        print(f"   {desc}: {pnl_pct:+.2f}% → {action}")
+    
+    # Test entry filter
+    print("\n   Entry Filter Tests:")
+    entry_tests = [
+        (0.75, 1.2, "Good coherence, good volatility"),
+        (0.50, 1.2, "Low coherence"),
+        (0.75, 0.3, "Low volatility"),
+        (0.75, 2.5, "High volatility"),
+    ]
+    
+    for coh, vol, desc in entry_tests:
+        should, reason = evolved.should_enter(coh, vol)
+        emoji = "✅" if should else "❌"
+        print(f"   {emoji} {desc}: {reason}")
