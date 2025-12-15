@@ -69,13 +69,8 @@ The system is composed of distinct biological and mechanical layers working in a
 
 ### 1. THE SOUL (Metaphysics & Identity)
 
-*   **The Master Equation (Lambda):** The mathematical backbone that calculates the state of reality.
-    ```
-    Lambda(t) = S(t) + O(t) + E(t)
-    ```
-    *   **S(t) (Sentinel):** The intent of the creator (Gary Leckey).
-    *   **O(t) (Oracle):** The raw market data stream.
-    *   **E(t) (Environment):** Cosmic resonance (Schumann Frequencies, Planetary Alignment).
+*   **The Master Equation (HNC):** The mathematical backbone that calculates the state of reality.
+    ```.The Master Equation (HNC): The Harmonic Nexus Core is the mathematical backbone that calculates the state of reality. HNC(t) = S(t) + O(t) + E(t), where S(t) (Sentinel) is the intent of the creator, O(t) (Oracle) is the raw market data stream, and E(t) (Environment) captures cosmic resonance (Schumann frequencies, planetary alignment).
 
 *   **Harmonic Nexus:** A filter that rejects trades vibrating at "distorted" frequencies (e.g., 440Hz) and amplifies those at "pure" frequencies (528Hz - Transformation, 432Hz - Clarity).
 
