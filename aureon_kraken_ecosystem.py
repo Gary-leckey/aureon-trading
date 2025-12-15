@@ -1244,6 +1244,19 @@ class AureonKrakenEcosystem:
 
     def refresh_equity(self, mark_cycle: bool = False) -> float:
         total, cash, holdings = self.compute_total_equity()
+        
+        # 🛠️ FIX: Auto-correct "Fake $1000 Balance" on first run
+        if self.tracker.initial_balance == 1000.0 and self.tracker.total_trades == 0:
+            if abs(total - 1000.0) > 1.0 and total > 0:
+                print(f"   ⚖️  Correcting Initial Balance: ${self.tracker.initial_balance:.2f} -> ${total:.2f} (Actual Wallet)")
+                self.tracker.initial_balance = total
+                self.tracker.first_start_balance = total
+                self.tracker.balance = total
+                self.tracker.peak_balance = total
+                self.tracker.equity_baseline = total
+                self.tracker.portfolio_equity = total
+                self.tracker.cash_balance = cash
+
         self.total_equity_gbp = total
         self.cash_balance_gbp = cash
         self.holdings_gbp = holdings

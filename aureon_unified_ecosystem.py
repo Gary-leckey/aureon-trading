@@ -10736,6 +10736,29 @@ class AureonKrakenEcosystem:
     def refresh_equity(self, mark_cycle: bool = False) -> float:
         self._liquidity_warnings.clear()
         total, cash, holdings = self.compute_total_equity()
+        
+        # 🛠️ FIX: Auto-correct "Fake $1000 Balance" on first run
+        # If we are using the default 1000, but the wallet shows something else (e.g. ~55),
+        # and we haven't done any trades yet, assume this is the TRUE starting balance.
+        if self.tracker.initial_balance == 1000.0 and self.tracker.total_trades == 0:
+            # Check if we are significantly different (e.g. > 1% diff) to avoid floating point noise
+            # But really, if it's the first run, we should trust the wallet.
+            if abs(total - 1000.0) > 1.0 and total > 0:
+                print(f"   ⚖️  Correcting Initial Balance: ${self.tracker.initial_balance:.2f} -> ${total:.2f} (Actual Wallet)")
+                self.tracker.initial_balance = total
+                self.tracker.first_start_balance = total
+                self.tracker.balance = total
+                self.tracker.peak_balance = total
+                self.tracker.equity_baseline = total
+                self.tracker.portfolio_equity = total
+                self.tracker.cash_balance = cash
+                
+                # Update the P&L snapshot immediately
+                self.pnl_state['total_equity'] = total
+                self.pnl_state['cash'] = cash
+                self.pnl_state['net_profit'] = 0.0
+                self.pnl_state['total_return_pct'] = 0.0
+
         self.total_equity_gbp = total
         self.cash_balance_gbp = cash
         self.holdings_gbp = holdings
