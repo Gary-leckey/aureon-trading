@@ -2100,6 +2100,21 @@ class AureonKrakenEcosystem:
     
     def run(self, interval: float = 5.0):
         """Main trading loop"""
+        # 🛠️ CRITICAL: Compute REAL wallet balance BEFORE banner!
+        total, cash, holdings = self.compute_total_equity()
+        if self.tracker.initial_balance == 1000.0 and self.tracker.total_trades == 0:
+            if abs(total - 1000.0) > 1.0 and total > 0:
+                print(f"\n   ⚖️  AUTO-CORRECTING BALANCE: ${self.tracker.initial_balance:.2f} -> ${total:.2f} (Actual Wallet)\n")
+                self.tracker.initial_balance = total
+                self.tracker.first_start_balance = total
+                self.tracker.balance = total
+                self.tracker.peak_balance = total
+                self.tracker.equity_baseline = total
+                self.tracker.portfolio_equity = total
+                self.tracker.cash_balance = cash
+                self.total_equity_gbp = total
+                self.cash_balance_gbp = cash
+        
         self.banner()
         
         print("🐙 Connecting to Kraken ecosystem...")
