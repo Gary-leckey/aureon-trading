@@ -9,13 +9,15 @@ The launcher (`cli/launcher.py`) is bundled as a single-file Windows executable 
    pip install pyinstaller
    ```
 2. Run PyInstaller with one-file mode and console output:
-   ```powershell
-   pyinstaller --onefile --name aureon --add-data "config.key;." --hidden-import requests --hidden-import cryptography.cli launcher.spec
-   ```
-   When a spec file is not present, you can build directly from the launcher entry point:
-   ```powershell
-   pyinstaller --onefile --name aureon cli\launcher.py --add-data "config.key;." --collect-all cryptography
-   ```
+
+   - **If you have a custom `launcher.spec` file (for advanced/custom builds), use:**
+     ```powershell
+     pyinstaller --onefile --name aureon --add-data "config.key;." --hidden-import requests --hidden-import cryptography.cli launcher.spec
+     ```
+   - **If you do _not_ have a `launcher.spec` file, build directly from the launcher entry point:**
+     ```powershell
+     pyinstaller --onefile --name aureon cli\launcher.py --add-data "config.key;." --collect-all cryptography
+     ```
 3. Copy the resulting `dist\aureon.exe` to your deployment location.
 
 ## Post-build smoke test
