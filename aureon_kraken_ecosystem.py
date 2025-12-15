@@ -765,6 +765,8 @@ class PerformanceTracker:
     
     def __init__(self, initial_balance: float):
         self.initial_balance = initial_balance
+        self.first_start_balance = initial_balance  # TRUE starting balance - survives restarts!
+        self.first_start_time = time.time()  # When the system FIRST started
         self.balance = initial_balance
         self.peak_balance = initial_balance
         self.total_trades = 0
@@ -1313,6 +1315,9 @@ class AureonKrakenEcosystem:
         """Save current state to file for recovery"""
         try:
             state = {
+                'first_start_balance': self.tracker.first_start_balance,  # TRUE starting balance - survives restarts!
+                'first_start_time': self.tracker.first_start_time,  # When we first started
+                'initial_balance': self.tracker.initial_balance,  # Reference for calculations
                 'balance': self.tracker.balance,
                 'peak_balance': self.tracker.peak_balance,
                 'total_trades': self.tracker.total_trades,
@@ -1353,7 +1358,10 @@ class AureonKrakenEcosystem:
             with open(CONFIG['STATE_FILE'], 'r') as f:
                 state = json.load(f)
             
-            # Restore tracker state
+            # Restore tracker state - including the TRUE starting balance!
+            self.tracker.first_start_balance = state.get('first_start_balance', state.get('initial_balance', self.tracker.initial_balance))
+            self.tracker.first_start_time = state.get('first_start_time', time.time())
+            self.tracker.initial_balance = state.get('initial_balance', self.tracker.initial_balance)
             self.tracker.balance = state.get('balance', self.tracker.balance)
             self.tracker.peak_balance = state.get('peak_balance', self.tracker.peak_balance)
             self.tracker.total_trades = state.get('total_trades', 0)
@@ -1363,6 +1371,8 @@ class AureonKrakenEcosystem:
             self.tracker.compounded = state.get('compounded', 0.0)
             self.tracker.harvested = state.get('harvested', 0.0)
             self.tracker.max_drawdown = state.get('max_drawdown', 0.0)
+            
+            print(f"   📊 Restored TRUE starting balance: £{self.tracker.first_start_balance:.2f} (from {time.strftime('%Y-%m-%d %H:%M', time.localtime(self.tracker.first_start_time))})")
             
             # Restore positions (optional - might be stale)
             saved_positions = state.get('positions', {})
@@ -1375,6 +1385,7 @@ class AureonKrakenEcosystem:
     def banner(self):
         mode = "🧪 PAPER" if self.dry_run else "💰 LIVE"
         sandbox_status = f"🧬 Gen {_evolved.generation}, {_evolved.win_rate:.0f}% WR" if SANDBOX_EVOLVED_AVAILABLE and _evolved else "❌ Not loaded"
+        start_time_str = time.strftime('%Y-%m-%d %H:%M', time.localtime(self.tracker.first_start_time))
         print(f"""
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║                                                                          ║
@@ -1398,7 +1409,9 @@ class AureonKrakenEcosystem:
 ║                                                                          ║
 ╚══════════════════════════════════════════════════════════════════════════╝
         
-   💵 Starting Balance: ${self.tracker.initial_balance:.2f}
+   📅 First Started: {start_time_str}
+   💵 TRUE Starting Balance: ${self.tracker.first_start_balance:.2f} (actual portfolio when first run)
+   💰 Current Balance: ${self.tracker.balance:.2f}
 """)
 
     # ─────────────────────────────────────────────────────────
@@ -2220,14 +2233,21 @@ class AureonKrakenEcosystem:
             
     def final_report(self):
         """Print final statistics"""
+        # Calculate from TRUE starting balance
+        true_start = self.tracker.first_start_balance
+        true_pnl = self.tracker.balance - true_start
+        true_return = (true_pnl / true_start * 100) if true_start > 0 else 0
+        start_time_str = time.strftime('%Y-%m-%d %H:%M', time.localtime(self.tracker.first_start_time))
+        
         print(f"""
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║          🐙🌌 AUREON KRAKEN ECOSYSTEM - FINAL REPORT 🌌🐙               ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 
-   Starting Balance:  ${self.tracker.initial_balance:.2f}
-   Final Balance:     ${self.tracker.balance:.2f}
-   💰 NET P&L:        ${self.tracker.balance - self.tracker.initial_balance:+.2f} ({self.tracker.total_return:+.2f}%)
+   📅 First Started:   {start_time_str}
+   💵 TRUE Starting:   ${true_start:.2f}  (actual portfolio value when first run)
+   💰 Current Balance: ${self.tracker.balance:.2f}
+   📊 NET P&L:         ${true_pnl:+.2f} ({true_return:+.2f}%)
 
    Total Trades:      {self.tracker.total_trades}
    Wins:              {self.tracker.wins}
@@ -2247,10 +2267,10 @@ class AureonKrakenEcosystem:
    └─ Circuit Breaker: {'🛑 ACTIVATED' if self.tracker.trading_halted else '✅ OK'}
 """)
         
-        if self.tracker.win_rate >= 51 and self.tracker.net_profit > 0:
+        if self.tracker.win_rate >= 51 and true_pnl > 0:
             print("   ✅ GOAL ACHIEVED: 51%+ WR + NET PROFIT! ✅")
         else:
-            print(f"   📊 Status: WR={self.tracker.win_rate:.1f}%, Net=${self.tracker.net_profit:+.2f}")
+            print(f"   📊 Status: WR={self.tracker.win_rate:.1f}%, Net=${true_pnl:+.2f}")
 
 
 # ═══════════════════════════════════════════════════════════════
