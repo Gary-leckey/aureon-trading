@@ -960,6 +960,9 @@ class AureonKrakenEcosystem:
         self.tradeable_currencies = ['USD', 'GBP', 'EUR', 'USDT', 'USDC']
         self._detect_wallet_currency()
         
+        # Check if state file exists (is this the FIRST ever run?)
+        is_first_ever_run = not os.path.exists(CONFIG['STATE_FILE'])
+        
         # Load previous state if exists
         fresh_start = os.environ.get('FRESH_START', '0') == '1'
         if fresh_start:
@@ -967,11 +970,25 @@ class AureonKrakenEcosystem:
         else:
             self.load_state()
 
-        # Initialise equity snapshot
+        # Initialise equity snapshot - get REAL portfolio value
         self.refresh_equity(mark_cycle=True)
         
+        # FIRST EVER RUN: Capture the TRUE starting balance automatically!
+        if is_first_ever_run and not self.dry_run and self.total_equity_gbp > 0:
+            self.tracker.first_start_balance = self.total_equity_gbp
+            self.tracker.first_start_time = time.time()
+            self.tracker.initial_balance = self.total_equity_gbp
+            self.tracker.peak_balance = self.total_equity_gbp
+            self.tracker.balance = self.total_equity_gbp
+            self.tracker.equity_baseline = self.total_equity_gbp
+            self.tracker.cycle_equity_start = self.total_equity_gbp
+            print(f"   🎯 FIRST RUN: Captured TRUE starting balance: £{self.total_equity_gbp:.2f}")
+            self.save_state()  # Save immediately so we never lose it!
+            self._import_existing_holdings()
+        
         # On fresh start in live mode, reset baselines to actual portfolio value
-        if fresh_start and not self.dry_run and self.total_equity_gbp > 0:
+        elif fresh_start and not self.dry_run and self.total_equity_gbp > 0:
+            # Keep the first_start_balance from state file, but reset current tracking
             self.tracker.initial_balance = self.total_equity_gbp
             self.tracker.peak_balance = self.total_equity_gbp
             self.tracker.balance = self.total_equity_gbp
@@ -981,6 +998,7 @@ class AureonKrakenEcosystem:
             self.tracker.trading_halted = False
             self.tracker.halt_reason = ""
             print(f"   📊 Baseline reset to real portfolio: £{self.total_equity_gbp:.2f}")
+            print(f"   📅 Original start preserved: £{self.tracker.first_start_balance:.2f}")
             
             # Import existing holdings as managed positions
             self._import_existing_holdings()
