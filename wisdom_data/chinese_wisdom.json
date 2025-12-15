@@ -1,8 +1,11 @@
 {
   "civilization": "Chinese I Ching",
-  "last_updated": "2025-12-15T00:00:00Z",
+  "last_updated": "2025-12-15T10:24:46.188521",
   "version": "1.0.0",
-  "sources": ["hardcoded", "wikipedia"],
+  "sources": [
+    "hardcoded",
+    "wikipedia"
+  ],
   "topics": [
     {
       "name": "Yin Yang Balance",
@@ -23,14 +26,14 @@
       "content": "Action through non-action - aligning with natural flow rather than forcing",
       "trading_insight": "Trade with the trend, don't fight the market. Let the trade come to you.",
       "source": "hardcoded",
-      "relevance_score": 0.90
+      "relevance_score": 0.9
     },
     {
       "name": "Timing Mastery",
       "content": "Right action at right time - understanding cycles and moments",
       "trading_insight": "Entry/exit timing is everything. Patience for setup completion.",
       "source": "hardcoded",
-      "relevance_score": 0.90
+      "relevance_score": 0.9
     },
     {
       "name": "Hexagram 1: The Creative (Qian)",
@@ -58,7 +61,7 @@
       "content": "Wood feeds Fire, Fire creates Earth, Earth bears Metal, Metal carries Water, Water nourishes Wood",
       "trading_insight": "Sector rotation follows cycles. What rises must feed the next phase.",
       "source": "hardcoded",
-      "relevance_score": 0.80
+      "relevance_score": 0.8
     }
   ],
   "core_principles": {
@@ -75,23 +78,63 @@
     "wu_wei": {
       "description": "Action through non-action - aligning with natural flow rather than forcing",
       "trading_application": "Trade with the trend, don't fight the market",
-      "confidence": 0.90
+      "confidence": 0.9
     },
     "timing": {
       "description": "Right action at right time - understanding cycles and moments",
       "trading_application": "Entry/exit timing, patience for setup completion",
-      "confidence": 0.90
+      "confidence": 0.9
     }
   },
   "trigrams": {
-    "qian": {"symbol": "☰", "meaning": "Heaven", "attribute": "Creative", "element": "Strong"},
-    "kun": {"symbol": "☷", "meaning": "Earth", "attribute": "Receptive", "element": "Yielding"},
-    "zhen": {"symbol": "☳", "meaning": "Thunder", "attribute": "Arousing", "element": "Movement"},
-    "kan": {"symbol": "☵", "meaning": "Water", "attribute": "Abysmal", "element": "Danger"},
-    "gen": {"symbol": "☶", "meaning": "Mountain", "attribute": "Stillness", "element": "Stopping"},
-    "xun": {"symbol": "☴", "meaning": "Wind", "attribute": "Gentle", "element": "Penetrating"},
-    "li": {"symbol": "☲", "meaning": "Fire", "attribute": "Clinging", "element": "Clarity"},
-    "dui": {"symbol": "☱", "meaning": "Lake", "attribute": "Joyous", "element": "Pleasure"}
+    "qian": {
+      "symbol": "☰",
+      "meaning": "Heaven",
+      "attribute": "Creative",
+      "element": "Strong"
+    },
+    "kun": {
+      "symbol": "☷",
+      "meaning": "Earth",
+      "attribute": "Receptive",
+      "element": "Yielding"
+    },
+    "zhen": {
+      "symbol": "☳",
+      "meaning": "Thunder",
+      "attribute": "Arousing",
+      "element": "Movement"
+    },
+    "kan": {
+      "symbol": "☵",
+      "meaning": "Water",
+      "attribute": "Abysmal",
+      "element": "Danger"
+    },
+    "gen": {
+      "symbol": "☶",
+      "meaning": "Mountain",
+      "attribute": "Stillness",
+      "element": "Stopping"
+    },
+    "xun": {
+      "symbol": "☴",
+      "meaning": "Wind",
+      "attribute": "Gentle",
+      "element": "Penetrating"
+    },
+    "li": {
+      "symbol": "☲",
+      "meaning": "Fire",
+      "attribute": "Clinging",
+      "element": "Clarity"
+    },
+    "dui": {
+      "symbol": "☱",
+      "meaning": "Lake",
+      "attribute": "Joyous",
+      "element": "Pleasure"
+    }
   },
   "key_hexagrams": {
     "1_qian": {
@@ -126,15 +169,52 @@
     }
   },
   "five_elements": {
-    "wood": {"season": "Spring", "direction": "East", "energy": "Growth", "market": "Expansion"},
-    "fire": {"season": "Summer", "direction": "South", "energy": "Peak", "market": "Euphoria"},
-    "earth": {"season": "Transition", "direction": "Center", "energy": "Balance", "market": "Consolidation"},
-    "metal": {"season": "Autumn", "direction": "West", "energy": "Decline", "market": "Correction"},
-    "water": {"season": "Winter", "direction": "North", "energy": "Storage", "market": "Accumulation"}
+    "wood": {
+      "season": "Spring",
+      "direction": "East",
+      "energy": "Growth",
+      "market": "Expansion"
+    },
+    "fire": {
+      "season": "Summer",
+      "direction": "South",
+      "energy": "Peak",
+      "market": "Euphoria"
+    },
+    "earth": {
+      "season": "Transition",
+      "direction": "Center",
+      "energy": "Balance",
+      "market": "Consolidation"
+    },
+    "metal": {
+      "season": "Autumn",
+      "direction": "West",
+      "energy": "Decline",
+      "market": "Correction"
+    },
+    "water": {
+      "season": "Winter",
+      "direction": "North",
+      "energy": "Storage",
+      "market": "Accumulation"
+    }
   },
   "element_cycles": {
-    "generating": ["Wood feeds Fire", "Fire creates Earth", "Earth bears Metal", "Metal collects Water", "Water nourishes Wood"],
-    "overcoming": ["Wood parts Earth", "Earth dams Water", "Water extinguishes Fire", "Fire melts Metal", "Metal chops Wood"]
+    "generating": [
+      "Wood feeds Fire",
+      "Fire creates Earth",
+      "Earth bears Metal",
+      "Metal collects Water",
+      "Water nourishes Wood"
+    ],
+    "overcoming": [
+      "Wood parts Earth",
+      "Earth dams Water",
+      "Water extinguishes Fire",
+      "Fire melts Metal",
+      "Metal chops Wood"
+    ]
   },
   "tao_principles": {
     "tao_te_ching": "The Tao that can be spoken is not the eternal Tao",
@@ -154,6 +234,66 @@
     "Feng shui",
     "Chinese numerology"
   ],
-  "learned_insights": [],
-  "scan_history": []
+  "learned_insights": [
+    {
+      "source": "Sacred-Texts",
+      "civilization": "chinese",
+      "topic": "Five elements (Chinese philosophy)",
+      "content": "The I Ching, or Book of Changes, is the most widely read of the fiveChinese Classics.\n The book was traditionally written by the legendary Chinese\n Emperor Fu Hsi (2953-2838 B.C.).  It is possible that the\n the I Ching originated from a prehistoric divination technique which\n dates back as far as 5000 B.C.  Thus it may be the oldest text at this site.\n Futher commentaries were added by King Wen an",
+      "relevance_score": 0.8166004361650702,
+      "trading_application": "Ancient chinese wisdom for market understanding",
+      "timestamp": "2025-12-15T10:24:28.016798",
+      "content_hash": "432e77be86f64ea36fe30f99153d0d02"
+    },
+    {
+      "source": "Sacred-Texts",
+      "civilization": "chinese",
+      "topic": "Five elements (Chinese philosophy)",
+      "content": "An I Ching interpretation is performed by making\n six binary decisions (a hexagram).  This is called 'casting the I Ching'.\n These are written down as a stack of six solid or broken lines.\n This was traditionally done either by tossing yarrow\n stalks or coins, although there is no reason why\n the hexagrams can't be generated by some other means\n (such as a computer program).",
+      "relevance_score": 0.7103183412697871,
+      "trading_application": "Ancient chinese wisdom for market understanding",
+      "timestamp": "2025-12-15T10:24:28.016825",
+      "content_hash": "3c7f89011cd73e2fc7de81210cf4e26f"
+    },
+    {
+      "source": "Sacred-Texts",
+      "civilization": "chinese",
+      "topic": "Five elements (Chinese philosophy)",
+      "content": "There are actuallyfourpossible values for each of the lines; the two \n on/off values, and a line which changes from on to off or vice versa.\n Thus one cast of the I Ching can generate two different hexagrams,\n which adds depth to the interpretation.\n The sophistication of this method has not escaped modern interpretation,\n and the four-valued logic has been compared to the biochemistry ofDNA amino",
+      "relevance_score": 0.673438616475206,
+      "trading_application": "Ancient chinese wisdom for market understanding",
+      "timestamp": "2025-12-15T10:24:28.016834",
+      "content_hash": "5e6fe75ac4e807fa6d5fe7104475620d"
+    },
+    {
+      "source": "Sacred-Texts",
+      "civilization": "chinese",
+      "topic": "Five elements (Chinese philosophy)",
+      "content": "Production Notes:\n This is a complete overhaul of the Legge I Ching etext, with all of the\n original illustrations.\n This utilizesUnicode charactersthroughout to represent the 'short A' and the 'Yodh' found in the original book.\n Because not all browsers support the official Unicode 'Yodh'\n (Ȝ and ȝ),\n we have used Ž and ž to represent it.\n In addition, we have used images to present the dozen or ",
+      "relevance_score": 0.8609696549958851,
+      "trading_application": "Ancient chinese wisdom for market understanding",
+      "timestamp": "2025-12-15T10:24:28.016841",
+      "content_hash": "b185168f0d82cae64f4222fb3f6b7f84"
+    },
+    {
+      "source": "Sacred-Texts",
+      "civilization": "chinese",
+      "topic": "Five elements (Chinese philosophy)",
+      "content": "This is a quiet place in cyberspacedevoted to religious tolerance and scholarshipNon-public domain contents of this sitenot otherwise copyrighted are © copyright 2023,\n John Bruno Hare, All Rights Reserved.SeeSite copyrights,Terms of Servicefor more information.Index|FAQ|Contact|Search|Buy DiskOpen Source for the Human Soul",
+      "relevance_score": 0.8768935599033751,
+      "trading_application": "Ancient chinese wisdom for market understanding",
+      "timestamp": "2025-12-15T10:24:28.017229",
+      "content_hash": "5ffafc9fa79a225ee8dc088f06bff93f"
+    }
+  ],
+  "scan_history": [
+    {
+      "timestamp": "2025-12-15T10:24:46.188503",
+      "insights_found": 5,
+      "sources_used": [
+        "Wikipedia",
+        "Sacred-Texts"
+      ]
+    }
+  ]
 }

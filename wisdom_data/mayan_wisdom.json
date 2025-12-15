@@ -1,8 +1,11 @@
 {
   "civilization": "Mayan",
-  "last_updated": "2025-12-15T00:00:00Z",
+  "last_updated": "2025-12-15T10:26:06.595376",
   "version": "1.0.0",
-  "sources": ["hardcoded", "wikipedia"],
+  "sources": [
+    "hardcoded",
+    "wikipedia"
+  ],
   "topics": [
     {
       "name": "Cyclical Time",
@@ -23,7 +26,7 @@
       "content": "Maintaining balance between opposing forces - light and dark, creation and destruction",
       "trading_insight": "Risk/reward balance. Portfolio equilibrium. The Mayans knew: Excess invites correction.",
       "source": "hardcoded",
-      "relevance_score": 0.90
+      "relevance_score": 0.9
     },
     {
       "name": "Tzolkin Sacred Calendar",
@@ -44,14 +47,14 @@
       "content": "The Great Cycle of 5,125 years enabling long-term pattern recognition",
       "trading_insight": "Super-cycles exist. The Mayans tracked them. Bitcoin's halving is a Long Count event.",
       "source": "hardcoded",
-      "relevance_score": 0.80
+      "relevance_score": 0.8
     },
     {
       "name": "Kukulkan's Descent",
       "content": "At equinox, the feathered serpent descends the pyramid of Chichen Itza",
       "trading_insight": "Equinox moments in markets - balance points before directional moves. Watch for the serpent.",
       "source": "hardcoded",
-      "relevance_score": 0.80
+      "relevance_score": 0.8
     },
     {
       "name": "Cenote Depths",
@@ -75,12 +78,12 @@
     "balance": {
       "description": "Maintaining balance between opposing forces",
       "trading_application": "Risk/reward balance, portfolio equilibrium",
-      "confidence": 0.90
+      "confidence": 0.9
     },
     "prophecy": {
       "description": "Understanding cycles enables prediction",
       "trading_application": "Pattern-based forecasting",
-      "confidence": 0.80
+      "confidence": 0.8
     }
   },
   "calendar_systems": {
@@ -139,26 +142,86 @@
     }
   },
   "day_signs": {
-    "imix": {"meaning": "Crocodile/Water Lily", "energy": "Primordial, beginning"},
-    "ik": {"meaning": "Wind/Breath", "energy": "Spirit, communication"},
-    "akbal": {"meaning": "Night/House", "energy": "Darkness, introspection"},
-    "kan": {"meaning": "Maize/Seed", "energy": "Growth, abundance"},
-    "chicchan": {"meaning": "Serpent", "energy": "Kundalini, transformation"},
-    "cimi": {"meaning": "Death", "energy": "Ending, transition"},
-    "manik": {"meaning": "Hand/Deer", "energy": "Skill, hunt"},
-    "lamat": {"meaning": "Star/Venus", "energy": "Harmony, beauty"},
-    "muluc": {"meaning": "Water/Moon", "energy": "Emotion, purification"},
-    "oc": {"meaning": "Dog", "energy": "Loyalty, guidance"},
-    "chuen": {"meaning": "Monkey", "energy": "Art, play, creativity"},
-    "eb": {"meaning": "Road/Grass", "energy": "Journey, path"},
-    "ben": {"meaning": "Reed/Staff", "energy": "Authority, pillar"},
-    "ix": {"meaning": "Jaguar", "energy": "Magic, night, feminine"},
-    "men": {"meaning": "Eagle", "energy": "Vision, freedom"},
-    "cib": {"meaning": "Owl/Vulture", "energy": "Ancient wisdom, forgiveness"},
-    "caban": {"meaning": "Earth/Earthquake", "energy": "Movement, evolution"},
-    "etznab": {"meaning": "Flint/Mirror", "energy": "Truth, reflection"},
-    "cauac": {"meaning": "Storm/Rain", "energy": "Cleansing, energy"},
-    "ahau": {"meaning": "Sun/Lord", "energy": "Enlightenment, completion"}
+    "imix": {
+      "meaning": "Crocodile/Water Lily",
+      "energy": "Primordial, beginning"
+    },
+    "ik": {
+      "meaning": "Wind/Breath",
+      "energy": "Spirit, communication"
+    },
+    "akbal": {
+      "meaning": "Night/House",
+      "energy": "Darkness, introspection"
+    },
+    "kan": {
+      "meaning": "Maize/Seed",
+      "energy": "Growth, abundance"
+    },
+    "chicchan": {
+      "meaning": "Serpent",
+      "energy": "Kundalini, transformation"
+    },
+    "cimi": {
+      "meaning": "Death",
+      "energy": "Ending, transition"
+    },
+    "manik": {
+      "meaning": "Hand/Deer",
+      "energy": "Skill, hunt"
+    },
+    "lamat": {
+      "meaning": "Star/Venus",
+      "energy": "Harmony, beauty"
+    },
+    "muluc": {
+      "meaning": "Water/Moon",
+      "energy": "Emotion, purification"
+    },
+    "oc": {
+      "meaning": "Dog",
+      "energy": "Loyalty, guidance"
+    },
+    "chuen": {
+      "meaning": "Monkey",
+      "energy": "Art, play, creativity"
+    },
+    "eb": {
+      "meaning": "Road/Grass",
+      "energy": "Journey, path"
+    },
+    "ben": {
+      "meaning": "Reed/Staff",
+      "energy": "Authority, pillar"
+    },
+    "ix": {
+      "meaning": "Jaguar",
+      "energy": "Magic, night, feminine"
+    },
+    "men": {
+      "meaning": "Eagle",
+      "energy": "Vision, freedom"
+    },
+    "cib": {
+      "meaning": "Owl/Vulture",
+      "energy": "Ancient wisdom, forgiveness"
+    },
+    "caban": {
+      "meaning": "Earth/Earthquake",
+      "energy": "Movement, evolution"
+    },
+    "etznab": {
+      "meaning": "Flint/Mirror",
+      "energy": "Truth, reflection"
+    },
+    "cauac": {
+      "meaning": "Storm/Rain",
+      "energy": "Cleansing, energy"
+    },
+    "ahau": {
+      "meaning": "Sun/Lord",
+      "energy": "Enlightenment, completion"
+    }
   },
   "cosmology": {
     "xibalba": "Underworld - place of trials and transformation",
@@ -179,5 +242,14 @@
     "Dresden Codex"
   ],
   "learned_insights": [],
-  "scan_history": []
+  "scan_history": [
+    {
+      "timestamp": "2025-12-15T10:26:06.595356",
+      "insights_found": 0,
+      "sources_used": [
+        "Wikipedia",
+        "Sacred-Texts"
+      ]
+    }
+  ]
 }

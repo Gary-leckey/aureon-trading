@@ -1,8 +1,11 @@
 {
   "civilization": "Hindu Vedic",
-  "last_updated": "2025-12-15T00:00:00Z",
+  "last_updated": "2025-12-15T10:25:26.550218",
   "version": "1.0.0",
-  "sources": ["hardcoded", "wikipedia"],
+  "sources": [
+    "hardcoded",
+    "wikipedia"
+  ],
   "topics": [
     {
       "name": "Karma - Action and Consequence",
@@ -16,7 +19,7 @@
       "content": "Cosmic order, proper action aligned with purpose and duty",
       "trading_insight": "Following your system is your dharma. Discipline over impulse. Honor your trading plan.",
       "source": "hardcoded",
-      "relevance_score": 0.90
+      "relevance_score": 0.9
     },
     {
       "name": "Maya - Seeing Through Illusion",
@@ -30,14 +33,14 @@
       "content": "Cycles within cycles at all scales - time's eternal wheel turning",
       "trading_insight": "Multiple timeframe analysis reveals nested cycles. Daily within weekly within monthly.",
       "source": "hardcoded",
-      "relevance_score": 0.90
+      "relevance_score": 0.9
     },
     {
       "name": "Satya Yuga - Golden Age",
       "content": "Age of truth and virtue, maximum dharma, prosperity reigns",
       "trading_insight": "Bull market, high trust, growth phase. Accumulate and ride the trend.",
       "source": "hardcoded",
-      "relevance_score": 0.80
+      "relevance_score": 0.8
     },
     {
       "name": "Kali Yuga - Dark Age",
@@ -58,7 +61,7 @@
       "content": "Vital energy flowing through all living things, breath of life",
       "trading_insight": "Volume is market prana. Without volume, price movement is false. Follow the breath.",
       "source": "hardcoded",
-      "relevance_score": 0.80
+      "relevance_score": 0.8
     }
   ],
   "core_principles": {
@@ -70,7 +73,7 @@
     "dharma": {
       "description": "Righteous duty, cosmic order, proper action aligned with purpose",
       "trading_application": "Following your system, discipline over impulse",
-      "confidence": 0.90
+      "confidence": 0.9
     },
     "maya": {
       "description": "Illusion - the world of appearances obscuring deeper reality",
@@ -80,7 +83,7 @@
     "kalachakra": {
       "description": "Wheel of time - cycles within cycles at all scales",
       "trading_application": "Multiple timeframe analysis, nested cycles",
-      "confidence": 0.90
+      "confidence": 0.9
     }
   },
   "yugas_world_ages": {
@@ -125,14 +128,32 @@
   },
   "cosmic_structure": {
     "trimurti": {
-      "brahma": {"role": "Creator", "market": "New trends, IPOs, innovation"},
-      "vishnu": {"role": "Preserver", "market": "Trend continuation, stability"},
-      "shiva": {"role": "Destroyer", "market": "Crashes, regime change, transformation"}
+      "brahma": {
+        "role": "Creator",
+        "market": "New trends, IPOs, innovation"
+      },
+      "vishnu": {
+        "role": "Preserver",
+        "market": "Trend continuation, stability"
+      },
+      "shiva": {
+        "role": "Destroyer",
+        "market": "Crashes, regime change, transformation"
+      }
     },
     "gunas": {
-      "sattva": {"quality": "Purity, harmony", "market": "Balanced, trending"},
-      "rajas": {"quality": "Activity, passion", "market": "Volatile, active"},
-      "tamas": {"quality": "Inertia, darkness", "market": "Stagnant, consolidation"}
+      "sattva": {
+        "quality": "Purity, harmony",
+        "market": "Balanced, trending"
+      },
+      "rajas": {
+        "quality": "Activity, passion",
+        "market": "Volatile, active"
+      },
+      "tamas": {
+        "quality": "Inertia, darkness",
+        "market": "Stagnant, consolidation"
+      }
     }
   },
   "jyotish_astrology": {
@@ -170,6 +191,66 @@
     "Hindu cosmology",
     "Arthashastra"
   ],
-  "learned_insights": [],
-  "scan_history": []
+  "learned_insights": [
+    {
+      "source": "Sacred-Texts",
+      "civilization": "hindu",
+      "topic": "Hinduism",
+      "content": "There are four Vedas, the Rig Veda, Sama Veda, Yajur Veda and Atharva Veda.\n The Vedas are the primary texts of Hinduism.\n They also had a vast influence on Buddhism, Jainism, and Sikhism.\n Traditionally the text of the Vedas was coeval with the universe.\n Scholars have determined that the Rig Veda, the oldest of the four Vedas, was\n composed about 1500 B.C., and codified about 600 B.C.\n It is unk",
+      "relevance_score": 0.8881513480296094,
+      "trading_application": "Ancient hindu wisdom for market understanding",
+      "timestamp": "2025-12-15T10:24:52.286934",
+      "content_hash": "063e76a7380f55db42e17374f4f87c98"
+    },
+    {
+      "source": "Sacred-Texts",
+      "civilization": "hindu",
+      "topic": "Hinduism",
+      "content": "The Vedas contain hymns, incantations, and rituals from ancient\n India.  Along withthe Book of the Dead,\n theEnuma Elish,\n theI Ching,\n and theAvesta, they are among\n the most ancient religious texts still in existence.\n Besides their spiritual value, they also give a unique\n view of everyday life in India four thousand years ago.\n The Vedas are also the most ancient extensive texts in\n an Indo-Eu",
+      "relevance_score": 0.8248378097908047,
+      "trading_application": "Ancient hindu wisdom for market understanding",
+      "timestamp": "2025-12-15T10:24:52.286959",
+      "content_hash": "043d5d59bada763338ecbe647c490857"
+    },
+    {
+      "source": "Sacred-Texts",
+      "civilization": "hindu",
+      "topic": "Hinduism",
+      "content": "The Rig-Vedatranslated byRalph Griffith[1896]A complete English translation of the Rig Veda.Rig-Veda (Sanskrit)The complete Rig Veda in Sanskrit, in Unicode Devanagari script and standard romanization.",
+      "relevance_score": 0.7244618004645834,
+      "trading_application": "Ancient hindu wisdom for market understanding",
+      "timestamp": "2025-12-15T10:24:52.286966",
+      "content_hash": "4bd5b0036ef0c70b7aabc7b8549e76f9"
+    },
+    {
+      "source": "Sacred-Texts",
+      "civilization": "hindu",
+      "topic": "Hinduism",
+      "content": "A Vedic Reader for Students(excerpts)byA.A. Macdonell[1917]An introduction to the Dramatis Personæ of the Rig Veda.",
+      "relevance_score": 0.8028359890102336,
+      "trading_application": "Ancient hindu wisdom for market understanding",
+      "timestamp": "2025-12-15T10:24:52.286970",
+      "content_hash": "e57846e68066470f9bc2712bdf5e13fc"
+    },
+    {
+      "source": "Sacred-Texts",
+      "civilization": "hindu",
+      "topic": "Hinduism",
+      "content": "The Sama-Vedatranslated byRalph Griffith[1895]A collection of hymns used by the priests during the Soma sacrifice.Many of these duplicate in part or in whole hymns from the Rig Veda.\n This is a complete translation.",
+      "relevance_score": 0.6171373684803113,
+      "trading_application": "Ancient hindu wisdom for market understanding",
+      "timestamp": "2025-12-15T10:24:52.286974",
+      "content_hash": "0f446bb3458dc6677296d8bd376993e6"
+    }
+  ],
+  "scan_history": [
+    {
+      "timestamp": "2025-12-15T10:25:26.550200",
+      "insights_found": 5,
+      "sources_used": [
+        "Wikipedia",
+        "Sacred-Texts"
+      ]
+    }
+  ]
 }

@@ -1,8 +1,11 @@
 {
   "civilization": "Strategic Warfare",
-  "last_updated": "2025-12-15T00:00:00Z",
+  "last_updated": "2025-12-15T10:24:05.918145",
   "version": "1.0.0",
-  "sources": ["hardcoded", "wikipedia"],
+  "sources": [
+    "hardcoded",
+    "wikipedia"
+  ],
   "core_principles": {
     "sun_tzu": {
       "description": "Know yourself, know your enemy - victory through superior intelligence",
@@ -12,12 +15,12 @@
     "clausewitz_friction": {
       "description": "Fog of war - uncertainty, confusion, and chance in all conflict",
       "trading_application": "Expect the unexpected, build in margins for error",
-      "confidence": 0.90
+      "confidence": 0.9
     },
     "boyd_ooda": {
       "description": "Observe-Orient-Decide-Act loop - faster cycles defeat slower opponents",
       "trading_application": "Rapid decision cycles, information processing speed",
-      "confidence": 0.90
+      "confidence": 0.9
     },
     "indirect_approach": {
       "description": "Liddell Hart's strategy - attack weakness, avoid strength",
@@ -80,5 +83,14 @@
     "Maneuver warfare"
   ],
   "learned_insights": [],
-  "scan_history": []
+  "scan_history": [
+    {
+      "timestamp": "2025-12-15T10:24:05.918125",
+      "insights_found": 0,
+      "sources_used": [
+        "Wikipedia",
+        "Sacred-Texts"
+      ]
+    }
+  ]
 }
