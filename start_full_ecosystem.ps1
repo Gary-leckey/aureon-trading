@@ -131,32 +131,32 @@ while (-not (Test-Path $brainFile)) {
 Write-Host ""
 Write-Host "[OK] Brain State Detected!" -ForegroundColor Green
 
-# 3. Start the Unified Ecosystem Engine
-Write-Host "[>>] Launching Unified Ecosystem Engine..." -ForegroundColor Yellow
-$ecosystemProcess = Start-Process -FilePath "python" -ArgumentList "aureon_unified_ecosystem.py" -PassThru -WindowStyle Minimized
+# 3. Start the Unified Live Trader (Background)
+Write-Host "[>>] Launching Unified Live Trader (v6)..." -ForegroundColor Yellow
+$traderProcess = Start-Process -FilePath "python" -ArgumentList "aureon_unified_live.py" -PassThru -WindowStyle Minimized
 
-if ($ecosystemProcess.Id) {
-    Write-Host "   [OK] Ecosystem Engine started with PID: $($ecosystemProcess.Id)" -ForegroundColor Green
+if ($traderProcess.Id) {
+    Write-Host "   [OK] Live Trader started with PID: $($traderProcess.Id)" -ForegroundColor Green
 } else {
-    Write-Error "   [FAIL] Failed to start Ecosystem Engine."
+    Write-Error "   [FAIL] Failed to start Live Trader."
     Stop-Process -Id $minerProcess.Id -ErrorAction SilentlyContinue
     exit 1
 }
 
-# 4. Give Ecosystem time to initialize
-Write-Host "[..] Waiting for Ecosystem initialization (5s)..." -ForegroundColor Yellow
-Start-Sleep -Seconds 5
-Write-Host "   [OK] Ecosystem ready" -ForegroundColor Green
+# 4. Give Trader time to initialize
+Write-Host "[..] Waiting for Trader initialization (3s)..." -ForegroundColor Yellow
+Start-Sleep -Seconds 3
+Write-Host "   [OK] Trader ready" -ForegroundColor Green
 
-# 5. Start the Unified Live Trader
+# 5. Start the Unified Ecosystem Engine (MAIN FOREGROUND)
 Write-Host ""
 Write-Host "===================================================" -ForegroundColor Green
-Write-Host "[>>] Launching Unified Live Trader (v6)..." -ForegroundColor Green
+Write-Host "[>>] Launching Unified Ecosystem (MAIN CONSOLE)..." -ForegroundColor Green
 Write-Host "===================================================" -ForegroundColor Green
 Write-Host ""
 
 try {
-    python aureon_unified_live.py
+    python aureon_unified_ecosystem.py
 }
 finally {
     # Cleanup on exit
@@ -168,8 +168,8 @@ finally {
         Write-Host "   [OK] Miner stopped." -ForegroundColor Green
     }
     
-    if ($ecosystemProcess) {
-        Stop-Process -Id $ecosystemProcess.Id -ErrorAction SilentlyContinue
-        Write-Host "   [OK] Ecosystem Engine stopped." -ForegroundColor Green
+    if ($traderProcess) {
+        Stop-Process -Id $traderProcess.Id -ErrorAction SilentlyContinue
+        Write-Host "   [OK] Trader stopped." -ForegroundColor Green
     }
 }
