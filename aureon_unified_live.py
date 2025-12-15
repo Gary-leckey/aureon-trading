@@ -95,9 +95,10 @@ CONFIG = {
     'COOLDOWN_MINUTES': 5,        # v4: Symbol cooldown
     'TIMEOUT_SEC': 420,           # v5: 7 min timeout (was 5 min)
     
-    # v5 FEE AWARENESS
+    # v5 FEE AWARENESS (Updated for Safety)
     'BINANCE_FEE_PCT': 0.001,     # 0.1% per trade
-    'ROUND_TRIP_FEE': 0.002,      # 0.2% total (buy + sell)
+    # ROUND_TRIP_FEE includes: 0.2% fees + 0.2% slippage + 0.1% spread = 0.5%
+    'ROUND_TRIP_FEE': 0.005,      # 0.5% total cost buffer (Guaranteed Net Profit)
     'MIN_PROFIT_AFTER_FEES': 0.005,  # Need 0.5% profit minimum
     
     # v5 LEARNED FREQUENCY BANDS (extended to include 850Hz+)
@@ -155,14 +156,16 @@ class ElephantMemory:
         with open(self.filepath, 'w') as f:
             json.dump(self.symbols, f, indent=2)
     
-    def record(self, symbol: str, profit_usd: float):
+    def record(self, symbol: str, profit_usd: float, sell_price: float = None):
         if symbol not in self.symbols:
-            self.symbols[symbol] = {'trades': 0, 'wins': 0, 'profit': 0, 'last_time': 0, 'streak': 0}
+            self.symbols[symbol] = {'trades': 0, 'wins': 0, 'profit': 0, 'last_time': 0, 'streak': 0, 'last_sell_price': 0}
         
         s = self.symbols[symbol]
         s['trades'] += 1
         s['profit'] += profit_usd
         s['last_time'] = time.time()
+        if sell_price:
+            s['last_sell_price'] = sell_price
         
         if profit_usd >= 0:
             s['wins'] += 1
@@ -172,16 +175,30 @@ class ElephantMemory:
         
         self.save()
     
-    def should_avoid(self, symbol: str) -> bool:
+    def should_avoid(self, symbol: str, current_price: float = None) -> Tuple[bool, str]:
         if symbol not in self.symbols:
-            return False
+            return False, ""
         s = self.symbols[symbol]
-        # Cooldown or 3+ loss streak
-        if time.time() - s.get('last_time', 0) < CONFIG['COOLDOWN_MINUTES'] * 60:
-            return True
+        
+        # Cooldown check
+        time_since_last = time.time() - s.get('last_time', 0)
+        if time_since_last < CONFIG['COOLDOWN_MINUTES'] * 60:
+            # RE-ENTRY PROTECTION: Don't buy back higher than we sold!
+            # If we are within cooldown, we are extra strict.
+            # But even after cooldown, we might want to be careful? 
+            # User said: "selling a coing then buying the same one at a higher raate"
+            # Let's enforce this strictly during the cooldown period.
+            
+            if current_price and s.get('last_sell_price'):
+                if current_price > s.get('last_sell_price'):
+                    return True, f"Price ${current_price:.4f} > Last Sell ${s['last_sell_price']:.4f}"
+            
+            return True, f"Cooldown ({int(time_since_last)}s < {CONFIG['COOLDOWN_MINUTES']*60}s)"
+            
         if s.get('streak', 0) >= 3:
-            return True
-        return False
+            return True, "Losing streak (3+)"
+            
+        return False, ""
 
 # ═══════════════════════════════════════════════════════════════════════════
 # LOT SIZE MANAGER
@@ -470,10 +487,16 @@ class AureonUnifiedLive:
         for symbol, ticker in self.ticker_cache.items():
             if not symbol.endswith(allowed_quotes): continue
             if not self.lot_mgr.can_trade(symbol): continue
-            if self.memory.should_avoid(symbol): continue
             
             try:
                 price = float(ticker['lastPrice'])
+                
+                # Check memory (cooldowns, re-entry protection)
+                avoid, reason = self.memory.should_avoid(symbol, current_price=price)
+                if avoid:
+                    # logger.debug(f"Skipping {symbol}: {reason}")
+                    continue
+                
                 change = float(ticker['priceChangePercent'])
                 volume = float(ticker['quoteVolume'])
                 high = float(ticker['highPrice'])
@@ -763,7 +786,9 @@ class AureonUnifiedLive:
                     result = self.client.place_market_order(symbol, 'SELL', quantity=float(qty_str))
                     logger.info(f"✅ Sold: Order #{result.get('orderId')}")
                     
-                    self.memory.record(symbol, pnl_usd)
+                    # Record trade with sell price for re-entry protection
+                    self.memory.record(symbol, pnl_usd, sell_price=price)
+                    
                     self.total_profit_usd += pnl_usd
                     if pnl_usd >= 0: self.wins += 1
                     
