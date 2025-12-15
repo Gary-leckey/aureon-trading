@@ -555,15 +555,25 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
     fee_rate = get_exchange_fee_rate(exchange)
     target_net = PENNY_TARGET_NET
     
+    # Add safety margins for slippage and spread (from CONFIG)
+    # This ensures we account for ALL costs, not just exchange fees.
+    slippage = CONFIG.get('SLIPPAGE_PCT', 0.0020)
+    spread = CONFIG.get('SPREAD_COST_PCT', 0.0010)
+    
+    # Total effective rate per leg (Fee + Slippage + Spread)
+    total_rate = fee_rate + slippage + spread
+    
     # 📐 EXACT CALCULATION using proper compounding formula
-    r = required_price_increase(trade_size, fee_rate, target_net)
+    # We use total_rate to ensure the price increase covers ALL costs
+    r = required_price_increase(trade_size, total_rate, target_net)
     
     # win_gte is the gross P&L needed (price increase × position)
     # Since gross_pnl = exit_value - entry_value = entry_value × r
     win_gte = trade_size * r
     
     # Approximate fee cost for reference (linear estimate)
-    approx_fees = 2 * fee_rate * trade_size
+    # This is just for display/logging - the real math is in 'r'
+    approx_fees = 2 * total_rate * trade_size
     
     # Stop Loss: Risk ~1.5x the win target (gives ~40% breakeven win rate)
     stop_lte = -(win_gte * 1.5)

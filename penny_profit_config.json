@@ -40,7 +40,7 @@
       }
     },
     "kraken": {
-      "fee_rate": 0.0026,
+      "fee_rate": 0.0040,
       "thresholds": {
         "5.0": {
           "cost": 0.041,
