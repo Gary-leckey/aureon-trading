@@ -1859,9 +1859,10 @@ NV_PUMP_WAVELENGTH = 532e-9      # Green pump laser wavelength (532nm)
 NV_EMISSION_WAVELENGTH = 637e-9  # Red emission wavelength (637nm)
 NV_SPIN_LIFETIME = 5e-3          # Spin coherence lifetime (~5ms at room temp)
 NV_QUANTUM_EFFICIENCY = 0.7      # Typical NV center quantum efficiency
-LUMINA_THRESHOLD_POWER = 2000.0  # Coherence Engine threshold (W)
+LUMINA_THRESHOLD_POWER = float(os.getenv("LUMINA_THRESHOLD_W", "2000"))  # Coherence Engine threshold (W)
 LUMINA_SLOPE_EFFICIENCY = 0.25   # 25% post-threshold efficiency
 LUMINA_Q_FACTOR_BASE = 1e6       # Base Q-factor for QIM resonator
+LUMINA_PUMP_SCALE = float(os.getenv("LUMINA_PUMP_SCALE", "20.0"))  # KH/s → W scaling for pump drive
 
 
 @dataclass
@@ -7053,8 +7054,8 @@ class HarmonicMiningOptimizer:
         The LuminaCell contributes to cascade when operating above threshold.
         """
         # Map hashrate to effective pump power
-        # Scale: 100 KH/s → ~1000W pump equivalent
-        effective_pump = hashrate * 0.01  # Scaling factor
+        # Default scaling: 100 KH/s → 2000 W pump equivalent (configurable via env)
+        effective_pump = hashrate * LUMINA_PUMP_SCALE
         
         # Get external coherence from other engines
         external_coherence = (
