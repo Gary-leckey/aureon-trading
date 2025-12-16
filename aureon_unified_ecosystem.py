@@ -5418,130 +5418,226 @@ def sync_exchange_trades_to_brain():
     """
     🧠📈 SYNC EXCHANGE TRADE HISTORY TO ADAPTIVE LEARNER
     
-    Pulls real trade history from Kraken and feeds it to the brain
-    so it can learn from actual wins/losses.
+    Pulls real trade history from ALL exchanges (Kraken + Binance) and feeds 
+    it to the brain so it can learn from actual wins/losses.
     
     This provides:
     - Real P&L data from actual trades
     - Entry/exit timestamps for time-of-day analysis
     - Pair performance tracking
     - Running balance history for drawdown analysis
+    - Cross-exchange learning (what works on Kraken vs Binance)
     """
+    from datetime import datetime
+    
+    total_synced = 0
+    total_wins = 0
+    total_losses = 0
+    exchange_results = {}
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🦑 KRAKEN TRADE SYNC
+    # ═══════════════════════════════════════════════════════════════
     try:
         import krakenex
-        from datetime import datetime
         
-        # Load API keys
         kraken = krakenex.API()
         kraken.key = os.getenv('KRAKEN_API_KEY')
         kraken.secret = os.getenv('KRAKEN_API_SECRET')
         
-        if not kraken.key or not kraken.secret:
-            logger.warning("🧠 Cannot sync trades - Kraken API keys not configured")
-            return {'status': 'no_api_keys', 'trades_synced': 0}
-        
-        # Get trade history from Kraken
-        result = kraken.query_private('TradesHistory', {'trades': True})
-        
-        if result.get('error'):
-            logger.warning(f"🧠 Kraken API error: {result['error']}")
-            return {'status': 'api_error', 'error': result['error'], 'trades_synced': 0}
-        
-        trades = result.get('result', {}).get('trades', {})
-        
-        if not trades:
-            logger.info("🧠 No trades found in Kraken history")
-            return {'status': 'no_trades', 'trades_synced': 0}
-        
-        # Sort by time
-        trade_list = sorted(trades.values(), key=lambda x: float(x.get('time', 0)))
-        
-        # Track buys to calculate P&L on sells
-        pair_holdings = {}
-        synced_count = 0
-        wins = 0
-        losses = 0
-        
-        for trade in trade_list:
-            pair = trade.get('pair', '')
-            side = trade.get('type', '').upper()
-            price = float(trade.get('price', 0))
-            vol = float(trade.get('vol', 0))
-            cost = float(trade.get('cost', 0))
-            fee = float(trade.get('fee', 0))
-            trade_time = float(trade.get('time', 0))
+        if kraken.key and kraken.secret:
+            result = kraken.query_private('TradesHistory', {'trades': True})
             
-            if side == 'BUY':
-                # Record buy for later P&L calculation
-                if pair not in pair_holdings:
-                    pair_holdings[pair] = {'qty': 0, 'cost_basis': 0, 'entry_time': trade_time}
-                pair_holdings[pair]['qty'] += vol
-                pair_holdings[pair]['cost_basis'] += cost + fee
-                pair_holdings[pair]['entry_time'] = trade_time
+            if not result.get('error'):
+                trades = result.get('result', {}).get('trades', {})
                 
-            elif side == 'SELL':
-                # Calculate realized P&L
-                realized_pnl = 0
-                if pair in pair_holdings and pair_holdings[pair]['qty'] > 0:
-                    avg_cost = pair_holdings[pair]['cost_basis'] / pair_holdings[pair]['qty']
-                    cost_of_sold = avg_cost * vol
-                    proceeds = cost - fee
-                    realized_pnl = proceeds - cost_of_sold
+                if trades:
+                    trade_list = sorted(trades.values(), key=lambda x: float(x.get('time', 0)))
+                    pair_holdings = {}
+                    kraken_synced = 0
+                    kraken_wins = 0
+                    kraken_losses = 0
                     
-                    # Update holdings
-                    pair_holdings[pair]['qty'] -= vol
-                    pair_holdings[pair]['cost_basis'] -= cost_of_sold
-                
-                # Create trade record for brain learning
-                trade_record = {
-                    'symbol': pair,
-                    'entry_price': avg_cost / vol if vol > 0 else price,
-                    'exit_price': price,
-                    'pnl': realized_pnl,
-                    'pnl_pct': (realized_pnl / cost_of_sold * 100) if cost_of_sold > 0 else 0,
-                    'entry_time': pair_holdings.get(pair, {}).get('entry_time', trade_time),
-                    'exit_time': trade_time,
-                    'quantity': vol,
-                    # Default values for harmonic fields (not available from exchange)
-                    'frequency': 432,  # Assume natural frequency
-                    'coherence': 0.5,
-                    'score': 70,
-                    'probability': 0.6,
-                    'hnc_action': 'HOLD',
-                    'source': 'kraken_sync'
-                }
-                
-                # Feed to adaptive learner
-                ADAPTIVE_LEARNER.record_trade(trade_record)
-                synced_count += 1
-                
-                if realized_pnl > 0:
-                    wins += 1
-                else:
-                    losses += 1
-        
-        # Save updated learning history
-        ADAPTIVE_LEARNER._save_history()
-        
-        # Log summary
-        total = wins + losses
-        win_rate = (wins / total * 100) if total > 0 else 0
-        
-        logger.info(f"🧠📈 Synced {synced_count} trades to brain | Wins: {wins} | Losses: {losses} | WR: {win_rate:.1f}%")
-        
-        return {
-            'status': 'success',
-            'trades_synced': synced_count,
-            'wins': wins,
-            'losses': losses,
-            'win_rate': win_rate
-        }
-        
+                    for trade in trade_list:
+                        pair = trade.get('pair', '')
+                        side = trade.get('type', '').upper()
+                        price = float(trade.get('price', 0))
+                        vol = float(trade.get('vol', 0))
+                        cost = float(trade.get('cost', 0))
+                        fee = float(trade.get('fee', 0))
+                        trade_time = float(trade.get('time', 0))
+                        
+                        if side == 'BUY':
+                            if pair not in pair_holdings:
+                                pair_holdings[pair] = {'qty': 0, 'cost_basis': 0, 'entry_time': trade_time}
+                            pair_holdings[pair]['qty'] += vol
+                            pair_holdings[pair]['cost_basis'] += cost + fee
+                            pair_holdings[pair]['entry_time'] = trade_time
+                            
+                        elif side == 'SELL':
+                            realized_pnl = 0
+                            cost_of_sold = 0
+                            avg_cost = price
+                            if pair in pair_holdings and pair_holdings[pair]['qty'] > 0:
+                                avg_cost = pair_holdings[pair]['cost_basis'] / pair_holdings[pair]['qty']
+                                cost_of_sold = avg_cost * vol
+                                proceeds = cost - fee
+                                realized_pnl = proceeds - cost_of_sold
+                                pair_holdings[pair]['qty'] -= vol
+                                pair_holdings[pair]['cost_basis'] -= cost_of_sold
+                            
+                            trade_record = {
+                                'symbol': pair,
+                                'entry_price': avg_cost / vol if vol > 0 else price,
+                                'exit_price': price,
+                                'pnl': realized_pnl,
+                                'pnl_pct': (realized_pnl / cost_of_sold * 100) if cost_of_sold > 0 else 0,
+                                'entry_time': pair_holdings.get(pair, {}).get('entry_time', trade_time),
+                                'exit_time': trade_time,
+                                'quantity': vol,
+                                'frequency': 432,
+                                'coherence': 0.5,
+                                'score': 70,
+                                'probability': 0.6,
+                                'hnc_action': 'HOLD',
+                                'source': 'kraken',
+                                'exchange': 'kraken'
+                            }
+                            
+                            ADAPTIVE_LEARNER.record_trade(trade_record)
+                            kraken_synced += 1
+                            if realized_pnl > 0:
+                                kraken_wins += 1
+                            else:
+                                kraken_losses += 1
+                    
+                    total_synced += kraken_synced
+                    total_wins += kraken_wins
+                    total_losses += kraken_losses
+                    exchange_results['kraken'] = {'synced': kraken_synced, 'wins': kraken_wins, 'losses': kraken_losses}
+                    logger.info(f"🦑 Kraken: Synced {kraken_synced} trades | W:{kraken_wins} L:{kraken_losses}")
+            else:
+                logger.warning(f"🦑 Kraken API error: {result.get('error')}")
+        else:
+            logger.debug("🦑 Kraken API keys not configured - skipping")
+            
     except Exception as e:
-        logger.error(f"🧠 Trade sync error: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
-        return {'status': 'error', 'error': str(e), 'trades_synced': 0}
+        logger.warning(f"🦑 Kraken sync error: {e}")
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🟡 BINANCE TRADE SYNC
+    # ═══════════════════════════════════════════════════════════════
+    try:
+        from binance_client import BinanceClient
+        
+        binance_key = os.getenv('BINANCE_API_KEY')
+        binance_secret = os.getenv('BINANCE_API_SECRET')
+        
+        if binance_key and binance_secret:
+            binance = BinanceClient()
+            
+            # Get all trades from Binance
+            all_trades = binance.get_all_my_trades()
+            
+            if all_trades:
+                binance_synced = 0
+                binance_wins = 0
+                binance_losses = 0
+                pair_holdings = {}
+                
+                # Flatten and sort all trades by time
+                all_trade_list = []
+                for symbol, trades in all_trades.items():
+                    for trade in trades:
+                        trade['_symbol'] = symbol
+                        all_trade_list.append(trade)
+                
+                all_trade_list.sort(key=lambda x: x.get('time', 0))
+                
+                for trade in all_trade_list:
+                    symbol = trade.get('_symbol', '')
+                    is_buyer = trade.get('isBuyer', False)
+                    price = float(trade.get('price', 0))
+                    qty = float(trade.get('qty', 0))
+                    quote_qty = float(trade.get('quoteQty', price * qty))
+                    commission = float(trade.get('commission', 0))
+                    trade_time = trade.get('time', 0) / 1000  # Binance uses milliseconds
+                    
+                    if is_buyer:
+                        if symbol not in pair_holdings:
+                            pair_holdings[symbol] = {'qty': 0, 'cost_basis': 0, 'entry_time': trade_time}
+                        pair_holdings[symbol]['qty'] += qty
+                        pair_holdings[symbol]['cost_basis'] += quote_qty + commission
+                        pair_holdings[symbol]['entry_time'] = trade_time
+                        
+                    else:  # SELL
+                        realized_pnl = 0
+                        cost_of_sold = 0
+                        avg_cost = price
+                        if symbol in pair_holdings and pair_holdings[symbol]['qty'] > 0:
+                            avg_cost = pair_holdings[symbol]['cost_basis'] / pair_holdings[symbol]['qty']
+                            cost_of_sold = avg_cost * qty
+                            proceeds = quote_qty - commission
+                            realized_pnl = proceeds - cost_of_sold
+                            pair_holdings[symbol]['qty'] -= qty
+                            pair_holdings[symbol]['cost_basis'] -= cost_of_sold
+                        
+                        trade_record = {
+                            'symbol': symbol,
+                            'entry_price': avg_cost / qty if qty > 0 else price,
+                            'exit_price': price,
+                            'pnl': realized_pnl,
+                            'pnl_pct': (realized_pnl / cost_of_sold * 100) if cost_of_sold > 0 else 0,
+                            'entry_time': pair_holdings.get(symbol, {}).get('entry_time', trade_time),
+                            'exit_time': trade_time,
+                            'quantity': qty,
+                            'frequency': 432,
+                            'coherence': 0.5,
+                            'score': 70,
+                            'probability': 0.6,
+                            'hnc_action': 'HOLD',
+                            'source': 'binance',
+                            'exchange': 'binance'
+                        }
+                        
+                        ADAPTIVE_LEARNER.record_trade(trade_record)
+                        binance_synced += 1
+                        if realized_pnl > 0:
+                            binance_wins += 1
+                        else:
+                            binance_losses += 1
+                
+                total_synced += binance_synced
+                total_wins += binance_wins
+                total_losses += binance_losses
+                exchange_results['binance'] = {'synced': binance_synced, 'wins': binance_wins, 'losses': binance_losses}
+                logger.info(f"🟡 Binance: Synced {binance_synced} trades | W:{binance_wins} L:{binance_losses}")
+        else:
+            logger.debug("🟡 Binance API keys not configured - skipping")
+            
+    except Exception as e:
+        logger.warning(f"🟡 Binance sync error: {e}")
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 📊 FINAL SUMMARY
+    # ═══════════════════════════════════════════════════════════════
+    
+    # Save updated learning history
+    ADAPTIVE_LEARNER._save_history()
+    
+    total = total_wins + total_losses
+    win_rate = (total_wins / total * 100) if total > 0 else 0
+    
+    logger.info(f"🧠📈 TOTAL: Synced {total_synced} trades from {len(exchange_results)} exchanges | WR: {win_rate:.1f}%")
+    
+    return {
+        'status': 'success',
+        'trades_synced': total_synced,
+        'wins': total_wins,
+        'losses': total_losses,
+        'win_rate': win_rate,
+        'exchanges': exchange_results
+    }
 
 
 # ═══════════════════════════════════════════════════════════════
