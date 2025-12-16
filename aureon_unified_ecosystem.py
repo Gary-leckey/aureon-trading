@@ -5076,12 +5076,13 @@ class AdaptiveLearningEngine:
             recommendation['confidence'] = 'low'
             
         # ═══ DETERMINE TRADE RECOMMENDATION ═══
-        if len(recommendation['warnings']) >= 2:
+        # Only flag as "don't trade" if MULTIPLE warnings AND very low WR
+        if len(recommendation['warnings']) >= 3:  # Was 2 - be less cautious
             recommendation['should_trade'] = False
             recommendation['warnings'].append("❌ Multiple red flags - consider skipping")
-        elif recommendation['expected_win_rate'] < 0.35 and recommendation['confidence'] != 'low':
+        elif recommendation['expected_win_rate'] < 0.15 and recommendation['confidence'] == 'high':  # Was 35% - way too conservative!
             recommendation['should_trade'] = False
-            recommendation['warnings'].append(f"❌ Expected WR {recommendation['expected_win_rate']*100:.0f}% too low")
+            recommendation['warnings'].append(f"❌ Expected WR {recommendation['expected_win_rate']*100:.0f}% very low")
             
         # ═══ HOLD TIME SUGGESTION ═══
         # If frequency band has high variance, suggest longer hold
@@ -11334,37 +11335,44 @@ class AureonKrakenEcosystem:
                 opp['learned_recommendation'] = recommendation
                 
                 # If confidence is HIGH and recommendation is NO, respect it
+                # BUT: Only skip if WR is EXTREMELY low (<15%) - otherwise still take chances!
                 if recommendation['confidence'] == 'high' and not recommendation['should_trade']:
-                    logger.warning(f"⛔ SKIPPING {symbol}: High-confidence negative signal")
-                    logger.warning(f"   Expected WR: {recommendation['expected_win_rate']*100:.0f}% based on {recommendation['similar_trades']} similar trades")
-                    return False
+                    if recommendation['expected_win_rate'] < 0.15:  # Very low - skip
+                        logger.warning(f"⛔ SKIPPING {symbol}: High-confidence negative signal")
+                        logger.warning(f"   Expected WR: {recommendation['expected_win_rate']*100:.0f}% based on {recommendation['similar_trades']} similar trades")
+                        return False
+                    else:
+                        logger.info(f"⚡ TAKING CHANCE on {symbol}: Past WR {recommendation['expected_win_rate']*100:.0f}% but staying opportunistic!")
                     
-                # If confidence is MEDIUM and expected WR < 35%, skip
-                if recommendation['confidence'] == 'medium' and recommendation['expected_win_rate'] < 0.35:
-                    logger.warning(f"⚠️ SKIPPING {symbol}: Medium-confidence, low expected WR ({recommendation['expected_win_rate']*100:.0f}%)")
+                # If confidence is MEDIUM and expected WR < 15%, skip (was 35% - too conservative!)
+                if recommendation['confidence'] == 'medium' and recommendation['expected_win_rate'] < 0.15:
+                    logger.warning(f"⚠️ SKIPPING {symbol}: Medium-confidence, very low expected WR ({recommendation['expected_win_rate']*100:.0f}%)")
                     return False
                 
-                # Extra caution: if we're in drawdown and WR is modest, skip
-                if dd > 5 and recommendation['expected_win_rate'] < 0.55:
-                    logger.warning(f"⚠️ SKIPPING {symbol}: In drawdown ({dd:.1f}%), WR only {recommendation['expected_win_rate']*100:.0f}%")
+                # Extra caution: if we're in BIG drawdown (>15%) and WR is poor (<25%), skip
+                # Was: dd > 5 and WR < 55% - WAY too conservative!
+                if dd > 15 and recommendation['expected_win_rate'] < 0.25:
+                    logger.warning(f"⚠️ SKIPPING {symbol}: In significant drawdown ({dd:.1f}%), WR only {recommendation['expected_win_rate']*100:.0f}%")
                     return False
                     
                 # Log advantages
                 if recommendation['advantages']:
                     logger.info(f"✅ {symbol} advantages: {', '.join(recommendation['advantages'][:2])}")
                 
-                # 🔒 Risk-aware gate: if we're in a drawdown and the edge is weak, stand down
+                # 🔒 Risk-aware gate: Only skip if BOTH P&L is significantly negative AND WR is very low
+                # Reduced conservatism - we need to take chances to make money!
                 pnl = opp['pnl_state']
                 if pnl:
-                    if pnl.get('net_profit', 0) < 0 and recommendation['confidence'] == 'low':
-                        # Exception: If the expected win rate is extremely high (>80%), take the risk even if confidence is low
-                        if recommendation['expected_win_rate'] >= 0.80:
-                            logger.info(f"⚡ TAKING RISK on {symbol}: Low confidence but high expected WR ({recommendation['expected_win_rate']*100:.0f}%)")
-                        else:
-                            logger.warning(f"⏸️ Skipping {symbol}: Net P&L negative and low-confidence signal")
+                    # Only skip if: negative P&L + low confidence + WR < 20% (was 80% - way too conservative!)
+                    if pnl.get('net_profit', 0) < -50 and recommendation['confidence'] == 'low':
+                        if recommendation['expected_win_rate'] < 0.20:
+                            logger.warning(f"⏸️ Skipping {symbol}: Net P&L very negative and poor expected WR ({recommendation['expected_win_rate']*100:.0f}%)")
                             return False
-                    if pnl.get('drawdown_pct', 0) >= CONFIG.get('MAX_DRAWDOWN_PCT', 20) * 0.5 and recommendation['expected_win_rate'] < 0.5:
-                        logger.warning(f"⏸️ Skipping {symbol}: Drawdown {pnl.get('drawdown_pct', 0):.1f}% and weak edge ({recommendation['expected_win_rate']*100:.0f}% WR)")
+                        else:
+                            logger.info(f"⚡ TAKING CHANCE on {symbol}: Low confidence but WR {recommendation['expected_win_rate']*100:.0f}% is acceptable!")
+                    # Only skip if: SEVERE drawdown (>75% of max) AND WR < 25% (was 50%)
+                    if pnl.get('drawdown_pct', 0) >= CONFIG.get('MAX_DRAWDOWN_PCT', 20) * 0.75 and recommendation['expected_win_rate'] < 0.25:
+                        logger.warning(f"⏸️ Skipping {symbol}: Severe drawdown {pnl.get('drawdown_pct', 0):.1f}% and weak edge ({recommendation['expected_win_rate']*100:.0f}% WR)")
                         return False
                     
         except Exception as e:
