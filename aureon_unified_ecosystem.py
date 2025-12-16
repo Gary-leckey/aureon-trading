@@ -8770,12 +8770,54 @@ class Synapse:
         self.strength = max(0.1, min(2.0, self.strength + adjustment))
 
 
+# 🍄🧠 FULL MYCELIUM NEURAL NETWORK WITH HIVES & QUEEN NEURON
+# ══════════════════════════════════════════════════════════════
+# Import the full neural network if available
+try:
+    from aureon_mycelium import MyceliumNetwork as FullMyceliumNetwork, Hive, Agent, Neuron
+    FULL_MYCELIUM_AVAILABLE = True
+    logger.info("🍄🧠 Full Mycelium Neural Network loaded - Hives & Queen Neuron ACTIVE")
+except ImportError:
+    FULL_MYCELIUM_AVAILABLE = False
+    logger.warning("⚠️ Full Mycelium not available, using simplified pattern network")
+
+
 class MyceliumNetwork:
-    """Neural network for pattern detection across symbols"""
+    """
+    Neural network for pattern detection across symbols.
     
-    def __init__(self):
+    🧠 ENHANCED: Now integrates with full Mycelium hive system!
+    - Multiple agent hives with different strategies
+    - Queen Neuron for collective decision making
+    - Self-spawning when profitable (network growth)
+    - Hebbian learning on all connections
+    """
+    
+    def __init__(self, initial_capital: float = 100.0):
+        # Simple pattern network (always available)
         self.synapses: Dict[str, List[Synapse]] = {}
         self.activations: Dict[str, float] = {}
+        
+        # 🍄 FULL NEURAL NETWORK (if available)
+        self.full_network = None
+        self.queen_signal = 0.0  # Queen Neuron's collective decision
+        self.hive_count = 0
+        self.total_agents = 0
+        self.generation = 0
+        
+        if FULL_MYCELIUM_AVAILABLE:
+            try:
+                self.full_network = FullMyceliumNetwork(
+                    initial_capital=initial_capital,
+                    agents_per_hive=5,
+                    target_multiplier=2.0
+                )
+                self.hive_count = len(self.full_network.hives)
+                self.total_agents = self.full_network.get_total_agents()
+                logger.info(f"🍄 Mycelium initialized: {self.hive_count} hives, {self.total_agents} agents")
+            except Exception as e:
+                logger.warning(f"⚠️ Could not initialize full Mycelium: {e}")
+                self.full_network = None
         
     def add_signal(self, symbol: str, signal: float):
         """Add a market signal to the network"""
@@ -8807,6 +8849,31 @@ class MyceliumNetwork:
                         # Signal boosts the target's activation
                         boost = synapse.pulse(activation) * 0.1 # Dampening factor
                         new_activations[synapse.target] = new_activations.get(synapse.target, self.activations[synapse.target]) + boost
+        
+        # 🍄 FULL NETWORK: Also step the hive neural network
+        if self.full_network:
+            try:
+                # Build market data from our activations
+                avg_activation = sum(self.activations.values()) / max(1, len(self.activations))
+                market_data = {
+                    "price": 95000,  # Will be updated with real price
+                    "momentum": avg_activation * 2 - 1,  # Convert [0,1] to [-1,1]
+                    "volatility": 0.5,
+                    "trend": avg_activation - 0.5
+                }
+                
+                # Step the full network - all hives process and Queen decides
+                result = self.full_network.step(market_data)
+                
+                # 🧠 QUEEN NEURON SIGNAL - This is the collective intelligence!
+                self.queen_signal = result.get("queen_signal", 0.0)
+                self.hive_count = result.get("hive_count", 1)
+                self.generation = result.get("generation", 0)
+                self.total_agents = self.full_network.get_total_agents()
+                
+            except Exception as e:
+                logger.debug(f"Mycelium step error: {e}")
+        
         return new_activations
 
     def learn(self, symbol: str, profit_pct: float):
@@ -8825,12 +8892,74 @@ class MyceliumNetwork:
             for synapse in synapses:
                 if synapse.target == symbol:
                     synapse.strengthen(profit_pct)
+        
+        # 🍄 FULL NETWORK: Also reinforce hive synapses
+        if self.full_network and profit_pct > 0:
+            try:
+                # Strengthen hive synapses that contributed to this profit
+                for synapse in self.full_network.hive_synapses:
+                    synapse.strengthen(profit_pct * 0.5)  # Dampened learning
+            except Exception:
+                pass
 
     def get_network_coherence(self) -> float:
-        """Overall network coherence"""
+        """Overall network coherence - now includes Queen Neuron signal!"""
         if not self.activations:
             return 0.5
-        return sum(self.activations.values()) / len(self.activations)
+        
+        # Base coherence from pattern network
+        base_coherence = sum(self.activations.values()) / len(self.activations)
+        
+        # 🧠 BLEND WITH QUEEN NEURON SIGNAL
+        if self.full_network and self.queen_signal != 0:
+            # Queen signal is [-1, 1], convert to [0, 1]
+            queen_coherence = (self.queen_signal + 1) / 2
+            # Blend: 70% pattern network, 30% Queen Neuron
+            blended = base_coherence * 0.7 + queen_coherence * 0.3
+            return blended
+        
+        return base_coherence
+    
+    def get_queen_signal(self) -> float:
+        """Get the Queen Neuron's collective decision signal [-1, 1]"""
+        return self.queen_signal
+    
+    def get_network_state(self) -> Dict[str, Any]:
+        """Get full neural network state for display"""
+        state = {
+            "pattern_nodes": len(self.activations),
+            "pattern_synapses": sum(len(s) for s in self.synapses.values()),
+            "queen_signal": self.queen_signal,
+            "hive_count": self.hive_count,
+            "total_agents": self.total_agents,
+            "generation": self.generation,
+            "full_network_active": self.full_network is not None
+        }
+        
+        if self.full_network:
+            try:
+                full_state = self.full_network.get_state()
+                state["total_equity"] = full_state.get("total_equity", 0)
+                state["total_harvested"] = full_state.get("total_harvested", 0)
+                state["split_events"] = len(full_state.get("split_events", []))
+            except Exception:
+                pass
+        
+        return state
+    
+    def display_neural_status(self):
+        """Display neural network status"""
+        state = self.get_network_state()
+        queen_emoji = "👑" if state["queen_signal"] > 0.3 else "👸" if state["queen_signal"] > -0.3 else "💀"
+        signal_bar = "█" * int(abs(state["queen_signal"]) * 10)
+        direction = "BUY" if state["queen_signal"] > 0 else "SELL" if state["queen_signal"] < 0 else "HOLD"
+        
+        print(f"""
+   🍄 MYCELIUM NEURAL NETWORK
+   ├─ Pattern Nodes: {state['pattern_nodes']} | Synapses: {state['pattern_synapses']}
+   ├─ Hives: {state['hive_count']} | Agents: {state['total_agents']} | Gen: {state['generation']}
+   └─ {queen_emoji} Queen Signal: {state['queen_signal']:+.3f} [{signal_bar}] → {direction}
+""")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -9406,7 +9535,7 @@ class AureonKrakenEcosystem:
         self.dry_run = self.client.dry_run
         
         self.auris = AurisEngine()
-        self.mycelium = MyceliumNetwork()
+        self.mycelium = MyceliumNetwork(initial_capital=initial_balance)  # 🍄🧠 Full neural network with hives!
         self.lattice = GaiaLatticeEngine()  # 🌍 GAIA FREQUENCY PHYSICS - HNC Blackboard Carrier Wave Dynamics
         self.enhancements = EnhancementLayer() if ENHANCEMENTS_AVAILABLE else None  # 🔯 CODEX INTEGRATION
         self.market_pulse = MarketPulse(self.client) # Initialize Market Pulse
@@ -12775,13 +12904,32 @@ class AureonKrakenEcosystem:
                 else:
                     gate_status.append('FREQ:~')
                 
+                # 🍄🧠 Gate 8: QUEEN NEURON - Collective hive intelligence
+                queen_signal = self.mycelium.get_queen_signal()
+                if queen_signal > 0.3:  # Strong BUY from Queen
+                    gates_passed += 1
+                    gate_status.append('QUEEN:✓✓')
+                    score += 12  # Queen's blessing bonus
+                elif queen_signal > 0.0:  # Weak BUY
+                    gates_passed += 0.5
+                    gate_status.append('QUEEN:✓')
+                    score += 5
+                elif queen_signal < -0.3:  # Strong SELL from Queen - trade against it!
+                    gates_passed -= 0.5
+                    gate_status.append('QUEEN:✗')
+                    score -= 5  # Queen says SELL, we're looking to BUY
+                else:  # Neutral
+                    gate_status.append('QUEEN:~')
+                
                 # Require minimum gates to pass
                 min_gates = CONFIG.get('OPTIMAL_MIN_GATES', 3)
                 if gates_passed < min_gates:
                     continue  # Skip - not enough gates passed
                 
-                # Bonus for high gate count (updated for 7 gates)
-                if gates_passed >= 6:
+                # Bonus for high gate count (updated for 8 gates including Queen)
+                if gates_passed >= 7:
+                    score += 30  # Queen approved!
+                elif gates_passed >= 6:
                     score += 25
                 elif gates_passed >= 5:
                     score += 20
@@ -15618,6 +15766,20 @@ class AureonKrakenEcosystem:
                 print(f"   🎮 Mode: {mode_str} | Entry Γ: {CONFIG['ENTRY_COHERENCE']:.3f} | Exit Γ: {CONFIG['EXIT_COHERENCE']:.3f}")
                 print(f"   💰 Compounded: {curr_sym}{self.tracker.compounded:.2f} | Harvested: {curr_sym}{self.tracker.harvested:.2f}")
                 print(f"   🌟 Pool: {curr_sym}{total_pool_profits:+.2f} total | {curr_sym}{capital_available:.2f} available | Scouts: {scout_count} | Splits: {split_count}{signal_str}")
+                
+                # 🍄🧠 MYCELIUM NEURAL NETWORK STATUS
+                try:
+                    myc_state = self.mycelium.get_network_state()
+                    queen_sig = myc_state.get('queen_signal', 0.0)
+                    queen_emoji = "👑" if queen_sig > 0.3 else "👸" if queen_sig > -0.3 else "💀"
+                    queen_dir = "BUY" if queen_sig > 0.1 else "SELL" if queen_sig < -0.1 else "HOLD"
+                    hives = myc_state.get('hive_count', 0)
+                    agents = myc_state.get('total_agents', 0)
+                    gen = myc_state.get('generation', 0)
+                    print(f"   🍄 Mycelium: {hives} hives | {agents} agents | Gen {gen} | {queen_emoji} Queen: {queen_sig:+.2f} → {queen_dir}")
+                except Exception:
+                    pass
+                
                 print(f"   ⏱️ Runtime: {runtime:.1f} min | Positions: {len(self.positions)}/{CONFIG['MAX_POSITIONS']} | Max Gen: {max_gen}")
                 
                 if self.tracker.trading_halted:
