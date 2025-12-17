@@ -105,6 +105,69 @@ export interface GlobalState {
   // Manager state
   isInitialized: boolean;
   isRunning: boolean;
+  
+  // ════════════════════════════════════════════════════════════════
+  // 📊 TERMINAL STATS MIRROR - Live system metrics
+  // ════════════════════════════════════════════════════════════════
+  
+  // Portfolio metrics
+  peakEquity: number;                // High water mark for drawdown calc
+  sessionStartTime: number;          // Runtime tracking (timestamp)
+  maxDrawdownPercent: number;        // Maximum historical drawdown
+  currentDrawdownPercent: number;    // Current drawdown from peak
+  cyclePnl: number;                  // Current session P&L
+  cyclePnlPercent: number;           // Current session P&L %
+  avgHoldTimeMinutes: number;        // Average trade duration
+  
+  // WebSocket status
+  wsMessageCount: number;            // Total WS messages received
+  wsConnected: boolean;              // WebSocket connection status
+  
+  // Trading mode
+  tradingMode: 'AGGRESSIVE' | 'CONSERVATIVE' | 'BALANCED';
+  entryCoherenceThreshold: number;   // Entry Γ gate
+  exitCoherenceThreshold: number;    // Exit Γ gate
+  riskMultiplier: number;            // Risk modifier (0.5x, 1x, etc)
+  takeProfitMultiplier: number;      // TP modifier
+  
+  // Gaia Lattice / Frequency state
+  gaiaLatticeState: 'COHERENT' | 'DISTORTION' | 'NEUTRAL';
+  gaiaFrequency: number;             // Current frequency (432Hz vs 440Hz)
+  purityPercent: number;             // Signal purity %
+  carrierWavePhi: number;            // φ carrier wave
+  harmonicLock432: number;           // % time at 432Hz
+  
+  // HNC (Harmonic Neural Coherence)
+  hncFrequency: number;              // Current HNC Hz
+  hncMarketState: 'CONSOLIDATION' | 'TRENDING' | 'VOLATILE' | 'BREAKOUT';
+  hncCoherencePercent: number;       // HNC coherence %
+  hncModifier: number;               // Position modifier (0.8x, 1.0x, etc)
+  
+  // Mycelium Swarm Intelligence
+  myceliumHives: number;             // Active hive count
+  myceliumAgents: number;            // Total agent count
+  myceliumGeneration: number;        // Current generation
+  maxGeneration: number;             // Max generation reached
+  queenState: 'HOLD' | 'BUY' | 'SELL';
+  queenPnl: number;                  // Queen's P&L
+  
+  // Capital management
+  compoundedCapital: number;         // 90% compounded back
+  harvestedCapital: number;          // 10% harvested to safety
+  poolTotal: number;                 // Total pool value
+  poolAvailable: number;             // Available for trading
+  scoutCount: number;                // Scout positions
+  splitCount: number;                // Split events
+  
+  // Active positions
+  maxPositions: number;              // Max concurrent positions
+  activePositions: Array<{
+    symbol: string;
+    entryPrice: number;
+    currentPrice: number;
+    pnlPercent: number;
+    side: 'LONG' | 'SHORT';
+  }>;
 }
 
 const initialState: GlobalState = {
@@ -172,6 +235,63 @@ const initialState: GlobalState = {
   
   isInitialized: false,
   isRunning: false,
+  
+  // ════════════════════════════════════════════════════════════════
+  // 📊 TERMINAL STATS MIRROR - Initial values
+  // ════════════════════════════════════════════════════════════════
+  
+  // Portfolio metrics
+  peakEquity: 0,
+  sessionStartTime: 0,
+  maxDrawdownPercent: 0,
+  currentDrawdownPercent: 0,
+  cyclePnl: 0,
+  cyclePnlPercent: 0,
+  avgHoldTimeMinutes: 0,
+  
+  // WebSocket status
+  wsMessageCount: 0,
+  wsConnected: false,
+  
+  // Trading mode
+  tradingMode: 'BALANCED',
+  entryCoherenceThreshold: 0.45,
+  exitCoherenceThreshold: 0.35,
+  riskMultiplier: 0.5,
+  takeProfitMultiplier: 0.8,
+  
+  // Gaia Lattice / Frequency state
+  gaiaLatticeState: 'NEUTRAL',
+  gaiaFrequency: 432,
+  purityPercent: 0,
+  carrierWavePhi: 0,
+  harmonicLock432: 0,
+  
+  // HNC (Harmonic Neural Coherence)
+  hncFrequency: 432,
+  hncMarketState: 'CONSOLIDATION',
+  hncCoherencePercent: 0,
+  hncModifier: 0.8,
+  
+  // Mycelium Swarm Intelligence
+  myceliumHives: 1,
+  myceliumAgents: 5,
+  myceliumGeneration: 0,
+  maxGeneration: 0,
+  queenState: 'HOLD',
+  queenPnl: 0,
+  
+  // Capital management
+  compoundedCapital: 0,
+  harvestedCapital: 0,
+  poolTotal: 0,
+  poolAvailable: 0,
+  scoutCount: 0,
+  splitCount: 0,
+  
+  // Active positions
+  maxPositions: 30,
+  activePositions: [],
 };
 
 type StateListener = (state: GlobalState) => void;

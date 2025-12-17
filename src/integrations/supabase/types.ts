@@ -3300,6 +3300,126 @@ export type Database = {
         }
         Relationships: []
       }
+      system_runtime_stats: {
+        Row: {
+          avg_hold_time_minutes: number | null
+          carrier_wave_phi: number | null
+          compounded_capital: number | null
+          created_at: string | null
+          current_drawdown_percent: number | null
+          cycle_pnl: number | null
+          entry_coherence_threshold: number | null
+          exit_coherence_threshold: number | null
+          gaia_frequency: number | null
+          gaia_lattice_state: string | null
+          harmonic_lock_432: number | null
+          harvested_capital: number | null
+          hnc_coherence_percent: number | null
+          hnc_frequency: number | null
+          hnc_market_state: string | null
+          hnc_modifier: number | null
+          id: string
+          max_drawdown_percent: number | null
+          max_generation: number | null
+          mycelium_agents: number | null
+          mycelium_generation: number | null
+          mycelium_hives: number | null
+          peak_equity: number | null
+          pool_available: number | null
+          pool_total: number | null
+          purity_percent: number | null
+          queen_pnl: number | null
+          queen_state: string | null
+          risk_multiplier: number | null
+          scout_count: number | null
+          session_start_time: string
+          split_count: number | null
+          take_profit_multiplier: number | null
+          trading_mode: string | null
+          updated_at: string | null
+          user_id: string
+          ws_message_count: number | null
+        }
+        Insert: {
+          avg_hold_time_minutes?: number | null
+          carrier_wave_phi?: number | null
+          compounded_capital?: number | null
+          created_at?: string | null
+          current_drawdown_percent?: number | null
+          cycle_pnl?: number | null
+          entry_coherence_threshold?: number | null
+          exit_coherence_threshold?: number | null
+          gaia_frequency?: number | null
+          gaia_lattice_state?: string | null
+          harmonic_lock_432?: number | null
+          harvested_capital?: number | null
+          hnc_coherence_percent?: number | null
+          hnc_frequency?: number | null
+          hnc_market_state?: string | null
+          hnc_modifier?: number | null
+          id?: string
+          max_drawdown_percent?: number | null
+          max_generation?: number | null
+          mycelium_agents?: number | null
+          mycelium_generation?: number | null
+          mycelium_hives?: number | null
+          peak_equity?: number | null
+          pool_available?: number | null
+          pool_total?: number | null
+          purity_percent?: number | null
+          queen_pnl?: number | null
+          queen_state?: string | null
+          risk_multiplier?: number | null
+          scout_count?: number | null
+          session_start_time?: string
+          split_count?: number | null
+          take_profit_multiplier?: number | null
+          trading_mode?: string | null
+          updated_at?: string | null
+          user_id: string
+          ws_message_count?: number | null
+        }
+        Update: {
+          avg_hold_time_minutes?: number | null
+          carrier_wave_phi?: number | null
+          compounded_capital?: number | null
+          created_at?: string | null
+          current_drawdown_percent?: number | null
+          cycle_pnl?: number | null
+          entry_coherence_threshold?: number | null
+          exit_coherence_threshold?: number | null
+          gaia_frequency?: number | null
+          gaia_lattice_state?: string | null
+          harmonic_lock_432?: number | null
+          harvested_capital?: number | null
+          hnc_coherence_percent?: number | null
+          hnc_frequency?: number | null
+          hnc_market_state?: string | null
+          hnc_modifier?: number | null
+          id?: string
+          max_drawdown_percent?: number | null
+          max_generation?: number | null
+          mycelium_agents?: number | null
+          mycelium_generation?: number | null
+          mycelium_hives?: number | null
+          peak_equity?: number | null
+          pool_available?: number | null
+          pool_total?: number | null
+          purity_percent?: number | null
+          queen_pnl?: number | null
+          queen_state?: string | null
+          risk_multiplier?: number | null
+          scout_count?: number | null
+          session_start_time?: string
+          split_count?: number | null
+          take_profit_multiplier?: number | null
+          trading_mode?: string | null
+          updated_at?: string | null
+          user_id?: string
+          ws_message_count?: number | null
+        }
+        Relationships: []
+      }
       telescope_observations: {
         Row: {
           beam_angle: number
