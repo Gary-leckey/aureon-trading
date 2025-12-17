@@ -10355,32 +10355,53 @@ class AureonKrakenEcosystem:
                 if amount <= 0:
                     continue
                     
-                # 🔧 KRAKEN ASSET NORMALIZATION: Remove Z/X prefixes and map XBT→BTC
-                # Kraken uses: XXBT for Bitcoin, XETH for Ethereum, ZUSD for USD, etc.
+                # 🔧 ASSET NORMALIZATION: Handle both Kraken and Binance special naming
                 asset_clean = asset_raw.upper()
                 
-                # Remove Kraken's Z prefix (fiat currencies)
-                if asset_clean.startswith('Z') and len(asset_clean) > 1:
-                    asset_clean = asset_clean[1:]
-                
-                # Remove Kraken's X prefix (crypto) - but handle XRP, XLM, XDG correctly
-                # Only strip X if it's a double-letter prefix (XX) or known X-prefixed crypto
-                if asset_clean.startswith('XX'):  # XXBT, XXDG, XXLM, etc.
-                    asset_clean = asset_clean[1:]  # XXBT → XBT
-                elif asset_clean.startswith('X') and asset_clean not in ['XRP', 'XLM', 'XMR', 'XTZ']:
-                    # Check if this is Kraken's X prefix vs actual coin name
-                    # Kraken prefixes: XETH, XLTC, etc. Actual coins: XRP, XLM
-                    if len(asset_clean) > 3:  # XETH (4), XLTC (4) - likely Kraken prefix
-                        asset_clean = asset_clean[1:]  # XETH → ETH
-                
-                # Map Kraken's XBT to standard BTC
-                if asset_clean == 'XBT':
-                    asset_clean = 'BTC'
-                elif asset_clean == 'XDG':
-                    asset_clean = 'DOGE'
+                if exchange == 'kraken':
+                    # KRAKEN: Remove Z/X prefixes and map XBT→BTC
+                    # Kraken uses: XXBT for Bitcoin, XETH for Ethereum, ZUSD for USD, etc.
+                    
+                    # Remove Kraken's Z prefix (fiat currencies)
+                    if asset_clean.startswith('Z') and len(asset_clean) > 1:
+                        asset_clean = asset_clean[1:]
+                    
+                    # Remove Kraken's X prefix (crypto) - but handle XRP, XLM, XDG correctly
+                    if asset_clean.startswith('XX'):  # XXBT, XXDG, XXLM, etc.
+                        asset_clean = asset_clean[1:]  # XXBT → XBT
+                    elif asset_clean.startswith('X') and asset_clean not in ['XRP', 'XLM', 'XMR', 'XTZ']:
+                        if len(asset_clean) > 3:  # XETH (4), XLTC (4) - likely Kraken prefix
+                            asset_clean = asset_clean[1:]  # XETH → ETH
+                    
+                    # Map Kraken's XBT to standard BTC
+                    if asset_clean == 'XBT':
+                        asset_clean = 'BTC'
+                    elif asset_clean == 'XDG':
+                        asset_clean = 'DOGE'
+                        
+                elif exchange == 'binance':
+                    # BINANCE: Handle Earn products (LD prefix), staked assets, wrapped tokens
+                    # LDBTC → BTC, BETH → ETH, BNSOL → SOL, WBTC → BTC, etc.
+                    
+                    # Remove LD prefix (Binance Earn/Flexible Savings)
+                    if asset_clean.startswith('LD') and len(asset_clean) > 2:
+                        asset_clean = asset_clean[2:]  # LDBTC → BTC
+                    
+                    # Handle staked/wrapped variants
+                    binance_asset_map = {
+                        'BETH': 'ETH',      # Staked ETH 2.0
+                        'BNSOL': 'SOL',     # Staked SOL
+                        'WBTC': 'BTC',      # Wrapped BTC
+                        'WETH': 'ETH',      # Wrapped ETH  
+                        'WBNB': 'BNB',      # Wrapped BNB
+                        'BTCB': 'BTC',      # BTC on BSC
+                        'POL': 'MATIC',     # Polygon rebrand (keep as MATIC for trading pairs)
+                    }
+                    if asset_clean in binance_asset_map:
+                        asset_clean = binance_asset_map[asset_clean]
                 
                 # Skip base currency (that's cash, not a position)
-                if asset_clean in ['GBP', 'EUR', 'USD', 'USDT', 'USDC']:
+                if asset_clean in ['GBP', 'EUR', 'USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'FDUSD']:
                     continue
                     
                 # Build the trading pair symbol
@@ -10394,7 +10415,7 @@ class AureonKrakenEcosystem:
                 
                 # Try each quote currency until we find a valid pair with price
                 # Include BTC/XBT for Kraken BTC-denominated pairs
-                quote_options = ['USDC', 'USDT', 'USD', 'EUR', 'GBP', 'BTC', 'XBT', base] if base not in ['USDC', 'USDT'] else [base, 'USDT', 'USD', 'EUR', 'BTC', 'XBT']
+                quote_options = ['USDC', 'USDT', 'USD', 'EUR', 'GBP', 'BTC', 'XBT', 'FDUSD', base] if base not in ['USDC', 'USDT'] else [base, 'USDT', 'USD', 'EUR', 'BTC', 'XBT', 'FDUSD']
                 
                 for quote in quote_options:
                     try_symbol = f"{asset_clean}{quote}"
@@ -11982,9 +12003,45 @@ class AureonKrakenEcosystem:
                 'DOT': ['DOT'],
                 'AVAX': ['AVAX'],
                 'LINK': ['LINK'],
-                'MATIC': ['MATIC'],
+                'MATIC': ['MATIC', 'POL'],  # Polygon rebranded
                 'SHIB': ['SHIB'],
                 'UNI': ['UNI'],
+            }
+            
+            # 🔧 BINANCE ASSET MAPPING: Handle Binance Earn, staking, and special assets
+            # Binance uses LD prefix for Earn products, B prefix for wrapped, etc.
+            binance_asset_variants = {
+                'BTC': ['BTC', 'LDBTC', 'WBTC', 'BTCB'],
+                'ETH': ['ETH', 'LDETH', 'WETH', 'BETH'],  # BETH = staked ETH
+                'BNB': ['BNB', 'LDBNB', 'WBNB'],
+                'USDT': ['USDT', 'LDUSDT'],
+                'USDC': ['USDC', 'LDUSDC'],
+                'SOL': ['SOL', 'LDSOL', 'BNSOL'],  # BNSOL = staked SOL
+                'DOGE': ['DOGE', 'LDDOGE'],
+                'XRP': ['XRP', 'LDXRP'],
+                'ADA': ['ADA', 'LDADA'],
+                'AVAX': ['AVAX', 'LDAVAX'],
+                'DOT': ['DOT', 'LDDOT'],
+                'MATIC': ['MATIC', 'POL', 'LDMATIC'],  # Polygon rebranded to POL
+                'SHIB': ['SHIB', 'LDSHIB'],
+                'LINK': ['LINK', 'LDLINK'],
+                'LTC': ['LTC', 'LDLTC'],
+                'UNI': ['UNI', 'LDUNI'],
+                'ATOM': ['ATOM', 'LDATOM'],
+                'XLM': ['XLM', 'LDXLM'],
+                'TRX': ['TRX', 'LDTRX'],
+                'NEAR': ['NEAR', 'LDNEAR'],
+                'APT': ['APT', 'LDAPT'],
+                'ARB': ['ARB', 'LDARB'],
+                'OP': ['OP', 'LDOP'],
+                'INJ': ['INJ', 'LDINJ'],
+                'SUI': ['SUI', 'LDSUI'],
+                'SEI': ['SEI', 'LDSEI'],
+                'FET': ['FET', 'LDFET'],
+                'PEPE': ['PEPE', 'LDPEPE'],
+                'FLOKI': ['FLOKI', 'LDFLOKI'],
+                'WIF': ['WIF', 'LDWIF'],
+                'BONK': ['BONK', 'LDBONK'],
             }
             
             def get_kraken_balance(asset: str) -> float:
@@ -11996,6 +12053,23 @@ class AureonKrakenEcosystem:
                         return float(bal)
                 # Also try raw asset name
                 return float(kraken_balances.get(asset, 0.0))
+            
+            def get_binance_balance(asset: str) -> float:
+                """Try multiple Binance asset name variants (including Earn products)."""
+                variants = binance_asset_variants.get(asset, [asset])
+                total = 0.0
+                for var in variants:
+                    bal = binance_balances.get(var, 0.0)
+                    if bal > 0:
+                        total += float(bal)
+                # Also try raw asset name if not already included
+                if asset not in variants:
+                    total += float(binance_balances.get(asset, 0.0))
+                # Try with LD prefix for any unknown asset (Binance Earn)
+                ld_asset = f"LD{asset}"
+                if ld_asset not in variants:
+                    total += float(binance_balances.get(ld_asset, 0.0))
+                return total
             
             positions_to_remove = []
             positions_adjusted = 0
@@ -12015,10 +12089,10 @@ class AureonKrakenEcosystem:
                 if exchange == 'kraken':
                     real_qty = get_kraken_balance(base_asset)
                 elif exchange == 'binance':
-                    real_qty = float(binance_balances.get(base_asset, 0.0))
+                    real_qty = get_binance_balance(base_asset)
                 else:
                     # Try both exchanges
-                    real_qty = float(binance_balances.get(base_asset, 0.0))
+                    real_qty = get_binance_balance(base_asset)
                     if real_qty == 0:
                         real_qty = get_kraken_balance(base_asset)
                 
