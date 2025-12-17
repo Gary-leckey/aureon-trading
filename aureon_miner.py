@@ -4620,7 +4620,7 @@ class QuantumBrainState:
     miner_brain_action: str = "HOLD"           # ACCUMULATE/HOLD/REDUCE
     miner_brain_confidence: float = 0.5        # 0-1 confidence
     
-    # Individual Civilization Signals
+    # Individual Civilization Signals (Original 7)
     celtic_signal: str = "HOLD"                # ☘️ Celtic Wisdom
     aztec_signal: str = "HOLD"                 # 🦅 Aztec Wisdom
     mogollon_signal: str = "HOLD"              # 🏺 Mogollon Wisdom
@@ -4628,6 +4628,12 @@ class QuantumBrainState:
     egyptian_signal: str = "HOLD"              # ☥ Egyptian Wisdom
     pythagorean_signal: str = "HOLD"           # 🔢 Pythagorean Wisdom
     warfare_signal: str = "HOLD"               # ⚔️ Warfare Wisdom
+    
+    # Extended 4 Civilizations (from JSON Wisdom Scanner)
+    chinese_signal: str = "HOLD"               # ☯️ Chinese Wisdom (I Ching, Taoism)
+    hindu_signal: str = "HOLD"                 # 🕉️ Hindu Wisdom (Vedic, Chakras)
+    mayan_signal: str = "HOLD"                 # 🌀 Mayan Wisdom (Tzolkin, Long Count)
+    norse_signal: str = "HOLD"                 # ᚱ Norse Wisdom (Runes, Wyrd)
     
     # Market Intelligence from Brain
     brain_fear_greed: int = 50                 # Fear & Greed Index
@@ -8092,6 +8098,7 @@ class AureonMiner:
             # Extract individual civilization signals from wisdom
             if self._brain_wisdom:
                 civilizations = self._brain_wisdom.get('civilization_actions', {})
+                # Original 7 civilizations
                 qbrain.state.celtic_signal = civilizations.get('Celtic', 'HOLD')
                 qbrain.state.aztec_signal = civilizations.get('Aztec', 'HOLD')
                 qbrain.state.mogollon_signal = civilizations.get('Mogollon', 'HOLD')
@@ -8099,6 +8106,12 @@ class AureonMiner:
                 qbrain.state.egyptian_signal = civilizations.get('Egyptian', 'HOLD')
                 qbrain.state.pythagorean_signal = civilizations.get('Pythagorean', 'HOLD')
                 qbrain.state.warfare_signal = civilizations.get('Warfare', 'HOLD')
+                
+                # Extended 4 civilizations (from JSON Wisdom Scanner)
+                qbrain.state.chinese_signal = civilizations.get('Chinese', 'HOLD')
+                qbrain.state.hindu_signal = civilizations.get('Hindu', 'HOLD')
+                qbrain.state.mayan_signal = civilizations.get('Mayan', 'HOLD')
+                qbrain.state.norse_signal = civilizations.get('Norse', 'HOLD')
                 
                 # Market intelligence
                 live_pulse = self._brain_wisdom.get('live_pulse', {})
