@@ -15441,7 +15441,34 @@ class AureonKrakenEcosystem:
                     'win_rate': self.tracker.win_rate / 100.0 if self.tracker.win_rate else 0.5,
                 }
                 
-                # Update the field with all data
+                # 🎯 Get Probability Matrix state (HNC Probability Integration)
+                probability_state = None
+                if self.prob_matrix:
+                    try:
+                        # Get best available probability signal
+                        prob_opps = self.prob_matrix.get_high_probability_opportunities(
+                            min_probability=0.55, min_confidence=0.4
+                        )
+                        if prob_opps:
+                            best = prob_opps[0]
+                            probability_state = {
+                                'probability': best.get('probability', 0.5),
+                                'confidence': best.get('confidence', 0.0),
+                                'modifier': best.get('modifier', 1.0),
+                                'h1_state': best.get('h1_state', 'UNKNOWN'),
+                                'action': best.get('action', 'HOLD'),
+                                'historical_win_rate': 0.5,
+                                'high_conviction_count': len(prob_opps),
+                                'consensus_strength': 0.5,
+                            }
+                        # Get win rate stats from probability matrix
+                        win_stats = self.prob_matrix.get_position_win_rate()
+                        if probability_state:
+                            probability_state['historical_win_rate'] = win_stats.get('win_rate', 0.5)
+                    except Exception as e:
+                        logger.debug(f"Probability state error: {e}")
+                
+                # Update the field with all data (including Probability Matrix!)
                 omega_signal = self.global_harmonic_field.update_all(
                     fear_greed=fg_value,
                     btc_price=btc_price,
@@ -15450,6 +15477,7 @@ class AureonKrakenEcosystem:
                     auris_state=auris_state,
                     mycelium_state=mycelium_state,
                     market_state=market_state,
+                    probability_state=probability_state,  # 🎯 HNC Probability Matrix!
                 )
                 
                 # Print field status every 10 cycles

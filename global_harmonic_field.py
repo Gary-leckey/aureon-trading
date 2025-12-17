@@ -98,7 +98,7 @@ class GlobalHarmonicFieldState:
     omega_confidence: float = 0.5         # Confidence in direction
     omega_momentum: float = 0.0           # Rate of change
     
-    # The 7 Harmonic Layers
+    # The 8 Harmonic Layers (42 sources → 8 layers → Ω)
     layer_wisdom: HarmonicLayerState = None
     layer_quantum: HarmonicLayerState = None
     layer_auris: HarmonicLayerState = None
@@ -106,6 +106,7 @@ class GlobalHarmonicFieldState:
     layer_waveform: HarmonicLayerState = None
     layer_stargate: HarmonicLayerState = None
     layer_market: HarmonicLayerState = None
+    layer_probability: HarmonicLayerState = None  # 🎯 Probability Matrix Layer
     
     # Field Harmonics
     resonance_frequency: float = 432.0    # Dominant field frequency
@@ -141,6 +142,8 @@ class GlobalHarmonicFieldState:
             self.layer_stargate = HarmonicLayerState(name="STARGATE", weight=0.8, frequency=7.83)
         if self.layer_market is None:
             self.layer_market = HarmonicLayerState(name="MARKET", weight=1.4, frequency=256.0)
+        if self.layer_probability is None:
+            self.layer_probability = HarmonicLayerState(name="PROBABILITY", weight=1.6, frequency=432.0)  # High weight - proven accuracy!
 
 
 class GlobalHarmonicField:
@@ -174,15 +177,16 @@ class GlobalHarmonicField:
         self._quantum_brain = None
         self._penny_engine = None
         
-        # Layer weights (sum to ~8.3)
+        # Layer weights (sum to ~9.9 with probability matrix)
         self.layer_weights = {
-            'wisdom': 1.5,    # 11 civilizations - highest weight
-            'quantum': 1.3,   # Quantum brain state
-            'auris': 1.2,     # 9 Auris nodes
-            'mycelium': 1.0,  # Network intelligence
-            'waveform': 1.1,  # 6D waveform
-            'stargate': 0.8,  # Earth grid
-            'market': 1.4,    # Direct market data
+            'wisdom': 1.5,      # 11 civilizations - highest weight
+            'quantum': 1.3,     # Quantum brain state
+            'auris': 1.2,       # 9 Auris nodes
+            'mycelium': 1.0,    # Network intelligence
+            'waveform': 1.1,    # 6D waveform
+            'stargate': 0.8,    # Earth grid
+            'market': 1.4,      # Direct market data
+            'probability': 1.6, # 🎯 HNC Probability Matrix - PROVEN ACCURACY!
         }
         
         # Initialize engines lazily
@@ -590,6 +594,77 @@ class GlobalHarmonicField:
         return layer
     
     # ═══════════════════════════════════════════════════════════════
+    # LAYER 8: PROBABILITY (HNC Probability Matrix)
+    # ═══════════════════════════════════════════════════════════════
+    
+    def update_probability_layer(self, probability_state: Dict = None) -> HarmonicLayerState:
+        """
+        Update Layer 8: HNC Probability Matrix.
+        
+        Sources:
+          - Fine-tuned Probability
+          - Confidence Score
+          - Position Modifier
+          - H1/H2 Window State
+          - Historical Win Rate
+          - High Conviction Signals
+        """
+        layer = self.state.layer_probability
+        
+        if probability_state:
+            layer.sources = {
+                'probability': probability_state.get('probability', 0.5),
+                'confidence': probability_state.get('confidence', 0.0),
+                'modifier': probability_state.get('modifier', 1.0),
+                'h1_state': probability_state.get('h1_state', 'UNKNOWN'),
+                'action': probability_state.get('action', 'HOLD'),
+                'historical_win_rate': probability_state.get('historical_win_rate', 0.5),
+                'high_conviction_count': probability_state.get('high_conviction_count', 0),
+                'consensus_strength': probability_state.get('consensus_strength', 0.5),
+            }
+            
+            # Primary: Fine-tuned probability (0-1 already)
+            base_value = layer.sources['probability']
+            
+            # Confidence-weighted adjustment
+            confidence_factor = layer.sources['confidence']
+            
+            # Historical win rate influence
+            hist_wr = layer.sources['historical_win_rate']
+            
+            # Action alignment (BUY action should boost for buy field)
+            action_mod = 0
+            if layer.sources['action'] == 'BUY':
+                action_mod = 0.1
+            elif layer.sources['action'] == 'STRONG_BUY':
+                action_mod = 0.2
+            elif layer.sources['action'] == 'SELL':
+                action_mod = -0.1
+            elif layer.sources['action'] == 'STRONG_SELL':
+                action_mod = -0.2
+            
+            # High conviction boost
+            hc_boost = min(layer.sources['high_conviction_count'] * 0.02, 0.1)  # Up to +10%
+            
+            # Combine: probability * confidence + historical performance + action modifier
+            layer.value = base_value * (0.5 + confidence_factor * 0.5) + hist_wr * 0.2 + action_mod + hc_boost
+            layer.value = max(0, min(1, layer.value))
+            
+            layer.coherence = confidence_factor
+            
+            # Signal based on probability action
+            if layer.sources['action'] in ['BUY', 'STRONG_BUY']:
+                layer.signal = 'BUY'
+            elif layer.sources['action'] in ['SELL', 'STRONG_SELL']:
+                layer.signal = 'SELL'
+            else:
+                layer.signal = 'NEUTRAL'
+        else:
+            layer.value = 0.5
+        
+        return layer
+    
+    # ═══════════════════════════════════════════════════════════════
     # MASTER FIELD COMPUTATION
     # ═══════════════════════════════════════════════════════════════
     
@@ -601,7 +676,7 @@ class GlobalHarmonicField:
         
         Returns the unified field value (0-1).
         """
-        # Gather all layer values and weights
+        # Gather all layer values and weights (8 layers now!)
         layers = [
             (self.state.layer_wisdom, self.layer_weights['wisdom']),
             (self.state.layer_quantum, self.layer_weights['quantum']),
@@ -610,6 +685,7 @@ class GlobalHarmonicField:
             (self.state.layer_waveform, self.layer_weights['waveform']),
             (self.state.layer_stargate, self.layer_weights['stargate']),
             (self.state.layer_market, self.layer_weights['market']),
+            (self.state.layer_probability, self.layer_weights['probability']),  # 🎯 HNC Probability Matrix!
         ]
         
         # Weighted sum
@@ -711,6 +787,7 @@ class GlobalHarmonicField:
                 'waveform': self.state.layer_waveform.value,
                 'stargate': self.state.layer_stargate.value,
                 'market': self.state.layer_market.value,
+                'probability': self.state.layer_probability.value,  # 🎯 HNC Probability Matrix!
             },
             'layer_signals': {
                 'wisdom': self.state.layer_wisdom.signal,
@@ -720,6 +797,7 @@ class GlobalHarmonicField:
                 'waveform': self.state.layer_waveform.signal,
                 'stargate': self.state.layer_stargate.signal,
                 'market': self.state.layer_market.signal,
+                'probability': self.state.layer_probability.signal,  # 🎯 HNC Probability Matrix!
             }
         }
     
@@ -727,11 +805,12 @@ class GlobalHarmonicField:
                    btc_change: float = 0.0, quantum_state: Dict = None,
                    auris_state: Dict = None, mycelium_state: Dict = None,
                    waveform_state: Dict = None, stargate_state: Dict = None,
-                   market_state: Dict = None) -> Dict:
+                   market_state: Dict = None, probability_state: Dict = None) -> Dict:
         """
-        Update all layers and compute the unified field.
+        Update all 8 layers and compute the unified field.
         
         This is the main entry point for feeding data into the field.
+        Now includes HNC Probability Matrix as the 8th layer!
         """
         # Update each layer
         self.update_wisdom_layer(fear_greed, btc_price, btc_change)
@@ -741,6 +820,7 @@ class GlobalHarmonicField:
         self.update_waveform_layer(waveform_state)
         self.update_stargate_layer(stargate_state)
         self.update_market_layer(market_state)
+        self.update_probability_layer(probability_state)  # 🎯 HNC Probability Matrix!
         
         # Compute unified field
         self.compute_field()
@@ -788,7 +868,7 @@ class GlobalHarmonicField:
 ║         0.382│                      │0.618                                   ║
 ║                                                                              ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║  THE 7 HARMONIC LAYERS:                                                      ║
+║  THE 8 HARMONIC LAYERS:                                                      ║
 ║  ───────────────────────────────────────────────────────────────────────     ║
 ║  🧠 WISDOM (11 Civs):  {signal['layers']['wisdom']:.3f}  {signal['layer_signals']['wisdom']:<8}                              ║
 ║  ⚛️ QUANTUM:           {signal['layers']['quantum']:.3f}  {signal['layer_signals']['quantum']:<8}                              ║
@@ -797,6 +877,7 @@ class GlobalHarmonicField:
 ║  🌌 6D WAVEFORM:       {signal['layers']['waveform']:.3f}  {signal['layer_signals']['waveform']:<8}                              ║
 ║  🌍 STARGATE:          {signal['layers']['stargate']:.3f}  {signal['layer_signals']['stargate']:<8}                              ║
 ║  💰 MARKET:            {signal['layers']['market']:.3f}  {signal['layer_signals']['market']:<8}                              ║
+║  🎯 PROBABILITY:       {signal['layers']['probability']:.3f}  {signal['layer_signals']['probability']:<8}                              ║
 ║                                                                              ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║  FIELD METRICS:                                                              ║
