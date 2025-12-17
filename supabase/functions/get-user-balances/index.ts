@@ -29,7 +29,7 @@ async function getDbCachedBalance(
   supabase: any,
   userId: string,
   exchange: string
-): Promise<{ data: ExchangeBalance | null; canFetch: boolean }> {
+): Promise<{ data: ExchangeBalance | null; canFetch: boolean; cachedAt?: string; hasRow?: boolean }> {
   try {
     const { data, error } = await supabase
       .from(BALANCE_CACHE_TABLE)
@@ -39,10 +39,11 @@ async function getDbCachedBalance(
       .single();
 
     if (error || !data) {
-      return { data: null, canFetch: true };
+      return { data: null, canFetch: true, hasRow: false };
     }
 
-    const cachedAt = new Date(data.cached_at).getTime();
+    const cachedAtIso = data.cached_at as string;
+    const cachedAt = new Date(cachedAtIso).getTime();
     const elapsed = Date.now() - cachedAt;
     const rateLimit = RATE_LIMITS[exchange as keyof typeof RATE_LIMITS] || 30000;
 
@@ -59,8 +60,14 @@ async function getDbCachedBalance(
       const errorText = typeof balanceData?.error === 'string' ? balanceData.error : '';
       const isRateLimit = /rate limit exceeded/i.test(errorText);
       const isInvalidNonce = /invalid nonce/i.test(errorText);
+      const isFetching = /fetch(ing)? in progress|fetching\.\.\./i.test(errorText);
 
-      const backoffMs = isRateLimit ? rateLimit : isInvalidNonce ? 15000 : 60000;
+      const backoffMs =
+        isRateLimit ? rateLimit :
+        isInvalidNonce ? 15000 :
+        isFetching ? 5000 :
+        60000;
+
       const canFetch = elapsed >= backoffMs;
 
       return {
@@ -74,6 +81,8 @@ async function getDbCachedBalance(
               }
             : null,
         canFetch,
+        cachedAt: cachedAtIso,
+        hasRow: true,
       };
     }
 
@@ -88,14 +97,57 @@ async function getDbCachedBalance(
           error: canFetch ? undefined : `Cached ${Math.round(elapsed / 1000)}s ago (rate limited)`,
         },
         canFetch,
+        cachedAt: cachedAtIso,
+        hasRow: true,
       };
     }
 
-    return { data: null, canFetch: true };
+    return { data: null, canFetch: true, cachedAt: cachedAtIso, hasRow: true };
   } catch {
-    return { data: null, canFetch: true };
+    return { data: null, canFetch: true, hasRow: false };
   }
 }
+
+// Optimistic lock to prevent concurrent "fresh" fetches across parallel edge invocations.
+// We acquire the lock by atomically bumping cached_at (or inserting a placeholder row).
+async function acquireFetchLock(
+  supabase: any,
+  userId: string,
+  exchange: string,
+  prevCachedAt?: string,
+  existingData?: ExchangeBalance | null
+): Promise<boolean> {
+  const nowIso = new Date().toISOString();
+  const placeholder: ExchangeBalance =
+    existingData ?? ({ exchange, connected: false, assets: [], totalUsd: 0, error: 'Fetching...' } as ExchangeBalance);
+
+  // If a row exists, attempt a compare-and-swap on cached_at.
+  if (prevCachedAt) {
+    const { count } = await supabase
+      .from(BALANCE_CACHE_TABLE)
+      .update({ cached_at: nowIso, balance_data: placeholder }, { count: 'exact' })
+      .eq('user_id', userId)
+      .eq('exchange', exchange)
+      .eq('cached_at', prevCachedAt);
+
+    if (count === 1) return true;
+    return false;
+  }
+
+  // If no row exists, try to insert. Unique constraint (user_id, exchange) prevents races.
+  const { error } = await supabase.from(BALANCE_CACHE_TABLE).insert({
+    user_id: userId,
+    exchange,
+    balance_data: placeholder,
+    cached_at: nowIso,
+  });
+
+  if (!error) return true;
+
+  // Another invocation probably inserted first.
+  return false;
+}
+
 
 // Save balance to database cache
 async function setDbCachedBalance(
@@ -668,15 +720,35 @@ serve(async (req) => {
     // Fetch Kraken balances with database-backed rate limiting (2 MINUTES to avoid rate limit)
     if (userCreds.kraken.apiKey && userCreds.kraken.apiSecret) {
       const krakenCache = await getDbCachedBalance(supabase, user.id, 'kraken');
+
       if (krakenCache.canFetch) {
-        console.log('[get-user-balances] Kraken: fetching fresh data');
-        fetchPromises.push(
-          fetchKrakenBalances(userCreds.kraken.apiKey, userCreds.kraken.apiSecret)
-            .then(async (result) => { 
-              await setDbCachedBalance(supabase, user.id, 'kraken', result); 
-              return result; 
-            })
+        // Acquire a cross-invocation lock so only ONE edge invocation hits Kraken when the window opens.
+        const locked = await acquireFetchLock(
+          supabase,
+          user.id,
+          'kraken',
+          krakenCache.hasRow ? krakenCache.cachedAt : undefined,
+          krakenCache.data
         );
+
+        if (locked) {
+          console.log('[get-user-balances] Kraken: fetching fresh data');
+          fetchPromises.push(
+            fetchKrakenBalances(userCreds.kraken.apiKey, userCreds.kraken.apiSecret)
+              .then(async (result) => {
+                await setDbCachedBalance(supabase, user.id, 'kraken', result);
+                return result;
+              })
+          );
+        } else if (krakenCache.data) {
+          console.log('[get-user-balances] Kraken: fetch already in progress, using cached data');
+          balances.push({
+            ...krakenCache.data,
+            error: krakenCache.data.error || 'Fetch in progress',
+          });
+        } else {
+          balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0, error: 'Fetch in progress' });
+        }
       } else if (krakenCache.data) {
         console.log('[get-user-balances] Kraken: using cached data (rate limited)');
         balances.push(krakenCache.data);
