@@ -20,6 +20,17 @@ from datetime import datetime
 from typing import List, Dict, Any
 from binance_client import BinanceClient
 
+# 🪙 PENNY PROFIT ENGINE
+try:
+    from penny_profit_engine import check_penny_exit, get_penny_engine
+    PENNY_PROFIT_AVAILABLE = True
+    _penny_engine = get_penny_engine()
+    print("🪙 Penny Profit Engine loaded for The Play")
+except ImportError:
+    PENNY_PROFIT_AVAILABLE = False
+    _penny_engine = None
+    print("⚠️ Penny Profit Engine not available")
+
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -408,9 +419,15 @@ class AureonThePlayTrader:
             snap = self.get_market_snapshot(symbol)
             if not snap: continue
             
+            # Track cycles for min hold time
+            pos['cycles'] = pos.get('cycles', 0) + 1
+            
             curr_price = snap['price']
             entry_price = pos['entry_price']
             pnl_pct = (curr_price - entry_price) / entry_price
+            current_value = pos.get('qty', 0) * curr_price
+            entry_value = pos.get('entry_value', pos.get('qty', 0) * entry_price)
+            gross_pnl = current_value - entry_value
             
             coherence = self.master_eq.compute_coherence(symbol, snap)
             freq = self.master_eq.get_frequency(coherence)
@@ -419,20 +436,35 @@ class AureonThePlayTrader:
             if random.random() < 0.05:
                 logger.info(f"📊 {symbol}: Γ={coherence:.4f} f={freq:.0f}Hz | PnL {pnl_pct*100:.2f}%")
             
-            # Exit 1: Coherence Break (Γ < 0.934)
-            if coherence < CONFIG['EXIT_COHERENCE']:
-                logger.info(f"⚡ {symbol}: COHERENCE EXIT (Γ={coherence:.4f} < 0.934)")
-                self.close_position(symbol, pos, curr_price, pnl_pct)
+            # 🪙 PENNY PROFIT EXIT LOGIC (priority over coherence)
+            if PENNY_PROFIT_AVAILABLE and _penny_engine is not None and entry_value > 0:
+                action, _ = check_penny_exit('binance', entry_value, current_value)
+                threshold = _penny_engine.get_threshold('binance', entry_value)
                 
-            # Exit 2: Take Profit (1.8%)
-            elif pnl_pct >= CONFIG['TAKE_PROFIT_PCT']:
-                logger.info(f"💰 {symbol}: TAKE PROFIT (+{pnl_pct*100:.2f}%)")
-                self.close_position(symbol, pos, curr_price, pnl_pct)
-                
-            # Exit 3: Stop Loss (0.8%)
-            elif pnl_pct <= -CONFIG['STOP_LOSS_PCT']:
-                logger.info(f"🛑 {symbol}: STOP LOSS ({pnl_pct*100:.2f}%)")
-                self.close_position(symbol, pos, curr_price, pnl_pct)
+                if action == 'TAKE_PROFIT':
+                    logger.info(f"🪙 {symbol}: PENNY TP (${gross_pnl:.4f} >= ${threshold.win_gte:.4f})")
+                    self.close_position(symbol, pos, curr_price, pnl_pct)
+                elif action == 'STOP_LOSS' and pos['cycles'] >= 5:
+                    logger.info(f"🪙 {symbol}: PENNY SL (${gross_pnl:.4f} <= ${threshold.stop_lte:.4f})")
+                    self.close_position(symbol, pos, curr_price, pnl_pct)
+                elif coherence < CONFIG['EXIT_COHERENCE'] and pos['cycles'] >= 5:
+                    logger.info(f"⚡ {symbol}: COHERENCE EXIT (Γ={coherence:.4f} < 0.934)")
+                    self.close_position(symbol, pos, curr_price, pnl_pct)
+            else:
+                # Fallback: Exit 1 - Coherence Break
+                if coherence < CONFIG['EXIT_COHERENCE'] and pos['cycles'] >= 5:
+                    logger.info(f"⚡ {symbol}: COHERENCE EXIT (Γ={coherence:.4f} < 0.934)")
+                    self.close_position(symbol, pos, curr_price, pnl_pct)
+                    
+                # Exit 2: Take Profit
+                elif pnl_pct >= CONFIG['TAKE_PROFIT_PCT']:
+                    logger.info(f"💰 {symbol}: TAKE PROFIT (+{pnl_pct*100:.2f}%)")
+                    self.close_position(symbol, pos, curr_price, pnl_pct)
+                    
+                # Exit 3: Stop Loss (with min hold)
+                elif pnl_pct <= -CONFIG['STOP_LOSS_PCT'] and pos['cycles'] >= 5:
+                    logger.info(f"🛑 {symbol}: STOP LOSS ({pnl_pct*100:.2f}%)")
+                    self.close_position(symbol, pos, curr_price, pnl_pct)
 
     def close_position(self, symbol, pos, price, pnl_pct):
         if self.dry_run:

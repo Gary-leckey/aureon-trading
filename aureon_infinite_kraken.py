@@ -32,7 +32,18 @@ from typing import Dict, List, Tuple, Optional
 sys.path.insert(0, '/workspaces/aureon-trading')
 from kraken_client import KrakenClient
 
-# 🧠 MINER BRAIN INTEGRATION
+# � PENNY PROFIT ENGINE
+try:
+    from penny_profit_engine import check_penny_exit, get_penny_engine
+    PENNY_PROFIT_AVAILABLE = True
+    _penny_engine = get_penny_engine()
+    print("🪙 Penny Profit Engine loaded")
+except ImportError:
+    PENNY_PROFIT_AVAILABLE = False
+    _penny_engine = None
+    print("⚠️ Penny Profit Engine not available")
+
+# �🧠 MINER BRAIN INTEGRATION
 try:
     from aureon_miner_brain import MinerBrain
     BRAIN_AVAILABLE = True
@@ -115,6 +126,8 @@ class Position:
         self.momentum = momentum
         self.entry_time = time.time()
         self.position_value = quantity * entry_price
+        self.entry_value = quantity * entry_price  # For penny profit
+        self.cycles = 0  # Track hold time for min hold
 
 
 class AureonInfiniteKraken:
@@ -244,10 +257,12 @@ class AureonInfiniteKraken:
         return candidates[:20]
         
     def check_positions(self):
-        """Check existing positions for TP/SL"""
+        """Check existing positions for TP/SL using penny profit"""
         closed = []
         
         for symbol, pos in list(self.positions.items()):
+            pos.cycles += 1  # Track hold time
+            
             ticker = self.ticker_cache.get(symbol, {})
             current_price = ticker.get('price', pos.entry_price)
             
@@ -256,21 +271,37 @@ class AureonInfiniteKraken:
                 
             pnl_pct = (current_price - pos.entry_price) / pos.entry_price * 100
             position_value = pos.quantity * current_price
+            gross_pnl = position_value - pos.entry_value
             
             should_close = False
             result = ""
+            emoji = ""
             
-            # Take profit hit! 🎉
-            if pnl_pct >= TARGET_PROFIT_PCT:
-                should_close = True
-                result = "WIN"
-                emoji = "🎉"
+            # 🪙 PENNY PROFIT EXIT LOGIC
+            if PENNY_PROFIT_AVAILABLE and _penny_engine is not None:
+                action, _ = check_penny_exit('kraken', pos.entry_value, position_value)
+                threshold = _penny_engine.get_threshold('kraken', pos.entry_value)
                 
-            # Stop loss hit 😢
-            elif pnl_pct <= -STOP_LOSS_PCT:
-                should_close = True
-                result = "LOSS"
-                emoji = "😢"
+                if action == 'TAKE_PROFIT':
+                    should_close = True
+                    result = "WIN"
+                    emoji = "🎉"
+                    print(f"   🪙 PENNY TP: Gross ${gross_pnl:.4f} >= ${threshold.win_gte:.4f}")
+                elif action == 'STOP_LOSS' and pos.cycles >= 5:
+                    should_close = True
+                    result = "LOSS"
+                    emoji = "😢"
+                    print(f"   🪙 PENNY SL: Gross ${gross_pnl:.4f} <= ${threshold.stop_lte:.4f}")
+            else:
+                # Fallback to percentage exits
+                if pnl_pct >= TARGET_PROFIT_PCT:
+                    should_close = True
+                    result = "WIN"
+                    emoji = "🎉"
+                elif pnl_pct <= -STOP_LOSS_PCT and pos.cycles >= 5:
+                    should_close = True
+                    result = "LOSS"
+                    emoji = "😢"
                 
             if should_close:
                 # Calculate exit

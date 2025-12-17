@@ -17,6 +17,17 @@ from typing import Dict, List, Optional
 from decimal import Decimal, ROUND_DOWN
 from binance_client import BinanceClient
 
+# 🪙 PENNY PROFIT ENGINE
+try:
+    from penny_profit_engine import check_penny_exit, get_penny_engine
+    PENNY_PROFIT_AVAILABLE = True
+    _penny_engine = get_penny_engine()
+    print("🪙 Penny Profit Engine loaded for BTC Trader")
+except ImportError:
+    PENNY_PROFIT_AVAILABLE = False
+    _penny_engine = None
+    print("⚠️ Penny Profit Engine not available")
+
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -299,7 +310,7 @@ class AureonBTCTrader:
                 time.sleep(0.2)
     
     def check_exits(self):
-        """Check positions for TP/SL exits"""
+        """Check positions for TP/SL exits using penny profit"""
         for symbol in list(self.positions.keys()):
             pos = self.positions[symbol]
             ticker = self.ticker_cache.get(symbol, {})
@@ -308,19 +319,40 @@ class AureonBTCTrader:
             if price <= 0:
                 continue
             
+            # Track cycles for min hold time
+            pos['cycles'] = pos.get('cycles', 0) + 1
+            
             entry = pos['entry']
             pnl_pct = (price - entry) / entry
+            current_value = pos['qty'] * price
+            entry_value = pos.get('entry_value', pos['qty'] * entry)
+            gross_pnl = current_value - entry_value
             
             should_exit = False
             reason = ""
             
-            if pnl_pct >= CONFIG['TAKE_PROFIT_PCT']:
-                should_exit = True
-                reason = f"💰 TP (+{pnl_pct*100:.2f}%)"
-            elif pnl_pct <= -CONFIG['STOP_LOSS_PCT']:
-                should_exit = True
-                reason = f"🛑 SL ({pnl_pct*100:.2f}%)"
-            elif time.time() - pos['entry_time'] > 3600:  # 1 hour stagnation
+            # 🪙 PENNY PROFIT EXIT LOGIC
+            if PENNY_PROFIT_AVAILABLE and _penny_engine is not None:
+                action, _ = check_penny_exit('binance', entry_value, current_value)
+                threshold = _penny_engine.get_threshold('binance', entry_value)
+                
+                if action == 'TAKE_PROFIT':
+                    should_exit = True
+                    reason = f"🪙 PENNY TP (${gross_pnl:.4f} >= ${threshold.win_gte:.4f})"
+                elif action == 'STOP_LOSS' and pos['cycles'] >= 5:
+                    should_exit = True
+                    reason = f"🪙 PENNY SL (${gross_pnl:.4f} <= ${threshold.stop_lte:.4f})"
+            else:
+                # Fallback to percentage exits
+                if pnl_pct >= CONFIG['TAKE_PROFIT_PCT']:
+                    should_exit = True
+                    reason = f"💰 TP (+{pnl_pct*100:.2f}%)"
+                elif pnl_pct <= -CONFIG['STOP_LOSS_PCT'] and pos['cycles'] >= 5:
+                    should_exit = True
+                    reason = f"🛑 SL ({pnl_pct*100:.2f}%)"
+            
+            # Stagnation check (keep this)
+            if not should_exit and time.time() - pos['entry_time'] > 3600:
                 should_exit = True
                 reason = f"⏰ STAGNATION ({pnl_pct*100:.2f}%)"
             

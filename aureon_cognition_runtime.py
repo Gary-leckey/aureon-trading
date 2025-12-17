@@ -56,10 +56,20 @@ class MinerModule:
 
 
 class RiskModule:
-    def __init__(self, bus: ThoughtBus, max_positions: int = 3, get_open_positions_count=None):
+    """
+    Risk-aware signal filter with capital and position limits.
+    
+    🔒 CAPITAL AWARE: Now checks available capital before approving signals.
+    This prevents flooding the execution system with orders that will fail.
+    """
+    def __init__(self, bus: ThoughtBus, max_positions: int = 3, 
+                 get_open_positions_count=None, get_available_capital=None,
+                 min_order_size: float = 6.0):
         self.bus = bus
         self.max_positions = max_positions
+        self.min_order_size = min_order_size
         self.get_open_positions_count = get_open_positions_count or (lambda: 0)
+        self.get_available_capital = get_available_capital or (lambda: float('inf'))
         self.bus.subscribe("miner.signal_batch", self.on_signals)
 
     def on_signals(self, t: Thought) -> None:
@@ -69,6 +79,28 @@ class RiskModule:
 
         # Get real position count from ecosystem
         open_positions = self.get_open_positions_count()
+        
+        # 🔒 Get available capital - critical for preventing spam orders
+        available_capital = self.get_available_capital()
+        
+        # 🛑 If capital is too low for even one trade, reject all buy signals early
+        if available_capital < self.min_order_size:
+            for c in candidates:
+                if c.get("side", "buy").lower() == "buy":
+                    rejected.append({**c, "reason": "insufficient_capital"})
+                else:
+                    # Allow sell signals even with low capital
+                    approved.append(c)
+            
+            # Publish and return early
+            self.bus.publish(Thought(
+                source="risk",
+                topic="risk.approved_intents",
+                trace_id=t.trace_id,
+                parent_id=t.id,
+                payload={"approved": approved, "rejected": rejected},
+            ))
+            return
 
         for c in sorted(candidates, key=lambda x: x.get("expected_edge", 0.0), reverse=True):
             if open_positions >= self.max_positions:

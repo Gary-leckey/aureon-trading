@@ -25,6 +25,17 @@ from typing import List, Dict, Any, Optional
 from binance_client import BinanceClient
 from decimal import Decimal, ROUND_DOWN
 
+# 🪙 PENNY PROFIT ENGINE
+try:
+    from penny_profit_engine import check_penny_exit, get_penny_engine
+    PENNY_PROFIT_AVAILABLE = True
+    _penny_engine = get_penny_engine()
+    print("🪙 Penny Profit Engine loaded for QGITA")
+except ImportError:
+    PENNY_PROFIT_AVAILABLE = False
+    _penny_engine = None
+    print("⚠️ Penny Profit Engine not available")
+
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -633,6 +644,12 @@ class AureonQGITATrader:
             entry = pos['entry_price']
             pnl_pct = (price - entry) / entry if entry > 0 else 0
             
+            # Track cycles for min hold time
+            pos['cycles'] = pos.get('cycles', 0) + 1
+            current_value = pos.get('qty', 0) * price
+            entry_value = pos.get('entry_value', pos.get('qty', 0) * entry)
+            gross_pnl = current_value - entry_value
+            
             # Create Auris state and run loop
             state = AurisState(snap)
             state = execute_auris_loop(state)
@@ -649,19 +666,37 @@ class AureonQGITATrader:
             should_exit = False
             exit_reason = ""
             
-            # Exit conditions
-            if prism == 'Red':
-                should_exit = True
-                exit_reason = f"🔴 RED PRISM (low confidence)"
-            elif pnl_pct >= CONFIG['TAKE_PROFIT_MULT'] * 0.01:  # ~2.25%
-                should_exit = True
-                exit_reason = f"💰 TAKE PROFIT (+{pnl_pct*100:.2f}%)"
-            elif pnl_pct <= -CONFIG['STOP_LOSS_MULT'] * 0.01:  # ~1.2%
-                should_exit = True
-                exit_reason = f"🛑 STOP LOSS ({pnl_pct*100:.2f}%)"
-            elif state.tigerCut:
-                should_exit = True
-                exit_reason = f"🐯 TIGER CUT (phase disruption)"
+            # 🪙 PENNY PROFIT EXIT LOGIC (priority)
+            if PENNY_PROFIT_AVAILABLE and _penny_engine is not None and entry_value > 0:
+                action, _ = check_penny_exit('binance', entry_value, current_value)
+                threshold = _penny_engine.get_threshold('binance', entry_value)
+                
+                if action == 'TAKE_PROFIT':
+                    should_exit = True
+                    exit_reason = f"🪙 PENNY TP (${gross_pnl:.4f} >= ${threshold.win_gte:.4f})"
+                elif action == 'STOP_LOSS' and pos['cycles'] >= 5:
+                    should_exit = True
+                    exit_reason = f"🪙 PENNY SL (${gross_pnl:.4f} <= ${threshold.stop_lte:.4f})"
+                elif prism == 'Red' and pos['cycles'] >= 5:
+                    should_exit = True
+                    exit_reason = f"🔴 RED PRISM (low confidence)"
+                elif state.tigerCut and pos['cycles'] >= 5:
+                    should_exit = True
+                    exit_reason = f"🐯 TIGER CUT (phase disruption)"
+            else:
+                # Fallback exit conditions
+                if prism == 'Red' and pos['cycles'] >= 5:
+                    should_exit = True
+                    exit_reason = f"🔴 RED PRISM (low confidence)"
+                elif pnl_pct >= CONFIG['TAKE_PROFIT_MULT'] * 0.01:
+                    should_exit = True
+                    exit_reason = f"💰 TAKE PROFIT (+{pnl_pct*100:.2f}%)"
+                elif pnl_pct <= -CONFIG['STOP_LOSS_MULT'] * 0.01 and pos['cycles'] >= 5:
+                    should_exit = True
+                    exit_reason = f"🛑 STOP LOSS ({pnl_pct*100:.2f}%)"
+                elif state.tigerCut and pos['cycles'] >= 5:
+                    should_exit = True
+                    exit_reason = f"🐯 TIGER CUT (phase disruption)"
             
             # Random status log
             if random.random() < 0.02:

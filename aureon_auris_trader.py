@@ -40,6 +40,17 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from binance_client import BinanceClient
 
+# 🪙 PENNY PROFIT ENGINE
+try:
+    from penny_profit_engine import check_penny_exit, get_penny_engine
+    PENNY_PROFIT_AVAILABLE = True
+    _penny_engine = get_penny_engine()
+    print("🪙 Penny Profit Engine loaded for Auris Trader")
+except ImportError:
+    PENNY_PROFIT_AVAILABLE = False
+    _penny_engine = None
+    print("⚠️ Penny Profit Engine not available")
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONFIGURATION
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -340,22 +351,44 @@ class AurisTrader:
             snapshot = self.get_market_snapshot(symbol)
             if not snapshot: continue
             
+            # Track cycles for min hold time
+            pos['cycles'] = pos.get('cycles', 0) + 1
+            
             coherence = self.engine.calculate_coherence(snapshot)
             pnl_pct = (snapshot.price - pos['entry_price']) / pos['entry_price'] * 100
+            current_value = pos['quantity'] * snapshot.price
+            entry_value = pos.get('entry_value', pos['quantity'] * pos['entry_price'])
+            gross_pnl = current_value - entry_value
             
             should_exit = False
             reason = ""
             
-            # Exit Logic
-            if coherence < EXIT_COHERENCE:
-                should_exit = True
-                reason = f"Coherence Break (Γ={coherence:.4f})"
-            elif pnl_pct > MIN_PROFIT_PCT * 3: # Take profit
-                should_exit = True
-                reason = f"Target Hit (+{pnl_pct:.2f}%)"
-            elif pnl_pct < -1.0: # Stop loss
-                should_exit = True
-                reason = f"Stop Loss (-{pnl_pct:.2f}%)"
+            # 🪙 PENNY PROFIT EXIT LOGIC (Priority over Coherence)
+            if PENNY_PROFIT_AVAILABLE and _penny_engine is not None:
+                action, _ = check_penny_exit('binance', entry_value, current_value)
+                threshold = _penny_engine.get_threshold('binance', entry_value)
+                
+                if action == 'TAKE_PROFIT':
+                    should_exit = True
+                    reason = f"🪙 PENNY TP (${gross_pnl:.4f} >= ${threshold.win_gte:.4f})"
+                elif action == 'STOP_LOSS' and pos['cycles'] >= 5:
+                    should_exit = True
+                    reason = f"🪙 PENNY SL (${gross_pnl:.4f} <= ${threshold.stop_lte:.4f})"
+                elif coherence < EXIT_COHERENCE and pos['cycles'] >= 5:
+                    # Only allow coherence break after min hold
+                    should_exit = True
+                    reason = f"Coherence Break (Γ={coherence:.4f})"
+            else:
+                # Fallback: Exit Logic
+                if coherence < EXIT_COHERENCE and pos['cycles'] >= 5:
+                    should_exit = True
+                    reason = f"Coherence Break (Γ={coherence:.4f})"
+                elif pnl_pct > MIN_PROFIT_PCT * 3:
+                    should_exit = True
+                    reason = f"Target Hit (+{pnl_pct:.2f}%)"
+                elif pnl_pct < -1.0 and pos['cycles'] >= 5:
+                    should_exit = True
+                    reason = f"Stop Loss (-{pnl_pct:.2f}%)"
                 
             if should_exit:
                 print(f"📤 AURIS EXIT: {symbol} @ ${snapshot.price:.4f} | {reason}")

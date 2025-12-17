@@ -26,7 +26,18 @@ from threading import Thread, Lock
 sys.path.insert(0, '/workspaces/aureon-trading')
 from kraken_client import KrakenClient
 
-# 🧠 MINER BRAIN INTEGRATION
+# � PENNY PROFIT ENGINE
+try:
+    from penny_profit_engine import check_penny_exit, get_penny_engine
+    PENNY_PROFIT_AVAILABLE = True
+    _penny_engine = get_penny_engine()
+    print("🪙 Penny Profit Engine loaded")
+except ImportError:
+    PENNY_PROFIT_AVAILABLE = False
+    _penny_engine = None
+    print("⚠️ Penny Profit Engine not available - using percentage exits")
+
+# �🧠 MINER BRAIN INTEGRATION
 try:
     from aureon_miner_brain import MinerBrain
     BRAIN_AVAILABLE = True
@@ -538,13 +549,26 @@ class Aureon51Live:
                 current_price = self.ticker_cache.get(symbol, {}).get('price', pos.entry_price)
                 
             change_pct = (current_price - pos.entry_price) / pos.entry_price * 100
+            current_value = pos.quantity * current_price
+            gross_pnl = current_value - pos.entry_value
             
-            # Check TP
-            if change_pct >= TAKE_PROFIT_PCT:
-                to_close.append((symbol, "TP", change_pct, current_price))
-            # Check SL
-            elif change_pct <= -STOP_LOSS_PCT:
-                to_close.append((symbol, "SL", change_pct, current_price))
+            # 🪙 PENNY PROFIT EXIT LOGIC
+            if PENNY_PROFIT_AVAILABLE and _penny_engine is not None:
+                action, _ = check_penny_exit('kraken', pos.entry_value, current_value)
+                threshold = _penny_engine.get_threshold('kraken', pos.entry_value)
+                
+                if action == 'TAKE_PROFIT':
+                    print(f"   🪙 PENNY TP: {symbol} | Gross: ${gross_pnl:.4f} >= Target: ${threshold.win_gte:.4f}")
+                    to_close.append((symbol, "PENNY_TP", change_pct, current_price))
+                elif action == 'STOP_LOSS' and pos.cycles >= 5:  # Min 5 cycles hold
+                    print(f"   🪙 PENNY SL: {symbol} | Gross: ${gross_pnl:.4f} <= Stop: ${threshold.stop_lte:.4f}")
+                    to_close.append((symbol, "PENNY_SL", change_pct, current_price))
+            else:
+                # Fallback to percentage exits
+                if change_pct >= TAKE_PROFIT_PCT:
+                    to_close.append((symbol, "TP", change_pct, current_price))
+                elif change_pct <= -STOP_LOSS_PCT and pos.cycles >= 5:
+                    to_close.append((symbol, "SL", change_pct, current_price))
                 
         for symbol, reason, pct, price in to_close:
             self.close_position(symbol, reason, pct, price)

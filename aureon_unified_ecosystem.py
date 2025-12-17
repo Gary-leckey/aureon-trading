@@ -558,8 +558,13 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
     Returns:
         dict with: required_pct, win_gte, stop_lte, fee_rate, trade_size, target_net
     """
-    if not PENNY_PROFIT_ENABLED or trade_size <= 0:
+    if not PENNY_PROFIT_ENABLED:
         return None
+    
+    # 🔧 FIX: Ensure we always return a threshold for valid positions
+    # Use minimum $1 trade size if entry_value is corrupted/zero
+    if trade_size <= 0:
+        trade_size = 1.0  # Fallback to $1 minimum
     
     fee_rate = get_exchange_fee_rate(exchange)
     target_net = PENNY_TARGET_NET
@@ -584,8 +589,10 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
     # This is just for display/logging - the real math is in 'r'
     approx_fees = 2 * total_rate * trade_size
     
-    # Stop Loss: Risk ~1.5x the win target (gives ~40% breakeven win rate)
-    stop_lte = -(win_gte * 1.5)
+    # Stop Loss: Risk ~3x the win target (gives ~25% breakeven win rate)
+    # 🔧 FIX: 1.5x was too tight - normal volatility triggered stops before profits!
+    # With 3x, we give positions room to breathe and hit penny profit.
+    stop_lte = -(win_gte * 3.0)
     
     return {
         'required_pct': round(r * 100, 4),  # As percentage
@@ -1303,11 +1310,13 @@ class EcosystemBrainBridge:
     - CascadeAmplifier → Brain-Guided Signal Boost
     
     This bridge ensures ALL trading decisions are informed by:
-    1. Ancient wisdom (Celtic, Aztec, Egyptian, Pythagorean, etc.)
+    1. Ancient wisdom (Celtic, Aztec, Egyptian, Pythagorean, Chinese, Hindu, Mayan, Norse, etc.)
     2. Quantum coherence from the mining optimizer
     3. Adaptive learning from past trades
     4. Cascade amplification from win streaks
     5. 🔷 Diamond Lattice sacred geometry ZPE boost
+    
+    🧠 11 CIVILIZATIONS UNITE for trading decisions!
     """
     
     def __init__(self):
@@ -9846,11 +9855,13 @@ class AureonKrakenEcosystem:
         # Modules (thinking parts)
         self.miner_module = MinerModule(self.thought_bus)
 
-        # Risk limits (tune max_positions)
+        # Risk limits (tune max_positions) - now with capital awareness!
         self.risk_module = RiskModule(
             self.thought_bus, 
             max_positions=CONFIG.get('MAX_POSITIONS', 3),
-            get_open_positions_count=lambda: len(self.positions)
+            get_open_positions_count=lambda: len(self.positions),
+            get_available_capital=lambda: self.capital_pool.get_available() if hasattr(self, 'capital_pool') else 0.0,
+            min_order_size=6.0  # Kraken minimum ~$5, use $6 for safety
         )
 
         # Execution: connect to your real order function
@@ -9919,6 +9930,7 @@ class AureonKrakenEcosystem:
         # Continuously scans Wikipedia and Sacred-Texts for ancient wisdom
         # 11 Civilizations: Celtic, Aztec, Egyptian, Pythagorean, Plantagenet, 
         #                   Mogollon, Warfare, Chinese, Hindu, Mayan, Norse
+        # 🧠 ALL 11 CIVILIZATIONS NOW VOTE IN THE CONSENSUS!
         self.wisdom_scanner = None
         self._wisdom_scan_counter = 0
         self._wisdom_scan_interval = 43200  # Full scan every 43200 cycles (~24 hours at 2s)
@@ -11943,8 +11955,16 @@ class AureonKrakenEcosystem:
                     print(f"   🛑 HOLDING {pos.symbol}: Gross ${gross_pnl:.4f} < penny target ${min_gross_win:.4f}")
                     return False
             
-            # STOP LOSS: Cut losses at penny stop
+            # STOP LOSS: Cut losses at penny stop - BUT enforce minimum hold time!
+            # 🔧 FIX: Give positions time to recover before cutting
             if reason == "SL":
+                hold_time_min = (time.time() - pos.entry_time) / 60.0 if pos.entry_time else pos.cycles
+                min_hold_for_sl = 5  # Minimum 5 minutes or 5 cycles before stop loss
+                
+                if hold_time_min < min_hold_for_sl:
+                    print(f"   ⏳ HOLDING {pos.symbol}: Only held {hold_time_min:.1f} min < {min_hold_for_sl} min minimum before SL")
+                    return False
+                    
                 if gross_pnl <= max_gross_loss:
                     print(f"   🛑 PENNY SL: {pos.symbol} gross ${gross_pnl:.4f} <= ${max_gross_loss:.4f} - CUTTING LOSS!")
                     return True
@@ -14713,8 +14733,12 @@ class AureonKrakenEcosystem:
                     # Hit penny profit target!
                     to_close.append((symbol, "TP", change_pct, current_price))
                 elif penny_check['should_sl']:
-                    # Hit penny stop loss
-                    to_close.append((symbol, "SL", change_pct, current_price))
+                    # Hit penny stop loss - BUT ONLY after minimum hold time!
+                    # 🔧 FIX: Give positions time to recover before cutting
+                    if pos.cycles >= 5:  # Hold at least 5 cycles (~5 mins) before stop loss
+                        to_close.append((symbol, "SL", change_pct, current_price))
+                    else:
+                        logger.debug(f"Holding {symbol} SL - only {pos.cycles}/5 cycles")
                 elif gross_pnl > 0:
                     # 💰 PENNY PROFIT OVERRIDE: Ignore min_hold if we have profit!
                     # Check if we're at penny harvest level
@@ -14724,29 +14748,42 @@ class AureonKrakenEcosystem:
                         to_close.append((symbol, "HARVEST", change_pct, current_price))
             else:
                 # Fallback to percentage-based TP/SL
-                if change_pct >= target_tp:
-                    to_close.append((symbol, "TP", change_pct, current_price))
-                elif change_pct <= -target_sl:
-                    to_close.append((symbol, "SL", change_pct, current_price))
-                elif change_pct > 0:
-                    # 💰 PENNY PROFIT OVERRIDE: Ignore min_hold if we have profit!
-                    # Legacy harvest check
-                    exit_fee = exit_value * get_platform_fee(pos.exchange, 'taker')
-                    slippage_cost = exit_value * CONFIG['SLIPPAGE_PCT']
-                    spread_cost = exit_value * CONFIG['SPREAD_COST_PCT']
-                    total_expenses = pos.entry_fee + exit_fee + slippage_cost + spread_cost
-                    net_pnl = gross_pnl - total_expenses
-                    min_profit = pos.entry_value * CONFIG['MIN_NET_PROFIT_PCT']
-                    
-                    # 💰 PENNY PROFIT OVERRIDE: If net profit >= $0.01, take it!
-                    if net_pnl >= 0.01:
-                        net_pnl_pct = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
-                        print(f"   🌾 PENNY HARVEST: {symbol} net profit ${net_pnl:.4f} ({net_pnl_pct:.2f}%)")
-                        to_close.append((symbol, "HARVEST", change_pct, current_price))
-                    elif net_pnl >= min_profit and pos.cycles >= min_hold:
-                        net_pnl_pct = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
-                        print(f"   🌾 HARVEST: {symbol} net profit ${net_pnl:.4f} ({net_pnl_pct:.2f}%)")
-                        to_close.append((symbol, "HARVEST", change_pct, current_price))
+                # 🔧 FIX: Don't use fallback % stops - ALWAYS compute penny threshold
+                # Recalculate with fallback entry value
+                fallback_entry = pos.entry_value if pos.entry_value > 0 else (pos.quantity * pos.entry_price)
+                penny_check_retry = check_penny_exit(pos.exchange, fallback_entry, gross_pnl)
+                penny_threshold = penny_check_retry.get('threshold')
+                
+                if penny_threshold:
+                    # Use computed penny thresholds even as fallback
+                    if penny_check_retry['should_tp']:
+                        to_close.append((symbol, "TP", change_pct, current_price))
+                    elif penny_check_retry['should_sl'] and pos.cycles >= 5:  # Hold at least 5 cycles before stop
+                        to_close.append((symbol, "SL", change_pct, current_price))
+                else:
+                    # Last resort: only TP at +1.8%, NEVER stop out early
+                    if change_pct >= target_tp:
+                        to_close.append((symbol, "TP", change_pct, current_price))
+                    # 🔧 FIX: Removed automatic SL at -1.5% - wait for penny SL instead
+                    elif change_pct > 0:
+                        # 💰 PENNY PROFIT OVERRIDE: Ignore min_hold if we have profit!
+                        # Legacy harvest check
+                        exit_fee = exit_value * get_platform_fee(pos.exchange, 'taker')
+                        slippage_cost = exit_value * CONFIG['SLIPPAGE_PCT']
+                        spread_cost = exit_value * CONFIG['SPREAD_COST_PCT']
+                        total_expenses = pos.entry_fee + exit_fee + slippage_cost + spread_cost
+                        net_pnl = gross_pnl - total_expenses
+                        min_profit = pos.entry_value * CONFIG['MIN_NET_PROFIT_PCT']
+                        
+                        # 💰 PENNY PROFIT OVERRIDE: If net profit >= $0.01, take it!
+                        if net_pnl >= 0.01:
+                            net_pnl_pct = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
+                            print(f"   🌾 PENNY HARVEST: {symbol} net profit ${net_pnl:.4f} ({net_pnl_pct:.2f}%)")
+                            to_close.append((symbol, "HARVEST", change_pct, current_price))
+                        elif net_pnl >= min_profit and pos.cycles >= min_hold:
+                            net_pnl_pct = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
+                            print(f"   🌾 HARVEST: {symbol} net profit ${net_pnl:.4f} ({net_pnl_pct:.2f}%)")
+                            to_close.append((symbol, "HARVEST", change_pct, current_price))
                 
         for symbol, reason, pct, price in to_close:
             self.close_position(symbol, reason, pct, price)
@@ -15387,6 +15424,9 @@ class AureonKrakenEcosystem:
         
         ⚠️ IMPORTANT: Uses quote_qty (notional value) instead of base qty to ensure
         we meet minimum order requirements ($5 on Kraken).
+        
+        🔒 FIXED: Now properly checks CASH BALANCE (liquid funds) not total equity.
+        Total equity includes value of crypto holdings - you can't use that to buy more!
         """
         try:
             # Strategy: use the exchange from ticker cache or default to primary
@@ -15396,22 +15436,34 @@ class AureonKrakenEcosystem:
             # Default to minimum viable order size ($6 to exceed Kraken's $5 min)
             min_order_usd = 6.0  # Just above Kraken's $5 minimum
             
-            # Get available balance and calculate proper size
+            # 🔒 FIX: Use CASH BALANCE (actual liquid GBP) not capital_pool.get_available()
+            # capital_pool includes value of crypto holdings, but you can't spend that!
+            available_capital = 0.0
             try:
-                balances = getattr(self, 'cached_balances', {})
-                kraken_bal = balances.get('kraken', {})
-                usd_available = float(kraken_bal.get('USD', {}).get('free', 0) or 
-                                     kraken_bal.get('ZUSD', {}).get('free', 0) or 
-                                     kraken_bal.get('GBP', {}).get('free', 0) or 0)
-                
-                # Use 2% of available balance per trade, minimum $6
-                position_size_usd = max(min_order_usd, usd_available * 0.02)
-                
-                # Cap at reasonable amount
-                position_size_usd = min(position_size_usd, 50.0)
-                
+                # Use actual cash balance - this is what you can actually spend
+                available_capital = getattr(self, 'cash_balance_gbp', 0.0) or 0.0
+                # Fallback: if cash balance seems stale, refresh from exchange
+                if available_capital <= 0:
+                    _, cash, _ = self.compute_total_equity()
+                    available_capital = cash
             except Exception:
-                position_size_usd = min_order_usd
+                available_capital = 0.0
+            
+            # 🛑 BLOCK orders if insufficient funds - don't spam Kraken with doomed requests
+            if side.lower() == 'buy' and available_capital < min_order_usd:
+                logger.debug(f"Blocking {symbol} buy - insufficient CASH: £{available_capital:.2f} < £{min_order_usd:.2f} min")
+                return {"error": "insufficient_funds", "symbol": symbol, "side": side, "available": available_capital}
+            
+            # Use 2% of available capital per trade, minimum $6
+            position_size_usd = max(min_order_usd, available_capital * 0.02)
+            
+            # Cap at reasonable amount and what's actually available
+            position_size_usd = min(position_size_usd, 50.0, available_capital * 0.95)
+            
+            # 🛑 Final sanity check - don't proceed if we can't meet minimums
+            if side.lower() == 'buy' and position_size_usd < min_order_usd:
+                logger.debug(f"Blocking {symbol} buy - position size {position_size_usd:.2f} below minimum {min_order_usd:.2f}")
+                return {"error": "insufficient_funds", "symbol": symbol, "side": side, "available": available_capital}
             
             # Use quote_qty (notional) instead of base quantity
             # This ensures we meet minimum notional requirements
@@ -15442,7 +15494,16 @@ class AureonKrakenEcosystem:
         if "error" not in order_result:
             print(f"   🧠✅ Cognition executed: {symbol} {side}")
         else:
-            print(f"   🧠❌ Cognition failed: {symbol} {side} - {order_result.get('error')}")
+            error = order_result.get('error', 'Unknown')
+            # Don't spam logs for insufficient funds - this is expected when capital is low
+            if error == 'insufficient_funds':
+                # Only log occasionally, not every single signal
+                if not hasattr(self, '_last_insufficient_warn') or time.time() - self._last_insufficient_warn > 60:
+                    available = order_result.get('available', 0)
+                    print(f"   🧠💰 Cognition paused: Insufficient capital (£{available:.2f} available)")
+                    self._last_insufficient_warn = time.time()
+            else:
+                print(f"   🧠❌ Cognition failed: {symbol} {side} - {error}")
 
     def _on_news_sentiment(self, t: Thought) -> None:
         """
@@ -16155,8 +16216,9 @@ class AureonKrakenEcosystem:
                 mode_str = "🎯 HIGH-Γ" if CONFIG['HIGH_COHERENCE_MODE'] else "🔥 AGGRESSIVE"
                 lambda_str = "Λ-Field" if CONFIG['ENABLE_LAMBDA_FIELD'] else "Classic"
                 
-                # 🌟 Swarm orchestrator stats
-                capital_available = self.capital_pool.get_available()
+                # 🌟 Swarm orchestrator stats - show BOTH capital tracking AND actual cash
+                capital_available = self.capital_pool.get_available()  # This includes holdings value
+                actual_cash = getattr(self, 'cash_balance_gbp', 0.0) or 0.0  # Actual liquid GBP
                 cycle_profits = self.capital_pool.profits_this_cycle
                 total_pool_profits = self.capital_pool.total_profits
                 
@@ -16223,7 +16285,7 @@ class AureonKrakenEcosystem:
                             print(f"   📡 Freq Grid: {' | '.join(dist_parts[:6])} | 🌈×{harmonic_count['harmonic']} ⚠️×{harmonic_count['distortion']}")
                 print(f"   🎮 Mode: {mode_str} | Entry Γ: {CONFIG['ENTRY_COHERENCE']:.3f} | Exit Γ: {CONFIG['EXIT_COHERENCE']:.3f}")
                 print(f"   💰 Compounded: {curr_sym}{self.tracker.compounded:.2f} | Harvested: {curr_sym}{self.tracker.harvested:.2f}")
-                print(f"   🌟 Pool: {curr_sym}{total_pool_profits:+.2f} total | {curr_sym}{capital_available:.2f} available | Scouts: {scout_count} | Splits: {split_count}{signal_str}")
+                print(f"   🌟 Pool P&L: {curr_sym}{total_pool_profits:+.2f} | 💵 Cash: {curr_sym}{actual_cash:.2f} | Scouts: {scout_count} | Splits: {split_count}{signal_str}")
                 
                 # 🍄🧠 MYCELIUM NEURAL NETWORK STATUS
                 try:

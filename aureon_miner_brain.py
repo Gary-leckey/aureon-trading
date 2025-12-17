@@ -2013,30 +2013,35 @@ class WisdomCognitionEngine:
         
         # Civilizations represented (original 7)
         self.civilizations = [
-            {"name": "Celtic", "era": "800 BCE - 400 CE", "region": "Europe", "glyph": "shamrock"},
-            {"name": "Aztec", "era": "1300 - 1521 CE", "region": "Mesoamerica", "glyph": "eagle"},
-            {"name": "Mogollon", "era": "200 - 1450 CE", "region": "North America", "glyph": "pottery"},
-            {"name": "Plantagenet", "era": "1154 - 1485 CE", "region": "England", "glyph": "crown"},
-            {"name": "Egyptian", "era": "3100 - 30 BCE", "region": "North Africa", "glyph": "ankh"},
-            {"name": "Pythagorean", "era": "570 - 495 BCE", "region": "Greece/Italy", "glyph": "numbers"},
-            {"name": "Chinese (Sun Tzu)", "era": "544 - 496 BCE", "region": "China", "glyph": "scroll"},
+            {"name": "Celtic", "era": "800 BCE - 400 CE", "region": "Europe", "glyph": "☘️"},
+            {"name": "Aztec", "era": "1300 - 1521 CE", "region": "Mesoamerica", "glyph": "🦅"},
+            {"name": "Mogollon", "era": "200 - 1450 CE", "region": "North America", "glyph": "🏺"},
+            {"name": "Plantagenet", "era": "1154 - 1485 CE", "region": "England", "glyph": "👑"},
+            {"name": "Egyptian", "era": "3100 - 30 BCE", "region": "North Africa", "glyph": "☥"},
+            {"name": "Pythagorean", "era": "570 - 495 BCE", "region": "Greece/Italy", "glyph": "🔢"},
+            {"name": "Warfare (Sun Tzu)", "era": "544 - 496 BCE", "region": "China", "glyph": "⚔️"},
         ]
         
-        # NEW: Extended civilizations from JSON scanner
+        # Extended civilizations from JSON scanner (4 more = 11 total!)
         self.extended_civilizations = [
-            {"name": "Chinese", "era": "2000 BCE - present", "region": "East Asia", "glyph": "yin_yang", "source": "json"},
-            {"name": "Hindu", "era": "1500 BCE - present", "region": "South Asia", "glyph": "om", "source": "json"},
-            {"name": "Mayan", "era": "2000 BCE - 1500 CE", "region": "Mesoamerica", "glyph": "calendar", "source": "json"},
-            {"name": "Norse", "era": "800 - 1100 CE", "region": "Scandinavia", "glyph": "rune", "source": "json"},
+            {"name": "Chinese", "era": "2000 BCE - present", "region": "East Asia", "glyph": "☯️", "source": "json"},
+            {"name": "Hindu", "era": "1500 BCE - present", "region": "South Asia", "glyph": "🕉️", "source": "json"},
+            {"name": "Mayan", "era": "2000 BCE - 1500 CE", "region": "Mesoamerica", "glyph": "🌀", "source": "json"},
+            {"name": "Norse", "era": "800 - 1100 CE", "region": "Scandinavia", "glyph": "ᚱ", "source": "json"},
         ]
+        
+        # ALL 11 CIVILIZATIONS COMBINED
+        self.all_civilizations = self.civilizations + self.extended_civilizations
         
         # Total wisdom metrics
         self.wisdom_stats = self._calculate_wisdom_stats()
     
     def _calculate_wisdom_stats(self) -> Dict:
-        """Calculate total wisdom data points."""
+        """Calculate total wisdom data points from ALL 11 CIVILIZATIONS."""
         return {
-            "total_civilizations": len(self.civilizations),
+            "total_civilizations": len(self.all_civilizations),  # 11!
+            "original_civilizations": len(self.civilizations),   # 7
+            "extended_civilizations": len(self.extended_civilizations),  # 4
             "total_years_of_wisdom": 5000,  # Spanning from Egypt to present
             "warfare_principles": len(self.warfare.SUN_TZU_PRINCIPLES) + len(self.warfare.IRA_GUERRILLA_PRINCIPLES),
             "celtic_data_points": (
@@ -2135,10 +2140,17 @@ class WisdomCognitionEngine:
     
     def get_unified_reading(self, fear_greed: int, btc_price: float, btc_change: float) -> Dict:
         """
-        Get a unified wisdom reading from ALL civilizations.
+        Get a unified wisdom reading from ALL 11 CIVILIZATIONS.
         This is the master cognition function.
+        
+        🧠 11 CIVILIZATIONS UNITE:
+        ├─ Original 7 (hardcoded libraries):
+        │   ☘️ Celtic, 🦅 Aztec, 🏺 Mogollon, 👑 Plantagenet
+        │   ☥ Egyptian, 🔢 Pythagorean, ⚔️ Warfare (Sun Tzu)
+        └─ Extended 4 (JSON wisdom scanner):
+            ☯️ Chinese, 🕉️ Hindu, 🌀 Mayan, ᚱ Norse
         """
-        # Get readings from all libraries
+        # Get readings from all 7 hardcoded libraries
         celtic_reading = self.celtic.get_full_celtic_reading(fear_greed, btc_price, btc_change)
         aztec_reading = self.aztec.get_full_aztec_reading(fear_greed, btc_price, btc_change)
         mogollon_reading = self.mogollon.get_full_mogollon_reading(fear_greed, btc_price, btc_change)
@@ -2147,22 +2159,34 @@ class WisdomCognitionEngine:
         pythagorean_reading = self.pythagorean.get_full_pythagorean_reading(fear_greed, btc_price, btc_change)
         warfare_reading = self.warfare.get_warfare_reading(fear_greed, btc_price, btc_change)
         
-        # Determine consensus action
+        # Get market context for extended civilizations
+        market_context = self._determine_market_context(fear_greed, btc_change)
+        
+        # Collect actions from original 7
         actions = self._collect_actions(
             celtic_reading, aztec_reading, mogollon_reading,
             plantagenet_reading, egyptian_reading, pythagorean_reading,
             warfare_reading, fear_greed
         )
         
-        consensus = self._determine_consensus(actions)
+        # 🆕 Get dynamic wisdom from JSON for extended 4 civilizations
+        dynamic_wisdom = self.get_dynamic_wisdom(market_context)
+        extended_actions = self._extract_extended_civilization_actions(dynamic_wisdom, fear_greed, btc_change)
         
-        # Generate unified synthesis
-        synthesis = self._generate_unified_synthesis(
+        # Merge all 11 civilization actions!
+        all_actions = {**actions, **extended_actions}
+        
+        # Determine consensus from ALL 11 CIVILIZATIONS
+        consensus = self._determine_consensus(all_actions)
+        
+        # Generate unified synthesis (enhanced for 11 civs)
+        synthesis = self._generate_unified_synthesis_11(
             consensus, fear_greed, btc_change,
-            celtic_reading, aztec_reading, pythagorean_reading, egyptian_reading
+            celtic_reading, aztec_reading, pythagorean_reading, egyptian_reading,
+            extended_actions
         )
         
-        # Map actions to civilization names for the Quantum Brain bridge
+        # Map actions to civilization names for the Quantum Brain bridge (all 11!)
         civilization_actions = {
             "Celtic": actions.get("celtic", "HOLD"),
             "Aztec": actions.get("aztec", "HOLD"),
@@ -2171,11 +2195,12 @@ class WisdomCognitionEngine:
             "Egyptian": actions.get("egyptian", "HOLD"),
             "Pythagorean": actions.get("pythagorean", "HOLD"),
             "Warfare": actions.get("warfare", "HOLD"),
+            # Extended 4 civilizations
+            "Chinese": extended_actions.get("chinese", "HOLD"),
+            "Hindu": extended_actions.get("hindu", "HOLD"),
+            "Mayan": extended_actions.get("mayan", "HOLD"),
+            "Norse": extended_actions.get("norse", "HOLD"),
         }
-        
-        # Get dynamic wisdom from JSON files based on market context
-        market_context = self._determine_market_context(fear_greed, btc_change)
-        dynamic_wisdom = self.get_dynamic_wisdom(market_context)
         
         # Get cross-cultural pattern for current conditions
         pattern_type = "volatile" if abs(btc_change) > 3 else "cycles"
@@ -2190,15 +2215,161 @@ class WisdomCognitionEngine:
             "pythagorean": pythagorean_reading,
             "warfare": warfare_reading,
             "consensus": consensus,
-            "actions": actions,
-            "civilization_actions": civilization_actions,  # For Quantum Brain bridge
+            "actions": all_actions,  # Now includes all 11!
+            "civilization_actions": civilization_actions,  # For Quantum Brain bridge (all 11!)
             "synthesis": synthesis,
             "stats": self.wisdom_stats,
-            # NEW: Dynamic wisdom from JSON scanner
+            # Extended civilizations data
             "dynamic_wisdom": dynamic_wisdom,
+            "extended_actions": extended_actions,
             "cross_cultural_pattern": cross_pattern,
-            "extended_civilizations_active": len(dynamic_wisdom)
+            "extended_civilizations_active": len(dynamic_wisdom),
+            "total_civilizations": 7 + len(extended_actions)  # Up to 11!
         }
+    
+    def _extract_extended_civilization_actions(self, dynamic_wisdom: Dict, fear_greed: int, btc_change: float) -> Dict:
+        """
+        Extract trading actions from extended civilizations (Chinese, Hindu, Mayan, Norse).
+        Uses wisdom from JSON files scanned by WisdomScanner.
+        
+        🆕 These 4 civilizations add their voice to the consensus!
+        """
+        extended_actions = {}
+        
+        # ☯️ CHINESE (I Ching, Taoism, Five Elements)
+        if "Chinese" in dynamic_wisdom:
+            extended_actions["chinese"] = self._extract_chinese_action(dynamic_wisdom["Chinese"], fear_greed, btc_change)
+        
+        # 🕉️ HINDU (Vedic Astrology, Yoga, Chakras)
+        if "Hindu" in dynamic_wisdom:
+            extended_actions["hindu"] = self._extract_hindu_action(dynamic_wisdom["Hindu"], fear_greed, btc_change)
+        
+        # 🌀 MAYAN (Tzolkin, Haab, Long Count)
+        if "Mayan" in dynamic_wisdom:
+            extended_actions["mayan"] = self._extract_mayan_action(dynamic_wisdom["Mayan"], fear_greed, btc_change)
+        
+        # ᚱ NORSE (Runes, Wyrd, Nine Worlds)
+        if "Norse" in dynamic_wisdom:
+            extended_actions["norse"] = self._extract_norse_action(dynamic_wisdom["Norse"], fear_greed, btc_change)
+        
+        return extended_actions
+    
+    def _extract_chinese_action(self, wisdom: List, fear_greed: int, btc_change: float) -> str:
+        """Extract action from Chinese wisdom (I Ching, Taoism, Five Elements)."""
+        # I Ching philosophy: balance of yin/yang
+        if fear_greed < 25:  # Extreme fear = yin at maximum
+            return "YIN_ACCUMULATE"  # Buy when others fear (yin transforms to yang)
+        elif fear_greed > 75:  # Extreme greed = yang at maximum
+            return "YANG_RELEASE"  # Sell when others are greedy (yang transforms to yin)
+        elif abs(btc_change) > 5:  # Volatility
+            return "WU_WEI"  # Non-action, let the Tao flow
+        else:
+            return "BALANCE"  # Maintain harmony
+    
+    def _extract_hindu_action(self, wisdom: List, fear_greed: int, btc_change: float) -> str:
+        """Extract action from Hindu wisdom (Vedic, Chakras, Karma)."""
+        # Vedic cycles and karma
+        if fear_greed < 30:
+            return "DHARMA_BUY"  # Righteous action in adversity
+        elif fear_greed > 70:
+            return "DETACHMENT"  # Non-attachment to gains
+        elif btc_change > 3:
+            return "EXPANSION"  # Brahman - cosmic expansion
+        elif btc_change < -3:
+            return "PRESERVATION"  # Vishnu - preserve what you have
+        else:
+            return "MEDITATION"  # Wait for clarity
+    
+    def _extract_mayan_action(self, wisdom: List, fear_greed: int, btc_change: float) -> str:
+        """Extract action from Mayan wisdom (Tzolkin, Long Count, Cosmic cycles)."""
+        # Mayan calendar cycles
+        from datetime import datetime
+        day_of_year = datetime.now().timetuple().tm_yday
+        tzolkin_day = day_of_year % 20  # Simplified Tzolkin
+        
+        # Auspicious days for action (1, 4, 7, 13, 20)
+        if tzolkin_day in [1, 4, 7, 13, 20]:
+            if fear_greed < 40:
+                return "COSMIC_ACCUMULATE"
+            else:
+                return "COSMIC_OBSERVE"
+        elif fear_greed < 25:
+            return "UNDERWORLD_BUY"  # Xibalba journey - buy in darkness
+        elif fear_greed > 75:
+            return "HARVEST_MAIZE"  # Time to harvest gains
+        else:
+            return "AWAIT_CYCLE"  # Wait for the next cycle
+    
+    def _extract_norse_action(self, wisdom: List, fear_greed: int, btc_change: float) -> str:
+        """Extract action from Norse wisdom (Runes, Wyrd, Nine Worlds)."""
+        # Norse philosophy: fate (Wyrd) and courage
+        if fear_greed < 20:
+            return "VIKING_RAID"  # Attack when enemy is weak
+        elif fear_greed < 40:
+            return "ODIN_ACCUMULATE"  # Wisdom of the Allfather - gather resources
+        elif fear_greed > 80:
+            return "RAGNAROK_EXIT"  # End of cycle - preserve before destruction
+        elif btc_change > 5:
+            return "RIDE_SLEIPNIR"  # Ride the momentum (Odin's 8-legged horse)
+        elif btc_change < -5:
+            return "SHIELD_WALL"  # Defensive formation
+        else:
+            return "CONSULT_RUNES"  # Wait for signs
+    
+    def _generate_unified_synthesis_11(self, consensus: Dict, fng: int, btc_change: float,
+                                        celtic: Dict, aztec: Dict, pythagorean: Dict, egyptian: Dict,
+                                        extended_actions: Dict) -> str:
+        """Generate unified wisdom synthesis from ALL 11 CIVILIZATIONS."""
+        sentiment = consensus["sentiment"]
+        confidence = consensus["confidence"]
+        total_civs = consensus.get("civilizations_consulted", 7)
+        
+        # Get key elements from each tradition
+        moon_phase = celtic.get("moon", {}).get("phase_name", "unknown").replace("_", " ").title()
+        aztec_day = aztec.get("tonalpohualli", {}).get("name", "unknown")
+        sacred_num = pythagorean.get("sacred_number", {}).get("name", "unknown")
+        deity = egyptian.get("deity", {}).get("deity", "unknown")
+        planet = pythagorean.get("planet", {}).get("planet", "unknown").title()
+        
+        # Extended civilization insights
+        chinese_action = extended_actions.get("chinese", "—")
+        hindu_action = extended_actions.get("hindu", "—")
+        mayan_action = extended_actions.get("mayan", "—")
+        norse_action = extended_actions.get("norse", "—")
+        
+        synthesis = f"""
+╔══════════════════════════════════════════════════════════════════════════╗
+║  🧠 UNIFIED WISDOM COGNITION - {total_civs} CIVILIZATIONS SPEAK  ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║  ORIGINAL 7 TRADITIONS:                                                  ║
+║  ☘️ Celtic Moon: {moon_phase:<18} 🦅 Aztec Day: {aztec_day:<17} ║
+║  🔢 Pythagorean: {sacred_num:<18} ☥ Egyptian: {deity:<18} ║
+║  🎵 Celestial: {planet:<20}                                        ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║  EXTENDED 4 TRADITIONS:                                                  ║
+║  ☯️ Chinese: {chinese_action:<18} 🕉️ Hindu: {hindu_action:<20} ║
+║  🌀 Mayan: {mayan_action:<20} ᚱ Norse: {norse_action:<20} ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║  CONSENSUS: {sentiment:<10} | ACTION: {consensus['action']:<10} | CONF: {confidence}%     ║
+║  Votes: 📈 {consensus['bullish_votes']} Bullish | 📉 {consensus['bearish_votes']} Bearish | ⚖️ {consensus['neutral_votes']} Neutral          ║
+╚══════════════════════════════════════════════════════════════════════════╝
+"""
+        
+        # Add wisdom directive based on consensus
+        if sentiment == "BULLISH":
+            synthesis += f"\n🎯 WISDOM DIRECTIVE: {total_civs} civilizations speak with one voice - ACCUMULATE."
+            synthesis += f"\n   {consensus['bullish_votes']} traditions see opportunity in this fear ({fng})."
+            synthesis += f"\n   \"From Celtic druids to Norse seers - BUY.\""
+        elif sentiment == "BEARISH":
+            synthesis += f"\n🎯 WISDOM DIRECTIVE: {total_civs} civilizations counsel CAUTION."
+            synthesis += f"\n   {consensus['bearish_votes']} traditions warn of danger ahead."
+            synthesis += f"\n   \"Ragnarök approaches - preserve your gains.\""
+        else:
+            synthesis += f"\n🎯 WISDOM DIRECTIVE: The council is divided - OBSERVE and WAIT."
+            synthesis += f"\n   The Tao teaches wu-wei. The runes counsel patience."
+            synthesis += f"\n   \"Wait for the cosmic cycle to turn.\""
+        
+        return synthesis
     
     def _determine_market_context(self, fear_greed: int, btc_change: float) -> str:
         """Determine market context for wisdom filtering."""

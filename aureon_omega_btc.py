@@ -24,6 +24,19 @@ from urllib.parse import urlencode
 from typing import Dict, List, Optional, Tuple
 import requests
 
+# 🪙 PENNY PROFIT ENGINE
+try:
+    import sys
+    sys.path.insert(0, '/workspaces/aureon-trading')
+    from penny_profit_engine import check_penny_exit, get_penny_engine
+    PENNY_PROFIT_AVAILABLE = True
+    _penny_engine = get_penny_engine()
+    print("🪙 Penny Profit Engine loaded for Omega BTC")
+except ImportError:
+    PENNY_PROFIT_AVAILABLE = False
+    _penny_engine = None
+    print("⚠️ Penny Profit Engine not available")
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # API KEYS (Key 4)
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -297,7 +310,7 @@ class PositionTracker:
         return self.positions.get(asset)
     
     def check_exit(self, asset: str, current_price: float) -> Tuple[bool, str, float]:
-        """Check if position should be closed. Returns (should_exit, reason, pnl_pct)"""
+        """Check if position should be closed using penny profit. Returns (should_exit, reason, pnl_pct)"""
         pos = self.get_position(asset)
         if not pos:
             return False, "", 0
@@ -305,10 +318,28 @@ class PositionTracker:
         entry = pos['entry_price']
         pnl_pct = (current_price - entry) / entry * 100
         
-        if pnl_pct >= TARGET_PROFIT_PCT:
-            return True, f"PROFIT +{pnl_pct:.2f}%", pnl_pct
-        elif pnl_pct <= -STOP_LOSS_PCT:
-            return True, f"STOP LOSS {pnl_pct:.2f}%", pnl_pct
+        # Track cycles for min hold time
+        pos['cycles'] = pos.get('cycles', 0) + 1
+        qty = pos.get('qty', 0)
+        current_value = qty * current_price
+        entry_value = pos.get('entry_value', qty * entry)
+        gross_pnl = current_value - entry_value
+        
+        # 🪙 PENNY PROFIT EXIT LOGIC
+        if PENNY_PROFIT_AVAILABLE and _penny_engine is not None and entry_value > 0:
+            action, _ = check_penny_exit('binance', entry_value, current_value)
+            threshold = _penny_engine.get_threshold('binance', entry_value)
+            
+            if action == 'TAKE_PROFIT':
+                return True, f"🪙 PENNY TP (${gross_pnl:.4f} >= ${threshold.win_gte:.4f})", pnl_pct
+            elif action == 'STOP_LOSS' and pos['cycles'] >= 5:
+                return True, f"🪙 PENNY SL (${gross_pnl:.4f} <= ${threshold.stop_lte:.4f})", pnl_pct
+        else:
+            # Fallback to percentage exits
+            if pnl_pct >= TARGET_PROFIT_PCT:
+                return True, f"PROFIT +{pnl_pct:.2f}%", pnl_pct
+            elif pnl_pct <= -STOP_LOSS_PCT and pos['cycles'] >= 5:
+                return True, f"STOP LOSS {pnl_pct:.2f}%", pnl_pct
         
         return False, f"Holding {pnl_pct:+.2f}%", pnl_pct
 

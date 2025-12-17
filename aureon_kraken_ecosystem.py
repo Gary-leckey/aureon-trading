@@ -53,13 +53,18 @@ from aureon_lattice import LatticeEngine
 
 # 🧬 SANDBOX EVOLVED PARAMETERS - 454 Generations of Learning
 try:
-    from penny_profit_engine import get_evolved_exits, SandboxEvolvedExits
+    from penny_profit_engine import get_evolved_exits, SandboxEvolvedExits, check_penny_exit, get_penny_engine
     SANDBOX_EVOLVED_AVAILABLE = True
+    PENNY_PROFIT_AVAILABLE = True
     _evolved = get_evolved_exits()
+    _penny_engine = get_penny_engine()
     print(f"🧬 Sandbox Evolution loaded - Gen {_evolved.generation}, {_evolved.win_rate:.1f}% win rate")
+    print(f"🪙 Penny Profit Engine loaded")
 except ImportError:
     SANDBOX_EVOLVED_AVAILABLE = False
+    PENNY_PROFIT_AVAILABLE = False
     _evolved = None
+    _penny_engine = None
     print("⚠️ Sandbox Evolution not available - using defaults")
 
 # 🔮 NEXUS PREDICTOR - 79.6% Win Rate Validated Over 11 Years!
@@ -1319,19 +1324,19 @@ class AureonKrakenEcosystem:
         gross_pnl = exit_value - pos.entry_value
         net_pnl = gross_pnl - total_expenses
         
-        # TAKE PROFIT: Always allow if we're in profit
-        if reason == "TP" and net_pnl > 0:
+        # 🪙 PENNY PROFIT TAKE PROFIT: Always allow - the engine calculated this correctly
+        if reason in ["TP", "PENNY_TP"] and net_pnl > 0:
             return True
         
-        # STOP LOSS: Only allow if loss is small OR we must cut losses
-        if reason == "SL":
-            # Allow SL if loss is less than 1% or if change is catastrophic (>2%)
-            loss_pct = abs(net_pnl / pos.entry_value * 100)
-            if loss_pct < 1.0 or abs(change_pct * 100) > 2.0:
-                return True
-            # Otherwise hold - don't lock in losses on noise
-            print(f"   🛑 HOLDING {pos.symbol}: Loss too large to realize (${net_pnl:.2f})")
-            return False
+        # 🪙 PENNY PROFIT STOP LOSS: Trust the penny profit engine's calculation
+        if reason in ["SL", "PENNY_SL"]:
+            # Penny profit SL already has 3x cushion built in
+            # Only block if we haven't held long enough (noise filter)
+            if pos.cycles < 5:
+                print(f"   🛑 HOLDING {pos.symbol}: Min hold time not met ({pos.cycles}/5 cycles)")
+                return False
+            # Allow the SL
+            return True
         
         # REBALANCE/SWAP: Only if net negative is small
         if reason in ["REBALANCE", "SWAP"]:
@@ -1925,21 +1930,45 @@ class AureonKrakenEcosystem:
                 gen_marker = f" [G{pos.generation}]" if pos.generation > 0 else ""
                 print(f"   🔍 {symbol}{gen_marker}: Entry={pos.entry_price:.5f} Curr={current_price:.5f} ({source}) Pct={change_pct:+.2f}%")
 
-            # Get Lattice Modifiers
-            lattice_state = self.lattice.get_state()
-            # Handle lattice_state as dict or object
-            tp_mod = lattice_state.get('tp_mod', 1.0) if isinstance(lattice_state, dict) else getattr(lattice_state, 'tp_mod', 1.0)
-            sl_mod = lattice_state.get('sl_mod', 1.0) if isinstance(lattice_state, dict) else getattr(lattice_state, 'sl_mod', 1.0)
+            # 🪙 PENNY PROFIT EXIT LOGIC
+            # Use penny profit engine for proper dollar-based exits
+            current_value = pos.quantity * current_price
             
-            target_tp = CONFIG['TAKE_PROFIT_PCT'] * tp_mod
-            target_sl = CONFIG['STOP_LOSS_PCT'] * sl_mod
+            if PENNY_PROFIT_AVAILABLE and _penny_engine is not None:
+                # Use penny profit dollar-based thresholds
+                action, gross_pnl = check_penny_exit('kraken', pos.entry_value, current_value)
+                threshold = _penny_engine.get_threshold('kraken', pos.entry_value)
+                
+                # Check Take Profit (penny profit - ALWAYS allow)
+                if action == 'TAKE_PROFIT':
+                    print(f"   🪙 PENNY TP: {symbol} | Gross: ${gross_pnl:.4f} >= Target: ${threshold.win_gte:.4f}")
+                    to_close.append((symbol, "PENNY_TP", change_pct, current_price))
+                
+                # Check Stop Loss (with minimum hold time - 5 cycles)
+                elif action == 'STOP_LOSS' and pos.cycles >= 5:
+                    print(f"   🪙 PENNY SL: {symbol} | Gross: ${gross_pnl:.4f} <= Stop: ${threshold.stop_lte:.4f}")
+                    to_close.append((symbol, "PENNY_SL", change_pct, current_price))
+                
+                # Log threshold info periodically
+                elif pos.cycles % 20 == 0:
+                    print(f"   🪙 {symbol}: Gross ${gross_pnl:.4f} | TP >= ${threshold.win_gte:.4f} | SL <= ${threshold.stop_lte:.4f}")
+            
+            else:
+                # Fallback to percentage-based exits (only if penny profit not available)
+                # Get Lattice Modifiers
+                lattice_state = self.lattice.get_state()
+                tp_mod = lattice_state.get('tp_mod', 1.0) if isinstance(lattice_state, dict) else getattr(lattice_state, 'tp_mod', 1.0)
+                sl_mod = lattice_state.get('sl_mod', 1.0) if isinstance(lattice_state, dict) else getattr(lattice_state, 'sl_mod', 1.0)
+                
+                target_tp = CONFIG['TAKE_PROFIT_PCT'] * tp_mod
+                target_sl = CONFIG['STOP_LOSS_PCT'] * sl_mod
 
-            # Check TP
-            if change_pct >= target_tp:
-                to_close.append((symbol, "TP", change_pct, current_price))
-            # Check SL
-            elif change_pct <= -target_sl:
-                to_close.append((symbol, "SL", change_pct, current_price))
+                # Check TP
+                if change_pct >= target_tp:
+                    to_close.append((symbol, "TP", change_pct, current_price))
+                # Check SL (with minimum hold time)
+                elif change_pct <= -target_sl and pos.cycles >= 5:
+                    to_close.append((symbol, "SL", change_pct, current_price))
                 
         for symbol, reason, pct, price in to_close:
             self.close_position(symbol, reason, pct, price)

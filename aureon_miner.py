@@ -8343,9 +8343,12 @@ class AureonMiner:
             else:
                 c_icon = "⚖️"
             
-            print(f"║ 7 Civilizations: {c_icon} {consensus:<12} | Conf: {confidence:.0%}      ║")
+            # Get total civilizations count (7 original + 4 extended = 11)
+            total_civs = wisdom.get('total_civilizations', 7)
+            print(f"║ {total_civs} Civilizations: {c_icon} {consensus:<12} | Conf: {confidence:.0%}      ║")
             print(f"║ Mode: {behavior:<22} | Mult: {intensity:.2f}x          ║")
             print(f"║ ☘️Celtic ⚔️Warfare 🦅Aztec 🏺Mogollon 👑Plantagenet ☥Egyptian 🔢Pythagorean ║")
+            print(f"║ ☯️Chinese 🕉️Hindu 🌀Mayan ᚱNorse                                          ║")
         
         # Show Binance Pool session earnings for each pool
         binance_sessions = [s for s in self.sessions if s._is_binance_pool and s._binance_pool_api]
