@@ -10511,6 +10511,70 @@ class AureonKrakenEcosystem:
         if imported > 0:
             print(f"   ✅ Imported {imported} existing holdings as managed positions")
             print(f"   💡 Positions with REAL cost basis are protected from loss-making sales!")
+        
+        # 💼 CAPITAL.COM CFD POSITIONS - Import open CFD positions
+        try:
+            capital_client = self.client.clients.get('capital')
+            if capital_client and hasattr(capital_client.client, 'get_positions'):
+                capital_positions = capital_client.client.get_positions()
+                if capital_positions:
+                    print(f"\n   💼 Importing {len(capital_positions)} Capital.com CFD positions...")
+                    for cfd_pos in capital_positions:
+                        try:
+                            # Capital.com position structure
+                            epic = cfd_pos.get('market', {}).get('epic') or cfd_pos.get('epic', '')
+                            direction = cfd_pos.get('position', {}).get('direction') or cfd_pos.get('direction', 'BUY')
+                            size = float(cfd_pos.get('position', {}).get('size') or cfd_pos.get('size', 0))
+                            open_level = float(cfd_pos.get('position', {}).get('openLevel') or cfd_pos.get('openLevel', 0))
+                            
+                            if not epic or size <= 0:
+                                continue
+                            
+                            # Skip if already tracked
+                            if epic in self.positions:
+                                continue
+                            
+                            # Get current price
+                            current_price = open_level
+                            try:
+                                ticker = capital_client.client.get_ticker(epic)
+                                current_price = ticker.get('price', open_level)
+                            except:
+                                pass
+                            
+                            # Calculate value
+                            position_value = size * current_price
+                            
+                            # Create position
+                            self.positions[epic] = Position(
+                                symbol=epic,
+                                entry_price=open_level,
+                                quantity=size if direction == 'BUY' else -size,  # Negative for shorts
+                                entry_fee=position_value * CONFIG.get('CAPITAL_FEE', 0.001),
+                                entry_value=position_value,
+                                momentum=0.0,
+                                coherence=0.5,
+                                entry_time=time.time(),
+                                dominant_node='Capital.com',
+                                exchange='capital',
+                                is_historical=False  # CFD positions have known entry
+                            )
+                            imported += 1
+                            
+                            pnl_pct = ((current_price - open_level) / open_level * 100) if open_level > 0 else 0
+                            if direction == 'SELL':
+                                pnl_pct = -pnl_pct  # Invert for shorts
+                            pnl_icon = "🟢" if pnl_pct >= 0 else "🔴"
+                            dir_icon = "📈" if direction == 'BUY' else "📉"
+                            print(f"   💼 {dir_icon} {epic}: {size} @ £{open_level:.4f} → £{current_price:.4f} {pnl_icon} {pnl_pct:+.2f}%")
+                            
+                        except Exception as pos_err:
+                            logger.debug(f"Could not import Capital.com position: {pos_err}")
+                            
+                    if imported > 0:
+                        print(f"   ✅ Imported Capital.com CFD positions")
+        except Exception as cap_err:
+            logger.debug(f"Capital.com position import skipped: {cap_err}")
     
     def _liquidate_historical_for_opportunity(self, needed_cash: float, target_exchange: str, target_symbol: str) -> float:
         """🔄 Liquidate historical assets OR big losers to free up cash for better opportunities.
@@ -12105,8 +12169,21 @@ class AureonKrakenEcosystem:
                     real_qty = get_kraken_balance(base_asset)
                 elif exchange == 'binance':
                     real_qty = get_binance_balance(base_asset)
+                elif exchange == 'capital':
+                    # Capital.com CFD positions - check via API
+                    try:
+                        capital_client = self.client.clients.get('capital')
+                        if capital_client and hasattr(capital_client.client, 'get_positions'):
+                            capital_positions = capital_client.client.get_positions()
+                            for cfd_pos in capital_positions:
+                                epic = cfd_pos.get('market', {}).get('epic') or cfd_pos.get('epic', '')
+                                if epic == symbol:
+                                    real_qty = float(cfd_pos.get('position', {}).get('size') or cfd_pos.get('size', 0))
+                                    break
+                    except Exception:
+                        pass
                 else:
-                    # Try both exchanges
+                    # Try both spot exchanges
                     real_qty = get_binance_balance(base_asset)
                     if real_qty == 0:
                         real_qty = get_kraken_balance(base_asset)
