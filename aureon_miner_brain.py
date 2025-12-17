@@ -2183,6 +2183,7 @@ class WisdomCognitionEngine:
         synthesis = self._generate_unified_synthesis_11(
             consensus, fear_greed, btc_change,
             celtic_reading, aztec_reading, pythagorean_reading, egyptian_reading,
+            mogollon_reading, plantagenet_reading, warfare_reading,
             extended_actions
         )
         
@@ -2318,11 +2319,12 @@ class WisdomCognitionEngine:
     
     def _generate_unified_synthesis_11(self, consensus: Dict, fng: int, btc_change: float,
                                         celtic: Dict, aztec: Dict, pythagorean: Dict, egyptian: Dict,
+                                        mogollon: Dict, plantagenet: Dict, warfare: Dict,
                                         extended_actions: Dict) -> str:
         """Generate unified wisdom synthesis from ALL 11 CIVILIZATIONS."""
         sentiment = consensus["sentiment"]
         confidence = consensus["confidence"]
-        total_civs = consensus.get("civilizations_consulted", 7)
+        total_civs = consensus.get("civilizations_consulted", 11)
         
         # Get key elements from each tradition
         moon_phase = celtic.get("moon", {}).get("phase_name", "unknown").replace("_", " ").title()
@@ -2331,6 +2333,11 @@ class WisdomCognitionEngine:
         deity = egyptian.get("deity", {}).get("deity", "unknown")
         planet = pythagorean.get("planet", {}).get("planet", "unknown").title()
         
+        # Original 7 - get Mogollon, Plantagenet, and Warfare insights
+        mogollon_season = mogollon.get("desert_season", {}).get("season", "unknown")
+        plantagenet_king = plantagenet.get("king", {}).get("name", "unknown")
+        warfare_condition = warfare.get("condition", "unknown")
+        
         # Extended civilization insights
         chinese_action = extended_actions.get("chinese", "—")
         hindu_action = extended_actions.get("hindu", "—")
@@ -2338,21 +2345,22 @@ class WisdomCognitionEngine:
         norse_action = extended_actions.get("norse", "—")
         
         synthesis = f"""
-╔══════════════════════════════════════════════════════════════════════════╗
-║  🧠 UNIFIED WISDOM COGNITION - {total_civs} CIVILIZATIONS SPEAK  ║
-╠══════════════════════════════════════════════════════════════════════════╣
-║  ORIGINAL 7 TRADITIONS:                                                  ║
-║  ☘️ Celtic Moon: {moon_phase:<18} 🦅 Aztec Day: {aztec_day:<17} ║
-║  🔢 Pythagorean: {sacred_num:<18} ☥ Egyptian: {deity:<18} ║
-║  🎵 Celestial: {planet:<20}                                        ║
-╠══════════════════════════════════════════════════════════════════════════╣
-║  EXTENDED 4 TRADITIONS:                                                  ║
-║  ☯️ Chinese: {chinese_action:<18} 🕉️ Hindu: {hindu_action:<20} ║
-║  🌀 Mayan: {mayan_action:<20} ᚱ Norse: {norse_action:<20} ║
-╠══════════════════════════════════════════════════════════════════════════╣
-║  CONSENSUS: {sentiment:<10} | ACTION: {consensus['action']:<10} | CONF: {confidence}%     ║
-║  Votes: 📈 {consensus['bullish_votes']} Bullish | 📉 {consensus['bearish_votes']} Bearish | ⚖️ {consensus['neutral_votes']} Neutral          ║
-╚══════════════════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  🧠 UNIFIED WISDOM COGNITION - {total_civs} CIVILIZATIONS SPEAK                          ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  ORIGINAL 7 TRADITIONS:                                                      ║
+║  ☘️ Celtic Moon: {moon_phase:<18} 🦅 Aztec Day: {aztec_day:<19}║
+║  🔢 Pythagorean: {sacred_num:<18} ☥ Egyptian: {deity:<20}║
+║  🎵 Celestial: {planet:<20} 🏺 Mogollon: {mogollon_season:<17}║
+║  👑 Plantagenet: {plantagenet_king:<17} ⚔️ Warfare: {warfare_condition:<18}║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  EXTENDED 4 TRADITIONS:                                                      ║
+║  ☯️ Chinese: {chinese_action:<20} 🕉️ Hindu: {hindu_action:<20}║
+║  🌀 Mayan: {mayan_action:<22} ᚱ Norse: {norse_action:<20}║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  CONSENSUS: {sentiment:<10} | ACTION: {consensus['action']:<10} | CONF: {confidence}%               ║
+║  Votes: 📈 {consensus['bullish_votes']} Bullish | 📉 {consensus['bearish_votes']} Bearish | ⚖️ {consensus['neutral_votes']} Neutral                    ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 """
         
         # Add wisdom directive based on consensus
