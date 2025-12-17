@@ -8,16 +8,18 @@ const corsHeaders = {
 };
 
 function isPrintableAscii(s: string) {
-  // allow common API key charset; disallow whitespace/control chars
   if (!s) return false;
   if (/[\s\x00-\x1F\x7F]/.test(s)) return false;
   return /^[\x21-\x7E]+$/.test(s);
 }
 
-function maskKey(key: string) {
-  const trimmed = key.trim();
-  if (trimmed.length <= 8) return "****";
-  return `${trimmed.slice(0, 4)}****${trimmed.slice(-4)}`;
+interface SpotPosition {
+  asset: string;
+  free: number;
+  locked: number;
+  total: number;
+  usdValue: number;
+  exchange: string;
 }
 
 serve(async (req) => {
@@ -38,13 +40,9 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify user
     const anonSupabase = createClient(supabaseUrl, supabaseAnonKey);
     const token = authHeader.replace("Bearer ", "");
-    const {
-      data: { user },
-      error: authError,
-    } = await anonSupabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await anonSupabase.auth.getUser(token);
 
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -57,7 +55,7 @@ serve(async (req) => {
 
     const { data: session, error: sessionError } = await supabase
       .from("aureon_user_sessions")
-      .select("binance_api_key_encrypted, binance_api_secret_encrypted, binance_iv")
+      .select("binance_api_key_encrypted, binance_api_secret_encrypted, binance_iv, kraken_api_key_encrypted, kraken_api_secret_encrypted, kraken_iv")
       .eq("user_id", user.id)
       .single();
 
@@ -68,21 +66,9 @@ serve(async (req) => {
       });
     }
 
-    if (!session.binance_api_key_encrypted || !session.binance_api_secret_encrypted || !session.binance_iv) {
-      return new Response(JSON.stringify({ error: "No Binance credentials configured" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const decodeIvFromB64 = (ivB64: string) => Uint8Array.from(atob(ivB64), (c) => c.charCodeAt(0));
-    const iv = decodeIvFromB64(session.binance_iv);
-
-    // Match the working function: primary key is the unified padded key.
-    // Also attempt MASTER_ENCRYPTION_KEY for backwards compatibility.
+    // Decryption setup
     const primaryKeyString = "aureon-default-key-32chars!!";
     const fallbackKeyString = Deno.env.get("MASTER_ENCRYPTION_KEY") || "";
-
     const encoder = new TextEncoder();
     const keyBytes1 = encoder.encode(primaryKeyString.padEnd(32, "0").slice(0, 32));
     const keyBytes2 = encoder.encode(fallbackKeyString.padEnd(32, "0").slice(0, 32));
@@ -92,27 +78,23 @@ serve(async (req) => {
       ? await crypto.subtle.importKey("raw", keyBytes2, { name: "AES-GCM" }, false, ["decrypt"])
       : null;
 
-    async function decryptWithKey(encrypted: string, key: CryptoKey): Promise<string> {
+    const decodeIvFromB64 = (ivB64: string) => Uint8Array.from(atob(ivB64), (c) => c.charCodeAt(0));
+
+    async function decryptWithKey(encrypted: string, key: CryptoKey, iv: Uint8Array): Promise<string> {
       const encryptedBytes = Uint8Array.from(atob(encrypted), (c) => c.charCodeAt(0));
       const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv as unknown as BufferSource }, key, encryptedBytes);
       return new TextDecoder().decode(decrypted);
     }
 
-    async function decryptCredential(encrypted: string): Promise<string> {
-      // 1) Try primary AES-GCM key
+    async function decryptCredential(encrypted: string, iv: Uint8Array): Promise<string> {
       try {
-        return await decryptWithKey(encrypted, cryptoKey1);
+        return await decryptWithKey(encrypted, cryptoKey1, iv);
       } catch {
-        // 2) Try fallback key if configured
         if (cryptoKey2) {
           try {
-            return await decryptWithKey(encrypted, cryptoKey2);
-          } catch {
-            // continue
-          }
+            return await decryptWithKey(encrypted, cryptoKey2, iv);
+          } catch { /* continue */ }
         }
-
-        // 3) Legacy: stored as base64 of plaintext
         try {
           return atob(encrypted);
         } catch {
@@ -121,98 +103,155 @@ serve(async (req) => {
       }
     }
 
-    let apiKey = (await decryptCredential(session.binance_api_key_encrypted)).trim();
-    let apiSecret = (await decryptCredential(session.binance_api_secret_encrypted)).trim();
-
-    // Validate decrypted output before using in headers
-    if (!isPrintableAscii(apiKey) || apiKey.length < 16) {
-      console.error("[fetch-open-positions] Decrypted Binance API key invalid", {
-        userId: user.id,
-        apiKeyMasked: maskKey(apiKey),
-        apiKeyLen: apiKey.length,
-      });
-      return new Response(
-        JSON.stringify({
-          error: "Binance credentials invalid. Please re-save your Binance API Key/Secret in Settings.",
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!isPrintableAscii(apiSecret) || apiSecret.length < 16) {
-      console.error("[fetch-open-positions] Decrypted Binance API secret invalid", {
-        userId: user.id,
-        apiSecretLen: apiSecret.length,
-      });
-      return new Response(
-        JSON.stringify({
-          error: "Binance credentials invalid. Please re-save your Binance API Key/Secret in Settings.",
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Fetch account info from Binance
-    const timestamp = Date.now();
-    const queryString = `timestamp=${timestamp}`;
-    const signature = createHmac("sha256", apiSecret).update(queryString).digest("hex");
-
-    const accountRes = await fetch(`https://api.binance.com/api/v3/account?${queryString}&signature=${signature}`, {
-      headers: { "X-MBX-APIKEY": apiKey },
-    });
-
-    if (!accountRes.ok) {
-      const errText = await accountRes.text();
-      console.error("Binance account error:", errText);
-      return new Response(JSON.stringify({ error: "Failed to fetch Binance account" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const accountData = await accountRes.json();
-    const balances = accountData.balances || [];
-
-    const spotPositions = balances
-      .filter((b: any) => {
-        const free = parseFloat(b.free || "0");
-        const locked = parseFloat(b.locked || "0");
-        return free > 0 || locked > 0;
-      })
-      .map((b: any) => ({
-        asset: b.asset,
-        free: parseFloat(b.free || "0"),
-        locked: parseFloat(b.locked || "0"),
-        total: parseFloat(b.free || "0") + parseFloat(b.locked || "0"),
-      }));
-
+    // Fetch prices for USD conversion
     const pricesRes = await fetch("https://api.binance.com/api/v3/ticker/price");
     const allPrices = pricesRes.ok ? await pricesRes.json() : [];
     const priceMap: Record<string, number> = {};
     for (const p of allPrices) priceMap[p.symbol] = parseFloat(p.price);
 
-    const enrichedPositions = spotPositions.map((pos: any) => {
-      let usdValue = 0;
-      if (pos.asset === "USDT" || pos.asset === "USDC" || pos.asset === "BUSD") {
-        usdValue = pos.total;
-      } else {
-        const usdtPair = `${pos.asset}USDT`;
-        const btcPair = `${pos.asset}BTC`;
-        if (priceMap[usdtPair]) usdValue = pos.total * priceMap[usdtPair];
-        else if (priceMap[btcPair] && priceMap["BTCUSDT"]) usdValue = pos.total * priceMap[btcPair] * priceMap["BTCUSDT"];
-      }
-      return { ...pos, usdValue };
-    });
+    function getUsdValue(asset: string, total: number): number {
+      if (asset === "USDT" || asset === "USDC" || asset === "BUSD" || asset === "USD") return total;
+      const usdtPair = `${asset}USDT`;
+      const btcPair = `${asset}BTC`;
+      if (priceMap[usdtPair]) return total * priceMap[usdtPair];
+      if (priceMap[btcPair] && priceMap["BTCUSDT"]) return total * priceMap[btcPair] * priceMap["BTCUSDT"];
+      return 0;
+    }
 
-    enrichedPositions.sort((a: any, b: any) => b.usdValue - a.usdValue);
-    const totalUsdValue = enrichedPositions.reduce((sum: number, p: any) => sum + p.usdValue, 0);
+    const allPositions: SpotPosition[] = [];
+    const errors: string[] = [];
+
+    // ========== BINANCE ==========
+    if (session.binance_api_key_encrypted && session.binance_api_secret_encrypted && session.binance_iv) {
+      try {
+        const binanceIv = decodeIvFromB64(session.binance_iv);
+        const binanceApiKey = (await decryptCredential(session.binance_api_key_encrypted, binanceIv)).trim();
+        const binanceApiSecret = (await decryptCredential(session.binance_api_secret_encrypted, binanceIv)).trim();
+
+        if (isPrintableAscii(binanceApiKey) && isPrintableAscii(binanceApiSecret) && binanceApiKey.length >= 16) {
+          const timestamp = Date.now();
+          const queryString = `timestamp=${timestamp}`;
+          const signature = createHmac("sha256", binanceApiSecret).update(queryString).digest("hex");
+
+          const accountRes = await fetch(`https://api.binance.com/api/v3/account?${queryString}&signature=${signature}`, {
+            headers: { "X-MBX-APIKEY": binanceApiKey },
+          });
+
+          if (accountRes.ok) {
+            const accountData = await accountRes.json();
+            const balances = accountData.balances || [];
+            for (const b of balances) {
+              const free = parseFloat(b.free || "0");
+              const locked = parseFloat(b.locked || "0");
+              const total = free + locked;
+              if (total > 0) {
+                allPositions.push({
+                  asset: b.asset,
+                  free,
+                  locked,
+                  total,
+                  usdValue: getUsdValue(b.asset, total),
+                  exchange: "binance",
+                });
+              }
+            }
+          } else {
+            errors.push(`Binance: ${accountRes.status}`);
+          }
+        } else {
+          errors.push("Binance: Invalid credentials");
+        }
+      } catch (e: any) {
+        errors.push(`Binance: ${e.message}`);
+      }
+    }
+
+    // ========== KRAKEN ==========
+    if (session.kraken_api_key_encrypted && session.kraken_api_secret_encrypted && session.kraken_iv) {
+      try {
+        const krakenIv = decodeIvFromB64(session.kraken_iv);
+        const krakenApiKey = (await decryptCredential(session.kraken_api_key_encrypted, krakenIv)).trim();
+        const krakenApiSecret = (await decryptCredential(session.kraken_api_secret_encrypted, krakenIv)).trim();
+
+        if (isPrintableAscii(krakenApiKey) && krakenApiKey.length >= 10) {
+          const nonce = Date.now().toString();
+          const postData = `nonce=${nonce}`;
+          const path = "/0/private/Balance";
+
+          // Kraken signature
+          const sha256Hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(nonce + postData));
+          const pathBytes = new TextEncoder().encode(path);
+          const message = new Uint8Array(pathBytes.length + sha256Hash.byteLength);
+          message.set(pathBytes, 0);
+          message.set(new Uint8Array(sha256Hash), pathBytes.length);
+
+          const secretBytes = Uint8Array.from(atob(krakenApiSecret), (c) => c.charCodeAt(0));
+          const hmacKey = await crypto.subtle.importKey("raw", secretBytes, { name: "HMAC", hash: "SHA-512" }, false, ["sign"]);
+          const signatureBytes = await crypto.subtle.sign("HMAC", hmacKey, message);
+          const signature = btoa(String.fromCharCode(...new Uint8Array(signatureBytes)));
+
+          const krakenRes = await fetch("https://api.kraken.com/0/private/Balance", {
+            method: "POST",
+            headers: {
+              "API-Key": krakenApiKey,
+              "API-Sign": signature,
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: postData,
+          });
+
+          if (krakenRes.ok) {
+            const krakenData = await krakenRes.json();
+            if (krakenData.error && krakenData.error.length > 0) {
+              errors.push(`Kraken: ${krakenData.error.join(", ")}`);
+            } else if (krakenData.result) {
+              // Kraken asset mapping (e.g., XXBT -> BTC, ZUSD -> USD)
+              const assetMap: Record<string, string> = {
+                XXBT: "BTC", XBT: "BTC", XETH: "ETH", XXRP: "XRP", XLTC: "LTC",
+                ZUSD: "USD", ZEUR: "EUR", ZGBP: "GBP", USDT: "USDT", DOT: "DOT", SOL: "SOL",
+              };
+
+              for (const [krakenAsset, balance] of Object.entries(krakenData.result)) {
+                const total = parseFloat(balance as string);
+                if (total > 0) {
+                  const asset = assetMap[krakenAsset] || krakenAsset.replace(/^[XZ]/, "");
+                  allPositions.push({
+                    asset,
+                    free: total,
+                    locked: 0,
+                    total,
+                    usdValue: getUsdValue(asset, total),
+                    exchange: "kraken",
+                  });
+                }
+              }
+            }
+          } else {
+            errors.push(`Kraken: ${krakenRes.status}`);
+          }
+        } else {
+          errors.push("Kraken: Invalid credentials");
+        }
+      } catch (e: any) {
+        errors.push(`Kraken: ${e.message}`);
+      }
+    }
+
+    // Sort by USD value descending
+    allPositions.sort((a, b) => b.usdValue - a.usdValue);
+    const totalUsdValue = allPositions.reduce((sum, p) => sum + p.usdValue, 0);
 
     return new Response(
       JSON.stringify({
         success: true,
-        positions: enrichedPositions,
+        positions: allPositions,
         totalUsdValue,
-        positionCount: enrichedPositions.length,
+        positionCount: allPositions.length,
+        exchanges: {
+          binance: allPositions.filter((p) => p.exchange === "binance").length > 0,
+          kraken: allPositions.filter((p) => p.exchange === "kraken").length > 0,
+        },
+        errors: errors.length > 0 ? errors : undefined,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
