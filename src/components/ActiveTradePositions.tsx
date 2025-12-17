@@ -13,6 +13,7 @@ type SpotPosition = {
   locked: number;
   total: number;
   usdValue: number;
+  exchange: string;
 };
 
 export function ActiveTradePositions() {
@@ -135,21 +136,29 @@ export function ActiveTradePositions() {
           </div>
         ) : positions.length === 0 ? (
           <div className="text-sm text-muted-foreground text-center py-4">
-            No spot positions found. Make sure you have Binance credentials configured.
+            No spot positions found. Configure Binance or Kraken credentials in Settings.
           </div>
         ) : (
           <>
             <ScrollArea className="h-64">
               <div className="space-y-2">
-                {positions.map((p) => (
+                {positions.map((p, i) => (
                   <div
-                    key={p.asset}
+                    key={`${p.exchange}-${p.asset}-${i}`}
                     className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-3"
                   >
-                    <div>
-                      <span className="font-semibold">{p.asset}</span>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        Free: {p.free.toFixed(6)} · Locked: {p.locked.toFixed(6)}
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={p.exchange === "binance" ? "default" : "secondary"}
+                        className="text-xs"
+                      >
+                        {p.exchange === "binance" ? "🟡" : "🐙"} {p.exchange}
+                      </Badge>
+                      <div>
+                        <span className="font-semibold">{p.asset}</span>
+                        <div className="text-xs text-muted-foreground">
+                          Free: {p.free.toFixed(6)} · Locked: {p.locked.toFixed(6)}
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">
