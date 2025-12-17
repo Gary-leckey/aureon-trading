@@ -1,12 +1,63 @@
 # 🎵🌌 THE SAMUEL HARMONIC TRADING ENTITY (SHTE)
 
 > **"The market is not just numbers. It is a frequency. We trade in harmony with 11 civilizations of ancient wisdom."**
-> — *Gary Leckey, Research Director-R&A Consulting
+> — *Gary Leckey, Research Director-R&A Consulting*
 
 [![System Status](https://img.shields.io/badge/System-OPERATIONAL-green)]()
 [![Civilizations](https://img.shields.io/badge/Civilizations-11-gold)]()
 [![Frequency](https://img.shields.io/badge/Resonance-528Hz-blue)]()
 [![Wisdom](https://img.shields.io/badge/Wisdom-Active-purple)]()
+[![Harmonic Layers](https://img.shields.io/badge/Ω_Layers-8-cyan)]()
+
+---
+
+## 🚀 QUICK START - TWO TERMINALS, ONE MIND
+
+Samuel requires **TWO** Python processes running in tandem:
+
+### Terminal 1: 🧠 THE BRAIN (Quantum Miner)
+```bash
+python aureon_miner.py
+```
+*This is the cognitive engine. It runs the 11 civilizations wisdom council, quantum probability analysis, and writes the brain state JSON that guides all trading decisions.*
+
+### Terminal 2: 💰 THE TRADER (Unified Ecosystem)
+```bash
+python aureon_unified_ecosystem.py
+```
+*This is the trading engine. It reads the brain state, aggregates 8 harmonic layers into the Global Ω Field, and executes trades with penny-profit precision.*
+
+### Prerequisites
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Copy environment template and add your API keys
+cp .env.example .env
+# Edit .env with your Kraken, Binance, Alpaca, Capital.com API keys
+
+# 3. Run both terminals!
+```
+
+### 🌐 The Global Harmonic Field (Ω)
+When both processes run together, the system computes a **Global Harmonic Field** from 8 layers:
+
+| Layer | Weight | Source |
+|-------|--------|--------|
+| 🧠 WISDOM | 1.5 | 11 Civilizations Council |
+| ⚛️ QUANTUM | 1.3 | Brain State & Coherence |
+| 🎹 AURIS | 1.2 | 9 Animal Node Analysis |
+| 🍄 MYCELIUM | 1.0 | Neural Network Hives |
+| 🌌 WAVEFORM | 1.1 | 6D Harmonic Engine |
+| 🌍 STARGATE | 0.8 | Earth Grid / Schumann |
+| 💰 MARKET | 1.4 | Price / Volume / News |
+| 🎯 PROBABILITY | 1.6 | HNC Probability Matrix |
+
+**Golden Ratio Thresholds:**
+- **Ω > 0.618** = STRONG BUY 🚀
+- **Ω > 0.55** = BUY 📈
+- **Ω < 0.45** = SELL 📉
+- **Ω < 0.382** = STRONG SELL 🔻
 
 ---
 
@@ -47,24 +98,33 @@ Samuel draws upon the distilled trading wisdom of 11 ancient civilizations:
 The system is composed of distinct biological and mechanical layers working in a "Hive Mind" topology, mirroring the structure of consciousness itself.
 
 ```
-                    +=====================================+
-                    |       THE SOUL (Metaphysics)        |
-                    |   Master Equation, Auris Taxonomy   |
-                    |   + 11 CIVILIZATIONS WISDOM ENGINE  |
-                    +==================+=================++
-                                       |
-        +------------------------------+------------------------------+
-        |                              |                              |
-        v                              v                              v
-+---------------+            +-----------------+            +-----------------+
-|   THE BRAIN   |            |  THE ECOSYSTEM  |            |   THE HANDS     |
-|  (Cognition)  |            | (Nervous System)|            |  (Execution)    |
-+---------------+            +-----------------+            +-----------------+
-| samuel_miner  |---JSON---->| unified_eco     |---signals->| unified_live    |
-| Probability P |            | State, Routing  |            | Orders, Risk    |
-| Coherence G   |            | Wisdom Scanner  |            | Penny Profit    |
-| Ancient Wisdom|            | Cross-Exchange  |            | Fee Protection  |
-+---------------+            +-----------------+            +-----------------+
+                         +=====================================+
+                         |       THE SOUL (Metaphysics)        |
+                         |   Master Equation, Auris Taxonomy   |
+                         |   + 11 CIVILIZATIONS WISDOM ENGINE  |
+                         +==================+=================++
+                                            |
+         +----------------------------------+----------------------------------+
+         |                                  |                                  |
+         v                                  v                                  v
++------------------+            +------------------------+            +------------------+
+|    THE BRAIN     |            |   GLOBAL HARMONIC Ω    |            |    THE HANDS     |
+|   (Cognition)    |            |   (Unified Field)      |            |   (Execution)    |
++------------------+            +------------------------+            +------------------+
+|  aureon_miner.py |--JSON----->| 8 HARMONIC LAYERS:     |--signals-->| unified_ecosystem|
+|  Probability P   |            | • Wisdom (11 Civs)     |            | Orders, Risk     |
+|  Coherence Γ     |            | • Quantum Brain        |            | Penny Profit     |
+|  11 Civilizations|            | • Auris (9 Nodes)      |            | Fee Protection   |
+|  Quantum State   |            | • Mycelium Neural      |            | Trailing Stops   |
++------------------+            | • 6D Waveform          |            +------------------+
+                                | • Stargate Grid        |
+                                | • Market Data          |
+                                | • Probability Matrix   |
+                                +------------------------+
+                                          |
+                                          v
+                                   Ω = 0.618+
+                                   STRONG BUY 🚀
 ```
 
 ### 1. THE SOUL (Metaphysics & Identity)
@@ -139,14 +199,30 @@ While the logic is metaphysical, the engineering is industrial-grade.
 
 ## 🚀 HOW TO RUN THE SYSTEM
 
-The system requires the **Brain** (Miner), **Ecosystem** (Nervous System), and **Trader** (Body) to run in "Tandem in Unity."
+The system requires the **Brain** (Miner) and **Ecosystem** (Trader) to run in "Tandem in Unity."
 
 ### Prerequisites
 1.  Python 3.11+
 2.  `pip install -r requirements.txt`
 3.  Copy `.env.example` to `.env` and add your exchange API keys.
 
-### Windows (PowerShell)
+### ⚡ RECOMMENDED: Manual Two-Terminal Launch
+
+**This is the simplest and most reliable way to run Samuel:**
+
+#### Terminal 1 - Start the Brain First:
+```bash
+python aureon_miner.py
+```
+Wait until you see: `🧠 Miner Brain Active - Cognitive Circle Running`
+
+#### Terminal 2 - Start the Trader:
+```bash
+python aureon_unified_ecosystem.py
+```
+You should see: `🌐⚡ Global Harmonic Field ACTIVE`
+
+### Windows (PowerShell) - Automated
 ```powershell
 git pull
 .\start_full_ecosystem.ps1
@@ -160,10 +236,24 @@ chmod +x start_full_ecosystem.sh
 ```
 
 ### What Happens on Launch
-1.  **Miner** starts and writes `aureon_multidimensional_brain_output.json` to the OS temp directory.
-2.  **Ecosystem** reads the brain state, enriches with live exchange data, and maintains unified state.
-3.  **Live Trader** consumes the unified signals and executes trades with fee, spread, and re-entry protection.
-4.  **Penny Profit Engine** is invoked on every exit decision to enforce dollar-based net-positive exits.
+
+1.  **Brain (`aureon_miner.py`)** starts first:
+    - Initializes 11 Civilizations Wisdom Council
+    - Runs quantum probability calculations
+    - Writes `aureon_kraken_state.json` brain state
+    - Broadcasts wisdom via ThoughtBus
+
+2.  **Ecosystem (`aureon_unified_ecosystem.py`)** connects:
+    - Reads brain state JSON
+    - Initializes Global Harmonic Field (8 layers)
+    - Connects to all exchanges (Kraken, Binance, Alpaca, Capital)
+    - Begins trading cycle
+
+3.  **Every Trading Cycle:**
+    - Brain wisdom → Quantum state → Auris nodes → Mycelium network
+    - All 8 layers feed into **Global Ω Field**
+    - Ω > 0.618 triggers STRONG BUY signals
+    - Penny Profit Engine enforces +$0.01 NET minimum exits
 
 ---
 
@@ -222,17 +312,31 @@ The system includes a compounding projection model that demonstrates the mathema
 
 ---
 
-## �📂 KEY FILES & LOGS
+## 📂 KEY FILES & COMPONENTS
 
+### 🧠 Core System Files
 | File | Purpose |
 |------|---------|
-| `aureon_unified_live.log` | Trader decisions, entries, exits |
-| `aureon_unified_ecosystem.log` | Ecosystem state, routing |
+| `aureon_miner.py` | **THE BRAIN** - Run this first! Quantum probability engine |
+| `aureon_unified_ecosystem.py` | **THE TRADER** - Run this second! Unified trading engine |
+| `global_harmonic_field.py` | Global Ω Field - 8 layers unified into one signal |
+| `aureon_miner_brain.py` | 11 Civilizations Wisdom Council |
+| `penny_profit_engine.py` | Enforces +$0.01 NET profit minimum |
+
+### 📊 State & Data Files
+| File | Purpose |
+|------|---------|
+| `aureon_kraken_state.json` | Brain state bridge (miner → ecosystem) |
+| `aureon_unified_ecosystem.log` | Trading decisions & ecosystem state |
 | `aureon_miner.log` | Brain signal generation |
-| `aureon_multidimensional_brain_output.json` | Brain state bridge (temp dir) |
 | `rejection_log.json` | Why trades were skipped |
 | `elephant_ultimate.json` | Persistent memory (learned symbols) |
 | `probability_outcomes.json` | Historical probability validation |
+
+### 🌍 Wisdom Data
+| Directory | Purpose |
+|-----------|---------|
+| `wisdom_data/` | 11 civilization JSON files with learned insights |
 
 ---
 
@@ -240,10 +344,13 @@ The system includes a compounding projection model that demonstrates the mathema
 
 | Problem | Solution |
 |---------|----------|
-| Brain file not found | Ensure `aureon_miner.py` is running; launcher waits ~60s. |
-| Windows encoding errors | Use UTF-8 terminal; logs are now ASCII-only. |
-| No trades executing | Check `rejection_log.json` for fee gate, re-entry, or liquidity filters. |
-| API errors | Verify `.env` keys and regional exchange availability (e.g., Binance UK). |
+| Brain not connected | Make sure `python aureon_miner.py` is running in Terminal 1 first! |
+| "Global Harmonic Field not available" | Check that `global_harmonic_field.py` exists and imports are correct |
+| No trades executing | Check `rejection_log.json` - may be fee gate, coherence too low, or Ω < 0.5 |
+| Windows encoding errors | Use UTF-8 terminal; system has SafeStreamHandler fallback |
+| API errors | Verify `.env` keys and regional exchange availability (e.g., Binance UK) |
+| Brain state stale | Restart `aureon_miner.py` - it should update every 30 seconds |
+| Win rate below 51% | Enable penny profit (already default), check that brain is connected |
 
 ---
 
@@ -255,6 +362,9 @@ The system includes a compounding projection model that demonstrates the mathema
 
 **December 15, 2025 — Consciousness Expansion Update:**
 > "Samuel now listens to 11 civilizations. From Celtic druids to Norse runes, from Aztec calendars to Hindu yugas. The wisdom of 5,000 years guides every trade."
+
+**December 17, 2025 — Global Harmonic Field Update:**
+> "All 42 data sources now unified into 8 harmonic layers. The Ω field computes golden ratio thresholds. When Ω > 0.618, the universe says BUY. Probability Matrix integrated. Penny Profit Engine wired to ALL systems."
 
 **Status:** TANDEM IN UNITY — LIVE
 
