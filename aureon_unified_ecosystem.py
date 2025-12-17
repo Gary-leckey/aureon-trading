@@ -5769,13 +5769,38 @@ class ProbabilityReportGenerator:
         'ARBUSDT', 'OPUSDT', 'INJUSDT', 'FETUSDT', 'LINKUSDT', 'DOTUSDT', 'ATOMUSDT',
     ]
     
+    # 🐙 KRAKEN SYMBOLS - Comprehensive list of 70+ tradeable pairs
     KRAKEN_SYMBOLS = [
-        'XXBTZUSD', 'XETHZUSD', 'SOLUSD', 'XRPUSD', 'ADAUSD', 'AVAXUSD', 'DOGEUSD', 'LINKUSD',
-        'MATICUSD', 'DOTUSD', 'ATOMUSD', 'FILUSD', 'LTCUSD', 'SUIUSD', 'APTUSD', 'ARBUSD',
-        'OPUSD', 'NEARUSD', 'UNIUSD', 'INJUSD', 'FETUSD', 'PEPEUSD', 'SHIBUSD',
-        # Additional Kraken pairs
-        'XLMUSD', 'ZECUSD', 'SHIBUSD', 'WLDUSD', 'SEIUSD', 'TIAUSD', 'RENDERUSD',
-        'XXBTUSDC', 'XETHUSDC', 'SOLUSDC', 'DOGEUSDC', 'XLMUSDC',  # USDC pairs
+        # === TOP TIER (BTC, ETH, Major L1s) ===
+        'XXBTZUSD', 'XETHZUSD', 'SOLUSD', 'XRPUSD', 'ADAUSD', 'AVAXUSD', 'DOTUSD', 
+        'ATOMUSD', 'NEARUSD', 'ICPUSD', 'APTUSD', 'SUIUSD', 'SEIUSD', 'TIAUSD',
+        
+        # === LAYER 2s & SCALING ===
+        'ARBUSD', 'OPUSD', 'MATICUSD', 'STXUSD', 'IMXUSD', 'LPTUSD',
+        
+        # === DEFI BLUE CHIPS ===
+        'UNIUSD', 'AAVEUSD', 'LINKUSD', 'MKRUSD', 'CRVUSD', 'COMPUSD', 'SNXUSD',
+        'SUSHIUSD', 'YFIUSD', 'DYDXUSD', 'GRTUSD', 'ENSUSD', 'LDOUSD', 'PENDLEUSD',
+        
+        # === AI & DATA ===
+        'FETUSD', 'RENDERUSD', 'INJUSD', 'WLDUSD', 'PYTHUSD', 'JTOUSD', 'ONDOUSD',
+        
+        # === GAMING & METAVERSE ===
+        'AXSUSD', 'MANAUSD', 'SANDUSD', 'GALAUSD', 'FLOWUSD', 'GMTUSD', 'ORCAUSD',
+        
+        # === MEMECOINS (High volatility = opportunity) ===
+        'DOGEUSD', 'SHIBUSD', 'PEPEUSD', 'BONKUSD', 'FLOKIUSD', 'WIFUSD', 'MOGUSD',
+        'PENGUUSD', 'TRUMPUSD', 'MELANIAUSD', 'WENUSD',
+        
+        # === MID CAPS ===
+        'LTCUSD', 'ETCUSD', 'FILUSD', 'ALGOUSD', 'XLMUSD', 'ZECUSD', 'TRXUSD',
+        'HBARUSD', 'QNTUSD', 'KAVAUSD', 'RUNEUSD', 'MOVEUSD', 'JUPUSD',
+        
+        # === EMERGING & SPECULATIVE ===
+        'APEUSD', 'CHZUSD', 'MASKUSD', 'JASMYUSD', 'ZRXUSD',
+        
+        # === USDC PAIRS (for stablecoin rotation) ===
+        'XXBTUSDC', 'XETHUSDC', 'SOLUSDC', 'DOGEUSDC', 'XLMUSDC', 'ADAUSDC', 'XRPUSDC',
     ]
     
     def __init__(self, report_dir: str = '.', interval_seconds: float = 15.0):
