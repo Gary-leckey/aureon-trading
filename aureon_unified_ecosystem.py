@@ -248,6 +248,15 @@ except ImportError:
     BRAIN_AVAILABLE = False
     print("⚠️  Miner Brain not available")
 
+# 🌐⚡ GLOBAL HARMONIC FIELD - UNIFIED 42-SOURCE FIELD ⚡🌐
+try:
+    from global_harmonic_field import GlobalHarmonicField, get_global_field, compute_global_omega
+    HARMONIC_FIELD_AVAILABLE = True
+    print("🌐⚡ Global Harmonic Field loaded - 42 sources → 7 layers → Ω")
+except ImportError as e:
+    HARMONIC_FIELD_AVAILABLE = False
+    print(f"⚠️  Global Harmonic Field not available: {e}")
+
 # 🌍⚡ HNC FREQUENCY INTEGRATION ⚡🌍
 try:
     from hnc_master_protocol import HarmonicNexusCore, HNCTradingBridge, LiveMarketFrequencyFeed
@@ -10145,6 +10154,16 @@ class AureonKrakenEcosystem:
         # This ensures any assets on exchanges are tracked properly
         if not self.dry_run:
             self._import_existing_holdings()
+        
+        # 🌐⚡ GLOBAL HARMONIC FIELD - 42 Sources → 7 Layers → Ω ⚡🌐
+        # The Ultimate Unified Field that ties ALL data sources together
+        self.global_harmonic_field = None
+        if HARMONIC_FIELD_AVAILABLE:
+            try:
+                self.global_harmonic_field = get_global_field()
+                print("   🌐⚡ Global Harmonic Field ACTIVE (Ω > 0.618 = STRONG BUY)")
+            except Exception as e:
+                print(f"   ⚠️ Global Harmonic Field init failed: {e}")
 
     # ═══════════════════════════════════════════════════════════════
     # 🚫 SYMBOL VALIDATION CACHE - Reduce API noise for invalid symbols
@@ -13454,6 +13473,37 @@ class AureonKrakenEcosystem:
             except Exception:
                 pass  # Brain boost is optional enhancement
             
+            # 🌐⚡ GLOBAL HARMONIC FIELD BOOST - Apply Ω field strength adjustment ⚡🌐
+            # The unified field from 42 data sources provides the ultimate confluence signal
+            omega_boost = 1.0
+            omega_value = 0.5
+            omega_direction = 'NEUTRAL'
+            if self.global_harmonic_field:
+                try:
+                    signal = self.global_harmonic_field.get_signal()
+                    omega_value = signal.get('omega', 0.5)
+                    omega_direction = signal.get('direction', 'NEUTRAL')
+                    confidence = signal.get('confidence', 0.5)
+                    
+                    # Golden Ratio thresholds:
+                    # Ω > 0.618 = STRONG_BUY → 1.2x boost (Golden ratio)
+                    # Ω > 0.55 = BUY → 1.1x boost
+                    # Ω < 0.45 = SELL → 0.9x penalty
+                    # Ω < 0.382 = STRONG_SELL → 0.75x penalty (Inverse golden)
+                    
+                    if omega_direction == 'STRONG_BUY':
+                        omega_boost = 1.0 + (confidence * 0.25)  # Up to 1.25x
+                    elif omega_direction == 'BUY':
+                        omega_boost = 1.0 + (confidence * 0.15)  # Up to 1.15x
+                    elif omega_direction == 'SELL':
+                        omega_boost = 1.0 - (confidence * 0.15)  # Down to 0.85x
+                    elif omega_direction == 'STRONG_SELL':
+                        omega_boost = 1.0 - (confidence * 0.30)  # Down to 0.70x
+                    
+                    score = int(score * omega_boost)
+                except Exception as e:
+                    logger.debug(f"Omega boost error: {e}")
+            
             # 🧠 Use adaptive learning score threshold
             min_score = learned.get('min_score', CONFIG['MIN_SCORE'])
             
@@ -13503,6 +13553,10 @@ class AureonKrakenEcosystem:
                     'brain_consensus': ECOSYSTEM_BRAIN._brain_consensus,
                     'brain_confidence': ECOSYSTEM_BRAIN._brain_confidence,
                     'brain_fear_greed': ECOSYSTEM_BRAIN._fear_greed,
+                    # 🌐⚡ GLOBAL HARMONIC FIELD fields
+                    'omega': omega_value,
+                    'omega_direction': omega_direction,
+                    'omega_boost': omega_boost,
                 })
                 
                 # 🔮 LOG PREDICTION FOR VALIDATION 🔮
@@ -15330,6 +15384,84 @@ class AureonKrakenEcosystem:
                 self.capital_pool.update_sentiment(avg_sentiment)
             except Exception as e:
                 print(f"   ⚠️ Market Pulse Error: {e}")
+
+        # 🌐⚡ GLOBAL HARMONIC FIELD UPDATE ⚡🌐
+        # Feed all 42 data sources into the unified field every cycle
+        omega_signal = None
+        if self.global_harmonic_field:
+            try:
+                # Gather data from all sources
+                fear_greed = getattr(self, 'macro_snapshot', None)
+                fg_value = fear_greed.crypto_fear_greed if fear_greed else 50
+                
+                # BTC price from ticker cache
+                btc_price = self.ticker_cache.get('BTCUSD', {}).get('price', 100000)
+                btc_change = self.ticker_cache.get('BTCUSD', {}).get('change24h', 0)
+                
+                # Get quantum brain state if available
+                quantum_state = None
+                if self.brain:
+                    try:
+                        brain_state = self.brain.get_unified_state()
+                        quantum_state = {
+                            'unified_coherence': brain_state.get('unified_coherence', 0.5),
+                            'planetary_gamma': brain_state.get('planetary_gamma', 0.5),
+                            'probability_edge': brain_state.get('probability_edge', 0),
+                            'cascade_multiplier': brain_state.get('cascade_multiplier', 1.0),
+                            'is_optimal_window': brain_state.get('optimal_window', False),
+                        }
+                    except:
+                        pass
+                
+                # Get Auris state
+                auris_state = None
+                if hasattr(self.auris, 'get_auris_state'):
+                    try:
+                        a_state = self.auris.get_auris_state()
+                        auris_state = {
+                            'auris_dolphin': a_state.get('dolphin', 0.5),
+                            'auris_owl': a_state.get('owl', 0.5),
+                            'piano_lambda': getattr(self.auris, 'piano_lambda', 1.0),
+                            'piano_coherence': getattr(self.auris, 'piano_coherence', 0.5),
+                            'rainbow_state': getattr(self.enhancement_layer, 'rainbow_state', 'LOVE') if self.enhancement_layer else 'LOVE',
+                        }
+                    except:
+                        pass
+                
+                # Get Mycelium state
+                mycelium_state = {
+                    'mycelium_coherence': self.mycelium.get_network_coherence() if self.mycelium else 0.5,
+                    'mycelium_agents': len(self.mycelium.hives) if self.mycelium else 0,
+                }
+                
+                # Get market state
+                market_state = {
+                    'btc_change_24h': btc_change,
+                    'news_sentiment': self._last_news_sentiment.get('score', 0.5) if hasattr(self, '_last_news_sentiment') else 0.5,
+                    'win_rate': self.tracker.win_rate / 100.0 if self.tracker.win_rate else 0.5,
+                }
+                
+                # Update the field with all data
+                omega_signal = self.global_harmonic_field.update_all(
+                    fear_greed=fg_value,
+                    btc_price=btc_price,
+                    btc_change=btc_change,
+                    quantum_state=quantum_state,
+                    auris_state=auris_state,
+                    mycelium_state=mycelium_state,
+                    market_state=market_state,
+                )
+                
+                # Print field status every 10 cycles
+                if self.iteration % 10 == 0:
+                    omega = omega_signal.get('omega', 0.5)
+                    direction = omega_signal.get('direction', 'NEUTRAL')
+                    confidence = omega_signal.get('confidence', 0.5)
+                    emoji = '🚀' if direction == 'STRONG_BUY' else '📈' if direction == 'BUY' else '📉' if direction == 'SELL' else '🔻' if direction == 'STRONG_SELL' else '⚖️'
+                    print(f"   🌐⚡ HARMONIC FIELD: Ω={omega:.4f} {emoji} {direction} (Confidence: {confidence:.1%})")
+                
+            except Exception as e:
+                logger.debug(f"Harmonic field update error: {e}")
 
         # Refresh data
         self.refresh_tickers()
