@@ -7,15 +7,48 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function decodeIv(ivB64: string): Uint8Array {
+  return Uint8Array.from(atob(ivB64), (c) => c.charCodeAt(0));
+}
+
+async function decryptCredential(encryptedB64: string, cryptoKey: CryptoKey, iv: Uint8Array): Promise<string> {
+  const encryptedBytes = Uint8Array.from(atob(encryptedB64), (c) => c.charCodeAt(0));
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: iv as unknown as BufferSource },
+    cryptoKey,
+    encryptedBytes
+  );
+  return new TextDecoder().decode(decrypted);
+}
+
+async function getCryptoKey(): Promise<CryptoKey> {
+  // Must match create-aureon-session and update-user-credentials
+  const encryptionKey = 'aureon-default-key-32chars!!';
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(encryptionKey.padEnd(32, '0').slice(0, 32));
+  return crypto.subtle.importKey('raw', keyData, { name: 'AES-GCM' }, false, ['decrypt']);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      supabaseUrl,
+      supabaseAnonKey,
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     );
 
@@ -29,18 +62,35 @@ serve(async (req) => {
 
     const { symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'BNBUSDT', 'ADAUSDT', 'DOGEUSDT'], limit = 50 } = await req.json().catch(() => ({}));
 
-    const apiKey = Deno.env.get('BINANCE_API_KEY');
-    const apiSecret = Deno.env.get('BINANCE_API_SECRET');
+    // Load and decrypt THIS USER'S Binance credentials
+    const service = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: session, error: sessionError } = await service
+      .from('aureon_user_sessions')
+      .select('binance_api_key_encrypted, binance_api_secret_encrypted, binance_iv')
+      .eq('user_id', user.id)
+      .single();
 
-    if (!apiKey || !apiSecret) {
-      console.error('Missing Binance credentials');
-      return new Response(JSON.stringify({ error: 'Binance credentials not configured' }), {
-        status: 500,
+    if (sessionError || !session) {
+      return new Response(JSON.stringify({ error: 'No trading session found. Please re-login.' }), {
+        status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('Fetching trades for symbols:', symbols);
+    if (!session.binance_api_key_encrypted || !session.binance_api_secret_encrypted || !session.binance_iv) {
+      return new Response(JSON.stringify({ error: 'No Binance credentials saved. Add them in Settings → API Credentials.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const cryptoKey = await getCryptoKey();
+    const iv = decodeIv(session.binance_iv);
+    const apiKey = await decryptCredential(session.binance_api_key_encrypted, cryptoKey, iv);
+    const apiSecret = await decryptCredential(session.binance_api_secret_encrypted, cryptoKey, iv);
+
+    console.log('[fetch-trades] Fetching trades for user:', user.id);
+    console.log('[fetch-trades] Symbols:', symbols);
 
     // Fetch trades from multiple symbols
     const allTrades: any[] = [];

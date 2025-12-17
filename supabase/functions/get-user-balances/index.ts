@@ -525,29 +525,57 @@ serve(async (req) => {
     const balances: ExchangeBalance[] = [];
     const fetchPromises: Promise<ExchangeBalance>[] = [];
 
-    // PRIORITY 1: Use ecosystem secrets (global API keys)
-    const binanceApiKey = Deno.env.get('BINANCE_API_KEY');
-    const binanceApiSecret = Deno.env.get('BINANCE_API_SECRET');
-    const krakenApiKey = Deno.env.get('KRAKEN_API_KEY');
-    const krakenApiSecret = Deno.env.get('KRAKEN_API_SECRET');
-    const alpacaApiKey = Deno.env.get('ALPACA_API_KEY');
-    const alpacaSecretKey = Deno.env.get('ALPACA_SECRET_KEY');
-    const capitalApiKey = Deno.env.get('CAPITAL_API_KEY');
-    const capitalPassword = Deno.env.get('CAPITAL_PASSWORD');
-    const capitalIdentifier = Deno.env.get('CAPITAL_IDENTIFIER');
+    const decodeIvFromB64 = (ivB64: string) => Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
 
-    console.log('[get-user-balances] Using ecosystem secrets:', {
-      binance: !!binanceApiKey,
-      kraken: !!krakenApiKey,
-      alpaca: !!alpacaApiKey,
-      capital: !!capitalApiKey
+    // === Use USER-SAVED credentials (never global/shared secrets) ===
+    const userCreds = {
+      binance: { apiKey: null as string | null, apiSecret: null as string | null },
+      kraken: { apiKey: null as string | null, apiSecret: null as string | null },
+      alpaca: { apiKey: null as string | null, apiSecret: null as string | null },
+      capital: { apiKey: null as string | null, password: null as string | null, identifier: null as string | null },
+    };
+
+    // Binance
+    if (session.binance_api_key_encrypted && session.binance_api_secret_encrypted && session.binance_iv) {
+      const iv = decodeIvFromB64(session.binance_iv);
+      userCreds.binance.apiKey = await decryptCredential(session.binance_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+      userCreds.binance.apiSecret = await decryptCredential(session.binance_api_secret_encrypted, cryptoKey, legacyCryptoKey, iv);
+    }
+
+    // Kraken
+    if (session.kraken_api_key_encrypted && session.kraken_api_secret_encrypted && session.kraken_iv) {
+      const iv = decodeIvFromB64(session.kraken_iv);
+      userCreds.kraken.apiKey = await decryptCredential(session.kraken_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+      userCreds.kraken.apiSecret = await decryptCredential(session.kraken_api_secret_encrypted, cryptoKey, legacyCryptoKey, iv);
+    }
+
+    // Alpaca
+    if (session.alpaca_api_key_encrypted && session.alpaca_secret_key_encrypted && session.alpaca_iv) {
+      const iv = decodeIvFromB64(session.alpaca_iv);
+      userCreds.alpaca.apiKey = await decryptCredential(session.alpaca_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+      userCreds.alpaca.apiSecret = await decryptCredential(session.alpaca_secret_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+    }
+
+    // Capital.com
+    if (session.capital_api_key_encrypted && session.capital_password_encrypted && session.capital_identifier_encrypted && session.capital_iv) {
+      const iv = decodeIvFromB64(session.capital_iv);
+      userCreds.capital.apiKey = await decryptCredential(session.capital_api_key_encrypted, cryptoKey, legacyCryptoKey, iv);
+      userCreds.capital.password = await decryptCredential(session.capital_password_encrypted, cryptoKey, legacyCryptoKey, iv);
+      userCreds.capital.identifier = await decryptCredential(session.capital_identifier_encrypted, cryptoKey, legacyCryptoKey, iv);
+    }
+
+    console.log('[get-user-balances] Using user credentials:', {
+      binance: !!userCreds.binance.apiKey,
+      kraken: !!userCreds.kraken.apiKey,
+      alpaca: !!userCreds.alpaca.apiKey,
+      capital: !!userCreds.capital.apiKey,
     });
 
     // Fetch Binance balances with rate limiting
-    if (binanceApiKey && binanceApiSecret) {
+    if (userCreds.binance.apiKey && userCreds.binance.apiSecret) {
       if (canFetchExchange('binance')) {
         fetchPromises.push(
-          fetchBinanceBalances(binanceApiKey, binanceApiSecret)
+          fetchBinanceBalances(userCreds.binance.apiKey, userCreds.binance.apiSecret)
             .then(result => { setCachedBalance('binance', result); return result; })
         );
       } else {
@@ -556,14 +584,14 @@ serve(async (req) => {
         else balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
       }
     } else {
-      balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0, error: 'No ecosystem credentials' });
+      balances.push({ exchange: 'binance', connected: false, assets: [], totalUsd: 0, error: 'Not configured' });
     }
 
     // Fetch Kraken balances with rate limiting (60s minimum between calls)
-    if (krakenApiKey && krakenApiSecret) {
+    if (userCreds.kraken.apiKey && userCreds.kraken.apiSecret) {
       if (canFetchExchange('kraken')) {
         fetchPromises.push(
-          fetchKrakenBalances(krakenApiKey, krakenApiSecret)
+          fetchKrakenBalances(userCreds.kraken.apiKey, userCreds.kraken.apiSecret)
             .then(result => { setCachedBalance('kraken', result); return result; })
         );
       } else {
@@ -576,14 +604,14 @@ serve(async (req) => {
         }
       }
     } else {
-      balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0, error: 'No ecosystem credentials' });
+      balances.push({ exchange: 'kraken', connected: false, assets: [], totalUsd: 0, error: 'Not configured' });
     }
 
     // Fetch Alpaca balances with rate limiting
-    if (alpacaApiKey && alpacaSecretKey) {
+    if (userCreds.alpaca.apiKey && userCreds.alpaca.apiSecret) {
       if (canFetchExchange('alpaca')) {
         fetchPromises.push(
-          fetchAlpacaBalances(alpacaApiKey, alpacaSecretKey)
+          fetchAlpacaBalances(userCreds.alpaca.apiKey, userCreds.alpaca.apiSecret)
             .then(result => { setCachedBalance('alpaca', result); return result; })
         );
       } else {
@@ -592,14 +620,14 @@ serve(async (req) => {
         else balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0, error: 'Rate limited, no cache' });
       }
     } else {
-      balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0, error: 'No ecosystem credentials' });
+      balances.push({ exchange: 'alpaca', connected: false, assets: [], totalUsd: 0, error: 'Not configured' });
     }
 
     // Fetch Capital.com balances with rate limiting (60s minimum)
-    if (capitalApiKey && capitalPassword && capitalIdentifier) {
+    if (userCreds.capital.apiKey && userCreds.capital.password && userCreds.capital.identifier) {
       if (canFetchExchange('capital')) {
         fetchPromises.push(
-          fetchCapitalBalances(capitalApiKey, capitalPassword, capitalIdentifier)
+          fetchCapitalBalances(userCreds.capital.apiKey, userCreds.capital.password, userCreds.capital.identifier)
             .then(result => { setCachedBalance('capital', result); return result; })
         );
       } else {
@@ -612,7 +640,7 @@ serve(async (req) => {
         }
       }
     } else {
-      balances.push({ exchange: 'capital', connected: false, assets: [], totalUsd: 0, error: 'No ecosystem credentials' });
+      balances.push({ exchange: 'capital', connected: false, assets: [], totalUsd: 0, error: 'Not configured' });
     }
 
     // Wait for all fetches
