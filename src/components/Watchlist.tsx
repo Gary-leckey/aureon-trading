@@ -4,7 +4,19 @@ import { useMultiSymbolWatchlist, type WatchlistSymbol } from '@/hooks/useMultiS
 import { PriceAlerts } from '@/components/PriceAlerts';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
-const WATCHLIST_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'DOGEUSDT'];
+const WATCHLIST_SYMBOLS = [
+  // TOP TIER
+  'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'AVAXUSDT',
+  'DOTUSDT', 'ATOMUSDT', 'NEARUSDT', 'APTUSDT', 'SUIUSDT',
+  // LAYER 2s
+  'ARBUSDT', 'OPUSDT', 'MATICUSDT',
+  // DEFI
+  'UNIUSDT', 'AAVEUSDT', 'LINKUSDT',
+  // AI
+  'FETUSDT', 'INJUSDT', 'WLDUSDT',
+  // MEMECOINS
+  'DOGEUSDT', 'SHIBUSDT', 'PEPEUSDT', 'BONKUSDT', 'WIFUSDT',
+];
 
 export const Watchlist = () => {
   const { symbolData, isConnected } = useMultiSymbolWatchlist(WATCHLIST_SYMBOLS);

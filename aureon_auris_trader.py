@@ -51,8 +51,22 @@ ENTRY_COHERENCE = 0.938
 EXIT_COHERENCE = 0.934
 MIN_PROFIT_PCT = 0.8  # 0.8% Net profit target (was 0.2% - need to beat fees!)
 
-# Pairs to scan (High liquidity for CargoShip)
-PAIRS = ['SOLUSDC', 'XRPUSDC', 'ADAUSDC', 'DOGEUSDC', 'AVAXUSDC', 'BTCUSDC', 'ETHUSDC']
+# 🔶 PAIRS - Comprehensive Binance trading pairs (70+)
+PAIRS = [
+    # === TOP TIER ===
+    'BTCUSDC', 'ETHUSDC', 'SOLUSDC', 'XRPUSDC', 'ADAUSDC', 'AVAXUSDC', 'BNBUSDC',
+    'DOTUSDC', 'ATOMUSDC', 'NEARUSDC', 'ICPUSDC', 'APTUSDC', 'SUIUSDC', 'SEIUSDC',
+    # === LAYER 2s ===
+    'ARBUSDC', 'OPUSDC', 'MATICUSDC', 'STXUSDC', 'IMXUSDC',
+    # === DEFI ===
+    'UNIUSDC', 'AAVEUSDC', 'LINKUSDC', 'CRVUSDC', 'SNXUSDC', 'LDOUSDC',
+    # === AI & DATA ===
+    'FETUSDC', 'RENDERUSDC', 'INJUSDC', 'WLDUSDC',
+    # === MEMECOINS ===
+    'DOGEUSDC', 'SHIBUSDC', 'PEPEUSDC', 'BONKUSDC', 'FLOKIUSDC', 'WIFUSDC',
+    # === MID CAPS ===
+    'LTCUSDC', 'FILUSDC', 'XLMUSDC', 'TRXUSDC', 'HBARUSDC', 'RUNEUSDC',
+]
 
 logging.basicConfig(
     level=logging.INFO,

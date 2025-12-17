@@ -332,10 +332,19 @@ class SelfValidatingPredictor:
     def run_validation_session(self, cycles: int = 5):
         """Run multiple prediction cycles to build confidence"""
         
+        # 🔶 COMPREHENSIVE VALIDATION SYMBOLS
         symbols = [
-            ('binance', 'BTCUSDC'),
-            ('binance', 'ETHUSDC'),
-            ('binance', 'SUIUSDC'),
+            # TOP TIER
+            ('binance', 'BTCUSDC'), ('binance', 'ETHUSDC'), ('binance', 'SOLUSDC'),
+            ('binance', 'XRPUSDC'), ('binance', 'ADAUSDC'), ('binance', 'AVAXUSDC'),
+            # LAYER 2s
+            ('binance', 'ARBUSDC'), ('binance', 'OPUSDC'), ('binance', 'SUIUSDC'),
+            # DEFI
+            ('binance', 'UNIUSDC'), ('binance', 'LINKUSDC'), ('binance', 'AAVEUSDC'),
+            # AI
+            ('binance', 'FETUSDC'), ('binance', 'INJUSDC'),
+            # MEMECOINS
+            ('binance', 'DOGEUSDC'), ('binance', 'PEPEUSDC'), ('binance', 'BONKUSDC'),
         ]
         
         print("\n" + "="*70)

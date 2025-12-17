@@ -13,12 +13,17 @@ interface MarketTicker {
 }
 
 const BINANCE_SYMBOLS = [
-  'BTCUSDT',
-  'ETHUSDT',
-  'BNBUSDT',
-  'SOLUSDT',
-  'XRPUSDT',
-  'ADAUSDT'
+  // TOP TIER
+  'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'AVAXUSDT',
+  'DOTUSDT', 'ATOMUSDT', 'NEARUSDT', 'APTUSDT', 'SUIUSDT',
+  // LAYER 2s
+  'ARBUSDT', 'OPUSDT', 'MATICUSDT',
+  // DEFI
+  'UNIUSDT', 'AAVEUSDT', 'LINKUSDT',
+  // AI
+  'FETUSDT', 'INJUSDT', 'WLDUSDT',
+  // MEMECOINS
+  'DOGEUSDT', 'SHIBUSDT', 'PEPEUSDT', 'BONKUSDT', 'WIFUSDT',
 ];
 
 const MarketOverview = () => {

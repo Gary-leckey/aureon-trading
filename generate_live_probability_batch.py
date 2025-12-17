@@ -10,10 +10,27 @@ os.environ.setdefault('LIVE','1')
 from binance_client import BinanceClient
 from hnc_probability_matrix import HNCProbabilityIntegration
 
+# 🔶 COMPREHENSIVE BINANCE SYMBOLS (70+)
 DEFAULT_SYMBOLS = [
-    'BTCUSDC','ETHUSDC','SOLUSDC','XRPUSDC','ADAUSDC','AVAXUSDC','DOGEUSDC','LINKUSDC',
-    'MATICUSDC','DOTUSDC','ATOMUSDC','FILUSDC','LTCUSDC','SUIUSDC','APTUSDC','ARBUSDC',
-    'OPUSDC','NEARUSDC','UNIUSDC','INJUSDC'
+    # === TOP TIER ===
+    'BTCUSDC', 'ETHUSDC', 'SOLUSDC', 'XRPUSDC', 'ADAUSDC', 'AVAXUSDC', 'BNBUSDC',
+    'DOTUSDC', 'ATOMUSDC', 'NEARUSDC', 'ICPUSDC', 'APTUSDC', 'SUIUSDC', 'SEIUSDC', 'TIAUSDC',
+    # === LAYER 2s ===
+    'ARBUSDC', 'OPUSDC', 'MATICUSDC', 'STXUSDC', 'IMXUSDC',
+    # === DEFI ===
+    'UNIUSDC', 'AAVEUSDC', 'LINKUSDC', 'CRVUSDC', 'SNXUSDC', 'LDOUSDC', 'PENDLEUSDC',
+    'MKRUSDC', 'COMPUSDC', 'DYDXUSDC', 'GRTUSDC', 'ENSUSDC',
+    # === AI & DATA ===
+    'FETUSDC', 'RENDERUSDC', 'INJUSDC', 'WLDUSDC', 'PYTHUSDC', 'JTOUSDC', 'ONDOUSDC',
+    # === GAMING ===
+    'AXSUSDC', 'MANAUSDC', 'SANDUSDC', 'GALAUSDC', 'FLOWUSDC', 'GMTUSDC',
+    # === MEMECOINS ===
+    'DOGEUSDC', 'SHIBUSDC', 'PEPEUSDC', 'BONKUSDC', 'FLOKIUSDC', 'WIFUSDC', 'TRUMPUSDC',
+    # === MID CAPS ===
+    'LTCUSDC', 'ETCUSDC', 'FILUSDC', 'ALGOUSDC', 'XLMUSDC', 'TRXUSDC', 'HBARUSDC',
+    'QNTUSDC', 'KAVAUSDC', 'RUNEUSDC', 'MOVEUSDC', 'JUPUSDC',
+    # === EMERGING ===
+    'APEUSDC', 'CHZUSDC', 'MASKUSDC', 'JASMYUSDC', 'ZRXUSDC',
 ]
 
 def collect_baseline(client: BinanceClient, symbol: str, samples: int = 5, interval: float = 0.2):

@@ -94,7 +94,22 @@ class ProbabilityCollector:
         self.hnc = HNCProbabilityIntegration()
         self.data_buffer: List[DataPoint] = []
         self.collection_interval = 60  # Collect every minute
-        self.symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "ADAUSDT"]
+        # 🔶 COMPREHENSIVE SYMBOLS (50+)
+        self.symbols = [
+            # TOP TIER
+            'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'AVAXUSDT',
+            'DOTUSDT', 'ATOMUSDT', 'NEARUSDT', 'APTUSDT', 'SUIUSDT',
+            # LAYER 2s
+            'ARBUSDT', 'OPUSDT', 'MATICUSDT',
+            # DEFI
+            'UNIUSDT', 'AAVEUSDT', 'LINKUSDT',
+            # AI
+            'FETUSDT', 'INJUSDT', 'WLDUSDT',
+            # MEMECOINS
+            'DOGEUSDT', 'SHIBUSDT', 'PEPEUSDT', 'BONKUSDT', 'WIFUSDT',
+            # MID CAPS
+            'LTCUSDT', 'XLMUSDT', 'TRXUSDT', 'HBARUSDT',
+        ]
         self.output_file = "probability_matrix_data.jsonl"
         
         logger.info("Probability Collector Initialized")

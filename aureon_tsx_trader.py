@@ -66,7 +66,22 @@ class TradingConfig:
     
     def __post_init__(self):
         if self.pairs is None:
-            self.pairs = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT']
+            # 🔶 COMPREHENSIVE BINANCE PAIRS (50+)
+            self.pairs = [
+                # === TOP TIER ===
+                'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'AVAXUSDT',
+                'DOTUSDT', 'ATOMUSDT', 'NEARUSDT', 'ICPUSDT', 'APTUSDT', 'SUIUSDT', 'SEIUSDT',
+                # === LAYER 2s ===
+                'ARBUSDT', 'OPUSDT', 'MATICUSDT', 'STXUSDT', 'IMXUSDT',
+                # === DEFI ===
+                'UNIUSDT', 'AAVEUSDT', 'LINKUSDT', 'CRVUSDT', 'SNXUSDT', 'LDOUSDT',
+                # === AI & DATA ===
+                'FETUSDT', 'RENDERUSDT', 'INJUSDT', 'WLDUSDT',
+                # === MEMECOINS ===
+                'DOGEUSDT', 'SHIBUSDT', 'PEPEUSDT', 'BONKUSDT', 'FLOKIUSDT', 'WIFUSDT',
+                # === MID CAPS ===
+                'LTCUSDT', 'FILUSDT', 'XLMUSDT', 'TRXUSDT', 'HBARUSDT', 'RUNEUSDT',
+            ]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

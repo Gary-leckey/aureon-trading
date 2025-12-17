@@ -11,7 +11,19 @@ import { Bell, BellOff, Trash2, Plus, TrendingUp, TrendingDown } from 'lucide-re
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import type { WatchlistSymbol } from '@/hooks/useMultiSymbolWatchlist';
 
-const AVAILABLE_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'DOGEUSDT'];
+const AVAILABLE_SYMBOLS = [
+  // TOP TIER
+  'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'AVAXUSDT',
+  'DOTUSDT', 'ATOMUSDT', 'NEARUSDT', 'APTUSDT', 'SUIUSDT',
+  // LAYER 2s
+  'ARBUSDT', 'OPUSDT', 'MATICUSDT',
+  // DEFI
+  'UNIUSDT', 'AAVEUSDT', 'LINKUSDT',
+  // AI
+  'FETUSDT', 'INJUSDT', 'WLDUSDT',
+  // MEMECOINS
+  'DOGEUSDT', 'SHIBUSDT', 'PEPEUSDT', 'BONKUSDT', 'WIFUSDT',
+];
 
 type PriceAlertsProps = {
   symbolData: Map<string, WatchlistSymbol>;

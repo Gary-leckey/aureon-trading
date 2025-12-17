@@ -2,7 +2,13 @@ import { useBinanceWebSocket } from '@/hooks/useBinanceWebSocket';
 import { cn } from '@/lib/utils';
 import { TrendingUp, TrendingDown, Wifi, WifiOff } from 'lucide-react';
 
-const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT'];
+const SYMBOLS = [
+  'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'AVAXUSDT',
+  'DOTUSDT', 'NEARUSDT', 'APTUSDT', 'SUIUSDT',
+  'ARBUSDT', 'OPUSDT', 'MATICUSDT',
+  'UNIUSDT', 'LINKUSDT',
+  'DOGEUSDT', 'SHIBUSDT', 'PEPEUSDT', 'BONKUSDT',
+];
 
 export const LivePriceTicker = () => {
   const { marketData, connected } = useBinanceWebSocket(SYMBOLS);
