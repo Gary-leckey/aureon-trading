@@ -4612,10 +4612,10 @@ class QuantumBrainState:
     ecosystem_sync: float = 0.5           # How synchronized all systems are
     
     # ═══════════════════════════════════════════════════════════════
-    # 🧠🌍 MINER BRAIN (7 CIVILIZATIONS) FIELDS (v5)
+    # 🧠🌍 MINER BRAIN (11 CIVILIZATIONS) FIELDS (v5.5)
     # ═══════════════════════════════════════════════════════════════
     
-    # 7 Civilizations Wisdom State
+    # 11 Civilizations Wisdom State
     miner_brain_consensus: str = "NEUTRAL"     # BULLISH/BEARISH/NEUTRAL
     miner_brain_action: str = "HOLD"           # ACCUMULATE/HOLD/REDUCE
     miner_brain_confidence: float = 0.5        # 0-1 confidence
@@ -7817,7 +7817,11 @@ class AureonMiner:
         
         try:
             self._miner_brain = MinerBrain()
-            logger.info("🧠 Miner Brain v5.4: LOADED")
+            logger.info("🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠")
+            logger.info("   AUREON MINER BRAIN v5.5 - SANDBOX EVOLVED INTELLIGENCE")
+            logger.info("   11 Civilizations + 5000 Years + 454 Generations = Universal Truth")
+            logger.info("   \"Your feet are for dancing, your brain is for cutting out the BS!\"")
+            logger.info("🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠")
             logger.info("   ⚔️ Strategic Warfare (Sun Tzu + IRA)")
             logger.info("   ☘️ Celtic Wisdom (Druids, Moon, Frequencies)")
             logger.info("   🦅 Aztec Wisdom (Tonalpohualli, Teotl)")
@@ -7825,7 +7829,11 @@ class AureonMiner:
             logger.info("   👑 Plantagenet Wisdom (Medieval Strategy)")
             logger.info("   ☥ Egyptian Wisdom (Kemetic, Ma'at, Netjeru)")
             logger.info("   🔢 Pythagorean Wisdom (Musica Universalis)")
-            logger.info("   🌍 Unified Cognition Engine (7 Civilizations)")
+            logger.info("   ☯️ Chinese Wisdom (I Ching, Taoism)")
+            logger.info("   🕉️ Hindu Wisdom (Vedic, Chakras)")
+            logger.info("   🌀 Mayan Wisdom (Tzolkin, Long Count)")
+            logger.info("   ᚱ Norse Wisdom (Runes, Wyrd)")
+            logger.info("   🌍 Unified Cognition Engine (11 Civilizations)")
         except Exception as e:
             logger.error(f"🧠 Miner Brain failed to load: {e}")
             self._miner_brain = None
@@ -8049,7 +8057,7 @@ class AureonMiner:
         """
         Apply the brain's unified wisdom to influence mining behavior.
         
-        The 7 civilizations speak with one voice - we listen.
+        The 11 civilizations speak with one voice - we listen.
         """
         if not self._brain_consensus:
             return
@@ -8072,11 +8080,11 @@ class AureonMiner:
         # NEUTRAL = Balanced
         
         if consensus in ['BULLISH', 'POSITIVE', 'OPPORTUNITY']:
-            # 7 civilizations say accumulate - increase mining intensity multiplier
+            # 11 civilizations say accumulate - increase mining intensity multiplier
             intensity_mult = 1.0 + (confidence * 0.3)  # Up to 1.3x
             behavior = "AGGRESSIVE_ACCUMULATION"
         elif consensus in ['BEARISH', 'NEGATIVE', 'CAUTION']:
-            # 7 civilizations say caution - maintain but don't over-extend
+            # 11 civilizations say caution - maintain but don't over-extend
             intensity_mult = 1.0 - (confidence * 0.1)  # Down to 0.9x
             behavior = "CONSERVATIVE_HOLD"
         else:
@@ -8098,7 +8106,7 @@ class AureonMiner:
             # Extract individual civilization signals from wisdom
             if self._brain_wisdom:
                 civilizations = self._brain_wisdom.get('civilization_actions', {})
-                # Original 7 civilizations
+                # Original 7 civilizations (core foundation)
                 qbrain.state.celtic_signal = civilizations.get('Celtic', 'HOLD')
                 qbrain.state.aztec_signal = civilizations.get('Aztec', 'HOLD')
                 qbrain.state.mogollon_signal = civilizations.get('Mogollon', 'HOLD')
@@ -8270,7 +8278,7 @@ class AureonMiner:
                 # Display Platypus state (Song of the Sphaerae - Planetary Coherence)
                 logger.info(self.optimizer.platypus.format_display())
                 
-                # Display Miner Brain Wisdom State (7 Civilizations)
+                # Display Miner Brain Wisdom State (11 Civilizations)
                 self._display_brain_wisdom_state()
                 
                 # Display earnings from Binance Pool sessions
@@ -8340,7 +8348,7 @@ class AureonMiner:
               f"Λ={platypus_stats.get('Lambda', 0.5):.3f} | cascade={platypus_stats.get('cascade', 1.0):.2f}x | "
               f"{lighthouse_icon} {ephemeris_icon} ║")
         
-        # Show Miner Brain Wisdom State (7 Civilizations)
+        # Show Miner Brain Wisdom State (11 Civilizations)
         if self._miner_brain:
             print("╠═══════════════ MINER BRAIN WISDOM ════════════════════════╣")
             consensus = self._brain_consensus or 'UNKNOWN'
@@ -8357,7 +8365,8 @@ class AureonMiner:
                 c_icon = "⚖️"
             
             # Get total civilizations count (7 original + 4 extended = 11)
-            total_civs = wisdom.get('total_civilizations', 7)
+            wisdom = self._brain_wisdom or {}
+            total_civs = wisdom.get('total_civilizations', 11)
             print(f"║ {total_civs} Civilizations: {c_icon} {consensus:<12} | Conf: {confidence:.0%}      ║")
             print(f"║ Mode: {behavior:<22} | Mult: {intensity:.2f}x          ║")
             print(f"║ ☘️Celtic ⚔️Warfare 🦅Aztec 🏺Mogollon 👑Plantagenet ☥Egyptian 🔢Pythagorean ║")
