@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { globalSystemsManager } from '@/core/globalSystemsManager';
 
 export interface MarketData {
   symbol: string;
@@ -13,6 +14,7 @@ export interface MarketData {
 export const useBinanceWebSocket = (symbols: string[] = ['BTCUSDT', 'ETHUSDT']) => {
   const [marketData, setMarketData] = useState<Record<string, MarketData>>({});
   const [connected, setConnected] = useState(false);
+  const messageCountRef = useRef(0);
 
   useEffect(() => {
     // Public WebSocket - no credentials required for market data
@@ -22,6 +24,8 @@ export const useBinanceWebSocket = (symbols: string[] = ['BTCUSDT', 'ETHUSDT']) 
     ws.onopen = () => {
       console.log('🌈 Connected to Binance WebSocket');
       setConnected(true);
+      // Update global state
+      globalSystemsManager['updateState']?.({ wsConnected: true });
     };
 
     ws.onmessage = (event) => {
@@ -29,6 +33,15 @@ export const useBinanceWebSocket = (symbols: string[] = ['BTCUSDT', 'ETHUSDT']) 
         const message = JSON.parse(event.data);
         if (message.data) {
           const ticker = message.data;
+          messageCountRef.current += 1;
+          
+          // Update global state with WS message count periodically
+          if (messageCountRef.current % 10 === 0) {
+            globalSystemsManager['updateState']?.({ 
+              wsMessageCount: messageCountRef.current 
+            });
+          }
+          
           setMarketData(prev => ({
             ...prev,
             [ticker.s]: {
@@ -50,11 +63,13 @@ export const useBinanceWebSocket = (symbols: string[] = ['BTCUSDT', 'ETHUSDT']) 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
       setConnected(false);
+      globalSystemsManager['updateState']?.({ wsConnected: false });
     };
 
     ws.onclose = () => {
       console.log('WebSocket closed');
       setConnected(false);
+      globalSystemsManager['updateState']?.({ wsConnected: false });
     };
 
     return () => {
@@ -62,5 +77,5 @@ export const useBinanceWebSocket = (symbols: string[] = ['BTCUSDT', 'ETHUSDT']) 
     };
   }, [symbols.join(',')]);
 
-  return { marketData, connected };
+  return { marketData, connected, messageCount: messageCountRef.current };
 };

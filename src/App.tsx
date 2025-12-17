@@ -12,11 +12,12 @@ import { MarketMetricsPanel } from "@/components/MarketMetricsPanel";
 import { PortfolioSummaryPanel } from "@/components/PortfolioSummaryPanel";
 import { ActiveTradePositions } from "@/components/ActiveTradePositions";
 import { LivePnLTable } from "@/components/LivePnLTable";
+import { LiveTerminalStats } from "@/components/LiveTerminalStats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Brain, TrendingUp, TrendingDown, Sparkles } from "lucide-react";
+import { RefreshCw, Brain, TrendingUp, TrendingDown, Sparkles, Terminal } from "lucide-react";
 import { format } from "date-fns";
 import type { User } from "@supabase/supabase-js";
 
@@ -305,8 +306,13 @@ function TradeFeed() {
             )}
           </div>
 
-          {/* Active Positions (real Binance/Kraken spot balances) */}
-          <ActiveTradePositions />
+          {/* Terminal Stats Mirror - Live system metrics */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <LiveTerminalStats />
+            
+            {/* Active Positions (real Binance/Kraken spot balances) */}
+            <ActiveTradePositions />
+          </div>
 
           {/* Live P&L Tracker - shows open positions with live profit/loss */}
           <LivePnLTable />
