@@ -660,15 +660,29 @@ class UnifiedExchangeClient:
             try:
                 # Normalize to Kraken altname (no slash, upper)
                 alt = symbol.replace('/', '').upper()
+                
+                # 🔧 BTC→XBT normalization for Kraken (they use XBT not BTC!)
+                if alt.startswith('BTC'):
+                    alt_xbt = 'XBT' + alt[3:]
+                else:
+                    alt_xbt = alt
+                    
                 # Kraken expects the internal pair name (e.g. XXBTZUSD). Map altname -> internal.
                 self.client._load_asset_pairs()
-                pair = self.client._alt_to_int.get(alt, alt)
+                
+                # Try XBT version first if BTC was requested
+                pair = self.client._alt_to_int.get(alt_xbt) or self.client._alt_to_int.get(alt, alt)
+                ticker_symbol = alt_xbt if alt_xbt in self.client._alt_to_int else alt
 
                 # Use KrakenClient ticker helper so mapping/format stays consistent
-                result = self.client._ticker([alt])
+                result = self.client._ticker([ticker_symbol])
                 if not result:
-                    logger.error(f"Kraken ticker empty result for {alt} (pair {pair})")
-                    return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+                    # Fallback: try original if XBT didn't work
+                    if ticker_symbol != alt:
+                        result = self.client._ticker([alt])
+                    if not result:
+                        logger.error(f"Kraken ticker empty result for {alt} (tried {ticker_symbol}, pair {pair})")
+                        return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
 
                 key, data = next(iter(result.items()))
                 try:

@@ -453,7 +453,14 @@ class KrakenClient:
         
         # Resolve pair and get pair info for validation
         pairs = self._load_asset_pairs()
-        pair = self._alt_to_int.get(symbol, symbol)
+        
+        # 🔧 BTC→XBT normalization for Kraken (they use XBT not BTC!)
+        sym_upper = symbol.upper()
+        if sym_upper.startswith('BTC'):
+            xbt_symbol = 'XBT' + sym_upper[3:]
+            pair = self._alt_to_int.get(xbt_symbol) or self._alt_to_int.get(sym_upper, sym_upper)
+        else:
+            pair = self._alt_to_int.get(sym_upper, sym_upper)
         
         # Get pair info for ordermin and lot_decimals
         pair_info = pairs.get(pair, {})
