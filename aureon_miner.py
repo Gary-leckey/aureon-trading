@@ -6367,6 +6367,107 @@ class QuantumProcessingBrain:
             'weights': dict(self.weights),
         })
 
+    def run_cycle(self, quantum_context: dict = None) -> dict:
+        """
+        Execute a quantum processing cycle compatible with MinerBrain interface.
+        
+        This method provides compatibility with the EcosystemBrainBridge which
+        expects a brain.run_cycle() method. Wraps the quantum brain's compute
+        methods and returns a standardized result dict.
+        
+        Args:
+            quantum_context: Optional dict with ecosystem context data
+            
+        Returns:
+            dict compatible with MinerBrain.run_cycle() output
+        """
+        # Merge incoming context with ecosystem data
+        if quantum_context:
+            self.compute_with_ecosystem(
+                trading_coherence=quantum_context.get('trading_coherence', 0.5),
+                market_frequency=quantum_context.get('market_frequency', 1.0),
+                hnc_probability=quantum_context.get('hnc_probability', 0.5),
+                bridge_capital=quantum_context.get('bridge_capital', 10000),
+                bridge_win_rate=quantum_context.get('bridge_win_rate', 0.5),
+                active_positions=quantum_context.get('active_positions', 0),
+                auris_coherence=quantum_context.get('auris_coherence', 0.5),
+            )
+        
+        # Run the multidimensional compute cycle
+        self.compute_multidimensional()
+        
+        # Determine action based on quantum state
+        if self.state.is_optimal_window and self.state.unified_coherence > 0.7:
+            action = "BUY"
+            confidence = 70 + (self.state.unified_coherence - 0.7) * 100
+        elif self.state.unified_coherence < 0.3:
+            action = "SELL"
+            confidence = 70 + (0.3 - self.state.unified_coherence) * 100
+        else:
+            action = "HOLD"
+            confidence = 50 + abs(0.5 - self.state.unified_coherence) * 40
+        
+        confidence = min(95, max(5, confidence))
+        
+        # Map to harmonic signal
+        harmonic_signal = self.state.harmonic_signal if hasattr(self.state, 'harmonic_signal') else action
+        
+        # Build result compatible with MinerBrain output
+        result = {
+            "talk": f"Quantum Brain Ψ={self.state.unified_coherence:.3f} cascade={self.state.cascade_multiplier:.2f}x",
+            "consensus": action,
+            "unified_consensus": "BULLISH" if action == "BUY" else ("BEARISH" if action == "SELL" else "NEUTRAL"),
+            "unified_action": action,
+            "unified_confidence": confidence,
+            "manipulation_probability": max(0, 1.0 - self.state.unified_coherence),
+            "speculations": [f"Quantum coherence at {self.state.unified_coherence:.1%}"],
+            "reflection": {"blind_spots": []},
+            "accuracy": {"overall_accuracy": self.state.unified_coherence},
+            "prediction": {
+                "predicted_direction": action,
+                "confidence": confidence,
+                "quantum_coherence": self.state.unified_coherence,
+                "cascade_multiplier": self.state.cascade_multiplier,
+            },
+            "dreams": {"scenarios_dreamed": []},
+            "live_pulse": {
+                "pulse": "BULLISH" if self.state.unified_coherence > 0.6 else ("BEARISH" if self.state.unified_coherence < 0.4 else "NEUTRAL"),
+                "btc_price": 0,  # Not available in quantum brain
+            },
+            "unified_reading": {
+                "consensus": {
+                    "sentiment": "BULLISH" if action == "BUY" else ("BEARISH" if action == "SELL" else "NEUTRAL"),
+                    "action": action,
+                    "confidence": confidence,
+                }
+            },
+            "civilization_actions": {},
+            "quantum_context_received": quantum_context is not None,
+            # Quantum-specific fields
+            "quantum_state": {
+                "unified_coherence": self.state.unified_coherence,
+                "cascade_multiplier": self.state.cascade_multiplier,
+                "multiverse_cascade": self.state.multiverse_cascade,
+                "is_optimal_window": self.state.is_optimal_window,
+                "strategy": self.state.search_strategy,
+                "piano_lambda": getattr(self.state, 'piano_lambda', 1.0),
+                "rainbow_state": getattr(self.state, 'rainbow_state', 'RESONANCE'),
+            },
+            "sandbox_evolution": {
+                "generation": 0,
+                "best_win_rate": 50.0,
+                "should_trade": self.state.is_optimal_window and self.state.unified_coherence > 0.6,
+                "entry_filter_reason": "Quantum coherence filter",
+                "evolved_params": {},
+                "exit_targets": None,
+                "position_size_pct": 10,
+            }
+        }
+        
+        logger.debug(f"🧠 QuantumBrain.run_cycle: Ψ={self.state.unified_coherence:.3f} → {action} @ {confidence:.0f}%")
+        
+        return result
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # STRATUM CLIENT
