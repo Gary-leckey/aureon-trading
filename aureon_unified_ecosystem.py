@@ -11877,28 +11877,81 @@ class AureonKrakenEcosystem:
                     fee = gross_value * fee_rate
                     net_value = gross_value - fee
                     
-                    # We don't have entry price, so we'll sell if value > $1 
-                    # (assumes any remaining assets are from profitable trades or dust)
-                    min_harvest_value = 1.0  # Only harvest if > $1 net
+                    # 🔒 PENNY PROFIT CHECK FOR HARVESTER 🔒
+                    # We need to check if we have position data to know entry price
+                    # If no position data, we DON'T harvest (can't prove profit)
                     
-                    if net_value >= min_harvest_value:
-                        print(f"   🌾 Found: {bal:.4f} {asset} = ${gross_value:.2f} (net: ${net_value:.2f})")
-                        
-                        # Universal lot size handling for ALL exchanges
-                        sell_qty, block_reason, adj_note = self._prepare_liquidation_quantity(
-                            exchange_name, symbol, bal, price
-                        )
-                        if sell_qty is None:
-                            print(f"   ⚠️ {symbol}: {block_reason}")
-                            continue
-                        if adj_note:
-                            print(f"   📐 {adj_note}")
-                        
-                        # Attempt to sell
-                        try:
-                            result = self.client.place_market_order(
-                                exchange_name, symbol, 'SELL', quantity=sell_qty
+                    # Check if we have this symbol tracked with entry price
+                    position_entry = None
+                    for pos_symbol, pos in self.positions.items():
+                        # Match the asset in the position symbol
+                        if base_asset in pos_symbol or asset in pos_symbol:
+                            position_entry = pos
+                            break
+                    
+                    # Also check elephant memory for historical entry data
+                    if not position_entry and hasattr(self, 'memory'):
+                        mem_data = self.memory.get_symbol_data(symbol) or self.memory.get_symbol_data(f"{base_asset}USDC") or self.memory.get_symbol_data(f"{base_asset}USD")
+                        if mem_data and mem_data.get('last_entry_price'):
+                            # Create a pseudo-position for calculation
+                            class PseudoPos:
+                                def __init__(self, entry_price, entry_value, entry_fee, exchange):
+                                    self.entry_price = entry_price
+                                    self.entry_value = entry_value
+                                    self.entry_fee = entry_value * get_platform_fee(exchange, 'taker')
+                                    self.exchange = exchange
+                            position_entry = PseudoPos(
+                                mem_data.get('last_entry_price', price),
+                                mem_data.get('last_entry_value', gross_value),
+                                gross_value * fee_rate,
+                                exchange_name
                             )
+                    
+                    # If we have position data, check for penny profit
+                    if position_entry:
+                        entry_value = getattr(position_entry, 'entry_value', gross_value)
+                        entry_fee = getattr(position_entry, 'entry_fee', 0)
+                        
+                        # Calculate true P&L
+                        exit_fee = gross_value * fee_rate
+                        slippage = gross_value * CONFIG.get('SLIPPAGE_PCT', 0.002)
+                        spread = gross_value * CONFIG.get('SPREAD_COST_PCT', 0.001)
+                        
+                        gross_pnl = gross_value - entry_value
+                        total_fees = entry_fee + exit_fee + slippage + spread
+                        net_pnl = gross_pnl - total_fees
+                        
+                        # 💰 Only harvest if NET PROFIT is positive (penny profit!)
+                        if net_pnl < 0.01:  # Need at least 1 cent net profit
+                            print(f"   ⚠️ {asset}: ${gross_value:.2f} but net P&L ${net_pnl:.2f} < $0.01 - HOLDING")
+                            break
+                        
+                        print(f"   🌾 Found: {bal:.4f} {asset} = ${gross_value:.2f} (net P&L: ${net_pnl:.2f} ✅)")
+                    else:
+                        # No position data - we can't prove profit, so don't harvest blindly
+                        # Only harvest if very small dust (< $2) that's not worth tracking
+                        if gross_value >= 2.0:
+                            print(f"   ⚠️ {asset}: ${gross_value:.2f} but NO entry data - HOLDING (can't prove profit)")
+                            break
+                        else:
+                            # Dust cleanup for tiny amounts
+                            print(f"   🧹 Dust: {bal:.4f} {asset} = ${gross_value:.2f} (cleaning up)")
+                    
+                    # Universal lot size handling for ALL exchanges
+                    sell_qty, block_reason, adj_note = self._prepare_liquidation_quantity(
+                        exchange_name, symbol, bal, price
+                    )
+                    if sell_qty is None:
+                        print(f"   ⚠️ {symbol}: {block_reason}")
+                        continue
+                    if adj_note:
+                        print(f"   📐 {adj_note}")
+                    
+                    # Attempt to sell
+                    try:
+                        result = self.client.place_market_order(
+                            exchange_name, symbol, 'SELL', quantity=sell_qty
+                        )
                             
                             if result and not result.get('rejected') and not result.get('error'):
                                 # Extract actual fill value
