@@ -9,6 +9,7 @@ import { AuthForm } from "@/components/AuthForm";
 import { SettingsDrawer } from "@/components/SettingsDrawer";
 import { LivePriceTicker } from "@/components/LivePriceTicker";
 import { MarketMetricsPanel } from "@/components/MarketMetricsPanel";
+import { PortfolioSummaryPanel } from "@/components/PortfolioSummaryPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -239,20 +240,39 @@ function TradeFeed() {
             <MarketMetricsPanel />
           </div>
 
-          {/* AI Commentary */}
-          {commentary && (
-            <Card className="border-primary/50 bg-primary/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="w-5 h-5 text-primary" />
-                  AI Commentary
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-foreground leading-relaxed">{commentary}</p>
-              </CardContent>
-            </Card>
-          )}
+          {/* Portfolio */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <PortfolioSummaryPanel />
+
+            {/* AI Commentary */}
+            {commentary ? (
+              <Card className="border-primary/50 bg-primary/5 md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="w-5 h-5 text-primary" />
+                    AI Commentary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-foreground leading-relaxed">{commentary}</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="w-5 h-5 text-primary" />
+                    AI Brain
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Click "Brain" to generate commentary on your most recent trades.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
           {/* Trade List */}
           <Card>
