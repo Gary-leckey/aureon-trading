@@ -28,6 +28,17 @@ except ImportError:
     _penny_engine = None
     print("⚠️ Penny Profit Engine not available")
 
+# 🧠 WISDOM COGNITION ENGINE - 11 Civilizations
+try:
+    from aureon_miner_brain import WisdomCognitionEngine
+    WISDOM_AVAILABLE = True
+    _wisdom_engine = WisdomCognitionEngine()
+    print("🧠 Wisdom Engine loaded - 11 civilizations ready")
+except ImportError:
+    WISDOM_AVAILABLE = False
+    _wisdom_engine = None
+    print("⚠️ Wisdom Engine not available")
+
 try:
     from dotenv import load_dotenv
     load_dotenv()

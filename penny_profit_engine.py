@@ -485,3 +485,69 @@ if __name__ == '__main__':
         should, reason = evolved.should_enter(coh, vol)
         emoji = "✅" if should else "❌"
         print(f"   {emoji} {desc}: {reason}")
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🧠 WISDOM GUIDANCE HELPER
+# ═══════════════════════════════════════════════════════════════
+
+_wisdom_engine = None
+
+def get_wisdom_guidance(fear_greed: int = 50, btc_price: float = 100000, btc_change: float = 0.0) -> Dict:
+    """
+    Get wisdom guidance from the 11 civilizations.
+    
+    This is a convenience function that all trading systems can call
+    to get the brain's consensus before making trades.
+    
+    Returns:
+        Dict with:
+        - consensus: 'BULLISH', 'BEARISH', or 'NEUTRAL'
+        - action: 'ACCUMULATE', 'HOLD', 'REDUCE', etc.
+        - confidence: 0-100%
+        - permission: True if OK to trade, False if brain says no
+        - message: Human-readable guidance
+    """
+    global _wisdom_engine
+    
+    try:
+        if _wisdom_engine is None:
+            from aureon_miner_brain import WisdomCognitionEngine
+            _wisdom_engine = WisdomCognitionEngine()
+        
+        reading = _wisdom_engine.get_unified_reading(fear_greed, btc_price, btc_change)
+        consensus = reading.get('consensus', {})
+        
+        sentiment = consensus.get('sentiment', 'NEUTRAL')
+        action = consensus.get('action', 'HOLD')
+        confidence = consensus.get('confidence', 50)
+        
+        # Determine if brain gives permission to trade
+        permission = True
+        if sentiment == 'BEARISH' and confidence > 70:
+            permission = False  # Strong bearish = don't buy
+        elif action in ['EXIT_NOW', 'REDUCE', 'CAUTION']:
+            permission = False
+        
+        return {
+            'consensus': sentiment,
+            'action': action,
+            'confidence': confidence,
+            'permission': permission,
+            'bullish_votes': consensus.get('bullish_votes', 0),
+            'bearish_votes': consensus.get('bearish_votes', 0),
+            'neutral_votes': consensus.get('neutral_votes', 0),
+            'message': f"🧠 {consensus.get('civilizations_consulted', 11)} civilizations: {sentiment} ({confidence}%) - {action}"
+        }
+    except Exception as e:
+        logger.warning(f"Wisdom guidance unavailable: {e}")
+        return {
+            'consensus': 'NEUTRAL',
+            'action': 'HOLD',
+            'confidence': 50,
+            'permission': True,  # Default to allow trading
+            'bullish_votes': 0,
+            'bearish_votes': 0,
+            'neutral_votes': 0,
+            'message': f"🧠 Wisdom unavailable: {e}"
+        }
