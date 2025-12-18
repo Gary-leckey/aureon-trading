@@ -313,6 +313,19 @@ except ImportError as e:
     BRIDGE_AVAILABLE = False
     print(f"⚠️  Aureon Bridge not available: {e}")
 
+# 🌐 AUREON UI BRIDGE - LIVE DATA VALIDATOR FROM aureoninstitute.com 🌐
+try:
+    from aureon_ui_bridge import (
+        AureonUIBridge, AureonUIValidator, UIMyceliumConnector,
+        get_ui_bridge, get_ui_connector, validate_trade_against_ui,
+        get_harmonic_field_status, get_fear_greed_status,
+        UIValidatedSignal, FrequencyBand, RiskLevel, Element
+    )
+    UI_BRIDGE_AVAILABLE = True
+except ImportError as e:
+    UI_BRIDGE_AVAILABLE = False
+    print(f"⚠️  UI Bridge not available: {e}")
+
 # 🌌⚡ HNC IMPERIAL PREDICTABILITY ENGINE ⚡🌌
 try:
     from hnc_imperial_predictability import (
@@ -8720,6 +8733,62 @@ class AurisEngine:
         
         return True, "All gates OPEN"
     
+    def should_trade_ui_validated(self, symbol: str, exchange: str, action: str, confidence: float = 0.7) -> Tuple[bool, str, float]:
+        """
+        🌐 UI BRIDGE VALIDATION - Cross-reference with aureoninstitute.com data
+        
+        Validates a trade against:
+        - Harmonic frequency alignment (432Hz optimal, 440Hz blocked)
+        - Global coherence (Γ >= 0.30)
+        - Fear & Greed index (blocks extreme greed buys)
+        - Risk level (blocks high-risk new entries)
+        
+        Returns (should_trade, reason, adjusted_confidence)
+        """
+        if not self.ui_bridge_enabled or not self.ui_bridge:
+            return True, "UI Bridge not enabled - trade allowed", confidence
+        
+        try:
+            # Run async validation in sync context
+            import asyncio
+            
+            # Use existing loop if available, else create new
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            # Validate against UI data
+            result = loop.run_until_complete(
+                self.ui_bridge.validate_and_enhance_signal(
+                    symbol=symbol,
+                    exchange=exchange,
+                    action=action,
+                    confidence=confidence
+                )
+            )
+            
+            validated_action = result.get('validated_action', action)
+            validated_confidence = result.get('validated_confidence', confidence)
+            reason = result.get('ui_validation', {}).get('reason', 'Unknown')
+            
+            # Log the UI validation
+            harmonic = result.get('harmonic_data', {})
+            freq_hz = harmonic.get('frequency_hz', 432)
+            band = harmonic.get('frequency_band', 'HARMONY')
+            
+            if validated_action == 'HOLD' and action != 'HOLD':
+                logger.info(f"🌐 UI BLOCKED {action} {symbol} - {reason} [{freq_hz}Hz {band}]")
+                return False, reason, validated_confidence
+            
+            logger.debug(f"🌐 UI VALIDATED {action} {symbol} @ {validated_confidence:.0%} [{freq_hz}Hz {band}]")
+            return True, reason, validated_confidence
+            
+        except Exception as e:
+            logger.warning(f"⚠️ UI validation error: {e} - allowing trade")
+            return True, f"UI validation error ({e})", confidence
+    
     def get_system_health_report(self) -> Dict[str, Any]:
         """
         🏥 COMPREHENSIVE SYSTEM HEALTH CHECK 🏥
@@ -10147,6 +10216,19 @@ class AureonKrakenEcosystem:
                 self.bridge_enabled = False
         self.last_bridge_sync = 0.0
         self.bridge_sync_interval = 10.0  # Sync every 10 seconds
+        
+        # 🌐 UI BRIDGE - Live Data Validation from aureoninstitute.com 🌐
+        self.ui_bridge = None
+        self.ui_bridge_enabled = UI_BRIDGE_AVAILABLE if 'UI_BRIDGE_AVAILABLE' in dir() else False
+        self.ui_mycelium_connector = None
+        if self.ui_bridge_enabled and os.getenv('ENABLE_UI_BRIDGE', '1') == '1':
+            try:
+                self.ui_bridge = get_ui_bridge()
+                self.ui_mycelium_connector = get_ui_connector()
+                print("   🌐 UI Bridge enabled: aureoninstitute.com ↔ Trading System active")
+            except Exception as e:
+                print(f"   ⚠️ UI Bridge initialization failed: {e}")
+                self.ui_bridge_enabled = False
         
         # 🚀 ENHANCED TRADING COMPONENTS 🚀
         self.smart_router = SmartOrderRouter(self.client)

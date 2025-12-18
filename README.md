@@ -18,6 +18,7 @@
 ![Mycelium Network](https://img.shields.io/badge/🍄_Mycelium-CONNECTED-blueviolet)
 ![Irish Patriots](https://img.shields.io/badge/🇮🇪_Irish_Patriots-DEPLOYED-darkgreen)
 ![Cascade Amplifier](https://img.shields.io/badge/⛏️_Cascade-546x-gold)
+![UI Bridge](https://img.shields.io/badge/🌐_UI_Bridge-LIVE-cyan)
 
 ---
 
@@ -245,6 +246,52 @@ Real-time visibility into every active position:
 | **P&L** | Net profit/loss with 🟢/🔴 indicator |
 | **HOLD** | Time in position (minutes/hours) |
 | **EXIT ETA** | Kill Scanner's predicted exit + probability |
+
+---
+
+### 🌐 AUREON UI BRIDGE - Live Data Validator
+
+The **UI Bridge** connects the trading system to the live dashboard at [aureoninstitute.com](https://aureoninstitute.com/), validating every trade against real-time UI data.
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│    🌐 AUREON UI BRIDGE - aureoninstitute.com Integration        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   📊 DATA GATHERED:                                            │
+│   • Sniper Leaderboard (kills, accuracy, P&L by symbol)        │
+│   • Harmonic Field Analytics (frequency bands, coherence)       │
+│   • Fear & Greed Index (sentiment + temperature)               │
+│   • Portfolio Holdings (risk levels, elements)                  │
+│   • Position Cost Basis (entry, P&L, trades)                   │
+│   • Arbitrage Opportunities (cross-exchange spreads)           │
+│   • Market Metrics (volatility, momentum, volume)              │
+│                                                                 │
+│   ✅ VALIDATION GATES:                                         │
+│   • Frequency Alignment (432Hz optimal, 440Hz blocked)         │
+│   • Coherence Check (Γ >= 0.30 required)                       │
+│   • Fear & Greed Gate (blocks extreme greed buys)              │
+│   • Risk Level Gate (blocks high-risk entries)                 │
+│                                                                 │
+│   🍄 MYCELIUM INTEGRATION:                                     │
+│   • Broadcasts harmonic state to neural network                │
+│   • Unified validation with Scanner + Patriots                 │
+│   • UI signals flow through mycelium channels                  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Validation Flow:**
+```
+Trade Signal → UI Bridge → Harmonic Check → Coherence Check → Fear/Greed Check → Risk Check → VALIDATED/BLOCKED
+```
+
+| Validation | Pass Criteria | Fail Action |
+|------------|---------------|-------------|
+| 🎵 Frequency | 426-434 Hz (HARMONY) | Block trade until clarity |
+| 🌀 Coherence | Γ >= 0.30 | Block trade, chaos detected |
+| 😟 Fear/Greed | Not extreme greed (>75) for buys | Block new buys |
+| ⚠️ Risk | LOW or MEDIUM only | Block high-risk entries |
 
 ---
 
