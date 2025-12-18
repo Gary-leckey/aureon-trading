@@ -111,6 +111,56 @@ def get_sniper_config() -> Dict[str, Any]:
     return config
 
 
+def map_sniper_platform_assets(multi_client: Any) -> Dict[str, Any]:
+    """
+    Build a per-platform coverage map for IRA sniper mode.
+    
+    Args:
+        multi_client: MultiExchangeClient-like object with .clients mapping.
+    
+    Returns:
+        {
+            'sniper_active': bool,
+            'platforms': {
+                'kraken': {'sellable_assets': [...], 'asset_count': int, 'active': bool},
+                ...
+            }
+        }
+    """
+    config = get_sniper_config()
+    platforms: Dict[str, Dict[str, Any]] = {}
+    clients = getattr(multi_client, 'clients', {}) or {}
+    
+    for name, client in clients.items():
+        sellable_assets = []
+        balances = {}
+        try:
+            balances = client.get_all_balances()
+        except Exception:
+            balances = {}
+        
+        for asset, amount in (balances or {}).items():
+            try:
+                if float(amount) > 0:
+                    sellable_assets.append(asset)
+            except Exception:
+                continue
+        
+        unique_assets = sorted(set(sellable_assets))
+        platforms[name] = {
+            'active': bool(config.get('ACTIVE', True)),
+            'sellable_assets': unique_assets,
+            'asset_count': len(unique_assets),
+        }
+    
+    return {
+        'sniper_active': bool(config.get('ACTIVE', True)),
+        'platforms': platforms,
+        'position_size_usd': config.get('POSITION_SIZE_USD'),
+        'max_positions': config.get('MAX_POSITIONS'),
+    }
+
+
 # =============================================================================
 # APPLY SNIPER MODE TO EXISTING CONFIG
 # =============================================================================
