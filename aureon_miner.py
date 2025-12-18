@@ -8308,10 +8308,6 @@ class AureonMiner:
                                 f"Today {earnings['today']:.8f} | "
                                 f"Wallet {earnings['wallet']:.8f} {coin}"
                             )
-                        logger.info(
-                            f"💰 SESSION: +{profit['btc_earned']:.8f} BTC (${profit['usd_value']:.2f}) | "
-                            f"Wallet: {profit['current_balance']:.8f} BTC"
-                        )
 
     def _print_final_stats(self):
         print("\n╔════════════════════ FINAL MINING STATS ════════════════════╗")
