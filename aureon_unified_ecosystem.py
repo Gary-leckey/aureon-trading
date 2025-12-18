@@ -15074,15 +15074,15 @@ class AureonKrakenEcosystem:
             if penny_threshold:
                 # 💰 PENNY PROFIT MODE - Use dollar thresholds
                 if penny_check['should_tp']:
-                    # Hit penny profit target!
+                    # 🇮🇪 SNIPER KILL! Hit penny profit - INSTANT EXIT
                     to_close.append((symbol, "TP", change_pct, current_price))
                 elif penny_check['should_sl']:
-                    # Hit penny stop loss - BUT ONLY after minimum hold time!
-                    # 🔧 FIX: Give positions time to recover before cutting
-                    if pos.cycles >= 5:  # Hold at least 5 cycles (~5 mins) before stop loss
+                    # 🛡️ STOP LOSS - Quick exit to protect capital
+                    # 🇮🇪 SNIPER MODE: Only 1 cycle minimum (was 5)
+                    if pos.cycles >= 1:  # Sniper mode: fast stops
                         to_close.append((symbol, "SL", change_pct, current_price))
                     else:
-                        logger.debug(f"Holding {symbol} SL - only {pos.cycles}/5 cycles")
+                        logger.debug(f"Holding {symbol} SL - cycle {pos.cycles}/1")
                 elif gross_pnl > 0:
                     # 💰 PENNY PROFIT OVERRIDE: Ignore min_hold if we have profit!
                     # Check if we're at penny harvest level
@@ -15101,8 +15101,9 @@ class AureonKrakenEcosystem:
                 if penny_threshold:
                     # Use computed penny thresholds even as fallback
                     if penny_check_retry['should_tp']:
+                        # 🇮🇪 SNIPER KILL!
                         to_close.append((symbol, "TP", change_pct, current_price))
-                    elif penny_check_retry['should_sl'] and pos.cycles >= 5:  # Hold at least 5 cycles before stop
+                    elif penny_check_retry['should_sl'] and pos.cycles >= 1:  # 🇮🇪 SNIPER: fast stops
                         to_close.append((symbol, "SL", change_pct, current_price))
                 else:
                     # Last resort: only TP at +1.8%, NEVER stop out early

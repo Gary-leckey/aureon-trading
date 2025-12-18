@@ -610,30 +610,29 @@ class AureonBTCv2:
             should_exit = False
             reason = ""
             
-            # 🪙 PENNY PROFIT EXIT LOGIC
+            # 🪙 PENNY PROFIT EXIT LOGIC - INSTANT SNIPER KILLS
             if PENNY_PROFIT_AVAILABLE and _penny_engine is not None and entry_value > 0:
                 action, _ = check_penny_exit('binance', entry_value, current_value)
                 threshold = _penny_engine.get_threshold('binance', entry_value)
                 
+                # 🇮🇪 SNIPER MODE: INSTANT exit on penny profit - NO WAITING
                 if action == 'TAKE_PROFIT':
                     should_exit = True
-                    reason = f"🪙 PENNY TP (${gross_pnl:.4f} >= ${threshold.win_gte:.4f})"
-                elif action == 'STOP_LOSS' and pos['cycles'] >= 5:
+                    reason = f"🇮🇪 SNIPER KILL! ${gross_pnl:.4f} >= ${threshold.win_gte:.4f}"
+                elif action == 'STOP_LOSS' and pos['cycles'] >= 1:  # Only need 1 cycle for stop
                     should_exit = True
-                    reason = f"🪙 PENNY SL (${gross_pnl:.4f} <= ${threshold.stop_lte:.4f})"
+                    reason = f"🛡️ STOP LOSS (${gross_pnl:.4f} <= ${threshold.stop_lte:.4f})"
             else:
-                # Fallback to percentage exits
+                # Fallback to percentage exits - SNIPER STYLE
                 if pnl_pct >= CONFIG['TAKE_PROFIT_PCT']:
                     should_exit = True
-                    reason = f"💰 TAKE PROFIT"
-                elif pnl_pct <= -CONFIG['STOP_LOSS_PCT'] and pos['cycles'] >= 5:
+                    reason = f"🇮🇪 SNIPER KILL! +{pnl_pct*100:.2f}%"
+                elif pnl_pct <= -CONFIG['STOP_LOSS_PCT'] and pos['cycles'] >= 1:
                     should_exit = True
-                    reason = f"🛑 STOP LOSS"
+                    reason = f"🛡️ STOP LOSS"
             
-            # Stagnation check (keep this)
-            if not should_exit and time.time() - pos['entry_time'] > 3600:
-                should_exit = True
-                reason = f"⏰ STAGNATION"
+            # NO STAGNATION - Sniper doesn't wait around
+            # We hunt fresh targets, not stale positions
             
             if should_exit:
                 qty_str = self.lot_mgr.format_qty(symbol, pos['qty'])
