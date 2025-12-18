@@ -328,7 +328,8 @@ class UnifiedExchangeClient:
                 # For now, let's try direct access and some common mappings.
                 
                 # Map common assets to Kraken internal names if not found
-                mappings = {'BTC': 'XXBT', 'ETH': 'XETH', 'USD': 'ZUSD', 'GBP': 'ZGBP', 'EUR': 'ZEUR'}
+                # Kraken uses XXBT for BTC, XXDG for DOGE, XETH for ETH, ZUSD for USD, etc.
+                mappings = {'BTC': 'XXBT', 'DOGE': 'XXDG', 'ETH': 'XETH', 'USD': 'ZUSD', 'GBP': 'ZGBP', 'EUR': 'ZEUR'}
                 search_keys = [asset, mappings.get(asset, asset)]
                 
                 for key in search_keys:
@@ -661,23 +662,25 @@ class UnifiedExchangeClient:
                 # Normalize to Kraken altname (no slash, upper)
                 alt = symbol.replace('/', '').upper()
                 
-                # 🔧 BTC→XBT normalization for Kraken (they use XBT not BTC!)
+                # 🔧 Kraken ticker normalization - they use weird names!
+                # BTC→XBT, DOGE→XDG (Kraken's internal naming convention)
+                kraken_alt = alt
                 if alt.startswith('BTC'):
-                    alt_xbt = 'XBT' + alt[3:]
-                else:
-                    alt_xbt = alt
+                    kraken_alt = 'XBT' + alt[3:]
+                elif alt.startswith('DOGE'):
+                    kraken_alt = 'XDG' + alt[4:]  # DOGEUSDC → XDGUSDC
                     
                 # Kraken expects the internal pair name (e.g. XXBTZUSD). Map altname -> internal.
                 self.client._load_asset_pairs()
                 
-                # Try XBT version first if BTC was requested
-                pair = self.client._alt_to_int.get(alt_xbt) or self.client._alt_to_int.get(alt, alt)
-                ticker_symbol = alt_xbt if alt_xbt in self.client._alt_to_int else alt
+                # Try Kraken-mapped version first (XBT for BTC, XDG for DOGE)
+                pair = self.client._alt_to_int.get(kraken_alt) or self.client._alt_to_int.get(alt, alt)
+                ticker_symbol = kraken_alt if kraken_alt in self.client._alt_to_int else alt
 
                 # Use KrakenClient ticker helper so mapping/format stays consistent
                 result = self.client._ticker([ticker_symbol])
                 if not result:
-                    # Fallback: try original if XBT didn't work
+                    # Fallback: try original if mapped version didn't work
                     if ticker_symbol != alt:
                         result = self.client._ticker([alt])
                     if not result:
