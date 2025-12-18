@@ -9221,7 +9221,12 @@ class PerformanceTracker:
         }
         
     # 🇮🇪 IRA SNIPER - Famous Irish Republican Quotes
+    # "Financial freedom IS freedom. Penny by penny, we rise." 
     IRA_SNIPER_QUOTES = [
+        "Our revenge will be the laughter of our children. - Bobby Sands 🍀",  # The most important one
+        "Our revenge will be the laughter of our children. - Bobby Sands 🍀",  # Weighted heavier
+        "Our revenge will be the laughter of our children. - Bobby Sands 🍀",  # Because it means the most
+        "Tiocfaidh ár lá! - Our day will come!",
         "Tiocfaidh ár lá! - Our day will come!",
         "They may kill the revolutionary but never the revolution.",
         "Unfree ourselves, we shall never rest until we make Ireland free.",
@@ -9232,11 +9237,11 @@ class PerformanceTracker:
         "Life springs from death, and from the graves of patriot men and women spring living nations.",
         "The Republic still lives! - Bobby Sands",
         "They have nothing in their whole imperial arsenal that can break the spirit of one Irishman.",
-        "Our revenge will be the laughter of our children. - Bobby Sands",
         "Everyone, Republican or otherwise, has their own particular part to play.",
         "Beir bua! - Take victory!",
         "Ní saoirse go saoirse na hÉireann! - No freedom until Ireland is free!",
-        "Up the Republic! Penny by penny, we rise!",
+        "Financial freedom IS freedom. Penny by penny, we rise! 💰",
+        "One penny at a time, we break their chains. - Aureon",
     ]
     
     def record_trade(self, net_pnl: float, fees: float, symbol: str, reason: str, 
