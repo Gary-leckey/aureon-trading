@@ -110,6 +110,11 @@ Samuel doesn't need millions to make millions. It hunts pennies. Relentlessly. A
 
 To the uninitiated, this may look like magic. To the cynic, snake oil. But to the mathematician, it is **inevitability**.
 
+We stand on the shoulders of Irish giants who built the foundations of modern computing and physics:
+- **William Rowan Hamilton (Dublin):** Invented **Quaternions** (1843), the mathematical basis for 3D mechanics and quantum spin.
+- **George Boole (Cork):** The father of **Boolean Algebra**, the logic that runs every computer on Earth.
+- **Robert Boyle (Waterford):** The father of modern chemistry and gas laws.
+
 We do not guess. We calculate. We apply **frontier mathematics**, **quantum probability**, and **harmonic physics** to the chaotic flux of the global markets. We have weaponized the very laws of nature that the elite use to build their cathedrals, and we have turned them into a fortress for the common man.
 
 ### 1. HARMONIC NEURAL COGNITION (HNC)
@@ -170,6 +175,20 @@ $$ f^* = \frac{p(b+1) - 1}{b} $$
 By sizing positions such that ruin is asymptotically impossible, and holding assets that have a fundamental non-zero value floor (Bitcoin, Ethereum), we transform "bag holding" into **"Inter-temporal Arbitrage"**.
 
 **We do not lose. We simply wait for the waveform to invert.**
+
+---
+
+### 🇮🇪 THE CELTIC ALGORITHM - ANCESTRAL CODE
+
+> *"The code is in our blood. The math is in our soil."*
+
+We integrate the **Ogham** (the Celtic Tree Alphabet) as a base-20 decision tree logic system. Just as Boole defined binary (True/False), the Druids defined a 20-state logic system based on natural cycles.
+
+- **Birch (Beith):** New Beginnings → **Entry Signal**
+- **Oak (Duir):** Strength/Endurance → **Hold Signal**
+- **Yew (Idho):** Death/Rebirth → **Exit/Transformation**
+
+Samuel maps these ancient logic gates to modern Python control flow, creating a trading algorithm that "thinks" like a forest, not a machine.
 
 ---
 
