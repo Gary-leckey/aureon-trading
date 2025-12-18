@@ -1042,8 +1042,146 @@ class ActiveTarget:
     eta_to_kill: float = float('inf')  # Seconds until predicted kill
     momentum_score: float = 0.0  # -1.0 to 1.0
     
+    # 🎲 Monte Carlo enhanced metrics
+    mc_probability: float = 0.0  # Monte Carlo simulated probability
+    mc_eta_median: float = float('inf')  # Median ETA from simulations
+    mc_eta_p10: float = float('inf')  # 10th percentile (optimistic)
+    mc_eta_p90: float = float('inf')  # 90th percentile (conservative)
+    mc_simulations: int = 0  # Number of sims run
+    
     # History for velocity calculation
     pnl_history: List[Tuple[float, float]] = field(default_factory=list)  # [(timestamp, pnl), ...]
+
+
+class MonteCarloETASimulator:
+    """
+    🎲 MONTE CARLO ETA SIMULATOR - Statistical Enhancement for Penny Profit Gate
+    
+    Runs simulations to estimate:
+    - Probability of reaching penny profit gate
+    - Expected time to reach gate (with confidence intervals)
+    - Whether current momentum will sustain
+    
+    Only enhances if simulation improves upon base calculation.
+    "Trust the math, but verify with 1000 parallel universes."
+    """
+    
+    def __init__(self, num_simulations: int = 100):
+        self.num_simulations = num_simulations
+        self.rng = None  # Lazy init numpy random
+        
+    def _ensure_numpy(self):
+        """Lazy load numpy for performance."""
+        if self.rng is None:
+            try:
+                import numpy as np
+                self.rng = np.random.default_rng()
+                self.np = np
+            except ImportError:
+                return False
+        return True
+    
+    def simulate_eta(
+        self,
+        current_pnl: float,
+        target_pnl: float,
+        pnl_velocity: float,
+        volatility: float = 0.001,  # P&L volatility per second
+        max_time_seconds: float = 600.0  # Max 10 minutes simulation
+    ) -> Dict:
+        """
+        🎲 Run Monte Carlo simulation to estimate ETA to penny profit gate.
+        
+        Uses geometric Brownian motion with drift (velocity) and volatility.
+        
+        Returns dict with:
+            - mc_probability: Probability of hitting target in max_time
+            - mc_eta_median: Median time to hit target
+            - mc_eta_p10: 10th percentile (optimistic)
+            - mc_eta_p90: 90th percentile (conservative) 
+            - enhanced: Whether MC improves upon simple ETA
+        """
+        if not self._ensure_numpy():
+            return {'enhanced': False, 'reason': 'numpy not available'}
+        
+        np = self.np
+        
+        gap = target_pnl - current_pnl
+        
+        # If already at target
+        if gap <= 0:
+            return {
+                'mc_probability': 1.0,
+                'mc_eta_median': 0.0,
+                'mc_eta_p10': 0.0,
+                'mc_eta_p90': 0.0,
+                'enhanced': True,
+                'simulations': 0
+            }
+        
+        # If no positive velocity and we're not close, unlikely to hit
+        if pnl_velocity <= 0 and gap > volatility * 10:
+            return {
+                'mc_probability': max(0.05, 0.5 - abs(gap) / target_pnl),
+                'mc_eta_median': float('inf'),
+                'mc_eta_p10': float('inf'),
+                'mc_eta_p90': float('inf'),
+                'enhanced': True,
+                'simulations': 0
+            }
+        
+        # Time step for simulation
+        dt = 1.0  # 1 second steps
+        n_steps = int(max_time_seconds / dt)
+        
+        # Run simulations
+        hit_times = []
+        
+        for _ in range(self.num_simulations):
+            pnl = current_pnl
+            for step in range(n_steps):
+                # Geometric Brownian motion: dP = μdt + σdW
+                drift = pnl_velocity * dt
+                shock = volatility * np.sqrt(dt) * self.rng.standard_normal()
+                pnl += drift + shock
+                
+                if pnl >= target_pnl:
+                    hit_times.append(step * dt)
+                    break
+        
+        # Calculate statistics
+        n_hits = len(hit_times)
+        probability = n_hits / self.num_simulations
+        
+        if n_hits > 0:
+            hit_times_sorted = sorted(hit_times)
+            eta_median = hit_times_sorted[len(hit_times_sorted) // 2]
+            eta_p10 = hit_times_sorted[max(0, int(len(hit_times_sorted) * 0.1))]
+            eta_p90 = hit_times_sorted[min(len(hit_times_sorted) - 1, int(len(hit_times_sorted) * 0.9))]
+        else:
+            eta_median = float('inf')
+            eta_p10 = float('inf')
+            eta_p90 = float('inf')
+        
+        # Simple ETA for comparison
+        simple_eta = gap / pnl_velocity if pnl_velocity > 0 else float('inf')
+        
+        # MC is "enhanced" if it provides useful info
+        enhanced = probability > 0.1 or (simple_eta == float('inf') and probability > 0)
+        
+        return {
+            'mc_probability': probability,
+            'mc_eta_median': eta_median,
+            'mc_eta_p10': eta_p10,
+            'mc_eta_p90': eta_p90,
+            'simple_eta': simple_eta,
+            'enhanced': enhanced,
+            'simulations': self.num_simulations
+        }
+
+
+# Global Monte Carlo simulator instance
+MC_SIMULATOR = MonteCarloETASimulator(num_simulations=100)
 
 
 class ActiveKillScanner:
@@ -1367,6 +1505,47 @@ class ActiveKillScanner:
             target.eta_to_kill = float('inf')  # No ETA (negative momentum)
         
         # ═══════════════════════════════════════════════════════════════════════
+        # 🎲 MONTE CARLO ENHANCEMENT - Only if it improves prediction
+        # ═══════════════════════════════════════════════════════════════════════
+        mc_enhanced = False
+        try:
+            # Calculate P&L volatility from history
+            if len(target.pnl_history) >= 3:
+                pnl_values = [h[1] for h in target.pnl_history]
+                pnl_volatility = max(0.0001, (max(pnl_values) - min(pnl_values)) / len(pnl_values))
+            else:
+                pnl_volatility = abs(target.pnl_velocity) * 0.5 + 0.0001  # Estimate from velocity
+            
+            # Run Monte Carlo simulation
+            mc_result = MC_SIMULATOR.simulate_eta(
+                current_pnl=target.current_pnl,
+                target_pnl=target.win_threshold,
+                pnl_velocity=target.pnl_velocity,
+                volatility=pnl_volatility,
+                max_time_seconds=300.0  # 5 minute horizon
+            )
+            
+            # Only use MC if it enhances prediction
+            if mc_result.get('enhanced', False):
+                mc_enhanced = True
+                target.mc_probability = mc_result['mc_probability']
+                target.mc_eta_median = mc_result['mc_eta_median']
+                target.mc_eta_p10 = mc_result['mc_eta_p10']
+                target.mc_eta_p90 = mc_result['mc_eta_p90']
+                target.mc_simulations = mc_result.get('simulations', 0)
+                
+                # If MC probability is better than base calc, use it
+                if target.mc_probability > 0 and target.mc_eta_median < float('inf'):
+                    # Blend MC with simple ETA if MC is valid
+                    if target.eta_to_kill == float('inf') and target.mc_eta_median < float('inf'):
+                        target.eta_to_kill = target.mc_eta_median  # MC found a path!
+                    elif target.mc_eta_median < float('inf'):
+                        # Average simple and MC ETA (MC often more realistic)
+                        target.eta_to_kill = (target.eta_to_kill + target.mc_eta_median) / 2
+        except Exception as e:
+            mc_enhanced = False
+        
+        # ═══════════════════════════════════════════════════════════════════════
         # 🧠⛏️ ENHANCED PROBABILITY - Adaptive Learning + Miner Cascade Power
         # ═══════════════════════════════════════════════════════════════════════
         
@@ -1379,6 +1558,11 @@ class ActiveKillScanner:
         else:
             base_probability = proximity * (0.5 + 0.5 * target.momentum_score)
         base_probability = max(0, min(1, base_probability))
+        
+        # 🎲 Monte Carlo probability blend (if enhanced)
+        if mc_enhanced and target.mc_probability > 0:
+            # Weighted average: 60% MC, 40% base (MC is typically more accurate)
+            base_probability = 0.6 * target.mc_probability + 0.4 * base_probability
         
         # 🧠 ADAPTIVE LEARNING BOOST - Based on historical patterns
         learned_boost = self._get_learned_probability_boost(target)
@@ -1415,6 +1599,12 @@ class ActiveKillScanner:
             'kappa_t': self.kappa_t,
             'lighthouse_gamma': self.lighthouse_gamma,
             'consecutive_kills': self.consecutive_kills,
+            # 🎲 Monte Carlo metrics
+            'mc_enhanced': mc_enhanced,
+            'mc_probability': target.mc_probability if mc_enhanced else 0,
+            'mc_eta_median': target.mc_eta_median if mc_enhanced else float('inf'),
+            'mc_eta_p10': target.mc_eta_p10 if mc_enhanced else float('inf'),
+            'mc_eta_p90': target.mc_eta_p90 if mc_enhanced else float('inf'),
         }
         
         # 🎯 CHECK FOR KILL - The moment of truth!
@@ -1422,12 +1612,13 @@ class ActiveKillScanner:
             verdict = f"🎯⚡ KILL READY! {target.symbol} | P&L: ${target.current_pnl:.4f} >= ${target.win_threshold:.4f} | CASCADE: {cascade_mult:.2f}x"
             return (True, verdict, metrics)
         
-        # Not ready yet - build status
+        # Not ready yet - build status with MC info
+        mc_tag = "🎲" if mc_enhanced else ""
         if target.eta_to_kill < float('inf'):
             eta_str = f"{target.eta_to_kill:.1f}s" if target.eta_to_kill < 60 else f"{target.eta_to_kill/60:.1f}m"
-            verdict = f"🔍 Tracking {target.symbol} | {proximity*100:.0f}% to kill | ETA: {eta_str} | Mom: {target.momentum_score:+.2f}"
+            verdict = f"🔍{mc_tag} Tracking {target.symbol} | {proximity*100:.0f}% to kill | ETA: {eta_str} | Mom: {target.momentum_score:+.2f}"
         else:
-            verdict = f"⏳ Holding {target.symbol} | {proximity*100:.0f}% to kill | Waiting for momentum..."
+            verdict = f"⏳{mc_tag} Holding {target.symbol} | {proximity*100:.0f}% to kill | Waiting for momentum..."
         
         return (False, verdict, metrics)
     

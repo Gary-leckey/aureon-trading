@@ -17093,6 +17093,17 @@ class AureonKrakenEcosystem:
                 elif pct < -0.5:
                     ladders.append('📈-')
                 
+                # 🎲 Monte Carlo enhanced indicator
+                try:
+                    scanner = get_active_scanner()
+                    scanner_key = f"{pos.exchange}:{symbol}"
+                    if scanner_key in scanner.targets:
+                        target = scanner.targets[scanner_key]
+                        if hasattr(target, 'mc_simulations') and target.mc_simulations > 0:
+                            ladders.append('🎲')  # MC enhanced
+                except:
+                    pass
+                
                 # P&L color indicator
                 pnl_icon = "🟢" if pnl_val > 0 else "🔴" if pnl_val < 0 else "⚪"
                 
@@ -17106,7 +17117,7 @@ class AureonKrakenEcosystem:
                 print(f"      {icon} {asset:<6} | {exch:<4} | ${entry_val:>8.2f} | {pnl_icon} {pnl_val:>+7.4f} | {hold_str:>6} | {eta_str:>5} {prob_pct:>2.0f}% | {ladder_str}")
             
             print(f"   {'─'*85}")
-            print(f"   🪜 Ladders: 🧠Brain 🔮Matrix 🎵HNC 📈Momentum  (+)=accelerating (-)=slowing")
+            print(f"   🪜 Ladders: 🧠Brain 🔮Matrix 🎵HNC 📈Momentum 🎲MonteCarlo  (+)=faster (-)=slower")
                 
         # Stats
         runtime = (time.time() - self.start_time) / 60
@@ -17973,6 +17984,17 @@ class AureonKrakenEcosystem:
                         elif pct < -0.3:
                             ladders.append('📈↓')
                         
+                        # 🎲 Monte Carlo enhanced indicator
+                        try:
+                            scanner = get_active_scanner()
+                            scanner_key = f"{pos.exchange}:{symbol}"
+                            if scanner_key in scanner.targets:
+                                target = scanner.targets[scanner_key]
+                                if hasattr(target, 'mc_simulations') and target.mc_simulations > 0:
+                                    ladders.append('🎲')  # MC enhanced
+                        except:
+                            pass
+                        
                         # P&L color indicator
                         pnl_icon = "🟢" if pnl_val > 0 else "🔴" if pnl_val < 0 else "⚪"
                         
@@ -17986,7 +18008,7 @@ class AureonKrakenEcosystem:
                         print(f"      {icon}{asset:6s} │ {exch:3s} │ ${entry_val:>9.2f} │ {pnl_icon}${pnl_val:>+9.4f} │ {hold_str:>5s} │ {eta_full:>10s} │ {ladder_str}")
                     
                     print(f"   {'─'*95}")
-                    print(f"   🪜 Ladders: 🧠Brain 🔮Matrix 🎵HNC 📈Momentum  (↑)=faster to gate  (↓)=slower")
+                    print(f"   🪜 Ladders: 🧠Brain 🔮Matrix 🎵HNC 📈Momentum 🎲MonteCarlo  (↑)=faster (↓)=slower")
                         
                 # Stats
                 rt_count = len(self.realtime_prices)
