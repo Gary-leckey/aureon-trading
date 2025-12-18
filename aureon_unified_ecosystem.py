@@ -11675,7 +11675,7 @@ class AureonKrakenEcosystem:
     
     def _build_scout_candidates(self) -> List[Dict]:
         """☘️ Build candidate list from ticker cache for Irish Patriot deployment.
-        
+
         Returns list of candidates with:
         - symbol, price, change24h, volume, score
         - coherence, dominant_node, quote_currency, source
@@ -11683,9 +11683,9 @@ class AureonKrakenEcosystem:
         quote_currencies = CONFIG.get('QUOTE_CURRENCIES', ['USD', 'USDT', 'GBP', 'EUR'])
         min_vol = CONFIG.get('SCOUT_MIN_VOLATILITY', 1.5)
         min_vol_q = CONFIG.get('SCOUT_MIN_VOLUME_QUOTE', 100000)
-        
+
         all_candidates = []
-        
+
         for quote_curr in quote_currencies:
             for symbol, data in self.ticker_cache.items():
                 if not symbol.endswith(quote_curr):
@@ -11721,7 +11721,45 @@ class AureonKrakenEcosystem:
                     'quote_currency': quote_curr,
                     'source': source
                 })
-        
+
+        # If nothing passed the strict filters, relax to ensure market coverage
+        if not all_candidates:
+            print("   ⚠️ No scout candidates met volatility/volume thresholds - relaxing filters for coverage")
+
+            for quote_curr in quote_currencies:
+                for symbol, data in self.ticker_cache.items():
+                    if not symbol.endswith(quote_curr):
+                        continue
+                    if symbol in self.positions:
+                        continue
+
+                    price = data.get('price', 0)
+                    volume = data.get('volume', 0)
+                    change = data.get('change24h', 0)
+
+                    # Require tradable price/volume but allow calmer markets
+                    if price <= 0 or volume <= 0:
+                        continue
+
+                    volume_m = max(volume / 1_000_000, 0.001)
+                    lion_score = max(abs(change), 0.1) * volume_m * 100
+
+                    all_candidates.append({
+                        'symbol': symbol,
+                        'price': price,
+                        'change24h': change,
+                        'volume': volume,
+                        'score': lion_score,
+                        'coherence': 0.60,
+                        'dominant_node': 'PatriotScout',
+                        'quote_currency': quote_curr,
+                        'source': data.get('source', '').lower(),
+                        'war_go': True  # Always allow relaxed candidates to deploy if needed
+                    })
+
+            # Prioritise by volume even in relaxed mode
+            all_candidates.sort(key=lambda x: -x.get('volume', 0))
+
         # Sort by score descending
         all_candidates.sort(key=lambda x: -x.get('score', 0))
         return all_candidates
