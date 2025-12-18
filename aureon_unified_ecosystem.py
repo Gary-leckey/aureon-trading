@@ -444,6 +444,27 @@ except ImportError as e:
     WISDOM_SCANNER_AVAILABLE = False
     print(f"⚠️  Wisdom Scanner not available: {e}")
 
+# ==== 🇮🇪🎯 UNIFIED SNIPER BRAIN - THE KILL SHOT ENGINE ====
+try:
+    from unified_sniper_brain import get_unified_brain, UnifiedSniperBrain
+    SNIPER_BRAIN_AVAILABLE = True
+    print("   🎯 UNIFIED SNIPER BRAIN LOADED - Ready for kills!")
+except ImportError as e:
+    SNIPER_BRAIN_AVAILABLE = False
+    UnifiedSniperBrain = None
+    print(f"⚠️  Sniper Brain not available: {e}")
+
+# ==== 🇮🇪 BHOY'S WISDOM - STRATEGIC QUOTES ====
+try:
+    from bhoys_wisdom import celebrate_penny_profit, get_contextual_wisdom
+    BHOYS_WISDOM_AVAILABLE = True
+    print("   🍀 Bhoy's Wisdom loaded - Through a Bhoy's Eyes Active!")
+except ImportError as e:
+    BHOYS_WISDOM_AVAILABLE = False
+    def celebrate_penny_profit(amount, symbol): return "Our revenge will be the laughter of our children."
+    def get_contextual_wisdom(context): return "Tiocfaidh ár lá!"
+    print(f"⚠️  Bhoy's Wisdom not available: {e}")
+
 # ═══════════════════════════════════════════════════════════════
 # 💰 PENNY PROFIT ENGINE - DYNAMIC DOLLAR-BASED EXIT THRESHOLDS 💰
 # ═══════════════════════════════════════════════════════════════
@@ -616,21 +637,24 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
     }
 
 
-def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float) -> dict:
-    """Check if position should exit based on dynamically calculated thresholds.
+def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float, symbol: str = None) -> dict:
+    """🎯 IRA SNIPER - Check if position should exit based on dynamically calculated thresholds.
+    
+    The sniper never misses - instant exit when penny profit is achieved!
     
     Args:
         exchange: Exchange name
         entry_value: Position entry value in dollars (ANY size!)
         gross_pnl: Current gross P&L (before fees)
+        symbol: Trading symbol for wisdom quotes
     
     Returns:
-        {'should_tp': bool, 'should_sl': bool, 'threshold': dict, 'gross_pnl': float}
+        {'should_tp': bool, 'should_sl': bool, 'threshold': dict, 'gross_pnl': float, 'sniper_active': bool}
     """
     threshold = get_penny_threshold(exchange, entry_value)
     
     if not threshold:
-        return {'should_tp': False, 'should_sl': False, 'threshold': None, 'gross_pnl': gross_pnl}
+        return {'should_tp': False, 'should_sl': False, 'threshold': None, 'gross_pnl': gross_pnl, 'sniper_active': False}
     
     # Check Take Profit: gross P&L >= win threshold
     should_tp = gross_pnl >= threshold['win_gte']
@@ -638,11 +662,20 @@ def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float) -> dic
     # Check Stop Loss: gross P&L <= loss threshold  
     should_sl = gross_pnl <= threshold['stop_lte']
     
+    # 🇮🇪🎯 SNIPER BRAIN - Get wisdom for the kill
+    sniper_wisdom = None
+    if should_tp and BHOYS_WISDOM_AVAILABLE:
+        # Calculate approximate net profit
+        net_profit = gross_pnl - threshold.get('cost', 0)
+        sniper_wisdom = celebrate_penny_profit(net_profit, symbol or 'UNKNOWN')
+    
     return {
         'should_tp': should_tp,
         'should_sl': should_sl,
         'threshold': threshold,
-        'gross_pnl': gross_pnl
+        'gross_pnl': gross_pnl,
+        'sniper_active': True,
+        'sniper_wisdom': sniper_wisdom
     }
 
 
@@ -9267,21 +9300,32 @@ class PerformanceTracker:
     
     def record_trade(self, net_pnl: float, fees: float, symbol: str, reason: str, 
                      hold_time_sec: float = 0, platform: str = 'kraken', volume: float = 0.0):
-        """Record a completed trade with platform attribution"""
+        """Record a completed trade with platform attribution - THE SNIPER MAKES THE KILLS"""
         self.total_trades += 1
         self.total_fees += fees
         result = 'WIN' if net_pnl > 0 else 'LOSS'
         if net_pnl > 0:
             self.wins += 1
-            # 🇮🇪 IRA SNIPER CELEBRATION - Penny profit win!
-            import random
-            quote = random.choice(self.IRA_SNIPER_QUOTES)
-            print(f"\n🇮🇪🇮🇪🇮🇪 IRA SNIPER WIN! 🇮🇪🇮🇪🇮🇪")
-            print(f"    💰 +${net_pnl:.4f} on {symbol}")
+            # 🇮🇪🎯 IRA SNIPER KILL! - Use Bhoy's Wisdom for celebration
+            if BHOYS_WISDOM_AVAILABLE:
+                quote = celebrate_penny_profit(net_pnl, symbol)
+            else:
+                import random
+                quote = random.choice(self.IRA_SNIPER_QUOTES)
+            print(f"\n🇮🇪🎯🔫 SNIPER KILL! 🔫🎯🇮🇪")
+            print(f"    💰 +${net_pnl:.4f} NET PROFIT on {symbol}")
+            print(f"    ⏱️  Hold time: {hold_time_sec:.1f}s")
             print(f"    📜 \"{quote}\"")
-            print(f"🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪🇮🇪\n")
+            print(f"    🏆 Win Rate: {self.win_rate:.1f}% ({self.wins}/{self.total_trades})")
+            print(f"🇮🇪🎯🔫💰 ONE BULLET, ONE KILL, RELOAD, REPEAT 💰🔫🎯🇮🇪\n")
         else:
             self.losses += 1
+            # Get resilience wisdom for losses
+            if BHOYS_WISDOM_AVAILABLE:
+                wisdom = get_contextual_wisdom('resilience')
+                print(f"\n⚔️ TACTICAL RETREAT: {symbol} -${abs(net_pnl):.4f}")
+                print(f"    📜 \"{wisdom}\"")
+                print(f"    💪 Reload and engage next target...\n")
         
         # Track hold time
         if hold_time_sec > 0:
@@ -15062,19 +15106,25 @@ class AureonKrakenEcosystem:
 
             # ═══════════════════════════════════════════════════════════════
             # 💰 PENNY PROFIT TP/SL - DOLLAR-BASED EXIT LOGIC 💰
+            # 🇮🇪🎯 THE SNIPER MAKES THE KILLS THROUGH THE ECOSYSTEM
             # ═══════════════════════════════════════════════════════════════
             # Calculate gross P&L for penny profit check
             exit_value = pos.quantity * current_price
             gross_pnl = exit_value - pos.entry_value
             
-            # Check penny profit thresholds
-            penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl)
+            # 🎯 Check penny profit thresholds - SNIPER BRAIN ACTIVE
+            penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl, symbol)
             penny_threshold = penny_check.get('threshold')
+            
+            # 🇮🇪 Sniper wisdom for the kill
+            sniper_wisdom = penny_check.get('sniper_wisdom')
             
             if penny_threshold:
                 # 💰 PENNY PROFIT MODE - Use dollar thresholds
                 if penny_check['should_tp']:
-                    # 🇮🇪 SNIPER KILL! Hit penny profit - INSTANT EXIT
+                    # 🇮🇪🎯 SNIPER KILL! Hit penny profit - INSTANT EXIT
+                    if sniper_wisdom:
+                        print(f"   🎯 SNIPER LOCKED: {symbol} - \"{sniper_wisdom}\"")
                     to_close.append((symbol, "TP", change_pct, current_price))
                 elif penny_check['should_sl']:
                     # 🛡️ STOP LOSS - Quick exit to protect capital
