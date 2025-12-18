@@ -539,7 +539,8 @@ except ImportError as e:
 try:
     from ira_sniper_mode import (
         IraCelticSniper, get_celtic_sniper, SNIPER_CONFIG,
-        check_sniper_exit, celebrate_sniper_kill
+        check_sniper_exit, celebrate_sniper_kill,
+        get_sniper_config, map_sniper_platform_assets, apply_sniper_mode
     )
     CELTIC_SNIPER_AVAILABLE = True
     print("   🎯 IRA Celtic Sniper loaded - Zero Loss Mode Active!")
@@ -9861,6 +9862,20 @@ class AureonKrakenEcosystem:
         self.client = MultiExchangeClient()
         self.dry_run = self.client.dry_run
         
+        # 🇮🇪🎯 IRA SNIPER MODE - ensure activation across every platform and asset we can sell
+        self.sniper_config = get_sniper_config() if CELTIC_SNIPER_AVAILABLE else {}
+        self.sniper_coverage = map_sniper_platform_assets(self.client) if CELTIC_SNIPER_AVAILABLE else {}
+        self.sniper_brain = get_unified_brain(
+            exchange='kraken',
+            position_size=CONFIG.get('MIN_TRADE_USD', 10.0)
+        ) if SNIPER_BRAIN_AVAILABLE else None
+        self._sniper_bridge_ready = False
+        self._scout_bridge_status: Dict[str, Any] = {}
+        if self.sniper_config.get('ACTIVE', True):
+            CONFIG.update(apply_sniper_mode(CONFIG))
+            self._announce_sniper_activation()
+            self._sync_sniper_bridge("startup")
+        
         self.auris = AurisEngine()
         self.mycelium = MyceliumNetwork(initial_capital=initial_balance)  # 🍄🧠 Full neural network with hives!
         self.lattice = GaiaLatticeEngine()  # 🌍 GAIA FREQUENCY PHYSICS - HNC Blackboard Carrier Wave Dynamics
@@ -10474,7 +10489,47 @@ class AureonKrakenEcosystem:
         }
 
     # ═══════════════════════════════════════════════════════════════
-    # 🎵 SACRED FREQUENCY MAPPING - Harmonic Trading Intelligence 🎵
+    # � SNIPER BRIDGE - GPT CODEX TELEMETRY INTEGRATION 🎯
+    # ═══════════════════════════════════════════════════════════════
+
+    def _announce_sniper_activation(self):
+        """Announce IRA sniper mode activation."""
+        print("\n   🇮🇪🎯 IRA SNIPER MODE ACTIVATED!")
+        print("   🎯 Zero Loss Policy: We NEVER lose. Every trade is a confirmed kill.")
+        print("   ☘️ Celtic intelligence guiding all entry decisions.\n")
+
+    def _sync_sniper_bridge(self, note: str = ""):
+        """Keep sniper brain and scout coverage aligned with live balances."""
+        if not hasattr(self, 'sniper_config') or not self.sniper_config.get('ACTIVE', True):
+            return
+
+        try:
+            if CELTIC_SNIPER_AVAILABLE:
+                self.sniper_coverage = map_sniper_platform_assets(self.client)
+            platforms = self.sniper_coverage.get('platforms', {}) if self.sniper_coverage else {}
+            self._sniper_bridge_ready = bool(platforms)
+            self._scout_bridge_status = {
+                'last_update': time.time(),
+                'platforms': platforms,
+                'note': note
+            }
+            if note:
+                print(f"   🎯 Sniper bridge synced ({note}) - platforms linked: {len(platforms)}")
+        except Exception as e:
+            print(f"   ⚠️ Sniper bridge sync failed: {e}")
+
+    def _record_sniper_kill(self, pos, net_pnl: float):
+        """Send completed trade data to unified sniper brain for telemetry."""
+        if not hasattr(self, 'sniper_brain') or not self.sniper_brain:
+            return
+        try:
+            self.sniper_brain.record_kill(net_pnl, pos.symbol, is_win=(net_pnl > 0))
+            self._sync_sniper_bridge("kill")
+        except Exception as e:
+            print(f"   ⚠️ Sniper brain telemetry failed: {e}")
+
+    # ═══════════════════════════════════════════════════════════════
+    # �🎵 SACRED FREQUENCY MAPPING - Harmonic Trading Intelligence 🎵
     # ═══════════════════════════════════════════════════════════════
     
     def _get_sacred_frequency_modifier(self, freq: float) -> float:
@@ -11661,6 +11716,7 @@ class AureonKrakenEcosystem:
             print(f"\n   🎯 DEPLOYED {scouts_deployed} scout(s) - WE'RE IN THE GAME!\n")
         else:
             print(f"\n   ⚠️  No scouts deployed - check balance/liquidity\n")
+        self._sync_sniper_bridge("scouts")
 
     def _normalize_ticker_symbol(self, symbol: str) -> str:
         """Convert internal symbol format to Kraken ticker format.
@@ -15869,6 +15925,8 @@ class AureonKrakenEcosystem:
             platform=pos.exchange,
             volume=exit_value
         )
+        # 🧠 Feed kill data to unified sniper brain for telemetry
+        self._record_sniper_kill(pos, net_pnl)
         
         # Feed learning back to Mycelium Network
         # pct is the price change percentage. If positive, we reinforce.
@@ -16073,6 +16131,13 @@ class AureonKrakenEcosystem:
               f"Positions: {len(self.positions)} | Value: £{total_value:.2f} | "
               f"PnL: £{total_pnl:+.2f} | Win: {win_rate:.0f}% ({self.tracker.wins}W/{self.tracker.losses}L)"
               f"{matrix_stats}")
+        if hasattr(self, 'sniper_brain') and self.sniper_brain:
+            sniper_status = self.sniper_brain.get_status()
+            bridge_flag = "LINKED" if self._sniper_bridge_ready else "PENDING"
+            print(f"   🎯 Sniper Brain: {bridge_flag} | Kills {sniper_status['wins']}W/{sniper_status['losses']}L (today {sniper_status['kills_today']}) | Size ${sniper_status['position_size']:.2f}")
+        if hasattr(self, 'sniper_coverage') and self.sniper_coverage:
+            linked_platforms = len(self.sniper_coverage.get('platforms', {}))
+            print(f"   🔭 Scout Bridge: {linked_platforms} exchanges | Scouts deployed: {self.scouts_deployed}")
         
         # 🌀 MEDICINE WHEEL FREQUENCY MESSAGE - What is the market saying?
         try:
