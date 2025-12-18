@@ -11643,7 +11643,8 @@ class AureonKrakenEcosystem:
                             'price': scout.entry_price,
                             'score': 75,  # Force high score
                             'coherence': 0.65,
-                            'dominant_node': f'Patriot_{scout.codename}',
+                            'dominant_node': 'PatriotScout',  # 🔥 MUST match is_force_scout check!
+                            'patriot_codename': scout.codename,  # Store codename separately
                             'source': scout.exchange,
                             'quote_currency': self._get_quote_asset(scout.symbol)
                         }
@@ -14977,7 +14978,13 @@ class AureonKrakenEcosystem:
         base_currency = CONFIG['BASE_CURRENCY'].upper()
         
         # 🚀 Check if this is a forced scout deployment
-        is_force_scout = opp.get('dominant_node') in ('ForceScout', 'PatriotScout') or CONFIG.get('FORCE_TRADE', False)
+        # Match: 'ForceScout', 'PatriotScout', or any 'Patriot_xxx' pattern
+        dominant_node = opp.get('dominant_node', '')
+        is_force_scout = (
+            dominant_node in ('ForceScout', 'PatriotScout') or 
+            dominant_node.startswith('Patriot_') or  # 🇮🇪 Irish Patriot naming
+            CONFIG.get('FORCE_TRADE', False)
+        )
         
         # ☘️ CELTIC SNIPER ENTRY VALIDATION
         # Use Celtic intelligence to validate entry quality
