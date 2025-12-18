@@ -10686,7 +10686,11 @@ class AureonKrakenEcosystem:
                     cost_source = "CURRENT"
                     
                 # Create position from existing holding
-                estimated_entry_fee = entry_value * get_platform_fee(exchange, 'taker')
+                # Use combined rate (fee + slippage + spread) to match penny profit formula
+                fee_rate = get_platform_fee(exchange, 'taker')
+                slippage = CONFIG.get('SLIPPAGE_PCT', 0.0020)
+                spread = CONFIG.get('SPREAD_COST_PCT', 0.0010)
+                estimated_entry_fee = entry_value * (fee_rate + slippage + spread)
                 
                 self.positions[symbol] = Position(
                     symbol=symbol,
@@ -12142,33 +12146,35 @@ class AureonKrakenEcosystem:
         
         🔥 PENNY PROFIT MODE: Exit when gross P&L hits exact dollar threshold
         💰 Target: +$0.01 net profit per trade (scales through volume!)
+        
+        📐 IMPORTANT: The penny threshold's 'win_gte' already accounts for ALL fees
+        via the formula r = ((1 + P/A) / (1-f)²) - 1 where f = fee + slippage + spread.
+        So when gross_pnl >= win_gte, the NET profit is ALREADY ~$0.01.
+        DO NOT subtract fees again - that would be double-counting!
         """
         change_pct = (current_price - pos.entry_price) / pos.entry_price
         
-        # Calculate actual P&L with platform-specific fees
+        # Calculate gross P&L (before fees - the threshold handles fee math)
         exit_value = pos.quantity * current_price
-        exit_fee = exit_value * get_platform_fee(pos.exchange, 'taker')
-        slippage_cost = exit_value * CONFIG['SLIPPAGE_PCT']
-        spread_cost = exit_value * CONFIG['SPREAD_COST_PCT']
-        
-        total_expenses = pos.entry_fee + exit_fee + slippage_cost + spread_cost
         gross_pnl = exit_value - pos.entry_value
-        net_pnl = gross_pnl - total_expenses
         
         # 💰 PENNY PROFIT THRESHOLDS - Dollar-based exit logic
+        # The threshold's win_gte is the GROSS P&L required to NET $0.01
         penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl)
         penny_threshold = penny_check.get('threshold')
         
         if penny_threshold:
             # Use penny profit dollar thresholds
+            # 📐 These thresholds already account for ALL fees in their calculation!
             min_gross_win = penny_threshold.get('win_gte', 0.01)
             max_gross_loss = penny_threshold.get('stop_lte', -0.02)
+            target_net = penny_threshold.get('target_net', 0.01)  # Default $0.01
             
             # TAKE PROFIT: Hit penny profit target
             if reason == "TP":
                 if gross_pnl >= min_gross_win:
-                    estimated_net = gross_pnl - total_expenses
-                    print(f"   💰 PENNY TP: {pos.symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f} -> net ~${estimated_net:.4f}")
+                    # Net profit is the target (fees already in threshold math)
+                    print(f"   💰 PENNY TP: {pos.symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f} -> NET ~${target_net:.2f}")
                     return True
                 else:
                     print(f"   🛑 HOLDING {pos.symbol}: Gross ${gross_pnl:.4f} < penny target ${min_gross_win:.4f}")
@@ -12195,36 +12201,42 @@ class AureonKrakenEcosystem:
             # 🌾 HARVEST: Use penny threshold for harvest too
             if reason in ("HARVEST", "bridge_harvest"):
                 if gross_pnl >= min_gross_win:
-                    print(f"   🌾 PENNY HARVEST: {pos.symbol} gross ${gross_pnl:.4f} - LOCKING IN PENNY!")
+                    print(f"   🌾 PENNY HARVEST: {pos.symbol} gross ${gross_pnl:.4f} -> NET ~${target_net:.2f} - LOCKING IN PENNY!")
                     return True
                 print(f"   🛑 HOLDING {pos.symbol}: Harvest blocked - gross ${gross_pnl:.4f} < ${min_gross_win:.4f}")
                 return False
         else:
-            # Fallback to percentage-based when penny profit not available
-            min_profit_buffer = pos.entry_value * CONFIG['MIN_NET_PROFIT_PCT']
-            min_net_profit = min_profit_buffer
+            # Fallback: compute penny threshold on-the-fly (should always work)
+            # This ensures we NEVER use the old percentage-based logic
+            fallback_entry = pos.entry_value if pos.entry_value > 0 else (pos.quantity * pos.entry_price)
+            penny_threshold_fb = get_penny_threshold(pos.exchange, fallback_entry)
             
-            if reason == "TP":
-                if net_pnl >= min_net_profit:
-                    print(f"   ✅ EXIT APPROVED: {pos.symbol} net profit ${net_pnl:.4f} >= min ${min_net_profit:.4f}")
-                    return True
-                else:
-                    print(f"   🛑 HOLDING {pos.symbol}: Net profit ${net_pnl:.4f} < min required ${min_net_profit:.4f}")
+            if penny_threshold_fb:
+                min_gross_win = penny_threshold_fb.get('win_gte', 0.01)
+                max_gross_loss = penny_threshold_fb.get('stop_lte', -0.02)
+                target_net = penny_threshold_fb.get('target_net', 0.01)
+                
+                if reason == "TP":
+                    if gross_pnl >= min_gross_win:
+                        print(f"   ✅ EXIT APPROVED: {pos.symbol} gross ${gross_pnl:.4f} -> NET ~${target_net:.2f}")
+                        return True
+                    else:
+                        print(f"   🛑 HOLDING {pos.symbol}: Gross ${gross_pnl:.4f} < penny target ${min_gross_win:.4f}")
+                        return False
+                
+                if reason in ("HARVEST", "bridge_harvest"):
+                    if gross_pnl >= min_gross_win:
+                        print(f"   🌾 HARVEST APPROVED: {pos.symbol} gross ${gross_pnl:.4f} -> NET ~${target_net:.2f}")
+                        return True
+                    print(f"   🛑 HOLDING {pos.symbol}: Harvest blocked - gross ${gross_pnl:.4f} < ${min_gross_win:.4f}")
                     return False
-            
-            if reason in ("HARVEST", "bridge_harvest"):
-                if net_pnl >= min_net_profit:
-                    print(f"   🌾 HARVEST APPROVED: {pos.symbol} net profit ${net_pnl:.4f}")
-                    return True
-                print(f"   🛑 HOLDING {pos.symbol}: Harvest blocked - net ${net_pnl:.4f} < min ${min_net_profit:.4f}")
-                return False
-            
-            if reason == "SL":
-                loss_pct = abs(net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
-                if loss_pct < 1.0 or abs(change_pct * 100) > 2.0:
-                    return True
-                print(f"   🛑 HOLDING {pos.symbol}: Loss too large (${net_pnl:.2f})")
-                return False
+                
+                if reason == "SL":
+                    if gross_pnl <= max_gross_loss:
+                        print(f"   🛑 PENNY SL: {pos.symbol} gross ${gross_pnl:.4f} <= ${max_gross_loss:.4f}")
+                        return True
+                    print(f"   ⏳ HOLDING {pos.symbol}: Gross ${gross_pnl:.4f} > stop ${max_gross_loss:.4f}")
+                    return False
         
         # BRIDGE FORCE EXIT: Always allow (emergency exit)
         if reason == "bridge_force_exit":
@@ -14521,8 +14533,13 @@ class AureonKrakenEcosystem:
                     return
 
         actual_fraction = (pos_size / self.tracker.balance) if self.tracker.balance > 0 else 0.0
-        # Use platform-specific fee
-        entry_fee = pos_size * get_platform_fee(exchange, 'taker')
+        # Use combined rate (fee + slippage + spread) to match penny profit formula
+        # This ensures entry_fee reflects ALL costs on the entry leg
+        fee_rate = get_platform_fee(exchange, 'taker')
+        slippage = CONFIG.get('SLIPPAGE_PCT', 0.0020)
+        spread = CONFIG.get('SPREAD_COST_PCT', 0.0010)
+        total_rate = fee_rate + slippage + spread
+        entry_fee = pos_size * total_rate
         quantity = pos_size / price
         
         # 🔧 KRAKEN VOLUME MINIMUM CHECK: Ensure order quantity meets pair's ordermin
@@ -14600,7 +14617,7 @@ class AureonKrakenEcosystem:
                             price = actual_fill_price
                             quantity = actual_qty
                             pos_size = actual_value
-                            entry_fee = actual_fee if actual_fee > 0 else pos_size * get_platform_fee(exchange, 'taker')
+                            entry_fee = actual_fee if actual_fee > 0 else pos_size * total_rate
                     elif res.get('cummulativeQuoteQty') and res.get('executedQty'):
                         # Fallback: use order response totals
                         exec_qty = float(res.get('executedQty', 0))
@@ -14611,7 +14628,7 @@ class AureonKrakenEcosystem:
                             price = actual_fill_price
                             quantity = exec_qty
                             pos_size = cumm_quote
-                            entry_fee = pos_size * get_platform_fee(exchange, 'taker')
+                            entry_fee = pos_size * total_rate
                             
         prime_multiplier = 1.0
         if len(self.positions) < 3:  # Apply prime sizing to first few positions
@@ -14619,7 +14636,7 @@ class AureonKrakenEcosystem:
             pos_size *= prime_multiplier
             pos_size = min(pos_size, available_risk, cash_available)
             quantity = pos_size / price
-            entry_fee = pos_size * get_platform_fee(exchange, 'taker')
+            entry_fee = pos_size * total_rate
         
         # Create position with swarm enhancements
         is_scout = len(self.positions) == 0  # First position becomes scout
@@ -14985,46 +15002,38 @@ class AureonKrakenEcosystem:
                     
                     # 🚨 MATRIX SAYS SELL - Time to exit if we're profitable
                     if prob_action in ['SELL', 'STRONG SELL'] and prob_confidence >= 0.5:
-                        # Only exit if we're at least breakeven (after fees)
+                        # Calculate gross P&L - penny threshold already handles fee math
                         exit_value = pos.quantity * current_price
-                        exit_fee = exit_value * get_platform_fee(pos.exchange, 'taker')
-                        total_fees = pos.entry_fee + exit_fee + exit_value * CONFIG['SLIPPAGE_PCT']
                         gross_pnl = exit_value - pos.entry_value
-                        net_pnl = gross_pnl - total_fees
                         
                         # 💰 PENNY PROFIT CHECK FOR MATRIX EXITS
                         penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl)
                         penny_threshold = penny_check.get('threshold')
                         
-                        # 💰 PENNY PROFIT OVERRIDE: If net profit >= $0.01, take it regardless of matrix!
-                        if net_pnl >= 0.01:
-                             print(f"   🔮 MATRIX EXIT (PENNY SECURED): {symbol} {prob_action} (prob={prob_probability:.0%}, conf={prob_confidence:.0%}) Net: ${net_pnl:.4f} >= $0.01")
-                             to_close.append((symbol, "MATRIX_SELL", change_pct, current_price))
-                             prob_exit_triggered = True
-                        elif penny_threshold:
+                        # 💰 PENNY PROFIT OVERRIDE: Check if gross P&L meets penny target
+                        if penny_threshold:
                             min_gross_win = penny_threshold.get('win_gte', 0.01)
+                            target_net = penny_threshold.get('target_net', 0.01)
                             if gross_pnl >= min_gross_win:
-                                print(f"   🔮 MATRIX EXIT (PENNY SECURED): {symbol} {prob_action} (prob={prob_probability:.0%}, conf={prob_confidence:.0%}) Gross: ${gross_pnl:.4f} >= ${min_gross_win:.4f}")
+                                print(f"   🔮 MATRIX EXIT (PENNY SECURED): {symbol} {prob_action} (prob={prob_probability:.0%}, conf={prob_confidence:.0%}) Gross: ${gross_pnl:.4f} >= ${min_gross_win:.4f} -> NET ~${target_net:.2f}")
                                 to_close.append((symbol, "MATRIX_SELL", change_pct, current_price))
                                 prob_exit_triggered = True
                             elif prob_action == 'STRONG SELL' and prob_confidence >= 0.7 and gross_pnl > -pos.entry_value * 0.01:
                                 # Allow small loss (<1%) on STRONG SELL signals only
-                                print(f"   🚨 MATRIX FORCE EXIT: {symbol} STRONG SELL (conf={prob_confidence:.0%}) - Small loss ${net_pnl:.2f}")
+                                print(f"   🚨 MATRIX FORCE EXIT: {symbol} STRONG SELL (conf={prob_confidence:.0%}) - Small loss ${gross_pnl:.2f}")
                                 to_close.append((symbol, "MATRIX_FORCE", change_pct, current_price))
                                 prob_exit_triggered = True
                             else:
                                 print(f"   🛑 HOLDING {symbol}: Matrix signal ignored - Penny Profit not met (${gross_pnl:.4f} < ${min_gross_win:.4f})")
-                        
-                        # Fallback if penny profit not enabled
-                        elif net_pnl >= 0:  # At least breakeven
-                            print(f"   🔮 MATRIX EXIT: {symbol} {prob_action} (prob={prob_probability:.0%}, conf={prob_confidence:.0%}) Net P&L: ${net_pnl:.2f}")
-                            to_close.append((symbol, "MATRIX_SELL", change_pct, current_price))
-                            prob_exit_triggered = True
-                        elif net_pnl > -pos.entry_value * 0.01:  # Allow small loss (<1%) on strong signals
-                            if prob_action == 'STRONG SELL' and prob_confidence >= 0.7:
-                                print(f"   🚨 MATRIX FORCE EXIT: {symbol} STRONG SELL (conf={prob_confidence:.0%}) - Small loss ${net_pnl:.2f}")
-                                to_close.append((symbol, "MATRIX_FORCE", change_pct, current_price))
-                                prob_exit_triggered = True
+                        else:
+                            # Fallback: compute penny threshold on-the-fly
+                            fb_threshold = get_penny_threshold(pos.exchange, pos.entry_value)
+                            if fb_threshold:
+                                min_gross_win = fb_threshold.get('win_gte', 0.01)
+                                if gross_pnl >= min_gross_win:
+                                    print(f"   🔮 MATRIX EXIT: {symbol} {prob_action} (prob={prob_probability:.0%}, conf={prob_confidence:.0%}) Gross: ${gross_pnl:.4f}")
+                                    to_close.append((symbol, "MATRIX_SELL", change_pct, current_price))
+                                    prob_exit_triggered = True
                 except Exception as e:
                     pass  # Continue with normal checks
             
@@ -15276,17 +15285,30 @@ class AureonKrakenEcosystem:
             except Exception as e:
                 logger.warning(f"State save failed after close: {e}")
         
-        # Calculate P&L with platform-specific fees (Pessimistic Accounting)
-        # We assume slippage AND spread cost on exit price for conservative P&L
+        # 📐 Calculate P&L using the same model as penny profit threshold formula
+        # The formula r = ((1 + P/A) / (1-f)²) - 1 treats fees as multiplicative factors
+        # So we must calculate NET P&L the same way for consistency
+        #
+        # Entry: paid A, received A×(1-f) worth of crypto (fee deducted)
+        # Exit: crypto now worth exit_value, we receive exit_value×(1-f) (fee deducted)
+        # Net = exit_value×(1-f) - A  (we already paid A on entry)
+        #
+        # Since the threshold already accounts for all fees, we compute ACTUAL net P&L here
+        
         exit_value = pos.quantity * price
-        exit_fee = exit_value * get_platform_fee(pos.exchange, 'taker')
-        slippage_cost = exit_value * CONFIG['SLIPPAGE_PCT']
-        spread_cost = exit_value * CONFIG['SPREAD_COST_PCT']
-        
-        # Total Expenses = Entry Fee + Exit Fee + Slippage + Spread
-        total_expenses = pos.entry_fee + exit_fee + slippage_cost + spread_cost
-        
         gross_pnl = exit_value - pos.entry_value
+        
+        # Get the combined fee rate used in penny threshold calculation
+        fee_rate = get_exchange_fee_rate(pos.exchange)
+        slippage = CONFIG.get('SLIPPAGE_PCT', 0.0020)
+        spread = CONFIG.get('SPREAD_COST_PCT', 0.0010)
+        total_rate = fee_rate + slippage + spread
+        
+        # Calculate actual fees (linear approximation for accounting purposes)
+        # Entry fee was already calculated on pos.entry_fee using entry_value
+        exit_fee = exit_value * total_rate  # All costs on exit leg
+        total_expenses = pos.entry_fee + exit_fee
+        
         net_pnl = gross_pnl - total_expenses
         
         # Calculate hold time
