@@ -6942,7 +6942,7 @@ class TrailingStopManager:
             pos.lowest_price = current_price
             
         # Calculate current P&L percentage
-        pnl_pct = ((current_price - pos.entry_price) / pos.entry_price) * 100
+        pnl_pct = ((current_price - pos.entry_price) / pos.entry_price) * 100 if pos.entry_price > 0 else 0.0
         result['pnl_pct'] = pnl_pct
         
         # Check if trailing stop should activate
@@ -6971,7 +6971,7 @@ class TrailingStopManager:
                 self.trailing_stops_triggered += 1
                 
                 # Calculate locked profit
-                locked_pnl = ((pos.trailing_stop_price - pos.entry_price) / pos.entry_price) * 100
+                locked_pnl = ((pos.trailing_stop_price - pos.entry_price) / pos.entry_price) * 100 if pos.entry_price > 0 else 0.0
                 self.trailing_profits_locked += locked_pnl
                 
         return result
@@ -12683,7 +12683,7 @@ class AureonKrakenEcosystem:
         via the formula r = ((1 + P/A) / (1-f)²) - 1 where f = fee + slippage + spread.
         So when gross_pnl >= win_gte, the NET profit is ALREADY ~$0.01.
         """
-        change_pct = (current_price - pos.entry_price) / pos.entry_price
+        change_pct = (current_price - pos.entry_price) / pos.entry_price if pos.entry_price > 0 else 0.0
         
         # Calculate gross P&L (before fees - the threshold handles fee math)
         exit_value = pos.quantity * current_price
@@ -14977,7 +14977,7 @@ class AureonKrakenEcosystem:
                 curr_price = self.get_realtime_price(pos_symbol)
                 if curr_price is None:
                     curr_price = self.ticker_cache.get(pos_symbol, {}).get('price', pos.entry_price)
-                if curr_price and curr_price > 0:
+                if curr_price and curr_price > 0 and pos.entry_price > 0:
                     pct = (curr_price - pos.entry_price) / pos.entry_price * 100
                     if pct < worst_pct:
                         worst_pct = pct
@@ -15409,7 +15409,7 @@ class AureonKrakenEcosystem:
                             
                             # Exit if frequency shifted from harmonic to distortion
                             if entry_freq in [256, 512, 528, 639, 963] and current_freq == 440:
-                                change_pct = (current_price - pos.entry_price) / pos.entry_price * 100
+                                change_pct = (current_price - pos.entry_price) / pos.entry_price * 100 if pos.entry_price > 0 else 0.0
                                 print(f"   🔴 HNC EXIT {symbol}: Frequency shift {entry_freq:.0f}Hz→440Hz (distortion)")
                                 to_close.append((symbol, "HNC_FREQ_SHIFT", change_pct, current_price))
                                 continue
@@ -15692,6 +15692,8 @@ class AureonKrakenEcosystem:
             if current_price is None:
                 current_price = self.ticker_cache.get(symbol, {}).get('price', pos.entry_price)
             if current_price is None or current_price == 0:
+                continue
+            if pos.entry_price <= 0:
                 continue
                 
             change_pct = (current_price - pos.entry_price) / pos.entry_price * 100
@@ -16484,7 +16486,7 @@ class AureonKrakenEcosystem:
             for symbol, pos in self.positions.items():
                 rt = self.get_realtime_price(symbol)
                 price = rt if rt else pos.entry_price
-                pct = (price - pos.entry_price) / pos.entry_price * 100
+                pct = (price - pos.entry_price) / pos.entry_price * 100 if pos.entry_price > 0 else 0.0
                 print(f"      {symbol:12s} Entry: ${pos.entry_price:.6f} | Now: {pct:+.2f}%")
                 
         # Stats
@@ -17264,12 +17266,15 @@ class AureonKrakenEcosystem:
                     print(f"\n   📊 Active Positions ({len(self.positions)}/{CONFIG['MAX_POSITIONS']}):")
                     for symbol, pos in self.positions.items():
                         rt = self.get_realtime_price(symbol)
-                        if rt:
+                        if pos.entry_price <= 0:
+                            pct = 0.0
+                            src = "⚠️"
+                        elif rt:
                             pct = (rt - pos.entry_price) / pos.entry_price * 100
                             src = "🔴"
                         else:
                             cached = self.ticker_cache.get(symbol, {}).get('price', pos.entry_price)
-                            pct = (cached - pos.entry_price) / pos.entry_price * 100
+                            pct = (cached - pos.entry_price) / pos.entry_price * 100 if pos.entry_price > 0 else 0.0
                             src = "⚪"
                         icon = self._get_node_icon(pos.dominant_node)
                         print(f"      {icon} {symbol:12s} Entry: ${pos.entry_price:.6f} | Now: {pct:+.2f}% {src}")
