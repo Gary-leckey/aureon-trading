@@ -5992,6 +5992,23 @@ class ProbabilityReportGenerator:
         self._price_history: Dict[str, List[Tuple[float, float]]] = {}  # symbol -> [(timestamp, price), ...]
         self._max_price_history = 10  # Keep last 10 prices for momentum
         
+        # 🇮🇪🎯 IRA SNIPER MODE INTEGRATION
+        self._sniper_coverage: Dict[str, Any] = {}
+        self._sniper_brain = None
+        self._celtic_sniper = None
+        if CELTIC_SNIPER_AVAILABLE:
+            try:
+                self._celtic_sniper = get_celtic_sniper()
+                logger.info("   🎯 Celtic Sniper linked to Probability Generator")
+            except Exception as e:
+                logger.debug(f"Celtic sniper not available: {e}")
+        if SNIPER_BRAIN_AVAILABLE:
+            try:
+                self._sniper_brain = get_unified_brain('probability', position_size=10.0)
+                logger.info("   🧠 Sniper Brain linked to Probability Generator")
+            except Exception as e:
+                logger.debug(f"Sniper brain not available: {e}")
+        
         # Generation stats
         self.last_generation = 0.0
         self.generation_count = 0
@@ -6006,6 +6023,13 @@ class ProbabilityReportGenerator:
         
         self._running = True
         self._ecosystem = ecosystem
+        
+        # 🎯 Sync sniper coverage from ecosystem
+        if ecosystem and hasattr(ecosystem, 'sniper_coverage'):
+            self._sniper_coverage = ecosystem.sniper_coverage or {}
+        if ecosystem and hasattr(ecosystem, 'sniper_brain'):
+            self._sniper_brain = ecosystem.sniper_brain
+        
         self._thread = threading.Thread(target=self._generation_loop, daemon=True)
         self._thread.start()
         logger.info("📊 Probability Report Generator STARTED (background thread)")
@@ -6049,8 +6073,19 @@ class ProbabilityReportGenerator:
         kraken_results = self._generate_exchange_report('kraken', self.KRAKEN_SYMBOLS, ticker_cache)
         all_results.extend(kraken_results)
         
-        # Sort by probability
-        all_results.sort(key=lambda r: (r.get('probability', 0), r.get('confidence', 0)), reverse=True)
+        # 🎯 Sort by probability + sniper boost (Celtic-aligned signals get priority)
+        all_results.sort(
+            key=lambda r: (
+                r.get('probability', 0) + r.get('sniper_boost', 0),  # Boosted probability
+                1 if r.get('celtic_aligned') else 0,  # Celtic alignment bonus
+                r.get('confidence', 0)
+            ), 
+            reverse=True
+        )
+        
+        # Count Celtic-aligned signals
+        celtic_count = sum(1 for r in all_results if r.get('celtic_aligned'))
+        sniper_boosted = sum(1 for r in all_results if r.get('sniper_boost', 0) > 0)
         
         # Save combined report
         report = {
@@ -6059,8 +6094,11 @@ class ProbabilityReportGenerator:
             'interval_seconds': self.interval,
             'generation_count': self.generation_count + 1,
             'count': len(all_results),
+            'celtic_aligned_count': celtic_count,
+            'sniper_boosted_count': sniper_boosted,
             'top_10': all_results[:10],
             'high_conviction': [r for r in all_results if r.get('probability', 0) >= 0.75],
+            'celtic_picks': [r for r in all_results if r.get('celtic_aligned')][:10],
             'all': all_results,
         }
         
@@ -6109,7 +6147,9 @@ class ProbabilityReportGenerator:
         
         elapsed = time.time() - start_time
         if self.generation_count % 4 == 0:  # Log every minute (4 * 15s)
-            logger.info(f"📊 Probability reports regenerated #{self.generation_count} ({len(all_results)} signals, {elapsed:.2f}s)")
+            celtic_flag = f" | 🇮🇪 Celtic: {celtic_count}" if celtic_count > 0 else ""
+            sniper_flag = f" | 🎯 Sniper: {sniper_boosted}" if sniper_boosted > 0 else ""
+            logger.info(f"📊 Probability reports regenerated #{self.generation_count} ({len(all_results)} signals, {elapsed:.2f}s{celtic_flag}{sniper_flag})")
     
     def _generate_exchange_report(self, exchange: str, symbols: List[str], ticker_cache: Dict) -> List[Dict]:
         """Generate probability report for a specific exchange."""
@@ -6160,6 +6200,8 @@ class ProbabilityReportGenerator:
                             'momentum': momentum,
                             'coherence': coherence,
                             'is_harmonic': is_harmonic,
+                            'sniper_boost': self._calculate_sniper_boost(symbol, exchange),
+                            'celtic_aligned': self._check_celtic_alignment(symbol, momentum),
                         })
                     except Exception as e:
                         logger.debug(f"HNC analysis failed for {symbol}: {e}")
@@ -6179,6 +6221,8 @@ class ProbabilityReportGenerator:
                             'momentum': momentum,
                             'coherence': coherence,
                             'is_harmonic': is_harmonic,
+                            'sniper_boost': self._calculate_sniper_boost(symbol, exchange),
+                            'celtic_aligned': self._check_celtic_alignment(symbol, momentum),
                         })
                 else:
                     # Simple probability calculation without HNC
@@ -6290,8 +6334,94 @@ class ProbabilityReportGenerator:
         
         return prob, action
     
+    def _calculate_sniper_boost(self, symbol: str, exchange: str) -> float:
+        """
+        🎯 Calculate sniper boost for symbol based on coverage and brain readiness.
+        
+        Returns boost factor 0.0 to 0.2 that can be added to probability.
+        """
+        boost = 0.0
+        
+        # Check if exchange is in sniper coverage
+        platforms = self._sniper_coverage.get('platforms', {})
+        if exchange.lower() in platforms:
+            boost += 0.05  # Exchange is sniper-ready
+            
+            # Check if symbol's base asset is in sellable assets
+            sellable = platforms.get(exchange.lower(), {}).get('sellable_assets', [])
+            base = symbol.replace('USD', '').replace('USDC', '').replace('USDT', '').replace('/', '')
+            if base in sellable or base.upper() in [a.upper() for a in sellable]:
+                boost += 0.05  # Asset is sellable (can execute sniper exit)
+        
+        # Bonus if sniper brain is active and winning
+        if self._sniper_brain:
+            try:
+                status = self._sniper_brain.get_status()
+                win_rate = status.get('win_rate', 0.5)
+                if win_rate > 0.6:
+                    boost += 0.05  # Brain is performing well
+                if status.get('kills_today', 0) > 0:
+                    boost += 0.02  # Brain has recent activity
+            except:
+                pass
+        
+        return min(0.2, boost)  # Cap at 0.2 boost
+    
+    def _check_celtic_alignment(self, symbol: str, momentum: float) -> bool:
+        """
+        🇮🇪 Check if signal aligns with Celtic sniper training model.
+        
+        Returns True if the signal matches IRA training patterns.
+        """
+        if not self._celtic_sniper:
+            return False
+        
+        try:
+            # Check if Celtic sniper would approve this entry
+            # Positive momentum + sniper active = aligned
+            sniper_config = get_sniper_config() if CELTIC_SNIPER_AVAILABLE else {}
+            if not sniper_config.get('ACTIVE', False):
+                return False
+            
+            # Celtic alignment requires:
+            # 1. Positive momentum (buying into strength)
+            # 2. Not in "WAIT" mode from training model
+            if momentum <= 0:
+                return False
+            
+            # If we have a Celtic sniper instance, check its recommendation
+            if hasattr(self._celtic_sniper, 'should_enter'):
+                return self._celtic_sniper.should_enter(symbol, momentum)
+            
+            return momentum > 0.5  # Default: aligned if momentum > 0.5%
+            
+        except Exception:
+            return False
+    
+    def _feed_sniper_telemetry(self, top_signals: List[Dict]):
+        """🧠 Feed top signals to sniper brain for pattern learning."""
+        if not self._sniper_brain:
+            return
+        
+        try:
+            for signal in top_signals[:5]:  # Top 5 only
+                if signal.get('celtic_aligned') and signal.get('sniper_boost', 0) > 0:
+                    # This is a high-quality Celtic-aligned signal
+                    self._sniper_brain.record_signal(
+                        symbol=signal['symbol'],
+                        exchange=signal.get('exchange', 'unknown'),
+                        probability=signal.get('probability', 0.5),
+                        momentum=signal.get('momentum', 0),
+                        sniper_boost=signal.get('sniper_boost', 0)
+                    )
+        except Exception as e:
+            logger.debug(f"Sniper telemetry feed failed: {e}")
+
     def _feed_to_adaptive_learning(self, top_signals: List[Dict]):
         """Feed top signals to AdaptiveLearningEngine for continuous learning."""
+        # 🎯 Also feed to sniper brain
+        self._feed_sniper_telemetry(top_signals)
+        
         try:
             for signal in top_signals:
                 if signal.get('probability', 0) >= 0.70:
@@ -6305,6 +6435,8 @@ class ProbabilityReportGenerator:
                         'is_harmonic': signal.get('is_harmonic', False),
                         'action': signal.get('action', 'HOLD'),
                         'timestamp': datetime.now().isoformat(),
+                        'sniper_boost': signal.get('sniper_boost', 0),
+                        'celtic_aligned': signal.get('celtic_aligned', False),
                     }
                     
                     # Feed to adaptive learner for frequency band analysis
