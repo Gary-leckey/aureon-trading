@@ -13,8 +13,8 @@ Strategy: Ride the wave on coins with strong 24h momentum
 
 Features:
 - Real Kraken market data
-- Full fee tracking (0.26% taker)
-- Net profit optimization
+- Full fee tracking (0.70% combined: fee + slippage + spread)
+- Net profit optimization with CORRECT penny profit math
 - Live portfolio tracking
 """
 
@@ -30,8 +30,16 @@ import random
 sys.path.insert(0, '/workspaces/aureon-trading')
 from kraken_client import KrakenClient
 
-# Kraken fee
-TAKER_FEE = 0.0026  # 0.26%
+# =============================================================================
+# CONFIGURATION - CORRECTED FEE MODEL (matches penny profit formula)
+# =============================================================================
+KRAKEN_FEE_RATE = 0.004      # 0.40% taker fee
+SLIPPAGE_PCT = 0.002         # 0.20% slippage  
+SPREAD_COST_PCT = 0.001      # 0.10% spread
+TOTAL_COST_RATE = KRAKEN_FEE_RATE + SLIPPAGE_PCT + SPREAD_COST_PCT  # 0.70% per leg
+
+# Legacy compatibility - use combined rate everywhere
+TAKER_FEE = TOTAL_COST_RATE
 
 # Quacker Config
 MOMENTUM_THRESHOLD = 0.05  # 5% 24h change to enter
