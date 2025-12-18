@@ -454,6 +454,357 @@ def sniper_override_active() -> bool:
 
 
 # =============================================================================
+# 🎯⚡ ACTIVE KILL SCANNER - INTELLIGENT HUNTING SYSTEM ⚡🎯
+# =============================================================================
+# Unlike Zaitsev lying in wait for days, we ACTIVELY hunt:
+# - Constant probability scanning
+# - Timestamp tracking with ETA predictions  
+# - Momentum analysis for optimal timing
+# - INSTANT kill execution the microsecond profit confirmed
+# =============================================================================
+
+@dataclass
+class ActiveTarget:
+    """A target being actively tracked for kill opportunity."""
+    symbol: str
+    exchange: str
+    entry_price: float
+    entry_value: float
+    quantity: float
+    entry_time: float  # Unix timestamp
+    win_threshold: float  # Gross P&L needed for kill
+    
+    # Real-time tracking
+    current_price: float = 0.0
+    current_pnl: float = 0.0
+    pnl_velocity: float = 0.0  # P&L change per second
+    last_update: float = 0.0
+    scans: int = 0
+    
+    # Prediction metrics
+    probability_of_kill: float = 0.0  # 0.0 to 1.0
+    eta_to_kill: float = float('inf')  # Seconds until predicted kill
+    momentum_score: float = 0.0  # -1.0 to 1.0
+    
+    # History for velocity calculation
+    pnl_history: List[Tuple[float, float]] = field(default_factory=list)  # [(timestamp, pnl), ...]
+
+
+class ActiveKillScanner:
+    """
+    🎯⚡ ACTIVE KILL SCANNER - The Intelligent Hunting System ⚡🎯
+    
+    Not passive waiting - ACTIVE HUNTING:
+    - Scans all positions every cycle
+    - Calculates probability of kill based on momentum
+    - Predicts ETA to profit threshold
+    - Executes INSTANT kills the microsecond threshold is hit
+    
+    "The Celtic warrior doesn't wait for the enemy to come.
+     He studies, predicts, and strikes at the EXACT moment."
+    """
+    
+    def __init__(self):
+        self.targets: Dict[str, ActiveTarget] = {}
+        self.kills_executed: int = 0
+        self.total_pnl: float = 0.0
+        self.scan_count: int = 0
+        self.last_scan_time: float = 0.0
+        self.scan_interval_ms: float = 0.0  # Track scan speed
+        
+    def register_target(
+        self,
+        symbol: str,
+        exchange: str,
+        entry_price: float,
+        entry_value: float,
+        quantity: float,
+        win_threshold: float
+    ) -> ActiveTarget:
+        """
+        Register a new target for active tracking.
+        
+        The moment a position opens, the scanner begins hunting.
+        """
+        target = ActiveTarget(
+            symbol=symbol,
+            exchange=exchange,
+            entry_price=entry_price,
+            entry_value=entry_value,
+            quantity=quantity,
+            entry_time=time.time(),
+            win_threshold=win_threshold,
+            current_price=entry_price,
+            last_update=time.time()
+        )
+        
+        key = f"{exchange}:{symbol}"
+        self.targets[key] = target
+        
+        return target
+    
+    def scan_target(self, key: str, current_price: float) -> Tuple[bool, str, Dict]:
+        """
+        🎯 SCAN TARGET - Update intelligence and check for kill opportunity.
+        
+        Returns:
+            (kill_ready: bool, verdict: str, metrics: dict)
+        """
+        if key not in self.targets:
+            return (False, "Target not found", {})
+        
+        target = self.targets[key]
+        now = time.time()
+        
+        # Update price and P&L
+        target.current_price = current_price
+        exit_value = target.quantity * current_price
+        target.current_pnl = exit_value - target.entry_value
+        
+        # Track P&L history for velocity calculation (keep last 10)
+        target.pnl_history.append((now, target.current_pnl))
+        if len(target.pnl_history) > 10:
+            target.pnl_history.pop(0)
+        
+        # Calculate P&L velocity (change per second)
+        if len(target.pnl_history) >= 2:
+            oldest = target.pnl_history[0]
+            newest = target.pnl_history[-1]
+            time_diff = newest[0] - oldest[0]
+            if time_diff > 0:
+                target.pnl_velocity = (newest[1] - oldest[1]) / time_diff
+        
+        # Calculate momentum score (-1 to +1)
+        if target.pnl_velocity > 0:
+            # Positive momentum - moving toward kill
+            target.momentum_score = min(1.0, target.pnl_velocity / 0.01)  # Normalize to ~$0.01/s
+        else:
+            # Negative momentum - moving away from kill
+            target.momentum_score = max(-1.0, target.pnl_velocity / 0.01)
+        
+        # Calculate ETA to kill (if positive momentum)
+        gap_to_kill = target.win_threshold - target.current_pnl
+        if target.pnl_velocity > 0 and gap_to_kill > 0:
+            target.eta_to_kill = gap_to_kill / target.pnl_velocity
+        elif gap_to_kill <= 0:
+            target.eta_to_kill = 0  # Ready NOW!
+        else:
+            target.eta_to_kill = float('inf')  # No ETA (negative momentum)
+        
+        # Calculate probability of kill (heuristic based on momentum and proximity)
+        proximity = target.current_pnl / target.win_threshold if target.win_threshold > 0 else 0
+        proximity = max(0, min(1, proximity))  # Clamp 0-1
+        
+        if target.momentum_score > 0:
+            # Positive momentum boosts probability
+            target.probability_of_kill = proximity * (0.5 + 0.5 * target.momentum_score)
+        else:
+            # Negative momentum reduces probability
+            target.probability_of_kill = proximity * (0.5 + 0.5 * target.momentum_score)
+        target.probability_of_kill = max(0, min(1, target.probability_of_kill))
+        
+        # Update tracking
+        target.last_update = now
+        target.scans += 1
+        
+        # Build metrics
+        hold_time = now - target.entry_time
+        metrics = {
+            'symbol': target.symbol,
+            'exchange': target.exchange,
+            'current_pnl': target.current_pnl,
+            'win_threshold': target.win_threshold,
+            'gap_to_kill': gap_to_kill,
+            'pnl_velocity': target.pnl_velocity,
+            'momentum_score': target.momentum_score,
+            'eta_to_kill': target.eta_to_kill,
+            'probability': target.probability_of_kill,
+            'hold_time_seconds': hold_time,
+            'scans': target.scans
+        }
+        
+        # 🎯 CHECK FOR KILL - The moment of truth!
+        if target.current_pnl >= target.win_threshold:
+            verdict = f"🎯⚡ KILL READY! {target.symbol} | P&L: ${target.current_pnl:.4f} >= ${target.win_threshold:.4f}"
+            return (True, verdict, metrics)
+        
+        # Not ready yet - build status
+        if target.eta_to_kill < float('inf'):
+            eta_str = f"{target.eta_to_kill:.1f}s" if target.eta_to_kill < 60 else f"{target.eta_to_kill/60:.1f}m"
+            verdict = f"🔍 Tracking {target.symbol} | {proximity*100:.0f}% to kill | ETA: {eta_str} | Mom: {target.momentum_score:+.2f}"
+        else:
+            verdict = f"⏳ Holding {target.symbol} | {proximity*100:.0f}% to kill | Waiting for momentum..."
+        
+        return (False, verdict, metrics)
+    
+    def scan_all_targets(self, price_getter) -> List[Tuple[str, bool, str, Dict]]:
+        """
+        🎯⚡ SCAN ALL TARGETS - Full battlefield scan.
+        
+        Args:
+            price_getter: Function that takes (exchange, symbol) and returns current price
+        
+        Returns:
+            List of (key, kill_ready, verdict, metrics) for each target
+        """
+        scan_start = time.time()
+        results = []
+        
+        for key, target in self.targets.items():
+            try:
+                current_price = price_getter(target.exchange, target.symbol)
+                kill_ready, verdict, metrics = self.scan_target(key, current_price)
+                results.append((key, kill_ready, verdict, metrics))
+            except Exception as e:
+                results.append((key, False, f"⚠️ Scan error: {e}", {}))
+        
+        # Track scan performance
+        scan_end = time.time()
+        self.scan_interval_ms = (scan_end - scan_start) * 1000
+        self.last_scan_time = scan_end
+        self.scan_count += 1
+        
+        return results
+    
+    def execute_kill(self, key: str, net_pnl: float) -> None:
+        """Record a successful kill."""
+        if key in self.targets:
+            target = self.targets[key]
+            hold_time = time.time() - target.entry_time
+            
+            self.kills_executed += 1
+            self.total_pnl += net_pnl
+            
+            # Remove from active targets
+            del self.targets[key]
+            
+            # Celebrate!
+            print(f"""
+🎯⚡ KILL EXECUTED! ⚡🎯
+   Symbol: {target.symbol} on {target.exchange.upper()}
+   Net P&L: ${net_pnl:.4f}
+   Hold Time: {hold_time:.1f}s
+   Scans: {target.scans}
+   Kill #{self.kills_executed} | Total: ${self.total_pnl:.4f}
+""")
+    
+    def remove_target(self, key: str) -> None:
+        """Remove a target without recording a kill (e.g., manual close)."""
+        if key in self.targets:
+            del self.targets[key]
+    
+    def get_status_report(self) -> str:
+        """Generate a status report of all active targets."""
+        if not self.targets:
+            return "🎯 No active targets. Scanner ready."
+        
+        lines = [
+            "╔══════════════════════════════════════════════════════════════════════════╗",
+            "║  🎯⚡ ACTIVE KILL SCANNER - BATTLEFIELD STATUS ⚡🎯                        ║",
+            "╠══════════════════════════════════════════════════════════════════════════╣",
+            f"║  Targets: {len(self.targets)} | Kills: {self.kills_executed} | Total P&L: ${self.total_pnl:.4f} | Scan: {self.scan_interval_ms:.1f}ms  ║",
+            "╠══════════════════════════════════════════════════════════════════════════╣",
+        ]
+        
+        # Sort by probability (highest first)
+        sorted_targets = sorted(
+            self.targets.items(),
+            key=lambda x: x[1].probability_of_kill,
+            reverse=True
+        )
+        
+        for key, t in sorted_targets:
+            gap = t.win_threshold - t.current_pnl
+            proximity = (t.current_pnl / t.win_threshold * 100) if t.win_threshold > 0 else 0
+            hold_time = time.time() - t.entry_time
+            
+            # ETA string
+            if t.eta_to_kill < float('inf'):
+                eta = f"{t.eta_to_kill:.0f}s" if t.eta_to_kill < 60 else f"{t.eta_to_kill/60:.1f}m"
+            else:
+                eta = "---"
+            
+            # Momentum indicator
+            if t.momentum_score > 0.3:
+                mom = "🟢↑"
+            elif t.momentum_score > 0:
+                mom = "🟡↗"
+            elif t.momentum_score > -0.3:
+                mom = "🟡↘"
+            else:
+                mom = "🔴↓"
+            
+            lines.append(
+                f"║  {t.symbol:<12} | ${t.current_pnl:+.4f}/${t.win_threshold:.4f} "
+                f"| {proximity:5.1f}% | ETA: {eta:>6} | {mom}  ║"
+            )
+        
+        lines.append("╚══════════════════════════════════════════════════════════════════════════╝")
+        
+        return "\n".join(lines)
+    
+    def get_priority_targets(self, top_n: int = 3) -> List[ActiveTarget]:
+        """Get targets most likely to hit kill threshold soon."""
+        sorted_targets = sorted(
+            self.targets.values(),
+            key=lambda t: (t.probability_of_kill, -t.eta_to_kill),
+            reverse=True
+        )
+        return sorted_targets[:top_n]
+
+
+# Global scanner instance
+_active_scanner: Optional[ActiveKillScanner] = None
+
+
+def get_active_scanner() -> ActiveKillScanner:
+    """Get or create the global Active Kill Scanner instance."""
+    global _active_scanner
+    if _active_scanner is None:
+        _active_scanner = ActiveKillScanner()
+    return _active_scanner
+
+
+def register_sniper_target(
+    symbol: str,
+    exchange: str,
+    entry_price: float,
+    entry_value: float,
+    quantity: float,
+    win_threshold: float
+) -> ActiveTarget:
+    """Register a new target with the Active Kill Scanner."""
+    scanner = get_active_scanner()
+    return scanner.register_target(
+        symbol=symbol,
+        exchange=exchange,
+        entry_price=entry_price,
+        entry_value=entry_value,
+        quantity=quantity,
+        win_threshold=win_threshold
+    )
+
+
+def scan_sniper_targets(price_getter) -> List[Tuple[str, bool, str, Dict]]:
+    """Scan all targets and return kill opportunities."""
+    scanner = get_active_scanner()
+    return scanner.scan_all_targets(price_getter)
+
+
+def execute_sniper_kill(exchange: str, symbol: str, net_pnl: float) -> None:
+    """Record a successful kill."""
+    scanner = get_active_scanner()
+    key = f"{exchange}:{symbol}"
+    scanner.execute_kill(key, net_pnl)
+
+
+def get_scanner_status() -> str:
+    """Get the current scanner status report."""
+    scanner = get_active_scanner()
+    return scanner.get_status_report()
+
+
+# =============================================================================
 # SNIPER CELEBRATION
 # =============================================================================
 

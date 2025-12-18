@@ -205,6 +205,12 @@ from ira_sniper_mode import (
     map_sniper_platform_assets,
     sniper_authorizes_kill,  # 🎯 ABSOLUTE KILL AUTHORITY
     sniper_override_active,  # 🛡️ Check if sniper has control
+    # ⚡ ACTIVE KILL SCANNER - Intelligent Hunting System
+    get_active_scanner,
+    register_sniper_target,
+    scan_sniper_targets,
+    execute_sniper_kill,
+    get_scanner_status,
 )
 
 try:
@@ -10679,6 +10685,13 @@ class AureonKrakenEcosystem:
 
     def _record_sniper_kill(self, pos, net_pnl: float):
         """Send completed trade data to unified sniper brain for telemetry."""
+        # 🎯⚡ ACTIVE KILL SCANNER - Record the kill!
+        try:
+            if net_pnl > 0:
+                execute_sniper_kill(pos.exchange, pos.symbol, net_pnl)
+        except Exception as e:
+            logger.debug(f"Kill scanner record error: {e}")
+        
         if not hasattr(self, 'sniper_brain') or not self.sniper_brain:
             return
         try:
@@ -15404,6 +15417,25 @@ class AureonKrakenEcosystem:
             cost_tracker.set_entry_price(symbol, price, quantity, exchange, entry_fee)
         except Exception as e:
             logger.warning(f"Failed to log cost basis for {symbol}: {e}")
+        
+        # 🎯⚡ REGISTER WITH ACTIVE KILL SCANNER ⚡🎯
+        # The hunt begins the moment the position opens!
+        try:
+            # Calculate win threshold using penny profit formula
+            penny_threshold = get_penny_threshold(exchange, pos_size)
+            win_threshold = penny_threshold.get('win_gte', 0.04) if penny_threshold else 0.04
+            
+            register_sniper_target(
+                symbol=symbol,
+                exchange=exchange,
+                entry_price=price,
+                entry_value=pos_size,
+                quantity=quantity,
+                win_threshold=win_threshold
+            )
+            print(f"   🎯⚡ SCANNER LOCKED: {symbol} | Target: ${win_threshold:.4f} gross for 1p net")
+        except Exception as e:
+            logger.warning(f"Failed to register with kill scanner: {e}")
             
         # 🧠 PUBLISH THOUGHT: TRADE OPENED 🧠
         if THOUGHT_BUS_AVAILABLE and THOUGHT_BUS:
@@ -15532,7 +15564,33 @@ class AureonKrakenEcosystem:
         """Check all positions for TP/SL with HNC frequency optimization and Earth Resonance"""
         to_close = []
         
-        # 🌍✨ Get Earth Resonance exit urgency once per cycle ✨🌍
+        # �⚡ ACTIVE KILL SCANNER - INTELLIGENT HUNTING SCAN ⚡🎯
+        # Scan all targets and update predictions BEFORE checking exits
+        if self.positions:
+            try:
+                def price_getter(exchange, symbol):
+                    return self.get_realtime_price(symbol) or 0.0
+                
+                scan_results = scan_sniper_targets(price_getter)
+                
+                # Show scanner status every 5 cycles or when kills are ready
+                kills_ready = [r for r in scan_results if r[1]]  # Kill ready
+                if self.iteration % 5 == 0 or kills_ready:
+                    print(f"\n   🎯⚡ ACTIVE KILL SCANNER ({len(scan_results)} targets)")
+                    for key, kill_ready, verdict, metrics in scan_results:
+                        if kill_ready:
+                            print(f"   🎯 {verdict}")
+                        elif self.iteration % 10 == 0:  # Show tracking info every 10 cycles
+                            print(f"   {verdict}")
+                    
+                    # Priority targets summary
+                    scanner = get_active_scanner()
+                    if scanner.kills_executed > 0:
+                        print(f"   💰 Session: {scanner.kills_executed} kills | Total: ${scanner.total_pnl:.4f}")
+            except Exception as e:
+                logger.debug(f"Kill scanner error: {e}")
+        
+        # �🌍✨ Get Earth Resonance exit urgency once per cycle ✨🌍
         earth_exit_urgency = 0.0
         if CONFIG.get('EARTH_EXIT_URGENCY', True) and self.auris.earth_engine:
             try:
