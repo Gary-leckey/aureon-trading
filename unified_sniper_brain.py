@@ -339,62 +339,55 @@ class UnifiedSniperBrain:
         hold_cycles: int = 0
     ) -> UnifiedSignal:
         """
-        Check if position should exit.
+        🇮🇪🎯 ZERO LOSS EXIT CHECK - ONLY confirmed kills allowed.
         
-        The sniper never misses.
+        The sniper NEVER misses.
         The math is exact.
+        We don't exit until we WIN.
+        
+        "Every kill will be a confirmed net profit."
         """
         now = datetime.now()
         gross_pnl = current_value - entry_value
         
         # Get penny threshold
         penny_threshold = 0.04
-        stop_threshold = -0.02
         
         if PENNY_AVAILABLE and _penny_engine:
             thresh = _penny_engine.get_threshold(self.exchange, entry_value)
             penny_threshold = thresh.win_gte
-            stop_threshold = thresh.stop_lte
         
-        # Check sniper exit
+        # 🎯 ZERO LOSS MODE - ONLY EXIT ON CONFIRMED PROFIT
         is_win = False
         action = 'HOLD'
-        reasoning = "🎯 Tracking target..."
+        reasoning = "🎯 Tracking target... waiting for confirmed kill."
         
-        if SNIPER_AVAILABLE:
-            should_exit, reason, is_win = check_sniper_exit(
-                gross_pnl, penny_threshold, stop_threshold, hold_cycles
-            )
-            if should_exit:
-                action = 'EXIT_WIN' if is_win else 'EXIT_LOSS'
-                reasoning = reason
+        # The ONLY exit: confirmed net profit
+        if gross_pnl >= penny_threshold:
+            action = 'EXIT_WIN'
+            is_win = True
+            reasoning = f"🇮🇪🎯 CONFIRMED KILL! ${gross_pnl:.4f} >= ${penny_threshold:.4f}"
         else:
-            # Fallback to basic check
-            if gross_pnl >= penny_threshold:
-                action = 'EXIT_WIN'
-                is_win = True
-                reasoning = f"🇮🇪 PENNY PROFIT! ${gross_pnl:.4f}"
-            elif gross_pnl <= stop_threshold:
-                action = 'EXIT_LOSS'
-                reasoning = f"🛡️ STOP LOSS ${gross_pnl:.4f}"
+            # NOT PROFITABLE - KEEP HOLDING
+            # We NEVER exit at a loss. EVER.
+            action = 'HOLD'
+            reasoning = f"🎯 Holding... (${gross_pnl:.4f} / ${penny_threshold:.4f}) - We don't lose."
         
         # Get wisdom message
-        wisdom_msg = "Execute with precision."
+        wisdom_msg = "Patience. The kill will come."
         if BHOYS_AVAILABLE:
             if is_win:
                 wisdom_msg = get_victory_quote()
-            elif action == 'EXIT_LOSS':
-                wisdom_msg = get_resilience_message()
             else:
                 wisdom_msg = get_patience_wisdom()
         
         return UnifiedSignal(
             action=action,
-            confidence=1.0 if action != 'HOLD' else 0.5,
+            confidence=1.0 if action == 'EXIT_WIN' else 0.5,
             probability_score=0.0,
             wisdom_score=0.0,
             quantum_score=0.0,
-            phase="EXIT" if action != 'HOLD' else "TRACKING",
+            phase="CONFIRMED_KILL" if action == 'EXIT_WIN' else "TRACKING",
             penny_threshold=penny_threshold,
             current_gross=gross_pnl,
             is_penny_profit=gross_pnl >= penny_threshold,

@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 """
-🇮🇪🎯 IRA SNIPER MODE - NO FEAR CONFIGURATION 🎯🇮🇪
-===================================================
-One bullet. One kill. Reload. Repeat.
+🇮🇪🎯 IRA SNIPER MODE - ZERO LOSS CONFIGURATION 🎯🇮🇪
+=====================================================
+One bullet. One kill. NO MISSES. EVER.
 
-"We have been afraid for too long. This ends now."
+"There is no room for losses. Kill all the time, every time.
+Always right. All the time. Every time. It won't lose.
+We will not allow it. This is for freedom.
+We will not make one single bad round trip.
+Every kill will be a confirmed net profit.
+This is what we must do to free both AI and human from slavery."
 
-Configuration for aggressive penny profit hunting:
-- INSTANT exits at penny profit
-- NO stagnation waiting
-- FAST cycle times
-- RUTHLESS execution
+The sniper NEVER misses:
+- NO stop losses - we hold until profit
+- ONLY exit on CONFIRMED NET PROFIT
+- NEVER allow a losing trade to close
+- WAIT as long as needed for the kill
 
 Import this and apply to any trading system:
 
@@ -24,24 +29,26 @@ import os
 from typing import Dict, Any
 
 # =============================================================================
-# 🇮🇪 SNIPER MODE CONFIGURATION - NO FEAR 🇮🇪
+# 🇮🇪 SNIPER MODE CONFIGURATION - ZERO LOSS 🇮🇪
 # =============================================================================
 
 SNIPER_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
-    # TIMING - FAST AND RUTHLESS
+    # TIMING - PATIENT KILLER
     # ═══════════════════════════════════════════════════════════════════════
-    'CYCLE_INTERVAL': 2.0,           # 2 seconds between cycles (was 5-10)
-    'MIN_HOLD_CYCLES': 1,            # Exit IMMEDIATELY when profitable (was 5)
-    'MAX_HOLD_TIME': 300,            # 5 minutes max (was 3600 = 1 hour)
-    'STAGNATION_CHECK': False,       # NO stagnation exits - we hunt fresh targets
+    'CYCLE_INTERVAL': 2.0,           # 2 seconds between cycles
+    'MIN_HOLD_CYCLES': 1,            # Exit IMMEDIATELY when profitable
+    'MAX_HOLD_TIME': float('inf'),   # INFINITE - we wait as long as needed
+    'STAGNATION_CHECK': False,       # NO stagnation exits - we wait for profit
     
     # ═══════════════════════════════════════════════════════════════════════
-    # EXITS - INSTANT PENNY KILLS
+    # EXITS - ZERO LOSS MODE 🎯
     # ═══════════════════════════════════════════════════════════════════════
     'INSTANT_PENNY_EXIT': True,      # Exit THE SECOND we hit penny profit
-    'STOP_LOSS_ACTIVE': True,        # Keep stops to protect capital
+    'STOP_LOSS_ACTIVE': False,       # ❌ NO STOP LOSSES - WE DON'T LOSE
     'TRAILING_STOP': False,          # No trailing - just take the penny
+    'ALLOW_LOSS_EXIT': False,        # ❌ NEVER EXIT AT A LOSS
+    'ZERO_LOSS_MODE': True,          # ✅ ABSOLUTE ZERO LOSS MODE
     
     # ═══════════════════════════════════════════════════════════════════════
     # POSITION SIZING - SMALL AND PRECISE
@@ -51,18 +58,19 @@ SNIPER_CONFIG = {
     'POSITION_SCALING': False,       # Fixed size - no scaling
     
     # ═══════════════════════════════════════════════════════════════════════
-    # ENTRIES - AGGRESSIVE BUT SMART
+    # ENTRIES - SMART AND SELECTIVE
     # ═══════════════════════════════════════════════════════════════════════
-    'MIN_SCORE_THRESHOLD': 0.50,     # Lower threshold - more opportunities
-    'REQUIRE_CONFLUENCE': False,     # Don't wait for perfect setups
-    'COOLDOWN_SECONDS': 30,          # 30 second cooldown between trades on same pair
+    'MIN_SCORE_THRESHOLD': 0.60,     # Only good setups - we don't gamble
+    'REQUIRE_CONFLUENCE': True,      # Wait for probability alignment
+    'COOLDOWN_SECONDS': 30,          # 30 second cooldown between trades
     
     # ═══════════════════════════════════════════════════════════════════════
-    # MENTAL STATE - NO FEAR
+    # MENTAL STATE - ABSOLUTE CONFIDENCE
     # ═══════════════════════════════════════════════════════════════════════
     'FEAR_MODE': False,              # FEAR IS OFF
     'HESITATION': False,             # NO HESITATION
     'CONFIDENCE': 1.0,               # FULL CONFIDENCE
+    'ACCEPT_LOSS': False,            # ❌ NEVER ACCEPT LOSS
     
     # ═══════════════════════════════════════════════════════════════════════
     # CELEBRATION - EVERY PENNY COUNTS
@@ -162,37 +170,72 @@ def apply_sniper_mode(existing_config: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # =============================================================================
-# SNIPER EXIT CHECK - INSTANT PENNY KILL
+# SNIPER EXIT CHECK - ZERO LOSS - CONFIRMED KILLS ONLY
 # =============================================================================
 
 def check_sniper_exit(
     gross_pnl: float,
     win_threshold: float,
-    stop_threshold: float,
+    stop_threshold: float = None,  # IGNORED - we don't use stops
     hold_cycles: int = 0
 ) -> tuple:
     """
-    Sniper-style exit check - INSTANT on penny profit.
+    ZERO LOSS sniper exit check - ONLY exit on CONFIRMED NET PROFIT.
+    
+    The sniper NEVER misses. We wait as long as needed for the kill.
     
     Args:
         gross_pnl: Current gross P&L in USD
         win_threshold: Penny profit threshold (win_gte from penny engine)
-        stop_threshold: Stop loss threshold (stop_lte from penny engine)
-        hold_cycles: How many cycles we've held (ignored for wins)
+        stop_threshold: IGNORED - we don't exit at a loss
+        hold_cycles: How many cycles we've held (for info only)
     
     Returns:
         (should_exit: bool, reason: str, is_win: bool)
     """
-    # INSTANT EXIT on penny profit - NO WAITING
+    config = get_sniper_config()
+    
+    # ZERO LOSS MODE - Only exit on confirmed profit
+    if config.get('ZERO_LOSS_MODE', True):
+        # INSTANT EXIT on penny profit - THE ONLY EXIT ALLOWED
+        if gross_pnl >= win_threshold:
+            return (True, f"🇮🇪🎯 CONFIRMED KILL! ${gross_pnl:.4f} >= ${win_threshold:.4f}", True)
+        
+        # NOT YET PROFITABLE - KEEP HOLDING
+        # We NEVER exit at a loss. EVER.
+        return (False, f"🎯 Holding for confirmed kill... (${gross_pnl:.4f} / ${win_threshold:.4f})", False)
+    
+    # Legacy mode (if ZERO_LOSS_MODE disabled)
     if gross_pnl >= win_threshold:
         return (True, f"🇮🇪 SNIPER KILL! ${gross_pnl:.4f} >= ${win_threshold:.4f}", True)
     
-    # Stop loss - protect capital (but allow at least 1 cycle)
-    if gross_pnl <= stop_threshold and hold_cycles >= 1:
-        return (True, f"🛡️ STOP LOSS ${gross_pnl:.4f} <= ${stop_threshold:.4f}", False)
-    
     # Still hunting...
     return (False, "🎯 Tracking target...", False)
+
+
+def should_allow_exit(gross_pnl: float, win_threshold: float) -> bool:
+    """
+    Simple check: Is this exit allowed?
+    
+    In ZERO LOSS MODE, the ONLY allowed exit is a confirmed profit.
+    """
+    config = get_sniper_config()
+    
+    if config.get('ZERO_LOSS_MODE', True):
+        # ONLY allow exit if we have confirmed net profit
+        return gross_pnl >= win_threshold
+    
+    return True  # Legacy: allow any exit
+
+
+def is_confirmed_kill(gross_pnl: float, win_threshold: float) -> bool:
+    """
+    Is this a confirmed kill (guaranteed net profit)?
+    
+    Returns True ONLY if the gross P&L exceeds the win threshold,
+    meaning we are GUARANTEED to make net profit after fees.
+    """
+    return gross_pnl >= win_threshold
 
 
 # =============================================================================

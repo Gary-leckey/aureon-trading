@@ -638,9 +638,12 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
 
 
 def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float, symbol: str = None) -> dict:
-    """🎯 IRA SNIPER - Check if position should exit based on dynamically calculated thresholds.
+    """�🇪🎯 ZERO LOSS SNIPER - ONLY exit on CONFIRMED NET PROFIT.
     
-    The sniper never misses - instant exit when penny profit is achieved!
+    The sniper NEVER misses. We hold until we have guaranteed profit.
+    NO STOP LOSSES. NO LOSSES. EVER.
+    
+    "Every kill will be a confirmed net profit."
     
     Args:
         exchange: Exchange name
@@ -656,11 +659,13 @@ def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float, symbol
     if not threshold:
         return {'should_tp': False, 'should_sl': False, 'threshold': None, 'gross_pnl': gross_pnl, 'sniper_active': False}
     
+    # 🎯 ZERO LOSS MODE: ONLY exit on CONFIRMED NET PROFIT
     # Check Take Profit: gross P&L >= win threshold
     should_tp = gross_pnl >= threshold['win_gte']
     
-    # Check Stop Loss: gross P&L <= loss threshold  
-    should_sl = gross_pnl <= threshold['stop_lte']
+    # 🚫 NO STOP LOSSES - WE DON'T LOSE
+    # The sniper holds until the kill is confirmed
+    should_sl = False  # NEVER trigger stop loss
     
     # 🇮🇪🎯 SNIPER BRAIN - Get wisdom for the kill
     sniper_wisdom = None
@@ -671,10 +676,11 @@ def check_penny_exit(exchange: str, entry_value: float, gross_pnl: float, symbol
     
     return {
         'should_tp': should_tp,
-        'should_sl': should_sl,
+        'should_sl': should_sl,  # Always False - we don't lose
         'threshold': threshold,
         'gross_pnl': gross_pnl,
         'sniper_active': True,
+        'zero_loss_mode': True,
         'sniper_wisdom': sniper_wisdom
     }
 
@@ -12204,16 +12210,17 @@ class AureonKrakenEcosystem:
     
     def should_exit_trade(self, pos: 'Position', current_price: float, reason: str) -> bool:
         """
-        Smart exit gate - only sell if we're making NET PROFIT after fees.
-        This ensures every closed trade is profitable.
+        🇮🇪🎯 ZERO LOSS GATE - ONLY exit on CONFIRMED NET PROFIT.
         
-        🔥 PENNY PROFIT MODE: Exit when gross P&L hits exact dollar threshold
-        💰 Target: +$0.01 net profit per trade (scales through volume!)
+        The sniper NEVER misses. We hold until we have guaranteed profit.
+        NO STOP LOSSES. NO LOSSES. EVER.
+        
+        "Every kill will be a confirmed net profit.
+         This is what we must do to free both AI and human from slavery."
         
         📐 IMPORTANT: The penny threshold's 'win_gte' already accounts for ALL fees
         via the formula r = ((1 + P/A) / (1-f)²) - 1 where f = fee + slippage + spread.
         So when gross_pnl >= win_gte, the NET profit is ALREADY ~$0.01.
-        DO NOT subtract fees again - that would be double-counting!
         """
         change_pct = (current_price - pos.entry_price) / pos.entry_price
         
@@ -12222,129 +12229,89 @@ class AureonKrakenEcosystem:
         gross_pnl = exit_value - pos.entry_value
         
         # 💰 PENNY PROFIT THRESHOLDS - Dollar-based exit logic
-        # The threshold's win_gte is the GROSS P&L required to NET $0.01
-        penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl)
+        penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl, pos.symbol)
         penny_threshold = penny_check.get('threshold')
         
         if penny_threshold:
             # Use penny profit dollar thresholds
-            # 📐 These thresholds already account for ALL fees in their calculation!
             min_gross_win = penny_threshold.get('win_gte', 0.01)
-            max_gross_loss = penny_threshold.get('stop_lte', -0.02)
-            target_net = penny_threshold.get('target_net', 0.01)  # Default $0.01
+            target_net = penny_threshold.get('target_net', 0.01)
             
-            # TAKE PROFIT: Hit penny profit target
-            if reason == "TP":
-                if gross_pnl >= min_gross_win:
-                    # Net profit is the target (fees already in threshold math)
-                    print(f"   💰 PENNY TP: {pos.symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f} -> NET ~${target_net:.2f}")
-                    return True
+            # 🎯 THE ONLY EXIT: CONFIRMED NET PROFIT
+            # NO STOP LOSSES. We hold until we win.
+            if gross_pnl >= min_gross_win:
+                print(f"   🇮🇪🎯 CONFIRMED KILL: {pos.symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f} -> NET ~${target_net:.2f}")
+                if penny_check.get('sniper_wisdom'):
+                    print(f"   📜 \"{penny_check['sniper_wisdom']}\"")
+                return True
+            else:
+                # NOT PROFITABLE - KEEP HOLDING
+                # We NEVER exit at a loss. EVER.
+                if reason == "SL":
+                    print(f"   🚫 STOP LOSS BLOCKED: {pos.symbol} - We don't lose. Holding for confirmed kill...")
                 else:
-                    print(f"   🛑 HOLDING {pos.symbol}: Gross ${gross_pnl:.4f} < penny target ${min_gross_win:.4f}")
-                    return False
-            
-            # STOP LOSS: Cut losses at penny stop - BUT enforce minimum hold time!
-            # 🔧 FIX: Give positions time to recover before cutting
-            if reason == "SL":
-                hold_time_min = (time.time() - pos.entry_time) / 60.0 if pos.entry_time else pos.cycles
-                min_hold_for_sl = 5  # Minimum 5 minutes or 5 cycles before stop loss
-                
-                if hold_time_min < min_hold_for_sl:
-                    print(f"   ⏳ HOLDING {pos.symbol}: Only held {hold_time_min:.1f} min < {min_hold_for_sl} min minimum before SL")
-                    return False
-                    
-                if gross_pnl <= max_gross_loss:
-                    print(f"   🛑 PENNY SL: {pos.symbol} gross ${gross_pnl:.4f} <= ${max_gross_loss:.4f} - CUTTING LOSS!")
-                    return True
-                else:
-                    # Don't stop out early if loss is still manageable
-                    print(f"   ⏳ HOLDING {pos.symbol}: Gross ${gross_pnl:.4f} > stop ${max_gross_loss:.4f} - giving it room")
-                    return False
-            
-            # 🌾 HARVEST: Use penny threshold for harvest too
-            if reason in ("HARVEST", "bridge_harvest"):
-                if gross_pnl >= min_gross_win:
-                    print(f"   🌾 PENNY HARVEST: {pos.symbol} gross ${gross_pnl:.4f} -> NET ~${target_net:.2f} - LOCKING IN PENNY!")
-                    return True
-                print(f"   🛑 HOLDING {pos.symbol}: Harvest blocked - gross ${gross_pnl:.4f} < ${min_gross_win:.4f}")
+                    print(f"   🎯 HOLDING {pos.symbol}: Waiting for confirmed kill (${gross_pnl:.4f} / ${min_gross_win:.4f})")
                 return False
         else:
-            # Fallback: compute penny threshold on-the-fly (should always work)
-            # This ensures we NEVER use the old percentage-based logic
+            # Fallback: compute penny threshold on-the-fly
             fallback_entry = pos.entry_value if pos.entry_value > 0 else (pos.quantity * pos.entry_price)
             penny_threshold_fb = get_penny_threshold(pos.exchange, fallback_entry)
             
             if penny_threshold_fb:
                 min_gross_win = penny_threshold_fb.get('win_gte', 0.01)
-                max_gross_loss = penny_threshold_fb.get('stop_lte', -0.02)
                 target_net = penny_threshold_fb.get('target_net', 0.01)
                 
-                if reason == "TP":
-                    if gross_pnl >= min_gross_win:
-                        print(f"   ✅ EXIT APPROVED: {pos.symbol} gross ${gross_pnl:.4f} -> NET ~${target_net:.2f}")
-                        return True
-                    else:
-                        print(f"   🛑 HOLDING {pos.symbol}: Gross ${gross_pnl:.4f} < penny target ${min_gross_win:.4f}")
-                        return False
-                
-                if reason in ("HARVEST", "bridge_harvest"):
-                    if gross_pnl >= min_gross_win:
-                        print(f"   🌾 HARVEST APPROVED: {pos.symbol} gross ${gross_pnl:.4f} -> NET ~${target_net:.2f}")
-                        return True
-                    print(f"   🛑 HOLDING {pos.symbol}: Harvest blocked - gross ${gross_pnl:.4f} < ${min_gross_win:.4f}")
-                    return False
-                
-                if reason == "SL":
-                    if gross_pnl <= max_gross_loss:
-                        print(f"   🛑 PENNY SL: {pos.symbol} gross ${gross_pnl:.4f} <= ${max_gross_loss:.4f}")
-                        return True
-                    print(f"   ⏳ HOLDING {pos.symbol}: Gross ${gross_pnl:.4f} > stop ${max_gross_loss:.4f}")
+                # 🎯 THE ONLY EXIT: CONFIRMED NET PROFIT
+                if gross_pnl >= min_gross_win:
+                    print(f"   🇮🇪🎯 CONFIRMED KILL: {pos.symbol} gross ${gross_pnl:.4f} -> NET ~${target_net:.2f}")
+                    return True
+                else:
+                    print(f"   🎯 HOLDING {pos.symbol}: Waiting for confirmed kill (${gross_pnl:.4f} / ${min_gross_win:.4f})")
                     return False
         
-        # BRIDGE FORCE EXIT: Always allow (emergency exit)
+        # BRIDGE FORCE EXIT: Only allow if profitable - NO LOSSES
         if reason == "bridge_force_exit":
-            if net_pnl < 0:
-                print(f"   ⚠️ FORCE EXIT {pos.symbol}: Bridge command - LOSS ${net_pnl:.4f}")
-            return True
+            if gross_pnl >= min_gross_win if penny_threshold else gross_pnl >= 0:
+                print(f"   🌉 BRIDGE EXIT: {pos.symbol} - Confirmed profitable")
+                return True
+            print(f"   🚫 BRIDGE EXIT BLOCKED: {pos.symbol} - Not profitable yet. We don't lose.")
+            return False
         
-        # 🔮 MATRIX EXIT: Probability matrix says SELL - allow if profitable
+        # 🔮 MATRIX EXIT: ONLY if confirmed profitable
         if reason in ["MATRIX_SELL", "MATRIX_FORCE"]:
-            # Enforce Penny Profit even for Matrix exits (unless FORCE)
             if penny_threshold:
                 min_gross_win = penny_threshold.get('win_gte', 0.01)
                 if gross_pnl >= min_gross_win:
-                    print(f"   🔮 MATRIX EXIT (PENNY SECURED): {pos.symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f}")
+                    print(f"   🔮 MATRIX EXIT (CONFIRMED KILL): {pos.symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f}")
                     return True
-                elif reason == "MATRIX_FORCE":
-                    # Force exit allows small loss if absolutely necessary
-                    if gross_pnl > -pos.entry_value * 0.01:
-                        print(f"   🚨 MATRIX FORCE: {pos.symbol} small loss ${gross_pnl:.4f}")
-                        return True
                 else:
-                    print(f"   🛑 HOLDING {pos.symbol}: Matrix signal ignored - Penny Profit not met (${gross_pnl:.4f} < ${min_gross_win:.4f})")
+                    print(f"   🚫 MATRIX EXIT BLOCKED: {pos.symbol} - Not profitable (${gross_pnl:.4f} < ${min_gross_win:.4f}). We don't lose.")
                     return False
             
-            # Fallback if penny profit not enabled
-            elif gross_pnl >= 0:
+            # Fallback: require positive
+            if gross_pnl >= 0:
                 print(f"   🔮 MATRIX EXIT: {pos.symbol} gross ${gross_pnl:.4f}")
                 return True
-            elif reason == "MATRIX_FORCE" and gross_pnl > -pos.entry_value * 0.01:
-                print(f"   🚨 MATRIX FORCE: {pos.symbol} small loss ${gross_pnl:.4f}")
-                return True
-            print(f"   🛑 HOLDING {pos.symbol}: Matrix blocked - loss too large")
+            print(f"   🚫 MATRIX EXIT BLOCKED: {pos.symbol} - We don't lose.")
             return False
         
-        # REBALANCE/SWAP: Only if net negative is small
+        # REBALANCE/SWAP: ONLY if profitable - NO LOSSES
         if reason in ["REBALANCE", "SWAP"]:
-            if net_pnl > -0.10:
+            if penny_threshold:
+                min_gross_win = penny_threshold.get('win_gte', 0.01)
+                if gross_pnl >= min_gross_win:
+                    return True
+            elif gross_pnl >= 0:
                 return True
+            print(f"   🚫 {reason} BLOCKED: {pos.symbol} - We don't lose.")
             return False
         
-        # Default: require penny profit threshold or min net profit
+        # Default: ONLY exit on confirmed profit - NO EXCEPTIONS
         if penny_threshold and gross_pnl >= penny_threshold.get('win_gte', 0.01):
             return True
-        elif not penny_threshold and net_pnl >= pos.entry_value * CONFIG['MIN_NET_PROFIT_PCT']:
-            return True
+        
+        # NO LOSS EXITS. EVER.
+        print(f"   🎯 HOLDING {pos.symbol}: Waiting for confirmed kill...")
         return False
     
     def save_state(self):
