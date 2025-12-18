@@ -1,0 +1,25 @@
+{
+  "training_completed": "2025-12-18T14:12:01.932888",
+  "total_trades": 77429,
+  "wins": 77429,
+  "losses": 0,
+  "win_rate": 100.0,
+  "total_pnl": 46495.47616713697,
+  "avg_pnl": 0.6004917558942641,
+  "parameters": {
+    "position_size": 10.0,
+    "required_r": 0.021324354657688005,
+    "min_win_gross": 0.21324354657688005,
+    "min_volatility": 0.005,
+    "max_volatility": 0.1,
+    "lookback": 3
+  },
+  "threshold": {
+    "required_pct": 2.1324354657688005,
+    "required_r": 0.021324354657688005,
+    "win_gte": 0.21324354657688005,
+    "position_size": 10.0,
+    "target_net": 0.01
+  },
+  "combined_rate": 0.010000000000000002
+}
