@@ -234,6 +234,15 @@ class PatriotScout:
     This is not just a position - this is a WARRIOR.
     Wired with intelligence, trained for preemptive action,
     united with brothers across all battlefronts.
+    
+    🎯⚡ ACTIVE KILL SCANNER INTEGRATION ⚡🎯
+    Now includes same capabilities as IRA Sniper:
+    - P&L velocity tracking ($/second toward profit)
+    - Momentum scoring (-1 to +1)
+    - ETA to kill prediction
+    - Probability of kill calculation
+    - Cascade amplification (up to 10x)
+    - Adaptive learning from kills
     """
     # Identity
     scout_id: str
@@ -270,6 +279,21 @@ class PatriotScout:
     total_profit: float = 0.0
     battles_fought: int = 0
     
+    # 🎯⚡ ACTIVE KILL SCANNER STATE ⚡🎯
+    pnl_history: List[Tuple[float, float]] = field(default_factory=list)  # (timestamp, pnl)
+    pnl_velocity: float = 0.0              # $/second - positive means approaching kill
+    momentum_score: float = 0.0            # -1 to +1, current momentum
+    eta_to_kill: float = float('inf')      # Estimated seconds to hit threshold
+    probability_of_kill: float = 0.0       # 0-1 probability we'll hit target
+    scans: int = 0                         # Number of price scans
+    last_scan_time: float = 0.0            # Last scan timestamp
+    
+    # ⛏️ CASCADE AMPLIFIER STATE ⛏️
+    cascade_factor: float = 1.0            # From miner (up to 10x)
+    kappa_t: float = 1.0                   # κt efficiency (up to 2.49x)
+    lighthouse_gamma: float = 0.5          # Planetary coherence
+    consecutive_kills: int = 0             # Kill streak
+    
     def get_battle_cry(self) -> str:
         """Generate a battle cry for this patriot"""
         cries = [
@@ -303,13 +327,97 @@ class PatriotScout:
         return random.choice(cries)
     
     def update_price(self, price: float):
-        """Update current price and recalculate P&L"""
+        """
+        Update current price and recalculate P&L.
+        
+        🎯⚡ NOW WITH ACTIVE KILL SCANNER ⚡🎯
+        Tracks P&L velocity, momentum, and ETA to kill.
+        """
+        now = time.time()
         self.current_price = price
+        self.scans += 1
+        self.last_scan_time = now
+        
         if self.entry_price > 0 and self.position_size > 0:
             current_value = self.position_size * price
             self.unrealized_pnl = current_value - self.entry_value_usd
             self.peak_pnl = max(self.peak_pnl, self.unrealized_pnl)
             self.min_pnl = min(self.min_pnl, self.unrealized_pnl)
+            
+            # 🎯 Track P&L history for velocity calculation (keep last 10)
+            self.pnl_history.append((now, self.unrealized_pnl))
+            if len(self.pnl_history) > 10:
+                self.pnl_history.pop(0)
+            
+            # 🎯 Calculate P&L velocity (change per second)
+            if len(self.pnl_history) >= 2:
+                oldest = self.pnl_history[0]
+                newest = self.pnl_history[-1]
+                time_diff = newest[0] - oldest[0]
+                if time_diff > 0:
+                    self.pnl_velocity = (newest[1] - oldest[1]) / time_diff
+            
+            # 🎯 Calculate momentum score (-1 to +1)
+            if self.pnl_velocity > 0:
+                self.momentum_score = min(1.0, self.pnl_velocity / 0.01)
+            else:
+                self.momentum_score = max(-1.0, self.pnl_velocity / 0.01)
+            
+            # 🎯 Calculate ETA to kill
+            gap_to_kill = self.target_profit_usd - self.unrealized_pnl
+            if self.pnl_velocity > 0 and gap_to_kill > 0:
+                self.eta_to_kill = gap_to_kill / self.pnl_velocity
+            elif gap_to_kill <= 0:
+                self.eta_to_kill = 0  # Ready NOW!
+            else:
+                self.eta_to_kill = float('inf')
+            
+            # 🎯 Calculate probability of kill with cascade boost
+            self._calculate_kill_probability()
+    
+    def _calculate_kill_probability(self):
+        """
+        🎯 Calculate probability of hitting profit target.
+        Uses momentum, proximity, and cascade amplification.
+        """
+        if self.target_profit_usd <= 0:
+            self.probability_of_kill = 0.0
+            return
+        
+        # Base probability from proximity
+        proximity = self.unrealized_pnl / self.target_profit_usd
+        proximity = max(0, min(1, proximity))
+        
+        # Momentum factor
+        if self.momentum_score > 0:
+            base_prob = proximity * (0.5 + 0.5 * self.momentum_score)
+        else:
+            base_prob = proximity * (0.5 + 0.5 * self.momentum_score)
+        
+        # ⛏️ CASCADE AMPLIFICATION
+        cascade_mult = self._get_cascade_multiplier()
+        
+        self.probability_of_kill = max(0, min(1, base_prob * cascade_mult))
+    
+    def _get_cascade_multiplier(self) -> float:
+        """
+        ⛏️ Calculate cascade multiplier for probability boost.
+        Same formula as IRA Sniper: CASCADE × κt × Lighthouse
+        """
+        cascade_mult = 1.0 + (self.cascade_factor - 1.0) * 0.3
+        kappa_mult = 1.0 + (self.kappa_t - 1.0) * 0.2
+        lighthouse_mult = 1.0
+        if self.lighthouse_gamma >= 0.75:
+            lighthouse_mult = 1.0 + (self.lighthouse_gamma - 0.75) * 0.4
+        return min(3.0, cascade_mult * kappa_mult * lighthouse_mult)
+    
+    def sync_cascade(self, cascade_factor: float, kappa_t: float, lighthouse_gamma: float):
+        """
+        ⛏️ MINER SYNC: Import cascade state from ecosystem.
+        """
+        self.cascade_factor = cascade_factor
+        self.kappa_t = kappa_t
+        self.lighthouse_gamma = lighthouse_gamma
     
     def should_exit(self) -> Tuple[bool, str]:
         """
@@ -387,6 +495,21 @@ class PatriotScoutNetwork:
         self.victories = 0
         self.retreats = 0
         
+        # 🧠 ADAPTIVE LEARNING STATE - Same as IRA Sniper
+        self.kill_history: List[Dict] = []  # Historical kills for learning
+        self.avg_kill_time: float = 30.0    # Average seconds to kill
+        self.avg_kill_velocity: float = 0.002  # Average $/s at kill time
+        self.momentum_success_rate: Dict[str, float] = {}  # Momentum band -> success rate
+        
+        # ⛏️ CASCADE AMPLIFIER STATE - Synced from ecosystem
+        self.cascade_factor: float = 1.0
+        self.kappa_t: float = 1.0
+        self.lighthouse_gamma: float = 0.5
+        self.consecutive_kills: int = 0
+        
+        # Load learned state
+        self._load_learned_state()
+        
         # Initialize Celtic warfare systems
         self._wire_celtic_systems()
         
@@ -441,6 +564,136 @@ class PatriotScoutNetwork:
                 print(f"   ⚠️ War Strategist wire failed: {e}")
                 self.war_strategist = None
     
+    # ═══════════════════════════════════════════════════════════════════════
+    # 🧠 ADAPTIVE LEARNING METHODS - Same as IRA Sniper
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def _load_learned_state(self):
+        """Load learned parameters from adaptive learning history."""
+        try:
+            history_file = 'adaptive_learning_history.json'
+            if os.path.exists(history_file):
+                with open(history_file, 'r') as f:
+                    data = json.load(f)
+                
+                # Extract patriot-specific learning
+                patriot_data = data.get('patriot_learning', {})
+                self.avg_kill_time = patriot_data.get('avg_kill_time', 30.0)
+                self.avg_kill_velocity = patriot_data.get('avg_kill_velocity', 0.002)
+                self.momentum_success_rate = patriot_data.get('momentum_success_rate', {})
+                self.kill_history = patriot_data.get('kill_history', [])[-100:]
+                
+                # Get cascade state
+                cascade_data = data.get('cascade_state', {})
+                self.cascade_factor = cascade_data.get('cascade_factor', 1.0)
+                self.kappa_t = cascade_data.get('kappa_t', 1.0)
+                self.lighthouse_gamma = cascade_data.get('lighthouse_gamma', 0.5)
+                
+                print(f"   🧠 Loaded learning: avg_kill={self.avg_kill_time:.0f}s CASCADE={self.cascade_factor:.1f}x")
+        except Exception:
+            pass  # Use defaults
+    
+    def _save_learned_state(self):
+        """Save learned parameters to adaptive learning history."""
+        try:
+            history_file = 'adaptive_learning_history.json'
+            data = {}
+            if os.path.exists(history_file):
+                with open(history_file, 'r') as f:
+                    data = json.load(f)
+            
+            data['patriot_learning'] = {
+                'avg_kill_time': self.avg_kill_time,
+                'avg_kill_velocity': self.avg_kill_velocity,
+                'momentum_success_rate': self.momentum_success_rate,
+                'total_kills': self.total_kills,
+                'total_profit': self.total_profit,
+                'kill_history': self.kill_history[-100:],
+            }
+            
+            data['cascade_state'] = {
+                'cascade_factor': self.cascade_factor,
+                'kappa_t': self.kappa_t,
+                'lighthouse_gamma': self.lighthouse_gamma,
+                'consecutive_kills': self.consecutive_kills,
+            }
+            
+            with open(history_file, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception:
+            pass
+    
+    def _learn_from_kill(self, scout: PatriotScout, net_pnl: float, hold_time: float):
+        """🧠 ADAPTIVE LEARNING: Record kill data and update predictions."""
+        kill_record = {
+            'codename': scout.codename,
+            'symbol': scout.symbol,
+            'exchange': scout.exchange,
+            'hold_time': hold_time,
+            'net_pnl': net_pnl,
+            'final_velocity': scout.pnl_velocity,
+            'final_momentum': scout.momentum_score,
+            'scans': scout.scans,
+            'entry_value': scout.entry_value_usd,
+            'timestamp': time.time(),
+        }
+        self.kill_history.append(kill_record)
+        
+        alpha = 0.1
+        self.avg_kill_time = (1 - alpha) * self.avg_kill_time + alpha * hold_time
+        
+        if scout.pnl_velocity > 0:
+            self.avg_kill_velocity = (1 - alpha) * self.avg_kill_velocity + alpha * scout.pnl_velocity
+        
+        momentum_band = self._get_momentum_band(scout.momentum_score)
+        if momentum_band not in self.momentum_success_rate:
+            self.momentum_success_rate[momentum_band] = 0.5
+        
+        success = 1.0 if net_pnl > 0 else 0.0
+        current_rate = self.momentum_success_rate[momentum_band]
+        self.momentum_success_rate[momentum_band] = (1 - alpha) * current_rate + alpha * success
+        
+        if net_pnl > 0:
+            self.consecutive_kills += 1
+            boost = 1.15 * (1 + net_pnl * 5)
+            self.cascade_factor = min(10.0, self.cascade_factor * boost)
+            self.kappa_t = min(2.49, self.kappa_t + 0.05)
+        else:
+            self.consecutive_kills = 0
+            self.cascade_factor = max(1.0, self.cascade_factor * 0.95)
+            self.kappa_t = max(1.0, self.kappa_t - 0.025)
+        
+        if len(self.kill_history) % 5 == 0:
+            self._save_learned_state()
+    
+    def _get_momentum_band(self, momentum: float) -> str:
+        """Categorize momentum into bands for learning."""
+        if momentum >= 0.7:
+            return 'STRONG_UP'
+        elif momentum >= 0.3:
+            return 'UP'
+        elif momentum >= 0:
+            return 'WEAK_UP'
+        elif momentum >= -0.3:
+            return 'WEAK_DOWN'
+        elif momentum >= -0.7:
+            return 'DOWN'
+        else:
+            return 'STRONG_DOWN'
+    
+    def sync_cascade_to_scouts(self):
+        """Sync cascade state to all active scouts."""
+        for scout in self.scouts.values():
+            if scout.status in ['deployed', 'engaged']:
+                scout.sync_cascade(self.cascade_factor, self.kappa_t, self.lighthouse_gamma)
+    
+    def sync_from_ecosystem(self, cascade_factor: float, kappa_t: float, lighthouse_gamma: float):
+        """⛏️ MINER SYNC: Import cascade state from ecosystem's CascadeAmplifier."""
+        self.cascade_factor = cascade_factor
+        self.kappa_t = kappa_t
+        self.lighthouse_gamma = lighthouse_gamma
+        self.sync_cascade_to_scouts()
+
     def _generate_scout_id(self) -> str:
         """Generate unique scout ID with Irish prefix"""
         self.scout_counter += 1
@@ -570,8 +823,11 @@ class PatriotScoutNetwork:
         """
         Record a VICTORY for this scout.
         Celebrate like true Irish!
+        
+        🧠 Now with ADAPTIVE LEARNING - learns from each kill!
         """
         profit = actual_profit if actual_profit is not None else scout.unrealized_pnl
+        hold_time = time.time() - scout.entry_time if scout.entry_time > 0 else 0
         
         scout.kills += 1
         scout.total_profit += profit
@@ -581,9 +837,14 @@ class PatriotScoutNetwork:
         self.total_profit += profit
         self.victories += 1
         
+        # 🧠 ADAPTIVE LEARNING - Record this kill
+        self._learn_from_kill(scout, profit, hold_time)
+        
         if PATRIOT_CONFIG['CELEBRATE_KILLS']:
             print(scout.get_victory_cry(profit))
-            print(f"   📊 Network Stats: {self.total_kills} kills, +${self.total_profit:.4f} total")
+            cascade_info = f"CASCADE: {self.cascade_factor:.1f}x" if self.cascade_factor > 1.0 else ""
+            streak_info = f"🔥{self.consecutive_kills}" if self.consecutive_kills > 1 else ""
+            print(f"   📊 Network Stats: {self.total_kills} kills, +${self.total_profit:.4f} total {cascade_info} {streak_info}")
     
     def execute_retreat(self, scout: PatriotScout, reason: str):
         """
@@ -662,11 +923,19 @@ class PatriotScoutNetwork:
                 'preemptive': self.preemptive_engine is not None,
                 'coordinator': self.war_room is not None,
                 'war_strategy': self.war_strategist is not None
-            }
+            },
+            # 🧠 Adaptive Learning Stats
+            'avg_kill_time': self.avg_kill_time,
+            'avg_kill_velocity': self.avg_kill_velocity,
+            'momentum_success_rate': self.momentum_success_rate,
+            # ⛏️ Cascade Stats
+            'cascade_factor': self.cascade_factor,
+            'kappa_t': self.kappa_t,
+            'consecutive_kills': self.consecutive_kills,
         }
     
     def print_status(self):
-        """Print beautiful status display"""
+        """Print beautiful status display with learning/cascade stats"""
         status = self.get_network_status()
         
         print("\n" + "═" * 70)
@@ -688,6 +957,19 @@ class PatriotScoutNetwork:
         for system, wired in status['systems_wired'].items():
             emoji = "✅" if wired else "❌"
             print(f"      {emoji} {system.replace('_', ' ').title()}")
+        
+        # 🧠⛏️ ENHANCED STATS - Same as IRA Sniper
+        print("\n   🎯⚡ KILL SCANNER STATS ⚡🎯")
+        cascade_str = f"{status['cascade_factor']:.1f}x" if status['cascade_factor'] > 1.0 else "1.0x"
+        kappa_str = f"{status['kappa_t']:.2f}" if status['kappa_t'] > 1.0 else "1.00"
+        streak_str = f"🔥{status['consecutive_kills']}" if status['consecutive_kills'] > 1 else "0"
+        print(f"      ⛏️ CASCADE: {cascade_str} | κt: {kappa_str} | STREAK: {streak_str}")
+        print(f"      🧠 Avg Kill Time: {status['avg_kill_time']:.0f}s | Velocity: ${status['avg_kill_velocity']:.4f}/s")
+        
+        if status['momentum_success_rate']:
+            print("      📊 Momentum Success:")
+            for band, rate in status['momentum_success_rate'].items():
+                print(f"         • {band}: {rate:.0%}")
         
         print("═" * 70)
         print(f"   📜 \"{get_patriot_wisdom()}\"")
