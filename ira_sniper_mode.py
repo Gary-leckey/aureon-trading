@@ -349,6 +349,111 @@ def is_confirmed_kill(gross_pnl: float, win_threshold: float) -> bool:
 
 
 # =============================================================================
+# 🇮🇪🎯 SNIPER ABSOLUTE KILL AUTHORITY 🎯🇮🇪
+# =============================================================================
+
+def sniper_authorizes_kill(
+    gross_pnl: float,
+    win_threshold: float,
+    symbol: str,
+    exit_reason: str,
+    entry_value: float = 0.0,
+    current_value: float = 0.0
+) -> Tuple[bool, str]:
+    """
+    🇮🇪🎯 THE SNIPER HAS ABSOLUTE AUTHORITY OVER ALL EXITS. 🎯🇮🇪
+    
+    NO exit happens without the sniper's explicit authorization.
+    This is the FINAL GATE. The sniper's word is LAW.
+    
+    "The sniper does not ask permission. The sniper grants it.
+     Every kill is HIS decision. HIS timing. HIS profit.
+     No algorithm, no signal, no panic can override the sniper.
+     When the sniper says HOLD - we HOLD.
+     When the sniper says KILL - we KILL."
+    
+    Args:
+        gross_pnl: Current gross profit/loss
+        win_threshold: Minimum profit required for confirmed kill
+        symbol: The asset being targeted
+        exit_reason: Why someone wants to exit (SL, TP, MATRIX, etc.)
+        entry_value: Original position value
+        current_value: Current position value
+    
+    Returns:
+        (authorized: bool, sniper_verdict: str)
+        - authorized: True ONLY if sniper grants the kill
+        - sniper_verdict: The sniper's reasoning
+    """
+    config = get_sniper_config()
+    
+    # 🇮🇪 THE SNIPER'S LAW
+    if not config.get('ZERO_LOSS_MODE', True):
+        # Legacy mode - sniper is sleeping
+        return (True, "🔓 Legacy mode - sniper authority bypassed")
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🎯 CONFIRMED KILL - SNIPER AUTHORIZES EXIT
+    # ═══════════════════════════════════════════════════════════════
+    if gross_pnl >= win_threshold:
+        net_estimate = gross_pnl - (win_threshold - 0.01)  # Rough net estimate
+        verdict = f"🇮🇪🎯 KILL AUTHORIZED! {symbol} | Profit: ${gross_pnl:.4f} >= ${win_threshold:.4f}"
+        
+        # Add Celtic wisdom for the kill
+        try:
+            from bhoys_wisdom import get_battle_wisdom
+            wisdom = get_battle_wisdom()
+            verdict += f"\n   📜 \"{wisdom}\""
+        except ImportError:
+            pass
+        
+        return (True, verdict)
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🛡️ NO KILL - SNIPER DENIES EXIT - HOLD THE LINE
+    # ═══════════════════════════════════════════════════════════════
+    
+    # Calculate how far from profit
+    gap = win_threshold - gross_pnl
+    pct_to_target = (gross_pnl / win_threshold * 100) if win_threshold > 0 else 0
+    
+    # Build denial message based on exit reason
+    if exit_reason == "SL":
+        denial = f"🚫 STOP LOSS DENIED! The sniper does not retreat."
+    elif exit_reason == "bridge_force_exit":
+        denial = f"🚫 BRIDGE EXIT DENIED! No external commands override the sniper."
+    elif exit_reason in ["MATRIX_SELL", "MATRIX_FORCE"]:
+        denial = f"🚫 MATRIX EXIT DENIED! The matrix does not command the sniper."
+    elif exit_reason in ["REBALANCE", "SWAP"]:
+        denial = f"🚫 {exit_reason} DENIED! Portfolio rules do not override combat."
+    elif exit_reason == "PANIC":
+        denial = f"🚫 PANIC SELL DENIED! Fear is not a valid exit strategy."
+    else:
+        denial = f"🚫 EXIT DENIED! Reason '{exit_reason}' not authorized."
+    
+    verdict = f"""
+{denial}
+   🎯 {symbol}: ${gross_pnl:.4f} / ${win_threshold:.4f} ({pct_to_target:.0f}% to target)
+   📏 Gap to profit: ${gap:.4f}
+   ⏳ The sniper waits. The kill WILL come.
+   🇮🇪 "Ní neart go cur le chéile" - There is no strength without unity."""
+    
+    return (False, verdict)
+
+
+def sniper_override_active() -> bool:
+    """
+    Check if sniper override mode is active.
+    When active, NO exit can happen without sniper authorization.
+    
+    Returns:
+        True if sniper has absolute control (default)
+    """
+    config = get_sniper_config()
+    return config.get('ZERO_LOSS_MODE', True) and not config.get('ALLOW_LOSS_EXIT', False)
+
+
+# =============================================================================
 # SNIPER CELEBRATION
 # =============================================================================
 

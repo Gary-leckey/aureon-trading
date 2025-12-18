@@ -203,6 +203,8 @@ from ira_sniper_mode import (
     check_sniper_exit,
     get_sniper_config,
     map_sniper_platform_assets,
+    sniper_authorizes_kill,  # 🎯 ABSOLUTE KILL AUTHORITY
+    sniper_override_active,  # 🛡️ Check if sniper has control
 )
 
 try:
@@ -12890,30 +12892,32 @@ class AureonKrakenEcosystem:
                 min_gross_win = penny_threshold_fb.get('win_gte', min_gross_win)
                 target_net = penny_threshold_fb.get('target_net', target_net)
 
-        # 🇮🇪🎯 IRA SNIPER EXIT CHECK - global zero-loss enforcement across all platforms
-        sniper_exit, sniper_reason, is_win = check_sniper_exit(
+        # ═══════════════════════════════════════════════════════════════════════
+        # 🇮🇪🎯 SNIPER ABSOLUTE KILL AUTHORITY - THE SNIPER'S WORD IS LAW 🎯🇮🇪
+        # ═══════════════════════════════════════════════════════════════════════
+        # The sniper has FULL CONTROL. No exit happens without his authorization.
+        # "When the sniper says HOLD - we HOLD. When the sniper says KILL - we KILL."
+        
+        authorized, sniper_verdict = sniper_authorizes_kill(
             gross_pnl=gross_pnl,
             win_threshold=min_gross_win,
-            hold_cycles=pos.cycles
+            symbol=pos.symbol,
+            exit_reason=reason,
+            entry_value=pos.entry_value,
+            current_value=exit_value
         )
 
-        if sniper_exit:
-            print(f"   {sniper_reason} -> NET ~${target_net:.2f}")
+        if authorized:
+            # 🎯 SNIPER AUTHORIZES THE KILL - Execute with honor
+            print(f"   {sniper_verdict}")
+            print(f"   💰 NET PROFIT: ~${target_net:.2f}")
             if sniper_wisdom:
                 print(f"   📜 \"{sniper_wisdom}\"")
             return True
 
-        # NOT PROFITABLE - KEEP HOLDING (applies to SL, matrix, or any exit request)
-        if reason == "SL":
-            print(f"   🚫 STOP LOSS BLOCKED: {pos.symbol} - {sniper_reason}")
-        elif reason == "bridge_force_exit":
-            print(f"   🚫 BRIDGE EXIT BLOCKED: {pos.symbol} - {sniper_reason}")
-        elif reason in ["MATRIX_SELL", "MATRIX_FORCE"]:
-            print(f"   🚫 MATRIX EXIT BLOCKED: {pos.symbol} - {sniper_reason}")
-        elif reason in ["REBALANCE", "SWAP"]:
-            print(f"   🚫 {reason} BLOCKED: {pos.symbol} - {sniper_reason}")
-        else:
-            print(f"   🎯 HOLDING {pos.symbol}: {sniper_reason}")
+        # 🛡️ SNIPER DENIES EXIT - The sniper's decision is ABSOLUTE
+        # No algorithm, no panic, no signal can override this.
+        print(sniper_verdict)
         return False
     
     def save_state(self):
