@@ -2,7 +2,7 @@ import os
 import requests
 import time
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Iterable, List, Optional
 
 # Load environment variables from .env file
 try:
@@ -53,6 +53,58 @@ class AlpacaClient:
             logger.error(f"Alpaca Request Failed: {e}")
             return {}
 
+    # ═════════════════════════════════════════════════════════════════════=
+    # INTERNAL HELPERS
+    # ═════════════════════════════════════════════════════════════════════=
+
+    @staticmethod
+    def _normalize_pair_symbol(symbol: str) -> Optional[str]:
+        """
+        Normalize crypto pair symbols to Alpaca's slash format (e.g., BTCUSD -> BTC/USD).
+
+        Alpaca asset payloads sometimes return BTC/USD while upstream callers may
+        provide BTCUSD. This helper makes sure we always talk to the API using the
+        slash variant and keeps base/quote parsing consistent across the client.
+        """
+        if not symbol:
+            return None
+
+        cleaned = symbol.replace(' ', '').replace('-', '/').upper()
+        if '/' in cleaned:
+            parts = cleaned.split('/')
+            if len(parts) == 2 and parts[0] and parts[1]:
+                return f"{parts[0]}/{parts[1]}"
+
+        for quote in ("USD", "USDT", "USDC"):
+            if cleaned.endswith(quote) and len(cleaned) > len(quote):
+                base = cleaned[:-len(quote)]
+                return f"{base}/{quote}"
+
+        return None
+
+    @staticmethod
+    def _chunk_symbols(symbols: Iterable[str], chunk_size: int = 50) -> Iterable[List[str]]:
+        chunk = []
+        for sym in symbols:
+            normalized = AlpacaClient._normalize_pair_symbol(sym)
+            if not normalized:
+                continue
+            chunk.append(normalized)
+            if len(chunk) >= chunk_size:
+                yield chunk
+                chunk = []
+        if chunk:
+            yield chunk
+
+    @staticmethod
+    def _resolve_symbol(symbol: str) -> str:
+        normalized = AlpacaClient._normalize_pair_symbol(symbol)
+        return normalized or symbol
+
+    # ═════════════════════════════════════════════════════════════════════=
+    # CORE ACCOUNT / MARKET DATA
+    # ═════════════════════════════════════════════════════════════════════=
+
     def get_account(self) -> Dict[str, Any]:
         """Get account details."""
         return self._request("GET", "/v2/account")
@@ -63,6 +115,7 @@ class AlpacaClient:
 
     def get_position(self, symbol: str) -> Dict[str, Any]:
         """Get position for a specific symbol."""
+        symbol = self._resolve_symbol(symbol)
         return self._request("GET", f"/v2/positions/{symbol}")
 
     def get_clock(self) -> Dict[str, Any]:
@@ -71,6 +124,7 @@ class AlpacaClient:
 
     def place_order(self, symbol: str, qty: float, side: str, type: str = "market", time_in_force: str = "gtc") -> Dict[str, Any]:
         """Place an order."""
+        symbol = self._resolve_symbol(symbol)
         if self.dry_run:
             logger.info(f"[DRY RUN] Alpaca Order: {side} {qty} {symbol}")
             return {"id": "dry_run_id", "status": "accepted"}
@@ -85,21 +139,65 @@ class AlpacaClient:
         return self._request("POST", "/v2/orders", data=data)
 
     def get_crypto_bars(self, symbols: List[str], timeframe: str = "1Min", limit: int = 100) -> Dict[str, Any]:
-        """Get crypto bars."""
-        params = {
-            "symbols": ",".join(symbols),
-            "timeframe": timeframe,
-            "limit": limit
-        }
-        # Crypto data endpoint
-        return self._request("GET", "/v1beta3/crypto/us/bars", params=params, base_url=self.data_url)
+        """Get crypto bars for one or more symbols with chunking support."""
+        all_bars: Dict[str, List[Dict[str, Any]]] = {}
+
+        for chunk in self._chunk_symbols(symbols):
+            params = {
+                "symbols": ",".join(chunk),
+                "timeframe": timeframe,
+                "limit": limit
+            }
+            resp = self._request("GET", "/v1beta3/crypto/us/bars", params=params, base_url=self.data_url)
+            payload = resp.get('bars', resp) if isinstance(resp, dict) else {}
+
+            if isinstance(payload, dict):
+                for sym, data in payload.items():
+                    all_bars.setdefault(sym, []).extend(data or [])
+
+        return {"bars": all_bars} if all_bars else {}
 
     def get_latest_crypto_quotes(self, symbols: List[str]) -> Dict[str, Any]:
         """Get latest crypto quotes (bid/ask)."""
-        params = {
-            "symbols": ",".join(symbols)
-        }
-        return self._request("GET", "/v1beta3/crypto/us/latest/quotes", params=params, base_url=self.data_url)
+        all_quotes: Dict[str, Any] = {}
+
+        for chunk in self._chunk_symbols(symbols):
+            params = {
+                "symbols": ",".join(chunk)
+            }
+            resp = self._request("GET", "/v1beta3/crypto/us/latest/quotes", params=params, base_url=self.data_url)
+            payload = resp.get('quotes', resp) if isinstance(resp, dict) else {}
+
+            if isinstance(payload, dict):
+                all_quotes.update(payload)
+
+        return all_quotes
+
+    def get_tradable_crypto_symbols(self, quote_filter: Optional[str] = None) -> List[str]:
+        """
+        Return all tradable crypto symbols in normalized Alpaca format.
+
+        Args:
+            quote_filter: Optional quote currency to restrict to (e.g., 'USD')
+        """
+        symbols: List[str] = []
+        assets = self.get_assets(status='active', asset_class='crypto') or []
+
+        for asset in assets:
+            if not asset.get('tradable'):
+                continue
+
+            normalized = self._normalize_pair_symbol(asset.get('symbol', ''))
+            if not normalized:
+                continue
+
+            base, quote = normalized.split('/')
+            if quote_filter and quote.upper() != quote_filter.upper():
+                continue
+
+            symbols.append(normalized)
+
+        return symbols
 
     def get_assets(self, status: str = "active", asset_class: str = "crypto") -> List[Dict[str, Any]]:
         """Get list of assets."""
@@ -287,6 +385,7 @@ class AlpacaClient:
             
         Benefit: Better price control, may get better fills
         """
+        symbol = self._resolve_symbol(symbol)
         if self.dry_run:
             logger.info(f"[DRY RUN] Alpaca Limit Order: {side} {qty} {symbol} @ {limit_price}")
             return {"id": "dry_run_id", "status": "accepted", "type": "limit"}
@@ -328,6 +427,7 @@ class AlpacaClient:
             
         Note: For crypto, use stop_limit instead (stop not supported directly)
         """
+        symbol = self._resolve_symbol(symbol)
         if self.dry_run:
             logger.info(f"[DRY RUN] Alpaca Stop Order: {side} {qty} {symbol} @ stop={stop_price}")
             return {"id": "dry_run_id", "status": "accepted", "type": "stop"}
@@ -367,6 +467,7 @@ class AlpacaClient:
             
         For crypto: This is the primary way to do stop-loss (stop orders not supported)
         """
+        symbol = self._resolve_symbol(symbol)
         if self.dry_run:
             logger.info(f"[DRY RUN] Alpaca Stop-Limit: {side} {qty} {symbol} @ stop={stop_price} limit={limit_price}")
             return {"id": "dry_run_id", "status": "accepted", "type": "stop_limit"}
@@ -410,6 +511,7 @@ class AlpacaClient:
                  
         Note: Trailing stop only triggers during regular market hours
         """
+        symbol = self._resolve_symbol(symbol)
         if self.dry_run:
             trail = f"{trail_percent}%" if trail_percent else f"${trail_price}"
             logger.info(f"[DRY RUN] Alpaca Trailing Stop: {side} {qty} {symbol} trail={trail}")
@@ -470,6 +572,7 @@ class AlpacaClient:
                                stop_loss_stop=195,
                                stop_loss_limit=194)
         """
+        symbol = self._resolve_symbol(symbol)
         if self.dry_run:
             logger.info(f"[DRY RUN] Alpaca Bracket: {side} {qty} {symbol} TP={take_profit_limit} SL={stop_loss_stop}")
             return {"id": "dry_run_id", "status": "accepted", "order_class": "bracket"}
@@ -528,6 +631,7 @@ class AlpacaClient:
         Returns:
             Order response
         """
+        symbol = self._resolve_symbol(symbol)
         if self.dry_run:
             logger.info(f"[DRY RUN] Alpaca OCO: {side} {qty} {symbol} TP={take_profit_limit} SL={stop_loss_stop}")
             return {"id": "dry_run_id", "status": "accepted", "order_class": "oco"}
@@ -584,6 +688,7 @@ class AlpacaClient:
         Returns:
             Order response
         """
+        symbol = self._resolve_symbol(symbol)
         if self.dry_run:
             exit_type = f"TP={take_profit_limit}" if take_profit_limit else f"SL={stop_loss_stop}"
             logger.info(f"[DRY RUN] Alpaca OTO: {side} {qty} {symbol} {exit_type}")
@@ -720,6 +825,7 @@ class AlpacaClient:
         Returns:
             Order response
         """
+        symbol = self._resolve_symbol(symbol)
         if quote_qty and not quantity:
             # Need to estimate quantity from quote
             try:
@@ -753,6 +859,7 @@ class AlpacaClient:
         Returns:
             Order response
         """
+        symbol = self._resolve_symbol(symbol)
         # For crypto, stop orders aren't supported - use stop_limit
         is_crypto = "/" in symbol or symbol.endswith("USD") and len(symbol) > 5
         
@@ -778,6 +885,7 @@ class AlpacaClient:
         Returns:
             Order response
         """
+        symbol = self._resolve_symbol(symbol)
         price = limit_price if limit_price else take_profit_price
         return self.place_limit_order(symbol, quantity, side, price)
 
@@ -807,6 +915,7 @@ class AlpacaClient:
         Returns:
             Order response
         """
+        symbol = self._resolve_symbol(symbol)
         if take_profit and stop_loss:
             # Both TP and SL -> use bracket order
             return self.place_bracket_order(
@@ -849,8 +958,8 @@ class AlpacaClient:
             
             positions = self.get_positions()
             for pos in positions:
-                sym = pos.get('symbol', '').replace('/', '')
-                base = sym[:-3] if sym.endswith('USD') else sym
+                norm = self._normalize_pair_symbol(pos.get('symbol', '')) or ''
+                base = norm.split('/')[0] if '/' in norm else ''
                 if base.upper() == asset.upper():
                     return float(pos.get('qty', 0) or 0)
             return 0.0
@@ -875,8 +984,8 @@ class AlpacaClient:
             for pos in positions:
                 qty = float(pos.get('qty', 0) or 0)
                 if qty > 0:
-                    sym = pos.get('symbol', '')
-                    base = sym.replace('/', '').replace('USD', '')
+                    norm = self._normalize_pair_symbol(pos.get('symbol', '')) or ''
+                    base = norm.split('/')[0] if '/' in norm else ''
                     balances[base] = qty
         except:
             pass
@@ -890,37 +999,33 @@ class AlpacaClient:
             List of ticker dicts with symbol, lastPrice, priceChangePercent, quoteVolume
         """
         try:
-            # Get active crypto assets
-            assets = self.get_assets(status='active', asset_class='crypto')
-            symbols = [a['symbol'] for a in assets if a.get('tradable')]
-            
-            # Filter to USD pairs
-            relevant = [s for s in symbols if s.endswith('/USD')][:50]
-            
-            if not relevant:
+            symbols = self.get_tradable_crypto_symbols()
+            if not symbols:
                 return []
-            
-            # Get 1-day bars for 24h change calculation
-            bars = self.get_crypto_bars(relevant, timeframe="1Day", limit=2)
-            
+
+            bars_resp = self.get_crypto_bars(symbols, timeframe="1Day", limit=2)
+            bars = bars_resp.get('bars', bars_resp) if isinstance(bars_resp, dict) else {}
+
             tickers = []
-            for sym, data in bars.get('bars', {}).items():
+            for sym in symbols:
+                data = bars.get(sym) if isinstance(bars, dict) else None
                 if not data:
                     continue
+
                 latest = data[-1]
-                prev_close = data[-2]['c'] if len(data) > 1 else latest['o']
-                
-                close = float(latest['c'])
-                change_pct = ((close - prev_close) / prev_close * 100) if prev_close > 0 else 0
-                volume = float(latest['v']) * close
-                
+                prev_close = data[-2]['c'] if len(data) > 1 else latest.get('o', 0)
+
+                close = float(latest.get('c', 0))
+                change_pct = ((close - prev_close) / prev_close * 100) if prev_close else 0
+                volume = float(latest.get('v', 0)) * close
+
                 tickers.append({
                     'symbol': sym.replace('/', ''),  # Convert BTC/USD to BTCUSD
                     'lastPrice': str(close),
                     'priceChangePercent': str(change_pct),
                     'quoteVolume': str(volume)
                 })
-            
+
             return tickers
         except Exception as e:
             logger.error(f"Error getting Alpaca tickers: {e}")
@@ -944,7 +1049,7 @@ class AlpacaClient:
             return 0.0
         
         try:
-            symbol = f"{asset}/{quote}"
+            symbol = self._resolve_symbol(f"{asset}/{quote}")
             quotes = self.get_latest_crypto_quotes([symbol])
             if symbol in quotes:
                 q = quotes[symbol]
@@ -962,8 +1067,9 @@ class AlpacaClient:
     def get_available_pairs(self, base: str = None, quote: str = None) -> List[Dict[str, Any]]:
         """
         Get available trading pairs, optionally filtered by base or quote asset.
-        
-        Note: Alpaca crypto only supports USD pairs currently.
+
+        Note: Alpaca crypto pairs are typically USD-quoted but this helper
+        normalizes any quote currency returned by the API (USD, USDT, USDC, etc.).
         
         Args:
             base: Filter by base asset (e.g., 'BTC', 'ETH')
@@ -973,38 +1079,35 @@ class AlpacaClient:
             List of pairs with base, quote, and pair name
         """
         try:
-            assets = self.get_assets(status='active', asset_class='crypto')
+            assets = self.get_assets(status='active', asset_class='crypto') or []
             results = []
-            
+
             for asset in assets:
                 if not asset.get('tradable'):
                     continue
-                
-                symbol = asset.get('symbol', '')
-                if '/' not in symbol:
+
+                normalized = self._normalize_pair_symbol(asset.get('symbol', ''))
+                if not normalized:
                     continue
-                
-                parts = symbol.split('/')
-                if len(parts) != 2:
-                    continue
-                
-                pair_base = parts[0]
-                pair_quote = parts[1]
-                
-                # Apply filters
+
+                pair_base, pair_quote = normalized.split('/')
+
                 if base and pair_base.upper() != base.upper():
                     continue
                 if quote and pair_quote.upper() != quote.upper():
                     continue
-                
+
+                min_qty = asset.get('min_order_size') or asset.get('min_trade_increment') or 0
+                min_notional = asset.get('min_trade_increment') or 0
+
                 results.append({
-                    "pair": symbol,
+                    "pair": normalized,
                     "base": pair_base,
                     "quote": pair_quote,
-                    "min_qty": float(asset.get('min_order_size', 0)),
-                    "min_notional": float(asset.get('min_trade_increment', 0))
+                    "min_qty": float(min_qty),
+                    "min_notional": float(min_notional)
                 })
-            
+
             return results
         except Exception as e:
             logger.error(f"Error getting Alpaca pairs: {e}")

@@ -583,52 +583,7 @@ class UnifiedExchangeClient:
 
         if self.exchange_id == 'alpaca':
             try:
-                # Fetch active crypto assets
-                assets = self.client.get_assets(asset_class='crypto')
-                symbols = [a['symbol'] for a in assets if a['status'] == 'active']
-                
-                # Limit to top 50 to avoid huge requests if many assets
-                # Or filter by base currency
-                # Alpaca crypto symbols are like BTC/USD
-                relevant_symbols = [s for s in symbols if s.endswith('/USD') or s.endswith('/USDT')]
-                relevant_symbols = relevant_symbols[:50] 
-                
-                if not relevant_symbols:
-                    return []
-                    
-                # Get latest bars (24h is hard, let's get latest quotes or bars)
-                # Actually, get_crypto_bars with 1Day timeframe?
-                # But we need 24h change.
-                # Let's get 1Day bars limit 2.
-                
-                # For simplicity in this unified interface, let's just get latest quotes 
-                # and assume 0 change if we can't easily calculate it without history.
-                # OR, use get_crypto_bars for 1Day.
-                
-                bars = self.client.get_crypto_bars(relevant_symbols, timeframe="1D", limit=2)
-                # bars response: {'bars': {'BTC/USD': [{...}, {...}]}}
-                
-                all_tickers = []
-                for sym, data in bars.get('bars', {}).items():
-                    if len(data) < 1: continue
-                    latest = data[-1]
-                    prev = data[-2] if len(data) > 1 else latest
-                    
-                    close = float(latest['c'])
-                    open_p = float(latest['o']) # Open of current day, or use prev close?
-                    # 24h change usually implies rolling 24h. 1D bar is 00:00 UTC.
-                    # Let's use open of the day as approximation.
-                    
-                    change_pct = ((close - open_p) / open_p * 100) if open_p > 0 else 0
-                    volume = float(latest['v']) * close # Approx quote volume
-                    
-                    all_tickers.append({
-                        'symbol': sym,
-                        'lastPrice': close,
-                        'priceChangePercent': change_pct,
-                        'quoteVolume': volume
-                    })
-                return all_tickers
+                return self.client.get_24h_tickers()
             except Exception as e:
                 logger.error(f"Alpaca get_24h_tickers error: {e}")
                 return []
