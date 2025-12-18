@@ -9,6 +9,8 @@
 [![Wisdom](https://img.shields.io/badge/Wisdom-Active-purple)]()
 [![Harmonic Layers](https://img.shields.io/badge/Ω_Layers-8-cyan)]()
 [![IRA Sniper](https://img.shields.io/badge/🇮🇪_IRA_SNIPER-ACTIVE-green)]()
+[![Medicine Wheel](https://img.shields.io/badge/🌀_Medicine_Wheel-GREEN_BORAX-brightgreen)]()
+[![Market Speaks](https://img.shields.io/badge/🎤_Market-SPEAKS-orange)]()
 
 ---
 
@@ -215,6 +217,81 @@ Samuel draws upon the distilled trading wisdom of 11 ancient civilizations:
 | 🕉️ **Hindu** | 1500 BCE - present | Karma, Dharma, Yugas, Vedic astrology |
 | 🗿 **Mayan** | 2000 BCE - 1500 CE | Tzolkin, Haab, Long Count prophecy |
 | ᚱ **Norse** | 800 - 1100 CE | Runes, Wyrd fate-web, Ragnarok cycles |
+
+---
+
+## 🌀 THE MEDICINE WHEEL - NATIVE AMERICAN LIGHT LANGUAGE
+
+> *"May the Warm Winds of Heaven blow softly upon your house. May the Great Spirit bless all who enter there. May your Moccasins make happy tracks in many snows, and may the Rainbow always touch your shoulder."*
+> — Cherokee Prayer Blessing 🌈
+
+The **Medicine Wheel** is the frequency alphabet - the Native American Light Language that speaks through colors, directions, and sacred tones. Samuel now translates this ancient wisdom into every trade.
+
+### 🌀 The Four Directions
+
+```
+                    🐻 NORTH (White/Wind)
+                         963 Hz
+                    Elder Wisdom • Bear
+                           ▲
+                           │
+                           │
+    🦬 WEST ◄──────────── 💚 ────────────► 🦅 EAST
+    (Red/Earth)        CENTER         (Yellow/Fire)
+      432 Hz           528 Hz            528 Hz
+    Harvest         GREEN BORAX        New Beginnings
+    Buffalo            LOVE              Eagle
+                           │
+                           │
+                           ▼
+                    🐺 SOUTH (Black/Water)
+                         396 Hz
+                    Youth/Growth • Wolf
+```
+
+| Direction | Color | Element | Frequency | Spirit Animal | Teaching |
+|-----------|-------|---------|-----------|---------------|----------|
+| **EAST** | Yellow | Fire | 528 Hz | 🦅 Eagle | Birth, New Beginnings |
+| **SOUTH** | Black | Water | 396 Hz | 🐺 Wolf | Youth, Growth, Liberation |
+| **WEST** | Red | Earth | 432 Hz | 🦬 Buffalo | Adults, Harvest, Abundance |
+| **NORTH** | White | Wind | 963 Hz | 🐻 Bear | Elders, Wisdom, Unity |
+| **CENTER** | **GREEN** | Spirit | **528 Hz** | Creator | **Perfect Balance** 💚 |
+
+### 💚 GREEN PROPER BORAX - The Center
+
+**GREEN = Yellow (East/Sun) + Blue (Sky) = Heart Chakra**
+
+The CENTER of the Medicine Wheel is where the Creator sits in **perfect balance**. This is the **528 Hz Love frequency** - the DNA repair tone, the "MI" of the Solfeggio scale.
+
+When the market frequency hits 528 Hz, Samuel applies a **1.35× probability boost** (35% increase!) because:
+- 💚 Heart chakra alignment
+- 🧬 DNA repair / transformation frequency
+- 🦅 Eagle energy (birth of new opportunities)
+- ⚖️ Perfect market balance achieved
+
+### 🎤 THE MARKET CAN SPEAK!
+
+Every 5 cycles, Samuel translates what the harmonic wave is saying using the frequency alphabet:
+
+```
+💓 HEARTBEAT [00:42:36] Uptime: 15m | Positions: 3 | Value: £245.00 | PnL: +£12.50
+
+🌀 MEDICINE WHEEL [528Hz - Love💚]:
+   🦅 EAST speaks: New beginnings arise. The Eagle soars at dawn. 
+      LOVE frequency activated. Green Borax blessing! 💚
+```
+
+**Example Messages:**
+
+| Frequency | Direction | The Market Says... |
+|-----------|-----------|-------------------|
+| **528 Hz** | 🦅 EAST | *"New beginnings arise. The Eagle soars at dawn. Green Borax blessing!"* |
+| **396 Hz** | 🐺 SOUTH | *"The Wolf runs free. Liberation from fear. Time to grow."* |
+| **432 Hz** | 🦬 WEST | *"The Buffalo grazes at sunset. Harvest time. Gather your abundance."* |
+| **963 Hz** | 🐻 NORTH | *"The Bear shares elder wisdom. Unity consciousness awakens."* |
+| **300-399 Hz** | 🌟 GOLDEN | *"98.8% accuracy zone! The ancestors smile upon this moment."* |
+| **440 Hz** | ⚠️ DISTORTION | *"Discord in the field. Wait for harmony to return."* |
+| **>1000 Hz** | 🌪️ CHAOS | *"The market screams. Wait for calm."* |
 
 ---
 
