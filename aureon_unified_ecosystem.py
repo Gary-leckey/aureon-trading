@@ -12470,8 +12470,15 @@ class AureonKrakenEcosystem:
                         base_asset = symbol[:-len(suffix)]
                         break
                 
-                # Determine which exchange and get balance
-                exchange = getattr(pos, 'exchange', 'kraken').lower()
+                # 🔧 SMART EXCHANGE DETECTION: Fix exchange assignment if wrong
+                stored_exchange = getattr(pos, 'exchange', 'kraken').lower()
+                correct_exchange = self._detect_exchange_for_symbol(symbol, stored_exchange)
+                
+                if correct_exchange != stored_exchange:
+                    print(f"   🔧 {symbol}: Exchange correction {stored_exchange.upper()} → {correct_exchange.upper()}")
+                    pos.exchange = correct_exchange
+                    
+                exchange = correct_exchange
                 real_qty = 0.0
                 
                 if exchange == 'kraken':
@@ -14210,11 +14217,66 @@ class AureonKrakenEcosystem:
     # Position Management
     # ─────────────────────────────────────────────────────────
     
+    def _detect_exchange_for_symbol(self, symbol: str, hint_source: str = None) -> str:
+        """
+        🔧 SMART EXCHANGE DETECTION 🔧
+        Determines correct exchange for a symbol based on:
+        1. Quote currency patterns (USDC → Binance, GBP/EUR → Kraken)
+        2. Known Binance-only pairs
+        3. Hint from ticker source
+        
+        This prevents routing DOGEUSDC to Kraken (which doesn't support it).
+        """
+        symbol_upper = symbol.upper()
+        
+        # 🔥 USDC pairs are BINANCE ONLY - Kraken uses different symbols for stablecoins
+        if symbol_upper.endswith('USDC'):
+            return 'binance'
+        
+        # 🔥 These quote currencies are more common on Kraken
+        if symbol_upper.endswith(('GBP', 'EUR', 'ZGBP', 'ZEUR', 'CHF')):
+            return 'kraken'
+            
+        # 🔥 USD pairs - Check if in our Binance USDC pairs list (converted to USD)
+        # These are likely from Binance with USDC, not Kraken with USD
+        BINANCE_USDC_BASES = {
+            'DOGE', 'SHIB', 'PEPE', 'WIF', 'BONK', 'FLOKI', 'MEME', 'TURBO',
+            'LUNC', 'USTC', 'LUNA', 'APT', 'ARB', 'OP', 'SUI', 'SEI', 'INJ',
+            'TIA', 'JUP', 'PYTH', 'WLD', 'BLUR', 'STRK', 'PIXEL', 'PORTAL',
+            'ALT', 'MANTA', 'DYM', 'XAI', 'AI', 'RNDR', 'FET', 'AGIX', 'TAO',
+            'AKT', 'JASMY', 'CFX', 'MANA', 'SAND', 'AXS', 'IMX', 'GALA',
+            'ENJ', 'ROSE', 'KAS', 'IOTA', 'STX', 'ALGO', 'FTM', 'NEAR',
+            'AVAX', 'ATOM', 'DOT', 'LINK', 'SOL', 'ETH', 'BTC', 'XRP', 'ADA'
+        }
+        
+        # Extract base from symbol
+        for suffix in ['USDT', 'USD', 'USDC', 'GBP', 'EUR', 'BTC', 'ETH']:
+            if symbol_upper.endswith(suffix):
+                base = symbol_upper[:-len(suffix)]
+                if base in BINANCE_USDC_BASES and suffix in ('USDC', 'USDT'):
+                    return 'binance'
+                break
+        
+        # 🔥 ALPACA - US Stocks and ETFs
+        if hint_source and hint_source.lower() == 'alpaca':
+            return 'alpaca'
+        
+        # 🔥 CAPITAL.COM - CFDs  
+        if hint_source and hint_source.lower() == 'capital':
+            return 'capital'
+        
+        # Default to hint if provided, else kraken
+        if hint_source:
+            return hint_source.lower()
+        
+        return 'kraken'
+    
     def open_position(self, opp: Dict):
         """Open a new position - dynamically frees capital if needed"""
         symbol = opp['symbol']
         price = opp['price']
-        exchange = (opp.get('source') or 'kraken').lower()
+        hint_source = opp.get('source')
+        exchange = self._detect_exchange_for_symbol(symbol, hint_source)
         exchange_marker = exchange.upper()
         quote_asset = self._get_quote_asset(symbol)
         base_currency = CONFIG['BASE_CURRENCY'].upper()
@@ -15088,7 +15150,14 @@ class AureonKrakenEcosystem:
             
         pos = self.positions[symbol]
         
-        # 🚀 CANCEL SERVER-SIDE ORDERS (Kraken/Alpaca native TP/SL) before manual close
+        # � SMART EXCHANGE CORRECTION: If position has wrong exchange, fix it!
+        # This prevents errors like trying to sell DOGEUSDC on Kraken
+        correct_exchange = self._detect_exchange_for_symbol(symbol, pos.exchange)
+        if correct_exchange != pos.exchange.lower():
+            print(f"   🔧 Exchange correction: {symbol} was {pos.exchange.upper()} → {correct_exchange.upper()}")
+            pos.exchange = correct_exchange
+        
+        # �🚀 CANCEL SERVER-SIDE ORDERS (Kraken/Alpaca native TP/SL) before manual close
         if not self.dry_run and pos.exchange.lower() in ['kraken', 'alpaca']:
             try:
                 # Cancel stop-loss order if exists (for Alpaca, this might be OCO ID)
