@@ -502,6 +502,16 @@ class ActiveKillScanner:
     
     "The Celtic warrior doesn't wait for the enemy to come.
      He studies, predicts, and strikes at the EXACT moment."
+    
+    🧠 ADAPTIVE LEARNING INTEGRATION:
+    - Learns optimal kill timing from historical trades
+    - Adjusts probability calculations based on past performance
+    - Feeds kill data back to improve future predictions
+    
+    ⛏️ MINER CASCADE AMPLIFICATION:
+    - Uses cascade factor to boost kill priority
+    - κt efficiency factor for smarter targeting
+    - Lighthouse Γ for planetary alignment timing
     """
     
     def __init__(self):
@@ -512,6 +522,215 @@ class ActiveKillScanner:
         self.last_scan_time: float = 0.0
         self.scan_interval_ms: float = 0.0  # Track scan speed
         
+        # 🧠 ADAPTIVE LEARNING STATE
+        self.kill_history: List[Dict] = []  # Historical kills for learning
+        self.avg_kill_time: float = 30.0  # Average seconds to kill (learned)
+        self.avg_kill_velocity: float = 0.002  # Average $/s at kill time (learned)
+        self.momentum_success_rate: Dict[str, float] = {}  # Momentum band -> success rate
+        
+        # ⛏️ MINER CASCADE STATE
+        self.cascade_factor: float = 1.0  # From CascadeAmplifier
+        self.kappa_t: float = 1.0  # Efficiency factor
+        self.lighthouse_gamma: float = 0.5  # Planetary coherence
+        self.consecutive_kills: int = 0  # Kill streak
+        
+        # Load learned parameters
+        self._load_learned_state()
+        
+    def _load_learned_state(self):
+        """Load learned parameters from adaptive learning history."""
+        try:
+            import json
+            import os
+            history_file = 'adaptive_learning_history.json'
+            if os.path.exists(history_file):
+                with open(history_file, 'r') as f:
+                    data = json.load(f)
+                    
+                # Extract sniper-specific learning
+                sniper_data = data.get('sniper_learning', {})
+                self.avg_kill_time = sniper_data.get('avg_kill_time', 30.0)
+                self.avg_kill_velocity = sniper_data.get('avg_kill_velocity', 0.002)
+                self.momentum_success_rate = sniper_data.get('momentum_success_rate', {})
+                
+                # Get cascade state if available
+                cascade_data = data.get('cascade_state', {})
+                self.cascade_factor = cascade_data.get('cascade_factor', 1.0)
+                self.kappa_t = cascade_data.get('kappa_t', 1.0)
+                
+        except Exception:
+            pass  # Use defaults
+    
+    def _save_learned_state(self):
+        """Save learned parameters to adaptive learning history."""
+        try:
+            import json
+            import os
+            history_file = 'adaptive_learning_history.json'
+            
+            # Load existing data
+            data = {}
+            if os.path.exists(history_file):
+                with open(history_file, 'r') as f:
+                    data = json.load(f)
+            
+            # Update sniper-specific learning
+            data['sniper_learning'] = {
+                'avg_kill_time': self.avg_kill_time,
+                'avg_kill_velocity': self.avg_kill_velocity,
+                'momentum_success_rate': self.momentum_success_rate,
+                'kills_executed': self.kills_executed,
+                'total_pnl': self.total_pnl,
+                'kill_history': self.kill_history[-100:],  # Keep last 100 kills
+            }
+            
+            # Update cascade state
+            data['cascade_state'] = {
+                'cascade_factor': self.cascade_factor,
+                'kappa_t': self.kappa_t,
+                'lighthouse_gamma': self.lighthouse_gamma,
+                'consecutive_kills': self.consecutive_kills,
+            }
+            
+            with open(history_file, 'w') as f:
+                json.dump(data, f, indent=2)
+                
+        except Exception as e:
+            pass  # Silent fail on save
+    
+    def sync_from_cascade_amplifier(self, cascade_factor: float, kappa_t: float, 
+                                     lighthouse_gamma: float):
+        """
+        ⛏️ MINER SYNC: Import cascade state from ecosystem's CascadeAmplifier.
+        
+        This gives the scanner access to the miner's proven 546x optimization:
+        - CASCADE AMPLIFICATION for kill priority
+        - κt EFFICIENCY for smarter targeting
+        - LIGHTHOUSE Γ for timing alignment
+        """
+        self.cascade_factor = cascade_factor
+        self.kappa_t = kappa_t
+        self.lighthouse_gamma = lighthouse_gamma
+    
+    def _get_cascade_multiplier(self) -> float:
+        """
+        ⛏️ Calculate combined cascade multiplier for probability boost.
+        
+        Formula from miner: Total = CASCADE × κt × Lighthouse
+        """
+        # Cascade contribution (up to 3x from consecutive kills)
+        cascade_mult = 1.0 + (self.cascade_factor - 1.0) * 0.3
+        
+        # κt efficiency contribution (up to 1.5x)
+        kappa_mult = 1.0 + (self.kappa_t - 1.0) * 0.2
+        
+        # Lighthouse contribution when gamma is high
+        lighthouse_mult = 1.0
+        if self.lighthouse_gamma >= 0.75:
+            lighthouse_mult = 1.0 + (self.lighthouse_gamma - 0.75) * 0.4
+        
+        return min(3.0, cascade_mult * kappa_mult * lighthouse_mult)
+    
+    def _learn_from_kill(self, target: 'ActiveTarget', net_pnl: float, hold_time: float):
+        """
+        🧠 ADAPTIVE LEARNING: Record kill data and update predictions.
+        """
+        # Record kill to history
+        kill_record = {
+            'symbol': target.symbol,
+            'exchange': target.exchange,
+            'hold_time': hold_time,
+            'net_pnl': net_pnl,
+            'final_velocity': target.pnl_velocity,
+            'final_momentum': target.momentum_score,
+            'scans': target.scans,
+            'entry_value': target.entry_value,
+            'win_threshold': target.win_threshold,
+            'timestamp': time.time(),
+        }
+        self.kill_history.append(kill_record)
+        
+        # Update average kill time (exponential moving average)
+        alpha = 0.1  # Learning rate
+        self.avg_kill_time = (1 - alpha) * self.avg_kill_time + alpha * hold_time
+        
+        # Update average kill velocity
+        if target.pnl_velocity > 0:
+            self.avg_kill_velocity = (1 - alpha) * self.avg_kill_velocity + alpha * target.pnl_velocity
+        
+        # Update momentum success rate by band
+        momentum_band = self._get_momentum_band(target.momentum_score)
+        if momentum_band not in self.momentum_success_rate:
+            self.momentum_success_rate[momentum_band] = 0.5
+        
+        # Win = positive P&L
+        success = 1.0 if net_pnl > 0 else 0.0
+        current_rate = self.momentum_success_rate[momentum_band]
+        self.momentum_success_rate[momentum_band] = (1 - alpha) * current_rate + alpha * success
+        
+        # Update cascade state on successful kill
+        if net_pnl > 0:
+            self.consecutive_kills += 1
+            # Boost cascade factor (capped at 10x)
+            boost = 1.15 * (1 + net_pnl * 5)  # Extra boost for bigger wins
+            self.cascade_factor = min(10.0, self.cascade_factor * boost)
+            # Ramp κt efficiency
+            self.kappa_t = min(2.49, self.kappa_t + 0.05)
+        else:
+            self.consecutive_kills = 0
+            # Decay cascade
+            self.cascade_factor = max(1.0, self.cascade_factor * 0.95)
+            self.kappa_t = max(1.0, self.kappa_t - 0.025)
+        
+        # Save learned state periodically
+        if len(self.kill_history) % 5 == 0:
+            self._save_learned_state()
+    
+    def _get_momentum_band(self, momentum: float) -> str:
+        """Categorize momentum into bands for learning."""
+        if momentum >= 0.7:
+            return 'STRONG_UP'
+        elif momentum >= 0.3:
+            return 'UP'
+        elif momentum >= 0:
+            return 'WEAK_UP'
+        elif momentum >= -0.3:
+            return 'WEAK_DOWN'
+        elif momentum >= -0.7:
+            return 'DOWN'
+        else:
+            return 'STRONG_DOWN'
+    
+    def _get_learned_probability_boost(self, target: 'ActiveTarget') -> float:
+        """
+        🧠 Get probability boost based on learned patterns.
+        """
+        boost = 1.0
+        
+        # Momentum-based boost from historical success rates
+        momentum_band = self._get_momentum_band(target.momentum_score)
+        if momentum_band in self.momentum_success_rate:
+            success_rate = self.momentum_success_rate[momentum_band]
+            # Higher success rate = higher probability boost
+            if success_rate > 0.6:
+                boost *= 1.0 + (success_rate - 0.6) * 0.5  # Up to 1.2x
+            elif success_rate < 0.4:
+                boost *= 0.8 + success_rate * 0.5  # Down to 0.8x
+        
+        # ETA-based boost (if close to average kill time, boost probability)
+        if self.avg_kill_time > 0 and target.eta_to_kill < float('inf'):
+            time_similarity = 1.0 - abs(target.eta_to_kill - self.avg_kill_time) / self.avg_kill_time
+            time_similarity = max(0, time_similarity)
+            boost *= 1.0 + time_similarity * 0.2  # Up to 1.2x
+        
+        # Velocity-based boost (if velocity close to historical success velocity)
+        if self.avg_kill_velocity > 0 and target.pnl_velocity > 0:
+            velocity_ratio = target.pnl_velocity / self.avg_kill_velocity
+            if velocity_ratio > 1.0:
+                boost *= min(1.3, 1.0 + (velocity_ratio - 1.0) * 0.15)  # Faster = better
+        
+        return boost
+    
     def register_target(
         self,
         symbol: str,
@@ -591,23 +810,35 @@ class ActiveKillScanner:
         else:
             target.eta_to_kill = float('inf')  # No ETA (negative momentum)
         
-        # Calculate probability of kill (heuristic based on momentum and proximity)
+        # ═══════════════════════════════════════════════════════════════════════
+        # 🧠⛏️ ENHANCED PROBABILITY - Adaptive Learning + Miner Cascade Power
+        # ═══════════════════════════════════════════════════════════════════════
+        
+        # Base probability from momentum and proximity
         proximity = target.current_pnl / target.win_threshold if target.win_threshold > 0 else 0
         proximity = max(0, min(1, proximity))  # Clamp 0-1
         
         if target.momentum_score > 0:
-            # Positive momentum boosts probability
-            target.probability_of_kill = proximity * (0.5 + 0.5 * target.momentum_score)
+            base_probability = proximity * (0.5 + 0.5 * target.momentum_score)
         else:
-            # Negative momentum reduces probability
-            target.probability_of_kill = proximity * (0.5 + 0.5 * target.momentum_score)
+            base_probability = proximity * (0.5 + 0.5 * target.momentum_score)
+        base_probability = max(0, min(1, base_probability))
+        
+        # 🧠 ADAPTIVE LEARNING BOOST - Based on historical patterns
+        learned_boost = self._get_learned_probability_boost(target)
+        
+        # ⛏️ CASCADE AMPLIFICATION - Miner-proven 546x optimization
+        cascade_mult = self._get_cascade_multiplier()
+        
+        # Combined probability with boosts
+        target.probability_of_kill = base_probability * learned_boost * cascade_mult
         target.probability_of_kill = max(0, min(1, target.probability_of_kill))
         
         # Update tracking
         target.last_update = now
         target.scans += 1
         
-        # Build metrics
+        # Build metrics (now includes learning/cascade data)
         hold_time = now - target.entry_time
         metrics = {
             'symbol': target.symbol,
@@ -620,12 +851,19 @@ class ActiveKillScanner:
             'eta_to_kill': target.eta_to_kill,
             'probability': target.probability_of_kill,
             'hold_time_seconds': hold_time,
-            'scans': target.scans
+            'scans': target.scans,
+            # 🧠⛏️ Enhanced metrics
+            'learned_boost': learned_boost,
+            'cascade_mult': cascade_mult,
+            'cascade_factor': self.cascade_factor,
+            'kappa_t': self.kappa_t,
+            'lighthouse_gamma': self.lighthouse_gamma,
+            'consecutive_kills': self.consecutive_kills,
         }
         
         # 🎯 CHECK FOR KILL - The moment of truth!
         if target.current_pnl >= target.win_threshold:
-            verdict = f"🎯⚡ KILL READY! {target.symbol} | P&L: ${target.current_pnl:.4f} >= ${target.win_threshold:.4f}"
+            verdict = f"🎯⚡ KILL READY! {target.symbol} | P&L: ${target.current_pnl:.4f} >= ${target.win_threshold:.4f} | CASCADE: {cascade_mult:.2f}x"
             return (True, verdict, metrics)
         
         # Not ready yet - build status
@@ -667,10 +905,18 @@ class ActiveKillScanner:
         return results
     
     def execute_kill(self, key: str, net_pnl: float) -> None:
-        """Record a successful kill."""
+        """
+        Record a successful kill and learn from it.
+        
+        🧠 ADAPTIVE LEARNING: Every kill teaches the scanner to be smarter.
+        ⛏️ CASCADE AMPLIFICATION: Consecutive kills boost future probability.
+        """
         if key in self.targets:
             target = self.targets[key]
             hold_time = time.time() - target.entry_time
+            
+            # 🧠⛏️ LEARN FROM THIS KILL
+            self._learn_from_kill(target, net_pnl, hold_time)
             
             self.kills_executed += 1
             self.total_pnl += net_pnl
@@ -678,7 +924,10 @@ class ActiveKillScanner:
             # Remove from active targets
             del self.targets[key]
             
-            # Celebrate!
+            # Celebrate with cascade info!
+            cascade_info = f"🌊 CASCADE: {self.cascade_factor:.2f}x | κt: {self.kappa_t:.2f}" if self.cascade_factor > 1.1 else ""
+            streak_info = f"🔥 STREAK: {self.consecutive_kills}!" if self.consecutive_kills > 1 else ""
+            
             print(f"""
 🎯⚡ KILL EXECUTED! ⚡🎯
    Symbol: {target.symbol} on {target.exchange.upper()}
@@ -686,6 +935,7 @@ class ActiveKillScanner:
    Hold Time: {hold_time:.1f}s
    Scans: {target.scans}
    Kill #{self.kills_executed} | Total: ${self.total_pnl:.4f}
+   {cascade_info} {streak_info}
 """)
     
     def remove_target(self, key: str) -> None:
@@ -694,15 +944,21 @@ class ActiveKillScanner:
             del self.targets[key]
     
     def get_status_report(self) -> str:
-        """Generate a status report of all active targets."""
+        """Generate a status report of all active targets with learning/cascade stats."""
         if not self.targets:
             return "🎯 No active targets. Scanner ready."
+        
+        # Build header with cascade/learning info
+        cascade_str = f"CASCADE: {self.cascade_factor:.1f}x" if self.cascade_factor > 1.0 else "CASCADE: 1.0x"
+        kappa_str = f"κt: {self.kappa_t:.2f}" if self.kappa_t > 1.0 else ""
+        streak_str = f"STREAK: {self.consecutive_kills}" if self.consecutive_kills > 0 else ""
         
         lines = [
             "╔══════════════════════════════════════════════════════════════════════════╗",
             "║  🎯⚡ ACTIVE KILL SCANNER - BATTLEFIELD STATUS ⚡🎯                        ║",
             "╠══════════════════════════════════════════════════════════════════════════╣",
-            f"║  Targets: {len(self.targets)} | Kills: {self.kills_executed} | Total P&L: ${self.total_pnl:.4f} | Scan: {self.scan_interval_ms:.1f}ms  ║",
+            f"║  Targets: {len(self.targets)} | Kills: {self.kills_executed} | P&L: ${self.total_pnl:.4f} | {cascade_str}  ║",
+            f"║  ⛏️ {kappa_str} | 🔥 {streak_str} | 🧠 Avg Kill: {self.avg_kill_time:.0f}s              ║",
             "╠══════════════════════════════════════════════════════════════════════════╣",
         ]
         
@@ -802,6 +1058,45 @@ def get_scanner_status() -> str:
     """Get the current scanner status report."""
     scanner = get_active_scanner()
     return scanner.get_status_report()
+
+
+def sync_scanner_with_cascade(cascade_factor: float, kappa_t: float, lighthouse_gamma: float) -> None:
+    """
+    ⛏️ MINER SYNC: Import cascade state from ecosystem's CascadeAmplifier.
+    
+    Call this from the ecosystem to give the scanner access to miner power:
+    - CASCADE AMPLIFICATION (up to 10x)
+    - κt EFFICIENCY (up to 2.49x)
+    - LIGHTHOUSE Γ for timing
+    """
+    scanner = get_active_scanner()
+    scanner.sync_from_cascade_amplifier(cascade_factor, kappa_t, lighthouse_gamma)
+
+
+def get_scanner_learning_stats() -> Dict:
+    """
+    🧠 Get adaptive learning statistics from the scanner.
+    
+    Returns dict with:
+    - avg_kill_time: Average seconds to complete a kill
+    - avg_kill_velocity: Average $/s at kill time
+    - momentum_success_rate: Success rate by momentum band
+    - cascade_factor: Current cascade amplification
+    - consecutive_kills: Current kill streak
+    """
+    scanner = get_active_scanner()
+    return {
+        'avg_kill_time': scanner.avg_kill_time,
+        'avg_kill_velocity': scanner.avg_kill_velocity,
+        'momentum_success_rate': scanner.momentum_success_rate,
+        'cascade_factor': scanner.cascade_factor,
+        'kappa_t': scanner.kappa_t,
+        'lighthouse_gamma': scanner.lighthouse_gamma,
+        'consecutive_kills': scanner.consecutive_kills,
+        'kills_executed': scanner.kills_executed,
+        'total_pnl': scanner.total_pnl,
+        'kill_history_count': len(scanner.kill_history),
+    }
 
 
 # =============================================================================

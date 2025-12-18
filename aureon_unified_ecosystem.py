@@ -211,6 +211,9 @@ from ira_sniper_mode import (
     scan_sniper_targets,
     execute_sniper_kill,
     get_scanner_status,
+    # 🧠⛏️ LEARNING & MINER INTEGRATION
+    sync_scanner_with_cascade,
+    get_scanner_learning_stats,
 )
 
 try:
@@ -10689,6 +10692,23 @@ class AureonKrakenEcosystem:
         try:
             if net_pnl > 0:
                 execute_sniper_kill(pos.exchange, pos.symbol, net_pnl)
+                
+            # 🧠 ADAPTIVE LEARNING: Feed scanner stats to ecosystem learner
+            # This creates a bidirectional learning loop:
+            # Scanner learns from kills → Ecosystem learns from scanner → Scanner gets smarter
+            try:
+                scanner_stats = get_scanner_learning_stats()
+                if scanner_stats['kills_executed'] > 0:
+                    # Feed scanner's learned momentum success rates to ecosystem
+                    ADAPTIVE_LEARNER.optimized_thresholds['scanner_cascade'] = scanner_stats['cascade_factor']
+                    ADAPTIVE_LEARNER.optimized_thresholds['scanner_kappa'] = scanner_stats['kappa_t']
+                    ADAPTIVE_LEARNER.optimized_thresholds['scanner_streak'] = scanner_stats['consecutive_kills']
+                    
+                    # Log the learning sync every 10 kills
+                    if scanner_stats['kills_executed'] % 10 == 0:
+                        logger.info(f"🧠 Scanner→Learner sync: CASCADE={scanner_stats['cascade_factor']:.1f}x κt={scanner_stats['kappa_t']:.2f} STREAK={scanner_stats['consecutive_kills']}")
+            except Exception:
+                pass
         except Exception as e:
             logger.debug(f"Kill scanner record error: {e}")
         
@@ -15571,22 +15591,36 @@ class AureonKrakenEcosystem:
                 def price_getter(exchange, symbol):
                     return self.get_realtime_price(symbol) or 0.0
                 
+                # ⛏️ SYNC SCANNER WITH CASCADE AMPLIFIER - Miner's 546x Power!
+                try:
+                    sync_scanner_with_cascade(
+                        cascade_factor=CASCADE_AMPLIFIER.cascade_factor,
+                        kappa_t=CASCADE_AMPLIFIER.kappa_t,
+                        lighthouse_gamma=CASCADE_AMPLIFIER.lighthouse_gamma
+                    )
+                except Exception:
+                    pass  # CASCADE_AMPLIFIER might not be initialized yet
+                
                 scan_results = scan_sniper_targets(price_getter)
                 
                 # Show scanner status every 5 cycles or when kills are ready
                 kills_ready = [r for r in scan_results if r[1]]  # Kill ready
                 if self.iteration % 5 == 0 or kills_ready:
-                    print(f"\n   🎯⚡ ACTIVE KILL SCANNER ({len(scan_results)} targets)")
+                    scanner = get_active_scanner()
+                    cascade_info = f"CASCADE: {scanner.cascade_factor:.1f}x" if scanner.cascade_factor > 1.0 else ""
+                    kappa_info = f"κt: {scanner.kappa_t:.2f}" if scanner.kappa_t > 1.0 else ""
+                    streak_info = f"🔥{scanner.consecutive_kills}" if scanner.consecutive_kills > 1 else ""
+                    print(f"\n   🎯⚡ ACTIVE KILL SCANNER ({len(scan_results)} targets) {cascade_info} {kappa_info} {streak_info}")
                     for key, kill_ready, verdict, metrics in scan_results:
                         if kill_ready:
                             print(f"   🎯 {verdict}")
                         elif self.iteration % 10 == 0:  # Show tracking info every 10 cycles
                             print(f"   {verdict}")
                     
-                    # Priority targets summary
-                    scanner = get_active_scanner()
+                    # Priority targets summary with learning + cascade stats
                     if scanner.kills_executed > 0:
-                        print(f"   💰 Session: {scanner.kills_executed} kills | Total: ${scanner.total_pnl:.4f}")
+                        learned_boost = f"LEARNED: {scanner.momentum_success_rate:.0%}" if scanner.momentum_success_rate > 0 else ""
+                        print(f"   💰 Session: {scanner.kills_executed} kills | ${scanner.total_pnl:.4f} | Avg: {scanner.avg_kill_time:.0f}s {learned_boost}")
             except Exception as e:
                 logger.debug(f"Kill scanner error: {e}")
         
