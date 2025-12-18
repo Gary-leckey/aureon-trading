@@ -16780,14 +16780,53 @@ class AureonKrakenEcosystem:
             for opp in all_opps[:min(slots_to_fill, CONFIG['MAX_POSITIONS'] - current_positions)]:
                 self.open_position(opp)
                 
-        # Show positions
+        # Show positions - ENHANCED with full details
         if self.positions:
-            print(f"\\n   📊 Active Positions ({len(self.positions)}/{CONFIG['MAX_POSITIONS']}):")
+            print(f"\\n   📊 ACTIVE POSITIONS ({len(self.positions)}/{CONFIG['MAX_POSITIONS']}):")
+            print(f"   {'─'*70}")
             for symbol, pos in self.positions.items():
                 rt = self.get_realtime_price(symbol)
                 price = rt if rt else pos.entry_price
                 pct = (price - pos.entry_price) / pos.entry_price * 100 if pos.entry_price > 0 else 0.0
-                print(f"      {symbol:12s} Entry: ${pos.entry_price:.6f} | Now: {pct:+.2f}%")
+                pnl_val = (price - pos.entry_price) * pos.quantity if pos.entry_price > 0 else 0.0
+                
+                # Platform/Exchange
+                exch = getattr(pos, 'exchange', 'kraken').upper()[:3]
+                
+                # Entry value (how much we're in for)
+                entry_val = pos.entry_value if pos.entry_value > 0 else pos.entry_price * pos.quantity
+                
+                # Satoshi price (sats per coin)
+                sats = int(pos.entry_price * 100_000_000) if pos.entry_price < 1 else 0
+                sats_str = f"{sats:,} sats" if sats > 0 else f"${pos.entry_price:.4f}"
+                
+                # Hold time
+                hold_sec = time.time() - pos.entry_time
+                hold_str = f"{hold_sec/60:.1f}m" if hold_sec < 3600 else f"{hold_sec/3600:.1f}h"
+                
+                # Exit ETA from Kill Scanner
+                eta_str = "∞"
+                prob_str = ""
+                try:
+                    scanner = get_active_scanner()
+                    if symbol in scanner.targets:
+                        target = scanner.targets[symbol]
+                        if target.eta_to_kill < float('inf'):
+                            eta_str = f"{target.eta_to_kill:.0f}s" if target.eta_to_kill < 60 else f"{target.eta_to_kill/60:.1f}m"
+                        prob_str = f"({target.probability_of_kill*100:.0f}%)"
+                except:
+                    pass
+                
+                # P&L color indicator
+                pnl_icon = "🟢" if pnl_val > 0 else "🔴" if pnl_val < 0 else "⚪"
+                
+                # Extract base asset from symbol
+                asset = symbol.replace('USD', '').replace('GBP', '').replace('EUR', '').replace('USDT', '')[:6]
+                
+                icon = self._get_node_icon(pos.dominant_node)
+                print(f"      {icon} {asset:6s} | {exch} | ${entry_val:.2f} in @ {sats_str}")
+                print(f"         {pnl_icon} P&L: ${pnl_val:+.4f} ({pct:+.2f}%) | Hold: {hold_str} | ETA: {eta_str} {prob_str}")
+            print(f"   {'─'*70}")
                 
         # Stats
         runtime = (time.time() - self.start_time) / 60
@@ -17561,23 +17600,72 @@ class AureonKrakenEcosystem:
                                 pass
                         self.open_position(opp)
                         
-                # Show positions
+                # Show positions - ENHANCED FULL DETAILS TABLE
                 if self.positions:
-                    print(f"\n   📊 Active Positions ({len(self.positions)}/{CONFIG['MAX_POSITIONS']}):")
+                    print(f"\n   📊 ACTIVE POSITIONS ({len(self.positions)}/{CONFIG['MAX_POSITIONS']}):")
+                    print(f"   {'─'*80}")
+                    print(f"      {'ASSET':6s} │ {'EX':3s} │ {'ENTRY $':>10s} │ {'ENTRY PRICE':>14s} │ {'P&L':>12s} │ {'HOLD':>5s} │ {'EXIT ETA':>12s}")
+                    print(f"   {'─'*80}")
                     for symbol, pos in self.positions.items():
                         rt = self.get_realtime_price(symbol)
                         if pos.entry_price <= 0:
                             pct = 0.0
+                            price = 0.0
                             src = "⚠️"
                         elif rt:
+                            price = rt
                             pct = (rt - pos.entry_price) / pos.entry_price * 100
-                            src = "🔴"
+                            src = "🔴"  # Live price
                         else:
                             cached = self.ticker_cache.get(symbol, {}).get('price', pos.entry_price)
+                            price = cached
                             pct = (cached - pos.entry_price) / pos.entry_price * 100 if pos.entry_price > 0 else 0.0
-                            src = "⚪"
+                            src = "⚪"  # Cached price
+                        
+                        # Calculate P&L value
+                        pnl_val = (price - pos.entry_price) * pos.quantity if pos.entry_price > 0 else 0.0
+                        
+                        # Platform/Exchange
+                        exch = getattr(pos, 'exchange', 'kraken').upper()[:3]
+                        
+                        # Entry value (how much we're in for)
+                        entry_val = pos.entry_value if pos.entry_value > 0 else pos.entry_price * pos.quantity
+                        
+                        # Satoshi price (for crypto < $1)
+                        if pos.entry_price < 1 and pos.entry_price > 0:
+                            sats = int(pos.entry_price * 100_000_000)
+                            entry_str = f"{sats:,} sats"
+                        else:
+                            entry_str = f"${pos.entry_price:.6f}"
+                        
+                        # Hold time
+                        hold_sec = time.time() - pos.entry_time
+                        hold_str = f"{hold_sec/60:.0f}m" if hold_sec < 3600 else f"{hold_sec/3600:.1f}h"
+                        
+                        # Exit ETA from Kill Scanner
+                        eta_str = "---"
+                        try:
+                            scanner = get_active_scanner()
+                            if symbol in scanner.targets:
+                                target = scanner.targets[symbol]
+                                if target.probability_of_kill > 0:
+                                    if target.eta_to_kill < float('inf'):
+                                        eta_str = f"{target.eta_to_kill:.0f}s" if target.eta_to_kill < 60 else f"{target.eta_to_kill/60:.1f}m"
+                                        eta_str += f" ({target.probability_of_kill*100:.0f}%)"
+                                    elif target.probability_of_kill > 0.8:
+                                        eta_str = f"NOW! ({target.probability_of_kill*100:.0f}%)"
+                        except:
+                            pass
+                        
+                        # P&L color indicator
+                        pnl_icon = "🟢" if pnl_val > 0 else "🔴" if pnl_val < 0 else "⚪"
+                        
+                        # Extract base asset from symbol
+                        asset = symbol.replace('USD', '').replace('GBP', '').replace('EUR', '').replace('USDT', '')[:6]
+                        
                         icon = self._get_node_icon(pos.dominant_node)
-                        print(f"      {icon} {symbol:12s} Entry: ${pos.entry_price:.6f} | Now: {pct:+.2f}% {src}")
+                        print(f"      {icon}{asset:6s} │ {exch:3s} │ ${entry_val:>9.2f} │ {entry_str:>14s} │ {pnl_icon}${pnl_val:>+9.4f} │ {hold_str:>5s} │ {eta_str:>12s} {src}")
+                    print(f"   {'─'*80}")
                         
                 # Stats
                 rt_count = len(self.realtime_prices)
