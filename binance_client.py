@@ -578,6 +578,15 @@ class BinanceClient:
         
         Returns dict: {symbol: [trades]}
         """
+        # 🔧 BINANCE VALID PAIRS: Only try quote currencies that Binance actually supports
+        # Binance has very limited EUR/GBP support - only major pairs
+        BINANCE_EUR_SUPPORTED = {'BTC', 'ETH', 'BNB', 'XRP', 'ADA', 'SOL', 'DOT', 'DOGE', 'SHIB', 'MATIC', 'LTC', 'AVAX', 'LINK', 'ATOM'}
+        BINANCE_GBP_SUPPORTED = {'BTC', 'ETH', 'BNB', 'XRP', 'ADA', 'SOL', 'DOT', 'DOGE', 'LTC'}
+        
+        # Assets that should NEVER be used as base (stablecoins, earn products, etc.)
+        SKIP_AS_BASE = {'USDC', 'USDT', 'BUSD', 'TUSD', 'FDUSD', 'EUR', 'GBP', 'USD', 
+                        'LDUSDC', 'LDUSDT', 'LDBUSD', 'LDBNB', 'LDBTC', 'LDETH'}
+        
         if not symbols:
             # Get symbols from current balances
             account = self.account()
@@ -585,10 +594,27 @@ class BinanceClient:
             symbols = []
             for b in balances:
                 if float(b.get('free', 0)) > 0 or float(b.get('locked', 0)) > 0:
-                    asset = b['asset']
-                    # Try common quote currencies
-                    for quote in ['USDC', 'USDT', 'EUR', 'GBP']:
-                        symbols.append(f"{asset}{quote}")
+                    asset = b['asset'].upper()
+                    
+                    # Skip stablecoins and special assets as base
+                    if asset in SKIP_AS_BASE or asset.startswith('LD'):
+                        continue
+                    
+                    # Clean up Binance Earn prefix if present
+                    clean_asset = asset[2:] if asset.startswith('LD') else asset
+                    
+                    # Only try quote currencies that this asset actually supports on Binance
+                    # USDC and USDT are widely supported
+                    symbols.append(f"{clean_asset}USDC")
+                    symbols.append(f"{clean_asset}USDT")
+                    
+                    # EUR only for major coins
+                    if clean_asset in BINANCE_EUR_SUPPORTED:
+                        symbols.append(f"{clean_asset}EUR")
+                    
+                    # GBP only for top coins
+                    if clean_asset in BINANCE_GBP_SUPPORTED:
+                        symbols.append(f"{clean_asset}GBP")
         
         all_trades = {}
         for symbol in symbols:

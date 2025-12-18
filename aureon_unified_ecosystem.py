@@ -10618,9 +10618,22 @@ class AureonKrakenEcosystem:
                 gbp_value = 0.0
                 price = 0.0
                 
-                # Try each quote currency until we find a valid pair with price
-                # Include BTC/XBT for Kraken BTC-denominated pairs
-                quote_options = ['USDC', 'USDT', 'USD', 'EUR', 'GBP', 'BTC', 'XBT', 'FDUSD', base] if base not in ['USDC', 'USDT'] else [base, 'USDT', 'USD', 'EUR', 'BTC', 'XBT', 'FDUSD']
+                # 🔧 EXCHANGE-SPECIFIC QUOTE OPTIONS
+                # Binance: USDC/USDT primary, EUR/GBP only for major coins
+                # Kraken: USD/EUR/GBP widely supported
+                BINANCE_EUR_GBP_SUPPORTED = {'BTC', 'ETH', 'BNB', 'XRP', 'ADA', 'SOL', 'DOT', 'DOGE', 'LTC', 'AVAX', 'LINK', 'SHIB', 'MATIC'}
+                
+                if exchange == 'binance':
+                    # Binance: USDC/USDT are primary, EUR/GBP only for majors
+                    quote_options = ['USDC', 'USDT', 'FDUSD']
+                    if asset_clean in BINANCE_EUR_GBP_SUPPORTED:
+                        quote_options.extend(['EUR', 'GBP'])
+                elif exchange == 'kraken':
+                    # Kraken: USD/EUR/GBP widely supported
+                    quote_options = ['USD', 'USDC', 'EUR', 'GBP', 'XBT']
+                else:
+                    # Generic fallback
+                    quote_options = ['USDC', 'USDT', 'USD']
                 
                 for quote in quote_options:
                     try_symbol = f"{asset_clean}{quote}"
