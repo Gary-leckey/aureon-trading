@@ -3280,7 +3280,7 @@ class MultiExchangeOrchestrator:
         - 285 Hz: Healing, tissue regeneration
         - 396 Hz: Liberation from fear/guilt (UT)
         - 417 Hz: Undoing situations, facilitating change (RE)
-        - 528 Hz: Love frequency, DNA repair (MI) ⭐ OPTIMAL
+        - 528 Hz: Love frequency, DNA repair (MI) ⭐ OPTIMAL GREEN BORAX
         - 639 Hz: Connection, relationships (FA)
         - 741 Hz: Awakening intuition (SOL)
         - 852 Hz: Returning to spiritual order (LA)
@@ -3294,22 +3294,16 @@ class MultiExchangeOrchestrator:
         DISTORTION:
         - 440 Hz: Artificial concert pitch (dissonance)
         """
-        # Check Schumann harmonics (7.83Hz × n)
-        schumann_base = 7.83
-        for harmonic in range(1, 128):  # Up to 128th harmonic (~1000Hz)
-            schumann_freq = schumann_base * harmonic
-            if abs(freq - schumann_freq) <= 3:
-                return CONFIG.get('FREQUENCY_BOOST_SCHUMANN', 1.45)
-        
-        # Check exact sacred frequencies (±5Hz tolerance)
+        # 🟢 Check SACRED SOLFEGGIO frequencies FIRST! 
+        # 528Hz GREEN LOVE must be prioritized over Schumann harmonics!
         sacred_map = {
+            (523, 533): CONFIG.get('FREQUENCY_BOOST_528HZ', 1.35),   # 528 Hz Love ⭐ GREEN BORAX
+            (391, 401): CONFIG.get('FREQUENCY_BOOST_396HZ', 1.40),   # 396 Hz Liberation
+            (427, 437): CONFIG.get('FREQUENCY_BOOST_432HZ', 1.30),   # 432 Hz Cosmic
             (169, 179): CONFIG.get('FREQUENCY_BOOST_174HZ', 1.20),   # 174 Hz Foundation
             (280, 290): CONFIG.get('FREQUENCY_BOOST_285HZ', 1.25),   # 285 Hz Healing
-            (391, 401): CONFIG.get('FREQUENCY_BOOST_396HZ', 1.40),   # 396 Hz Liberation
             (412, 422): CONFIG.get('FREQUENCY_BOOST_417HZ', 1.30),   # 417 Hz Change
-            (427, 437): CONFIG.get('FREQUENCY_BOOST_432HZ', 1.30),   # 432 Hz Cosmic
             (435, 445): CONFIG.get('FREQUENCY_SUPPRESS_440HZ', 0.70),# 440 Hz Distortion!
-            (523, 533): CONFIG.get('FREQUENCY_BOOST_528HZ', 1.35),   # 528 Hz Love ⭐
             (634, 644): CONFIG.get('FREQUENCY_BOOST_639HZ', 1.25),   # 639 Hz Connection
             (736, 746): CONFIG.get('FREQUENCY_BOOST_741HZ', 1.15),   # 741 Hz Awakening
             (847, 857): CONFIG.get('FREQUENCY_BOOST_852HZ', 1.20),   # 852 Hz Spiritual
@@ -3320,6 +3314,13 @@ class MultiExchangeOrchestrator:
         for (low, high), modifier in sacred_map.items():
             if low <= freq <= high:
                 return modifier
+        
+        # Check Schumann harmonics AFTER sacred frequencies (7.83Hz × n)
+        schumann_base = 7.83
+        for harmonic in range(1, 128):  # Up to 128th harmonic (~1000Hz)
+            schumann_freq = schumann_base * harmonic
+            if abs(freq - schumann_freq) <= 3:
+                return CONFIG.get('FREQUENCY_BOOST_SCHUMANN', 1.45)
         
         # Band-based fallback
         if 300 <= freq <= 399:
@@ -10269,7 +10270,7 @@ class AureonKrakenEcosystem:
         - 285 Hz: Healing, tissue regeneration
         - 396 Hz: Liberation from fear/guilt (UT)
         - 417 Hz: Undoing situations, facilitating change (RE)
-        - 528 Hz: Love frequency, DNA repair (MI) ⭐ OPTIMAL
+        - 528 Hz: Love frequency, DNA repair (MI) ⭐ OPTIMAL GREEN BORAX
         - 639 Hz: Connection, relationships (FA)
         - 741 Hz: Awakening intuition (SOL)
         - 852 Hz: Returning to spiritual order (LA)
@@ -10283,22 +10284,16 @@ class AureonKrakenEcosystem:
         DISTORTION:
         - 440 Hz: Artificial concert pitch (dissonance)
         """
-        # Check Schumann harmonics (7.83Hz × n)
-        schumann_base = 7.83
-        for harmonic in range(1, 128):  # Up to 128th harmonic (~1000Hz)
-            schumann_freq = schumann_base * harmonic
-            if abs(freq - schumann_freq) <= 3:
-                return CONFIG.get('FREQUENCY_BOOST_SCHUMANN', 1.45)
-        
-        # Check exact sacred frequencies (±5Hz tolerance)
+        # 🟢 Check SACRED SOLFEGGIO frequencies FIRST! 
+        # 528Hz GREEN LOVE must be prioritized over Schumann harmonics!
         sacred_map = {
+            (523, 533): CONFIG.get('FREQUENCY_BOOST_528HZ', 1.35),   # 528 Hz Love ⭐ GREEN BORAX
+            (391, 401): CONFIG.get('FREQUENCY_BOOST_396HZ', 1.40),   # 396 Hz Liberation
+            (427, 437): CONFIG.get('FREQUENCY_BOOST_432HZ', 1.30),   # 432 Hz Cosmic
             (169, 179): CONFIG.get('FREQUENCY_BOOST_174HZ', 1.20),   # 174 Hz Foundation
             (280, 290): CONFIG.get('FREQUENCY_BOOST_285HZ', 1.25),   # 285 Hz Healing
-            (391, 401): CONFIG.get('FREQUENCY_BOOST_396HZ', 1.40),   # 396 Hz Liberation
             (412, 422): CONFIG.get('FREQUENCY_BOOST_417HZ', 1.30),   # 417 Hz Change
-            (427, 437): CONFIG.get('FREQUENCY_BOOST_432HZ', 1.30),   # 432 Hz Cosmic
             (435, 445): CONFIG.get('FREQUENCY_SUPPRESS_440HZ', 0.70),# 440 Hz Distortion!
-            (523, 533): CONFIG.get('FREQUENCY_BOOST_528HZ', 1.35),   # 528 Hz Love ⭐
             (634, 644): CONFIG.get('FREQUENCY_BOOST_639HZ', 1.25),   # 639 Hz Connection
             (736, 746): CONFIG.get('FREQUENCY_BOOST_741HZ', 1.15),   # 741 Hz Awakening
             (847, 857): CONFIG.get('FREQUENCY_BOOST_852HZ', 1.20),   # 852 Hz Spiritual
@@ -10309,6 +10304,13 @@ class AureonKrakenEcosystem:
         for (low, high), modifier in sacred_map.items():
             if low <= freq <= high:
                 return modifier
+        
+        # Check Schumann harmonics AFTER sacred frequencies (7.83Hz × n)
+        schumann_base = 7.83
+        for harmonic in range(1, 128):  # Up to 128th harmonic (~1000Hz)
+            schumann_freq = schumann_base * harmonic
+            if abs(freq - schumann_freq) <= 3:
+                return CONFIG.get('FREQUENCY_BOOST_SCHUMANN', 1.45)
         
         # Band-based fallback
         if 300 <= freq <= 399:
