@@ -48,21 +48,24 @@ bot.positions[symbol] = Position(
 # 2. Simulate SELL
 print(f"\n2. Simulating SELL at £{exit_price:.2f} (+2%)...")
 
-# Calculate expected exit values manually
+# Calculate expected exit values manually using combined rate
+# This matches the penny profit formula which uses (1-f)² where f = fee + slippage + spread
 exit_value = quantity * exit_price
 gross_pnl = exit_value - investment
-exit_fee_rate = CONFIG['KRAKEN_FEE']
-exit_fee = exit_value * exit_fee_rate
-slippage_rate = CONFIG['SLIPPAGE_PCT'] # 0.0010
-slippage_cost = exit_value * slippage_rate
+fee_rate = CONFIG['KRAKEN_FEE']
+slippage_rate = CONFIG['SLIPPAGE_PCT']
+spread_rate = CONFIG.get('SPREAD_COST_PCT', 0.001)
+total_rate = fee_rate + slippage_rate + spread_rate  # Combined rate per leg
 
-total_expenses = entry_fee + exit_fee + slippage_cost
+exit_fee = exit_value * total_rate  # Exit uses combined rate
+
+total_expenses = entry_fee + exit_fee  # Both legs use combined rate
 net_pnl = gross_pnl - total_expenses
 
 print(f"   Exit Value: £{exit_value:.4f}")
 print(f"   Gross PnL: £{gross_pnl:.4f}")
-print(f"   Expected Exit Fee ({exit_fee_rate*100}%): £{exit_fee:.4f}")
-print(f"   Expected Slippage ({slippage_rate*100}%): £{slippage_cost:.4f}")
+print(f"   Combined Rate per leg: {total_rate*100:.2f}%")
+print(f"   Expected Exit Fee: £{exit_fee:.4f}")
 print(f"   Total Expenses: £{total_expenses:.4f}")
 print(f"   Expected NET PnL: £{net_pnl:.4f}")
 

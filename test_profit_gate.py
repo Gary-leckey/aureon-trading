@@ -51,16 +51,22 @@ def should_exit_trade(pos: SimPosition, current_price: float, reason: str) -> tu
     """
     Smart exit gate - only sell if we're making NET PROFIT after fees.
     Returns: (should_exit, explanation, net_pnl)
+    
+    📐 Uses consistent fee model matching penny profit formula:
+    Combined rate = fee + slippage + spread for both legs
     """
     change_pct = (current_price - pos.entry_price) / pos.entry_price
     
-    # Calculate actual P&L with platform-specific fees
-    exit_value = pos.quantity * current_price
-    exit_fee = exit_value * get_platform_fee(pos.exchange, 'taker')
-    slippage_cost = exit_value * CONFIG['SLIPPAGE_PCT']
-    spread_cost = exit_value * CONFIG['SPREAD_COST_PCT']
+    # Calculate P&L using combined rate (matches penny profit formula)
+    fee_rate = get_platform_fee(pos.exchange, 'taker')
+    slippage = CONFIG.get('SLIPPAGE_PCT', 0.002)
+    spread = CONFIG.get('SPREAD_COST_PCT', 0.001)
+    total_rate = fee_rate + slippage + spread
     
-    total_expenses = pos.entry_fee + exit_fee + slippage_cost + spread_cost
+    exit_value = pos.quantity * current_price
+    exit_fee = exit_value * total_rate
+    
+    total_expenses = pos.entry_fee + exit_fee  # Both use combined rate
     gross_pnl = exit_value - pos.entry_value
     net_pnl = gross_pnl - total_expenses
     
@@ -73,11 +79,10 @@ def should_exit_trade(pos: SimPosition, current_price: float, reason: str) -> tu
     📊 P&L Calculation for {pos.symbol}:
     ─────────────────────────────────────────
     Entry: {pos.quantity:.6f} @ ${pos.entry_price:.6f} = ${pos.entry_value:.4f}
-    Entry Fee: ${pos.entry_fee:.4f} ({get_platform_fee(pos.exchange, 'taker')*100:.2f}%)
+    Entry Fee: ${pos.entry_fee:.4f} (combined rate: {total_rate*100:.2f}%)
     
     Exit: {pos.quantity:.6f} @ ${current_price:.6f} = ${exit_value:.4f}
-    Exit Fee: ${exit_fee:.4f}
-    Slippage: ${slippage_cost:.4f}
+    Exit Fee: ${exit_fee:.4f} (combined rate)
     Spread: ${spread_cost:.4f}
     
     Total Expenses: ${total_expenses:.4f}

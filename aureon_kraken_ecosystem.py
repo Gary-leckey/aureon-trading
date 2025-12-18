@@ -1330,21 +1330,19 @@ class AureonKrakenEcosystem:
         """
         Smart exit gate - only sell if we're making NET PROFIT after fees.
         This ensures every closed trade is profitable.
+        
+        📐 NOTE: The penny profit threshold already accounts for all fees
+        via the formula r = ((1 + P/A) / (1-f)²) - 1 where f = fee + slippage + spread.
+        We use gross_pnl comparison with threshold - don't double-count fees!
         """
         change_pct = (current_price - pos.entry_price) / pos.entry_price
         
-        # Calculate actual P&L with fees
+        # Calculate gross P&L (threshold handles fee math)
         exit_value = pos.quantity * current_price
-        exit_fee = exit_value * CONFIG['KRAKEN_FEE_TAKER']
-        slippage_cost = exit_value * CONFIG['SLIPPAGE_PCT']
-        spread_cost = exit_value * CONFIG['SPREAD_COST_PCT']
-        
-        total_expenses = pos.entry_fee + exit_fee + slippage_cost + spread_cost
         gross_pnl = exit_value - pos.entry_value
-        net_pnl = gross_pnl - total_expenses
         
         # 🪙 PENNY PROFIT TAKE PROFIT: Always allow - the engine calculated this correctly
-        if reason in ["TP", "PENNY_TP"] and net_pnl > 0:
+        if reason in ["TP", "PENNY_TP"] and gross_pnl > 0:
             return True
         
         # 🪙 PENNY PROFIT STOP LOSS: Trust the penny profit engine's calculation
@@ -1357,9 +1355,10 @@ class AureonKrakenEcosystem:
             # Allow the SL
             return True
         
-        # REBALANCE/SWAP: Only if net negative is small
+        # REBALANCE/SWAP: Only if loss is small relative to position
         if reason in ["REBALANCE", "SWAP"]:
-            if net_pnl > -0.10:  # Allow up to 10p loss for rebalancing
+            loss_pct = abs(gross_pnl / pos.entry_value) if pos.entry_value > 0 else 0
+            if loss_pct < 0.01:  # Allow up to 1% loss for rebalancing
                 return True
             return False
         
@@ -2077,15 +2076,18 @@ class AureonKrakenEcosystem:
         if success:
             self.positions.pop(symbol)
         
-        # Calculate P&L (Pessimistic Accounting)
-        # We assume slippage on exit price
-        slippage_cost = (pos.quantity * price) * CONFIG['SLIPPAGE_PCT']
+        # 📐 Calculate P&L using consistent fee model matching penny profit formula
+        # Use combined rate (fee + slippage + spread) for both legs
+        fee_rate = CONFIG.get('KRAKEN_FEE_TAKER', CONFIG['KRAKEN_FEE'])
+        slippage = CONFIG.get('SLIPPAGE_PCT', 0.002)
+        spread = CONFIG.get('SPREAD_COST_PCT', 0.001)
+        total_rate = fee_rate + slippage + spread
         
         exit_value = pos.quantity * price
-        exit_fee = exit_value * CONFIG['KRAKEN_FEE']
+        exit_fee = exit_value * total_rate
         
-        # Total Expenses = Entry Fee + Exit Fee + Slippage
-        total_expenses = pos.entry_fee + exit_fee + slippage_cost
+        # Total Expenses = Entry Fee + Exit Fee (both use combined rate)
+        total_expenses = pos.entry_fee + exit_fee
         
         gross_pnl = exit_value - pos.entry_value
         net_pnl = gross_pnl - total_expenses

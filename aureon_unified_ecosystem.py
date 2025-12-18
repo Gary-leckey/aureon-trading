@@ -15091,24 +15091,15 @@ class AureonKrakenEcosystem:
                         to_close.append((symbol, "TP", change_pct, current_price))
                     # 🔧 FIX: Removed automatic SL at -1.5% - wait for penny SL instead
                     elif change_pct > 0:
-                        # 💰 PENNY PROFIT OVERRIDE: Ignore min_hold if we have profit!
-                        # Legacy harvest check
-                        exit_fee = exit_value * get_platform_fee(pos.exchange, 'taker')
-                        slippage_cost = exit_value * CONFIG['SLIPPAGE_PCT']
-                        spread_cost = exit_value * CONFIG['SPREAD_COST_PCT']
-                        total_expenses = pos.entry_fee + exit_fee + slippage_cost + spread_cost
-                        net_pnl = gross_pnl - total_expenses
-                        min_profit = pos.entry_value * CONFIG['MIN_NET_PROFIT_PCT']
-                        
-                        # 💰 PENNY PROFIT OVERRIDE: If net profit >= $0.01, take it!
-                        if net_pnl >= 0.01:
-                            net_pnl_pct = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
-                            print(f"   🌾 PENNY HARVEST: {symbol} net profit ${net_pnl:.4f} ({net_pnl_pct:.2f}%)")
-                            to_close.append((symbol, "HARVEST", change_pct, current_price))
-                        elif net_pnl >= min_profit and pos.cycles >= min_hold:
-                            net_pnl_pct = (net_pnl / pos.entry_value * 100) if pos.entry_value > 0 else 0
-                            print(f"   🌾 HARVEST: {symbol} net profit ${net_pnl:.4f} ({net_pnl_pct:.2f}%)")
-                            to_close.append((symbol, "HARVEST", change_pct, current_price))
+                        # 💰 PENNY PROFIT OVERRIDE: Compute threshold on-the-fly
+                        # Use penny threshold instead of manual fee calculation
+                        fb_threshold = get_penny_threshold(pos.exchange, pos.entry_value)
+                        if fb_threshold:
+                            min_gross_win = fb_threshold.get('win_gte', 0.01)
+                            target_net = fb_threshold.get('target_net', 0.01)
+                            if gross_pnl >= min_gross_win:
+                                print(f"   🌾 PENNY HARVEST: {symbol} gross ${gross_pnl:.4f} >= ${min_gross_win:.4f} -> NET ~${target_net:.2f}")
+                                to_close.append((symbol, "HARVEST", change_pct, current_price))
                 
         for symbol, reason, pct, price in to_close:
             self.close_position(symbol, reason, pct, price)
