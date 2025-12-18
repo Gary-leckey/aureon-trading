@@ -15024,19 +15024,30 @@ class AureonKrakenEcosystem:
             if current_price is None:
                 try:
                     # Force single ticker lookup
-                    if pos.exchange == 'binance':
-                        ticker = self.client.get_ticker(symbol, exchange='binance')
+                    exchange = (pos.exchange or "").lower()
+
+                    if exchange == 'binance':
+                        ticker = self.client.get_ticker('binance', symbol)
                         if ticker:
-                            current_price = float(ticker.get('lastPrice', 0))
+                            current_price = float(ticker.get('price') or ticker.get('lastPrice', 0))
                             source = "REST_FORCE_BINANCE"
+                    elif exchange == 'kraken':
+                        kraken_client = self.client.clients.get('kraken') if hasattr(self.client, 'clients') else None
+                        if kraken_client:
+                            ticker_symbol = self._normalize_ticker_symbol(symbol)
+                            ticker = kraken_client.get_ticker(ticker_symbol)
+                            if ticker:
+                                current_price = float(ticker.get('price', 0))
+                                source = "REST_FORCE_KRAKEN"
                     else:
-                        # Kraken logic
-                        ticker_symbol = self._normalize_ticker_symbol(symbol)
-                        ticker = self.client._ticker([ticker_symbol])
-                        if ticker:
-                            t_data = list(ticker.values())[0]
-                            current_price = float(t_data.get('c', [0])[0])
-                            source = "REST_FORCE_KRAKEN"
+                        # Generic fallback using MultiExchangeClient if available
+                        try:
+                            ticker = self.client.get_ticker(exchange, symbol)
+                            if ticker:
+                                current_price = float(ticker.get('price', 0))
+                                source = f"REST_FORCE_{exchange.upper()}"
+                        except Exception:
+                            pass
                 except Exception as e:
                     print(f"   ⚠️ Failed to force price check for {symbol}: {e}")
 
