@@ -1,4 +1,6 @@
-# Schumann Resonance Live Validation System
+# Archive: Schumann Resonance Live Validation System
+
+Status: Historical/experimental reference. Please consult [README.md](README.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the current unified engine overview and instructions.
 
 ## Battle-Ready Validation Protocol
 

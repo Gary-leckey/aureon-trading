@@ -1,4 +1,6 @@
-# 🌟 HARMONIC NEXUS CHARTER — Solar Resonance Atlas 🌟
+# Archive: Harmonic Nexus Charter
+
+Status: Historical/experimental reference. For the active system face and operation, start with [README.md](README.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Prime Seal 10-9-1 — Lattice Nexus Live System
 

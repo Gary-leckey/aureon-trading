@@ -1,4 +1,6 @@
-# Auris Real-Time Validator Setup
+# Archive: Auris Real-Time Validator Setup
+
+Status: Historical/experimental reference. For the unified ecosystem and current run path, see [README.md](README.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Overview
 The Auris system now includes a complete real-time validation pipeline with Python backend processing for intent broadcast verification using Earth data streams.

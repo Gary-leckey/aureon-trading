@@ -1,4 +1,6 @@
-# Earth Live Data Server
+# Earth Live Data Server (Component)
+
+Scope: Optional development server for simulated data feeds. For the unified trading engine overview and run path, see [../README.md](../README.md) and [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md).
 
 This WebSocket server simulates Schumann Resonance and biometric sensor data for the AUREON Quantum Trading System.
 

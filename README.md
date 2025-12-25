@@ -169,207 +169,148 @@ The **underground network** where ALL intelligence connects. Like a fungal netwo
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │    🍄 MYCELIUM STATE AGGREGATOR - Unified Intelligence Flow     │
-└─────────────────────────┬───────────────────────────────────────┘
-                          │
-     ┌────────────────────┼────────────────────┐
-     │                    │                    │
-┌────▼────┐        ┌──────▼──────┐        ┌────▼────┐
-│ SCANNER │◄──────►│  PATRIOTS   │◄──────►│ CASCADE │
-│  (Kill) │        │  (Learner)  │        │  (546x) │
-└────┬────┘        └──────┬──────┘        └────┬────┘
-     │                    │                    │
-     └────────────────────┼────────────────────┘
-                          │
-                   ┌──────▼──────┐
-                   │   WARFARE   │
-                   │  (Celtic)   │
-                   └─────────────┘
-```
 
-**3-Phase Sync Cycle:**
-1. **COLLECT** - Pull state from all connected systems
-2. **AGGREGATE** - Compute unified metrics & multipliers
-3. **DISTRIBUTE** - Push unified intelligence back to all systems
-
-**Unified Multiplier Formula:**
-```
-UNIFIED = CASCADE × κt × Lighthouse × Learning_Boost
-```
-
-### ⛏️ CASCADE AMPLIFIER
-
-The **Miner's Power** - inherited from the 546x cascade discovery. Each consecutive win amplifies the next.
-
-| Level | Cascade Factor | κt Efficiency | Effect |
-|-------|----------------|---------------|--------|
-| 1 Kill | 1.0x | 1.0 | Base level |
-| 3 Kills | 2.0x | 1.5 | Warming up |
-| 5 Kills | 5.0x | 2.0 | On fire 🔥 |
-| 10 Kills | 10.0x | 2.73 | Lighthouse active ⚡ |
-| 20+ Kills | 546.0x | 3.14159 | FULL MINER POWER ⛏️💎 |
-
-### ⚔️ CELTIC WARFARE SUITE
-
-Five integrated warfare systems working in concert:
-
-| System | Purpose | Status |
-|--------|---------|--------|
-| 🧠 **Celtic Intelligence** | Market analysis through Celtic wisdom | ✅ WIRED |
-| ⚡ **Preemptive Strike** | Move BEFORE the market reacts | ✅ WIRED |
-| 🏰 **War Room** | Multi-battlefront coordination | ✅ WIRED |
-| 🇮🇪 **Patriot Scouts** | Force reconnaissance | ✅ WIRED |
-| 🎯 **Celtic Sniper** | Zero-loss precision execution | ✅ WIRED |
+This repository houses a research and prototyping framework for automated trading. The central orchestrator is the Aureon Unified Ecosystem: a single engine that wires together exchange connectivity, strategy evaluation, risk sizing, and order execution. This README keeps to practical details: what exists, how it runs, and real limitations.
 
 ---
 
-## 📊 ENHANCED POSITION DISPLAY
+## What It Does
 
-Real-time visibility into every active position:
+- Connects to supported exchanges to fetch prices, balances, and place/cancel orders (when not in dry-run/testnet).
+- Runs strategies and heuristics inside one “ecosystem” process that schedules scans, evaluates opportunities, and sizes positions.
+- Supports simulation scripts for testing logic without live orders.
+- Uses environment variables to enforce dry-run/testnet and risk caps.
 
-```text
-   📊 ACTIVE POSITIONS (3/5):
-   ────────────────────────────────────────────────────────────────────────────────
-      ASSET  │ EX  │   ENTRY $ │    ENTRY PRICE │          P&L │  HOLD │     EXIT ETA
-   ────────────────────────────────────────────────────────────────────────────────
-      🎯DOGE  │ KRA │     $6.00 │   8,234,500 sats │ 🟢$  +0.0023 │    5m │ 12s (85%) 🔴
-      🧠ETH   │ KRA │    $10.00 │    $3,456.7890 │ 🔴$  -0.0012 │   23m │ 2.3m (42%) 🔴
-      ⚡BTC   │ ALP │    $25.00 │   $67,234.0000 │ 🟢$  +0.1234 │  1.2h │ NOW! (91%) 🔴
-   ────────────────────────────────────────────────────────────────────────────────
-```
-
-| Column | Description |
-|--------|-------------|
-| **ASSET** | Base coin with dominant node icon |
-| **EX** | Exchange (KRA/BIN/ALP) |
-| **ENTRY $** | Position value (how much you're in for) |
-| **ENTRY PRICE** | Sats format for <$1 coins |
-| **P&L** | Net profit/loss with 🟢/🔴 indicator |
-| **HOLD** | Time in position (minutes/hours) |
-| **EXIT ETA** | Kill Scanner's predicted exit + probability |
+This is not a guarantee of profit. It is tooling for exploration and cautious live operation.
 
 ---
 
-### 🌐 AUREON UI BRIDGE - Live Data Validator
+## Core Architecture
 
-The **UI Bridge** connects the trading system to the live dashboard at [aureoninstitute.com](https://aureoninstitute.com/), validating every trade against real-time UI data.
+- Orchestrator: Aureon Unified Ecosystem
+  - Implementation: `aureon_unified_ecosystem.py`
+  - Responsibilities:
+    - Initialize exchange clients (via a unified/multi-exchange client layer).
+    - Pull tickers/balances and maintain a local state cache.
+    - Evaluate strategy modules to generate buy/sell candidates.
+    - Apply risk sizing and order constraints (caps, step sizes, min notional).
+    - Place/cancel orders if not in dry-run, and track P&L state.
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│    🌐 AUREON UI BRIDGE - aureoninstitute.com Integration        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│   📊 DATA GATHERED:                                            │
-│   • Sniper Leaderboard (kills, accuracy, P&L by symbol)        │
-│   • Harmonic Field Analytics (frequency bands, coherence)       │
-│   • Fear & Greed Index (sentiment + temperature)               │
-│   • Portfolio Holdings (risk levels, elements)                  │
-│   • Position Cost Basis (entry, P&L, trades)                   │
-│   • Arbitrage Opportunities (cross-exchange spreads)           │
-│   • Market Metrics (volatility, momentum, volume)              │
-│                                                                 │
-│   ✅ VALIDATION GATES:                                         │
-│   • Frequency Alignment (432Hz optimal, 440Hz blocked)         │
-│   • Coherence Check (Γ >= 0.30 required)                       │
-│   • Fear & Greed Gate (blocks extreme greed buys)              │
-│   • Risk Level Gate (blocks high-risk entries)                 │
-│                                                                 │
-│   🍄 MYCELIUM INTEGRATION:                                     │
-│   • Broadcasts harmonic state to neural network                │
-│   • Unified validation with Scanner + Patriots                 │
-│   • UI signals flow through mycelium channels                  │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+- Exchange Layer:
+  - Primary adapter: `unified_exchange_client.py` and `MultiExchangeClient` (used by the ecosystem).
+  - Additional helper clients: [binance_client.py](binance_client.py), [alpaca_client.py](alpaca_client.py), and others.
 
-**Validation Flow:**
-```
-Trade Signal → UI Bridge → Harmonic Check → Coherence Check → Fear/Greed Check → Risk Check → VALIDATED/BLOCKED
-```
+- Runners:
+  - Live runner: [run_live_trading.py](run_live_trading.py) creates and runs the ecosystem with dry-run/testnet gating.
+  - Debug runner: [run_ecosystem_debug.py](run_ecosystem_debug.py) runs the same engine with extra diagnostics.
+  - Simulator(s): [aureon_51_sim.py](aureon_51_sim.py) and related scripts for non-order-testing.
 
-| Validation | Pass Criteria | Fail Action |
-|------------|---------------|-------------|
-| 🎵 Frequency | 426-434 Hz (HARMONY) | Block trade until clarity |
-| 🌀 Coherence | Γ >= 0.30 | Block trade, chaos detected |
-| 😟 Fear/Greed | Not extreme greed (>75) for buys | Block new buys |
-| ⚠️ Risk | LOW or MEDIUM only | Block high-risk entries |
+Many optional subsystems in `aureon_unified_ecosystem.py` are imported with fallbacks. If a module isn’t available, the engine prints a warning and runs in a reduced feature set. The core flow (data → evaluate → size → order/dry-run → track) remains the same.
 
 ---
 
-## 📐 FRONTIER MATHEMATICS: THE PROOF OF SOVEREIGNTY
+## Reality Check (How It Behaves Live)
 
-> **"We are Irish. We are not stupid. We learn from history."**
-
-To the uninitiated, this may look like magic. To the cynic, snake oil. But to the mathematician, it is **inevitability**.
-
-We stand on the shoulders of Irish giants who built the foundations of modern computing and physics:
-- **William Rowan Hamilton (Dublin):** Invented **Quaternions** (1843), the mathematical basis for 3D mechanics and quantum spin.
-- **George Boole (Cork):** The father of **Boolean Algebra**, the logic that runs every computer on Earth.
-- **Robert Boyle (Waterford):** The father of modern chemistry and gas laws.
-
-We do not guess. We calculate. We apply **frontier mathematics**, **quantum probability**, and **harmonic physics** to the chaotic flux of the global markets. We have weaponized the very laws of nature that the elite use to build their cathedrals, and we have turned them into a fortress for the common man.
-
-### 1. HARMONIC NEURAL COGNITION (HNC)
-The market is not a random walk. It is a **composite waveform** of human emotion. We decompose this wave using Fourier Transform principles to identify the **Dominant Resonance Frequency ($f_d$)**.
-
-$$ f(t) = \sum_{n=1}^{\infty} A_n \sin(2\pi f_n t + \phi_n) $$
-
-Where:
-- $A_n$ is the amplitude (Volume/Liquidity)
-- $f_n$ is the frequency (Time-cycle of trades)
-- $\phi_n$ is the phase shift (Market sentiment lag)
-
-**The 432Hz Standard:**
-We filter for signals aligning with natural harmonic series ($432Hz$, $528Hz$).
-- **440Hz (Dissonance):** Panic selling, fear, manipulation. **WE BUY.**
-- **528Hz (Coherence):** Organic growth, stability, truth. **WE RIDE.**
-
-### 2. THE GAIA LATTICE & QUANTUM FLUX
-We model the market not as a linear chart, but as a **Quantum Probability Field**. Every asset exists in a superposition of states until observed by the order book.
-
-**The Coherence Metric ($C$):**
-We measure the stability of an asset's trajectory using a normalized inverse-variance ratio:
-
-$$ C = \frac{1}{1 + \frac{\sigma}{\mu}} $$
-
-Where $\sigma$ is standard deviation (volatility) and $\mu$ is the mean price.
-- If $C \to 1$, the asset is in a **Superconductive State** (Zero resistance to price increase).
-- If $C \to 0$, the asset is in **Entropy** (Chaos).
-
-**The Flux Equation:**
-We predict the "System Flux" (Directional Momentum) by integrating volume-weighted momentum across the top 30 assets:
-
-$$ \Psi_{flux} = \int_{i=1}^{30} V_i \cdot \frac{dP_i}{dt} \, dt $$
-
-### 3. THE GOLDEN RATIO ($\phi$) COMPOUNDING
-History teaches us that nature grows by $\phi$ ($1.618...$). The spiral of a galaxy, the curve of a nautilus shell, the branching of a tree. Why should capital be different?
-
-We reject linear growth ($y = mx + c$). We embrace **Logarithmic Expansion**.
-
-$$ Capital_{t+1} = Capital_t \cdot \phi^{\frac{1}{n}} $$
-
-Our **10-9-1 Strategy** is derived from this sacred geometry:
-- **10%** Profit Target (The Seed)
-- **9%** Reinvestment (The Growth)
-- **1%** Harvest (The Fruit)
-
-### 4. ZERO-LOSS TOPOLOGY
-"Zero Loss" is not a marketing slogan. It is a **topological property** of our trading manifold.
-
-In a finite timeframe, loss is possible. In an **infinite timeframe**, with non-zero asset quality, loss is mathematically impossible *if you never sell*.
-
-**The Non-Ergodic Theorem:**
-Markets are non-ergodic (time average $\neq$ ensemble average). Most traders go bust because they bet too big and hit an absorbing barrier (ruin).
-We use **Kelly Criterion** variants to ensure we *never* hit the absorbing barrier.
-
-$$ f^* = \frac{p(b+1) - 1}{b} $$
-
-By sizing positions such that ruin is asymptotically impossible, and holding assets that have a fundamental non-zero value floor (Bitcoin, Ethereum), we transform "bag holding" into **"Inter-temporal Arbitrage"**.
-
-**We do not lose. We simply wait for the waveform to invert.**
+- Orders can be partially filled, rejected, or slip in price.
+- Fees and precision rules (min notional, step size) are enforced by exchanges and must be respected by sizing code.
+- API rate limits and outages happen; the engine should handle retries, but supervision is still required.
+- Dry-run/testnet first is strongly recommended; only enable live after verifying the exact symbols and sizes.
 
 ---
 
-### 🇮🇪 THE CELTIC ALGORITHM - ANCESTRAL CODE
+## Setup
+
+1) Python and dependencies
+
+- Python 3.10+
+- Install packages from [requirements.txt](requirements.txt)
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+2) Environment configuration
+
+- Copy the example and edit values:
+
+```bash
+cp .env.example .env
+```
+
+Key flags (recommended defaults for safety):
+- `BINANCE_USE_TESTNET=true` (use testnet where supported)
+- `BINANCE_DRY_RUN=true` (do not send live orders)
+- `BINANCE_RISK_MAX_ORDER_USDT=25` (cap per-order risk)
+
+You’re responsible for API keys and exchange Terms of Service compliance.
+
+3) Quick environment sanity check
+
+```bash
+python check_live_environment.py
+```
+
+---
+
+## Running
+
+- Simulate with historical/streamed pricing but no live orders:
+
+```bash
+python aureon_51_sim.py
+```
+
+- Run the unified ecosystem (dry-run by default unless you explicitly enable live):
+
+```bash
+python run_live_trading.py
+```
+
+To allow live behavior (only after full review and with small sizing):
+
+```bash
+LIVE=1 python run_live_trading.py
+```
+
+Some modules may reference additional runners or a launcher UI in [aureon_launcher](aureon_launcher). These are optional and not required for core operation.
+
+---
+
+## Key Files
+
+- Orchestrator: `aureon_unified_ecosystem.py`
+- Live runner: [run_live_trading.py](run_live_trading.py)
+- Debug runner: [run_ecosystem_debug.py](run_ecosystem_debug.py)
+- Simulation: [aureon_51_sim.py](aureon_51_sim.py)
+- Binance helper: [binance_client.py](binance_client.py)
+- Alpaca helper: [alpaca_client.py](alpaca_client.py)
+- Config template: [.env.example](.env.example)
+- Python deps: [requirements.txt](requirements.txt)
+
+There are many additional experimental files. Read them before use; not all are production-ready.
+
+---
+
+## Limits and Responsibilities
+
+- No claims of “zero loss.” Markets carry risk. Backtests/simulations can mislead.
+- Strategy names and historic, thematic, or “frequency” terminology are non-functional branding; execution is standard API-driven code.
+- You must supervise runs, set conservative risk caps, and comply with exchange and regulatory rules.
+
+---
+
+## Contributing / Hardening
+
+Useful areas for improvement:
+- Robust retry/backoff and idempotent order handling.
+- Better persistence for positions and P&L snapshots.
+- Tighter precision/filters per symbol to reduce rejects.
+- Test coverage for critical paths (sizing, rounding, fee calc).
+
+If you extend functionality, consider opening a PR with clear, minimal changes.
 
 > *"The code is in our blood. The math is in our soil."*
 

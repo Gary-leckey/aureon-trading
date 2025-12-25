@@ -1,4 +1,6 @@
-# 🐙 AUREON Desktop Launcher
+# AUREON Desktop Launcher (Component)
+
+Scope: This is an optional Windows launcher for the unified trading engine. For the system overview, setup, and run instructions, see the root [README.md](../README.md) and [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md).
 
 Windows desktop application for running AUREON Quantum Trading System.
 

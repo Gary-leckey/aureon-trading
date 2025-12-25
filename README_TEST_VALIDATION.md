@@ -1,4 +1,6 @@
-# Validation System Test Guide
+# Archive: Validation System Test Guide
+
+Status: Historical/experimental reference. For the current system and how to run it, see the unified overview in [README.md](README.md) and the technical details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Quick 60-Second Go/No-Go Check
 
