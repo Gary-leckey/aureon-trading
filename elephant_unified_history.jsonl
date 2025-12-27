@@ -256,3 +256,33 @@
 {"ts": "2025-12-14T12:41:14.894513", "type": "hunt", "symbol": "GIGGLEUSDC", "volume": 5963146.20738, "change": 2.1}
 {"ts": "2025-12-14T12:41:16.684129", "type": "hunt", "symbol": "TNSRUSDC", "volume": 1284437.16638, "change": -9.436}
 {"ts": "2025-12-14T12:41:21.568366", "type": "hunt", "symbol": "HBARUSDC", "volume": 5311684.75551, "change": -1.783}
+{"ts": "2025-12-27T14:50:26.879332", "type": "hunt", "symbol": "ZECUSD", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T14:50:27.278384", "type": "hunt", "symbol": "FLOWUSDT", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T14:50:27.677209", "type": "hunt", "symbol": "ZECEUR", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T14:50:28.071612", "type": "hunt", "symbol": "TRUUSDT", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T14:50:28.471597", "type": "hunt", "symbol": "SRMUSD", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T14:50:28.909542", "type": "hunt", "symbol": "NILUSDT", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T14:50:29.304492", "type": "hunt", "symbol": "DASHUSD", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T14:50:30.146037", "type": "hunt", "symbol": "NIGHTUSD", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T14:50:30.540708", "type": "hunt", "symbol": "NIGHTUSD", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T14:50:30.941900", "type": "hunt", "symbol": "ONTUSDT", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T14:50:41.912555", "type": "result", "symbol": "ASTERUSDC", "profit": 0.19384560630400086}
+{"ts": "2025-12-27T14:55:22.451902", "type": "result", "symbol": "SRMUSD", "profit": 0.30224667638511626}
+{"ts": "2025-12-27T14:56:51.796886", "type": "result", "symbol": "DASHUSD", "profit": 0.03586620891055363}
+{"ts": "2025-12-27T14:57:20.498387", "type": "result", "symbol": "TRUUSDT", "profit": 0.04213272715189764}
+{"ts": "2025-12-27T15:02:43.718867", "type": "result", "symbol": "ONTUSDT", "profit": 0.04168281510709025}
+{"ts": "2025-12-27T15:04:13.688625", "type": "result", "symbol": "FLOWUSDT", "profit": 0.055612270197319943}
+{"ts": "2025-12-27T15:55:47.814842", "type": "result", "symbol": "ZECUSD", "profit": 0.046931518957253684}
+{"ts": "2025-12-27T15:59:42.538509", "type": "hunt", "symbol": "ZECUSD", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T15:59:42.948540", "type": "hunt", "symbol": "FLOWUSDT", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T15:59:43.348629", "type": "hunt", "symbol": "DASHUSD", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T15:59:43.753899", "type": "hunt", "symbol": "SOLUSDT", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T15:59:44.167470", "type": "hunt", "symbol": "SRMUSD", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T15:59:44.570130", "type": "hunt", "symbol": "TRUUSDT", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T15:59:44.971395", "type": "hunt", "symbol": "CCUSD", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T15:59:45.376869", "type": "hunt", "symbol": "SOLFDUSD", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T15:59:45.775834", "type": "hunt", "symbol": "SOLFDUSD", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T15:59:46.178959", "type": "hunt", "symbol": "ONTUSDT", "volume": 0, "change": 0.0}
+{"ts": "2025-12-27T16:00:41.999044", "type": "result", "symbol": "SRMUSD", "profit": 0.1467696786428395}
+{"ts": "2025-12-27T16:02:54.289424", "type": "result", "symbol": "FLOWUSDT", "profit": 0.09966905195000483}
+{"ts": "2025-12-27T16:03:10.075892", "type": "hunt", "symbol": "AVAXUSDT", "volume": 1421310.1853, "change": 2.612}

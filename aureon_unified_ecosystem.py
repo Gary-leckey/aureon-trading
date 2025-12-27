@@ -408,7 +408,7 @@ except ImportError as e:
         def get_entry_price(self, symbol): return None
         def set_entry_price(self, *args, **kwargs): pass
         def update_position(self, *args, **kwargs): pass
-        def can_sell_profitably(self, symbol, price, **kw): return True, {'recommendation': 'NO_TRACKER'}
+        def can_sell_profitably(self, symbol, price, quantity=None, **kw): return True, {'recommendation': 'NO_TRACKER'}
         def print_status(self): pass
     def get_cost_basis_tracker(): return CostBasisTracker()
 
@@ -11954,7 +11954,8 @@ class AureonKrakenEcosystem:
                             'dominant_node': 'PatriotScout',  # 🔥 MUST match is_force_scout check!
                             'patriot_codename': scout.codename,  # Store codename separately
                             'source': scout.exchange,
-                            'quote_currency': self._get_quote_asset(scout.symbol)
+                            'quote_currency': self._get_quote_asset(scout.symbol),
+                            'change24h': 0.0  # Default momentum for forced scouts
                         }
                         result = self.open_position(opp)
                         if result:
@@ -17392,6 +17393,86 @@ class AureonKrakenEcosystem:
         message = t.payload.get("message", "")
         logger.info(f"📚🌍✨ {message}")
 
+    def _bootstrap_24h_historical(self) -> None:
+        """
+        📊 BOOTSTRAP 24H HISTORICAL DATA
+        
+        Loads 24 hours of historical market data so the system has context
+        about where the market has been before making trading decisions.
+        This populates price_history for technical analysis and momentum detection.
+        """
+        print("\n📊 BOOTSTRAPPING 24H HISTORICAL DATA...")
+        print("   This ensures the system knows market context before trading\n")
+        
+        try:
+            # Get Binance client for historical data
+            binance_client = None
+            if hasattr(self.client, 'binance') and self.client.binance:
+                binance_client = self.client.binance
+            elif hasattr(self.client, 'clients'):
+                binance_client = self.client.clients.get('binance')
+            
+            if not binance_client:
+                print("   ⚠️ Binance client not available for historical data")
+                return
+            
+            # Check if client has get_24h_historical method
+            if not hasattr(binance_client, 'get_24h_historical'):
+                print("   ⚠️ Historical data method not available")
+                return
+            
+            # Get top trading pairs from our ticker cache
+            top_pairs = []
+            if self.ticker_cache:
+                usdc_pairs = [k for k in self.ticker_cache.keys() if k.endswith('USDC')]
+                # Sort by volume if available
+                usdc_pairs_with_vol = []
+                for pair in usdc_pairs:
+                    ticker = self.ticker_cache.get(pair, {})
+                    vol = float(ticker.get('quoteVolume', ticker.get('volume', 0)) or 0)
+                    usdc_pairs_with_vol.append((pair, vol))
+                usdc_pairs_with_vol.sort(key=lambda x: x[1], reverse=True)
+                top_pairs = [p[0] for p in usdc_pairs_with_vol[:30]]
+            
+            if not top_pairs:
+                top_pairs = ['BTCUSDC', 'ETHUSDC', 'SOLUSDC', 'BNBUSDC', 'XRPUSDC']
+            
+            # Fetch 24h historical data
+            historical = binance_client.get_24h_historical(symbols=top_pairs, interval='1h')
+            
+            # Populate price history for each symbol
+            loaded_count = 0
+            for symbol, klines in historical.items():
+                if klines:
+                    # Extract close prices for price_history
+                    closes = [k['close'] for k in klines]
+                    self.price_history[symbol] = closes
+                    
+                    # Also cache latest price
+                    if closes:
+                        self.realtime_prices[symbol] = closes[-1]
+                    
+                    loaded_count += 1
+            
+            print(f"   ✅ Loaded 24h history for {loaded_count} symbols")
+            print(f"   📈 Price history populated: {list(historical.keys())[:5]}...")
+            
+            # Log statistics
+            if historical:
+                first_symbol = list(historical.keys())[0]
+                first_klines = historical[first_symbol]
+                if first_klines:
+                    oldest = first_klines[0].get('timestamp', 0)
+                    newest = first_klines[-1].get('timestamp', 0)
+                    hours_of_data = (newest - oldest) / (1000 * 60 * 60) if oldest and newest else 0
+                    print(f"   ⏰ Historical span: ~{hours_of_data:.1f} hours of data")
+            
+        except Exception as e:
+            print(f"   ⚠️ Historical bootstrap failed: {e}")
+            logger.warning(f"24h historical bootstrap failed: {e}")
+        
+        print("")
+
     def run(self, interval: float = 2.0, target_profit_gbp: float = None, max_minutes: float = None):
         """Main trading loop - 🔥 BEAST MODE: 2 second cycles for MAXIMUM SPEED!
 
@@ -17423,6 +17504,9 @@ class AureonKrakenEcosystem:
         
         pair_count = self.refresh_tickers()
         print(f"✅ Connected! {pair_count} pairs loaded")
+        
+        # 📊 24H HISTORICAL BOOTSTRAP: Load market context before trading
+        self._bootstrap_24h_historical()
         
         # 🧠📈 BRAIN SYNC: Load historical trades from exchange for learning
         if not self.dry_run:

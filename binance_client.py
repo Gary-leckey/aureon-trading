@@ -233,9 +233,12 @@ class BinanceClient:
             dec_value = Decimal(str(value))
         except (InvalidOperation, ValueError, TypeError) as exc:
             raise ValueError(f"Invalid order value: {value}") from exc
-        formatted = format(dec_value, 'f')
+        
+        # Use high precision to avoid rounding errors from default 'f' (6 decimals)
+        formatted = "{:.20f}".format(dec_value)
         if '.' in formatted:
             formatted = formatted.rstrip('0').rstrip('.')
+        return formatted
         return formatted or '0'
 
     def place_market_order(self, symbol: str, side: str, quantity: float | str | Decimal | None = None, quote_qty: float | str | Decimal | None = None) -> Dict[str, Any]:
@@ -547,6 +550,104 @@ class BinanceClient:
                 raise RuntimeError(f"Failed to get ticker for {symbol} (dry-run fallback failed): {e}")
         
         raise RuntimeError(f"Failed to get ticker for {symbol}: {r.status_code if 'r' in dir() else 'no response'}")
+
+    def get_klines(self, symbol: str, interval: str = "15m", limit: int = 100) -> List[Dict]:
+        """Get historical klines/candlestick data for market context.
+        
+        Returns list of OHLCV candles for technical analysis.
+        Essential for 24h historical context on startup.
+        
+        Args:
+            symbol: Trading pair (e.g., BTCUSDC)
+            interval: Candle interval (1m, 5m, 15m, 1h, 4h, 1d)
+            limit: Number of candles (max 1000)
+            
+        Returns:
+            List of dicts with open, high, low, close, volume, timestamp
+        """
+        try:
+            params = {"symbol": symbol, "interval": interval, "limit": min(limit, 1000)}
+            r = self.session.get(f"{self.base}/api/v3/klines", params=params, timeout=10)
+            if r.status_code == 200:
+                raw = r.json()
+                # Parse Binance kline format into dict
+                return [{
+                    'timestamp': k[0],
+                    'open': float(k[1]),
+                    'high': float(k[2]),
+                    'low': float(k[3]),
+                    'close': float(k[4]),
+                    'volume': float(k[5]),
+                    'close_time': k[6],
+                    'quote_volume': float(k[7]),
+                    'trades': int(k[8]),
+                    'taker_buy_base': float(k[9]),
+                    'taker_buy_quote': float(k[10])
+                } for k in raw]
+        except Exception:
+            pass
+        
+        # Fallback to mainnet for dry-run
+        if self.dry_run:
+            try:
+                params = {"symbol": symbol, "interval": interval, "limit": min(limit, 1000)}
+                r = requests.get(f"{BINANCE_MAINNET}/api/v3/klines", params=params, timeout=10)
+                if r.status_code == 200:
+                    raw = r.json()
+                    return [{
+                        'timestamp': k[0],
+                        'open': float(k[1]),
+                        'high': float(k[2]),
+                        'low': float(k[3]),
+                        'close': float(k[4]),
+                        'volume': float(k[5]),
+                        'close_time': k[6],
+                        'quote_volume': float(k[7]),
+                        'trades': int(k[8]),
+                        'taker_buy_base': float(k[9]),
+                        'taker_buy_quote': float(k[10])
+                    } for k in raw]
+            except Exception as e:
+                print(f"⚠️ Failed to get klines for {symbol}: {e}")
+        return []
+    
+    def get_24h_historical(self, symbols: List[str] = None, interval: str = "1h") -> Dict[str, List[Dict]]:
+        """Bootstrap 24h historical data for multiple symbols.
+        
+        Fetches 24 hours of historical candles for each symbol to establish
+        market context before live trading begins.
+        
+        Args:
+            symbols: List of symbols to fetch (default: top volume pairs)
+            interval: Candle interval (default 1h = 24 candles per day)
+            
+        Returns:
+            Dict mapping symbol -> list of OHLCV candles
+        """
+        if symbols is None:
+            # Get top volume USDC pairs
+            try:
+                tickers = self.get_24h_tickers()
+                usdc_pairs = [t for t in tickers if t['symbol'].endswith('USDC')]
+                usdc_pairs.sort(key=lambda x: float(x.get('quoteVolume', 0)), reverse=True)
+                symbols = [t['symbol'] for t in usdc_pairs[:20]]
+            except Exception:
+                symbols = ['BTCUSDC', 'ETHUSDC', 'SOLUSDC', 'BNBUSDC', 'XRPUSDC']
+        
+        historical_data = {}
+        limit = 24 if interval == "1h" else 96  # 24h of 1h candles or 24h of 15m candles
+        
+        print(f"📊 Bootstrapping 24h historical data for {len(symbols)} symbols...")
+        for symbol in symbols:
+            try:
+                klines = self.get_klines(symbol, interval, limit)
+                if klines:
+                    historical_data[symbol] = klines
+            except Exception as e:
+                print(f"   ⚠️ {symbol}: {e}")
+        
+        print(f"   ✅ Loaded {len(historical_data)} symbol histories")
+        return historical_data
 
     def get_deposit_address(self, coin: str, network: str | None = None) -> Dict[str, Any]:
         """Retrieve deposit address for a given coin (and optional network).

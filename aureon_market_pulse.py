@@ -12,6 +12,13 @@ class MarketPulse:
     def __init__(self, client):
         self.client = client
 
+    def _safe_float(self, val: Any) -> float:
+        try:
+            if val is None: return 0.0
+            return float(val)
+        except (ValueError, TypeError):
+            return 0.0
+
     def analyze_market(self) -> Dict[str, Any]:
         """
         Perform a full market scan and return high-level metrics.
@@ -33,10 +40,7 @@ class MarketPulse:
 
         # 3. Top Movers
         def safe_pct(t):
-            try:
-                return float(t.get('priceChangePercent', 0))
-            except (ValueError, TypeError):
-                return 0.0
+            return self._safe_float(t.get('priceChangePercent', 0))
 
         top_gainers = sorted(tickers, key=safe_pct, reverse=True)[:5]
         top_losers = sorted(tickers, key=safe_pct)[:5]
@@ -55,7 +59,10 @@ class MarketPulse:
             return {"score": 0.0, "label": "Neutral"}
         
         # Simple average of 24h change
-        changes = [float(t.get('priceChangePercent', 0)) for t in tickers]
+        changes = [self._safe_float(t.get('priceChangePercent', 0)) for t in tickers]
+        if not changes:
+            return {"score": 0.0, "label": "Neutral"}
+            
         avg_change = sum(changes) / len(changes)
         
         # Advance/Decline Ratio
@@ -98,7 +105,7 @@ class MarketPulse:
             # Compare prices
             prices = []
             for l in listings:
-                p = float(l.get('lastPrice', 0))
+                p = self._safe_float(l.get('lastPrice', 0))
                 if p > 0:
                     prices.append({
                         'source': l.get('source'),

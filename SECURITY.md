@@ -2,20 +2,29 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
 | Version | Supported          |
 | ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| Main    | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+We take security seriously. If you discover a vulnerability, please do NOT open a public issue.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Instead, please report it responsibly:
+1. Email the maintainers (if a contact is listed in the repo profile).
+2. Or use GitHub's "Report a vulnerability" feature if enabled.
+
+We will acknowledge your report within 48 hours and provide an estimated timeline for a fix.
+
+## API Keys and Secrets
+
+- **NEVER** commit API keys, secrets, or credentials to the repository.
+- Use `.env` files (which are git-ignored) for local development.
+- If you accidentally commit a key, revoke it immediately.
+
+## Trading Risks
+
+This software executes financial transactions.
+- Always use **Testnet** or **Dry-Run** modes first.
+- Set strict risk limits (e.g., `BINANCE_RISK_MAX_ORDER_USDT`).
+- We are not responsible for financial losses due to software bugs or misconfiguration.

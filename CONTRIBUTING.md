@@ -19,7 +19,7 @@ We are looking for contributions in the following areas:
 The **Harmonic Nexus Core** is the heart of this system. While we encourage optimization, changes that fundamentally alter the frequency-based logic (e.g., removing the 528Hz filter) may be rejected if they violate the system's axiom.
 
 ### 2. Attribution is Mandatory
-As per our **CC BY 4.0 License**, any significant contribution or fork must maintain the original attribution to **Gary Leckey** as the creator of the Harmonic Nexus Core.
+As per our licensing, any significant contribution or fork must maintain the original attribution to **Gary Leckey** as the creator of the Harmonic Nexus Core.
 
 ### 3. Code Style
 - **Python:** We follow PEP 8. Use `snake_case` for variables and functions.
@@ -53,7 +53,7 @@ If you are contributing new wisdom, please follow this JSON structure:
 
 ## ⚖️ Legal Note
 
-By contributing code to this repository, you agree that your contributions may be licensed under the project's **CC BY 4.0** license.
+By contributing code to this repository, you agree that your code contributions will be licensed under the **MIT License**, and documentation/media contributions under **CC BY 4.0**.
 
 ---
 

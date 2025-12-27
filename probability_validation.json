@@ -3,7 +3,7 @@
     "BTCUSDC_20251210_232426": {
       "prediction_id": "BTCUSDC_20251210_232426",
       "symbol": "BTCUSDC",
-      "timestamp": "2025-12-10T23:24:26.019639",
+      "timestamp": "2025-12-26T00:30:06+00:00",
       "predicted_direction": "BULLISH",
       "predicted_probability": 0.72,
       "predicted_confidence": 0.85,
@@ -26,7 +26,7 @@
     "ETHUSDC_20251210_232426": {
       "prediction_id": "ETHUSDC_20251210_232426",
       "symbol": "ETHUSDC",
-      "timestamp": "2025-12-10T23:24:26.020588",
+      "timestamp": "2025-12-26T00:30:06+00:00",
       "predicted_direction": "BULLISH",
       "predicted_probability": 0.68,
       "predicted_confidence": 0.78,
@@ -49,7 +49,7 @@
     "SOLUSDC_20251210_232426": {
       "prediction_id": "SOLUSDC_20251210_232426",
       "symbol": "SOLUSDC",
-      "timestamp": "2025-12-10T23:24:26.021390",
+      "timestamp": "2025-12-26T00:30:06+00:00",
       "predicted_direction": "BEARISH",
       "predicted_probability": 0.62,
       "predicted_confidence": 0.71,

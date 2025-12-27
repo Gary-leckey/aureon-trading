@@ -301,7 +301,7 @@ def resolve_pool_config(platform: str = None, host: str = None, port: int = None
         return config['host'], config['port']
     
     # Default fallback
-    return host or 'stratum.braiins.com', port or 3333
+    return host, port
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -8421,7 +8421,8 @@ def main():
             host=RAW_HOST,
             port=int(RAW_PORT) if RAW_PORT else None
         )
-        miner.add_pool(POOL_HOST, POOL_PORT, WORKER, PASSWORD, PLATFORM or "custom")
+        if POOL_HOST:
+            miner.add_pool(POOL_HOST, POOL_PORT, WORKER, PASSWORD, PLATFORM or "custom")
     
     # Handle shutdown
     def shutdown(sig, frame):
@@ -8432,17 +8433,28 @@ def main():
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
     
-    if miner.start():
-        logger.info("⛏️ Miner running... Press Ctrl+C to stop")
+    if miner.sessions:
+        if miner.start():
+            logger.info("⛏️ Miner running... Press Ctrl+C to stop")
+            while True:
+                try:
+                    time.sleep(60)
+                    miner.update_harmonic_state()
+                except KeyboardInterrupt:
+                    break
+            miner.stop()
+        else:
+            exit(1)
+    else:
+        logger.warning("⚠️ No mining pool configured. Running in Harmonic Simulation Mode (Brain Only).")
+        logger.info("🧠 Brain running... Press Ctrl+C to stop")
         while True:
             try:
-                time.sleep(60)
+                time.sleep(10)
                 miner.update_harmonic_state()
             except KeyboardInterrupt:
                 break
         miner.stop()
-    else:
-        exit(1)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 {
-  "generated": "2025-12-03T19:38:43.233348",
+  "generated": "2025-12-26T00:10:59.222950+00:00",
   "total_pairs": 262,
   "bullish_count": 71,
   "bearish_count": 37,
@@ -3220,5 +3220,6 @@
       "frequency": 267.2274779853443,
       "state": "\ud83d\udca5 EXTREME BEARISH"
     }
-  ]
+  ],
+  "timestamp": "2025-12-26T00:30:06+00:00"
 }

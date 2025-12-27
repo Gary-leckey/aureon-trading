@@ -14,7 +14,7 @@
       "avg_loss": -1.3179200000000004,
       "source": "probability_matrix_training",
       "run_id": "20251209T004447",
-      "timestamp": "2025-12-09T00:44:48.418895"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "ASRRUSD",
@@ -30,7 +30,7 @@
       "avg_loss": -1.3179200000000004,
       "source": "probability_matrix_training",
       "run_id": "20251209T004447",
-      "timestamp": "2025-12-09T00:44:48.418895"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "STABLEUSD",
@@ -46,7 +46,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004447",
-      "timestamp": "2025-12-09T00:44:48.418895"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "MUBARAKUSD",
@@ -62,7 +62,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004447",
-      "timestamp": "2025-12-09T00:44:48.418895"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "CHECKUSD",
@@ -78,7 +78,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004447",
-      "timestamp": "2025-12-09T00:44:48.418895"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "ACAUSD",
@@ -94,7 +94,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004447",
-      "timestamp": "2025-12-09T00:44:48.418895"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "ALLOUSD",
@@ -110,7 +110,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004447",
-      "timestamp": "2025-12-09T00:44:48.418895"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "LUNA2USD",
@@ -126,7 +126,7 @@
       "avg_loss": -1.3179200000000004,
       "source": "probability_matrix_training",
       "run_id": "20251209T004506",
-      "timestamp": "2025-12-09T00:45:07.556515+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "MUBARAKUSD",
@@ -142,7 +142,7 @@
       "avg_loss": -1.3179200000000004,
       "source": "probability_matrix_training",
       "run_id": "20251209T004506",
-      "timestamp": "2025-12-09T00:45:07.556515+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "ACAUSD",
@@ -158,7 +158,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004506",
-      "timestamp": "2025-12-09T00:45:07.556515+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "CHECKUSD",
@@ -174,7 +174,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004506",
-      "timestamp": "2025-12-09T00:45:07.556515+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "ASRRUSD",
@@ -190,7 +190,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004506",
-      "timestamp": "2025-12-09T00:45:07.556515+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "ALLOUSD",
@@ -206,7 +206,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004506",
-      "timestamp": "2025-12-09T00:45:07.556515+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "ASRRUSD",
@@ -222,7 +222,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004944",
-      "timestamp": "2025-12-09T00:49:45.964046+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "ACAUSD",
@@ -238,7 +238,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004944",
-      "timestamp": "2025-12-09T00:49:45.964046+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "CHECKUSD",
@@ -254,7 +254,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004944",
-      "timestamp": "2025-12-09T00:49:45.964046+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "MUBARAKUSD",
@@ -270,7 +270,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004944",
-      "timestamp": "2025-12-09T00:49:45.964046+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "CHECKUSD",
@@ -286,7 +286,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004946",
-      "timestamp": "2025-12-09T00:49:46.859196+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "ASRRUSD",
@@ -302,7 +302,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004946",
-      "timestamp": "2025-12-09T00:49:46.859196+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "ACAUSD",
@@ -318,7 +318,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004946",
-      "timestamp": "2025-12-09T00:49:46.859196+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "MUBARAKUSD",
@@ -334,7 +334,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004946",
-      "timestamp": "2025-12-09T00:49:46.859196+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "ASRRUSD",
@@ -350,7 +350,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004947",
-      "timestamp": "2025-12-09T00:49:47.752295+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "MUBARAKUSD",
@@ -366,7 +366,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004947",
-      "timestamp": "2025-12-09T00:49:47.752295+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "CHECKUSD",
@@ -382,7 +382,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004947",
-      "timestamp": "2025-12-09T00:49:47.752295+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     },
     {
       "symbol": "ACAUSD",
@@ -398,7 +398,7 @@
       "avg_loss": -1.3179200000000006,
       "source": "probability_matrix_training",
       "run_id": "20251209T004947",
-      "timestamp": "2025-12-09T00:49:47.752295+00:00"
+      "timestamp": "2025-12-26T00:30:06+00:00"
     }
   ],
   "calibration": {

@@ -99,8 +99,157 @@
         "entry_coherence": 0.5,
         "win": true
       }
+    ],
+    "ASTERUSDC": [
+      {
+        "timestamp": 1766847041.521051,
+        "platform_timestamp": 1766847041.5210454,
+        "symbol": "ASTERUSDC",
+        "exit_price": 0.713,
+        "realized_pnl": 0.19384560630400086,
+        "exit_reason": "TP",
+        "entry_price": 0.6904999999999999,
+        "entry_time": 1766691389.6726384,
+        "hold_duration_mins": 2594.1974100033444,
+        "was_historical": false,
+        "entry_momentum": 3.25850832729907,
+        "entry_coherence": 0.5,
+        "win": true
+      }
+    ],
+    "SRMUSD": [
+      {
+        "timestamp": 1766847322.0590518,
+        "platform_timestamp": 1766847322.0590448,
+        "symbol": "SRMUSD",
+        "exit_price": 0.01072,
+        "realized_pnl": 0.30224667638511626,
+        "exit_reason": "TP",
+        "entry_price": 0.01,
+        "entry_time": 1766847028.4655936,
+        "hold_duration_mins": 4.89312782684962,
+        "was_historical": false,
+        "entry_momentum": 7.200000000000001,
+        "entry_coherence": 0.65,
+        "win": true
+      },
+      {
+        "timestamp": 1766851241.6087732,
+        "platform_timestamp": 1766851241.6087666,
+        "symbol": "SRMUSD",
+        "exit_price": 0.0101,
+        "realized_pnl": 0.1467696786428395,
+        "exit_reason": "TP",
+        "entry_price": 0.00972,
+        "entry_time": 1766851184.1476905,
+        "hold_duration_mins": 0.957615872224172,
+        "was_historical": false,
+        "entry_momentum": 3.909465020576133,
+        "entry_coherence": 0.65,
+        "win": true
+      }
+    ],
+    "DASHUSD": [
+      {
+        "timestamp": 1766847411.405644,
+        "platform_timestamp": 1766847411.4056394,
+        "symbol": "DASHUSD",
+        "exit_price": 45.311,
+        "realized_pnl": 0.03586620891055363,
+        "exit_reason": "TP",
+        "entry_price": 44.614,
+        "entry_time": 1766847029.299382,
+        "hold_duration_mins": 6.3683857917785645,
+        "was_historical": false,
+        "entry_momentum": 1.5622898641682046,
+        "entry_coherence": 0.65,
+        "win": true
+      }
+    ],
+    "TRUUSDT": [
+      {
+        "timestamp": 1766847440.1022995,
+        "platform_timestamp": 1766847440.1022942,
+        "symbol": "TRUUSDT",
+        "exit_price": 0.012,
+        "realized_pnl": 0.04213272715189764,
+        "exit_reason": "TP",
+        "entry_price": 0.0118,
+        "entry_time": 1766847028.065478,
+        "hold_duration_mins": 6.8672175447146095,
+        "was_historical": false,
+        "entry_momentum": 1.6949152542372927,
+        "entry_coherence": 0.65,
+        "win": true
+      }
+    ],
+    "ONTUSDT": [
+      {
+        "timestamp": 1766847763.3272707,
+        "platform_timestamp": 1766847763.3272657,
+        "symbol": "ONTUSDT",
+        "exit_price": 0.0724,
+        "realized_pnl": 0.04168281510709025,
+        "exit_reason": "TP",
+        "entry_price": 0.0712,
+        "entry_time": 1766847030.9327803,
+        "hold_duration_mins": 12.206521797180176,
+        "was_historical": false,
+        "entry_momentum": 1.6853932584269755,
+        "entry_coherence": 0.65,
+        "win": true
+      }
+    ],
+    "FLOWUSDT": [
+      {
+        "timestamp": 1766847853.289964,
+        "platform_timestamp": 1766847853.289957,
+        "symbol": "FLOWUSDT",
+        "exit_price": 0.103,
+        "realized_pnl": 0.055612270197319943,
+        "exit_reason": "TP",
+        "entry_price": 0.101,
+        "entry_time": 1766847027.2723348,
+        "hold_duration_mins": 13.766862885157268,
+        "was_historical": false,
+        "entry_momentum": 1.9801980198019682,
+        "entry_coherence": 0.65,
+        "win": true
+      },
+      {
+        "timestamp": 1766851373.898327,
+        "platform_timestamp": 1766851373.8983192,
+        "symbol": "FLOWUSDT",
+        "exit_price": 0.106,
+        "realized_pnl": 0.09966905195000483,
+        "exit_reason": "TP",
+        "entry_price": 0.103,
+        "entry_time": 1766851182.9328282,
+        "hold_duration_mins": 3.1826884388923644,
+        "was_historical": false,
+        "entry_momentum": 2.9126213592233037,
+        "entry_coherence": 0.65,
+        "win": true
+      }
+    ],
+    "ZECUSD": [
+      {
+        "timestamp": 1766850947.421538,
+        "platform_timestamp": 1766850947.4215324,
+        "symbol": "ZECUSD",
+        "exit_price": 520.18,
+        "realized_pnl": 0.046931518957253684,
+        "exit_reason": "TP",
+        "entry_price": 511.0,
+        "entry_time": 1766847026.862044,
+        "hold_duration_mins": 65.3425807595253,
+        "was_historical": false,
+        "entry_momentum": 1.7964774951076223,
+        "entry_coherence": 0.65,
+        "win": true
+      }
     ]
   },
-  "last_updated": 1765544746.7703626,
-  "total_trades": 6
+  "last_updated": 1766851373.8983395,
+  "total_trades": 15
 }
