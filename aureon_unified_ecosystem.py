@@ -15220,16 +15220,18 @@ class AureonKrakenEcosystem:
         """
         🔧 SMART EXCHANGE DETECTION 🔧
         Determines correct exchange for a symbol based on:
-        1. Quote currency patterns (USDC → Binance, GBP/EUR → Kraken)
+        1. Quote currency patterns (USDC/USDT/FDUSD → Binance, GBP/EUR → Kraken)
         2. Known Binance-only pairs
         3. Hint from ticker source
         
         This prevents routing DOGEUSDC to Kraken (which doesn't support it).
+        🔥 CRITICAL: Capital.com does NOT support crypto - NEVER route crypto there!
         """
         symbol_upper = symbol.upper()
         
-        # 🔥 USDC pairs are BINANCE ONLY - Kraken uses different symbols for stablecoins
-        if symbol_upper.endswith('USDC'):
+        # 🔥🔥🔥 CRITICAL: USDT/USDC/FDUSD pairs are ALWAYS Binance - NEVER Capital.com!
+        # Capital.com only does CFDs (forex, indices, commodities) - NO crypto!
+        if symbol_upper.endswith(('USDT', 'USDC', 'FDUSD', 'BUSD')):
             return 'binance'
         
         # 🔥 These quote currencies are more common on Kraken
@@ -15245,14 +15247,17 @@ class AureonKrakenEcosystem:
             'ALT', 'MANTA', 'DYM', 'XAI', 'AI', 'RNDR', 'FET', 'AGIX', 'TAO',
             'AKT', 'JASMY', 'CFX', 'MANA', 'SAND', 'AXS', 'IMX', 'GALA',
             'ENJ', 'ROSE', 'KAS', 'IOTA', 'STX', 'ALGO', 'FTM', 'NEAR',
-            'AVAX', 'ATOM', 'DOT', 'LINK', 'SOL', 'ETH', 'BTC', 'XRP', 'ADA'
+            'AVAX', 'ATOM', 'DOT', 'LINK', 'SOL', 'ETH', 'BTC', 'XRP', 'ADA',
+            # 🆕 Add more common Binance pairs
+            'ZBT', 'FLOW', 'ONT', 'HYPER', 'MATIC', 'POL', 'UNI', 'AAVE',
+            'COMP', 'MKR', 'SNX', 'CRV', 'LDO', 'RPL', 'BLUR', '1INCH'
         }
         
         # Extract base from symbol
         for suffix in ['USDT', 'USD', 'USDC', 'GBP', 'EUR', 'BTC', 'ETH']:
             if symbol_upper.endswith(suffix):
                 base = symbol_upper[:-len(suffix)]
-                if base in BINANCE_USDC_BASES and suffix in ('USDC', 'USDT'):
+                if base in BINANCE_USDC_BASES and suffix in ('USDC', 'USDT', 'USD'):
                     return 'binance'
                 break
         
@@ -15260,13 +15265,26 @@ class AureonKrakenEcosystem:
         if hint_source and hint_source.lower() == 'alpaca':
             return 'alpaca'
         
-        # 🔥 CAPITAL.COM - CFDs  
+        # 🔥 CAPITAL.COM - CFDs ONLY (forex, indices, commodities) - NOT CRYPTO!
+        # Only route to Capital if explicitly requested AND symbol looks like CFD
         if hint_source and hint_source.lower() == 'capital':
-            return 'capital'
+            # Verify it's actually a CFD symbol (forex pairs, indices, commodities)
+            CFD_PATTERNS = ('EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD',
+                           'US500', 'US100', 'UK100', 'DE40', 'FR40',
+                           'GOLD', 'SILVER', 'OIL', 'NATGAS', 'COPPER')
+            if any(p in symbol_upper for p in CFD_PATTERNS):
+                return 'capital'
+            # If hint says capital but symbol is crypto, use binance instead!
+            print(f"   ⚠️ ROUTING FIX: {symbol} looks like crypto, routing to binance (not capital)")
+            return 'binance'
         
-        # Default to hint if provided, else kraken
-        if hint_source:
+        # 🔥 Trust hint_source if it's a valid exchange (binance/kraken)
+        if hint_source and hint_source.lower() in ('binance', 'kraken'):
             return hint_source.lower()
+        
+        # Default to kraken for USD pairs, binance for everything else
+        if symbol_upper.endswith('USD') and not any(c in symbol_upper for c in ['USDT', 'USDC']):
+            return 'kraken'
         
         return 'kraken'
     
