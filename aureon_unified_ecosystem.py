@@ -1077,6 +1077,58 @@ CONFIG = {
     'SCOUT_MIN_VOLUME_QUOTE': 50000,     # 🤑 LOWERED: Trade thinner books too
     'SCOUT_PER_QUOTE_LIMIT': 3,          # Spread early scouts across quote currencies (3 per quote)
     
+    # ═══════════════════════════════════════════════════════════════════════════
+    # ⚔️🏴 4 BATTLEFRONTS - MULTI-EXCHANGE WAR CONFIGURATION ⚔️🏴
+    # ═══════════════════════════════════════════════════════════════════════════
+    # "We're not a one trick pony - we fight on ALL fronts!" 
+    # Each battlefield has its own scouts, harvester, and sniper coverage
+    # Mycelium Network coordinates to prevent duplicate positions across fronts
+    #
+    'MULTI_BATTLEFIELD_MODE': True,       # ⚔️ Enable 4-front warfare
+    'BATTLEFIELDS': {
+        'binance': {
+            'enabled': True,
+            'scouts_per_exchange': 3,     # 3 scouts on Binance front
+            'sniper_active': True,        # 🎯 Sniper covering Binance
+            'harvester_active': True,     # 🌾 Harvesting Binance positions
+            'asset_classes': ['crypto'],
+            'quote_currencies': ['USDC', 'USDT', 'FDUSD', 'BTC', 'ETH', 'BNB', 'EUR', 'GBP'],
+            'min_trade_usd': 1.44,
+            'max_positions': 15,
+        },
+        'kraken': {
+            'enabled': True,
+            'scouts_per_exchange': 3,     # 3 scouts on Kraken front
+            'sniper_active': True,        # 🎯 Sniper covering Kraken
+            'harvester_active': True,     # 🌾 Harvesting Kraken positions
+            'asset_classes': ['crypto'],
+            'quote_currencies': ['USD', 'EUR', 'GBP', 'USDT', 'USDC', 'BTC', 'ETH'],
+            'min_trade_usd': 5.25,
+            'max_positions': 15,
+        },
+        'capital': {
+            'enabled': True,
+            'scouts_per_exchange': 2,     # 2 scouts on Capital.com CFD front
+            'sniper_active': True,        # 🎯 Sniper covering Capital CFDs
+            'harvester_active': True,     # 🌾 Harvesting CFD positions
+            'asset_classes': ['forex', 'indices', 'commodities', 'stocks'],  # NO crypto!
+            'quote_currencies': ['USD', 'GBP'],
+            'min_trade_usd': 10.0,
+            'max_positions': 10,
+        },
+        'alpaca': {
+            'enabled': False,             # 📊 Analytics only by default - enable for stocks
+            'scouts_per_exchange': 2,     # 2 scouts on Alpaca stock front
+            'sniper_active': False,       # 🎯 Sniper waiting for Alpaca activation
+            'harvester_active': False,    # 🌾 Harvester waiting for Alpaca activation
+            'asset_classes': ['stocks', 'crypto'],
+            'quote_currencies': ['USD'],
+            'min_trade_usd': 1.0,
+            'max_positions': 10,
+        },
+    },
+    'PREVENT_DUPLICATE_POSITIONS': True,  # 🍄 Mycelium tracks cross-exchange to avoid doubling up
+    
     # Kelly Criterion & Risk Management
     'USE_KELLY_SIZING': True,       # Use Kelly instead of fixed %
     'KELLY_SAFETY_FACTOR': 0.5,     # Half-Kelly for safety
@@ -10914,12 +10966,25 @@ class AureonKrakenEcosystem:
     # ═══════════════════════════════════════════════════════════════
 
     def _announce_sniper_activation(self) -> None:
-        """Log IRA sniper readiness across platforms and sellable assets."""
+        """Log IRA sniper readiness across ALL 4 BATTLEFRONTS and sellable assets.
+        
+        🏴⚔️ Shows which platforms have:
+        - Sniper coverage (ready to kill)
+        - Harvester coverage (ready to close)
+        - Scout coverage (ready to deploy)
+        """
         coverage = getattr(self, 'sniper_coverage', {}) or {}
         platforms = coverage.get('platforms', {})
         active = bool(self.sniper_config.get('ACTIVE', False))
         status = "ACTIVE" if active else "INACTIVE"
+        
         print(f"\n🎯 IRA SNIPER STATUS: {status}")
+        print(f"   ⚔️ MULTI-BATTLEFIELD MODE: {'ENABLED' if CONFIG.get('MULTI_BATTLEFIELD_MODE', True) else 'DISABLED'}")
+        
+        # Show battlefield configuration
+        battlefields = CONFIG.get('BATTLEFIELDS', {})
+        enabled_bfs = [bf for bf, cfg in battlefields.items() if cfg.get('enabled', False)]
+        print(f"   🏴 Active Battlefronts: {', '.join(enabled_bfs).upper() if enabled_bfs else 'None'}\n")
         
         if not platforms:
             print("   ⚠️ No platform coverage available for sniper map.")
@@ -10927,17 +10992,33 @@ class AureonKrakenEcosystem:
             print("   ☘️ Celtic intelligence guiding all entry decisions.\n")
             return
         
-        for name, details in platforms.items():
-            assets = details.get('sellable_assets') or []
-            preview = ", ".join(assets[:6]) + ("..." if len(assets) > 6 else "") if assets else "none"
-            print(f"   • {name.upper()}: {len(assets)} sellable assets ({preview})")
+        # Show each battlefield's status
+        for bf_name, bf_config in battlefields.items():
+            enabled = bf_config.get('enabled', False)
+            status_icon = "✅" if enabled else "❌"
+            platform_info = platforms.get(bf_name, {})
+            assets = platform_info.get('sellable_assets', [])
+            asset_preview = ", ".join(assets[:5]) + ("..." if len(assets) > 5 else "") if assets else "none"
+            
+            sniper_icon = "🎯" if bf_config.get('sniper_active', False) else "⏸️"
+            harvester_icon = "🌾" if bf_config.get('harvester_active', False) else "⏸️"
+            scouts_count = bf_config.get('scouts_per_exchange', 0)
+            
+            print(f"   {status_icon} {bf_name.upper():12} | {sniper_icon} Sniper | {harvester_icon} Harvester | 🎖️ {scouts_count} scouts | 📦 {len(assets)} assets")
+            if enabled and assets:
+                print(f"      └─ Assets: {asset_preview}")
         
-        print(f"   Position size: ${self.sniper_config.get('POSITION_SIZE_USD', 0):.2f} | Max positions: {self.sniper_config.get('MAX_POSITIONS', 0)}")
+        print(f"\n   Position size: ${self.sniper_config.get('POSITION_SIZE_USD', 0):.2f} | Max positions: {self.sniper_config.get('MAX_POSITIONS', 0)}")
         print("   🎯 Zero Loss Policy: We NEVER lose. Every trade is a confirmed kill.")
-        print("   ☘️ Celtic intelligence guiding all entry decisions.\n")
+        print("   ☘️ Celtic intelligence guiding all entry decisions.")
+        print("   🍄 Mycelium Network preventing duplicate positions across battlefronts.\n")
 
     def _sync_sniper_bridge(self, note: str = ""):
-        """Keep sniper brain and scout coverage aligned with live balances."""
+        """Keep sniper brain and scout coverage aligned with live balances.
+        
+        🏴⚔️ MULTI-BATTLEFIELD MODE: Syncs sniper coverage across ALL 4 exchanges!
+        Mycelium network tracks positions to prevent duplicate kills.
+        """
         if not hasattr(self, 'sniper_config') or not self.sniper_config.get('ACTIVE', True):
             return
 
@@ -10951,8 +11032,43 @@ class AureonKrakenEcosystem:
                 'platforms': platforms,
                 'note': note
             }
+            
+            # 🏴⚔️ Multi-battlefield position tracking
+            battlefield_status = {}
+            battlefields = CONFIG.get('BATTLEFIELDS', {})
+            for bf_name, bf_config in battlefields.items():
+                if not bf_config.get('enabled', False):
+                    continue
+                platform_info = platforms.get(bf_name, {})
+                positions_on_exchange = sum(1 for sym, pos in self.positions.items() 
+                                           if getattr(pos, 'exchange', '').lower() == bf_name)
+                battlefield_status[bf_name] = {
+                    'sniper_active': bf_config.get('sniper_active', False),
+                    'harvester_active': bf_config.get('harvester_active', False),
+                    'assets': len(platform_info.get('sellable_assets', [])),
+                    'positions': positions_on_exchange,
+                    'max_positions': bf_config.get('max_positions', 10)
+                }
+            
+            self._battlefield_status = battlefield_status
+            
+            # 🍄 Sync with Mycelium Network
+            try:
+                mycelium_sync('sniper_bridge', {
+                    'platforms': list(platforms.keys()),
+                    'battlefields': battlefield_status,
+                    'total_positions': len(self.positions),
+                    'note': note,
+                    'timestamp': time.time()
+                })
+            except Exception:
+                pass
+            
             if note:
-                print(f"   🎯 Sniper bridge synced ({note}) - platforms linked: {len(platforms)}")
+                active_bfs = [bf for bf, st in battlefield_status.items() if st.get('sniper_active')]
+                print(f"   🎯 Sniper bridge synced ({note}) - battlefronts: {', '.join(active_bfs).upper()}")
+        except Exception as e:
+            print(f"   ⚠️ Sniper bridge sync failed: {e}")
         except Exception as e:
             print(f"   ⚠️ Sniper bridge sync failed: {e}")
 
@@ -11824,26 +11940,61 @@ class AureonKrakenEcosystem:
         return freed_cash
     
     def _build_scout_candidates(self) -> List[Dict]:
-        """☘️ Build candidate list from ticker cache for Irish Patriot deployment.
+        """☘️ Build candidate list from ALL 4 BATTLEFRONTS for Irish Patriot deployment.
 
         Returns list of candidates with:
         - symbol, price, change24h, volume, score
-        - coherence, dominant_node, quote_currency, source
+        - coherence, dominant_node, quote_currency, source (exchange)
+        
+        🏴⚔️ MULTI-BATTLEFIELD MODE: Scouts deployed across:
+        - Binance (crypto)
+        - Kraken (crypto) 
+        - Capital.com (forex/indices/commodities - NO crypto!)
+        - Alpaca (stocks - if enabled)
         """
+        battlefields = CONFIG.get('BATTLEFIELDS', {})
+        multi_battlefield_mode = CONFIG.get('MULTI_BATTLEFIELD_MODE', True)
         quote_currencies = CONFIG.get('QUOTE_CURRENCIES', ['USD', 'USDT', 'GBP', 'EUR'])
         min_vol = CONFIG.get('SCOUT_MIN_VOLATILITY', 1.5)
         min_vol_q = CONFIG.get('SCOUT_MIN_VOLUME_QUOTE', 100000)
 
         all_candidates = []
+        
+        # 🍄 Get ALL positions across ALL exchanges to prevent duplicates
+        all_open_symbols = set(self.positions.keys())
+        if CONFIG.get('PREVENT_DUPLICATE_POSITIONS', True):
+            # Normalize symbols for cross-exchange comparison (BTCUSDT on Binance = XBTUSDT on Kraken)
+            normalized_positions = set()
+            for sym in all_open_symbols:
+                # Normalize: remove exchange prefixes, convert XBT→BTC etc
+                norm = sym.upper().replace('XBT', 'BTC').lstrip('X').lstrip('Z')
+                normalized_positions.add(norm)
+        else:
+            normalized_positions = all_open_symbols
+            
+        print(f"   🍄 Mycelium tracking {len(all_open_symbols)} positions across all battlefields")
 
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE 1: Gather candidates from ticker cache (Binance & Kraken via WebSocket)
+        # ═══════════════════════════════════════════════════════════════
         for quote_curr in quote_currencies:
             for symbol, data in self.ticker_cache.items():
                 if not symbol.endswith(quote_curr):
                     continue
-                if symbol in self.positions:
+                    
+                # 🍄 ANTI-DUPLICATE: Check normalized symbol across all exchanges
+                norm_sym = symbol.upper().replace('XBT', 'BTC').lstrip('X').lstrip('Z')
+                if norm_sym in normalized_positions or symbol in self.positions:
                     continue
                     
                 source = data.get('source', '').lower()
+                
+                # Check if this battlefield is enabled
+                if multi_battlefield_mode and source in battlefields:
+                    bf_config = battlefields[source]
+                    if not bf_config.get('enabled', False):
+                        continue
+                
                 change = data.get('change24h', 0)
                 price = data.get('price', 0)
                 volume = data.get('volume', 0)
@@ -11869,8 +12020,94 @@ class AureonKrakenEcosystem:
                     'coherence': 0.65,
                     'dominant_node': 'PatriotScout',
                     'quote_currency': quote_curr,
-                    'source': source
+                    'source': source,
+                    'battlefield': source  # 🏴 Track which front this scout is for
                 })
+
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE 2: Add Capital.com CFD candidates (forex, indices, commodities)
+        # ═══════════════════════════════════════════════════════════════
+        if multi_battlefield_mode and battlefields.get('capital', {}).get('enabled', True):
+            try:
+                if hasattr(self, 'client') and hasattr(self.client, 'clients'):
+                    capital_client = self.client.clients.get('capital')
+                    if capital_client:
+                        # Capital.com specific symbols for forex/indices/commodities
+                        capital_symbols = [
+                            # Forex majors
+                            'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD', 'USDCHF',
+                            # Indices
+                            'US500', 'UK100', 'GER40', 'US30', 'USTEC',
+                            # Commodities
+                            'XAUUSD', 'XAGUSD', 'UKOIL', 'USOIL', 'NATGAS'
+                        ]
+                        for sym in capital_symbols:
+                            norm_sym = sym.upper()
+                            if norm_sym in normalized_positions:
+                                continue
+                            try:
+                                snapshot = capital_client.get_market_snapshot(sym)
+                                if snapshot and snapshot.get('price'):
+                                    price = float(snapshot.get('price', 0))
+                                    change = float(snapshot.get('change_pct', 0))
+                                    if price > 0:
+                                        all_candidates.append({
+                                            'symbol': sym,
+                                            'price': price,
+                                            'change24h': change,
+                                            'volume': 1000000,  # CFD has unlimited liquidity
+                                            'score': 60 + abs(change) * 5,  # CFD scoring
+                                            'coherence': 0.60,
+                                            'dominant_node': 'PatriotScout_CFD',
+                                            'quote_currency': 'USD' if 'USD' in sym else 'GBP',
+                                            'source': 'capital',
+                                            'battlefield': 'capital',
+                                            'asset_class': 'cfd'
+                                        })
+                            except Exception:
+                                continue
+            except Exception as e:
+                logger.debug(f"Capital.com scout scan skipped: {e}")
+
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE 3: Add Alpaca stock candidates (if enabled)
+        # ═══════════════════════════════════════════════════════════════
+        if multi_battlefield_mode and battlefields.get('alpaca', {}).get('enabled', False):
+            try:
+                if hasattr(self, 'client') and hasattr(self.client, 'clients'):
+                    alpaca_client = self.client.clients.get('alpaca')
+                    if alpaca_client:
+                        # Popular US stocks for scouting
+                        stock_symbols = [
+                            'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA',
+                            'AMD', 'INTC', 'CRM', 'NFLX', 'COIN', 'MARA', 'RIOT'
+                        ]
+                        for sym in stock_symbols:
+                            if sym in normalized_positions:
+                                continue
+                            try:
+                                quote = alpaca_client.get_quote(sym) if hasattr(alpaca_client, 'get_quote') else None
+                                if quote:
+                                    price = float(quote.get('price') or quote.get('last', 0))
+                                    change = float(quote.get('change_pct', 0))
+                                    if price > 0:
+                                        all_candidates.append({
+                                            'symbol': sym,
+                                            'price': price,
+                                            'change24h': change,
+                                            'volume': 500000,  # Stock default volume
+                                            'score': 55 + abs(change) * 4,
+                                            'coherence': 0.55,
+                                            'dominant_node': 'PatriotScout_Stock',
+                                            'quote_currency': 'USD',
+                                            'source': 'alpaca',
+                                            'battlefield': 'alpaca',
+                                            'asset_class': 'stocks'
+                                        })
+                            except Exception:
+                                continue
+            except Exception as e:
+                logger.debug(f"Alpaca scout scan skipped: {e}")
 
         # If nothing passed the strict filters, relax to ensure market coverage
         if not all_candidates:
@@ -11904,6 +12141,7 @@ class AureonKrakenEcosystem:
                         'dominant_node': 'PatriotScout',
                         'quote_currency': quote_curr,
                         'source': data.get('source', '').lower(),
+                        'battlefield': data.get('source', 'binance').lower(),
                         'war_go': True  # Always allow relaxed candidates to deploy if needed
                     })
 
@@ -11912,6 +12150,15 @@ class AureonKrakenEcosystem:
 
         # Sort by score descending
         all_candidates.sort(key=lambda x: -x.get('score', 0))
+        
+        # 🏴 Log battlefield distribution
+        if all_candidates:
+            bf_counts = {}
+            for c in all_candidates[:50]:  # Top 50
+                bf = c.get('battlefield', 'unknown')
+                bf_counts[bf] = bf_counts.get(bf, 0) + 1
+            print(f"   ⚔️ Scout candidates by battlefield: {bf_counts}")
+            
         return all_candidates
     
     def _deploy_scouts(self):
@@ -11925,6 +12172,8 @@ class AureonKrakenEcosystem:
         - Preemptive strike capability
         - Multi-battlefront coordination
         - War strategy quick kill analysis
+        
+        🏴⚔️ 4 BATTLEFRONT MODE: Deploys scouts to ALL active exchanges!
         """
         if self.scouts_deployed or not CONFIG['DEPLOY_SCOUTS_IMMEDIATELY']:
             return
@@ -11932,18 +12181,26 @@ class AureonKrakenEcosystem:
         # ☘️ USE IRISH PATRIOT DEPLOYER IF AVAILABLE
         if hasattr(self, 'patriot_deployer') and self.patriot_deployer is not None:
             print("\n   ☘️🔥 DEPLOYING IRISH PATRIOT SCOUTS - Celtic Warriors Ready! 🔥☘️")
-            print("   🇮🇪 Tiocfaidh ár lá - Our day will come!\n")
+            print("   🇮🇪 Tiocfaidh ár lá - Our day will come!")
             
-            # Build candidate list from ticker cache
+            # 🏴⚔️ MULTI-BATTLEFIELD STATUS
+            battlefields = CONFIG.get('BATTLEFIELDS', {})
+            active_fronts = [bf for bf, cfg in battlefields.items() if cfg.get('enabled', False)]
+            print(f"   ⚔️ ACTIVE BATTLEFRONTS: {', '.join(active_fronts).upper()}\n")
+            
+            # Build candidate list from ALL battlefields
             all_candidates = self._build_scout_candidates()
             
             if all_candidates:
+                # 🏴 DISTRIBUTE SCOUTS ACROSS BATTLEFIELDS
                 target_scouts = CONFIG.get('SCOUT_FORCE_COUNT', 10)
                 deployed = self.patriot_deployer.deploy_patriots(all_candidates, target_count=target_scouts)
                 
                 if deployed:
                     # 🔥 ACTUALLY PLACE THE ORDERS - Patriots need real positions!
                     real_positions = 0
+                    positions_by_battlefield = {}
+                    
                     for scout in deployed:
                         # Build opportunity dict for open_position
                         opp = {
@@ -11960,13 +12217,27 @@ class AureonKrakenEcosystem:
                         result = self.open_position(opp)
                         if result:
                             real_positions += 1
-                            print(f"   💰 {scout.codename} position LIVE on {scout.exchange}!")
+                            bf = scout.exchange.lower()
+                            positions_by_battlefield[bf] = positions_by_battlefield.get(bf, 0) + 1
+                            print(f"   💰 {scout.codename} position LIVE on {scout.exchange.upper()}!")
                         else:
                             print(f"   ⚠️ {scout.codename} order rejected - check balance/filters")
                     
+                    # 🏴 Report battlefield deployment
                     print(f"\n   ☘️ IRISH PATRIOTS: {real_positions}/{len(deployed)} actually in the field!")
+                    print(f"   ⚔️ Deployment by battlefield: {positions_by_battlefield}")
                     self.scouts_deployed = True
                     self._sync_sniper_bridge("patriots")
+                    
+                    # 🍄 Sync with Mycelium for cross-exchange awareness
+                    try:
+                        mycelium_sync('scouts_deployed', {
+                            'total': real_positions,
+                            'by_exchange': positions_by_battlefield,
+                            'timestamp': time.time()
+                        })
+                    except Exception:
+                        pass
                     return
             
             # Fall through to regular deployment if patriot deployer fails
@@ -15288,8 +15559,57 @@ class AureonKrakenEcosystem:
         
         return 'kraken'
     
+    def _is_duplicate_across_exchanges(self, symbol: str, target_exchange: str) -> bool:
+        """🍄 MYCELIUM CHECK: Prevent duplicate positions across different exchanges.
+        
+        Normalizes symbol names to catch cases like:
+        - BTCUSDT on Binance = XBTUSDT on Kraken = BTC/USDT on Capital
+        - ETHUSDC on Binance = XETHZUSD on Kraken
+        
+        Returns True if we already have a similar position on ANOTHER exchange.
+        """
+        if not CONFIG.get('PREVENT_DUPLICATE_POSITIONS', True):
+            return False
+            
+        # Normalize the target symbol
+        target_norm = symbol.upper().replace('XBT', 'BTC').replace('/', '').lstrip('X').lstrip('Z')
+        
+        # Extract base asset (remove quote currencies)
+        quote_suffixes = ['USDT', 'USDC', 'USD', 'GBP', 'EUR', 'BTC', 'ETH', 'BNB', 'FDUSD']
+        target_base = target_norm
+        for suffix in quote_suffixes:
+            if target_base.endswith(suffix):
+                target_base = target_base[:-len(suffix)]
+                break
+        
+        # Check all open positions on OTHER exchanges
+        for pos_symbol, pos in self.positions.items():
+            pos_exchange = getattr(pos, 'exchange', '').lower()
+            
+            # Allow same position on same exchange (shouldn't happen but safety)
+            if pos_exchange == target_exchange.lower():
+                continue
+                
+            # Normalize existing position symbol
+            pos_norm = pos_symbol.upper().replace('XBT', 'BTC').replace('/', '').lstrip('X').lstrip('Z')
+            pos_base = pos_norm
+            for suffix in quote_suffixes:
+                if pos_base.endswith(suffix):
+                    pos_base = pos_base[:-len(suffix)]
+                    break
+            
+            # If same base asset is already on another exchange, it's a duplicate
+            if target_base == pos_base:
+                print(f"   🍄❌ DUPLICATE BLOCKED: {symbol} on {target_exchange.upper()} - already have {pos_symbol} on {pos_exchange.upper()}")
+                return True
+                
+        return False
+    
     def open_position(self, opp: Dict):
-        """Open a new position - dynamically frees capital if needed"""
+        """Open a new position - dynamically frees capital if needed
+        
+        🏴⚔️ MULTI-BATTLEFIELD: Routes to correct exchange and prevents duplicates!
+        """
         symbol = opp['symbol']
         price = opp['price']
         hint_source = opp.get('source')
@@ -15298,11 +15618,15 @@ class AureonKrakenEcosystem:
         quote_asset = self._get_quote_asset(symbol)
         base_currency = CONFIG['BASE_CURRENCY'].upper()
         
+        # 🍄 MYCELIUM: Check for cross-exchange duplicates FIRST
+        if self._is_duplicate_across_exchanges(symbol, exchange):
+            return None
+        
         # 🚀 Check if this is a forced scout deployment
         # Match: 'ForceScout', 'PatriotScout', or any 'Patriot_xxx' pattern
         dominant_node = opp.get('dominant_node', '')
         is_force_scout = (
-            dominant_node in ('ForceScout', 'PatriotScout') or
+            dominant_node in ('ForceScout', 'PatriotScout', 'PatriotScout_CFD', 'PatriotScout_Stock') or
             dominant_node.startswith('Patriot_') or  # 🇮🇪 Irish Patriot naming
             CONFIG.get('FORCE_TRADE', False)
         )
