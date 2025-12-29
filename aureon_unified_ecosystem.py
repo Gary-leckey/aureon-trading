@@ -2425,12 +2425,14 @@ class UnifiedTradeConfirmation:
             confirmation.update(self._parse_kraken_response(result))
         elif exchange == 'capital':
             confirmation.update(self._parse_capital_response(result))
+        elif exchange == 'alpaca':
+            confirmation.update(self._parse_alpaca_response(result))
         else:
             confirmation['status'] = 'UNKNOWN'
             confirmation['order_id'] = str(result.get('orderId', result.get('id', 'unknown')))
             
         # Store confirmed trade
-        if confirmation.get('status') in ['FILLED', 'ACCEPTED', 'OPEN']:
+        if confirmation.get('status') in ['FILLED', 'ACCEPTED', 'OPEN', 'NEW', 'PENDING_NEW']:
             self.confirmed_trades.append(confirmation)
             
         return confirmation
@@ -2506,6 +2508,55 @@ class UnifiedTradeConfirmation:
             'status': 'PENDING',
             'order_id': deal_ref,
             'deal_reference': deal_ref
+        }
+    
+    def _parse_alpaca_response(self, result: Dict) -> Dict:
+        """
+        Parse Alpaca order response.
+        
+        Alpaca returns:
+        - id: Order ID
+        - status: 'new', 'accepted', 'pending_new', 'filled', 'canceled', 'rejected'
+        - filled_qty: Quantity filled
+        - filled_avg_price: Average fill price
+        - symbol: Symbol traded
+        """
+        if not result:
+            return {'status': 'FAILED', 'error': 'Empty response'}
+        
+        # Handle dry run
+        if result.get('id') == 'dry_run_id':
+            return {
+                'status': 'SIMULATED',
+                'order_id': 'dry_run_id',
+                'dry_run': True
+            }
+        
+        # Map Alpaca status to our standard format
+        alpaca_status = result.get('status', 'unknown').lower()
+        status_map = {
+            'new': 'NEW',
+            'accepted': 'ACCEPTED',
+            'pending_new': 'PENDING_NEW',
+            'filled': 'FILLED',
+            'partially_filled': 'PARTIAL',
+            'canceled': 'CANCELED',
+            'rejected': 'REJECTED',
+            'expired': 'EXPIRED',
+        }
+        status = status_map.get(alpaca_status, 'UNKNOWN')
+        
+        return {
+            'status': status,
+            'order_id': str(result.get('id', '')),
+            'client_order_id': result.get('client_order_id'),
+            'executed_qty': float(result.get('filled_qty', 0)),
+            'avg_price': float(result.get('filled_avg_price', 0)) if result.get('filled_avg_price') else None,
+            'symbol': result.get('symbol'),
+            'side': result.get('side'),
+            'order_type': result.get('type'),
+            'created_at': result.get('created_at'),
+            'filled_at': result.get('filled_at'),
         }
         
     def get_trade_history(self, exchange: str = None, limit: int = 50) -> List[Dict]:
