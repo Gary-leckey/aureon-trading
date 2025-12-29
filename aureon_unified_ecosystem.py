@@ -1011,7 +1011,7 @@ CONFIG = {
     'ALPACA_FEE_TAKER': 0.0025,     # 0.25% taker (crypto)
     'ALPACA_FEE_STOCK': 0.0000,     # $0 commission for stocks!
     'ALPACA_FEE': 0.0025,           # Default taker for crypto
-    'ALPACA_ANALYTICS_ONLY': True,  # 🦙 Alpaca is for market data/analytics only (no trades)
+    'ALPACA_ANALYTICS_ONLY': False, # 🦙 ALPACA TRADING ENABLED! Battlefield open!
     
     # 💼 CAPITAL.COM (CFD/Spread Betting)
     'CAPITAL_FEE_SPREAD': 0.0010,   # ~0.1% avg spread cost (varies by instrument)
@@ -1117,13 +1117,13 @@ CONFIG = {
             'max_positions': 10,
         },
         'alpaca': {
-            'enabled': False,             # 📊 Analytics only by default - enable for stocks
-            'scouts_per_exchange': 2,     # 2 scouts on Alpaca stock front
-            'sniper_active': False,       # 🎯 Sniper waiting for Alpaca activation
-            'harvester_active': False,    # 🌾 Harvester waiting for Alpaca activation
+            'enabled': True,              # 🦙 ALPACA BATTLEFIELD ACTIVATED!
+            'scouts_per_exchange': 3,     # 3 scouts on Alpaca front (crypto + stocks)
+            'sniper_active': True,        # 🎯 Sniper covering Alpaca
+            'harvester_active': True,     # 🌾 Harvester active on Alpaca
             'asset_classes': ['stocks', 'crypto'],
             'quote_currencies': ['USD'],
-            'min_trade_usd': 1.0,
+            'min_trade_usd': 1.0,         # Fractional shares = low minimum!
             'max_positions': 10,
         },
     },
