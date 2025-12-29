@@ -383,6 +383,23 @@ class MyceliumNetwork:
     """
     The Mycelium Neural Network - connects all hives in a distributed intelligence.
     
+    ╔═══════════════════════════════════════════════════════════════════════════════╗
+    ║  🎯 ONE GOAL: GROW NET PROFIT - FAST! 🎯                                      ║
+    ║                                                                               ║
+    ║  Every decision, every signal, every spawn - serves ONE purpose:             ║
+    ║  MAXIMIZE NET PROFIT GROWTH AS FAST AS POSSIBLE                               ║
+    ║                                                                               ║
+    ║  The Mycelium doesn't care about:                                             ║
+    ║  - Being "safe" (we have other systems for risk)                              ║
+    ║  - Waiting around (time = money)                                              ║
+    ║  - Small gains (we compound AGGRESSIVELY)                                     ║
+    ║                                                                               ║
+    ║  The Mycelium ONLY cares about:                                               ║
+    ║  - NET PROFIT (after ALL fees)                                                ║
+    ║  - GROWTH RATE (faster is better)                                             ║
+    ║  - COMPOUNDING (every penny back in)                                          ║
+    ╚═══════════════════════════════════════════════════════════════════════════════╝
+    
     Like fungal mycelium in a forest, this network:
     - Distributes resources (capital) where needed
     - Shares information (market signals)
@@ -390,11 +407,26 @@ class MyceliumNetwork:
     - Grows through spawning new hives
     """
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🎯 THE ONE GOAL - ENCODED INTO EVERY FIBER
+    # ═══════════════════════════════════════════════════════════════════════════════
+    ONE_GOAL = "GROW_NET_PROFIT_FAST"
+    GROWTH_AGGRESSION = 0.9  # 90% aggressive growth mode
+    COMPOUND_RATE = 0.95     # 95% of profits compound back
+    MIN_PROFIT_TARGET = 0.03 # Minimum $0.03 net profit per trade
+    
     def __init__(self, initial_capital: float, agents_per_hive: int = 5,
                  target_multiplier: float = 2.0):
         self.initial_capital = initial_capital
         self.agents_per_hive = agents_per_hive
         self.target_multiplier = target_multiplier
+        
+        # 🎯 THE GOAL - Track it obsessively
+        self.starting_equity = initial_capital
+        self.peak_equity = initial_capital
+        self.net_profit_total = 0.0
+        self.profit_rate_per_hour = 0.0
+        self.start_time = time.time()
         
         # Network state
         self.hives: List[Hive] = []
@@ -411,6 +443,7 @@ class MyceliumNetwork:
         self._spawn_hive(initial_capital)
         
         logger.info(f"🍄 Mycelium Network initialized with ${initial_capital:.2f}")
+        logger.info(f"🎯 ONE GOAL ACTIVE: {self.ONE_GOAL} | Aggression: {self.GROWTH_AGGRESSION*100}%")
     
     def _spawn_hive(self, capital: float, parent_generation: int = -1) -> Hive:
         """Spawn a new hive with given capital"""
@@ -520,11 +553,97 @@ class MyceliumNetwork:
         """Get total agent count"""
         return sum(hive.agent_count for hive in self.hives)
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🎯 THE ONE GOAL - PROFIT TRACKING & ACCELERATION
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def record_trade_profit(self, net_profit: float, trade_data: Dict = None):
+        """
+        Record a trade profit - THE MOST IMPORTANT METHOD!
+        Every penny of net profit gets tracked and compounds.
+        """
+        self.net_profit_total += net_profit
+        
+        # Update equity tracking
+        current_equity = self.get_total_equity()
+        self.peak_equity = max(self.peak_equity, current_equity)
+        
+        # Calculate profit rate ($ per hour)
+        elapsed_hours = max((time.time() - self.start_time) / 3600, 0.001)
+        self.profit_rate_per_hour = self.net_profit_total / elapsed_hours
+        
+        # Compound profits back into the network (95%)
+        compound_amount = net_profit * self.COMPOUND_RATE
+        if compound_amount > 0 and self.hives:
+            # Distribute to strongest performing hive's agents
+            best_hive = max(self.hives, key=lambda h: h.get_profit_multiplier())
+            for agent in best_hive.agents:
+                agent.equity += compound_amount / len(best_hive.agents)
+        
+        logger.info(f"🎯 NET PROFIT: ${net_profit:+.4f} | Total: ${self.net_profit_total:.2f} | Rate: ${self.profit_rate_per_hour:.2f}/hr")
+    
+    def get_growth_stats(self) -> Dict[str, Any]:
+        """
+        Get growth statistics - how fast are we achieving THE GOAL?
+        """
+        current_equity = self.get_total_equity()
+        elapsed_hours = max((time.time() - self.start_time) / 3600, 0.001)
+        elapsed_days = elapsed_hours / 24
+        
+        return {
+            "one_goal": self.ONE_GOAL,
+            "starting_equity": self.starting_equity,
+            "current_equity": current_equity,
+            "net_profit_total": self.net_profit_total,
+            "profit_rate_per_hour": self.profit_rate_per_hour,
+            "profit_rate_per_day": self.profit_rate_per_hour * 24,
+            "growth_percentage": ((current_equity - self.starting_equity) / max(self.starting_equity, 1)) * 100,
+            "elapsed_hours": elapsed_hours,
+            "elapsed_days": elapsed_days,
+            "peak_equity": self.peak_equity,
+            "compound_rate": self.COMPOUND_RATE,
+            "aggression": self.GROWTH_AGGRESSION
+        }
+    
+    def boost_signal_for_profit(self, base_signal: float, expected_profit: float) -> float:
+        """
+        Boost signals that lead to more profit.
+        THE GOAL: If it makes money, DO MORE OF IT!
+        """
+        if expected_profit <= 0:
+            return base_signal * 0.5  # Reduce signals that don't make money
+        
+        # Boost proportional to expected profit
+        profit_boost = min(expected_profit / self.MIN_PROFIT_TARGET, 3.0)
+        boosted = base_signal * (1 + (profit_boost * self.GROWTH_AGGRESSION))
+        
+        return min(boosted, 1.0)  # Cap at 1.0
+    
+    def should_take_trade(self, expected_net_profit: float, confidence: float) -> bool:
+        """
+        Simple decision: Does this trade grow net profit?
+        If yes → TAKE IT. If no → SKIP IT.
+        """
+        # Must meet minimum profit target
+        if expected_net_profit < self.MIN_PROFIT_TARGET:
+            return False
+        
+        # Higher profit = lower confidence needed
+        required_confidence = 0.7 - (expected_net_profit * 0.1)
+        required_confidence = max(required_confidence, 0.5)  # Never go below 50%
+        
+        return confidence >= required_confidence
+    
     def get_state(self) -> Dict[str, Any]:
-        """Get full network state"""
+        """Get full network state - INCLUDING THE GOAL METRICS!"""
+        growth = self.get_growth_stats()
         return {
             "timestamp": time.time(),
             "step": self.step_count,
+            "one_goal": self.ONE_GOAL,
+            "net_profit_total": growth["net_profit_total"],
+            "profit_rate_per_day": growth["profit_rate_per_day"],
+            "growth_percentage": growth["growth_percentage"],
             "total_hives": len(self.hives),
             "total_agents": self.get_total_agents(),
             "total_equity": self.get_total_equity(),
@@ -535,11 +654,17 @@ class MyceliumNetwork:
         }
     
     def display(self):
-        """Display network status"""
+        """Display network status - ALWAYS SHOW THE GOAL!"""
         state = self.get_state()
+        growth = self.get_growth_stats()
         
         print(f"""
 ╔═══════════════════════════════════════════════════════════════════════════════╗
+║  🎯 ONE GOAL: {self.ONE_GOAL:^55} 🎯  ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  💰 NET PROFIT: ${growth['net_profit_total']:>12.2f}  |  📈 Rate: ${growth['profit_rate_per_day']:>8.2f}/day          ║
+║  📊 Growth: {growth['growth_percentage']:>6.1f}%  |  Peak: ${growth['peak_equity']:>10.2f}                          ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
 ║                        🍄 MYCELIUM NEURAL NETWORK 🍄                          ║
 ╠═══════════════════════════════════════════════════════════════════════════════╣
 ║  Step: {state['step']:<10}  Generation: {state['generation']:<5}                                ║
