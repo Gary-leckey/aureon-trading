@@ -7707,13 +7707,38 @@ class UniversalMarketIntelligence:
         
         # Connect to thought bus
         if self.bus:
-            self.bus.register_node('universal_intel', self._on_thought)
+            # Subscribe to relevant topics
+            self.bus.subscribe('brain.*', self._on_thought_wrapper)
+            self.bus.subscribe('immune.*', self._on_thought_wrapper)
             
         logger.info("🌐 Universal Market Intelligence initialized - Scans ALL assets")
+    
+    def _on_thought_wrapper(self, thought):
+        """Wrapper to handle Thought objects from the bus."""
+        try:
+            topic = thought.topic if hasattr(thought, 'topic') else thought.get('topic', '')
+            payload = thought.payload if hasattr(thought, 'payload') else thought.get('data', {})
+            self._on_thought({'topic': topic, 'data': payload})
+        except Exception:
+            pass
         
     def _on_thought(self, thought: Dict[str, Any]):
         """Receive thoughts from other components."""
         pass  # We mainly emit, don't need to receive
+        
+    def _emit_thought(self, topic: str, data: Dict[str, Any]):
+        """Emit a thought to the bus."""
+        if self.bus:
+            try:
+                from aureon_thought_bus import Thought
+                thought = Thought(
+                    source='universal_intel',
+                    topic=f'universal_intel.{topic}',
+                    payload=data
+                )
+                self.bus.publish(thought)
+            except Exception:
+                pass
         
     def scan_all_assets(self, ticker_cache: Dict[str, Dict]) -> Dict[str, Any]:
         """
@@ -7868,12 +7893,11 @@ class UniversalMarketIntelligence:
         }
         
         # Emit to thought bus
-        if self.bus:
-            self.bus.emit('universal_intel', 'universal_scan_complete', {
-                'total_assets': total_scanned,
-                'sentiment': self.market_intelligence['sentiment_label'],
-                'anomalies': len(anomalies)
-            })
+        self._emit_thought('universal_scan_complete', {
+            'total_assets': total_scanned,
+            'sentiment': self.market_intelligence['sentiment_label'],
+            'anomalies': len(anomalies)
+        })
             
         return self.market_intelligence
         
@@ -10325,12 +10349,33 @@ class MyceliumNetwork:
     - Queen Neuron for collective decision making
     - Self-spawning when profitable (network growth)
     - Hebbian learning on all connections
+    
+    🌐 THOUGHT BUS INTEGRATION:
+    - Emits market signals to all connected components
+    - Receives universal market intelligence
+    - Passes information UP (to brain), DOWN (to positions), 
+      LEFT/RIGHT (to peer systems like Auris, Lattice)
     """
     
-    def __init__(self, initial_capital: float = 100.0):
+    MYCELIUM_AVAILABLE = True  # Flag for system interconnection
+    
+    def __init__(self, initial_capital: float = 100.0, thought_bus: Optional['ThoughtBus'] = None):
         # Simple pattern network (always available)
         self.synapses: Dict[str, List[Synapse]] = {}
         self.activations: Dict[str, float] = {}
+        
+        # 🌐 THOUGHT BUS CONNECTION - Pass info up/down/left/right!
+        self.bus = thought_bus
+        if self.bus:
+            # Subscribe to relevant topics for bidirectional flow
+            self.bus.subscribe('universal_intel.*', self._on_thought_wrapper)
+            self.bus.subscribe('brain.*', self._on_thought_wrapper)
+            self.bus.subscribe('immune.*', self._on_thought_wrapper)
+            logger.info("   🍄 Mycelium: Connected to Thought Bus - info flows ALL directions!")
+        
+        # 🌐 Universal Market Intelligence reference
+        self.universal_intel: Optional['UniversalMarketIntelligence'] = None
+        self.last_intel_digest: Dict[str, Any] = {}
         
         # 🍄 FULL NEURAL NETWORK (if available)
         self.full_network = None
@@ -10352,6 +10397,29 @@ class MyceliumNetwork:
             except Exception as e:
                 logger.warning(f"⚠️ Could not initialize full Mycelium: {e}")
                 self.full_network = None
+    
+    def _on_thought_wrapper(self, thought):
+        """Wrapper to handle Thought objects from the bus."""
+        try:
+            topic = thought.topic if hasattr(thought, 'topic') else thought.get('topic', '')
+            payload = thought.payload if hasattr(thought, 'payload') else thought.get('data', {})
+            self._on_thought({'topic': topic, 'data': payload})
+        except Exception:
+            pass
+            
+    def _emit_thought(self, topic: str, data: Dict[str, Any]):
+        """Emit a thought to the bus."""
+        if self.bus:
+            try:
+                from aureon_thought_bus import Thought
+                thought = Thought(
+                    source='mycelium',
+                    topic=f'mycelium.{topic}',
+                    payload=data
+                )
+                self.bus.publish(thought)
+            except Exception:
+                pass
         
     def add_signal(self, symbol: str, signal: float):
         """Add a market signal to the network"""
@@ -10372,6 +10440,79 @@ class MyceliumNetwork:
                 if not any(s.target == target for s in self.synapses[symbol]):
                     self.synapses[symbol].append(Synapse(source=symbol, target=target))
         
+        # 🌐 BROADCAST: Pass signal to thought bus (info flows LEFT/RIGHT to peers)
+        if self.bus and abs(signal - 0.5) > 0.2:  # Only broadcast significant signals
+            self._emit_thought('signal_detected', {
+                'symbol': symbol,
+                'signal': signal,
+                'direction': 'BUY' if signal > 0.6 else 'SELL' if signal < 0.4 else 'HOLD',
+                'strength': abs(signal - 0.5) * 2
+            })
+    
+    def _on_thought(self, thought: Dict[str, Any]):
+        """
+        Receive thoughts from other components.
+        This is how info flows INTO the mycelium from other systems.
+        """
+        topic = thought.get('topic', '')
+        data = thought.get('data', {})
+        
+        # 🌐 RECEIVE: Universal Market Intelligence updates
+        if 'universal_scan_complete' in topic:
+            self.last_intel_digest = {
+                'total_assets': data.get('total_assets', 0),
+                'sentiment': data.get('sentiment', 'NEUTRAL'),
+                'anomalies': data.get('anomalies', 0),
+                'timestamp': time.time()
+            }
+            # Adjust network sensitivity based on market sentiment
+            if data.get('sentiment') == 'BULLISH':
+                # Network becomes more responsive to buy signals
+                self._adjust_network_bias(0.1)
+            elif data.get('sentiment') == 'BEARISH':
+                # Network becomes more cautious
+                self._adjust_network_bias(-0.1)
+                
+        # 🧠 RECEIVE: Brain decisions (info flows DOWN from brain)
+        elif 'brain' in topic and 'decision' in topic:
+            brain_action = data.get('action', 'HOLD')
+            confidence = data.get('confidence', 0.5)
+            if brain_action == 'BUY' and confidence > 0.7:
+                self._amplify_buy_signals()
+            elif brain_action == 'SELL' and confidence > 0.7:
+                self._amplify_sell_signals()
+                
+        # 🛡️ RECEIVE: Immune system health (info flows from peer systems)
+        elif topic == 'immune_health':
+            health = data.get('health', 100)
+            if health < 50:
+                # System stressed - reduce mycelium activity
+                self._reduce_activity()
+    
+    def _adjust_network_bias(self, bias: float):
+        """Adjust network bias based on external signals."""
+        # Shift all activations slightly toward bias
+        for symbol in self.activations:
+            self.activations[symbol] = max(0, min(1, self.activations[symbol] + bias * 0.1))
+            
+    def _amplify_buy_signals(self):
+        """Amplify buy signals when brain says BUY."""
+        for symbol in self.activations:
+            if self.activations[symbol] > 0.5:
+                self.activations[symbol] = min(1.0, self.activations[symbol] * 1.1)
+                
+    def _amplify_sell_signals(self):
+        """Amplify sell signals when brain says SELL."""
+        for symbol in self.activations:
+            if self.activations[symbol] < 0.5:
+                self.activations[symbol] = max(0.0, self.activations[symbol] * 0.9)
+                
+    def _reduce_activity(self):
+        """Reduce network activity when system is stressed."""
+        # Move all activations toward neutral (0.5)
+        for symbol in self.activations:
+            self.activations[symbol] = self.activations[symbol] * 0.9 + 0.5 * 0.1
+        
     def propagate(self) -> Dict[str, float]:
         """Propagate signals through the network"""
         new_activations = {}
@@ -10389,6 +10530,12 @@ class MyceliumNetwork:
             try:
                 # Build market data from our activations
                 avg_activation = sum(self.activations.values()) / max(1, len(self.activations))
+                
+                # 🌐 INJECT: Universal market intel into hive processing
+                if self.last_intel_digest:
+                    sentiment_boost = 0.1 if self.last_intel_digest.get('sentiment') == 'BULLISH' else -0.1 if self.last_intel_digest.get('sentiment') == 'BEARISH' else 0
+                    avg_activation = max(0, min(1, avg_activation + sentiment_boost))
+                
                 market_data = {
                     "price": 95000,  # Will be updated with real price
                     "momentum": avg_activation * 2 - 1,  # Convert [0,1] to [-1,1]
@@ -10404,6 +10551,16 @@ class MyceliumNetwork:
                 self.hive_count = result.get("hive_count", 1)
                 self.generation = result.get("generation", 0)
                 self.total_agents = self.full_network.get_total_agents()
+                
+                # 🌐 BROADCAST UP: Send Queen's decision to brain via thought bus
+                if abs(self.queen_signal) > 0.3:
+                    self._emit_thought('queen_decision', {
+                        'signal': self.queen_signal,
+                        'direction': 'BUY' if self.queen_signal > 0 else 'SELL',
+                        'confidence': abs(self.queen_signal),
+                        'hives': self.hive_count,
+                        'agents': self.total_agents
+                    })
                 
             except Exception as e:
                 logger.debug(f"Mycelium step error: {e}")
@@ -11376,6 +11533,16 @@ class AureonKrakenEcosystem:
         self.universal_intel = UniversalMarketIntelligence(self.thought_bus)
         UNIVERSAL_MARKET_INTEL = self.universal_intel
         print("   🌐 Universal Market Intelligence active (scans ALL assets → brain)")
+
+        # 🍄 CONNECT MYCELIUM TO THOUGHT BUS - Info flows UP/DOWN/LEFT/RIGHT!
+        if hasattr(self, 'mycelium') and self.mycelium:
+            self.mycelium.bus = self.thought_bus
+            self.mycelium.universal_intel = self.universal_intel
+            # Subscribe mycelium to key events for bidirectional flow
+            self.thought_bus.subscribe("universal_intel.*", self.mycelium._on_thought_wrapper)
+            self.thought_bus.subscribe("brain.*", self.mycelium._on_thought_wrapper)
+            self.thought_bus.subscribe("immune.*", self.mycelium._on_thought_wrapper)
+            print("   🍄 Mycelium connected to ThoughtBus - info flows UP↑ DOWN↓ LEFT← RIGHT→")
 
         # 📰 News Feed (World News API integration)
         self.news_feed = None
