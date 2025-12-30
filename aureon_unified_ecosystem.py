@@ -14379,13 +14379,21 @@ class AureonKrakenEcosystem:
 
     def should_enter_trade(self, opp: Dict, pos_size: float, lattice_state, is_force_scout: bool = False) -> bool:
         """
-        🎯 PROBABILITY-MATRIX-DRIVEN entry decision.
+        🎯🪙 ONE SHARED GOAL: NET PENNY PROFIT AFTER FEES 🪙🎯
         
-        THE VISION: The probability matrix tells us WHEN to buy and WHAT to buy.
-        It should be "surfing the wave" - in and out of positions for net profits.
+        Every system, every scan, every prediction answers ONE question:
+        "Will this trade make +$0.01 NET after ALL fees?"
         
-        Buy BTC at this price, sell at this time, take profit, buy ETH, sell, etc.
-        Snowballing profits through intelligent timing.
+        We can predict waves, harmonics, movements - but predictions are WORTHLESS
+        unless they translate to the SHARED GOAL.
+        
+        THE LOGIC:
+        1. Calculate exact penny profit threshold for this trade
+        2. Ask Brain: "Will price move enough to hit that threshold?"
+        3. Ask Matrix: "What's the PROBABILITY we hit that threshold?"
+        4. Ask Imperial: "Is the cosmic timing aligned for that movement?"
+        5. If ALL systems agree we'll hit the penny → TRADE
+        6. If ANY system says we won't hit the penny → NO TRADE
         
         If is_force_scout=True, bypass most gates - we're going IN!
         """
@@ -14394,28 +14402,100 @@ class AureonKrakenEcosystem:
             return False
             
         symbol = opp.get('symbol', 'UNKNOWN')
-        
-        # 🦅 FORCE SCOUTS BYPASS MOST GATES - they're going IN!
-        if is_force_scout:
-            logger.info(f"🦅 FORCE SCOUT {symbol}: BYPASSING brain/matrix/imperial gates - EXECUTING!")
-            return True  # Force scouts just go!
+        exchange = opp.get('source', 'binance')
+        price = opp.get('price', 0)
         
         # ═══════════════════════════════════════════════════════════════
-        # 🧠🌍 BRAIN GATE CHECK - 7 CIVILIZATIONS + QUANTUM BRAIN
-        # 🛡️ VALIDATION LOCK: The Brain is the Captain. It plots the course.
+        # 🪙 STEP 1: Calculate the EXACT penny profit threshold
+        # This is the SHARED GOAL - every system must validate THIS number
+        # ═══════════════════════════════════════════════════════════════
+        penny_threshold = get_penny_threshold(exchange, pos_size)
+        if not penny_threshold:
+            logger.warning(f"⛔ {symbol}: Cannot calculate penny threshold - NO TRADE")
+            return False
+            
+        required_move_pct = penny_threshold['required_pct']  # e.g., 0.52%
+        required_price = price * (1 + penny_threshold['required_r'])
+        target_net = penny_threshold['target_net']
+        
+        # Store in opp for exit logic to use
+        opp['penny_threshold'] = penny_threshold
+        opp['required_move_pct'] = required_move_pct
+        opp['required_price'] = required_price
+        
+        logger.info(f"🪙 {symbol}: SHARED GOAL = +${target_net:.2f} net | Need +{required_move_pct:.3f}% (${price:.4f} → ${required_price:.4f})")
+        
+        # 🦅 FORCE SCOUTS: Verify they can ACTUALLY hit penny profit
+        if is_force_scout:
+            # Even force scouts must have a CHANCE at penny profit
+            probability = opp.get('probability', 0.5)
+            if probability < 0.40:  # At least 40% chance
+                logger.info(f"🦅⛔ {symbol}: Force scout BLOCKED - Only {probability*100:.0f}% chance of +{required_move_pct:.3f}%")
+                return False
+            logger.info(f"🦅 FORCE SCOUT {symbol}: {probability*100:.0f}% chance of +{required_move_pct:.3f}% → EXECUTING!")
+            return True
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 🧠 STEP 2: Ask Brain - "Will price move +{required_move_pct}%?"
+        # The Brain predicts DIRECTION and MAGNITUDE
         # ═══════════════════════════════════════════════════════════════
         brain_ok, brain_reason = self.should_trade_brain()
-        if not brain_ok:
-            logger.info(f"⛔ {symbol}: BRAIN BLOCKED - {brain_reason}")
-            return False
-        
-        brain_consensus = opp.get('brain_consensus', ECOSYSTEM_BRAIN._brain_consensus)
-        brain_confidence = opp.get('brain_confidence', ECOSYSTEM_BRAIN._brain_confidence)
         brain_rec = ECOSYSTEM_BRAIN.get_trading_recommendation()
+        brain_confidence = opp.get('brain_confidence', ECOSYSTEM_BRAIN._brain_confidence)
         
-        # 🛡️ VALIDATION LOCK: If Brain says REDUCE, we do NOT enter.
-        if brain_rec['action'] == 'REDUCE' and brain_confidence > 0.6:
-            logger.info(f"⛔ {symbol}: Brain says REDUCE (conf={brain_confidence:.0%}) - BLOCKED by Validation Lock")
+        # Brain must believe in UPWARD movement
+        if brain_rec['action'] == 'REDUCE':
+            logger.info(f"⛔ {symbol}: Brain says REDUCE - Price won't move +{required_move_pct:.3f}% | NO PENNY")
+            return False
+            
+        if brain_rec['action'] == 'HOLD' and brain_confidence > 0.6:
+            logger.info(f"⛔ {symbol}: Brain says HOLD (conf={brain_confidence:.0%}) - Not enough movement for penny | NO PENNY")
+            return False
+            
+        if brain_rec['action'] == 'BUY' and brain_confidence > 0.5:
+            logger.info(f"✅ {symbol}: Brain says BUY (conf={brain_confidence:.0%}) - Expects +{required_move_pct:.3f}% movement")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 🔮 STEP 3: Ask Matrix - "What's PROBABILITY of +{required_move_pct}%?"
+        # The Matrix calculates the ODDS of hitting our exact target
+        # ═══════════════════════════════════════════════════════════════
+        prob_action = opp.get('prob_action', 'HOLD')
+        probability = opp.get('probability', 0.5)
+        prob_confidence = opp.get('prob_confidence', 0.0)
+        
+        # We need HIGH probability of hitting penny profit
+        # SLIGHT BUY with 67% prob means only 67% chance of ANY profit, not penny profit
+        # Scale down: If Matrix says 67% for "some profit", actual penny prob is lower
+        adjusted_prob = probability * 0.85  # Conservative adjustment
+        
+        if prob_action in ['SELL', 'STRONG SELL']:
+            logger.info(f"⛔ {symbol}: Matrix says {prob_action} - 0% chance of +{required_move_pct:.3f}% | NO PENNY")
+            return False
+            
+        if prob_action == 'HOLD' and probability < 0.55:
+            logger.info(f"⛔ {symbol}: Matrix says HOLD ({probability*100:.0f}%) - Won't hit +{required_move_pct:.3f}% | NO PENNY")
+            return False
+            
+        # For SLIGHT BUY, need higher probability since the signal is weak
+        if prob_action == 'SLIGHT BUY' and adjusted_prob < 0.55:
+            logger.info(f"⛔ {symbol}: Matrix says SLIGHT BUY but adjusted prob={adjusted_prob*100:.0f}% - Won't hit penny | NO PENNY")
+            return False
+            
+        if prob_action in ['BUY', 'STRONG BUY']:
+            logger.info(f"✅ {symbol}: Matrix says {prob_action} ({probability*100:.0f}%) - Good odds for +{required_move_pct:.3f}%")
+        elif prob_action == 'SLIGHT BUY' and adjusted_prob >= 0.55:
+            logger.info(f"✅ {symbol}: Matrix says SLIGHT BUY (adj={adjusted_prob*100:.0f}%) - Acceptable odds for penny")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 🌌 STEP 4: Ask Imperial - "Is cosmic timing right for +{required_move_pct}%?"
+        # Imperial validates the TIMING of our penny profit
+        # ═══════════════════════════════════════════════════════════════
+        imperial_action = opp.get('imperial_action', 'HOLD')
+        imperial_conf = opp.get('imperial_confidence', 0.0)
+        
+        # Imperial veto only if HIGHLY confident in SELL
+        if imperial_conf >= 0.7 and imperial_action in ['SELL', 'STRONG SELL']:
+            logger.info(f"⛔ {symbol}: Imperial says {imperial_action} (conf={imperial_conf:.0%}) - Cosmic timing wrong | NO PENNY")
             return False
         
         # If brain is very bullish, log approval
@@ -14447,24 +14527,11 @@ class AureonKrakenEcosystem:
         
         # ✅ Log when matrix says BUY
         if prob_action in ['BUY', 'STRONG BUY', 'SLIGHT BUY']:
-            logger.info(f"✅ {symbol}: Matrix says {prob_action} (prob={probability:.0%}, conf={prob_confidence:.0%}) - APPROVED!")
-        
         # ═══════════════════════════════════════════════════════════════
-        # 📊 IMPERIAL PREDICTION - 🛡️ VALIDATION LOCK ACTIVE
+        # 📚 STEP 5: Ask Learned - "Historically, do trades like this hit penny?"
+        # The Learned system validates based on REAL HISTORICAL DATA
         # ═══════════════════════════════════════════════════════════════
-        imperial_action = opp.get('imperial_action', 'HOLD')
-        imperial_prob = opp.get('imperial_probability', 0.5)
-        imperial_conf = opp.get('imperial_confidence', 0.0)
-        
-        # 🛡️ VALIDATION LOCK: Imperial Prediction must not contradict
-        if imperial_conf >= 0.6 and imperial_action in ['SELL', 'STRONG SELL']:
-            logger.info(f"⛔ {symbol}: Imperial says {imperial_action} - BLOCKED by Validation Lock")
-            return False
-            
-        # ═══ GET LEARNED RECOMMENDATION - 🪙 ADVISORY ONLY ═══
         try:
-            # CRITICAL: Historical data shows 256_ROOT = 100% WR, 432_NATURAL = 18% WR
-            # Default to 256 (ROOT) which historically wins, NOT 432 which loses!
             frequency = opp.get('frequency', CONFIG.get('DEFAULT_FREQUENCY', 256))
             coherence = opp.get('coherence', 0.5)
             score = opp.get('score', 50)
@@ -14475,9 +14542,9 @@ class AureonKrakenEcosystem:
             risk_mod = 1.0
             dd = pnl_snapshot.get('drawdown_pct', 0) if pnl_snapshot else 0
             net_pnl = pnl_snapshot.get('net_profit', 0) if pnl_snapshot else 0
-            if dd > 5:      # soften sizing when drawdown > 5%
+            if dd > 5:
                 risk_mod *= 0.6
-            if net_pnl < 0: # soften when running negative on the day/session
+            if net_pnl < 0:
                 risk_mod *= 0.8
             opp['risk_mod_from_pnl'] = risk_mod
             
@@ -14489,42 +14556,34 @@ class AureonKrakenEcosystem:
                 probability=probability
             )
             
-            # Log the recommendation for visibility
             if recommendation['similar_trades'] >= 5:
                 summary = ADAPTIVE_LEARNER.get_recommendation_summary(recommendation)
                 logger.info(f"\n📊 LEARNED ANALYTICS for {symbol}:\n{summary}")
-                
-                # Store recommendation in opp for use in position management
                 opp['learned_recommendation'] = recommendation
                 
-                # 🛡️ VALIDATION LOCK: Learned Recommendations are BINDING
-                # We use the map to plot the course.
+                # 🪙 SHARED GOAL CHECK: Does history say we'll hit penny profit?
+                historical_wr = recommendation['expected_win_rate']
                 
-                # 🛡️ VALIDATION LOCK: If Learned says NO, we do NOT trade.
                 if recommendation['confidence'] == 'high' and not recommendation['should_trade']:
-                    logger.info(f"⛔ {symbol}: Learned says NO (WR={recommendation['expected_win_rate']*100:.0f}%) - BLOCKED by Validation Lock")
+                    logger.info(f"⛔ {symbol}: History says NO (WR={historical_wr*100:.0f}%) - Won't hit +{required_move_pct:.3f}% | NO PENNY")
                     return False
                     
-                # 🛡️ VALIDATION LOCK: If Learned says YES, we verify the win rate
-                if recommendation['should_trade'] and recommendation['expected_win_rate'] < 0.60:
-                    logger.info(f"⛔ {symbol}: Learned says YES but WR is low ({recommendation['expected_win_rate']*100:.0f}%) - BLOCKED by Validation Lock")
+                if recommendation['should_trade'] and historical_wr < 0.50:
+                    logger.info(f"⛔ {symbol}: History WR={historical_wr*100:.0f}% too low - Won't reliably hit penny | NO PENNY")
                     return False
                     
-                # Log advantages
-                if recommendation['advantages']:
-                    logger.info(f"✅ {symbol} advantages: {', '.join(recommendation['advantages'][:2])}")
-                
-                # 🪙 PENNY MODE: P&L warnings are advisory, don't block
-                pnl = opp['pnl_state']
-                if pnl:
-                    if pnl.get('net_profit', 0) < -50:
-                        logger.info(f"⚠️ {symbol}: P&L negative - advisory only, penny math is gate")
-                    if pnl.get('drawdown_pct', 0) >= CONFIG.get('MAX_DRAWDOWN_PCT', 20) * 0.5:
-                        logger.info(f"⚠️ {symbol}: Elevated drawdown - advisory only, penny math is gate")
+                if historical_wr >= 0.60:
+                    logger.info(f"✅ {symbol}: History WR={historical_wr*100:.0f}% - Good odds for +{required_move_pct:.3f}% penny profit")
                     
         except Exception as e:
             logger.debug(f"Could not get learned recommendation: {e}")
             
+        # ═══════════════════════════════════════════════════════════════
+        # 🪙 FINAL CHECK: All systems validated → Will we hit the penny?
+        # ═══════════════════════════════════════════════════════════════
+        logger.info(f"🪙✅ {symbol}: ALL SYSTEMS AGREE - Good odds for +${target_net:.2f} net profit")
+        logger.info(f"   📊 Entry: ${pos_size:.2f} @ ${price:.4f} → Target: ${required_price:.4f} (+{required_move_pct:.3f}%)")
+        
         # 🎯 SMART ENTRY: Combine penny math WITH historical learning
         # Don't enter trades that historically lose - that's not advisory, that's data!
         try:
