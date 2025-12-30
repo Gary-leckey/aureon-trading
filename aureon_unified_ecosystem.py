@@ -142,11 +142,39 @@ sanitize_logging_environment()
 
 
 # Load environment variables from .env file FIRST before any other imports
+def _load_dotenv_fallback(dotenv_path: str = '.env') -> None:
+    """Minimal .env loader (stdlib-only).
+
+    Used when `python-dotenv` is not installed. This intentionally only supports
+    simple `KEY=VALUE` lines and ignores comments and blank lines.
+    It does not override existing environment variables.
+    """
+    try:
+        if not os.path.exists(dotenv_path):
+            return
+        with open(dotenv_path, 'r', encoding='utf-8') as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' not in line:
+                    continue
+                key, value = line.split('=', 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if not key:
+                    continue
+                os.environ.setdefault(key, value)
+    except Exception:
+        # Never crash startup because of .env parsing.
+        return
+
+
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    pass
+    _load_dotenv_fallback()
 
 try:
     import websockets
