@@ -255,15 +255,38 @@ class SandboxEvolution:
             return f" | IRA training: volatility {volatility:.2f}% is within range of {required_move:.2f}% target"
         return f" | IRA training: volatility {volatility:.2f}% below {required_move:.2f}% target"
     
-    def get_exit_targets(self, entry_price: float) -> Dict[str, float]:
+    def get_exit_targets(self, entry_price: float, trade_size: float = 10.0, exchange: str = 'binance') -> Dict[str, float]:
         """
-        Calculate exit targets based on evolved parameters.
+        🪙 SHARED GOAL: Calculate exit targets based on PENNY PROFIT math.
+        
+        The ONLY goal is +$0.01 net profit after ALL fees.
+        All other percentage-based targets are ADVISORY.
         """
+        # Try to import penny profit math
+        try:
+            from aureon_unified_ecosystem import get_penny_threshold
+            
+            penny = get_penny_threshold(exchange, trade_size)
+            if penny:
+                required_r = penny['required_r']
+                return {
+                    'take_profit_price': entry_price * (1 + required_r),
+                    'stop_loss_price': entry_price * (1 - required_r * 3),  # 3:1 risk
+                    'take_profit_pct': required_r * 100,
+                    'stop_loss_pct': required_r * 300,
+                    'penny_target_net': penny['target_net'],
+                    'shared_goal': f"+${penny['target_net']:.2f} net after fees",
+                }
+        except ImportError:
+            pass
+        
+        # Fallback to percentage-based (but this is NOT the shared goal)
         return {
             'take_profit_price': entry_price * (1 + self.params['take_profit_pct'] / 100),
             'stop_loss_price': entry_price * (1 - self.params['stop_loss_pct'] / 100),
             'take_profit_pct': self.params['take_profit_pct'],
             'stop_loss_pct': self.params['stop_loss_pct'],
+            'shared_goal': 'FALLBACK: Using percentage targets (penny math unavailable)',
         }
     
     def get_position_size(self, capital: float) -> float:
@@ -6264,9 +6287,14 @@ class MinerBrain:
         print(f"   24h Volatility: {btc_vol:.2f}%")
         print(f"   Filter Result: {filter_reason}")
         if should_trade:
-            targets = self.sandbox_evolution.get_exit_targets(pulse_dict.get('btc_price', 100000))
-            print(f"   → Take Profit Target: ${targets['take_profit_price']:,.2f} (+{targets['take_profit_pct']:.2f}%)")
-            print(f"   → Stop Loss Target: ${targets['stop_loss_price']:,.2f} (-{targets['stop_loss_pct']:.2f}%)")
+            btc_price = pulse_dict.get('btc_price', 100000)
+            targets = self.sandbox_evolution.get_exit_targets(btc_price, trade_size=10.0, exchange='binance')
+            if 'penny_target_net' in targets:
+                print(f"   🪙 SHARED GOAL: {targets['shared_goal']}")
+                print(f"   → Penny TP Target: ${targets['take_profit_price']:,.2f} (+{targets['take_profit_pct']:.3f}%)")
+            else:
+                print(f"   → Take Profit Target: ${targets['take_profit_price']:,.2f} (+{targets['take_profit_pct']:.2f}%)")
+                print(f"   → Stop Loss Target: ${targets['stop_loss_price']:,.2f} (-{targets['stop_loss_pct']:.2f}%)")
         if ira_alignment:
             print("   IRA Training Insight:")
             print(
