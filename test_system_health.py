@@ -10,6 +10,7 @@ Run: python test_system_health.py
 import sys
 import os
 from datetime import datetime
+from pathlib import Path
 
 # ═══════════════════════════════════════════════════════════════════════════
 # TEST CONFIGURATION
@@ -96,14 +97,56 @@ def test_env_vars():
     # Load .env if exists
     try:
         from dotenv import load_dotenv
-        load_dotenv()
+
+        # Be resilient to different working directories (Windows/PowerShell, Task Scheduler, etc.)
+        repo_root = Path(__file__).resolve().parent
+        candidates = [repo_root / ".env", Path.cwd() / ".env"]
+        explicit = os.getenv("DOTENV_PATH")
+        if explicit:
+            candidates.insert(0, Path(explicit))
+
+        loaded = False
+        for candidate in candidates:
+            try:
+                if candidate.exists():
+                    load_dotenv(dotenv_path=str(candidate), override=False)
+                    loaded = True
+                    break
+            except Exception:
+                continue
+
+        if not loaded:
+            load_dotenv(override=False)
     except ImportError:
+        pass
+
+    # If we can, only require credentials for enabled battlefields.
+    required = list(REQUIRED_ENV_VARS)
+    try:
+        from aureon_unified_ecosystem import CONFIG
+        battlefields = (CONFIG.get('BATTLEFIELDS') or {}) if isinstance(CONFIG, dict) else {}
+        enabled_exchanges = {
+            ex.lower()
+            for ex, cfg in battlefields.items()
+            if isinstance(cfg, dict) and cfg.get('enabled')
+        }
+
+        dynamic_required = []
+        if 'binance' in enabled_exchanges:
+            dynamic_required += ["BINANCE_API_KEY", "BINANCE_SECRET_KEY"]
+        if 'kraken' in enabled_exchanges:
+            dynamic_required += ["KRAKEN_API_KEY", "KRAKEN_API_SECRET"]
+
+        if dynamic_required:
+            required = dynamic_required
+    except Exception:
+        # Fall back to the static list if we can't import config.
         pass
     
     passed = 0
     failed = 0
     
-    for var in REQUIRED_ENV_VARS:
+    for var in required:
         value = os.environ.get(var)
         if value:
             # Show first/last 4 chars only for security
@@ -113,6 +156,9 @@ def test_env_vars():
         else:
             print(f"  ❌ {var} not set")
             failed += 1
+
+    if failed:
+        print("\n  💡 Tip: set missing keys in .env or disable that battlefield in CONFIG['BATTLEFIELDS'].")
     
     return passed, failed
 
@@ -168,15 +214,20 @@ def test_version():
     print("=" * 50)
     
     try:
-        # Read version from file
-        with open("aureon_unified_ecosystem.py", "r") as f:
-            content = f.read(500)
-            if "Version:" in content:
-                # Extract version line
-                for line in content.split("\n"):
-                    if "Version:" in line:
-                        print(f"  ✅ {line.strip()}")
-                        return 1, 0
+        # Read version from file. On Windows, never rely on the default code page.
+        target = Path(__file__).resolve().parent / "aureon_unified_ecosystem.py"
+        try:
+            content = target.read_text(encoding="utf-8", errors="replace")[:500]
+        except Exception:
+            # Last-resort: read bytes and decode safely.
+            content = target.read_bytes()[:500].decode("utf-8", errors="replace")
+
+        if "Version:" in content:
+            # Extract version line
+            for line in content.split("\n"):
+                if "Version:" in line:
+                    print(f"  ✅ {line.strip()}")
+                    return 1, 0
         print("  ⚠️  No version found in module")
         return 0, 1
     except Exception as e:
@@ -190,6 +241,7 @@ def test_json_configs():
     print("=" * 50)
     
     import json
+    base_dir = Path(__file__).resolve().parent
     
     json_files = [
         "auris_runtime.json",
@@ -201,9 +253,10 @@ def test_json_configs():
     failed = 0
     
     for filename in json_files:
-        if os.path.exists(filename):
+        file_path = base_dir / filename
+        if file_path.exists():
             try:
-                with open(filename, "r") as f:
+                with open(file_path, "r", encoding="utf-8", errors="strict") as f:
                     json.load(f)
                 print(f"  ✅ {filename}")
                 passed += 1
