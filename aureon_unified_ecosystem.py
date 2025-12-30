@@ -5607,8 +5607,47 @@ class AdaptiveLearningEngine:
         self.learning_rate = 0.05  # How quickly to adapt
         self.min_samples_for_learning = 20  # Minimum trades before adjusting
         self.confidence_interval = 0.95  # Statistical confidence for changes
+
+        self._maybe_auto_reset_on_startup()
         
         self._load_history()
+
+    def _maybe_auto_reset_on_startup(self) -> None:
+        """Optionally reset learned analytics at process startup.
+
+        Controlled by env vars:
+        - AUREON_AUTO_RESET_LEARNED_ANALYTICS=1
+        - AUREON_AUTO_RESET_LEARNED_ANALYTICS_REASON=...
+        - AUREON_LEARNED_ANALYTICS_REGIME_TAG=...
+        - AUREON_AUTO_RESET_LEARNED_ANALYTICS_FORCE=1
+        - AUREON_AUTO_RESET_LEARNED_ANALYTICS_NO_ARCHIVE=1
+        """
+        try:
+            from learned_analytics_reset import auto_reset_config, reset_learned_analytics_if_needed
+        except Exception:
+            return
+
+        cfg = auto_reset_config()
+        if not cfg.get('enabled'):
+            return
+
+        result = reset_learned_analytics_if_needed(
+            history_path=self.history_file,
+            reason=str(cfg.get('reason') or 'startup auto reset'),
+            regime_tag=str(cfg.get('regime_tag') or 'penny_profit_v1'),
+            force=bool(cfg.get('force')),
+            archive=bool(cfg.get('archive', True)),
+        )
+
+        if result.error:
+            logger.warning(f"Adaptive Learning: auto-reset failed: {result.error}")
+            return
+
+        if result.did_reset:
+            if result.backup_path:
+                logger.info(f"Adaptive Learning: auto-reset complete (archived → {result.backup_path})")
+            else:
+                logger.info("Adaptive Learning: auto-reset complete")
         
     def _load_history(self):
         """Load historical trades from file."""
@@ -6128,11 +6167,20 @@ class AdaptiveLearningEngine:
                 recommendation['warnings'].append(f"❌ BLOCKED: {band} = {freq_wr*100:.0f}% WR historically")
                 
         # Hard block on losing hours
+        # IMPORTANT: hour-of-day is a noisy feature with small sample sizes.
+        # Only hard-block when we have enough hour-specific observations.
         if hour_total >= 3:
             hour_wr = hour_metrics.get('wins', 0) / hour_total
-            if hour_wr < 0.25:  # This hour loses - BLOCK
-                recommendation['should_trade'] = False
-                recommendation['warnings'].append(f"❌ BLOCKED: Hour {current_hour}:00 = {hour_wr*100:.0f}% WR")
+            # With small n, warn but don't hard-block.
+            if hour_total < 10:
+                if hour_wr < 0.25:
+                    recommendation['warnings'].append(
+                        f"⚠️ Hour {current_hour}:00 looks weak ({hour_wr*100:.0f}% WR on {hour_total} trades)"
+                    )
+            else:
+                if hour_wr < 0.25:  # This hour loses - BLOCK
+                    recommendation['should_trade'] = False
+                    recommendation['warnings'].append(f"❌ BLOCKED: Hour {current_hour}:00 = {hour_wr*100:.0f}% WR")
                 
         # Block on very low expected win rate (with confidence)
         if recommendation['expected_win_rate'] < 0.40 and recommendation['confidence'] in ['high', 'medium']:

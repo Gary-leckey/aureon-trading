@@ -89,9 +89,11 @@ def main():
             json.dump(learning, f, indent=2)
         print(f"\n📦 Archived learning history to: {learning_archive}")
         
-        # Reset learning metrics
-        learning['trade_history'] = []
+        # Reset learning metrics (current schema uses 'trades' + 'thresholds')
+        learning['trades'] = []
+        learning['thresholds'] = {}
         learning['beta_reset'] = timestamp
+        learning['updated_at'] = datetime.now().isoformat()
         
         with open(LEARNING_FILE, 'w') as f:
             json.dump(learning, f, indent=2)

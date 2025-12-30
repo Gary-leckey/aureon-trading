@@ -62,6 +62,9 @@ class TestNetProfitAfterFeesSmoke(unittest.TestCase):
         eco.memory.record = MagicMock()
         eco.memory.is_surge_window_active = MagicMock(return_value=False)
 
+        eco.elephant_memory = MagicMock()
+        eco.elephant_memory.record = MagicMock()
+
         eco.refresh_equity = MagicMock()
         eco.save_state = MagicMock()
         eco._record_sniper_kill = MagicMock()
