@@ -11301,6 +11301,9 @@ class AureonKrakenEcosystem:
         # Initialize Multi-Exchange Client
         self.client = MultiExchangeClient()
         self.dry_run = self.client.dry_run
+
+        # Positions must exist before any subsystem syncs that may reference it
+        self.positions = {}
         
         # 🇮🇪🎯 IRA SNIPER MODE - ensure activation across every platform and asset we can sell
         self.sniper_config = get_sniper_config() if CELTIC_SNIPER_AVAILABLE else {}
@@ -11322,7 +11325,11 @@ class AureonKrakenEcosystem:
         self.enhancements = EnhancementLayer() if ENHANCEMENTS_AVAILABLE else None  # 🔯 CODEX INTEGRATION
         self.market_pulse = MarketPulse(self.client) # Initialize Market Pulse
         self.tracker = PerformanceTracker(initial_balance)
-        self.memory = ElephantMemory()  # 🐘 Initialize Elephant Memory
+        # Two distinct memories:
+        # - ElephantMemory: symbol-level cooldown/blacklist + JSONL event trail
+        # - Memory Core (spiral_memory): durable position memory + surge windows + reconciliation
+        self.elephant_memory = ElephantMemory()  # 🐘 Symbol intelligence + event trail
+        self.memory = spiral_memory  # 🌀 Durable memory core
         self.flux_predictor = SystemFluxPredictor() # 🔮 Initialize Flux Predictor
 
         # Mirror harmonic engine reference for convenience
@@ -11336,9 +11343,6 @@ class AureonKrakenEcosystem:
         self.cash_balance_gbp = initial_balance
         self.holdings_gbp: Dict[str, float] = {}
         self.quote_currency_suffixes: List[str] = sorted(CONFIG['QUOTE_CURRENCIES'], key=len, reverse=True)
-        
-        # Positions
-        self.positions: Dict[str, Position] = {}
         
         # Market data
         self.ticker_cache: Dict[str, Dict] = {}
@@ -12005,8 +12009,9 @@ class AureonKrakenEcosystem:
 
         # 🐘 Append to elephant history as a second durable channel
         try:
-            if hasattr(self, 'memory') and self.memory:
-                self.memory.record_event('mycelium_heartbeat', snapshot)
+            em = getattr(self, 'elephant_memory', None)
+            if em:
+                em.record_event('mycelium_heartbeat', snapshot)
         except Exception:
             pass
 
@@ -14515,8 +14520,8 @@ class AureonKrakenEcosystem:
                             break
                     
                     # Also check elephant memory for historical entry data
-                    if not position_entry and hasattr(self, 'memory'):
-                        mem_data = self.memory.get_symbol_data(symbol) or self.memory.get_symbol_data(f"{base_asset}USDC") or self.memory.get_symbol_data(f"{base_asset}USD")
+                    if not position_entry and hasattr(self, 'elephant_memory'):
+                        mem_data = self.elephant_memory.get_symbol_data(symbol) or self.elephant_memory.get_symbol_data(f"{base_asset}USDC") or self.elephant_memory.get_symbol_data(f"{base_asset}USD")
                         if mem_data and mem_data.get('last_entry_price'):
                             # Create a pseudo-position for calculation
                             # Use combined rate (fee + slippage + spread) to match penny profit formula
@@ -15651,7 +15656,7 @@ class AureonKrakenEcosystem:
                     continue  # Skip blacklisted symbols
             
             # 🐘 Check Elephant Memory blacklist/cooldown
-            if self.memory.should_avoid(symbol):
+            if self.elephant_memory.should_avoid(symbol):
                 continue
             
             # Filter based on tradeable quote currencies
@@ -16317,19 +16322,22 @@ class AureonKrakenEcosystem:
             )
             result['confirmation'] = confirmation
             
-            # Log to elephant memory
-            self.memory.record_trade(
-                symbol=symbol,
-                entry_price=result.get('effective_price', 0),
-                exit_price=0,  # Will update on close
-                pnl=0,
-                duration=0,
-                metadata={
-                    'type': 'smart_routed',
-                    'exchange': result.get('routed_to'),
-                    'savings_pct': result.get('savings_pct', 0)
-                }
-            )
+            # Log to Elephant Memory event trail
+            try:
+                em = getattr(self, 'elephant_memory', None)
+                if em:
+                    em.record_event('smart_routed_order', {
+                        'symbol': symbol,
+                        'side': side,
+                        'quantity': quantity,
+                        'quote_qty': quote_qty,
+                        'effective_price': result.get('effective_price', 0),
+                        'routed_to': result.get('routed_to'),
+                        'savings_pct': result.get('savings_pct', 0),
+                        'confirmation': result.get('confirmation'),
+                    })
+            except Exception:
+                pass
         
         return result
     
@@ -17446,7 +17454,7 @@ class AureonKrakenEcosystem:
         self.capital_pool.allocate(symbol, pos_size)
         
         # 🐘 Record the successful hunt
-        self.memory.record_hunt(symbol, opp.get('volume', 0), opp.get('change24h', 0))
+        self.elephant_memory.record_hunt(symbol, opp.get('volume', 0), opp.get('change24h', 0))
         
         self.tracker.total_fees += entry_fee
         # Track entry fee in platform metrics
@@ -18161,7 +18169,7 @@ class AureonKrakenEcosystem:
         self.mycelium.learn(symbol, pct)
         
         # 🐘 Record trade result in Elephant Memory
-        self.memory.record(symbol, net_pnl)
+        self.elephant_memory.record(symbol, net_pnl)
         
         # 🧠 Record trade in Adaptive Learning Engine WITH NEWS/KNOWLEDGE CORRELATION
         ticker_snapshot = self.ticker_cache.get(symbol, {}) if hasattr(self, 'ticker_cache') else {}
@@ -19136,10 +19144,27 @@ class AureonKrakenEcosystem:
         # Reconstructs lost trade history using the Memory Core
         if not self.dry_run:
             print("   🐘 Reconciling memory with reality...")
-            self.memory.reconcile_with_reality(
-                current_positions=self.positions,
-                fetch_origin_fn=self._fetch_origin_trade
-            )
+            try:
+                all_balances = self.client.get_all_balances() or {}
+                wallet_assets: Dict[str, float] = {}
+                if isinstance(all_balances, dict):
+                    for _exchange, balances in all_balances.items():
+                        if not isinstance(balances, dict):
+                            continue
+                        for asset, qty in balances.items():
+                            try:
+                                q = float(qty or 0)
+                            except Exception:
+                                q = 0.0
+                            if q:
+                                wallet_assets[asset] = wallet_assets.get(asset, 0.0) + q
+
+                self.memory.reconcile_with_reality(
+                    wallet_assets=wallet_assets,
+                    trade_history_callback=self._fetch_origin_trade,
+                )
+            except Exception as e:
+                logger.warning(f"🌀 Memory reconciliation skipped: {e}")
 
         # Find initial opportunities for WebSocket
         initial_opps = self.find_opportunities()

@@ -40,8 +40,9 @@ def main():
         print("   ALPACA_SECRET_KEY=your_secret")
         return
     
-    print(f"✅ API Key: {api_key[:8]}...")
-    print(f"✅ Secret: {secret_key[:8]}...")
+    # Don't print credential material (even partially) to stdout.
+    print("✅ API Key: [set]")
+    print("✅ Secret: [set]")
     
     client = AlpacaClient()
     

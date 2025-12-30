@@ -345,21 +345,8 @@ class UnifiedExchangeClient:
             
         elif self.exchange_id == "alpaca":
             try:
-                if asset in ['USD', 'USDT']: # Cash
-                    acct = self.client.get_account()
-                    return float(acct.get('cash', 0.0))
-                
-                # Check positions
-                # Alpaca positions are by symbol e.g. 'BTCUSD'
-                # But we want balance of 'BTC'.
-                # We need to iterate positions.
-                positions = self.client.get_positions()
-                for pos in positions:
-                    # pos['symbol'] might be 'BTC/USD' or 'BTCUSD'
-                    sym = pos.get('symbol', '').replace('/', '')
-                    if sym.startswith(asset) and (sym == asset or sym == f"{asset}USD"):
-                        return float(pos.get('qty', 0.0))
-                return 0.0
+                # Prefer the client's own Kraken-compatible balance helper.
+                return float(self.client.get_free_balance(asset) or 0.0)
             except Exception as e:
                 logger.error(f"Error getting Alpaca balance: {e}")
                 return 0.0
@@ -389,25 +376,8 @@ class UnifiedExchangeClient:
         
         if self.exchange_id == 'alpaca':
             try:
-                # Cash
-                acct = self.client.get_account()
-                cash = float(acct.get('cash', 0.0))
-                if cash > 0:
-                    balances['USD'] = cash
-                
-                # Positions
-                positions = self.client.get_positions()
-                for pos in positions:
-                    qty = float(pos.get('qty', 0.0))
-                    if qty > 0:
-                        # Symbol is usually BTC/USD. We want BTC.
-                        sym = pos.get('symbol', '')
-                        if '/' in sym:
-                            base = sym.split('/')[0]
-                            balances[base] = qty
-                        else:
-                            balances[sym] = qty
-                return balances
+                # Use the client's Kraken-compatible balance map (qty_available aware).
+                return self.client.get_account_balance() or {}
             except Exception as e:
                 logger.error(f"Error getting Alpaca balances: {e}")
                 return {}
@@ -746,21 +716,11 @@ class UnifiedExchangeClient:
             return self.client.place_market_order(symbol, side, quantity=quantity, quote_qty=quote_qty)
             
         elif self.exchange_id == "alpaca":
-            # Alpaca uses 'qty' for base asset, 'notional' for quote asset (if supported for crypto)
-            # Crypto API supports 'qty' or 'notional'.
             try:
-                if quantity:
-                    return self.client.place_order(symbol, quantity, side, type="market")
-                elif quote_qty:
-                    # Alpaca supports notional for market orders
-                    # But let's check if place_order supports it.
-                    # My AlpacaClient.place_order takes qty.
-                    # I should update AlpacaClient or calculate qty here.
-                    # Let's calculate qty.
-                    ticker = self.get_ticker(symbol)
-                    if ticker['price'] > 0:
-                        qty = quote_qty / ticker['price']
-                        return self.client.place_order(symbol, qty, side, type="market")
+                # Route through AlpacaClient's Kraken-compatible helper which:
+                # - converts quote_qty -> qty
+                # - clamps SELL qty to qty_available (fee-safe)
+                return self.client.place_market_order(symbol, side, quantity=quantity, quote_qty=quote_qty)
             except Exception as e:
                 logger.error(f"Error placing Alpaca order: {e}")
                 return {}

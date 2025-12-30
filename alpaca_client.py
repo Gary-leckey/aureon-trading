@@ -2,12 +2,38 @@ import os
 import requests
 import time
 import logging
+from pathlib import Path
 from typing import Dict, Any, Iterable, List, Optional
 
 # Load environment variables from .env file
+#
+# NOTE:
+# This project is often run from different working directories (or via stdin).
+# `python-dotenv`'s default `find_dotenv()` can fail or miss the repo root.
+# We therefore try a few explicit candidate paths before falling back.
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+
+    dotenv_candidates = []
+    explicit = os.getenv("DOTENV_PATH")
+    if explicit:
+        dotenv_candidates.append(Path(explicit))
+
+    dotenv_candidates.append(Path.cwd() / ".env")
+    dotenv_candidates.append(Path(__file__).resolve().parent / ".env")
+
+    loaded = False
+    for candidate in dotenv_candidates:
+        try:
+            if candidate.exists():
+                load_dotenv(dotenv_path=str(candidate), override=False)
+                loaded = True
+                break
+        except Exception:
+            continue
+
+    if not loaded:
+        load_dotenv(override=False)
 except ImportError:
     pass
 
@@ -33,6 +59,7 @@ class AlpacaClient:
         self.data_url = "https://data.alpaca.markets"
         
         self.session = requests.Session()
+        self.last_error: Optional[Dict[str, Any]] = None
         if self.api_key and self.secret_key:
             self.session.headers.update({
                 "APCA-API-KEY-ID": self.api_key,
@@ -46,11 +73,21 @@ class AlpacaClient:
         try:
             resp = self.session.request(method, url, params=params, json=data, timeout=10)
             if not resp.ok:
-                logger.error(f"Alpaca API Error {resp.status_code}: {resp.text}")
+                body_text = (resp.text or "").strip()
+                logger.error(f"Alpaca API Error {resp.status_code}: {body_text}")
+                self.last_error = {
+                    "status_code": resp.status_code,
+                    "body": body_text[:2000],
+                    "endpoint": endpoint,
+                    "url": url,
+                }
                 return {}
+
+            self.last_error = None
             return resp.json()
         except Exception as e:
             logger.error(f"Alpaca Request Failed: {e}")
+            self.last_error = {"exception": str(e), "endpoint": endpoint, "url": url}
             return {}
 
     # ═════════════════════════════════════════════════════════════════════=
@@ -826,6 +863,7 @@ class AlpacaClient:
             Order response
         """
         symbol = self._resolve_symbol(symbol)
+        side_norm = (side or '').lower()
         if quote_qty and not quantity:
             # Need to estimate quantity from quote
             try:
@@ -841,6 +879,28 @@ class AlpacaClient:
         if not quantity:
             logger.error(f"Cannot place market order without quantity for {symbol}")
             return {}
+
+        # Crypto SELLs can fail if you try to sell the full filled quantity because
+        # Alpaca may reserve a small amount for fees/spread, leaving qty_available
+        # slightly below filled_qty. Clamp to available to prevent 40310000.
+        try:
+            if side_norm == 'sell' and '/' in symbol:
+                base = symbol.split('/')[0]
+                available = float(self.get_free_balance(base) or 0.0)
+                req = float(quantity or 0.0)
+                if available > 0 and req > 0:
+                    if req > available:
+                        logger.warning(
+                            f"Alpaca SELL clamped for {symbol}: requested {req:.12f} > available {available:.12f}"
+                        )
+                        req = available
+                    # Extra safety margin to avoid rounding/hold/reserve edge
+                    req = req * 0.999
+                    if req <= 0:
+                        return {}
+                    quantity = req
+        except Exception:
+            pass
             
         return self.place_order(symbol, quantity, side, type="market")
 
@@ -961,7 +1021,8 @@ class AlpacaClient:
                 norm = self._normalize_pair_symbol(pos.get('symbol', '')) or ''
                 base = norm.split('/')[0] if '/' in norm else ''
                 if base.upper() == asset.upper():
-                    return float(pos.get('qty', 0) or 0)
+                    # Prefer qty_available when present (crypto fee/hold safe)
+                    return float(pos.get('qty_available', pos.get('qty', 0)) or 0)
             return 0.0
         except:
             return 0.0
@@ -982,7 +1043,7 @@ class AlpacaClient:
             
             positions = self.get_positions()
             for pos in positions:
-                qty = float(pos.get('qty', 0) or 0)
+                qty = float(pos.get('qty_available', pos.get('qty', 0)) or 0)
                 if qty > 0:
                     norm = self._normalize_pair_symbol(pos.get('symbol', '')) or ''
                     base = norm.split('/')[0] if '/' in norm else ''
