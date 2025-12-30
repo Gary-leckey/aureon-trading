@@ -14402,58 +14402,64 @@ class AureonKrakenEcosystem:
         
         # ═══════════════════════════════════════════════════════════════
         # 🧠🌍 BRAIN GATE CHECK - 7 CIVILIZATIONS + QUANTUM BRAIN
-        # 🪙 PENNY MODE: Advisory only - the penny profit math is the real gate
+        # 🔒 VALIDATION LOCK: The Brain is now a HARD GATE.
         # ═══════════════════════════════════════════════════════════════
         brain_ok, brain_reason = self.should_trade_brain()
         if not brain_ok:
-            logger.info(f"🧠⚠️ {symbol}: BRAIN ADVISORY - {brain_reason} (allowing entry anyway)")
-            # Don't block - just log the advisory
+            logger.info(f"⛔ {symbol}: BRAIN BLOCKED - {brain_reason}")
+            return False
         
         brain_consensus = opp.get('brain_consensus', ECOSYSTEM_BRAIN._brain_consensus)
         brain_confidence = opp.get('brain_confidence', ECOSYSTEM_BRAIN._brain_confidence)
         brain_rec = ECOSYSTEM_BRAIN.get_trading_recommendation()
         
-        # 🪙 PENNY MODE: Brain is advisory, don't block entry
-        if brain_rec['action'] == 'REDUCE' and brain_confidence > 0.7:
-            logger.info(f"🧠⚠️ {symbol}: Brain says REDUCE (conf={brain_confidence:.0%}) - advisory only")
-            # Don't block - penny math is the gate
+        # 🔒 HARD GATE: If Brain says REDUCE, we do NOT enter.
+        if brain_rec['action'] == 'REDUCE' and brain_confidence > 0.6:
+            logger.info(f"⛔ {symbol}: Brain says REDUCE (conf={brain_confidence:.0%}) - BLOCKED by Validation Lock")
+            return False
         
         # If brain is very bullish, log approval
         if brain_rec['action'] == 'BUY' and brain_confidence > 0.7:
             logger.info(f"🧠📈 {symbol}: Brain APPROVED (7 Civs: {brain_rec['civilizations_bullish']}/7 bullish)")
         
         # ═══════════════════════════════════════════════════════════════
-        # 🔮 PROBABILITY MATRIX DECISION - 🪙 ADVISORY ONLY
-        # Penny profit math is the real gate - if we can make $0.01, take it!
+        # 🔮 PROBABILITY MATRIX DECISION - 🔒 VALIDATION LOCK ACTIVE
+        # The user demands 99.99% WR - Validation is now BINDING.
         # ═══════════════════════════════════════════════════════════════
         prob_action = opp.get('prob_action', 'HOLD')
         probability = opp.get('probability', 0.5)
         prob_confidence = opp.get('prob_confidence', 0.0)
         
-        # 🪙 PENNY MODE: All matrix signals are advisory - log but don't block
-        if prob_confidence >= 0.5:
-            if prob_action in ['SELL', 'STRONG SELL']:
-                logger.info(f"⚠️ {symbol}: Matrix says {prob_action} (prob={probability:.0%}) - advisory only, penny math is gate")
-                # Don't block - penny profit math decides
-            if prob_action == 'HOLD' and probability < 0.50:
-                logger.info(f"⚠️ {symbol}: Matrix says HOLD (prob={probability:.0%}) - advisory only")
-                # Don't block
+        # 🔒 HARD GATE: Reject weak signals
+        if prob_action in ['SELL', 'STRONG SELL']:
+            logger.info(f"⛔ {symbol}: Matrix says {prob_action} (prob={probability:.0%}) - BLOCKED by Validation Lock")
+            return False
+            
+        if prob_action == 'HOLD' and probability < 0.60:
+            logger.info(f"⛔ {symbol}: Matrix says HOLD (prob={probability:.0%}) - BLOCKED by Validation Lock")
+            return False
+            
+        # 🔒 HARD GATE: Reject SLIGHT BUY if confidence is low
+        # User wants 99.99% WR - we can't take "SLIGHT" risks without high probability
+        if prob_action == 'SLIGHT BUY' and probability < 0.75:
+            logger.info(f"⛔ {symbol}: Matrix says SLIGHT BUY (prob={probability:.0%}) - BLOCKED (Need >75% for Slight Buy)")
+            return False
         
         # ✅ Log when matrix says BUY
         if prob_action in ['BUY', 'STRONG BUY', 'SLIGHT BUY']:
             logger.info(f"✅ {symbol}: Matrix says {prob_action} (prob={probability:.0%}, conf={prob_confidence:.0%}) - APPROVED!")
         
         # ═══════════════════════════════════════════════════════════════
-        # 📊 IMPERIAL PREDICTION - 🪙 ADVISORY ONLY
+        # 📊 IMPERIAL PREDICTION - 🔒 VALIDATION LOCK ACTIVE
         # ═══════════════════════════════════════════════════════════════
         imperial_action = opp.get('imperial_action', 'HOLD')
         imperial_prob = opp.get('imperial_probability', 0.5)
         imperial_conf = opp.get('imperial_confidence', 0.0)
         
-        # 🪙 PENNY MODE: Imperial is advisory, don't block
-        if imperial_conf >= 0.5 and imperial_action in ['SELL', 'STRONG SELL']:
-            logger.info(f"🌌⚠️ {symbol}: Imperial says {imperial_action} - advisory only")
-            # Don't block - penny profit math is the gate
+        # 🔒 HARD GATE: Imperial Prediction must not contradict
+        if imperial_conf >= 0.6 and imperial_action in ['SELL', 'STRONG SELL']:
+            logger.info(f"⛔ {symbol}: Imperial says {imperial_action} - BLOCKED by Validation Lock")
+            return False
             
         # ═══ GET LEARNED RECOMMENDATION - 🪙 ADVISORY ONLY ═══
         try:
