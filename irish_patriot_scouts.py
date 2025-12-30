@@ -112,7 +112,7 @@ except ImportError:
     IRA_SNIPER_AVAILABLE = False
 
 try:
-    from penny_profit_engine import get_penny_params, should_exit_penny_profit
+    from penny_profit_engine import get_penny_engine, check_penny_exit
     PENNY_ENGINE_AVAILABLE = True
 except ImportError:
     PENNY_ENGINE_AVAILABLE = False
@@ -430,18 +430,36 @@ class PatriotScout:
         
         # 1. 🪙 SHARED GOAL: PENNY PROFIT VICTORY (Dynamic calculation)
         if PATRIOT_CONFIG['INSTANT_VICTORY_EXIT']:
-            # Try to get dynamic penny threshold from ecosystem
-            target = PATRIOT_CONFIG.get('PENNY_PROFIT_TARGET', 0.01)
+            # Use dynamic ecosystem penny math if available; otherwise fall back to penny_profit_engine.
+            # IMPORTANT: `unrealized_pnl` is a gross P&L figure, so the target must be a gross threshold.
+            target_gross = None
+            approx_cost = 0.0
+
             if PATRIOT_CONFIG.get('USE_DYNAMIC_PENNY_MATH', True):
                 try:
                     from aureon_unified_ecosystem import get_penny_threshold
-                    penny = get_penny_threshold('binance', self.entry_value_usd)
+                    penny = get_penny_threshold(self.exchange, self.entry_value_usd)
                     if penny:
-                        target = penny['win_gte']  # Use exact calculated threshold
+                        target_gross = float(penny.get('win_gte', 0) or 0)
+                        approx_cost = float(penny.get('cost', 0) or 0)
                 except ImportError:
-                    pass  # Use fallback
-            if self.unrealized_pnl >= target:
-                return True, f"🪙 SHARED GOAL! +${self.unrealized_pnl:.4f} >= ${target:.4f} net"
+                    pass
+
+            if target_gross is None and PENNY_ENGINE_AVAILABLE:
+                try:
+                    threshold = get_penny_engine().get_threshold(self.exchange, self.entry_value_usd)
+                    target_gross = float(threshold.win_gte)
+                    approx_cost = float(threshold.total_cost)
+                except Exception:
+                    target_gross = None
+
+            if target_gross is None:
+                # Last-resort fallback (treat config as gross)
+                target_gross = float(PATRIOT_CONFIG.get('PENNY_PROFIT_TARGET', 0.01) or 0.01)
+
+            if self.unrealized_pnl >= target_gross:
+                approx_net = self.unrealized_pnl - approx_cost
+                return True, f"🪙 SHARED GOAL! gross +${self.unrealized_pnl:.4f} >= ${target_gross:.4f} (≈net +${approx_net:.4f})"
         
         # 2. PREEMPTIVE EXIT SIGNAL
         if self.preemptive_signal and PATRIOT_CONFIG['PREEMPTIVE_EXIT_ENABLED']:
@@ -737,7 +755,7 @@ class PatriotScoutNetwork:
             entry_value_usd=size,
             current_price=price,
             status="recruited",
-            target_profit_usd=PATRIOT_CONFIG.get('PENNY_PROFIT_TARGET', 0.15)
+            target_profit_usd=PATRIOT_CONFIG.get('PENNY_PROFIT_TARGET', 0.01)
         )
         
         # Wire intelligence

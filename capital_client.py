@@ -385,10 +385,25 @@ class CapitalClient:
                 return response.json()
             else:
                 logger.error(f"Capital.com order failed: {response.text}")
-                return {'error': response.text}
+                return {
+                    'rejected': True,
+                    'error': 'http_error',
+                    'status_code': response.status_code,
+                    'reason': response.text,
+                    'symbol': symbol,
+                    'side': side,
+                    'quantity': quantity,
+                }
         except Exception as e:
             logger.error(f"Capital.com order error: {e}")
-            return {'error': str(e)}
+            return {
+                'rejected': True,
+                'error': 'exception',
+                'reason': str(e),
+                'symbol': symbol,
+                'side': side,
+                'quantity': quantity,
+            }
 
     def confirm_order(self, deal_reference: str) -> Dict[str, Any]:
         """Fetch confirmation for a previously submitted deal reference."""

@@ -710,10 +710,32 @@ class UnifiedExchangeClient:
                 return self.client.place_market_order(symbol, side, quantity=quantity, quote_qty=quote_qty)
             except Exception as e:
                 logger.error(f"Error placing Kraken order: {e}")
-                return {}
+                return {
+                    'rejected': True,
+                    'error': 'exception',
+                    'reason': str(e),
+                    'exchange': self.exchange_id,
+                    'symbol': symbol,
+                    'side': side,
+                    'quantity': quantity,
+                    'quote_qty': quote_qty,
+                }
 
         elif self.exchange_id == "binance":
-            return self.client.place_market_order(symbol, side, quantity=quantity, quote_qty=quote_qty)
+            try:
+                return self.client.place_market_order(symbol, side, quantity=quantity, quote_qty=quote_qty)
+            except Exception as e:
+                logger.error(f"Error placing Binance order: {e}")
+                return {
+                    'rejected': True,
+                    'error': 'exception',
+                    'reason': str(e),
+                    'exchange': self.exchange_id,
+                    'symbol': symbol,
+                    'side': side,
+                    'quantity': quantity,
+                    'quote_qty': quote_qty,
+                }
             
         elif self.exchange_id == "alpaca":
             try:
@@ -723,7 +745,16 @@ class UnifiedExchangeClient:
                 return self.client.place_market_order(symbol, side, quantity=quantity, quote_qty=quote_qty)
             except Exception as e:
                 logger.error(f"Error placing Alpaca order: {e}")
-                return {}
+                return {
+                    'rejected': True,
+                    'error': 'exception',
+                    'reason': str(e),
+                    'exchange': self.exchange_id,
+                    'symbol': symbol,
+                    'side': side,
+                    'quantity': quantity,
+                    'quote_qty': quote_qty,
+                }
 
         elif self.exchange_id == "capital":
             try:
@@ -737,9 +768,27 @@ class UnifiedExchangeClient:
                         return self.client.place_market_order(symbol, side, qty)
             except Exception as e:
                 logger.error(f"Error placing Capital.com order: {e}")
-                return {}
+                return {
+                    'rejected': True,
+                    'error': 'exception',
+                    'reason': str(e),
+                    'exchange': self.exchange_id,
+                    'symbol': symbol,
+                    'side': side,
+                    'quantity': quantity,
+                    'quote_qty': quote_qty,
+                }
 
-        return {}
+        return {
+            'rejected': True,
+            'error': 'invalid_order',
+            'reason': 'Must provide quantity or quote_qty',
+            'exchange': self.exchange_id,
+            'symbol': symbol,
+            'side': side,
+            'quantity': quantity,
+            'quote_qty': quote_qty,
+        }
 
     # ══════════════════════════════════════════════════════════════════════
     # ADVANCED ORDER TYPES - Limit, Stop-Loss, Take-Profit, Trailing Stop

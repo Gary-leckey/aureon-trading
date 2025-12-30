@@ -608,8 +608,11 @@ PENNY_PROFIT_CONFIG = {}  # Optional overrides from JSON
 PENNY_PROFIT_ENABLED = True  # Always enabled - dynamic calculation works without config
 PENNY_TARGET_NET = 0.01  # Default target: $0.01 net profit per trade
 
+# Shared-goal net target guardrails: 1–3 pennies after all costs.
+GLOBAL_NET_PROFIT_RANGE = (0.01, 0.03)
+
 # Binance must always capture between $0.01 and $0.03 NET after all fees
-BINANCE_NET_PROFIT_RANGE = (0.01, 0.03)
+BINANCE_NET_PROFIT_RANGE = GLOBAL_NET_PROFIT_RANGE
 
 # Default fee rates by exchange (can be overridden by CONFIG or JSON)
 DEFAULT_FEE_RATES = {
@@ -633,8 +636,17 @@ def load_penny_profit_config():
         try:
             with open(config_path, 'r') as f:
                 PENNY_PROFIT_CONFIG = json.load(f)
-            PENNY_TARGET_NET = PENNY_PROFIT_CONFIG.get('target_net_win', 0.01)
-            print(f"💰 Penny Profit Engine - DYNAMIC (target: +${PENNY_TARGET_NET:.2f} net per trade)")
+            loaded_target = float(PENNY_PROFIT_CONFIG.get('target_net_win', 0.01) or 0.01)
+
+            # Clamp the configured target into our shared-goal guardrails.
+            min_net, max_net = GLOBAL_NET_PROFIT_RANGE
+            PENNY_TARGET_NET = max(min_net, min(max_net, loaded_target))
+            if PENNY_TARGET_NET != loaded_target:
+                print(
+                    f"💰 Penny Profit Engine - DYNAMIC (target clamped: requested ${loaded_target:.2f} → ${PENNY_TARGET_NET:.2f} net per trade)"
+                )
+            else:
+                print(f"💰 Penny Profit Engine - DYNAMIC (target: +${PENNY_TARGET_NET:.2f} net per trade)")
         except Exception as e:
             print(f"⚠️  Penny config load error: {e} - using dynamic defaults")
     else:
@@ -651,11 +663,18 @@ def clamp_target_net_for_exchange(exchange: str, target_net: float) -> Tuple[flo
     $0.01 and $0.03 after *all* costs (fees, slippage, spread).
     """
     ex_lower = (exchange or 'binance').lower()
+
+    # Global guardrails: always keep targets within 1–3 pennies.
+    global_min, global_max = GLOBAL_NET_PROFIT_RANGE
+    globally_clamped = max(global_min, min(global_max, target_net))
+    was_clamped = globally_clamped != target_net
+    target_net = globally_clamped
+
     if ex_lower == 'binance':
         min_net, max_net = BINANCE_NET_PROFIT_RANGE
         clamped = max(min_net, min(max_net, target_net))
-        return clamped, clamped != target_net
-    return target_net, False
+        return clamped, was_clamped or (clamped != target_net)
+    return target_net, was_clamped
 
 
 def get_exchange_fee_rate(exchange: str) -> float:
@@ -14399,6 +14418,7 @@ class AureonKrakenEcosystem:
         """
         # Minimal sanity checks
         if pos_size <= 0 or self.total_equity_gbp <= 0:
+            opp['entry_reject_reason'] = 'invalid position size or equity'
             return False
             
         symbol = opp.get('symbol', 'UNKNOWN')
@@ -14412,6 +14432,7 @@ class AureonKrakenEcosystem:
         penny_threshold = get_penny_threshold(exchange, pos_size)
         if not penny_threshold:
             logger.warning(f"⛔ {symbol}: Cannot calculate penny threshold - NO TRADE")
+            opp['entry_reject_reason'] = 'cannot calculate penny threshold'
             return False
             
         required_move_pct = penny_threshold['required_pct']  # e.g., 0.52%
@@ -14431,6 +14452,7 @@ class AureonKrakenEcosystem:
             probability = opp.get('probability', 0.5)
             if probability < 0.40:  # At least 40% chance
                 logger.info(f"🦅⛔ {symbol}: Force scout BLOCKED - Only {probability*100:.0f}% chance of +{required_move_pct:.3f}%")
+                opp['entry_reject_reason'] = f"force scout probability too low ({probability:.2f})"
                 return False
             logger.info(f"🦅 FORCE SCOUT {symbol}: {probability*100:.0f}% chance of +{required_move_pct:.3f}% → EXECUTING!")
             return True
@@ -14446,46 +14468,17 @@ class AureonKrakenEcosystem:
         # Brain must believe in UPWARD movement
         if brain_rec['action'] == 'REDUCE':
             logger.info(f"⛔ {symbol}: Brain says REDUCE - Price won't move +{required_move_pct:.3f}% | NO PENNY")
+            opp['entry_reject_reason'] = 'brain: REDUCE'
             return False
             
         if brain_rec['action'] == 'HOLD' and brain_confidence > 0.6:
             logger.info(f"⛔ {symbol}: Brain says HOLD (conf={brain_confidence:.0%}) - Not enough movement for penny | NO PENNY")
+            opp['entry_reject_reason'] = f"brain: HOLD (conf={brain_confidence:.2f})"
             return False
             
         if brain_rec['action'] == 'BUY' and brain_confidence > 0.5:
             logger.info(f"✅ {symbol}: Brain says BUY (conf={brain_confidence:.0%}) - Expects +{required_move_pct:.3f}% movement")
-        
-        # ═══════════════════════════════════════════════════════════════
-        # 🔮 STEP 3: Ask Matrix - "What's PROBABILITY of +{required_move_pct}%?"
-        # The Matrix calculates the ODDS of hitting our exact target
-        # ═══════════════════════════════════════════════════════════════
-        prob_action = opp.get('prob_action', 'HOLD')
-        probability = opp.get('probability', 0.5)
-        prob_confidence = opp.get('prob_confidence', 0.0)
-        
-        # We need HIGH probability of hitting penny profit
-        # SLIGHT BUY with 67% prob means only 67% chance of ANY profit, not penny profit
-        # Scale down: If Matrix says 67% for "some profit", actual penny prob is lower
-        adjusted_prob = probability * 0.85  # Conservative adjustment
-        
-        if prob_action in ['SELL', 'STRONG SELL']:
-            logger.info(f"⛔ {symbol}: Matrix says {prob_action} - 0% chance of +{required_move_pct:.3f}% | NO PENNY")
-            return False
-            
-        if prob_action == 'HOLD' and probability < 0.55:
-            logger.info(f"⛔ {symbol}: Matrix says HOLD ({probability*100:.0f}%) - Won't hit +{required_move_pct:.3f}% | NO PENNY")
-            return False
-            
-        # For SLIGHT BUY, need higher probability since the signal is weak
-        if prob_action == 'SLIGHT BUY' and adjusted_prob < 0.55:
-            logger.info(f"⛔ {symbol}: Matrix says SLIGHT BUY but adjusted prob={adjusted_prob*100:.0f}% - Won't hit penny | NO PENNY")
-            return False
-            
-        if prob_action in ['BUY', 'STRONG BUY']:
-            logger.info(f"✅ {symbol}: Matrix says {prob_action} ({probability*100:.0f}%) - Good odds for +{required_move_pct:.3f}%")
-        elif prob_action == 'SLIGHT BUY' and adjusted_prob >= 0.55:
-            logger.info(f"✅ {symbol}: Matrix says SLIGHT BUY (adj={adjusted_prob*100:.0f}%) - Acceptable odds for penny")
-        
+
         # ═══════════════════════════════════════════════════════════════
         # 🌌 STEP 4: Ask Imperial - "Is cosmic timing right for +{required_move_pct}%?"
         # Imperial validates the TIMING of our penny profit
@@ -14496,6 +14489,7 @@ class AureonKrakenEcosystem:
         # Imperial veto only if HIGHLY confident in SELL
         if imperial_conf >= 0.7 and imperial_action in ['SELL', 'STRONG SELL']:
             logger.info(f"⛔ {symbol}: Imperial says {imperial_action} (conf={imperial_conf:.0%}) - Cosmic timing wrong | NO PENNY")
+            opp['entry_reject_reason'] = f"imperial: {imperial_action} (conf={imperial_conf:.2f})"
             return False
         
         # If brain is very bullish, log approval
@@ -14503,7 +14497,7 @@ class AureonKrakenEcosystem:
             logger.info(f"🧠📈 {symbol}: Brain APPROVED (7 Civs: {brain_rec['civilizations_bullish']}/7 bullish)")
         
         # ═══════════════════════════════════════════════════════════════
-        # 🔮 PROBABILITY MATRIX DECISION - 🛡️ VALIDATION LOCK ACTIVE
+        # 🔮 STEP 3: Ask Matrix - "What's PROBABILITY of +{required_move_pct}%?"
         # We map the waves to plot the course. If the map says "Reef", we don't sail.
         # ═══════════════════════════════════════════════════════════════
         prob_action = opp.get('prob_action', 'HOLD')
@@ -14512,27 +14506,31 @@ class AureonKrakenEcosystem:
         
         # 🛡️ VALIDATION LOCK: Reject weak signals
         if prob_action in ['SELL', 'STRONG SELL']:
-            logger.info(f"⛔ {symbol}: Matrix says {prob_action} (prob={probability:.0%}) - BLOCKED by Validation Lock")
+            logger.info(f"⛔ {symbol}: Matrix says {prob_action} (prob={probability:.0%}) - Won't hit +{required_move_pct:.3f}% | NO PENNY")
+            opp['entry_reject_reason'] = f"matrix: {prob_action} (prob={probability:.2f})"
             return False
             
         if prob_action == 'HOLD' and probability < 0.60:
-            logger.info(f"⛔ {symbol}: Matrix says HOLD (prob={probability:.0%}) - BLOCKED by Validation Lock")
+            logger.info(f"⛔ {symbol}: Matrix says HOLD (prob={probability:.0%}) - Won't hit +{required_move_pct:.3f}% | NO PENNY")
+            opp['entry_reject_reason'] = f"matrix: HOLD (prob={probability:.2f})"
             return False
             
         # 🛡️ VALIDATION LOCK: Reject SLIGHT BUY if confidence is low
         # User wants 99.99% WR - we can't take "SLIGHT" risks without high probability
         if prob_action == 'SLIGHT BUY' and probability < 0.75:
-            logger.info(f"⛔ {symbol}: Matrix says SLIGHT BUY (prob={probability:.0%}) - BLOCKED (Need >75% for Slight Buy)")
+            logger.info(f"⛔ {symbol}: Matrix says SLIGHT BUY (prob={probability:.0%}) - Need ≥75% to justify +{required_move_pct:.3f}% | NO PENNY")
+            opp['entry_reject_reason'] = f"matrix: SLIGHT BUY (prob={probability:.2f})"
             return False
         
         # ✅ Log when matrix says BUY
         if prob_action in ['BUY', 'STRONG BUY', 'SLIGHT BUY']:
-            logger.info(f"✅ {symbol}: Matrix says {prob_action} (prob={probability:.0%}) - APPROVED!")
+            logger.info(f"✅ {symbol}: Matrix says {prob_action} (prob={probability:.0%}) - APPROVED for +{required_move_pct:.3f}%")
             
         # ═══════════════════════════════════════════════════════════════
         # 📚 STEP 5: Ask Learned - "Historically, do trades like this hit penny?"
         # The Learned system validates based on REAL HISTORICAL DATA
         # ═══════════════════════════════════════════════════════════════
+        recommendation = None
         try:
             frequency = opp.get('frequency', CONFIG.get('DEFAULT_FREQUENCY', 256))
             coherence = opp.get('coherence', 0.5)
@@ -14565,14 +14563,22 @@ class AureonKrakenEcosystem:
                 
                 # 🪙 SHARED GOAL CHECK: Does history say we'll hit penny profit?
                 historical_wr = recommendation['expected_win_rate']
+
+                # Learned blocking should be proportional to evidence.
+                # Avoid hard-blocking on tiny sample sizes (e.g. 3-6 trades).
+                learned_conf = (recommendation.get('confidence') or 'low').lower()
+                learned_similar = int(recommendation.get('similar_trades') or 0)
+                learned_should_trade = bool(recommendation.get('should_trade', True))
+                learned_block_evidence = (learned_conf in ('high', 'medium')) and (learned_similar >= 10)
                 
-                if recommendation['confidence'] == 'high' and not recommendation['should_trade']:
-                    logger.info(f"⛔ {symbol}: History says NO (WR={historical_wr*100:.0f}%) - Won't hit +{required_move_pct:.3f}% | NO PENNY")
+                if (not learned_should_trade) and learned_block_evidence and historical_wr < 0.40:
+                    logger.info(f"⛔ {symbol}: Learned blocks (WR={historical_wr*100:.0f}%, {learned_similar} samples, {learned_conf}) - NO PENNY")
+                    opp['entry_reject_reason'] = f"learned: blocks (WR={historical_wr:.2f}, n={learned_similar}, conf={learned_conf})"
                     return False
-                    
-                if recommendation['should_trade'] and historical_wr < 0.50:
-                    logger.info(f"⛔ {symbol}: History WR={historical_wr*100:.0f}% too low - Won't reliably hit penny | NO PENNY")
-                    return False
+                elif (not learned_should_trade) and not learned_block_evidence:
+                    logger.info(
+                        f"⚠️ {symbol}: Learned suggests SKIP (WR={historical_wr*100:.0f}%, {learned_similar} samples, {learned_conf}) - not blocking (low evidence)"
+                    )
                     
                 if historical_wr >= 0.60:
                     logger.info(f"✅ {symbol}: History WR={historical_wr*100:.0f}% - Good odds for +{required_move_pct:.3f}% penny profit")
@@ -14581,23 +14587,29 @@ class AureonKrakenEcosystem:
             logger.debug(f"Could not get learned recommendation: {e}")
             
         # ═══════════════════════════════════════════════════════════════
+        # 🎯 SMART ENTRY: Combine penny math WITH historical learning
+        # Block only when the learned system has enough evidence.
+        # ═══════════════════════════════════════════════════════════════
+        try:
+            if recommendation and not recommendation.get('should_trade', True):
+                expected_wr = float(recommendation.get('expected_win_rate', 0.5) or 0.5)
+                learned_conf = (recommendation.get('confidence') or 'low').lower()
+                learned_similar = int(recommendation.get('similar_trades') or 0)
+                learned_block_evidence = (learned_conf in ('high', 'medium')) and (learned_similar >= 10)
+                if learned_block_evidence and expected_wr < 0.40:
+                    logger.info(f"🚫 {symbol}: BLOCKED by historical data (WR={expected_wr*100:.0f}%, {learned_similar} samples, {learned_conf})")
+                    opp['entry_reject_reason'] = f"historical: blocked (WR={expected_wr:.2f}, n={learned_similar}, conf={learned_conf})"
+                    return False
+        except Exception:
+            pass
+
+        # ═══════════════════════════════════════════════════════════════
         # 🪙 FINAL CHECK: All systems validated → Will we hit the penny?
         # ═══════════════════════════════════════════════════════════════
         logger.info(f"🪙✅ {symbol}: ALL SYSTEMS AGREE - Good odds for +${target_net:.2f} net profit")
         logger.info(f"   📊 Entry: ${pos_size:.2f} @ ${price:.4f} → Target: ${required_price:.4f} (+{required_move_pct:.3f}%)")
-        
-        # 🎯 SMART ENTRY: Combine penny math WITH historical learning
-        # Don't enter trades that historically lose - that's not advisory, that's data!
-        try:
-            if recommendation and not recommendation.get('should_trade', True):
-                expected_wr = recommendation.get('expected_win_rate', 0.5)
-                if expected_wr < 0.40:  # Historical WR too low
-                    logger.info(f"🚫 {symbol}: BLOCKED by historical data (WR={expected_wr*100:.0f}%)")
-                    return False
-        except Exception:
-            pass
-            
-        # Penny math is still the final gate for sizing, but we don't enter losing trades
+
+        # Penny math is the shared goal; if we got here, we’re green-lit.
         return True
     
     def _get_binance_lot_size(self, symbol: str) -> tuple:
@@ -17427,7 +17439,8 @@ class AureonKrakenEcosystem:
             return None
 
         if not self.should_enter_trade(opp, pos_size, lattice_state, is_force_scout=is_force_scout):
-            print(f"   ⚪ Skipping {symbol}: portfolio gate rejected entry")
+            reason = opp.get('entry_reject_reason') or 'portfolio gate rejected entry'
+            print(f"   ⚪ Skipping {symbol}: {reason}")
             return None
         
         quote_amount_needed = pos_size
@@ -17525,7 +17538,15 @@ class AureonKrakenEcosystem:
                         elif isinstance(txids, str) and txids:
                             order_id = txids
                     if not order_id:
-                        print(f"   ⚠️ Order failed for {symbol}: No order ID returned")
+                        # Preserve response payload for diagnosing filter/permission issues.
+                        if isinstance(res, dict) and (res.get('error') or res.get('code') or res.get('msg') or res.get('reason')):
+                            print(f"   ⚠️ Order failed for {symbol}: {res.get('reason') or res.get('msg') or res.get('error') or 'No order ID'}")
+                            # Keep this short; full payload can be large.
+                            safe_keys = {k: res.get(k) for k in ('exchange', 'error', 'code', 'msg', 'reason', 'status_code', 'rejected') if k in res}
+                            if safe_keys:
+                                print(f"      ↳ details: {safe_keys}")
+                        else:
+                            print(f"   ⚠️ Order failed for {symbol}: No order ID returned")
                         return
                     
                     # 🔥 CRITICAL FIX: Use ACTUAL fill price, not pre-order price!

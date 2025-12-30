@@ -54,6 +54,18 @@ def get_dynamic_penny_threshold(exchange: str = 'binance', trade_size: float = 1
         pass
     return WIN_THRESHOLD  # Fallback
 
+
+def get_dynamic_required_r(exchange: str = 'binance', trade_size: float = 10.0) -> float:
+    """🪙 SHARED GOAL: Get the dynamic required move (r) for net penny profit."""
+    try:
+        from aureon_unified_ecosystem import get_penny_threshold
+        penny = get_penny_threshold(exchange, trade_size)
+        if penny:
+            return float(penny.get('required_r', REQUIRED_R) or REQUIRED_R)
+    except ImportError:
+        pass
+    return REQUIRED_R
+
 # Time constants
 SECONDS_PER_BAR = 60  # Assume 1-minute bars for crypto
 MAX_ACCEPTABLE_BARS = 30  # Don't want to hold longer than 30 bars
@@ -247,10 +259,12 @@ class WarStrategy:
         # ═══════════════════════════════════════════════════════════════
         # 🧮 CALCULATE PROBABILITY OF PENNY PROFIT
         # ═══════════════════════════════════════════════════════════════
+
+        required_r = get_dynamic_required_r(exchange, POSITION_SIZE)
         
         # How many bars to hit REQUIRED_R based on avg move?
         if avg_move > 0:
-            estimated_bars = REQUIRED_R / avg_move
+            estimated_bars = required_r / avg_move
         else:
             estimated_bars = 50  # Conservative default
         
@@ -274,10 +288,10 @@ class WarStrategy:
         # If avg_move * 10 bars > required_r, good chance
         moves_in_10_bars = avg_move * 10
         
-        if moves_in_10_bars >= REQUIRED_R:
-            prob_penny = 0.7 + (moves_in_10_bars / REQUIRED_R - 1) * 0.1
+        if moves_in_10_bars >= required_r:
+            prob_penny = 0.7 + (moves_in_10_bars / required_r - 1) * 0.1
         else:
-            prob_penny = 0.3 + (moves_in_10_bars / REQUIRED_R) * 0.3
+            prob_penny = 0.3 + (moves_in_10_bars / required_r) * 0.3
         
         # Adjust with historical win rate
         if sample_size >= 5:

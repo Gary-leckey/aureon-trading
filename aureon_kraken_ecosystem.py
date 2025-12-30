@@ -1849,7 +1849,8 @@ class AureonKrakenEcosystem:
             return
 
         if not self.should_enter_trade(opp, pos_size, lattice_state):
-            print(f"   ⚪ Skipping {symbol}: portfolio gate rejected entry")
+            reason = opp.get('entry_reject_reason') or 'portfolio gate rejected entry'
+            print(f"   ⚪ Skipping {symbol}: {reason}")
             return
         
         actual_fraction = (pos_size / self.tracker.balance) if self.tracker.balance > 0 else 0.0
