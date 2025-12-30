@@ -14402,7 +14402,7 @@ class AureonKrakenEcosystem:
         
         # ═══════════════════════════════════════════════════════════════
         # 🧠🌍 BRAIN GATE CHECK - 7 CIVILIZATIONS + QUANTUM BRAIN
-        # 🔒 VALIDATION LOCK: The Brain is now a HARD GATE.
+        # 🛡️ VALIDATION LOCK: The Brain is the Captain. It plots the course.
         # ═══════════════════════════════════════════════════════════════
         brain_ok, brain_reason = self.should_trade_brain()
         if not brain_ok:
@@ -14413,7 +14413,7 @@ class AureonKrakenEcosystem:
         brain_confidence = opp.get('brain_confidence', ECOSYSTEM_BRAIN._brain_confidence)
         brain_rec = ECOSYSTEM_BRAIN.get_trading_recommendation()
         
-        # 🔒 HARD GATE: If Brain says REDUCE, we do NOT enter.
+        # 🛡️ VALIDATION LOCK: If Brain says REDUCE, we do NOT enter.
         if brain_rec['action'] == 'REDUCE' and brain_confidence > 0.6:
             logger.info(f"⛔ {symbol}: Brain says REDUCE (conf={brain_confidence:.0%}) - BLOCKED by Validation Lock")
             return False
@@ -14423,14 +14423,14 @@ class AureonKrakenEcosystem:
             logger.info(f"🧠📈 {symbol}: Brain APPROVED (7 Civs: {brain_rec['civilizations_bullish']}/7 bullish)")
         
         # ═══════════════════════════════════════════════════════════════
-        # 🔮 PROBABILITY MATRIX DECISION - 🔒 VALIDATION LOCK ACTIVE
-        # The user demands 99.99% WR - Validation is now BINDING.
+        # 🔮 PROBABILITY MATRIX DECISION - 🛡️ VALIDATION LOCK ACTIVE
+        # We map the waves to plot the course. If the map says "Reef", we don't sail.
         # ═══════════════════════════════════════════════════════════════
         prob_action = opp.get('prob_action', 'HOLD')
         probability = opp.get('probability', 0.5)
         prob_confidence = opp.get('prob_confidence', 0.0)
         
-        # 🔒 HARD GATE: Reject weak signals
+        # 🛡️ VALIDATION LOCK: Reject weak signals
         if prob_action in ['SELL', 'STRONG SELL']:
             logger.info(f"⛔ {symbol}: Matrix says {prob_action} (prob={probability:.0%}) - BLOCKED by Validation Lock")
             return False
@@ -14439,7 +14439,7 @@ class AureonKrakenEcosystem:
             logger.info(f"⛔ {symbol}: Matrix says HOLD (prob={probability:.0%}) - BLOCKED by Validation Lock")
             return False
             
-        # 🔒 HARD GATE: Reject SLIGHT BUY if confidence is low
+        # 🛡️ VALIDATION LOCK: Reject SLIGHT BUY if confidence is low
         # User wants 99.99% WR - we can't take "SLIGHT" risks without high probability
         if prob_action == 'SLIGHT BUY' and probability < 0.75:
             logger.info(f"⛔ {symbol}: Matrix says SLIGHT BUY (prob={probability:.0%}) - BLOCKED (Need >75% for Slight Buy)")
@@ -14450,13 +14450,13 @@ class AureonKrakenEcosystem:
             logger.info(f"✅ {symbol}: Matrix says {prob_action} (prob={probability:.0%}, conf={prob_confidence:.0%}) - APPROVED!")
         
         # ═══════════════════════════════════════════════════════════════
-        # 📊 IMPERIAL PREDICTION - 🔒 VALIDATION LOCK ACTIVE
+        # 📊 IMPERIAL PREDICTION - 🛡️ VALIDATION LOCK ACTIVE
         # ═══════════════════════════════════════════════════════════════
         imperial_action = opp.get('imperial_action', 'HOLD')
         imperial_prob = opp.get('imperial_probability', 0.5)
         imperial_conf = opp.get('imperial_confidence', 0.0)
         
-        # 🔒 HARD GATE: Imperial Prediction must not contradict
+        # 🛡️ VALIDATION LOCK: Imperial Prediction must not contradict
         if imperial_conf >= 0.6 and imperial_action in ['SELL', 'STRONG SELL']:
             logger.info(f"⛔ {symbol}: Imperial says {imperial_action} - BLOCKED by Validation Lock")
             return False
@@ -14497,12 +14497,18 @@ class AureonKrakenEcosystem:
                 # Store recommendation in opp for use in position management
                 opp['learned_recommendation'] = recommendation
                 
-                # 🪙 PENNY MODE: All learned recommendations are ADVISORY
-                # The penny profit math ($0.01 net) is the ONLY real gate
+                # 🛡️ VALIDATION LOCK: Learned Recommendations are BINDING
+                # We use the map to plot the course.
                 
-                # Log warnings but don't block
+                # 🛡️ VALIDATION LOCK: If Learned says NO, we do NOT trade.
                 if recommendation['confidence'] == 'high' and not recommendation['should_trade']:
-                    logger.info(f"⚠️ {symbol}: Learned says NO (WR={recommendation['expected_win_rate']*100:.0f}%) - advisory only")
+                    logger.info(f"⛔ {symbol}: Learned says NO (WR={recommendation['expected_win_rate']*100:.0f}%) - BLOCKED by Validation Lock")
+                    return False
+                    
+                # 🛡️ VALIDATION LOCK: If Learned says YES, we verify the win rate
+                if recommendation['should_trade'] and recommendation['expected_win_rate'] < 0.60:
+                    logger.info(f"⛔ {symbol}: Learned says YES but WR is low ({recommendation['expected_win_rate']*100:.0f}%) - BLOCKED by Validation Lock")
+                    return False
                     
                 # Log advantages
                 if recommendation['advantages']:
