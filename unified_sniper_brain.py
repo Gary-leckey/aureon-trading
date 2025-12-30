@@ -280,7 +280,7 @@ class UnifiedSniperBrain:
 ║  Penny Math:   {'LOADED' if PENNY_AVAILABLE else 'MISSING':12s}                               ║
 ║  Quantum:      {'LOADED' if QUANTUM_AVAILABLE else 'MISSING':12s}                               ║
 ║  Wisdom:       {'LOADED' if WISDOM_AVAILABLE else 'MISSING':12s}                               ║
-║  Probability:  {'LOADED' if PROBABILITY_AVAILABLE else 'MISSING':12s}                               ║
+║  Prob Nexus:   {'LOADED' if PROBABILITY_AVAILABLE else 'MISSING':12s}                               ║
 ║  ──────────────────────────────────────────────────────────  ║
 ║  "1 MILLION TRADES. ZERO LOSSES. THE MATH IS PROVEN."       ║
 ╚══════════════════════════════════════════════════════════════╝

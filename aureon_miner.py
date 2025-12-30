@@ -43,7 +43,7 @@ import threading
 import time
 import logging
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, Callable, List, Tuple
 from collections import deque
@@ -4088,7 +4088,9 @@ class PlatypusCoherenceEngine:
     def _julian_date(self, dt: Optional[datetime] = None) -> float:
         """Convert datetime to Julian Date"""
         if dt is None:
-            dt = datetime.utcnow()
+            # Keep this timestamp UTC-based but timezone-naive to avoid
+            # mixing aware/naive datetimes elsewhere in the miner.
+            dt = datetime.now(timezone.utc).replace(tzinfo=None)
         
         # J2000.0 is JD 2451545.0 = 2000-01-01T12:00:00
         j2000 = datetime(2000, 1, 1, 12, 0, 0)
@@ -4155,10 +4157,9 @@ class PlatypusCoherenceEngine:
         
         Returns: {planet: (elongation_deg, distance_au)}
         """
-        try:
-            now = datetime.now(datetime.UTC)
-        except AttributeError:
-            now = datetime.utcnow()  # Fallback for older Python
+        # Use UTC-based time but keep it timezone-naive for compatibility
+        # with ephemeris data that may be parsed as naive datetimes.
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         
         # Try real ephemeris first
         if self._ephemeris_loaded and self._ephemeris_df is not None:
@@ -7016,10 +7017,8 @@ class HarmonicMiningOptimizer:
         if not self._probability_matrix:
             return None
         try:
-            try:
-                now = datetime.now(datetime.UTC)
-            except AttributeError:
-                now = datetime.utcnow()  # Fallback for older Python
+            # UTC-based timestamp (timezone-naive for compatibility)
+            now = datetime.now(timezone.utc).replace(tzinfo=None)
                 
             pseudo_price = max(0.0001, difficulty)
             candle = {

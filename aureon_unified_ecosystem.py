@@ -17274,6 +17274,11 @@ class AureonKrakenEcosystem:
         exchange = self._detect_exchange_for_symbol(symbol, hint_source)
         exchange_marker = exchange.upper()
         quote_asset = self._get_quote_asset(symbol)
+        # Some callers (notably force-scout deployment) provide a quote hint.
+        # Prefer it when present to keep liquidity checks and sizing consistent.
+        opp_quote_hint = opp.get('quote_currency') or opp.get('quote')
+        if isinstance(opp_quote_hint, str) and opp_quote_hint.strip():
+            quote_asset = opp_quote_hint.strip().upper()
         base_currency = CONFIG['BASE_CURRENCY'].upper()
         
         # 🍄 MYCELIUM: Check for cross-exchange duplicates FIRST
@@ -17432,7 +17437,7 @@ class AureonKrakenEcosystem:
         # When total_equity_gbp is 0 or stale, use real cash balances directly
         if is_force_scout:
             # Get actual cash available from exchanges for this quote currency
-            quote_asset = opp.get('quote', CONFIG['BASE_CURRENCY'])
+            quote_asset = quote_asset or CONFIG['BASE_CURRENCY']
             actual_cash = 0.0
             try:
                 all_balances = self.client.get_all_balances()
@@ -17634,6 +17639,13 @@ class AureonKrakenEcosystem:
                     )
                     quote_amount_needed = fallback_quote
                 res = self.client.place_market_order(exchange, symbol, 'BUY', quote_qty=quote_amount_needed)
+                # Some exchange adapters or older code paths can still end up passing
+                # a falsy quote_qty through; if we get the explicit "missing size" reject,
+                # retry once using base-asset quantity.
+                if isinstance(res, dict) and res.get('rejected'):
+                    reason = (res.get('reason') or '').lower()
+                    if 'must provide quantity' in reason and quantity and quantity > 0:
+                        res = self.client.place_market_order(exchange, symbol, 'BUY', quantity=quantity)
             except Exception as e:
                 print(f"   ⚠️ Execution error for {symbol}: {e}")
                 return
