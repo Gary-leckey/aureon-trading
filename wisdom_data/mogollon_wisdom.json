@@ -1,6 +1,6 @@
 {
   "civilization": "Mogollon",
-  "last_updated": "2025-12-27T16:52:44.508047",
+  "last_updated": "2025-12-30T18:19:29.371418",
   "version": "1.0.0",
   "sources": [
     "hardcoded",
@@ -291,6 +291,14 @@
     },
     {
       "timestamp": "2025-12-27T16:52:44.508026",
+      "insights_found": 0,
+      "sources_used": [
+        "Wikipedia",
+        "Sacred-Texts"
+      ]
+    },
+    {
+      "timestamp": "2025-12-30T18:19:29.371372",
       "insights_found": 0,
       "sources_used": [
         "Wikipedia",
