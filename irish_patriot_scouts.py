@@ -145,17 +145,40 @@ except ImportError:
     ULTIMATE_INTEL = None
     print("⚠️ Ultimate Intelligence not available for Patriots")
 
-# 🌍🍄 AUREON ULTIMATE ECOSYSTEM - Full Integration  
-try:
-    from aureon_ultimate_ecosystem_wiring import (
-        get_ultimate_ecosystem, ecosystem_predict, ecosystem_record_outcome,
-        EcosystemPrediction
-    )
-    ECOSYSTEM_AVAILABLE = True
-    print("🌍🍄 Aureon Ultimate Ecosystem WIRED to Patriots! (world domination)")
-except ImportError:
-    ECOSYSTEM_AVAILABLE = False
-    print("⚠️ Ultimate Ecosystem not available for Patriots")
+# 🌍🍄 AUREON ULTIMATE ECOSYSTEM - Lazy load to avoid circular import
+# aureon_ultimate_ecosystem_wiring imports irish_patriot_scouts
+ECOSYSTEM_AVAILABLE = False
+_ECOSYSTEM_INSTANCE = None
+
+def _get_ecosystem():
+    """Lazy load ecosystem to avoid circular import"""
+    global _ECOSYSTEM_INSTANCE, ECOSYSTEM_AVAILABLE
+    if _ECOSYSTEM_INSTANCE is None:
+        try:
+            from aureon_ultimate_ecosystem_wiring import get_ultimate_ecosystem
+            _ECOSYSTEM_INSTANCE = get_ultimate_ecosystem()
+            ECOSYSTEM_AVAILABLE = True
+        except ImportError:
+            pass
+    return _ECOSYSTEM_INSTANCE
+
+def ecosystem_predict(*args, **kwargs):
+    """Lazy wrapper for ecosystem predict"""
+    try:
+        from aureon_ultimate_ecosystem_wiring import ecosystem_predict as _eco_predict
+        return _eco_predict(*args, **kwargs)
+    except ImportError:
+        return None
+
+def ecosystem_record_outcome(*args, **kwargs):
+    """Lazy wrapper for ecosystem record outcome"""
+    try:
+        from aureon_ultimate_ecosystem_wiring import ecosystem_record_outcome as _eco_record
+        return _eco_record(*args, **kwargs)
+    except ImportError:
+        pass
+
+print("⚠️ Ultimate Ecosystem not available for Patriots")
 
 try:
     from multi_battlefront_coordinator import (
@@ -167,12 +190,22 @@ except ImportError:
     COORDINATOR_AVAILABLE = False
 
 # Try to import existing systems for integration
-try:
-    from ira_sniper_mode import IRA_SNIPER_MODE
-    IRA_SNIPER_AVAILABLE = True
-except ImportError:
-    IRA_SNIPER_MODE = None
-    IRA_SNIPER_AVAILABLE = False
+# NOTE: IRA Sniper import moved to lazy loading to avoid circular import
+# ira_sniper_mode.py imports PatriotScoutNetwork from this file
+IRA_SNIPER_MODE = None
+IRA_SNIPER_AVAILABLE = False
+
+def _get_ira_sniper():
+    """Lazy load IRA Sniper to avoid circular import"""
+    global IRA_SNIPER_MODE, IRA_SNIPER_AVAILABLE
+    if IRA_SNIPER_MODE is None and not IRA_SNIPER_AVAILABLE:
+        try:
+            from ira_sniper_mode import IRA_SNIPER_MODE as sniper
+            IRA_SNIPER_MODE = sniper
+            IRA_SNIPER_AVAILABLE = True
+        except ImportError:
+            pass
+    return IRA_SNIPER_MODE
 
 try:
     from penny_profit_engine import get_penny_engine, check_penny_exit
