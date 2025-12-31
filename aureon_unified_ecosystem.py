@@ -15471,6 +15471,8 @@ class AureonKrakenEcosystem:
         
         This fixes the state drift problem where positions are sold on exchange
         but the local state file still shows them as active.
+        
+        ⚠️ SAFETY: Does NOT delete positions if API calls fail!
         """
         if self.dry_run:
             print("   🔄 Position sync skipped (dry run mode)")
@@ -15483,6 +15485,23 @@ class AureonKrakenEcosystem:
             all_balances = self.client.get_all_balances()
             kraken_balances = all_balances.get('kraken', {})
             binance_balances = all_balances.get('binance', {})
+            
+            # 🔒 SAFETY CHECK: If Kraken returned empty but we have Kraken positions,
+            # assume API failure and SKIP sync to prevent deleting real positions!
+            kraken_positions = [s for s, p in self.positions.items() 
+                               if getattr(p, 'exchange', 'kraken').lower() == 'kraken']
+            if kraken_positions and not kraken_balances:
+                print("   ⚠️ SAFETY: Kraken returned empty balances but we have Kraken positions!")
+                print("   ⚠️ Skipping sync to prevent deleting real positions (likely API error)")
+                return
+            
+            # Same for Binance
+            binance_positions = [s for s, p in self.positions.items() 
+                                if getattr(p, 'exchange', '').lower() == 'binance']
+            if binance_positions and not binance_balances:
+                print("   ⚠️ SAFETY: Binance returned empty balances but we have Binance positions!")
+                print("   ⚠️ Skipping sync to prevent deleting real positions (likely API error)")
+                return
             
             # 🔧 KRAKEN ASSET MAPPING: Standard name → Kraken names to try
             # Kraken returns normalized names from get_account_balance (BTC, ETH, etc.)
