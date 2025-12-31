@@ -556,7 +556,240 @@ def update_exchange_fees(
 
 
 # ═══════════════════════════════════════════════════════════════
-# 🧪 TEST / DEMO
+# �🎯 PROBABILITY MATRIX INTEGRATION 🎯🧠
+# ═══════════════════════════════════════════════════════════════
+
+def wire_to_probability_matrix():
+    """
+    🧠 Wire the Adaptive Gate to the Probability Intelligence Matrix.
+    
+    The Probability Matrix uses our gates to:
+    - Know EXACTLY what price move is needed for profit
+    - Calculate TRUE probability of hitting that move
+    - Adjust confidence based on how close we are to gates
+    """
+    try:
+        from probability_intelligence_matrix import get_probability_matrix, ProbabilityIntelligence
+        
+        matrix = get_probability_matrix()
+        gate = get_adaptive_gate()
+        
+        # Store gate reference in matrix for access
+        matrix.adaptive_gate = gate
+        
+        # Register as intelligence factor for probability calculations
+        def adaptive_gate_factor(
+            exchange: str,
+            trade_value: float,
+            current_r: float,  # Current price move (fraction)
+        ) -> dict:
+            """
+            Calculate how close we are to each gate.
+            Returns factor values for probability calculation.
+            """
+            result = gate.calculate_gates(exchange, trade_value)
+            
+            # Distance to each gate (negative means we've passed it!)
+            dist_to_breakeven = result.r_breakeven - current_r
+            dist_to_prime = result.r_prime - current_r
+            dist_to_buffer = result.r_prime_buffer - current_r
+            
+            # Factor values (1.0 = great, 0.0 = bad)
+            if current_r >= result.r_prime_buffer:
+                gate_status = 'BEYOND_BUFFER'
+                factor_value = 1.0
+            elif current_r >= result.r_prime:
+                gate_status = 'PRIME_ACHIEVED'
+                factor_value = 0.9
+            elif current_r >= result.r_breakeven:
+                gate_status = 'BREAKEVEN_ONLY'
+                factor_value = 0.6
+            else:
+                # Below breakeven - how close are we?
+                progress = current_r / result.r_breakeven if result.r_breakeven > 0 else 0
+                gate_status = 'BELOW_BREAKEVEN'
+                factor_value = 0.3 + (0.3 * progress)
+            
+            return {
+                'gate_status': gate_status,
+                'factor_value': factor_value,
+                'distance_to_breakeven': dist_to_breakeven,
+                'distance_to_prime': dist_to_prime,
+                'distance_to_buffer': dist_to_buffer,
+                'current_r': current_r,
+                'r_breakeven': result.r_breakeven,
+                'r_prime': result.r_prime,
+                'r_prime_buffer': result.r_prime_buffer,
+            }
+        
+        # Attach the factor function to the matrix
+        matrix.adaptive_gate_factor = adaptive_gate_factor
+        
+        logger.info("🧠🎯 Adaptive Gate WIRED to Probability Matrix!")
+        return True
+        
+    except ImportError as e:
+        logger.warning(f"Could not wire to Probability Matrix: {e}")
+        return False
+    except Exception as e:
+        logger.error(f"Error wiring to Probability Matrix: {e}")
+        return False
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🍄🎯 MYCELIUM NETWORK INTEGRATION - GOAL PROPAGATION 🎯🍄
+# ═══════════════════════════════════════════════════════════════
+
+def wire_to_mycelium(goal_target: float = 100000.0, goal_currency: str = 'GBP'):
+    """
+    🍄 Wire the Adaptive Gate to the Mycelium Network.
+    
+    The Mycelium uses our gates to:
+    - Understand the minimum viable trade thresholds
+    - Propagate the £100K goal with trade-level precision
+    - Coordinate all systems toward the same profit math
+    """
+    try:
+        from ira_sniper_mode import register_to_mycelium, mycelium_sync, get_mycelium_aggregator
+        
+        gate = get_adaptive_gate()
+        
+        # Create a Mycelium-compatible state object
+        class AdaptiveGateNode:
+            """Mycelium node for Adaptive Prime Profit Gate."""
+            
+            def __init__(self, gate_instance, target, currency):
+                self.gate = gate_instance
+                self.goal_target = target
+                self.goal_currency = currency
+                self.name = 'adaptive_profit_gate'
+                
+            def get_state(self):
+                """Return state for Mycelium sync."""
+                return {
+                    'name': self.name,
+                    'type': 'profit_gate',
+                    'goal': {
+                        'target': self.goal_target,
+                        'currency': self.goal_currency,
+                        'description': f"£{self.goal_target:,.0f} {self.goal_currency}",
+                    },
+                    'gates': {
+                        'prime_target': self.gate.default_prime,
+                        'buffer': self.gate.default_buffer,
+                        'use_maker': self.gate.use_maker_fees,
+                    },
+                    'exchanges': list(self.gate.fee_profiles.keys()),
+                    'calculations': self.gate.calculations_count,
+                    'last_calc': self.gate.last_calculation_time,
+                    'cached_results': len(self.gate._cache),
+                }
+            
+            def calculate_trades_to_goal(self, current_capital: float, avg_trade_size: float = 10.0) -> dict:
+                """Calculate how many successful trades needed to reach goal."""
+                remaining = max(0, self.goal_target - current_capital)
+                
+                if remaining <= 0:
+                    return {
+                        'goal_achieved': True,
+                        'trades_needed': 0,
+                        'message': f"🎯 GOAL ACHIEVED! {self.goal_currency}{current_capital:,.2f}",
+                    }
+                
+                # Get average prime profit across exchanges
+                avg_prime = self.gate.default_prime
+                trades_needed = int(remaining / avg_prime) + 1
+                
+                return {
+                    'goal_achieved': False,
+                    'current_capital': current_capital,
+                    'goal_target': self.goal_target,
+                    'remaining': remaining,
+                    'prime_per_trade': avg_prime,
+                    'trades_needed': trades_needed,
+                    'message': f"🎯 {trades_needed:,} trades @ ${avg_prime:.2f} each to reach £{self.goal_target:,.0f}",
+                }
+            
+            def sync_goal_to_thought_bus(self, current_capital: float):
+                """Sync goal progress to ThoughtBus."""
+                try:
+                    from aureon_thought_bus import ThoughtBus, Thought
+                    
+                    progress = self.calculate_trades_to_goal(current_capital)
+                    
+                    # Find ThoughtBus instance
+                    thought_bus = ThoughtBus(persist_path="thoughts.jsonl")
+                    thought_bus.publish(Thought(
+                        source="adaptive_profit_gate",
+                        topic="goal.progress",
+                        payload={
+                            'goal_target': self.goal_target,
+                            'goal_currency': self.goal_currency,
+                            'current_capital': current_capital,
+                            'remaining': progress.get('remaining', 0),
+                            'trades_needed': progress.get('trades_needed', 0),
+                            'prime_per_trade': self.gate.default_prime,
+                            'goal_achieved': progress.get('goal_achieved', False),
+                        }
+                    ))
+                    return True
+                except Exception as e:
+                    logger.warning(f"Could not sync goal to ThoughtBus: {e}")
+                    return False
+        
+        # Create node and register to Mycelium
+        gate_node = AdaptiveGateNode(gate, goal_target, goal_currency)
+        register_to_mycelium('adaptive_profit_gate', gate_node)
+        
+        # Sync initial state
+        mycelium_sync('adaptive_gate_registered', {
+            'goal_target': goal_target,
+            'goal_currency': goal_currency,
+            'prime_target': gate.default_prime,
+            'buffer': gate.default_buffer,
+        })
+        
+        logger.info(f"🍄🎯 Adaptive Gate WIRED to Mycelium Network!")
+        logger.info(f"   Goal: £{goal_target:,.0f} {goal_currency}")
+        logger.info(f"   Prime: ${gate.default_prime:.2f} per trade")
+        
+        return gate_node
+        
+    except ImportError as e:
+        logger.warning(f"Could not wire to Mycelium: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Error wiring to Mycelium: {e}")
+        return None
+
+
+def wire_all_integrations(goal_target: float = 100000.0):
+    """
+    🌍💰 WIRE EVERYTHING - Full ecosystem integration!
+    
+    Connects Adaptive Gate to:
+    1. Probability Intelligence Matrix (metrics)
+    2. Mycelium Network (goal propagation)
+    """
+    results = {
+        'probability_matrix': wire_to_probability_matrix(),
+        'mycelium': wire_to_mycelium(goal_target) is not None,
+    }
+    
+    success_count = sum(1 for v in results.values() if v)
+    
+    if success_count == len(results):
+        logger.info("🌍💰 ALL INTEGRATIONS WIRED! World domination mode ACTIVE!")
+    elif success_count > 0:
+        logger.info(f"🌍💰 {success_count}/{len(results)} integrations wired")
+    else:
+        logger.warning("⚠️ No integrations could be wired")
+    
+    return results
+
+
+# ═══════════════════════════════════════════════════════════════
+# �🧪 TEST / DEMO
 # ═══════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":

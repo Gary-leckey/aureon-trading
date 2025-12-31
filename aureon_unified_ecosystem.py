@@ -111,14 +111,24 @@ except ImportError:
 try:
     from adaptive_prime_profit_gate import (
         get_adaptive_gate, get_adaptive_threshold,
-        AdaptivePrimeProfitGate, AdaptiveGateResult
+        AdaptivePrimeProfitGate, AdaptiveGateResult,
+        wire_to_probability_matrix, wire_to_mycelium, wire_all_integrations
     )
     ADAPTIVE_GATE_AVAILABLE = True
     _adaptive_gate = get_adaptive_gate()
     print("💰🎯 Adaptive Prime Profit Gate ARMED! (dynamic fee adaptation)")
+    
+    # 🧠🍄 WIRE TO PROBABILITY MATRIX & MYCELIUM FOR £100K GOAL
+    _gate_integrations = wire_all_integrations(goal_target=100000.0)
+    if _gate_integrations.get('probability_matrix'):
+        print("   🧠 → Probability Matrix: WIRED (gate metrics)")
+    if _gate_integrations.get('mycelium'):
+        print("   🍄 → Mycelium Network: WIRED (£100K goal)")
+        
 except ImportError as e:
     ADAPTIVE_GATE_AVAILABLE = False
     _adaptive_gate = None
+    _gate_integrations = {}
     print(f"⚠️ Adaptive Prime Profit Gate not available: {e}")
 
 # Custom StreamHandler that forces UTF-8 encoding on Windows
