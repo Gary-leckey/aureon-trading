@@ -78,6 +78,18 @@ try:
     ENHANCED_NEXUS_AVAILABLE = True
 except ImportError:
     ENHANCED_NEXUS_AVAILABLE = False
+
+# 💎 PROBABILITY ULTIMATE INTELLIGENCE - 95% Accuracy Pattern Learning
+try:
+    from probability_ultimate_intelligence import (
+        get_ultimate_intelligence, ultimate_predict, record_ultimate_outcome,
+        UltimatePrediction
+    )
+    ULTIMATE_INTELLIGENCE_AVAILABLE = True
+    print("💎 Mycelium: Ultimate Intelligence WIRED! (95% accuracy)")
+except ImportError:
+    ULTIMATE_INTELLIGENCE_AVAILABLE = False
+    print("⚠️ Mycelium: Ultimate Intelligence not available")
     EnhancedProbabilityNexus = None
 
 # ═══════════════════════════════════════════════════════════════════════════════
