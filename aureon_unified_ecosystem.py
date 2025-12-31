@@ -107,6 +107,20 @@ except ImportError:
     ECOSYSTEM_WIRING_AVAILABLE = False
     print("⚠️ Ultimate Ecosystem Wiring not available")
 
+# 💰🎯 ADAPTIVE PRIME PROFIT GATE - Dynamic Break-Even Intelligence 💰🎯
+try:
+    from adaptive_prime_profit_gate import (
+        get_adaptive_gate, get_adaptive_threshold,
+        AdaptivePrimeProfitGate, AdaptiveGateResult
+    )
+    ADAPTIVE_GATE_AVAILABLE = True
+    _adaptive_gate = get_adaptive_gate()
+    print("💰🎯 Adaptive Prime Profit Gate ARMED! (dynamic fee adaptation)")
+except ImportError as e:
+    ADAPTIVE_GATE_AVAILABLE = False
+    _adaptive_gate = None
+    print(f"⚠️ Adaptive Prime Profit Gate not available: {e}")
+
 # Custom StreamHandler that forces UTF-8 encoding on Windows
 class SafeStreamHandler(logging.StreamHandler):
     def __init__(self, stream=None):
@@ -867,6 +881,24 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
     
     exchange_name = (exchange or 'binance').lower()
     
+    # 💰🎯 ADAPTIVE GATE: Use dynamic fee intelligence when available!
+    if ADAPTIVE_GATE_AVAILABLE and _adaptive_gate is not None:
+        try:
+            # Get comprehensive adaptive threshold with all gates
+            adaptive_result = get_adaptive_threshold(
+                exchange=exchange_name,
+                trade_value=trade_size,
+                target_profit=PENNY_TARGET_NET
+            )
+            if adaptive_result:
+                # 🎯 Use the PRIME PROFIT gate (not just break-even)
+                # This ensures we clear ALL costs plus target profit
+                return adaptive_result
+        except Exception as e:
+            # Fall back to legacy calculation if adaptive fails
+            logger.warning(f"Adaptive gate failed, using legacy: {e}")
+    
+    # 📊 LEGACY CALCULATION (fallback if adaptive not available)
     fee_rate = get_exchange_fee_rate(exchange_name)
     target_net, was_clamped = clamp_target_net_for_exchange(exchange_name, PENNY_TARGET_NET)
     
@@ -917,7 +949,8 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
         'target_net_clamped': was_clamped,
         'binance_net_range': BINANCE_NET_PROFIT_RANGE if exchange_name == 'binance' else None,
         'expected_net_after_costs': round(net_after_costs, 6),
-        'is_dynamic': True
+        'is_dynamic': True,
+        'adaptive_gate_used': False  # Mark that legacy was used
     }
 
 
@@ -18481,6 +18514,23 @@ class AureonKrakenEcosystem:
         if THOUGHT_BUS_AVAILABLE and THOUGHT_BUS:
             try:
                 entry_consensus = opp.get('entry_consensus') or {}
+                # 💰 Get adaptive gate info for this trade
+                adaptive_gate_info = {}
+                if ADAPTIVE_GATE_AVAILABLE and _adaptive_gate is not None:
+                    try:
+                        gate_result = _adaptive_gate.calculate_gates(exchange, pos_size)
+                        adaptive_gate_info = {
+                            'adaptive_gate_used': True,
+                            'break_even_r': gate_result.break_even_r,
+                            'prime_profit_r': gate_result.prime_profit_r,
+                            'prime_plus_buffer_r': gate_result.prime_plus_buffer_r,
+                            'expected_net': gate_result.expected_net_profit,
+                            'fee_profile': gate_result.fee_profile,
+                            'volatility_adjusted': gate_result.volatility_adjusted,
+                        }
+                    except Exception:
+                        adaptive_gate_info = {'adaptive_gate_used': False}
+                
                 THOUGHT_BUS.publish(Thought(
                     source="unified_ecosystem",
                     topic="execution.order.open",
@@ -18498,6 +18548,8 @@ class AureonKrakenEcosystem:
                         "entry_prob_quick": entry_consensus.get('prob_quick'),
                         "entry_confidence": entry_consensus.get('confidence'),
                         "gates_passed": opp.get('gates_passed', 0),
+                        # 💰 Adaptive Gate Intel
+                        **adaptive_gate_info,
                     }
                 ))
             except Exception as e:
