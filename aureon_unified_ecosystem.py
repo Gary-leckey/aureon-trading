@@ -14379,10 +14379,32 @@ class AureonKrakenEcosystem:
                     if asset_upper != base:
                         try:
                             converted = self.client.convert_to_quote(exchange, asset_upper, amount, base)
-                            cash_balance += converted if converted > 0 else amount
+                            if converted > 0:
+                                cash_balance += converted
+                            else:
+                                # 🔧 FIX: Use fallback FX rates when conversion fails
+                                FALLBACK_FX = {
+                                    ('USD', 'GBP'): 0.79, ('USDC', 'GBP'): 0.79, ('USDT', 'GBP'): 0.79,
+                                    ('EUR', 'GBP'): 0.84, ('GBP', 'USD'): 1.27, ('EUR', 'USD'): 1.06,
+                                }
+                                fx_key = (asset_upper, base.upper())
+                                if fx_key in FALLBACK_FX:
+                                    cash_balance += amount * FALLBACK_FX[fx_key]
+                                elif base.upper() == 'USD' and asset_upper in {'USD', 'USDC', 'USDT'}:
+                                    cash_balance += amount  # 1:1 for USD stables to USD
+                                else:
+                                    cash_balance += amount  # Last resort: assume 1:1
                         except:
-                            # Fallback: assume roughly 1:1 for stable coins
-                            cash_balance += amount
+                            # Fallback: use FX rates
+                            FALLBACK_FX = {
+                                ('USD', 'GBP'): 0.79, ('USDC', 'GBP'): 0.79, ('USDT', 'GBP'): 0.79,
+                                ('EUR', 'GBP'): 0.84, ('GBP', 'USD'): 1.27, ('EUR', 'USD'): 1.06,
+                            }
+                            fx_key = (asset_upper, base.upper())
+                            if fx_key in FALLBACK_FX:
+                                cash_balance += amount * FALLBACK_FX[fx_key]
+                            else:
+                                cash_balance += amount
                     else:
                         cash_balance += amount
             
@@ -14468,7 +14490,24 @@ class AureonKrakenEcosystem:
                             total_equity += converted
                             holdings_value[asset_clean] = holdings_value.get(asset_clean, 0.0) + converted
                             continue
-                        # Fallback: treat USD stables as 1:1 to avoid missing cash when pricing data is unavailable
+                        # 🔧 FIX: Fallback FX rates when exchange conversions fail
+                        # These prevent missing cash when pricing APIs are down
+                        FALLBACK_FX = {
+                            ('USD', 'GBP'): 0.79,   # $1 = £0.79
+                            ('USDC', 'GBP'): 0.79,
+                            ('USDT', 'GBP'): 0.79,
+                            ('EUR', 'GBP'): 0.84,   # €1 = £0.84
+                            ('GBP', 'USD'): 1.27,   # £1 = $1.27
+                            ('EUR', 'USD'): 1.06,   # €1 = $1.06
+                        }
+                        fx_key = (conversion_asset, base.upper())
+                        if fx_key in FALLBACK_FX:
+                            fallback_converted = amount * FALLBACK_FX[fx_key]
+                            cash_balance += fallback_converted
+                            total_equity += fallback_converted
+                            holdings_value[asset_clean] = holdings_value.get(asset_clean, 0.0) + fallback_converted
+                            continue
+                        # Original fallback for USD base
                         if base.upper() == 'USD' and conversion_asset in {'USD', 'USDC', 'USDT'}:
                             cash_balance += amount
                             total_equity += amount
