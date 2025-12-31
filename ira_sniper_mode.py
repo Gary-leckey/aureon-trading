@@ -162,9 +162,15 @@ except ImportError:
 try:
     from irish_patriot_scouts import PatriotScoutNetwork, PatriotScout, PATRIOT_CONFIG
     PATRIOTS_WIRED = True
-except ImportError:
+    print("☘️ Irish Patriot Scouts import successful!")
+except ImportError as e:
     PATRIOTS_WIRED = False
     PatriotScoutNetwork = None
+    print(f"⚠️ Irish Patriot Scouts import failed: {e}")
+except Exception as e:
+    PATRIOTS_WIRED = False
+    PatriotScoutNetwork = None
+    print(f"⚠️ Irish Patriot Scouts error: {e}")
 
 # Wire Mycelium Network
 try:
@@ -2872,8 +2878,13 @@ class IraCelticSniper:
         if PATRIOTS_WIRED and PatriotScoutNetwork:
             try:
                 self.patriot_network = PatriotScoutNetwork(dry_run=self.dry_run)
+                print("   ☘️ Patriot Network successfully WIRED!")
             except Exception as e:
                 print(f"   ⚠️ Patriot Network wire failed: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print(f"   ⚠️ Patriots not available: PATRIOTS_WIRED={PATRIOTS_WIRED}")
     
     def _print_celtic_wisdom(self):
         """Print a piece of Celtic wisdom"""
