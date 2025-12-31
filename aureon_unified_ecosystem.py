@@ -11285,7 +11285,17 @@ class PerformanceTracker:
             self.losses += 1
             # Get resilience wisdom for losses
             if BHOYS_WISDOM_AVAILABLE:
-                wisdom = get_contextual_wisdom('resilience')
+                # get_contextual_wisdom needs: win_rate, current_drawdown, trades_today
+                try:
+                    wisdom_result = get_contextual_wisdom(
+                        win_rate=self.win_rate / 100.0 if self.win_rate else 0.0,
+                        current_drawdown=0.0,  # We don't track this here
+                        trades_today=self.total_trades
+                    )
+                    wisdom = wisdom_result.get('quote', "Tiocfaidh ár lá!")
+                except (TypeError, AttributeError):
+                    # Fallback if function signature changes or errors
+                    wisdom = "Tiocfaidh ár lá! - Our day will come."
                 print(f"\n⚔️ TACTICAL RETREAT: {symbol} -${abs(net_pnl):.4f}")
                 print(f"    📜 \"{wisdom}\"")
                 print(f"    💪 Reload and engage next target...\n")
