@@ -114,8 +114,31 @@ class MultiExchangeClient:
                 alt = f"{kbase}{q}"
                 return alt
         if exchange == 'binance':
-            # Binance mostly uses USDT; map USD to USDT
-            bquote = 'USDT' if quote in ['USD', 'USDC'] else quote
+            # 🔧 FIX: Check what quote currency user actually HAS before normalizing
+            # If user has USDC, prefer USDC pairs. If they have USDT, prefer USDT.
+            binance_client = self.clients.get('binance')
+            usdc_bal = 0.0
+            usdt_bal = 0.0
+            if binance_client:
+                try:
+                    usdc_bal = float(binance_client.get_balance('USDC') or 0)
+                except:
+                    usdc_bal = 0.0
+                try:
+                    usdt_bal = float(binance_client.get_balance('USDT') or 0)
+                except:
+                    usdt_bal = 0.0
+            
+            # Prefer the quote currency the user actually has
+            if quote in ['USD', 'USDC', 'USDT']:
+                if usdc_bal > usdt_bal and usdc_bal > 1:
+                    bquote = 'USDC'  # User has more USDC
+                elif usdt_bal > 1:
+                    bquote = 'USDT'  # User has more USDT
+                else:
+                    bquote = 'USDT'  # Default to USDT if neither
+            else:
+                bquote = quote
             return f"{base}{bquote}"
         if exchange == 'alpaca':
             return f"{base}/{quote}"
