@@ -1213,7 +1213,7 @@ CONFIG = {
             'harvester_active': True,     # 🌾 Harvesting Binance positions
             'asset_classes': ['crypto'],
             'quote_currencies': ['USDC', 'USDT', 'FDUSD', 'BTC', 'ETH', 'BNB', 'EUR', 'GBP'],
-            'min_trade_usd': 1.44,
+            'min_trade_usd': 6.0,         # Raised to $6.0 to meet min notional
             'max_positions': 15,
         },
         'kraken': {
@@ -20035,6 +20035,26 @@ class AureonKrakenEcosystem:
                 # 🎯 Found an exchange with funds - place order
                 logger.debug(f"Routing {symbol} to {exchange} (£{available_capital:.2f} available)")
                 
+                # 🇬🇧 UK RESTRICTION CHECK
+                # Before we even try, check if the client says we can trade this symbol
+                # This prevents "Cognition failed" log spam
+                if hasattr(self.client, 'clients') and exchange in self.client.clients:
+                    client = self.client.clients[exchange]
+                    if hasattr(client, 'can_trade_symbol'):
+                        # Normalize symbol for that exchange first
+                        try:
+                            exch_symbol = self.client.normalize_symbol(exchange, symbol)
+                        except:
+                            exch_symbol = symbol
+                            
+                        can_trade, reason = client.can_trade_symbol(exch_symbol)
+                        if not can_trade:
+                            # If this is a BUY, we must respect the restriction
+                            # If it's a SELL, my previous fix allows it, so we let it pass
+                            if side.lower() == 'buy':
+                                logger.debug(f"Skipping {exchange} for {symbol} - {reason}")
+                                continue
+
                 result = self.trade_confirmation.submit_order(
                     exchange=exchange,
                     symbol=symbol,
