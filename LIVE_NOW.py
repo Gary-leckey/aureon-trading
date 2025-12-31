@@ -376,7 +376,15 @@ async def execute_trade(opp: Dict) -> bool:
         'avg_profit': opp['avg_profit']
     }
     
-    positions.append(position)using UNIFIED ECOSYSTEM"""
+    positions.append(position)
+    
+    print(f"✅ Position opened: {opp['pattern']} on {opp['exchange']} (confidence: {opp['confidence']*100:.0f}%)")
+    
+    return position
+
+
+def monitor_positions():
+    """Monitor positions and execute kills using UNIFIED ECOSYSTEM"""
     global capital, stats
     
     for pos in positions:
