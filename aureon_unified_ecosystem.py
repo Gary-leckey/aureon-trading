@@ -74,12 +74,12 @@ except ImportError:
 try:
     from aureon_immune_system import AureonImmuneSystem
     IMMUNE_SYSTEM_AVAILABLE = True
-except ImportError:
+except Exception as e:
     AureonImmuneSystem = None
     IMMUNE_SYSTEM_AVAILABLE = False
     # Note: the Unified Ecosystem also has an internal CognitiveImmuneSystem.
     # This flag refers only to the optional external module `aureon_immune_system`.
-    print("⚠️  External Immune System module (aureon_immune_system) not available")
+    print(f"⚠️  External Immune System module (aureon_immune_system) not available: {e}")
 
 # 💎 PROBABILITY ULTIMATE INTELLIGENCE - 95% Accuracy Pattern Learning 💎
 try:

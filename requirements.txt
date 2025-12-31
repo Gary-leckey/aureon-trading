@@ -13,3 +13,4 @@ astropy
 scipy
 cryptography
 flask
+psutil>=5.9.0
