@@ -383,7 +383,7 @@ async def execute_trade(opp: Dict) -> bool:
     return position
 
 
-def monitor_positions():
+async def monitor_positions():
     """Monitor positions and execute kills using UNIFIED ECOSYSTEM"""
     global capital, stats
     
