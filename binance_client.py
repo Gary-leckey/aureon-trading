@@ -243,7 +243,8 @@ class BinanceClient:
 
     def place_market_order(self, symbol: str, side: str, quantity: float | str | Decimal | None = None, quote_qty: float | str | Decimal | None = None) -> Dict[str, Any]:
         # 🇬🇧 UK Mode: Check restrictions before attempting trade
-        if self.uk_mode:
+        # ALLOW SELLS: If we own it, we must be allowed to sell it (harvest/exit)
+        if self.uk_mode and side.upper() != 'SELL':
             can_trade, reason = self.can_trade_symbol(symbol)
             if not can_trade:
                 return {
