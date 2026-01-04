@@ -51,6 +51,19 @@ class ThoughtBus:
         if self._persist_path:
             os.makedirs(os.path.dirname(self._persist_path) or ".", exist_ok=True)
 
+    def think(self, message: str, topic: str = "thought", priority: str = "normal", metadata: Dict = None) -> Thought:
+        """Convenience method to publish a thought"""
+        payload = {"message": message, "priority": priority}
+        if metadata:
+            payload.update(metadata)
+            
+        thought = Thought(
+            source="thought_bus_think",
+            topic=topic,
+            payload=payload
+        )
+        return self.publish(thought)
+
     def subscribe(self, topic: str, handler: Subscriber) -> None:
         """
         topic supports:

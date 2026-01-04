@@ -1627,6 +1627,130 @@ class HNCProbabilityIntegration:
         # Sort by probability
         opportunities.sort(key=lambda x: x['probability'], reverse=True)
         return opportunities
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 🌌🔮 LABYRINTH INTELLIGENCE INTEGRATION - The Matrix LEARNS from Labyrinth!
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def update_asset_signal(self, asset: str, momentum: float, market_sentiment: float):
+        """
+        🌌 Receive momentum signal from Labyrinth for probability adjustment
+        
+        Called by the Labyrinth wiring to update probability calculations
+        based on market-wide data.
+        
+        Args:
+            asset: The asset symbol
+            momentum: Current momentum from Labyrinth (-1 to 1 scale)
+            market_sentiment: Overall market sentiment from Labyrinth
+        """
+        if not hasattr(self, 'labyrinth_signals'):
+            self.labyrinth_signals = {}
+        
+        self.labyrinth_signals[asset] = {
+            'momentum': momentum,
+            'market_sentiment': market_sentiment,
+            'timestamp': time.time()
+        }
+        
+        # If we have a matrix for this asset, apply the signal
+        if asset in self.matrices:
+            matrix = self.matrices[asset]
+            
+            # Adjust probability based on Labyrinth intelligence
+            labyrinth_boost = 0.0
+            
+            # Strong momentum alignment with market sentiment boosts probability
+            if momentum > 0 and market_sentiment > 0:
+                labyrinth_boost = min(0.05, momentum * market_sentiment * 0.1)
+            elif momentum < 0 and market_sentiment < 0:
+                labyrinth_boost = min(0.05, abs(momentum * market_sentiment) * 0.1)
+            
+            # Store for later use
+            if not hasattr(matrix, 'labyrinth_boost'):
+                matrix.labyrinth_boost = 0.0
+            matrix.labyrinth_boost = labyrinth_boost
+    
+    def feed_labyrinth_pattern(self, asset: str, pattern_data: Dict):
+        """
+        🌌 Feed Labyrinth pattern data for probability resonance calculations
+        
+        The Matrix uses this to improve forecasting by incorporating
+        market-wide patterns discovered by the Labyrinth.
+        
+        Args:
+            asset: The asset symbol
+            pattern_data: Dict with momentum, volume, market_sentiment
+        """
+        if not hasattr(self, 'labyrinth_patterns'):
+            self.labyrinth_patterns = {}
+        
+        if asset not in self.labyrinth_patterns:
+            self.labyrinth_patterns[asset] = []
+        
+        self.labyrinth_patterns[asset].append({
+            **pattern_data,
+            'timestamp': time.time()
+        })
+        
+        # Keep last 50 patterns per asset
+        if len(self.labyrinth_patterns[asset]) > 50:
+            self.labyrinth_patterns[asset] = self.labyrinth_patterns[asset][-50:]
+    
+    def get_symbol_forecast(self, symbol: str) -> Dict:
+        """
+        🔮 Get probability forecast for a symbol, enhanced by Labyrinth intelligence
+        
+        Returns:
+            Dict with bullish_probability, bearish_probability, confidence, etc.
+        """
+        base_result = {
+            'symbol': symbol,
+            'bullish_probability': 0.5,
+            'bearish_probability': 0.5,
+            'confidence': 0.5,
+            'labyrinth_boost': 0.0,
+            'labyrinth_sentiment': 0.0
+        }
+        
+        # Get from matrix if available
+        if symbol in self.matrices:
+            matrix = self.matrices[symbol]
+            prob = matrix.fine_tuned_probability
+            conf = matrix.confidence_score
+            
+            # Determine bullish vs bearish based on recommended action
+            if matrix.recommended_action in ['STRONG_BUY', 'BUY']:
+                base_result['bullish_probability'] = prob
+                base_result['bearish_probability'] = 1 - prob
+            elif matrix.recommended_action in ['STRONG_SELL', 'SELL']:
+                base_result['bearish_probability'] = prob
+                base_result['bullish_probability'] = 1 - prob
+            else:
+                base_result['bullish_probability'] = prob
+                base_result['bearish_probability'] = 1 - prob
+            
+            base_result['confidence'] = conf
+            
+            # Add Labyrinth boost if available
+            if hasattr(matrix, 'labyrinth_boost'):
+                base_result['labyrinth_boost'] = matrix.labyrinth_boost
+        
+        # Add Labyrinth sentiment if available
+        if hasattr(self, 'labyrinth_signals') and symbol in self.labyrinth_signals:
+            signal = self.labyrinth_signals[symbol]
+            base_result['labyrinth_sentiment'] = signal.get('market_sentiment', 0.0)
+            
+            # Adjust probabilities based on fresh Labyrinth data (< 60 seconds old)
+            if time.time() - signal.get('timestamp', 0) < 60:
+                sentiment = signal.get('market_sentiment', 0)
+                # Boost bullish prob in bullish market, bearish in bearish
+                if sentiment > 0:
+                    base_result['bullish_probability'] = min(0.95, base_result['bullish_probability'] * (1 + sentiment * 0.1))
+                else:
+                    base_result['bearish_probability'] = min(0.95, base_result['bearish_probability'] * (1 + abs(sentiment) * 0.1))
+        
+        return base_result
 
 
 # ═══════════════════════════════════════════════════════════════

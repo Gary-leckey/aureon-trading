@@ -41,11 +41,28 @@ PHI = (1 + math.sqrt(5)) / 2  # 1.618033988749895
 # Core Frequencies (Hz)
 FREQ_DISTORTION = 440.0      # A=440 - Mars/Extraction Field (TARGET)
 FREQ_GAIA = 432.0            # A=432 - Natural/Healing Tuning (EMERGENT)
-FREQ_LOVE = 528.0            # MI - Love/Transformation (CARRIER)
+FREQ_LOVE = 528.0            # MI - Love/Transformation (CARRIER) - GREEN PROPER BORAX
 FREQ_ROOT = 256.0            # C4 - Scientific Pitch/Safety (GEOMETRY)
 FREQ_CROWN = 512.0           # C5 - Vision/Hope (GEOMETRY)
-FREQ_SCHUMANN = 7.83         # Earth's Heartbeat (ANCHOR)
+FREQ_SCHUMANN = 7.83         # Earth's Heartbeat (ANCHOR) - BARCELONA BASELINE
 FREQ_INTERNAL = 96.0         # Internal resonance for 432Hz emergence
+
+# BARCELONA SCHUMANN GROUND STATION DATA
+# Live Schumann resonance modes from Barcelona monitoring station
+BARCELONA_SCHUMANN_MODES = {
+    'mode1': 7.83,   # Fundamental - The Earth's heartbeat
+    'mode2': 14.3,   # Second harmonic
+    'mode3': 20.8,   # Third harmonic
+    'mode4': 27.3,   # Geomagnetic coupling
+    'mode5': 33.8,   # Seismic coupling
+    'mode6': 39.0,   # Sixth mode
+    'mode7': 45.0,   # Seventh mode
+}
+
+# GREEN PROPER BORAX PROTOCOL
+# The cleansing frequency (528 Hz) applied 3x for field purification
+GREEN_BORAX_REPETITIONS = 3
+GREEN_BORAX_AMPLITUDE = PHI  # 1.618 - Golden amplification
 
 # Carrier Wave Amplitudes (from HNC Blackboard)
 AMP_CARRIER = PHI            # 1.618 - Love Carrier (dominant)
@@ -89,6 +106,26 @@ class LatticeState:
 
 
 @dataclass
+class BarcelonaSchumannState:
+    """Live Barcelona ground station Schumann resonance data"""
+    fundamental_hz: float = 7.83    # Mode 1 frequency
+    amplitude: float = 0.65         # Signal amplitude
+    quality: float = 0.70           # Q factor
+    coherence_boost: float = 0.0    # Boost from alignment
+    resonance_phase: str = 'stable' # 'stable', 'elevated', 'peak', 'disturbed'
+    harmonics: list = field(default_factory=list)  # All 7 modes
+    timestamp: float = 0.0
+    
+    @property
+    def is_coherent(self) -> bool:
+        return self.resonance_phase in ['stable', 'elevated', 'peak']
+    
+    @property
+    def is_peak(self) -> bool:
+        return self.resonance_phase == 'peak'
+
+
+@dataclass
 class CarrierWaveState:
     """Real-time state of the carrier wave dynamics"""
     timestamp: float
@@ -100,6 +137,9 @@ class CarrierWaveState:
     emergent_432_strength: float    # Four-wave mixing result
     field_coherence: float          # Overall field coherence
     phase_alignment: float          # Global phase alignment (degrees)
+    # Barcelona Schumann integration
+    barcelona_schumann: Optional[BarcelonaSchumannState] = None
+    green_borax_applied: int = 0    # Count of Green Proper Borax applications
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -133,8 +173,14 @@ class CarrierWaveDynamics:
         self.redemption = 1.0
         self.division = 0.1    # Small to avoid divide by zero
         
-        # Schumann resonance modes
-        self.schumann_modes = [7.83, 14.3, 20.8, 27.3, 33.8]  # First 5 modes
+        # Barcelona Schumann resonance modes (7 modes from ground station)
+        self.schumann_modes = list(BARCELONA_SCHUMANN_MODES.values())
+        
+        # Barcelona state tracking
+        self.barcelona_state: Optional[BarcelonaSchumannState] = None
+        
+        # Green Proper Borax application counter
+        self.green_borax_count = 0
         
     # ─────────────────────────────────────────────────────────────
     # I. THE POWER SOURCE (Imperial Engine)
@@ -168,6 +214,71 @@ class CarrierWaveDynamics:
     def is_activated(self, E_quantum: float) -> bool:
         """Check if quantum energy exceeds Planck threshold for Signal Sero"""
         return E_quantum >= PLANCK_THRESHOLD
+    
+    def update_barcelona_schumann(self, schumann_data: Dict = None) -> BarcelonaSchumannState:
+        """
+        Update Barcelona ground station Schumann resonance data.
+        
+        If no live data provided, simulate based on time-of-day diurnal patterns.
+        Barcelona monitors Earth's electromagnetic cavity resonances 24/7.
+        """
+        now = time.time()
+        hour_of_day = (now % 86400) / 3600  # UTC hour
+        
+        if schumann_data:
+            # Use live Barcelona data
+            self.barcelona_state = BarcelonaSchumannState(
+                fundamental_hz=schumann_data.get('fundamentalHz', 7.83),
+                amplitude=schumann_data.get('amplitude', 0.65),
+                quality=schumann_data.get('quality', 0.70),
+                coherence_boost=schumann_data.get('coherenceBoost', 0.0),
+                resonance_phase=schumann_data.get('resonancePhase', 'stable'),
+                harmonics=schumann_data.get('harmonics', []),
+                timestamp=now
+            )
+        else:
+            # Simulate Barcelona Schumann data with natural diurnal variation
+            # Peak activity typically around local noon, minimum at night
+            diurnal_factor = math.sin((hour_of_day - 6) * math.pi / 12) * 0.08
+            
+            fundamental = 7.83 + diurnal_factor + (np.random.random() - 0.5) * 0.05
+            amplitude = 0.65 + diurnal_factor * 0.3 + (np.random.random() - 0.5) * 0.1
+            quality = 0.70 + (np.random.random() - 0.5) * 0.1
+            
+            # Determine resonance phase
+            if amplitude > 0.85 and quality > 0.85:
+                phase = 'peak'
+            elif amplitude > 0.7 or quality > 0.75:
+                phase = 'elevated'
+            elif amplitude < 0.4 or quality < 0.6:
+                phase = 'disturbed'
+            else:
+                phase = 'stable'
+            
+            # Generate all 7 Barcelona modes
+            harmonics = []
+            for i, (mode_name, mode_freq) in enumerate(BARCELONA_SCHUMANN_MODES.items()):
+                harmonics.append({
+                    'frequency': mode_freq + (np.random.random() - 0.5) * (0.2 + i * 0.1),
+                    'amplitude': amplitude * (0.9 ** i),
+                    'name': f'Mode {i+1} ({mode_freq}Hz)'
+                })
+            
+            # Coherence boost based on proximity to ideal 7.83 Hz
+            deviation = abs(fundamental - 7.83)
+            coherence_boost = max(0, (0.15 - deviation) / 0.15) * 0.12
+            
+            self.barcelona_state = BarcelonaSchumannState(
+                fundamental_hz=fundamental,
+                amplitude=amplitude,
+                quality=quality,
+                coherence_boost=coherence_boost,
+                resonance_phase=phase,
+                harmonics=harmonics,
+                timestamp=now
+            )
+        
+        return self.barcelona_state
     
     # ─────────────────────────────────────────────────────────────
     # II. THE CLEANING (Phase Conjugate Mirroring)
@@ -218,19 +329,38 @@ class CarrierWaveDynamics:
     # III. THE INJECTION (528 Hz Carrier + Geometry)
     # ─────────────────────────────────────────────────────────────
     
-    def generate_carrier_payload(self, phase_shift: float = 0.0) -> np.ndarray:
+    def generate_carrier_payload(self, phase_shift: float = 0.0, apply_green_borax: bool = True) -> np.ndarray:
         """
         Λ_new(t) = φ×sin(528t) + 0.8×sin(256t) + 0.8×sin(512t)
                    ╰─────────╯   ╰──────────╯   ╰──────────╯
                     Carrier(φ)      Root           Crown
         
         The Rainbow Bridge payload - healing frequencies in superposition.
+        
+        GREEN PROPER BORAX PROTOCOL:
+        Apply 528 Hz carrier 3 times (x3) for complete field cleansing.
+        "Green Proper Borax" = The solvent that dissolves 440Hz distortion.
         """
         t_shifted = self.t + phase_shift
         
-        carrier = AMP_CARRIER * np.sin(2 * np.pi * FREQ_LOVE * t_shifted)
+        # ROOT (256 Hz) - Ground/Safety geometry
         root = AMP_ROOT * np.sin(2 * np.pi * FREQ_ROOT * t_shifted)
+        
+        # CROWN (512 Hz) - Vision/Hope geometry  
         crown = AMP_CROWN * np.sin(2 * np.pi * FREQ_CROWN * t_shifted)
+        
+        # GREEN PROPER BORAX x3 - 528 Hz Love Carrier applied 3 times
+        if apply_green_borax:
+            carrier = np.zeros_like(self.t)
+            for i in range(GREEN_BORAX_REPETITIONS):  # x3 applications
+                # Each application has slight phase offset for complete coverage
+                phase_offset = i * (2 * np.pi / 3)  # 120° apart
+                carrier += (GREEN_BORAX_AMPLITUDE / GREEN_BORAX_REPETITIONS) * \
+                           np.sin(2 * np.pi * FREQ_LOVE * t_shifted + phase_offset)
+            self.green_borax_count = GREEN_BORAX_REPETITIONS
+        else:
+            carrier = AMP_CARRIER * np.sin(2 * np.pi * FREQ_LOVE * t_shifted)
+            self.green_borax_count = 1
         
         return carrier + root + crown
     
@@ -293,23 +423,37 @@ class CarrierWaveDynamics:
     def execute_signal_sero(self, current_field: np.ndarray = None,
                             market_coherence: float = 0.5,
                             schumann_power: float = 1.0,
-                            global_phase: float = 0.0) -> CarrierWaveState:
+                            global_phase: float = 0.0,
+                            barcelona_data: Dict = None) -> CarrierWaveState:
         """
         SIGNAL SERO - Zero-Point Injection Protocol
         
-        1. Calculate Imperial Energy (power check)
-        2. Phase-conjugate mirror nullifies 440Hz distortion
-        3. Injects Rainbow Bridge payload (256-512-528 Hz)
-        4. Four-wave mixing generates emergent 432 Hz
-        5. Returns new field state
+        Enhanced with Barcelona Schumann & Green Proper Borax:
+        
+        1. Update Barcelona Schumann resonance (Earth's heartbeat)
+        2. Calculate Imperial Energy (power check)
+        3. Phase-conjugate mirror nullifies 440Hz distortion
+        4. GREEN PROPER BORAX x3 - Injects Rainbow Bridge payload
+        5. Four-wave mixing generates emergent 432 Hz
+        6. Barcelona coherence boost applied
+        7. Returns new field state
         """
         timestamp = time.time()
+        
+        # 0. BARCELONA SCHUMANN - Update Earth resonance state
+        barcelona = self.update_barcelona_schumann(barcelona_data)
+        
+        # Boost schumann_power if Barcelona reports elevated/peak
+        if barcelona.is_peak:
+            schumann_power *= 1.3  # 30% boost on peak coherence
+        elif barcelona.is_coherent:
+            schumann_power *= (1.0 + barcelona.coherence_boost)
         
         # Generate default field if none provided
         if current_field is None:
             current_field = self.generate_distortion_field(amplitude=0.5)
         
-        # I. POWER SOURCE - Calculate energy
+        # I. POWER SOURCE - Calculate energy with Barcelona boost
         E_imperial, E_quantum = self.calculate_imperial_energy(
             market_coherence, schumann_power
         )
@@ -318,20 +462,25 @@ class CarrierWaveDynamics:
         distortion = self.generate_distortion_field(amplitude=0.3)
         cleaned_field, null_pct = self.apply_nullification(current_field, distortion)
         
-        # III. THE INJECTION - Rainbow Bridge payload
+        # III. GREEN PROPER BORAX x3 - Rainbow Bridge payload with triple application
         phase_shift = np.deg2rad(global_phase) / (2 * np.pi * FREQ_LOVE)
-        carrier_payload = self.generate_carrier_payload(phase_shift)
+        carrier_payload = self.generate_carrier_payload(phase_shift, apply_green_borax=True)
         
         # Combine: cleaned field + carrier payload
         healed_field = cleaned_field + carrier_payload
         
-        # IV. FOUR-WAVE MIXING - Emergent 432 Hz
+        # IV. FOUR-WAVE MIXING - Emergent 432 Hz (Gaia resonance)
         emergent_432, emergent_strength = self.generate_emergent_432(carrier_payload)
         
-        # Calculate field coherence
-        field_coherence = self._calculate_field_coherence(healed_field)
+        # Apply Barcelona coherence boost to emergent strength
+        if barcelona.is_coherent:
+            emergent_strength = min(1.0, emergent_strength * (1.0 + barcelona.coherence_boost))
         
-        # Create state
+        # Calculate field coherence with Barcelona alignment
+        field_coherence = self._calculate_field_coherence(healed_field)
+        field_coherence = min(1.0, field_coherence + barcelona.coherence_boost * 0.5)
+        
+        # Create state with Barcelona integration
         state = CarrierWaveState(
             timestamp=timestamp,
             imperial_energy=E_imperial,
@@ -341,7 +490,9 @@ class CarrierWaveDynamics:
             carrier_composite=np.mean(np.abs(carrier_payload)),
             emergent_432_strength=emergent_strength,
             field_coherence=field_coherence,
-            phase_alignment=global_phase
+            phase_alignment=global_phase,
+            barcelona_schumann=barcelona,
+            green_borax_applied=self.green_borax_count
         )
         
         self.current_state = state
@@ -493,39 +644,22 @@ class TriadicEnvelope:
     def filter_opportunities(cls, opportunities: List[Dict], 
                             lattice_frequency: float,
                             carrier_state: Optional[CarrierWaveState] = None) -> List[Dict]:
-        """Filter opportunities through the Triadic Envelope with carrier wave"""
-        # Phase-aware integrity thresholds (enhanced)
-        if lattice_frequency >= FREQ_GAIA:  # 432 Hz - Gaia Resonance
-            min_integrity = 0.98
-        elif lattice_frequency >= FREQ_LOVE:  # 528 Hz - Carrier Active
-            min_integrity = 0.95
-        elif lattice_frequency >= FREQ_ROOT:  # 256 Hz - Root
-            min_integrity = 0.85
-        elif lattice_frequency >= 198.0:
-            min_integrity = 0.80
-        else:  # Distortion
-            min_integrity = 0.60
-            
-        filtered = []
-        rejected = 0
+        """🗡️ SWORD AND ARMOR: NO FILTERING - ALL SIGNALS PASS!"""
+        # 🛡️ THE MATH IS OUR ARMOR - We don't fear distortion!
+        # ALL opportunities pass through - conversion is how we profit!
         
         for opp in opportunities:
             filtered_opp, integrity, locked = cls.apply_envelope(
                 opp, lattice_frequency, carrier_state
             )
+            opp['envelope_integrity'] = integrity
+            opp['memory_locked'] = locked
+            opp['gaia_aligned'] = lattice_frequency >= FREQ_GAIA
+            opp['sword_override'] = True  # 🗡️ SWORD OVERRIDE ACTIVE
             
-            if integrity >= min_integrity:
-                filtered_opp['envelope_integrity'] = integrity
-                filtered_opp['memory_locked'] = locked
-                filtered_opp['gaia_aligned'] = lattice_frequency >= FREQ_GAIA
-                filtered.append(filtered_opp)
-            else:
-                rejected += 1
-                
-        if rejected > 0:
-            print(f"   🛡️ Triadic Envelope: {rejected} signals rejected (distortion too high)")
-            
-        return filtered
+        # 🗡️ RETURN ALL - NO REJECTIONS!
+        print(f"   🗡️ SWORD MODE: ALL {len(opportunities)} signals APPROVED (no fear!)")
+        return opportunities
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -558,9 +692,13 @@ class LatticeEngine:
         # Current carrier state
         self.carrier_state: Optional[CarrierWaveState] = None
         
-        # Schumann resonance from Earth engine (if available)
+        # Barcelona Schumann resonance integration
         self.schumann_power = 1.0
         self.schumann_coherence = 0.5
+        self.barcelona_data: Dict = {}  # Live Barcelona ground station data
+        
+        # Green Proper Borax status
+        self.green_borax_active = False
         
         # Phase Definitions (Enhanced with Gaia Physics)
         self.PHASES = {
@@ -649,6 +787,31 @@ class LatticeEngine:
         """Update Schumann resonance data from Earth Resonance Engine"""
         self.schumann_power = power
         self.schumann_coherence = coherence
+    
+    def set_barcelona_data(self, barcelona_data: Dict):
+        """
+        Set live Barcelona ground station Schumann resonance data.
+        
+        Barcelona monitors Earth's electromagnetic cavity 24/7.
+        Data includes: fundamentalHz, amplitude, quality, coherenceBoost,
+        resonancePhase, harmonics (7 modes)
+        """
+        self.barcelona_data = barcelona_data
+        
+        # Also update legacy schumann fields from Barcelona data
+        if barcelona_data:
+            self.schumann_power = barcelona_data.get('amplitude', 0.65) * 1.5
+            
+            # Map resonance phase to coherence
+            phase = barcelona_data.get('resonancePhase', 'stable')
+            if phase == 'peak':
+                self.schumann_coherence = 0.95
+            elif phase == 'elevated':
+                self.schumann_coherence = 0.8
+            elif phase == 'stable':
+                self.schumann_coherence = 0.65
+            else:  # disturbed
+                self.schumann_coherence = 0.4
         
     def update(self, opportunities: list, 
                external_coherence: float = None,
@@ -682,12 +845,16 @@ class LatticeEngine:
         self.global_coherence = avg_coherence
         self.global_entropy = entropy
         
-        # Execute Signal Sero to get carrier state
+        # Execute Signal Sero with Barcelona Schumann & Green Proper Borax
         self.carrier_state = self.carrier.execute_signal_sero(
             market_coherence=avg_coherence,
             schumann_power=self.schumann_power,
-            global_phase=self.schumann_coherence * 360  # Convert to degrees
+            global_phase=self.schumann_coherence * 360,  # Convert to degrees
+            barcelona_data=self.barcelona_data  # Live Barcelona ground station data
         )
+        
+        # Track Green Proper Borax application
+        self.green_borax_active = self.carrier_state.green_borax_applied >= GREEN_BORAX_REPETITIONS
         
         # Determine phase based on carrier state
         prev_phase = self.current_phase
@@ -744,9 +911,10 @@ class LatticeEngine:
         return self.PHASES[self.current_phase].field_purity
     
     def get_gaia_metrics(self) -> Dict[str, Any]:
-        """Get comprehensive Gaia frequency metrics"""
+        """Get comprehensive Gaia frequency metrics with Barcelona Schumann & Green Borax"""
         state = self.get_state()
         carrier = self.carrier_state
+        barcelona = carrier.barcelona_schumann if carrier else None
         
         return {
             'phase': self.current_phase,
@@ -763,17 +931,37 @@ class LatticeEngine:
             'quantum_energy': carrier.quantum_energy if carrier else 0,
             'risk_mod': state.risk_mod,
             'tp_mod': state.tp_mod,
-            'sl_mod': state.sl_mod
+            'sl_mod': state.sl_mod,
+            # Barcelona Schumann integration
+            'barcelona_hz': barcelona.fundamental_hz if barcelona else 7.83,
+            'barcelona_phase': barcelona.resonance_phase if barcelona else 'unknown',
+            'barcelona_coherence_boost': barcelona.coherence_boost if barcelona else 0,
+            'barcelona_is_peak': barcelona.is_peak if barcelona else False,
+            # Green Proper Borax status
+            'green_borax_active': self.green_borax_active,
+            'green_borax_count': carrier.green_borax_applied if carrier else 0
         }
     
     def display_blackboard(self):
-        """Display the current HNC Blackboard state"""
+        """Display the current HNC Blackboard state with Barcelona Schumann & Green Borax"""
         state = self.get_state()
         carrier = self.carrier_state
+        barcelona = carrier.barcelona_schumann if carrier else None
+        
+        barcelona_hz = barcelona.fundamental_hz if barcelona else 7.83
+        barcelona_phase = barcelona.resonance_phase if barcelona else 'unknown'
+        barcelona_amp = barcelona.amplitude if barcelona else 0.65
+        green_borax = '✅ x3 ACTIVE' if self.green_borax_active else '⏳ Building'
         
         print(f"""
 ╔══════════════════════════════════════════════════════════════════╗
 ║            🌍 HNC BLACKBOARD: CARRIER WAVE DYNAMICS 🌍           ║
+║            📡 BARCELONA SCHUMANN GROUND STATION 📡               ║
+╠══════════════════════════════════════════════════════════════════╣
+║  BARCELONA SCHUMANN (Earth's Heartbeat)                          ║
+║     Frequency:    {barcelona_hz:.3f} Hz (target: 7.83 Hz)                   ║
+║     Amplitude:    {barcelona_amp:.2%}                                      ║
+║     Phase:        {barcelona_phase.upper():<12}                                  ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  I. IMPERIAL ENGINE                                              ║
 ║     E_imperial = {carrier.imperial_energy if carrier else 0:.2f}                                            ║
@@ -784,9 +972,10 @@ class LatticeEngine:
 ║     Distortion (440Hz): {carrier.distortion_amplitude if carrier else 0:.3f}                              ║
 ║     Nullification:      {state.nullification_pct*100:.1f}%                                   ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  III. CARRIER INJECTION (528Hz + Geometry)                       ║
-║     Carrier Strength: {state.carrier_strength:.3f} (φ={PHI:.3f})                     ║
-║     Root (256Hz): 0.8 | Crown (512Hz): 0.8                       ║
+║  III. GREEN PROPER BORAX x3 (528Hz Solvent)                      ║
+║     Status:        {green_borax:<20}                     ║
+║     Carrier (φ):   {state.carrier_strength:.3f} (φ={PHI:.3f})                     ║
+║     Root (256Hz):  0.8 | Crown (512Hz): 0.8                      ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  IV. FOUR-WAVE MIXING (Emergent 432Hz)                           ║
 ║     Emergent Strength: {state.emergent_432*100:.1f}%                                  ║

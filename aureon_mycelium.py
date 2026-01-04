@@ -1732,6 +1732,229 @@ class MyceliumNetwork:
             self.enhanced_nexus.compounding.starting_balance = actual_balance
             logger.info(f"🔱 Enhanced Nexus synced to balance: ${actual_balance:,.2f}")
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🍄 FULL MESH SIGNAL NETWORK - SMALL↔BIG, UP↔DOWN, LEFT↔RIGHT 🍄
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def get_queen_signal(self, market_data: Dict = None) -> float:
+        """
+        Get the Queen Neuron's aggregated signal.
+        This is the MASTER SIGNAL that combines all hives and agents.
+        """
+        if not self.hives:
+            return 0.0
+        
+        # If market data provided, do a full step first
+        if market_data:
+            result = self.step(market_data)
+            return result.get('queen_signal', 0.0)
+        
+        # Otherwise, get cached queen signal from last step
+        # Aggregate all hive signals through synapses
+        hive_signals = []
+        for hive in self.hives:
+            # Get aggregate signal from hive's agents
+            agent_signals = [a.last_signal for a in hive.agents if hasattr(a, 'last_signal')]
+            if agent_signals:
+                hive_signal = sum(agent_signals) / len(agent_signals)
+                hive_signals.append(hive_signal)
+        
+        if not hive_signals:
+            return 0.0
+        
+        # Queen aggregates all signals
+        transmitted = []
+        for i, signal in enumerate(hive_signals):
+            if i < len(self.hive_synapses):
+                transmitted.append(self.hive_synapses[i].transmit(signal))
+            else:
+                transmitted.append(signal)
+        
+        return self.queen_neuron.activate(transmitted)
+    
+    def get_network_coherence(self) -> float:
+        """
+        Get network coherence - how aligned are all agents?
+        1.0 = All agents agree perfectly
+        0.0 = Maximum disagreement
+        """
+        if not self.hives:
+            return 0.5
+        
+        all_signals = []
+        for hive in self.hives:
+            for agent in hive.agents:
+                if hasattr(agent, 'last_signal'):
+                    all_signals.append(agent.last_signal)
+        
+        if len(all_signals) < 2:
+            return 0.5
+        
+        # Coherence = 1 - variance of signals
+        mean_signal = sum(all_signals) / len(all_signals)
+        variance = sum((s - mean_signal) ** 2 for s in all_signals) / len(all_signals)
+        
+        # Normalize variance to [0, 1] range (assuming signals in [-1, 1])
+        normalized_variance = min(variance / 1.0, 1.0)
+        coherence = 1.0 - normalized_variance
+        
+        return max(0.0, min(1.0, coherence))
+    
+    def broadcast_signal(self, signal_type: str, data: Dict) -> None:
+        """
+        Broadcast a signal to ALL connected systems.
+        Direction: OUTWARD (Mycelium → All subsystems)
+        """
+        # Store for propagation
+        broadcast = {
+            'type': signal_type,
+            'data': data,
+            'timestamp': time.time(),
+            'source': 'mycelium_queen',
+            'coherence': self.get_network_coherence(),
+        }
+        
+        # Add to connection map for external systems to read
+        if 'broadcasts' not in self.connection_map:
+            self.connection_map['broadcasts'] = deque(maxlen=100)
+        self.connection_map['broadcasts'].append(broadcast)
+        
+        # Propagate to all hives
+        for hive in self.hives:
+            hive.receive_broadcast(broadcast) if hasattr(hive, 'receive_broadcast') else None
+    
+    def receive_external_signal(self, source: str, signal: float, confidence: float = 0.5) -> None:
+        """
+        Receive a signal from an external system.
+        Direction: INWARD (External → Mycelium)
+        
+        Sources can be: probability_matrix, adaptive_learner, chess_brain, 
+                       miner_brain, quantum_telescope, historical_wisdom, etc.
+        """
+        # Store external signal
+        if 'external_signals' not in self.connection_map:
+            self.connection_map['external_signals'] = {}
+        
+        self.connection_map['external_signals'][source] = {
+            'signal': signal,
+            'confidence': confidence,
+            'timestamp': time.time()
+        }
+        
+        # Blend into queen neuron bias (weighted by confidence)
+        blend_weight = 0.1 * confidence  # Max 10% influence per source
+        self.queen_neuron.bias = (1 - blend_weight) * self.queen_neuron.bias + blend_weight * signal
+    
+    def get_unified_signal(self, asset: str = None, include_external: bool = True) -> Dict:
+        """
+        Get a UNIFIED signal combining ALL sources:
+        - Internal: Queen neuron, all hives, all agents
+        - External: Probability, Adaptive, Historical, Chess, Quantum
+        
+        Returns comprehensive decision data.
+        """
+        # Internal signals
+        queen_signal = self.get_queen_signal()
+        coherence = self.get_network_coherence()
+        
+        # External signals
+        external_signals = self.connection_map.get('external_signals', {})
+        
+        # Weight and combine
+        signals = [queen_signal * coherence * 2]  # Queen has 2x weight
+        confidences = [coherence]
+        
+        if include_external:
+            for source, data in external_signals.items():
+                # Only use recent signals (< 60 seconds old)
+                if time.time() - data['timestamp'] < 60:
+                    signals.append(data['signal'] * data['confidence'])
+                    confidences.append(data['confidence'])
+        
+        if not signals:
+            return {
+                'signal': 0.0,
+                'action': 'HOLD',
+                'confidence': 0.5,
+                'coherence': coherence,
+                'sources': 0
+            }
+        
+        # Unified signal = weighted average
+        unified_signal = sum(signals) / len(signals)
+        unified_confidence = sum(confidences) / len(confidences)
+        
+        # Determine action
+        if unified_signal > 0.3 and unified_confidence > 0.5:
+            action = 'BUY'
+        elif unified_signal < -0.3 and unified_confidence > 0.5:
+            action = 'SELL'
+        else:
+            action = 'HOLD'
+        
+        return {
+            'signal': unified_signal,
+            'action': action,
+            'confidence': unified_confidence,
+            'coherence': coherence,
+            'queen_signal': queen_signal,
+            'external_count': len(external_signals),
+            'sources': len(signals)
+        }
+    
+    def connect_subsystem(self, name: str, subsystem: Any) -> None:
+        """
+        Connect a subsystem to the Mycelium mesh.
+        Enables bidirectional communication.
+        """
+        self.connection_map[name] = {
+            'instance': subsystem,
+            'connected_at': time.time(),
+            'signals_sent': 0,
+            'signals_received': 0
+        }
+        logger.info(f"🍄 Mycelium: {name} connected to network")
+    
+    def propagate_to_all(self, message_type: str, payload: Dict) -> int:
+        """
+        Propagate a message to ALL connected subsystems.
+        Returns count of systems that received the message.
+        """
+        count = 0
+        for name, conn in self.connection_map.items():
+            if isinstance(conn, dict) and 'instance' in conn:
+                instance = conn['instance']
+                if hasattr(instance, 'receive_mycelium_message'):
+                    try:
+                        instance.receive_mycelium_message(message_type, payload)
+                        conn['signals_sent'] = conn.get('signals_sent', 0) + 1
+                        count += 1
+                    except Exception:
+                        pass
+        return count
+    
+    def get_mesh_status(self) -> Dict:
+        """Get status of the full mesh network."""
+        connected = []
+        for name, conn in self.connection_map.items():
+            if isinstance(conn, dict) and 'instance' in conn:
+                connected.append({
+                    'name': name,
+                    'connected_at': conn.get('connected_at'),
+                    'signals_sent': conn.get('signals_sent', 0),
+                    'signals_received': conn.get('signals_received', 0)
+                })
+        
+        return {
+            'queen_signal': self.get_queen_signal(),
+            'coherence': self.get_network_coherence(),
+            'hive_count': len(self.hives),
+            'agent_count': self.get_total_agents(),
+            'connected_systems': connected,
+            'external_signals': len(self.connection_map.get('external_signals', {})),
+            'broadcasts_pending': len(self.connection_map.get('broadcasts', []))
+        }
+
     def get_state(self) -> Dict[str, Any]:
         """Get full network state - INCLUDING THE GOAL METRICS AND CONVERSION STATS!"""
         growth = self.get_growth_stats()

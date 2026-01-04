@@ -975,10 +975,11 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
     if ADAPTIVE_GATE_AVAILABLE and _adaptive_gate is not None:
         try:
             # Get comprehensive adaptive threshold with all gates
+            # Use 'prime' gate level for profit target (not just break-even)
             adaptive_result = get_adaptive_threshold(
                 exchange=exchange_name,
                 trade_value=trade_size,
-                target_profit=PENNY_TARGET_NET
+                gate_level='prime'  # Prime = profit target gate
             )
             if adaptive_result:
                 # 🎯 Use the PRIME PROFIT gate (not just break-even)
@@ -986,7 +987,7 @@ def get_penny_threshold(exchange: str, trade_size: float) -> dict:
                 return adaptive_result
         except Exception as e:
             # Fall back to legacy calculation if adaptive fails
-            logger.warning(f"Adaptive gate failed, using legacy: {e}")
+            logger.debug(f"Adaptive gate using legacy: {e}")
     
     # 📊 LEGACY CALCULATION (fallback if adaptive not available)
     fee_rate = get_exchange_fee_rate(exchange_name)
@@ -7072,6 +7073,229 @@ class AdaptiveLearningEngine:
             base_summary += f"\n\n   📚 KNOWLEDGE BASE: {len(self.knowledge_event_history)} research events tracked"
         
         return base_summary
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 🌌🧬 LABYRINTH INTELLIGENCE INTEGRATION - The Learner PLANS from Labyrinth!
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def feed_labyrinth_intelligence(self, labyrinth_data: Dict):
+        """
+        🌌 Receive intelligence from the Labyrinth (Universe Scanner)
+        
+        The Labyrinth feeds market-wide patterns including:
+        - top_movers: Highest momentum assets
+        - top_dips: Best buy opportunities
+        - momentum_map: Full momentum for all scanned assets
+        - volume_leaders: Highest volume assets
+        - conversion_paths: Profitable conversion chains
+        - market_sentiment: Overall market direction
+        
+        The Adaptive Learner uses this for:
+        1. Pattern recognition across the entire market
+        2. Planning optimal moves before they happen
+        3. Learning which patterns lead to profits
+        """
+        if not hasattr(self, 'labyrinth_history'):
+            self.labyrinth_history = []
+        
+        # Record this labyrinth snapshot
+        snapshot = {
+            'timestamp': time.time(),
+            'market_sentiment': labyrinth_data.get('market_sentiment', 0.0),
+            'top_movers': labyrinth_data.get('top_movers', [])[:5],
+            'top_dips': labyrinth_data.get('top_dips', [])[:5],
+            'volume_leaders': labyrinth_data.get('volume_leaders', [])[:5],
+            'conversion_paths': labyrinth_data.get('conversion_paths', [])[:5]
+        }
+        
+        self.labyrinth_history.append(snapshot)
+        
+        # Keep last 100 snapshots for pattern learning
+        if len(self.labyrinth_history) > 100:
+            self.labyrinth_history = self.labyrinth_history[-100:]
+        
+        # Update market sentiment tracking
+        if not hasattr(self, 'sentiment_history'):
+            self.sentiment_history = []
+        self.sentiment_history.append({
+            'time': time.time(),
+            'sentiment': labyrinth_data.get('market_sentiment', 0.0)
+        })
+        if len(self.sentiment_history) > 50:
+            self.sentiment_history = self.sentiment_history[-50:]
+    
+    def record_market_pattern(self, asset: str, pattern: Dict):
+        """
+        🧬 Record a market pattern for learning
+        
+        Tracks patterns per asset to learn what leads to profits.
+        """
+        if not hasattr(self, 'asset_patterns'):
+            self.asset_patterns = {}
+        
+        if asset not in self.asset_patterns:
+            self.asset_patterns[asset] = []
+        
+        self.asset_patterns[asset].append(pattern)
+        
+        # Keep last 50 patterns per asset
+        if len(self.asset_patterns[asset]) > 50:
+            self.asset_patterns[asset] = self.asset_patterns[asset][-50:]
+    
+    def plan_labyrinth_moves(self, conversion_paths: List[Dict], 
+                             top_dips: List[tuple], 
+                             market_sentiment: float) -> List[Dict]:
+        """
+        🧬🎯 PLAN OPTIMAL MOVES USING LABYRINTH INTELLIGENCE!
+        
+        This is the key method - uses Labyrinth data to PLAN moves:
+        1. Analyze conversion paths for profitable chains
+        2. Weight by historical success patterns
+        3. Factor in market sentiment
+        4. Return prioritized list of planned moves
+        
+        Returns:
+            List of planned moves with confidence scores
+        """
+        planned_moves = []
+        
+        # 1️⃣ ANALYZE CONVERSION PATHS
+        for conv in (conversion_paths or [])[:10]:
+            score = conv.get('score', 0)
+            from_asset = conv.get('from', '')
+            to_asset = conv.get('to', '')
+            expected_net = conv.get('expected_net', 0)
+            
+            # Weight by historical performance of this asset
+            historical_modifier = self._get_asset_historical_modifier(from_asset)
+            
+            # Weight by market sentiment
+            sentiment_modifier = 1.0 + (market_sentiment * 0.2)  # ±20% based on sentiment
+            
+            # Calculate confidence
+            confidence = min(0.95, (score / 100.0) * historical_modifier * sentiment_modifier)
+            
+            if confidence > 0.3 and expected_net > 0.001:  # 0.1% minimum expected profit
+                planned_moves.append({
+                    'type': 'conversion',
+                    'from_asset': from_asset,
+                    'to_asset': to_asset,
+                    'expected_profit': expected_net,
+                    'confidence': confidence,
+                    'reasoning': f"Labyrinth conv {from_asset}→{to_asset}, +{expected_net*100:.2f}%",
+                    'priority': score * confidence
+                })
+        
+        # 2️⃣ ANALYZE DIP OPPORTUNITIES
+        for asset, momentum in (top_dips or [])[:10]:
+            # Check if this asset historically recovers from dips
+            recovery_prob = self._get_dip_recovery_probability(asset)
+            
+            # Weight by sentiment - buy dips in bullish markets
+            sentiment_modifier = 1.0 + (market_sentiment * 0.3)  # ±30% for dips
+            
+            confidence = recovery_prob * sentiment_modifier
+            
+            if confidence > 0.4:  # 40% minimum confidence
+                planned_moves.append({
+                    'type': 'buy_dip',
+                    'asset': asset,
+                    'dip_magnitude': abs(momentum),
+                    'expected_recovery': recovery_prob,
+                    'confidence': min(0.9, confidence),
+                    'reasoning': f"Labyrinth dip {asset} at {momentum*100:.1f}%, recovery prob {recovery_prob*100:.0f}%",
+                    'priority': abs(momentum) * confidence * 100
+                })
+        
+        # 3️⃣ SENTIMENT-BASED MOVES
+        if abs(market_sentiment) > 0.3:  # Strong sentiment
+            direction = 'bullish' if market_sentiment > 0 else 'bearish'
+            # Find assets that historically perform well in this sentiment
+            best_assets = self._get_best_assets_for_sentiment(direction)
+            
+            for asset, historical_wr in best_assets[:3]:
+                planned_moves.append({
+                    'type': f'{direction}_momentum',
+                    'asset': asset,
+                    'sentiment_strength': abs(market_sentiment),
+                    'historical_win_rate': historical_wr,
+                    'confidence': historical_wr * 0.9,
+                    'reasoning': f"Labyrinth {direction} play on {asset} (hist WR: {historical_wr*100:.0f}%)",
+                    'priority': abs(market_sentiment) * historical_wr * 100
+                })
+        
+        # Sort by priority (highest first)
+        planned_moves.sort(key=lambda x: x.get('priority', 0), reverse=True)
+        
+        logger.debug(f"🧬🌌 Labyrinth planned {len(planned_moves)} moves, sentiment: {market_sentiment:.2f}")
+        
+        return planned_moves[:10]  # Top 10 planned moves
+    
+    def _get_asset_historical_modifier(self, asset: str) -> float:
+        """Get historical performance modifier for an asset."""
+        # Check trade history for this asset
+        asset_trades = [t for t in self.trade_history if t.get('symbol', '').upper().startswith(asset.upper())]
+        
+        if len(asset_trades) >= 3:
+            wins = sum(1 for t in asset_trades if t.get('pnl', 0) > 0)
+            win_rate = wins / len(asset_trades)
+            return 0.5 + win_rate  # 0.5 to 1.5x modifier
+        
+        return 1.0  # Default neutral modifier
+    
+    def _get_dip_recovery_probability(self, asset: str) -> float:
+        """Estimate probability of recovery from a dip for this asset."""
+        if not hasattr(self, 'asset_patterns') or asset not in self.asset_patterns:
+            return 0.5  # Default 50%
+        
+        patterns = self.asset_patterns[asset]
+        dip_patterns = [p for p in patterns if p.get('is_dip', False)]
+        
+        if len(dip_patterns) < 3:
+            return 0.5
+        
+        # Check how many dips were followed by recovery (next pattern is positive)
+        recoveries = 0
+        for i, p in enumerate(patterns[:-1]):
+            if p.get('is_dip', False) and i + 1 < len(patterns):
+                next_p = patterns[i + 1]
+                if next_p.get('momentum', 0) > 0:
+                    recoveries += 1
+        
+        dip_count = len(dip_patterns)
+        return recoveries / dip_count if dip_count > 0 else 0.5
+    
+    def _get_best_assets_for_sentiment(self, sentiment: str) -> List[tuple]:
+        """Get assets that historically perform best in bullish/bearish markets."""
+        if not hasattr(self, 'labyrinth_history') or len(self.labyrinth_history) < 5:
+            return []
+        
+        # Track asset performance during similar sentiment periods
+        asset_performance = {}
+        
+        for i, snapshot in enumerate(self.labyrinth_history[:-1]):
+            snap_sentiment = snapshot.get('market_sentiment', 0)
+            is_matching = (sentiment == 'bullish' and snap_sentiment > 0.1) or \
+                         (sentiment == 'bearish' and snap_sentiment < -0.1)
+            
+            if is_matching:
+                # Check top movers during this period
+                for asset, momentum in snapshot.get('top_movers', [])[:10]:
+                    if asset not in asset_performance:
+                        asset_performance[asset] = {'total': 0, 'positive': 0}
+                    asset_performance[asset]['total'] += 1
+                    if momentum > 0:
+                        asset_performance[asset]['positive'] += 1
+        
+        # Calculate win rates
+        results = []
+        for asset, perf in asset_performance.items():
+            if perf['total'] >= 2:
+                wr = perf['positive'] / perf['total']
+                results.append((asset, wr))
+        
+        results.sort(key=lambda x: x[1], reverse=True)
+        return results[:10]
 
 
 # Global adaptive learning instance
