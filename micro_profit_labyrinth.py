@@ -4006,7 +4006,9 @@ class MicroProfitLabyrinth:
                         if success:
                             conversions_this_turn = 1
                             self.exchange_stats[current_exchange]['conversions'] += 1
-                            self.exchange_stats[current_exchange]['profit'] += best.expected_pnl_usd
+                            # 🔧 FIX: Use ACTUAL P/L not expected P/L
+                            actual_pnl = getattr(best, 'actual_pnl_usd', best.expected_pnl_usd)
+                            self.exchange_stats[current_exchange]['profit'] += actual_pnl
                             # Queen learns from successful execution
                             await self.queen_learn_from_trade(best, success=True)
                         else:
@@ -4353,14 +4355,18 @@ class MicroProfitLabyrinth:
         if self.queen and hasattr(self.queen, 'say'):
             try:
                 if success:
-                    # Celebratory message!
-                    profit = opportunity.expected_pnl_usd
+                    # 🔧 FIX: Use ACTUAL P/L not expected P/L for celebration!
+                    profit = getattr(opportunity, 'actual_pnl_usd', opportunity.expected_pnl_usd)
                     if profit > 0.10:
-                        msg = f"Beautiful! We just made ${profit:.4f} on {opportunity.from_asset} to {opportunity.to_asset}! Keep winning!"
+                        msg = f"Beautiful! We actually made ${profit:.4f} on {opportunity.from_asset} to {opportunity.to_asset}! Keep winning!"
                         self.queen.say(msg, voice_enabled=True, emotion="profit")
                     elif profit > 0:
-                        msg = f"Nice! ${profit:.4f} profit. Every bit counts on our path to ONE BILLION!"
+                        msg = f"Nice! ${profit:.4f} actual profit. Every bit counts on our path to ONE BILLION!"
                         self.queen.say(msg, voice_enabled=False, emotion="calm")  # Don't speak small wins
+                    elif profit < 0:
+                        # Trade executed but resulted in loss
+                        msg = f"Trade completed but we lost ${abs(profit):.4f}. Learning from this!"
+                        self.queen.say(msg, voice_enabled=False, emotion="loss")
                 else:
                     # Learning message
                     msg = f"That {opportunity.from_asset} trade didn't work. Learning and adapting. We'll get the next one!"
@@ -6727,7 +6733,10 @@ class MicroProfitLabyrinth:
         
         # Calculate P&L using actual execution data (if available)
         if validation.get('total_sold') > 0 or validation.get('final_amount', 0) > 0 or buy_amount > 0:
-            # Use actual execution prices if we have them
+            # 🔧 FIX: Use ACTUAL EXECUTION PRICES, not current market prices!
+            # This is critical for accurate P/L calculation
+            
+            # Sold value - use actual execution price if available
             if validation.get('avg_sell_price', 0) > 0:
                 actual_sold_value = validation['total_sold'] * validation['avg_sell_price']
             else:
@@ -6741,11 +6750,18 @@ class MicroProfitLabyrinth:
             if final_amount <= 0 and buy_amount > 0:
                 # Fallback to buy_amount when final_amount is missing/zero
                 final_amount = buy_amount
-            actual_bought_value = final_amount * to_price
             
-            # Subtract fees
+            # 🔧 FIX: Use actual buy price if available, not current price
+            if validation.get('avg_buy_price', 0) > 0:
+                actual_bought_value = final_amount * validation['avg_buy_price']
+            else:
+                actual_bought_value = final_amount * to_price
+            
+            # Subtract fees (fees are already in USD/quote currency)
             fees = validation.get('total_fees', 0)
-            fees_in_usd = fees * to_price if fees > 0 else 0
+            # 🔧 FIX: fees_in_usd calculation - fees are often in quote currency already
+            # Don't multiply by to_price if fee is already in USD/USDC/USDT
+            fees_in_usd = fees  # Assume fees are already in USD value
             
             verified_pnl = actual_bought_value - actual_sold_value - fees_in_usd
             verification['verified_pnl'] = verified_pnl
@@ -7432,12 +7448,15 @@ class MicroProfitLabyrinth:
             for system, sigs in self.all_signals.items():
                 print(f"   {system}: {len(sigs)} signals")
         
-        # Conversions
+        # Conversions - Show ACTUAL P/L not expected!
         if self.conversions:
-            print("\n📋 CONVERSIONS:")
+            print("\n📋 CONVERSIONS (ACTUAL P/L):")
             for c in self.conversions:
                 status = "✅" if c.executed else "❌"
-                print(f"   {status} {c.from_asset} → {c.to_asset}: ${c.expected_pnl_usd:.4f} (Λ:{c.lambda_score:.0%} G:{c.gravity_score:.0%})")
+                # 🔧 FIX: Use actual_pnl_usd for display (what really happened)
+                actual_pnl = getattr(c, 'actual_pnl_usd', c.expected_pnl_usd)
+                verified = "✓" if getattr(c, 'pnl_verified', False) else "?"
+                print(f"   {status} {c.from_asset} → {c.to_asset}: ${actual_pnl:+.4f} {verified} (Λ:{c.lambda_score:.0%} G:{c.gravity_score:.0%})")
         
         # ═══════════════════════════════════════════════════════════════════
         # 🫒💰 LIVE BARTER MATRIX SUMMARY

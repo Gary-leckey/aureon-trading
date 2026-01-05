@@ -124,8 +124,8 @@
     "losses": 0.0
   },
   "VIRTUAL->BROCCOLI714": {
-    "wins": 1.0,
-    "losses": 0.0
+    "wins": 2.0,
+    "losses": 1.0
   },
   "DAI->USDT": {
     "wins": 0.0,
@@ -224,11 +224,11 @@
     "losses": 1.0
   },
   "BROCCOLI714->TST": {
-    "wins": 0.0,
+    "wins": 1.0,
     "losses": 1.0
   },
   "TST->VIRTUAL": {
-    "wins": 1.0,
+    "wins": 2.0,
     "losses": 0.0
   }
 }
