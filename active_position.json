@@ -1,0 +1,13 @@
+{
+  "symbol": "ZBTUSDC",
+  "base_asset": "ZBT",
+  "entry_price": 0.1302,
+  "quantity": 59.4,
+  "amount_usdc": 7.7386907945,
+  "target_pct": 5,
+  "target_price": 0.13671000000000003,
+  "stop_pct": -3,
+  "stop_price": 0.12629400000000002,
+  "timestamp": "2026-01-05T11:36:41.864295+00:00",
+  "status": "open"
+}
