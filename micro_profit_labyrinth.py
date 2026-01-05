@@ -1004,21 +1004,56 @@ class LiveBarterMatrix:
         - NO path that historically LOSES money
         - NO path with too many consecutive losses
         - We are in the PROFIT game, not the losing game!
+        - 👑🔮 QUEEN'S DREAMS NOW INFORM ALL DECISIONS!
         
         Returns: (approved: bool, reason: str)
         """
         key = (from_asset.upper(), to_asset.upper())
         
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # 👑🔮 CONSULT THE QUEEN'S DREAMS FIRST!
+        # ═══════════════════════════════════════════════════════════════════════════════
+        queen_dream_signal = "NEUTRAL"
+        queen_confidence = 0.5
+        
+        if hasattr(self, 'queen') and self.queen:
+            try:
+                dream_vision = self.queen.dream_of_winning({
+                    'from_asset': from_asset,
+                    'to_asset': to_asset,
+                })
+                queen_confidence = dream_vision.get('final_confidence', 0.5)
+                queen_will_win = dream_vision.get('will_win', False)
+                
+                if queen_will_win and queen_confidence >= 0.65:
+                    queen_dream_signal = "STRONG_WIN"
+                elif queen_confidence >= 0.55:
+                    queen_dream_signal = "FAVORABLE"
+                elif queen_confidence < 0.4:
+                    queen_dream_signal = "WARNING"
+                    # Queen's warning can override even good history!
+                    logger.info(f"👑⚠️ Queen dreams WARNING for {from_asset}→{to_asset} (conf: {queen_confidence:.0%})")
+            except Exception as e:
+                logger.debug(f"Could not consult Queen's dreams in approves_path: {e}")
+        
         # Check if already blocked
         if key in self.blocked_paths:
-            return False, f"👑 BLOCKED: {self.blocked_paths[key]}"
+            # 👑 Queen can override blocks if she dreams STRONG_WIN!
+            if queen_dream_signal == "STRONG_WIN":
+                logger.info(f"👑🔮 QUEEN OVERRIDE: Unblocking {from_asset}→{to_asset} - She dreams WIN!")
+                del self.blocked_paths[key]
+            else:
+                return False, f"👑 BLOCKED: {self.blocked_paths[key]}"
         
         # Check historical performance
         history = self.barter_history.get(key, {})
         trades = history.get('trades', 0)
         
         # New paths get a chance (3 trades to prove themselves)
+        # 👑 Queen's dreams can accelerate approval!
         if trades < 3:
+            if queen_dream_signal in ["STRONG_WIN", "FAVORABLE"]:
+                return True, f"👑 NEW_PATH + QUEEN DREAMS: Trial granted with blessing (conf: {queen_confidence:.0%})"
             return True, "👑 NEW_PATH: Queen grants trial period"
         
         # Calculate win rate and total profit
@@ -1028,28 +1063,41 @@ class LiveBarterMatrix:
         
         win_rate = wins / trades if trades > 0 else 0
         
-        # 👑 QUEEN'S MANDATES:
+        # 👑 QUEEN'S MANDATES (now informed by dreams!):
         
-        # 1. Win rate mandate
-        if win_rate < self.MIN_WIN_RATE_REQUIRED:
-            reason = f"Win rate {win_rate:.0%} < {self.MIN_WIN_RATE_REQUIRED:.0%} required"
+        # 1. Win rate mandate - Queen can boost tolerance if she dreams WIN
+        effective_min_win_rate = self.MIN_WIN_RATE_REQUIRED
+        if queen_dream_signal == "STRONG_WIN":
+            effective_min_win_rate = max(0.25, self.MIN_WIN_RATE_REQUIRED - 0.15)  # 15% more tolerance
+        
+        if win_rate < effective_min_win_rate:
+            reason = f"Win rate {win_rate:.0%} < {effective_min_win_rate:.0%} required"
             self._block_path(key, reason)
             return False, f"👑 BLOCKED: {reason}"
         
-        # 2. Total profit mandate
-        if total_profit < self.MIN_PATH_PROFIT:
-            reason = f"Path P/L ${total_profit:.2f} < ${self.MIN_PATH_PROFIT:.2f} limit"
+        # 2. Total profit mandate - Queen can accept smaller losses if dreaming WIN
+        effective_min_profit = self.MIN_PATH_PROFIT
+        if queen_dream_signal == "STRONG_WIN":
+            effective_min_profit = min(-0.50, self.MIN_PATH_PROFIT * 2)  # Accept more loss if Queen sees WIN
+        
+        if total_profit < effective_min_profit:
+            reason = f"Path P/L ${total_profit:.2f} < ${effective_min_profit:.2f} limit"
             self._block_path(key, reason)
             return False, f"👑 BLOCKED: {reason}"
         
-        # 3. Consecutive losses mandate
-        if consecutive_losses >= self.MAX_CONSECUTIVE_LOSSES:
+        # 3. Consecutive losses mandate - Queen's WARNING makes this stricter!
+        effective_max_losses = self.MAX_CONSECUTIVE_LOSSES
+        if queen_dream_signal == "WARNING":
+            effective_max_losses = max(1, self.MAX_CONSECUTIVE_LOSSES - 2)  # Stricter if Queen warns
+        
+        if consecutive_losses >= effective_max_losses:
             reason = f"{consecutive_losses} consecutive losses - path needs to cool down"
             self._block_path(key, reason)
             return False, f"👑 BLOCKED: {reason}"
         
-        # 👑 QUEEN APPROVES!
-        return True, f"👑 APPROVED: {win_rate:.0%} win rate, ${total_profit:+.2f} total"
+        # 👑 QUEEN APPROVES! Include dream status
+        dream_msg = f" | 👑🔮 {queen_dream_signal}" if queen_dream_signal != "NEUTRAL" else ""
+        return True, f"👑 APPROVED: {win_rate:.0%} win rate, ${total_profit:+.2f} total{dream_msg}"
     
     def check_pair_allowed(self, pair_key: str, exchange: str) -> Tuple[bool, str]:
         """
@@ -1151,6 +1199,7 @@ class LiveBarterMatrix:
         👑🔢 QUEEN'S MATHEMATICAL CERTAINTY GATE
         
         NO FEAR - MATH IS ON HER SIDE!
+        👑🔮 NOW INFORMED BY THE QUEEN'S DREAMS!
         
         This gate calculates the EXACT costs and GUARANTEES profit before approving.
         If the math doesn't work, the trade doesn't happen. Period.
@@ -1159,6 +1208,39 @@ class LiveBarterMatrix:
         """
         from_asset = from_asset.upper()
         to_asset = to_asset.upper()
+        
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # 👑🔮 CONSULT THE QUEEN'S DREAMS - Her wisdom guides the math!
+        # ═══════════════════════════════════════════════════════════════════════════════
+        queen_dream_multiplier = 1.0
+        queen_cost_tolerance = 0.0
+        queen_dream_status = "NEUTRAL"
+        
+        if hasattr(self, 'queen') and self.queen:
+            try:
+                dream_vision = self.queen.dream_of_winning({
+                    'from_asset': from_asset,
+                    'to_asset': to_asset,
+                    'exchange': exchange,
+                })
+                queen_confidence = dream_vision.get('final_confidence', 0.5)
+                queen_will_win = dream_vision.get('will_win', False)
+                
+                if queen_will_win and queen_confidence >= 0.65:
+                    queen_dream_status = "STRONG_WIN"
+                    queen_cost_tolerance = 0.005  # Allow 0.5% more cost if Queen dreams WIN
+                    queen_dream_multiplier = 1.3   # 30% boost to approval chances
+                elif queen_confidence >= 0.55:
+                    queen_dream_status = "FAVORABLE"
+                    queen_cost_tolerance = 0.002  # Allow 0.2% more cost
+                    queen_dream_multiplier = 1.15
+                elif queen_confidence < 0.4:
+                    queen_dream_status = "WARNING"
+                    queen_cost_tolerance = -0.005  # 0.5% LESS tolerance - stricter!
+                    queen_dream_multiplier = 0.7
+                    
+            except Exception as e:
+                logger.debug(f"Could not consult Queen's dreams in math_gate: {e}")
         
         # Calculate trade value
         from_value_usd = from_amount * from_price
@@ -1282,39 +1364,51 @@ class LiveBarterMatrix:
             }
         }
         
-        # 👑 QUEEN'S FINAL VERDICT
+        # 👑 QUEEN'S FINAL VERDICT (NOW WITH DREAM WISDOM!)
+        # Queen's dreams adjust tolerance: STRONG_WIN = +0.5%, FAVORABLE = +0.2%, WARNING = -0.5%
         
         # RULE 1: NO meme-to-meme conversions (too much slippage)
+        # Unless Queen dreams STRONG_WIN - she sees a path we don't
         if from_type == 'meme' and to_type == 'meme':
-            return False, "👑🔢 BLOCKED: Meme→Meme has catastrophic slippage", math_breakdown
+            if queen_dream_status != "STRONG_WIN":
+                return False, "👑🔢 BLOCKED: Meme→Meme has catastrophic slippage", math_breakdown
+            else:
+                logger.info(f"👑🔮 QUEEN OVERRIDE: Meme→Meme ALLOWED - Queen dreams STRONG_WIN!")
         
-        # RULE 2: NO conversions with >5% total cost
-        if total_cost_pct > 0.05:
-            return False, f"👑🔢 BLOCKED: Total cost {total_cost_pct*100:.1f}% > 5% limit", math_breakdown
+        # RULE 2: NO conversions with >5% total cost (adjusted by Queen's dreams)
+        cost_limit = 0.05 + queen_cost_tolerance  # Queen's dreams adjust tolerance
+        if total_cost_pct > cost_limit:
+            return False, f"👑🔢 BLOCKED: Total cost {total_cost_pct*100:.1f}% > {cost_limit*100:.1f}% limit (Queen: {queen_dream_status})", math_breakdown
         
         # RULE 3: Stablecoin conversions - PRIME PROFIT MODE
-        # Now with realistic spreads (0.10%), stablecoins CAN be profitable
-        # Allow up to 0.5% cost for stablecoins (they're safe, small losses are ok)
-        if is_safe_conversion and total_cost_pct > 0.005:
-            return False, f"👑🔢 BLOCKED: Stablecoin cost {total_cost_pct*100:.2f}% > 0.5% limit", math_breakdown
+        # Queen's dreams adjust the threshold: STRONG_WIN = 1%, FAVORABLE = 0.7%, WARNING = 0.3%
+        stable_limit = 0.005 + queen_cost_tolerance
+        if is_safe_conversion and total_cost_pct > stable_limit:
+            return False, f"👑🔢 BLOCKED: Stablecoin cost {total_cost_pct*100:.2f}% > {stable_limit*100:.2f}% limit (Queen: {queen_dream_status})", math_breakdown
         
-        # RULE 4: Meme coins need <3% cost
-        if is_risky_conversion and total_cost_pct > 0.03:
-            return False, f"👑🔢 BLOCKED: Meme coin cost {total_cost_pct*100:.1f}% too risky", math_breakdown
+        # RULE 4: Meme coins need <3% cost (adjusted by Queen's dreams)
+        meme_limit = 0.03 + queen_cost_tolerance
+        if is_risky_conversion and total_cost_pct > meme_limit:
+            return False, f"👑🔢 BLOCKED: Meme coin cost {total_cost_pct*100:.1f}% > {meme_limit*100:.1f}% (Queen: {queen_dream_status})", math_breakdown
         
-        # RULE 5: Path with very negative history
-        if path_profit < -0.50 and path_trades >= 3:
-            return False, f"👑🔢 BLOCKED: Path lost ${abs(path_profit):.2f} already", math_breakdown
+        # RULE 5: Path with very negative history (Queen can override if she sees redemption)
+        loss_threshold = -0.50 + (queen_cost_tolerance * 10)  # Queen can tolerate more loss if she sees win
+        if path_profit < loss_threshold and path_trades >= 3:
+            if queen_dream_status == "STRONG_WIN":
+                logger.info(f"👑🔮 QUEEN OVERRIDE: Path lost ${abs(path_profit):.2f} but Queen dreams STRONG_WIN - REDEMPTION!")
+            else:
+                return False, f"👑🔢 BLOCKED: Path lost ${abs(path_profit):.2f} (Queen: {queen_dream_status})", math_breakdown
         
         # 👑 RULE 6: PRIME PROFIT - Win rate must be >35% if we have enough history
-        # Lowered from 50% to allow momentum building
+        # Queen can lower threshold if she dreams STRONG_WIN
+        win_rate_threshold = 0.35 - (0.10 if queen_dream_status == "STRONG_WIN" else 0.05 if queen_dream_status == "FAVORABLE" else 0)
         if path_trades >= 4:
             win_rate = history.get('wins', 0) / path_trades
-            if win_rate < 0.35:
-                return False, f"👑🔢 BLOCKED: Path win rate {win_rate:.0%} < 35%", math_breakdown
+            if win_rate < win_rate_threshold:
+                return False, f"👑🔢 BLOCKED: Path win rate {win_rate:.0%} < {win_rate_threshold:.0%} (Queen: {queen_dream_status})", math_breakdown
         
-        # 👑 MATH APPROVED!
-        return True, f"👑🔢 APPROVED: Cost {total_cost_pct*100:.2f}%, breakeven ${total_cost_usd:.4f}", math_breakdown
+        # 👑 MATH APPROVED WITH QUEEN'S BLESSING!
+        return True, f"👑🔢 APPROVED: Cost {total_cost_pct*100:.2f}%, breakeven ${total_cost_usd:.4f} (Queen: {queen_dream_status})", math_breakdown
     
     def _block_path(self, key: Tuple[str, str], reason: str):
         """Block a path and broadcast through mycelium."""
@@ -1865,6 +1959,9 @@ class MicroProfitLabyrinth:
         self.conversions_made = 0
         self.total_profit_usd = 0.0
         self.start_value_usd = 0.0
+        
+        # 👑 Queen's guidance on position sizing (fed from portfolio reviews)
+        self.queen_position_multiplier = 1.0  # Adjusted by Queen based on performance
     
     def _load_uk_allowed_pairs(self):
         """Load UK-allowed Binance pairs from cached JSON file."""
@@ -3373,6 +3470,8 @@ class MicroProfitLabyrinth:
         "The probability matrix constantly dreams each turn"
         
         This runs EVERY turn (not throttled like global dreaming).
+        
+        👑🔮 THE QUEEN DREAMS FIRST - Her dreams guide all other dreams!
         """
         current_time = time.time()
         turn_dreams = []
@@ -3385,6 +3484,63 @@ class MicroProfitLabyrinth:
         symbols_to_dream = list(exchange_assets.keys())[:20]  # Top 20 by holdings
         
         print(f"\n   💭🎯 TURN DREAMING for {exchange.upper()} ({len(symbols_to_dream)} symbols)")
+        
+        # 👑🔮 0. THE QUEEN DREAMS FIRST - Her visions set the tone!
+        queen_vision_count = 0
+        if self.queen and hasattr(self.queen, 'dream_of_winning'):
+            try:
+                for symbol in symbols_to_dream[:10]:  # Queen dreams top 10
+                    if symbol not in self.prices:
+                        continue
+                    current_price = self.prices[symbol]
+                    
+                    opp_data = {
+                        'from_asset': 'USD',
+                        'to_asset': symbol,
+                        'expected_profit': 0.01,  # Speculative
+                        'exchange': exchange,
+                        'market_data': {'volatility': 0.5, 'momentum': 0.5}
+                    }
+                    
+                    queen_dream = self.queen.dream_of_winning(opp_data)
+                    queen_conf = queen_dream.get('final_confidence', 0.5)
+                    queen_wins = queen_dream.get('will_win', False)
+                    
+                    # Queen's strong dreams become turn dreams!
+                    if queen_wins and queen_conf >= 0.60:
+                        dream = Dream(
+                            timestamp=current_time,
+                            symbol=symbol,
+                            current_price=current_price,
+                            predicted_price=current_price * (1 + 0.01 * queen_conf),  # Scale by confidence
+                            direction='UP',
+                            target_time=current_time + 60,  # Queen sees further ahead
+                            source='queen_hive_mind',
+                            confidence=queen_conf
+                        )
+                        self.dreams.append(dream)
+                        turn_dreams.append(dream)
+                        queen_vision_count += 1
+                    elif not queen_wins and queen_conf <= 0.35:
+                        # Queen sees danger - DOWN dream
+                        dream = Dream(
+                            timestamp=current_time,
+                            symbol=symbol,
+                            current_price=current_price,
+                            predicted_price=current_price * (1 - 0.01 * (1 - queen_conf)),
+                            direction='DOWN',
+                            target_time=current_time + 60,
+                            source='queen_warning',
+                            confidence=1 - queen_conf
+                        )
+                        self.dreams.append(dream)
+                        turn_dreams.append(dream)
+                        queen_vision_count += 1
+                
+                if queen_vision_count > 0:
+                    logger.info(f"👑🔮 Queen dreamed {queen_vision_count} visions for {exchange}")
+            except Exception as e:
+                logger.debug(f"Queen turn dream error: {e}")
         
         # 1. Ask Multiverse for direction on exchange assets
         if self.multiverse:
@@ -3655,6 +3811,109 @@ class MicroProfitLabyrinth:
             for asset, amount in ex_bals.items():
                 self.balances[asset] = self.balances.get(asset, 0) + amount
 
+    async def report_portfolio_to_queen(self, voice_enabled: bool = True) -> Dict[str, Any]:
+        """
+        👑💰 REPORT PORTFOLIO TO QUEEN - Feed her the revenue data!
+        
+        Gathers portfolio performance from all exchanges and feeds it to the Queen.
+        The Queen reviews the data and speaks her verdict with her VOICE!
+        
+        Args:
+            voice_enabled: Whether the Queen should speak aloud (TTS)
+        
+        Returns:
+            Portfolio data dict with Queen's verdict
+        """
+        portfolio_data = {
+            'kraken': {'value': 0.0, 'profit': 0.0, 'trades': 0, 'win_rate': 0.0},
+            'binance': {'value': 0.0, 'profit': 0.0, 'trades': 0, 'win_rate': 0.0},
+            'alpaca': {'value': 0.0, 'profit': 0.0, 'trades': 0, 'win_rate': 0.0},
+            'total_value': 0.0,
+            'total_profit': 0.0,
+            'total_trades': 0
+        }
+        
+        print("\n👑💰 ═══ PORTFOLIO REPORT FOR THE QUEEN ═══")
+        
+        # Gather data from each exchange
+        for exchange in ['kraken', 'binance', 'alpaca']:
+            ex_stats = self.exchange_stats.get(exchange, {})
+            ex_balances = self.exchange_balances.get(exchange, {})
+            
+            # Calculate exchange value
+            ex_value = 0.0
+            for asset, amount in ex_balances.items():
+                if asset in ('USD', 'USDT', 'USDC', 'ZUSD'):
+                    ex_value += amount
+                else:
+                    price = self.prices.get(asset, 0)
+                    ex_value += amount * price
+            
+            # Get profit and trade stats
+            ex_profit = ex_stats.get('profit', 0.0)
+            ex_trades = ex_stats.get('conversions', 0)
+            
+            # Calculate win rate from barter history for this exchange
+            wins = 0
+            total = 0
+            for (from_a, to_a), hist in self.barter_matrix.barter_history.items():
+                # Attribute to exchange based on source exchange tracking
+                total += hist.get('trades', 0)
+                wins += hist.get('wins', 0)
+            
+            win_rate = wins / total if total > 0 else 0.5
+            
+            portfolio_data[exchange] = {
+                'value': ex_value,
+                'profit': ex_profit,
+                'trades': ex_trades,
+                'win_rate': win_rate
+            }
+            
+            portfolio_data['total_value'] += ex_value
+            portfolio_data['total_profit'] += ex_profit
+            portfolio_data['total_trades'] += ex_trades
+            
+            # Icon display
+            icon = {'kraken': '🐙', 'binance': '🔶', 'alpaca': '🦙'}[exchange]
+            profit_icon = '📈' if ex_profit >= 0 else '📉'
+            print(f"   {icon} {exchange.upper()}: ${ex_value:.2f} | {profit_icon} ${ex_profit:+.4f} | {ex_trades} trades")
+        
+        print(f"   💰 TOTAL: ${portfolio_data['total_value']:.2f} | P/L: ${portfolio_data['total_profit']:+.4f}")
+        
+        # Feed to the Queen!
+        if self.queen:
+            try:
+                # Have the Queen review and speak!
+                if hasattr(self.queen, 'announce_portfolio_status'):
+                    verdict = self.queen.announce_portfolio_status(portfolio_data)
+                    portfolio_data['queen_verdict'] = verdict
+                
+                # Get Queen's trading guidance
+                if hasattr(self.queen, 'get_trading_guidance'):
+                    guidance = self.queen.get_trading_guidance()
+                    portfolio_data['queen_guidance'] = guidance
+                    
+                    # Apply guidance to position sizing
+                    self.queen_position_multiplier = guidance.get('recommended_position_size', 1.0)
+                    print(f"   👑 Queen's Position Multiplier: {self.queen_position_multiplier:.1f}x")
+                
+                # Review each exchange
+                if hasattr(self.queen, 'review_exchange_performance'):
+                    for exchange in ['kraken', 'binance', 'alpaca']:
+                        ex_data = portfolio_data.get(exchange, {})
+                        verdict, action = self.queen.review_exchange_performance(exchange, ex_data)
+                        portfolio_data[exchange]['queen_verdict'] = verdict
+                        portfolio_data[exchange]['queen_action'] = action
+                        print(f"   👑 {exchange.upper()}: {action}")
+                
+            except Exception as e:
+                logger.error(f"Queen portfolio review error: {e}")
+        
+        print("═" * 50)
+        
+        return portfolio_data
+
     async def execute_turn(self) -> Tuple[List['MicroOpportunity'], int]:
         """
         Execute one turn for the current exchange.
@@ -3668,6 +3927,10 @@ class MicroProfitLabyrinth:
         icon = icons.get(current_exchange, '📊')
         
         print(f"\n🎯 ═══ TURN {self.turns_completed + 1}: {icon} {current_exchange.upper()} ═══")
+        
+        # 👑💰 PERIODIC PORTFOLIO REPORT TO QUEEN (every 10 turns)
+        if self.turns_completed > 0 and self.turns_completed % 10 == 0:
+            await self.report_portfolio_to_queen(voice_enabled=True)
         
         # REFRESH BALANCES FOR THIS EXCHANGE
         await self.refresh_exchange_balances(current_exchange)
@@ -3694,6 +3957,7 @@ class MicroProfitLabyrinth:
         
         # 💭🎯 TURN-SPECIFIC DREAMING - Dream about THIS exchange's assets
         await self.dream_for_turn(current_exchange)
+        
         
         # ✅ Validate any mature dreams before finding opportunities
         await self.validate_dreams()
@@ -4057,6 +4321,8 @@ class MicroProfitLabyrinth:
     async def queen_learn_from_trade(self, opportunity: 'MicroOpportunity', success: bool):
         """
         👑📚 QUEEN LEARNS FROM TRADE: Update wisdom based on trade outcome
+        
+        The Queen also SPEAKS about the trade result!
         """
         path_key = (opportunity.from_asset, opportunity.to_asset)
         
@@ -4082,6 +4348,25 @@ class MicroProfitLabyrinth:
         accuracy = history['queen_predictions']['correct'] / history['queen_predictions']['total']
         
         logger.info(f"👑📚 Queen accuracy on {opportunity.from_asset}→{opportunity.to_asset}: {accuracy:.0%}")
+        
+        # 👑🎤 THE QUEEN SPEAKS ABOUT THE TRADE!
+        if self.queen and hasattr(self.queen, 'say'):
+            try:
+                if success:
+                    # Celebratory message!
+                    profit = opportunity.expected_pnl_usd
+                    if profit > 0.10:
+                        msg = f"Beautiful! We just made ${profit:.4f} on {opportunity.from_asset} to {opportunity.to_asset}! Keep winning!"
+                        self.queen.say(msg, voice_enabled=True, emotion="profit")
+                    elif profit > 0:
+                        msg = f"Nice! ${profit:.4f} profit. Every bit counts on our path to ONE BILLION!"
+                        self.queen.say(msg, voice_enabled=False, emotion="calm")  # Don't speak small wins
+                else:
+                    # Learning message
+                    msg = f"That {opportunity.from_asset} trade didn't work. Learning and adapting. We'll get the next one!"
+                    self.queen.say(msg, voice_enabled=False, emotion="loss")  # Don't voice losses
+            except Exception as e:
+                logger.debug(f"Queen speak error: {e}")
         
         # Broadcast learning through mycelium
         if hasattr(self, 'mycelium_network') and self.mycelium_network:
@@ -4204,6 +4489,7 @@ class MicroProfitLabyrinth:
         - We only act if EXECUTE leads to the most profitable timeline
         - We are NEVER in the losing game - the Queen sees ALL timelines!
         - NEW PATHS require PROOF before trading - no speculative trades!
+        - 👑🔮 QUEEN'S DREAMS ARE THE FOUNDATION OF ALL TIMELINES!
         
         Returns: (approved: bool, reason: str)
         """
@@ -4214,6 +4500,46 @@ class MicroProfitLabyrinth:
         
         if from_price <= 0 or to_price <= 0:
             return False, "No price data for timeline simulation"
+        
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # 👑🔮 CONSULT THE QUEEN'S DREAMS FIRST - Her wisdom guides all timelines!
+        # ═══════════════════════════════════════════════════════════════════════════════
+        queen_dream_boost = 0.0
+        queen_dream_confidence = 0.5
+        queen_timeline_blessing = "NEUTRAL"
+        
+        if hasattr(self, 'queen') and self.queen:
+            try:
+                # Ask the Queen to dream about this opportunity
+                dream_vision = self.queen.dream_of_winning({
+                    'from_asset': from_asset,
+                    'to_asset': to_asset,
+                    'expected_pnl': opportunity.expected_pnl_usd,
+                    'market_data': {
+                        'from_price': from_price,
+                        'to_price': to_price,
+                    }
+                })
+                
+                queen_dream_confidence = dream_vision.get('final_confidence', 0.5)
+                queen_will_win = dream_vision.get('will_win', False)
+                queen_timeline_blessing = dream_vision.get('timeline', 'NEUTRAL')
+                
+                # 👑 Queen's dream directly influences timeline predictions!
+                if queen_will_win and queen_dream_confidence >= 0.6:
+                    queen_dream_boost = 0.3  # +30% boost to EXECUTE timeline
+                    queen_timeline_blessing = "FAVORABLE"
+                elif queen_dream_confidence >= 0.5:
+                    queen_dream_boost = 0.1  # +10% small boost
+                    queen_timeline_blessing = "CAUTIOUS"
+                elif queen_dream_confidence < 0.4:
+                    queen_dream_boost = -0.2  # -20% penalty - Queen sees danger!
+                    queen_timeline_blessing = "WARNING"
+                    
+                logger.info(f"👑🔮 Queen's Dream: {queen_timeline_blessing} | Confidence: {queen_dream_confidence:.0%} | Boost: {queen_dream_boost:+.0%}")
+                
+            except Exception as e:
+                logger.debug(f"Could not consult Queen's dreams: {e}")
         
         # Get historical data for timeline simulation
         from_history = self.barter_matrix.barter_history.get((from_asset, to_asset), {})
@@ -4269,6 +4595,15 @@ class MicroProfitLabyrinth:
             timeline_execute['expected_profit'] - timeline_execute['avg_slippage_cost']
         )
         
+        # �🔮 APPLY QUEEN'S DREAM BOOST TO EXECUTE TIMELINE!
+        # Her dreams directly influence the predicted outcome!
+        if queen_dream_boost != 0:
+            dream_adjustment = abs(timeline_execute['predicted_actual']) * queen_dream_boost
+            timeline_execute['predicted_actual'] += dream_adjustment
+            timeline_execute['queen_blessing'] = queen_timeline_blessing
+            timeline_execute['queen_confidence'] = queen_dream_confidence
+            logger.info(f"   👑 Dream adjustment: ${dream_adjustment:+.4f} → Predicted: ${timeline_execute['predicted_actual']:.4f}")
+        
         # 🔮 TIMELINE 2: SKIP (what happens if we don't trade?)
         timeline_skip = {
             'action': 'SKIP',
@@ -4277,6 +4612,7 @@ class MicroProfitLabyrinth:
             'avg_slippage_cost': 0.0,
             'confidence': 1.0,
             'predicted_actual': 0.0,  # No gain, no loss
+            'queen_blessing': 'NEUTRAL',
         }
         
         # 🔮 TIMELINE 3: REVERSE (what if we traded the OTHER way?)
@@ -4292,18 +4628,30 @@ class MicroProfitLabyrinth:
             'avg_slippage_cost': pessimistic_slippage / 100 * opportunity.from_value_usd,
             'confidence': 0.3,  # Low confidence for reverse
             'predicted_actual': -opportunity.expected_pnl_usd * 0.5,
+            'queen_blessing': 'UNFAVORABLE',  # Queen doesn't dream of reversals
         }
         
-        # 👑 QUEEN'S TIMELINE ANALYSIS
+        # 👑 QUEEN'S TIMELINE ANALYSIS - Dreams inform the scoring!
         timelines = [timeline_execute, timeline_skip, timeline_reverse]
         
-        # Score each timeline: predicted_actual * confidence * historical_win_rate
+        # Score each timeline: predicted_actual * confidence * historical_win_rate * queen_factor
         for t in timelines:
-            t['timeline_score'] = (
-                t['predicted_actual'] * 
-                t['confidence'] * 
-                t['historical_win_rate']
-            )
+            # Base score
+            base_score = t['predicted_actual'] * t['confidence'] * t['historical_win_rate']
+            
+            # 👑 QUEEN'S DREAM MULTIPLIER - Her dreams have WEIGHT!
+            queen_multiplier = 1.0
+            if t.get('queen_blessing') == 'FAVORABLE':
+                queen_multiplier = 1.5  # 50% boost if Queen dreams WIN
+            elif t.get('queen_blessing') == 'CAUTIOUS':
+                queen_multiplier = 1.1  # 10% boost
+            elif t.get('queen_blessing') == 'WARNING':
+                queen_multiplier = 0.5  # 50% penalty - heed the Queen's warning!
+            elif t.get('queen_blessing') == 'UNFAVORABLE':
+                queen_multiplier = 0.7  # 30% penalty
+            
+            t['timeline_score'] = base_score * queen_multiplier
+            t['queen_multiplier'] = queen_multiplier
         
         # Sort by timeline score (best first)
         timelines.sort(key=lambda x: x['timeline_score'], reverse=True)
@@ -4311,28 +4659,34 @@ class MicroProfitLabyrinth:
         
         # 👑 QUEEN'S MANDATE: Only execute if EXECUTE is the best timeline
         # PRIME PROFIT: If the Math Gate approved it AND expected profit > 0, TRUST IT!
+        # 🔮 NOW INFORMED BY THE QUEEN'S DREAMS!
         if best_timeline['action'] == 'EXECUTE':
             # Additional safety: predicted actual must be positive
             if timeline_execute['predicted_actual'] > 0:
-                return True, f"Timeline EXECUTE wins (score: {timeline_execute['timeline_score']:.4f})"
+                blessing_msg = f" | 👑 {queen_timeline_blessing}" if queen_timeline_blessing != "NEUTRAL" else ""
+                return True, f"Timeline EXECUTE wins (score: {timeline_execute['timeline_score']:.4f}){blessing_msg}"
             else:
-                return False, f"EXECUTE timeline predicts loss: ${timeline_execute['predicted_actual']:.4f}"
+                return False, f"EXECUTE timeline predicts loss: ${timeline_execute['predicted_actual']:.4f} | 👑 {queen_timeline_blessing}"
         
         elif best_timeline['action'] == 'SKIP':
+            # 👑 QUEEN OVERRIDE: If Queen dreams FAVORABLE and math is positive, TRUST HER!
+            if queen_timeline_blessing == 'FAVORABLE' and opportunity.expected_pnl_usd > 0.005:
+                return True, f"👑 QUEEN OVERRIDE: Timeline SKIP but Queen dreams WIN! (+${opportunity.expected_pnl_usd:.4f})"
             # PRIME PROFIT: Only trust Math Gate if expected profit is ACTUALLY positive
             # Don't trade if we're expected to lose money!
             if opportunity.expected_pnl_usd > 0.01:  # Must expect >$0.01 REAL profit
                 return True, f"Timeline SKIP but Math Gate says +${opportunity.expected_pnl_usd:.4f} - TRUSTING MATH!"
-            return False, f"Timeline SKIP is safer (execute would: ${timeline_execute['predicted_actual']:.4f})"
+            return False, f"Timeline SKIP is safer (execute would: ${timeline_execute['predicted_actual']:.4f}) | 👑 {queen_timeline_blessing}"
         
         else:
-            return False, f"Timeline REVERSE suggested - market moving against us"
+            return False, f"Timeline REVERSE suggested - market moving against us | 👑 {queen_timeline_blessing}"
 
     async def validate_signal_quality(self, opportunity: 'MicroOpportunity') -> float:
         """
         🎯 SIGNAL QUALITY VALIDATION
         
         Checks if our signals support this conversion:
+        - 👑🔮 QUEEN'S DREAMS - Her visions guide all decisions!
         - Dreams about target asset (should be UP)
         - Dreams about source asset (should NOT be UP)
         - Bus aggregator score
@@ -4342,6 +4696,48 @@ class MicroProfitLabyrinth:
         Returns: 0.0-1.0 quality score (higher = better signals)
         """
         quality_scores = []
+        
+        # 👑🔮 0. QUEEN'S DREAM - THE MOST IMPORTANT SIGNAL!
+        # All systems consult the Queen first!
+        queen_dream_quality = 0.5  # Neutral default
+        if self.queen and hasattr(self.queen, 'dream_of_winning'):
+            try:
+                opp_data = {
+                    'from_asset': opportunity.from_asset,
+                    'to_asset': opportunity.to_asset,
+                    'expected_profit': opportunity.expected_pnl_usd,
+                    'exchange': getattr(opportunity, 'source_exchange', 'kraken'),
+                    'market_data': {
+                        'volatility': getattr(opportunity, 'luck_score', 0.5),
+                        'momentum': opportunity.combined_score,
+                        'volume': 0.5,
+                        'spread': 0.5
+                    }
+                }
+                dream_vision = self.queen.dream_of_winning(opp_data)
+                queen_confidence = dream_vision.get('final_confidence', 0.5)
+                
+                if dream_vision.get('will_win', False):
+                    # Queen dreams WIN - this is the most important signal!
+                    if queen_confidence >= 0.70:
+                        queen_dream_quality = 0.95  # STRONG WIN
+                        logger.info(f"👑🔮 Signal: Queen dreams STRONG WIN ({queen_confidence:.0%})")
+                    elif queen_confidence >= 0.55:
+                        queen_dream_quality = 0.75  # FAVORABLE
+                        logger.info(f"👑🔮 Signal: Queen dreams FAVORABLE ({queen_confidence:.0%})")
+                    else:
+                        queen_dream_quality = 0.60  # Mild positive
+                else:
+                    # Queen dreams caution or loss
+                    if queen_confidence <= 0.35:
+                        queen_dream_quality = 0.20  # WARNING
+                        logger.info(f"👑⚠️ Signal: Queen dreams WARNING ({queen_confidence:.0%})")
+                    else:
+                        queen_dream_quality = 0.40  # Mild negative
+                
+                quality_scores.append(queen_dream_quality)
+            except Exception as e:
+                logger.debug(f"Queen dream signal error: {e}")
         
         # 1. Dream Score for TARGET (want UP dreams for buying)
         target_dream_score = self.calculate_dream_score(opportunity.to_asset)
@@ -4390,7 +4786,9 @@ class MicroProfitLabyrinth:
         # Calculate final quality score
         if quality_scores:
             final_score = sum(quality_scores) / len(quality_scores)
-            print(f"   📊 Signal breakdown: {', '.join([f'{s:.0%}' for s in quality_scores])}")
+            # 👑 Show Queen's contribution to the signal
+            queen_tag = f"👑{queen_dream_quality:.0%}" if queen_dream_quality != 0.5 else ""
+            print(f"   📊 Signal breakdown: {queen_tag} {', '.join([f'{s:.0%}' for s in quality_scores])}")
             return final_score
         
         return 0.5  # Default neutral
