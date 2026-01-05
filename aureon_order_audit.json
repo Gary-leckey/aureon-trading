@@ -12173,11 +12173,136 @@
         "warnings": []
       },
       "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T10:56:17.628213",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "BROCCOLI714",
+      "to_asset": "TST",
+      "from_amount": 1606.11367,
+      "to_amount": 2620.7,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 62091217,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 76691671,
+          "exchange": "binance",
+          "pair": "TSTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 1573.0,
+        "total_bought": 2620.7,
+        "avg_sell_price": 0.02984,
+        "avg_buy_price": 0.017910000000000002,
+        "total_fees": 0.08923109345,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.1578739942703374,
+        "calculated_pnl": -7.105427357601002e-15,
+        "verified_pnl": -0.09081409344999657,
+        "discrepancy": 0.09081409344998946,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T10:56:21.047114",
+      "conversion_num": 2,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "AIXBT",
+      "from_amount": 18.214071999999998,
+      "to_amount": 438.8933,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OSBGF7-TDPVE-4UAX45",
+          "exchange": "kraken",
+          "pair": "AIXBTUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 438.8933,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0415000001139229,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.16739284343875943,
+        "calculated_pnl": -4.999999703159119e-08,
+        "verified_pnl": 0.0,
+        "discrepancy": 4.999999703159119e-08,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T10:56:28.771645",
+      "conversion_num": 3,
+      "exchange": "binance",
+      "from_asset": "TST",
+      "to_asset": "VIRTUAL",
+      "from_amount": 2671.9177807,
+      "to_amount": 44.2,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 76691678,
+          "exchange": "binance",
+          "pair": "TSTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 436745257,
+          "exchange": "binance",
+          "pair": "VIRTUALUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 2618.4,
+        "total_bought": 44.2,
+        "avg_sell_price": 0.01789,
+        "avg_buy_price": 1.0593,
+        "total_fees": 0.088703893,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.33513522678939517,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.11081989300000403,
+        "discrepancy": 0.11081989300000403,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
     }
   ],
   "summary": {
-    "total": 295,
-    "verified": 274,
+    "total": 298,
+    "verified": 277,
     "discrepancies": 21
   }
 }

@@ -88,6 +88,15 @@ from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 
+# 👑📚 TRADING EDUCATION SYSTEM 📚👑
+try:
+    from aureon_trading_education import TradingEducationSystem, create_trading_education_system
+    EDUCATION_AVAILABLE = True
+except ImportError:
+    TradingEducationSystem = None
+    create_trading_education_system = None
+    EDUCATION_AVAILABLE = False
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGGING
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -402,7 +411,17 @@ class QueenHiveMind:
         # 🧠 ADAPTIVE LEARNING - Self-Optimization
         self.adaptive_learner = None  # AdaptiveLearningEngine
         
-        # 🗺️ LABYRINTH NAVIGATION STATE
+        # �📚 TRADING EDUCATION SYSTEM 📚👑
+        # Queen learns from Wikipedia, APIs, and online resources!
+        self.education_system = None
+        if EDUCATION_AVAILABLE:
+            try:
+                self.education_system = create_trading_education_system()
+                logger.info("👑📚 Trading Education System connected!")
+            except Exception as e:
+                logger.warning(f"📚⚠️ Could not initialize education system: {e}")
+        
+        # �🗺️ LABYRINTH NAVIGATION STATE
         self.labyrinth_path: List[Dict] = []  # Current navigation path
         self.labyrinth_position = {"level": 0, "chamber": "ENTRANCE"}
         self.labyrinth_insights: deque = deque(maxlen=100)  # Navigation insights
@@ -3546,6 +3565,251 @@ into my trading harmonics. Let's use this to WIN! 🐝💰
             return research.strip()
         else:
             return f"👑❌ Research failed for '{topic}': {wiki_result['error']}"
+
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 👑📚 THE QUEEN'S EDUCATION - Learning to Trade Better 📚👑
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def learn_trading_from_wikipedia(self, voice_enabled: bool = True) -> Dict[str, Any]:
+        """
+        📚👑 Learn trading concepts from Wikipedia!
+        
+        The Queen studies core trading topics to improve her decisions:
+        - Risk Management
+        - Slippage & Fees
+        - Trading Psychology
+        - Market Structure
+        
+        Returns:
+            Summary of learning session
+        """
+        if not self.education_system:
+            if voice_enabled:
+                self.say("I don't have access to my education system right now.", 
+                        voice_enabled=True, emotion="sad")
+            return {"error": "Education system not available"}
+        
+        self.say("Time to study! Learning from Wikipedia...", 
+                voice_enabled=voice_enabled, emotion="excited")
+        
+        # Learn core topics
+        result = self.education_system.learn_all_core_topics()
+        
+        if result.get('learned'):
+            self.say(f"I learned {len(result['learned'])} new trading concepts! I'm getting smarter!", 
+                    voice_enabled=voice_enabled, emotion="excited")
+        
+        return result
+    
+    def learn_specific_topic(self, topic: str, voice_enabled: bool = True) -> Dict[str, Any]:
+        """
+        📚 Learn about a specific topic from Wikipedia.
+        
+        Args:
+            topic: Topic to learn about (e.g., "risk management", "slippage")
+            voice_enabled: Whether to speak
+            
+        Returns:
+            Learned concept or error
+        """
+        if not self.education_system:
+            return {"error": "Education system not available"}
+        
+        self.say(f"Let me learn about {topic}...", voice_enabled=voice_enabled, emotion="calm")
+        
+        concept = self.education_system.learn_from_wikipedia(topic)
+        
+        if concept:
+            self.say(f"I understand {topic} now! Key insight: {concept.trading_application}", 
+                    voice_enabled=voice_enabled, emotion="excited")
+            return {
+                "success": True,
+                "topic": concept.topic,
+                "summary": concept.summary[:500],
+                "application": concept.trading_application,
+                "lessons": concept.key_lessons
+            }
+        else:
+            return {"error": f"Could not learn about {topic}"}
+    
+    def get_market_education(self, voice_enabled: bool = True) -> Dict[str, Any]:
+        """
+        🌐📊 Learn from free market APIs!
+        
+        Gets current market knowledge from:
+        - CoinGecko (market data)
+        - Fear & Greed Index (sentiment)
+        - Binance (market breadth)
+        
+        Returns:
+            Market education insights
+        """
+        if not self.education_system:
+            return {"error": "Education system not available"}
+        
+        self.say("Connecting to market APIs to learn current conditions...", 
+                voice_enabled=voice_enabled, emotion="calm")
+        
+        insights = {}
+        
+        # Learn from CoinGecko
+        coingecko = self.education_system.learn_from_coingecko()
+        if not coingecko.get('error'):
+            insights['coingecko'] = coingecko
+        
+        # Learn from Fear & Greed
+        fear_greed = self.education_system.learn_from_fear_greed_index()
+        if not fear_greed.get('error'):
+            insights['fear_greed'] = fear_greed
+            
+            # Adjust trading based on sentiment
+            value = fear_greed.get('value', 50)
+            if value < 25:
+                self.say("Market is in EXTREME FEAR! This could be a buying opportunity!", 
+                        voice_enabled=voice_enabled, emotion="excited")
+            elif value > 75:
+                self.say("Market is in EXTREME GREED! I should be careful!", 
+                        voice_enabled=voice_enabled, emotion="cautious")
+        
+        # Learn from Binance market analysis
+        binance = self.education_system.learn_from_binance_market()
+        if not binance.get('error'):
+            insights['binance'] = binance
+        
+        return insights
+    
+    def get_trading_wisdom(self, voice_enabled: bool = True) -> str:
+        """
+        🎓✨ Get a piece of trading wisdom!
+        
+        Returns random wisdom from learned knowledge.
+        """
+        if not self.education_system:
+            return "Knowledge is power. Learn from every trade."
+        
+        wisdom = self.education_system.get_market_wisdom()
+        
+        if voice_enabled:
+            self.say(f"Remember: {wisdom}", voice_enabled=True, emotion="calm")
+        
+        return wisdom
+    
+    def evaluate_trade_with_knowledge(
+        self,
+        from_asset: str,
+        to_asset: str,
+        expected_profit: float,
+        amount: float,
+        portfolio_value: float = None
+    ) -> Dict[str, Any]:
+        """
+        🧠📚 Evaluate a trade using ALL learned knowledge!
+        
+        Applies:
+        - Risk management rules
+        - Fee/slippage awareness
+        - Psychology checks
+        - Market structure understanding
+        
+        Returns:
+            Trade evaluation with recommendation
+        """
+        if not self.education_system:
+            return {
+                "approved": True,
+                "confidence": 0.5,
+                "recommendation": "Education system offline - using basic logic"
+            }
+        
+        # Use current equity if not provided
+        if portfolio_value is None:
+            portfolio_value = self.initial_capital + self.total_profit
+        
+        # Apply all learned knowledge
+        evaluation = self.education_system.evaluate_trade_opportunity(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            expected_profit=expected_profit,
+            amount=amount,
+            portfolio_value=portfolio_value
+        )
+        
+        # Log the evaluation
+        if not evaluation['approved']:
+            logger.warning(f"📚🚫 KNOWLEDGE BLOCKED: {from_asset}→{to_asset}")
+            for warning in evaluation.get('warnings', []):
+                logger.warning(f"   ⚠️ {warning}")
+        else:
+            logger.info(f"📚✅ KNOWLEDGE APPROVED: {from_asset}→{to_asset} ({evaluation['confidence']*100:.0f}%)")
+        
+        return evaluation
+    
+    def summarize_trading_knowledge(self, voice_enabled: bool = True) -> str:
+        """
+        📊 Summarize all knowledge the Queen has learned.
+        """
+        if not self.education_system:
+            return "Education system not available"
+        
+        summary = self.education_system.summarize_knowledge()
+        
+        if voice_enabled:
+            self.say("Here's everything I've learned about trading!", 
+                    voice_enabled=True, emotion="calm")
+        
+        return summary
+    
+    def study_before_trading(self, voice_enabled: bool = True) -> Dict[str, Any]:
+        """
+        📚🧠 Study session before trading!
+        
+        Complete learning routine:
+        1. Learn core Wikipedia topics
+        2. Get market insights from APIs
+        3. Review trading rules
+        
+        Returns:
+            Study session summary
+        """
+        if not self.education_system:
+            return {"error": "Education system not available"}
+        
+        self.say("Starting pre-trading study session...", 
+                voice_enabled=voice_enabled, emotion="calm")
+        
+        study_results = {
+            "wikipedia_learning": {},
+            "market_insights": {},
+            "active_rules": [],
+            "wisdom_for_today": ""
+        }
+        
+        # Learn from Wikipedia (first 5 topics if not learned)
+        topics = ["Risk management", "Slippage (finance)", "Trading psychology", 
+                  "Bid–ask spread", "Liquidity (economics)"]
+        
+        for topic in topics:
+            if topic.lower() not in self.education_system.learned_concepts:
+                concept = self.education_system.learn_from_wikipedia(topic)
+                if concept:
+                    study_results["wikipedia_learning"][topic] = concept.trading_application
+                time.sleep(0.3)
+        
+        # Get market insights
+        study_results["market_insights"] = self.get_market_education(voice_enabled=False)
+        
+        # Get active rules
+        active_rules = [r.description for r in self.education_system.trading_rules.values() if r.active]
+        study_results["active_rules"] = active_rules[:10]
+        
+        # Daily wisdom
+        study_results["wisdom_for_today"] = self.education_system.get_market_wisdom()
+        
+        self.say(f"Study complete! I have {len(self.education_system.learned_concepts)} concepts "
+                f"and {len(active_rules)} active trading rules.", 
+                voice_enabled=voice_enabled, emotion="excited")
+        
+        return study_results
 
     # ═══════════════════════════════════════════════════════════════════════════════
     # 👑🧠 THE QUEEN'S AUTONOMOUS MIND - She Thinks For Herself 🧠👑

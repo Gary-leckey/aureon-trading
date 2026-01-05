@@ -4734,5 +4734,53 @@
     "actual_edge": 0.0,
     "direction_correct": true,
     "timing_score": 0.5
+  },
+  {
+    "validation_id": "TST_20260105_105617",
+    "symbol": "TST",
+    "entry_price": 0.01793,
+    "entry_time": "2026-01-05T10:56:17.739347",
+    "predicted_edge": 0,
+    "predicted_confidence": 0.5,
+    "hour": 10,
+    "day_of_week": 0,
+    "status": "validated",
+    "exit_price": 0.01793,
+    "exit_time": "2026-01-05T10:56:17.740311",
+    "actual_edge": 0.0,
+    "direction_correct": true,
+    "timing_score": 0.5
+  },
+  {
+    "validation_id": "AIXBT_20260105_105621",
+    "symbol": "AIXBT",
+    "entry_price": 0.0415,
+    "entry_time": "2026-01-05T10:56:21.091930",
+    "predicted_edge": 0,
+    "predicted_confidence": 0.5,
+    "hour": 10,
+    "day_of_week": 0,
+    "status": "validated",
+    "exit_price": 0.0415,
+    "exit_time": "2026-01-05T10:56:21.093426",
+    "actual_edge": 0.0,
+    "direction_correct": true,
+    "timing_score": 0.5
+  },
+  {
+    "validation_id": "VIRTUAL_20260105_105628",
+    "symbol": "VIRTUAL",
+    "entry_price": 1.0527,
+    "entry_time": "2026-01-05T10:56:28.841322",
+    "predicted_edge": 0,
+    "predicted_confidence": 0.5,
+    "hour": 10,
+    "day_of_week": 0,
+    "status": "validated",
+    "exit_price": 1.0527,
+    "exit_time": "2026-01-05T10:56:28.842959",
+    "actual_edge": 0.0,
+    "direction_correct": true,
+    "timing_score": 0.5
   }
 ]

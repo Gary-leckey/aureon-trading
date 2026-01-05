@@ -1,0 +1,220 @@
+{
+  "concepts": {
+    "risk management": {
+      "topic": "Risk management",
+      "summary": "Risk management is the identification, evaluation, and prioritization of risks, followed by the minimization, monitoring, and control of the impact or probability of those risks occurring. Risks can come from various sources (i.e, threats) including uncertainty in international markets, political instability, dangers of project failures (at any phase in design, development, production, or sustaining of life-cycles), legal liabilities, credit risk, accidents, natural causes and disasters, deliberate attack from an adversary, or events of uncertain or unpredictable root-cause. Retail traders also apply risk management by using fixed percentage position sizing and risk-to-reward frameworks to avoid large drawdowns and support consistent decision-making under pressure.\nTwo types of events are analyzed in risk management: risks and opportunities. Negative events can be classified as risks while positive events are classified as opportunities.",
+      "source": "Wikipedia",
+      "source_url": "https://en.wikipedia.org/wiki/Risk_management",
+      "key_lessons": [
+        "Risk management is the identification, evaluation, and prioritization of risks, followed by the minimization, monitoring, and control of the impact or probability of those risks occurring.",
+        "Manage risk before seeking profit"
+      ],
+      "trading_application": "Use position sizing and stop losses",
+      "learned_at": "2026-01-05T11:03:09.744367",
+      "confidence": 1.0,
+      "times_applied": 0,
+      "success_rate": 0.0
+    },
+    "slippage (finance)": {
+      "topic": "Slippage (finance)",
+      "summary": "With regard to futures contracts as well as other financial instruments, slippage is the difference between where the computer signaled the entry and exit for a trade and where actual clients, with actual money, entered and exited the market using the computer's signals. Market impact, liquidity, and frictional costs may also contribute.\nAlgorithmic trading is often used to reduce slippage, and algorithms can be backtested on past data to see the effects of slippage, but it is impossible to eliminate.\n\n\n== Measurement ==\n\n\n=== Using initial mid price ===\nNassim Nicholas Taleb (1997) defines slippage as the difference between the average execution price and the initial midpoint of the bid and the offer for a given quantity to be executed.\n\n\n=== Using initial execution price ===\nKnight and Satchell mention a flow trader needs to consider the effect of executing a large order on the market and to adjust the bid-ask spread accordingly.",
+      "source": "Wikipedia",
+      "source_url": "https://en.wikipedia.org/wiki/Slippage_(finance)",
+      "key_lessons": [
+        "With regard to futures contracts as well as other financial instruments, slippage is the difference between where the computer signaled the entry and exit for a trade and where actual clients, with actual money, entered and exited the market using the computer's signals.",
+        "Account for slippage in profit calculations"
+      ],
+      "trading_application": "Require higher expected profit for small-cap coins",
+      "learned_at": "2026-01-05T11:03:30.205499",
+      "confidence": 1.0,
+      "times_applied": 0,
+      "success_rate": 0.0
+    },
+    "trading psychology": {
+      "topic": "Trading psychology",
+      "summary": "A stock trader or equity trader or share trader, also called a stock investor, is a person or company involved in trading equity securities and attempting to profit from the purchase and sale of those securities. Stock traders may be an investor, agent, hedger, arbitrageur, speculator, or stockbroker. Such equity trading in large publicly traded companies may be through a stock exchange. Stock shares in smaller public companies may be bought and sold in over-the-counter (OTC) markets or in some instances in equity crowdfunding platforms.\nStock traders can trade on their own account, called proprietary trading or self-directed trading, or through an agent authorized to buy and sell on the owner's behalf.",
+      "source": "Wikipedia",
+      "source_url": "https://en.wikipedia.org/wiki/Stock_trader",
+      "key_lessons": [
+        "A stock trader or equity trader or share trader, also called a stock investor, is a person or company involved in trading equity securities and attempting to profit from the purchase and sale of those securities.",
+        "Emotions can override logic - stay disciplined"
+      ],
+      "trading_application": "Wait for high-confidence setups only",
+      "learned_at": "2026-01-05T11:03:31.451542",
+      "confidence": 1.0,
+      "times_applied": 0,
+      "success_rate": 0.0
+    },
+    "bid\u2013ask spread": {
+      "topic": "Bid\u2013ask spread",
+      "summary": "The bid\u2013ask spread (also bid\u2013offer or bid/ask and buy/sell in the case of a market maker) is the difference between the prices quoted (either by a single market maker or in a limit order book) for an immediate sale (ask) and an immediate purchase (bid) for stocks, futures contracts, options, or currency pairs in some auction scenario. The size of the bid\u2013ask spread in a security is one measure of the liquidity of the market and of the size of the transaction cost. If the spread is 0 then it is a frictionless asset.\n\n\n== Liquidity ==\nThe trader initiating the transaction is said to demand liquidity, and the other party (counterparty) to the transaction supplies liquidity. Liquidity demanders place market orders and liquidity suppliers place limit orders.",
+      "source": "Wikipedia",
+      "source_url": "https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread",
+      "key_lessons": [
+        "The bid\u2013ask spread (also bid\u2013offer or bid/ask and buy/sell in the case of a market maker) is the difference between the prices quoted (either by a single market maker or in a limit order book) for an immediate sale (ask) and an immediate purchase (bid) for stocks, futures contracts, options, or currency pairs in some auction scenario."
+      ],
+      "trading_application": "Account for bid-ask spread in profit calculations",
+      "learned_at": "2026-01-05T11:03:32.850154",
+      "confidence": 1.0,
+      "times_applied": 0,
+      "success_rate": 0.0
+    },
+    "liquidity (economics)": {
+      "topic": "Liquidity (economics)",
+      "summary": "A liquidity trap is a situation, described in Keynesian economics, in which, \"after the rate of interest has fallen to a certain level, liquidity preference may become virtually absolute in the sense that almost everyone prefers holding cash rather than holding a debt (financial instrument) which yields so low a rate of interest.\"\nNegative natural interest rates and a zero lower bound are necessary conditions of a liquidity trap. Temporary economic disruption (e.g. banking crises, excessive debt accumulation) and structural factors (e.g. demographic decline, inequality) can produce negative natural interest rates. Credible monetary policy can overcome liquidity traps.",
+      "source": "Wikipedia",
+      "source_url": "https://en.wikipedia.org/wiki/Liquidity_trap",
+      "key_lessons": [
+        "A liquidity trap is a situation, described in Keynesian economics, in which, \"after the rate of interest has fallen to a certain level, liquidity preference may become virtually absolute in the sense that almost everyone prefers holding cash rather than holding a debt (financial instrument) which yields so low a rate of interest.",
+        "Trade only in liquid markets"
+      ],
+      "trading_application": "Check order book depth before large trades",
+      "learned_at": "2026-01-05T11:03:34.163797",
+      "confidence": 1.0,
+      "times_applied": 0,
+      "success_rate": 0.0
+    }
+  },
+  "rules": {
+    "RISK_001": {
+      "rule_id": "RISK_001",
+      "description": "Never risk more than 2% on a single trade",
+      "source_concept": "risk_management",
+      "condition": "before_any_trade",
+      "action": "check_position_size_vs_portfolio",
+      "priority": 100,
+      "active": true,
+      "applications": 0,
+      "successes": 0
+    },
+    "SLIP_001": {
+      "rule_id": "SLIP_001",
+      "description": "Require profit > 3x expected slippage",
+      "source_concept": "slippage",
+      "condition": "evaluating_opportunity",
+      "action": "reject_if_profit_too_small",
+      "priority": 95,
+      "active": true,
+      "applications": 0,
+      "successes": 0
+    },
+    "FEES_001": {
+      "rule_id": "FEES_001",
+      "description": "Total fees must be < 30% of expected profit",
+      "source_concept": "fees",
+      "condition": "evaluating_opportunity",
+      "action": "calculate_fee_impact",
+      "priority": 90,
+      "active": true,
+      "applications": 0,
+      "successes": 0
+    },
+    "LIQ_001": {
+      "rule_id": "LIQ_001",
+      "description": "Check liquidity before trading",
+      "source_concept": "market_structure",
+      "condition": "before_any_trade",
+      "action": "verify_sufficient_liquidity",
+      "priority": 85,
+      "active": true,
+      "applications": 0,
+      "successes": 0
+    },
+    "PSYCH_001": {
+      "rule_id": "PSYCH_001",
+      "description": "Wait for high confidence before trading",
+      "source_concept": "psychology",
+      "condition": "confidence_check",
+      "action": "require_80_percent_confidence",
+      "priority": 80,
+      "active": true,
+      "applications": 0,
+      "successes": 0
+    },
+    "LOSS_001": {
+      "rule_id": "LOSS_001",
+      "description": "Block path after first loss (learn from mistakes)",
+      "source_concept": "risk_management",
+      "condition": "after_loss",
+      "action": "block_losing_path",
+      "priority": 100,
+      "active": true,
+      "applications": 0,
+      "successes": 0
+    },
+    "WIN_001": {
+      "rule_id": "WIN_001",
+      "description": "Increase confidence on winning paths",
+      "source_concept": "psychology",
+      "condition": "after_win",
+      "action": "boost_path_confidence",
+      "priority": 75,
+      "active": true,
+      "applications": 0,
+      "successes": 0
+    },
+    "WIKI_78EC87E6": {
+      "rule_id": "WIKI_78EC87E6",
+      "description": "Apply Risk management knowledge",
+      "source_concept": "Risk management",
+      "condition": "trading_decision",
+      "action": "Use position sizing and stop losses",
+      "priority": 50,
+      "active": true,
+      "applications": 0,
+      "successes": 0
+    },
+    "WIKI_33D41AF7": {
+      "rule_id": "WIKI_33D41AF7",
+      "description": "Apply Slippage (finance) knowledge",
+      "source_concept": "Slippage (finance)",
+      "condition": "trading_decision",
+      "action": "Require higher expected profit for small-cap coins",
+      "priority": 50,
+      "active": true,
+      "applications": 0,
+      "successes": 0
+    },
+    "WIKI_654D1633": {
+      "rule_id": "WIKI_654D1633",
+      "description": "Apply Trading psychology knowledge",
+      "source_concept": "Trading psychology",
+      "condition": "trading_decision",
+      "action": "Wait for high-confidence setups only",
+      "priority": 50,
+      "active": true,
+      "applications": 0,
+      "successes": 0
+    },
+    "WIKI_92DDF0BA": {
+      "rule_id": "WIKI_92DDF0BA",
+      "description": "Apply Bid\u2013ask spread knowledge",
+      "source_concept": "Bid\u2013ask spread",
+      "condition": "trading_decision",
+      "action": "Account for bid-ask spread in profit calculations",
+      "priority": 50,
+      "active": true,
+      "applications": 0,
+      "successes": 0
+    },
+    "WIKI_3066BDD6": {
+      "rule_id": "WIKI_3066BDD6",
+      "description": "Apply Liquidity (economics) knowledge",
+      "source_concept": "Liquidity (economics)",
+      "condition": "trading_decision",
+      "action": "Check order book depth before large trades",
+      "priority": 50,
+      "active": true,
+      "applications": 0,
+      "successes": 0
+    }
+  },
+  "stats": {
+    "wikipedia_queries": 5,
+    "api_queries": 0,
+    "concepts_learned": 5,
+    "rules_derived": 5,
+    "knowledge_applications": 0
+  },
+  "last_saved": "2026-01-05T11:03:34.163903"
+}
