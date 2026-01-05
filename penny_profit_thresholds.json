@@ -766,5 +766,177 @@
         }
       }
     }
+  },
+  "min_profit_pct": 1.52,
+  "take_profit_target": 1.52,
+  "use_stop_loss": false,
+  "max_hold_time": null,
+  "backtest_source": "V14_100PCT",
+  "last_updated": 1767493709.098666,
+  "symbol_thresholds": {
+    "XRP-USD": {
+      "min_profit": 9.8471371961293,
+      "verified": true
+    },
+    "ADA-USD": {
+      "min_profit": 8.763570215692972,
+      "verified": true
+    },
+    "DOGE-USD": {
+      "min_profit": 26.066397004832464,
+      "verified": true
+    },
+    "DOT-USD": {
+      "min_profit": 7.429153331393696,
+      "verified": true
+    },
+    "SUIUSDT": {
+      "min_profit": 8.583863848924738,
+      "verified": true
+    },
+    "ATOM-USD": {
+      "min_profit": 8.312194376528177,
+      "verified": true
+    },
+    "ICP-USD": {
+      "min_profit": 13.706041555983651,
+      "verified": true
+    },
+    "FIL-USD": {
+      "min_profit": 21.04500736162041,
+      "verified": true
+    },
+    "SOLUSDT": {
+      "min_profit": 8.512858820319494,
+      "verified": true
+    },
+    "BTC-USD": {
+      "min_profit": 8.219546479277561,
+      "verified": true
+    },
+    "BTCUSDT": {
+      "min_profit": 8.344667657944868,
+      "verified": true
+    },
+    "LINK-USD": {
+      "min_profit": 8.200492168653152,
+      "verified": true
+    },
+    "JUPUSDT": {
+      "min_profit": 13.230812856659703,
+      "verified": true
+    },
+    "STXUSDT": {
+      "min_profit": 20.281502550603722,
+      "verified": true
+    },
+    "MATIC-USD": {
+      "min_profit": 10.681649945522175,
+      "verified": true
+    },
+    "NEAR-USD": {
+      "min_profit": 10.816689374949286,
+      "verified": true
+    },
+    "NEARUSDT": {
+      "min_profit": 9.948763814897912,
+      "verified": true
+    },
+    "SOL-USD": {
+      "min_profit": 15.990743063197009,
+      "verified": true
+    },
+    "ARB-USD": {
+      "min_profit": 12.697276588907227,
+      "verified": true
+    },
+    "LDOUSDT": {
+      "min_profit": 7.8361858411099705,
+      "verified": true
+    },
+    "WLDUSDT": {
+      "min_profit": 10.522762371925396,
+      "verified": true
+    },
+    "LTC-USD": {
+      "min_profit": 9.839284292364662,
+      "verified": true
+    },
+    "AVAX-USD": {
+      "min_profit": 14.16893141058918,
+      "verified": true
+    },
+    "CRVUSDT": {
+      "min_profit": 14.079282895682177,
+      "verified": true
+    },
+    "ETH-USD": {
+      "min_profit": 8.99754466260536,
+      "verified": true
+    },
+    "ICPUSDT": {
+      "min_profit": 12.36378032198983,
+      "verified": true
+    },
+    "LTCUSDT": {
+      "min_profit": 10.794433322905128,
+      "verified": true
+    },
+    "UNIUSDT": {
+      "min_profit": 7.2645429812553886,
+      "verified": true
+    },
+    "UNI-USD": {
+      "min_profit": 7.781999360276047,
+      "verified": true
+    },
+    "AVAXUSDT": {
+      "min_profit": 14.742969693478303,
+      "verified": true
+    },
+    "DOGEUSDT": {
+      "min_profit": 58.07199311787004,
+      "verified": true
+    },
+    "SOL-GBP": {
+      "min_profit": 7.380493901453699,
+      "verified": true
+    },
+    "INJUSDT": {
+      "min_profit": 12.240096863507,
+      "verified": true
+    },
+    "LINKUSDT": {
+      "min_profit": 7.700250288682938,
+      "verified": true
+    },
+    "BCHUSDT": {
+      "min_profit": 8.433765292065596,
+      "verified": true
+    },
+    "BCH-USD": {
+      "min_profit": 12.158724153374465,
+      "verified": true
+    },
+    "FETUSDT": {
+      "min_profit": 19.286151492838467,
+      "verified": true
+    },
+    "TIAUSDT": {
+      "min_profit": 11.309075576739275,
+      "verified": true
+    },
+    "FILUSDT": {
+      "min_profit": 24.141679487092492,
+      "verified": true
+    },
+    "COMPUSDT": {
+      "min_profit": 8.949314529668994,
+      "verified": true
+    },
+    "AAVEUSDT": {
+      "min_profit": 21.09742306601554,
+      "verified": true
+    }
   }
 }

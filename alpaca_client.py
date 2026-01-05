@@ -1330,6 +1330,50 @@ class AlpacaClient:
         if not path:
             return {"error": f"No conversion path found from {from_asset} to {to_asset}"}
         
+        # 👑 QUEEN MIND: Pre-flight validation for multi-step conversions
+        # Alpaca typically has ~$1 minimum and goes through USD
+        estimated_amount = amount
+        min_value_usd = 1.0  # Alpaca minimum
+        
+        for i, trade in enumerate(path):
+            pair = trade["pair"]
+            
+            # Get current price estimate
+            try:
+                quote_data = self.get_latest_crypto_quotes([pair])
+                if pair in quote_data:
+                    bp = quote_data[pair].get('bp', 0)
+                    ap = quote_data[pair].get('ap', 0)
+                    price = (float(bp or 0) + float(ap or 0)) / 2
+                else:
+                    price = 0
+            except Exception:
+                price = 0
+            
+            if trade["side"] == "sell":
+                # Selling crypto for USD
+                estimated_value = estimated_amount * price if price > 0 else 0
+                if estimated_value < min_value_usd and estimated_value > 0:
+                    return {
+                        "error": f"Multi-hop step {i+1} would yield ${estimated_value:.2f} < min ${min_value_usd:.2f}",
+                        "failed_step": i,
+                        "pair": pair
+                    }
+                # Estimate received USD
+                if price > 0:
+                    estimated_amount = estimated_amount * price
+            else:
+                # Buying crypto with USD
+                if estimated_amount < min_value_usd:
+                    return {
+                        "error": f"Multi-hop step {i+1} has ${estimated_amount:.2f} < min ${min_value_usd:.2f}",
+                        "failed_step": i,
+                        "pair": pair
+                    }
+                # Estimate received crypto
+                if price > 0:
+                    estimated_amount = estimated_amount / price
+        
         if self.dry_run:
             return {
                 "dryRun": True,
@@ -1365,20 +1409,30 @@ class AlpacaClient:
                 # Update remaining amount for next trade
                 if side == "sell":
                     # Estimate USD received
-                    exec_qty = float(result.get("qty", result.get("executedQty", 0)))
-                    price = float(result.get("filled_avg_price", 0))
+                    exec_qty_raw = result.get("qty", result.get("executedQty", result.get("filled_qty", 0)))
+                    exec_qty = float(exec_qty_raw) if exec_qty_raw is not None else 0.0
+                    price_raw = result.get("filled_avg_price", result.get("avg_price", 0))
+                    price = float(price_raw) if price_raw is not None else 0.0
                     if price > 0 and exec_qty > 0:
                         remaining_amount = exec_qty * price
                     else:
                         # Fallback: estimate from current price
-                        quote_data = self.get_latest_crypto_quotes([pair])
-                        if pair in quote_data:
-                            mid = (float(quote_data[pair].get('bp', 0)) + float(quote_data[pair].get('ap', 0))) / 2
-                            remaining_amount = amount * mid
+                        try:
+                            quote_data = self.get_latest_crypto_quotes([pair])
+                            if pair in quote_data:
+                                bp = quote_data[pair].get('bp', 0)
+                                ap = quote_data[pair].get('ap', 0)
+                                mid = (float(bp or 0) + float(ap or 0)) / 2
+                                if mid > 0:
+                                    remaining_amount = amount * mid
+                        except Exception:
+                            pass
                 else:
                     # We bought crypto
-                    exec_qty = float(result.get("qty", result.get("executedQty", 0)))
-                    remaining_amount = exec_qty
+                    exec_qty_raw = result.get("qty", result.get("executedQty", result.get("filled_qty", 0)))
+                    exec_qty = float(exec_qty_raw) if exec_qty_raw is not None else 0.0
+                    if exec_qty > 0:
+                        remaining_amount = exec_qty
                     
             except Exception as e:
                 results.append({

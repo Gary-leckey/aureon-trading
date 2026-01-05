@@ -173,3 +173,22 @@ class ThoughtBus:
                     if key == topic:
                         handlers.extend(subs)
             return handlers
+
+
+# ═══════════════════════════════════════════════════════════════
+# GLOBAL SINGLETON & COMPATIBILITY
+# ═══════════════════════════════════════════════════════════════
+
+_thought_bus_instance: Optional[ThoughtBus] = None
+
+def get_thought_bus(persist_path: Optional[str] = None) -> ThoughtBus:
+    """Get or create the global ThoughtBus instance."""
+    global _thought_bus_instance
+    if _thought_bus_instance is None:
+        _thought_bus_instance = ThoughtBus(
+            persist_path=persist_path or "thoughts.jsonl"
+        )
+    return _thought_bus_instance
+
+# Alias for compatibility - ThoughtSignal is just Thought
+ThoughtSignal = Thought

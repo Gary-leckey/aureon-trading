@@ -1,21 +1,23 @@
 {
-  "generation": 454,
+  "generation": 456,
   "total_trades": 792,
   "total_wins": 359,
   "total_losses": 425,
   "best_win_rate": 100.0,
   "best_parameters": {
-    "min_coherence": 0.7300880229800938,
-    "min_volatility": 0.7954344726940619,
-    "max_volatility": 1.6336193301911146,
-    "position_size_pct": 0.12166270060662765,
-    "take_profit_pct": 1.816655816282404,
-    "stop_loss_pct": 1.430534476919135,
+    "min_score": 8,
+    "min_coherence": 0.75,
+    "min_volatility": 0.3,
+    "max_volatility": 5.0,
+    "position_size_pct": 0.1,
+    "take_profit_pct": 1.52,
+    "stop_loss_pct": 0,
+    "trailing_lock_pct": 3.0,
     "hold_cycles_min": 1,
-    "hold_cycles_max": 64,
-    "use_maker_orders": false
+    "hold_cycles_max": 999999,
+    "use_maker_orders": true
   },
-  "best_total_pnl": 0.49204398333831545,
+  "best_total_pnl": 2201.7434495250022,
   "lessons": [
     "Wins: vol=2.18, coh=0.69, hold=2",
     "Loss: vol=2.10, coh=0.70, hold=2",
@@ -36,7 +38,10 @@
     "Wins: vol=1.65, coh=0.75, hold=4",
     "Loss: vol=1.10, coh=0.74, hold=4",
     "\u2191 position_size to 21.4% (winning!)",
-    "Gen 454: STUCK - randomizing parameters"
+    "Gen 454: STUCK - randomizing parameters",
+    "\ud83c\udfaf V14 BREAKTHROUGH: 100% win rate with NO STOP LOSS!",
+    "   86 trades, $2,201.74 profit",
+    "   Key: Hold until 1.52%+ profit, never exit at loss"
   ],
   "generation_history": [
     {
@@ -280,5 +285,66 @@
       }
     }
   ],
-  "last_updated": "2025-12-15T10:52:48.819220"
+  "last_updated": 1767493709.0939393,
+  "best_params": {
+    "min_score": 8,
+    "min_coherence": 0.75,
+    "min_volatility": 0.3,
+    "max_volatility": 5.0,
+    "position_size_pct": 0.1,
+    "take_profit_pct": 1.52,
+    "stop_loss_pct": 0,
+    "trailing_lock_pct": 3.0,
+    "hold_cycles_min": 1,
+    "hold_cycles_max": 999999,
+    "use_maker_orders": true
+  },
+  "best_trades": 86,
+  "best_pnl": 2201.7434495250022,
+  "evolution_source": "V14_BACKTEST_100PCT",
+  "evolution_history": [
+    {
+      "generation": 455,
+      "win_rate": 100.0,
+      "trades": 86,
+      "pnl": 2201.7434495250022,
+      "params": {
+        "min_score": 8,
+        "min_coherence": 0.75,
+        "min_volatility": 0.3,
+        "max_volatility": 5.0,
+        "position_size_pct": 0.1,
+        "take_profit_pct": 1.52,
+        "stop_loss_pct": 0,
+        "trailing_lock_pct": 3.0,
+        "hold_cycles_max": 999,
+        "use_maker_orders": true
+      },
+      "timestamp": 1767493656.164334
+    },
+    {
+      "generation": 456,
+      "trades": 86,
+      "wins": 86,
+      "losses": 0,
+      "win_rate": 100.0,
+      "total_pnl": 2201.7434495250022,
+      "final_capital": 12201.743449525002,
+      "parameters": {
+        "min_score": 8,
+        "min_coherence": 0.75,
+        "min_volatility": 0.3,
+        "max_volatility": 5.0,
+        "position_size_pct": 0.1,
+        "take_profit_pct": 1.52,
+        "stop_loss_pct": 0,
+        "trailing_lock_pct": 3.0,
+        "hold_cycles_min": 1,
+        "hold_cycles_max": 999999,
+        "use_maker_orders": true
+      },
+      "source": "V14_BACKTEST",
+      "timestamp": 1767493709.093942
+    }
+  ]
 }

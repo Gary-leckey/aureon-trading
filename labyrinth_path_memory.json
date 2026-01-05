@@ -1,0 +1,226 @@
+{
+  "USD->AAVE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "AAVE->USDC": {
+    "wins": 0.0,
+    "losses": 2.0
+  },
+  "USD->PEPE": {
+    "wins": 0.0,
+    "losses": 3.0
+  },
+  "USDC->AXS": {
+    "wins": 0.0,
+    "losses": 23.0
+  },
+  "CHZ->USDC": {
+    "wins": 0.0,
+    "losses": 24.0
+  },
+  "USD->USDT": {
+    "wins": 25.0,
+    "losses": 4.0
+  },
+  "AVAX->USDC": {
+    "wins": 2.0,
+    "losses": 3.0
+  },
+  "AXS->BONK": {
+    "wins": 0.0,
+    "losses": 7.0
+  },
+  "USD->ZUSD": {
+    "wins": 144.0,
+    "losses": 26.0
+  },
+  "USDC->USDT": {
+    "wins": 0.0,
+    "losses": 9.0
+  },
+  "USDC->IDEX": {
+    "wins": 0.0,
+    "losses": 4.0
+  },
+  "USDT->USDC": {
+    "wins": 10.0,
+    "losses": 2.0
+  },
+  "BONK->BROCCOLI714": {
+    "wins": 0.0,
+    "losses": 4.0
+  },
+  "BROCCOLI714->ALT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ALT->BONK": {
+    "wins": 1.0,
+    "losses": 2.0
+  },
+  "LINK->USD": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "PEPE->USD": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "BROCCOLI714->ACT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ACT->ALT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "BROCCOLI714->ACH": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ACH->BANANAS31": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USD->USDC": {
+    "wins": 5.0,
+    "losses": 3.0
+  },
+  "USD->DAI": {
+    "wins": 4.0,
+    "losses": 4.0
+  },
+  "DAI->USD": {
+    "wins": 2.0,
+    "losses": 4.0
+  },
+  "USDC->PEPE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "IDEX->BONK": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "AXS->BANANAS31": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "BANANAS31->DOGS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "BONK->RENDER": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "RENDER->VIRTUAL": {
+    "wins": 2.0,
+    "losses": 0.0
+  },
+  "USDT->DAI": {
+    "wins": 4.0,
+    "losses": 0.0
+  },
+  "VIRTUAL->BROCCOLI714": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "DAI->USDT": {
+    "wins": 0.0,
+    "losses": 3.0
+  },
+  "DOGS->RENDER": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDT->USD": {
+    "wins": 1.0,
+    "losses": 3.0
+  },
+  "USDC->DAI": {
+    "wins": 0.0,
+    "losses": 3.0
+  },
+  "DAI->ZUSD": {
+    "wins": 1.0,
+    "losses": 1.0
+  },
+  "USDT->ZUSD": {
+    "wins": 1.0,
+    "losses": 1.0
+  },
+  "USDC->XRP": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "USDC->USD": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "XRP->USDC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USD->ETH": {
+    "wins": 2.0,
+    "losses": 0.0
+  },
+  "ETH->USDC": {
+    "wins": 0.0,
+    "losses": 2.0
+  },
+  "ETH->USDT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDT->ETH": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "USDC->SOL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "SOL->ADA": {
+    "wins": 0.0,
+    "losses": 9.0
+  },
+  "DAI->ADA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ADA->USDC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ETH": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "USDC->ADA": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "ADA->USD": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "SOL->DOT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "SOL->PEPE": {
+    "wins": 0.0,
+    "losses": 49.0
+  },
+  "USDC->AIXBT": {
+    "wins": 0.0,
+    "losses": 3.0
+  },
+  "AIXBT->BANANAS31": {
+    "wins": 0.0,
+    "losses": 1.0
+  }
+}

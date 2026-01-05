@@ -322,6 +322,18 @@ except ImportError as e:
     PatriotScoutNetwork = None
     print(f"⚠️ Patriot Scouts not available: {e}")
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🔭 QUANTUM TELESCOPE - Multi-Dimensional Geometric Analysis
+# ═══════════════════════════════════════════════════════════════════════════════
+try:
+    from aureon_quantum_telescope import QuantumTelescope, LightBeam, GeometricSolid
+    QUANTUM_TELESCOPE_AVAILABLE = True
+    print("🔭 Quantum Telescope WIRED! (5 Platonic Lenses)")
+except ImportError as e:
+    QUANTUM_TELESCOPE_AVAILABLE = False
+    QuantumTelescope = None
+    print(f"⚠️ Quantum Telescope not available: {e}")
+
 # Logging Setup
 logging.basicConfig(
     level=logging.INFO,
@@ -1283,6 +1295,18 @@ class MultiverseLiveEngine:
         else:
             self.scout_network = None
             logger.warning("⚠️ Patriot Scout Network: OFFLINE")
+        
+        # Initialize Quantum Telescope (Multi-Dimensional Geometric Analysis)
+        if QUANTUM_TELESCOPE_AVAILABLE and QuantumTelescope:
+            try:
+                self.quantum_telescope = QuantumTelescope()
+                logger.info("🔭 Quantum Telescope: ONLINE (5 Platonic Lenses)")
+            except Exception as e:
+                self.quantum_telescope = None
+                logger.warning(f"🔭 Quantum Telescope: OFFLINE ({e})")
+        else:
+            self.quantum_telescope = None
+            logger.warning("⚠️ Quantum Telescope: OFFLINE")
         
         # Initialize Mycelium Network (distributed intelligence)
         if MYCELIUM_AVAILABLE:
@@ -2459,6 +2483,44 @@ class MultiverseLiveEngine:
                     f"🎬 INCEPTION: BUY {validated_symbol} on {validated_exchange} (confidence: {confidence:.2f}, depth: {len(plan.get('depth_traversed', []))})"
                 )
         
+        # 3.5. QUANTUM TELESCOPE - Multi-Dimensional Geometric Analysis
+        # Uses 5 Platonic Solid lenses to refract market data into probability spectrum
+        quantum_observations = {}
+        if self.quantum_telescope:
+            try:
+                prices = market_data.get("prices", {})
+                volumes = market_data.get("volumes", {})
+                changes = market_data.get("changes", {})
+                
+                # Observe top movers through the telescope
+                top_movers = sorted(changes.items(), key=lambda x: abs(x[1]), reverse=True)[:10]
+                for symbol, change in top_movers:
+                    price = prices.get(symbol, 0)
+                    volume = volumes.get(symbol, 10000)
+                    if price > 0:
+                        observation = self.quantum_telescope.observe(
+                            symbol=symbol,
+                            price=price,
+                            volume=volume,
+                            change_pct=change
+                        )
+                        quantum_observations[symbol] = observation
+                        
+                        # Log high-alignment observations
+                        if observation['geometric_alignment'] > 0.7:
+                            logger.info(
+                                f"🔭 QUANTUM: {symbol} | Alignment: {observation['geometric_alignment']:.2f} | "
+                                f"Dominant: {observation['dominant_solid']} | Prob: {observation['probability_spectrum']:.1%}"
+                            )
+                
+                result["quantum_telescope"] = {
+                    "observations": len(quantum_observations),
+                    "high_alignment_count": sum(1 for o in quantum_observations.values() if o['geometric_alignment'] > 0.7),
+                    "top_probability": max((o['probability_spectrum'] for o in quantum_observations.values()), default=0)
+                }
+            except Exception as e:
+                logger.warning(f"🔭 Quantum Telescope error: {e}")
+        
         # 4. SNIPER EXIT CHECK - Million Kill Training (check positions for sniper exits)
         sniper_signals: List[CommandoSignal] = []
         if self.sniper and self.positions:
@@ -2733,6 +2795,25 @@ class MultiverseLiveEngine:
                     entry_signal.exchange = validated_exchange
                 
             if entry_signal:
+                # 🔭 QUANTUM TELESCOPE CONFIDENCE BOOST
+                # Use geometric alignment to enhance signal confidence
+                quantum_boost = 0.0
+                if quantum_observations and entry_signal.symbol in quantum_observations:
+                    obs = quantum_observations[entry_signal.symbol]
+                    geo_align = obs.get('geometric_alignment', 0)
+                    prob_spec = obs.get('probability_spectrum', 0.5)
+                    dominant = obs.get('dominant_solid', 'UNKNOWN')
+                    
+                    # Boost based on geometric alignment and probability
+                    quantum_boost = (geo_align * 0.15) + ((prob_spec - 0.5) * 0.10)
+                    entry_signal.confidence = min(1.0, entry_signal.confidence + quantum_boost)
+                    
+                    if quantum_boost > 0.05:
+                        logger.info(
+                            f"🔭 QUANTUM BOOST: {entry_signal.symbol} +{quantum_boost:.1%} "
+                            f"(align={geo_align:.2f}, prob={prob_spec:.1%}, solid={dominant})"
+                        )
+                
                 logger.info(f"🎯 COMMANDO SIGNAL: {entry_signal.action} {entry_signal.symbol} on {entry_signal.exchange} (conf: {entry_signal.confidence:.2f})")
                 result["commando_signals"].append(entry_signal.to_dict())
                 self.stats["signals_generated"] += 1
@@ -2853,6 +2934,60 @@ class MultiverseLiveEngine:
                         )
             except Exception as e:
                 logger.debug(f"Ladder step error: {e}")
+        
+        # 11. LABYRINTH ARBITRAGE - Find profitable conversion paths across exchanges
+        labyrinth_opportunities = []
+        if hasattr(self, 'labyrinth') and self.labyrinth:
+            try:
+                prices = market_data.get("prices", {})
+                
+                # Check for cross-exchange arbitrage opportunities
+                # Look at our positioned assets and find better paths to profit
+                for symbol, pos in list(self.positions.items()):
+                    # Extract base asset from symbol (e.g., BTCUSDT -> BTC)
+                    base_asset = symbol.replace("USDT", "").replace("USDC", "").replace("USD", "").replace("BTC", "").replace("ETH", "")
+                    if not base_asset or len(base_asset) < 2:
+                        continue
+                    
+                    # Find best path to stable coin (USD/USDT/USDC)
+                    for target in ["USDT", "USDC", "USD"]:
+                        best_path = self.labyrinth.get_best_path(base_asset, target)
+                        if best_path and len(best_path) > 0:
+                            # Estimate conversion efficiency
+                            pos_value = pos.get("quantity", 0) * prices.get(symbol, pos.get("entry_price", 0))
+                            cost_est = self.labyrinth.estimate_conversion_cost(best_path, pos_value, prices)
+                            
+                            # If path is efficient (>99% output), record the opportunity
+                            if cost_est.get("efficiency", 0) > 0.99:
+                                labyrinth_opportunities.append({
+                                    "from": base_asset,
+                                    "to": target,
+                                    "hops": cost_est.get("hops", 0),
+                                    "efficiency": cost_est.get("efficiency", 0),
+                                    "estimated_fees": cost_est.get("fees", 0),
+                                    "path": " → ".join([s.get("symbol", "?") for s in best_path]) if best_path else "direct"
+                                })
+                                
+                                # Record this path usage
+                                self.labyrinth.record_path_usage(
+                                    path=best_path,
+                                    slippage=cost_est.get("slippage", 0),
+                                    profit=0  # Will update after actual conversion
+                                )
+                
+                if labyrinth_opportunities:
+                    result["labyrinth_opportunities"] = labyrinth_opportunities
+                    logger.info(f"🌀 LABYRINTH: Found {len(labyrinth_opportunities)} efficient conversion paths")
+                    
+                    # Log the most efficient path
+                    best_opp = max(labyrinth_opportunities, key=lambda x: x["efficiency"])
+                    logger.info(
+                        f"🌀 Best Path: {best_opp['from']} → {best_opp['to']} "
+                        f"({best_opp['hops']} hops, {best_opp['efficiency']:.2%} efficiency)"
+                    )
+                    
+            except Exception as e:
+                logger.debug(f"Labyrinth scan error: {e}")
         
         result["cycle_time_ms"] = (time.time() - cycle_start) * 1000
         return result

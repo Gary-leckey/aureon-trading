@@ -502,6 +502,16 @@ class BinanceClient:
                 total_quote += converted
         return total_quote
     
+    def get_ticker_price(self, symbol: str) -> Optional[Dict[str, str]]:
+        """Get current price for a symbol."""
+        try:
+            r = self.session.get(f"{self.base}/api/v3/ticker/price", params={"symbol": symbol}, timeout=5)
+            if r.status_code == 200:
+                return r.json()
+        except Exception:
+            pass
+        return None
+
     def get_24h_tickers(self) -> list:
         """Get all 24h ticker stats for commando scanning 🦆⚔️
         
@@ -798,6 +808,225 @@ class BinanceClient:
             'first_trade': first_trade,
             'last_trade': last_trade
         }
+
+    # ══════════════════════════════════════════════════════════════════════
+    # CRYPTO CONVERSION - Convert between crypto assets internally
+    # ══════════════════════════════════════════════════════════════════════
+
+    _pairs_cache = None
+    _pairs_cache_time = 0
+    _PAIRS_CACHE_TTL = 300  # 5 minutes
+
+    def get_available_pairs(self, base: str = None, quote: str = None) -> List[Dict[str, Any]]:
+        """
+        Get available trading pairs, optionally filtered by base or quote asset.
+        Uses caching to avoid repeated API calls (5 min TTL).
+        """
+        import time as _time
+        current_time = _time.time()
+        
+        # Check cache
+        if BinanceClient._pairs_cache is None or (current_time - BinanceClient._pairs_cache_time) > BinanceClient._PAIRS_CACHE_TTL:
+            try:
+                info = self.exchange_info()
+                symbols = info.get("symbols", [])
+                all_pairs = []
+                
+                for sym in symbols:
+                    if sym.get("status") != "TRADING":
+                        continue
+                    
+                    all_pairs.append({
+                        "pair": sym.get("symbol"),
+                        "base": sym.get("baseAsset", ""),
+                        "quote": sym.get("quoteAsset", "")
+                    })
+                
+                BinanceClient._pairs_cache = all_pairs
+                BinanceClient._pairs_cache_time = current_time
+            except Exception as e:
+                print(f"Error getting pairs: {e}")
+                return BinanceClient._pairs_cache or []
+        
+        # Filter from cache
+        results = []
+        for p in (BinanceClient._pairs_cache or []):
+            if base and p["base"].upper() != base.upper():
+                continue
+            if quote and p["quote"].upper() != quote.upper():
+                continue
+            results.append(p)
+        
+        return results
+
+    def find_conversion_path(self, from_asset: str, to_asset: str) -> List[Dict[str, Any]]:
+        """Find the best path to convert from one asset to another."""
+        from_asset = from_asset.upper()
+        to_asset = to_asset.upper()
+        
+        if from_asset == to_asset:
+            return []
+        
+        pairs = self.get_available_pairs()
+        pair_map = {p["pair"]: p for p in pairs}
+        
+        # Try direct pair
+        direct_pair = f"{from_asset}{to_asset}"
+        if direct_pair in pair_map:
+            return [{"pair": direct_pair, "side": "sell", "from": from_asset, "to": to_asset}]
+        
+        # Try inverse pair
+        inverse_pair = f"{to_asset}{from_asset}"
+        if inverse_pair in pair_map:
+            return [{"pair": inverse_pair, "side": "buy", "from": from_asset, "to": to_asset}]
+        
+        # Route through intermediary
+        for intermediate in ['USDC', 'BTC', 'EUR']:  # UK-safe intermediaries
+            if intermediate in (from_asset, to_asset):
+                continue
+            
+            path1 = None
+            p1_direct = f"{from_asset}{intermediate}"
+            p1_inverse = f"{intermediate}{from_asset}"
+            
+            if p1_direct in pair_map:
+                path1 = {"pair": p1_direct, "side": "sell", "from": from_asset, "to": intermediate}
+            elif p1_inverse in pair_map:
+                path1 = {"pair": p1_inverse, "side": "buy", "from": from_asset, "to": intermediate}
+            
+            if not path1:
+                continue
+            
+            path2 = None
+            p2_direct = f"{intermediate}{to_asset}"
+            p2_inverse = f"{to_asset}{intermediate}"
+            
+            if p2_direct in pair_map:
+                path2 = {"pair": p2_direct, "side": "sell", "from": intermediate, "to": to_asset}
+            elif p2_inverse in pair_map:
+                path2 = {"pair": p2_inverse, "side": "buy", "from": intermediate, "to": to_asset}
+            
+            if path2:
+                return [path1, path2]
+        
+        return []
+
+    def convert_crypto(self, from_asset: str, to_asset: str, amount: float) -> Dict[str, Any]:
+        """Convert one crypto asset to another within Binance."""
+        from_asset = from_asset.upper()
+        to_asset = to_asset.upper()
+        
+        if from_asset == to_asset:
+            return {"error": "Cannot convert to same asset"}
+        
+        # 🚨 CRITICAL: Block stablecoin→stablecoin swaps - they ALWAYS lose to fees!
+        STABLECOINS = {'USD', 'USDT', 'USDC', 'TUSD', 'BUSD', 'DAI', 'FDUSD', 'USDP'}
+        if from_asset in STABLECOINS and to_asset in STABLECOINS:
+            return {"error": f"Stablecoin→stablecoin swap blocked ({from_asset}→{to_asset}) - always loses to fees!"}
+        
+        path = self.find_conversion_path(from_asset, to_asset)
+        
+        if not path:
+            return {"error": f"No conversion path found from {from_asset} to {to_asset}"}
+        
+        # 👑 QUEEN MIND: Pre-flight balance check
+        # Get fresh balance BEFORE trading
+        try:
+            acct = self.account() or {}
+            actual_balance = 0.0
+            for bal in acct.get('balances', []):
+                if bal.get('asset', '').upper() == from_asset:
+                    actual_balance = float(bal.get('free', 0))
+                    break
+            
+            if actual_balance <= 0:
+                return {"error": f"No {from_asset} balance available on Binance (free: {actual_balance})"}
+            
+            # Clamp to actual balance if needed
+            if amount > actual_balance:
+                print(f"   👑 Binance pre-trade clamping: {amount:.6f} → {actual_balance * 0.98:.6f}")
+                amount = actual_balance * 0.98  # Extra 2% buffer for fees
+        except Exception as e:
+            print(f"   ⚠️ Balance check warning: {e}")
+        
+        # 👑 TINA B: Pre-flight validation for multi-step conversions
+        # Binance MIN_NOTIONAL is typically $5-10 depending on pair
+        min_notional = 5.0
+        estimated_amount = amount
+        estimated_value_usd = amount  # Track USD value through the path
+        
+        # Get SOL price for initial value estimate
+        try:
+            from_ticker = self.get_ticker_price(f"{from_asset}USDC") or self.get_ticker_price(f"{from_asset}USDT")
+            if from_ticker:
+                from_price = float(from_ticker.get("price", 0))
+                estimated_value_usd = amount * from_price
+        except:
+            pass
+        
+        for i, trade in enumerate(path):
+            pair = trade["pair"]
+            side = trade["side"]
+            
+            # Get current price
+            try:
+                ticker = self.get_ticker_price(pair)
+                price = float(ticker.get("price", 0)) if ticker else 0
+            except Exception:
+                price = 0
+            
+            if side == "sell":
+                # Selling base asset - check notional value in USD terms
+                if estimated_value_usd < min_notional and estimated_value_usd > 0:
+                    return {
+                        "error": f"Multi-hop step {i+1} value ${estimated_value_usd:.2f} < min ${min_notional:.2f} for {pair}",
+                        "failed_step": i,
+                        "pair": pair
+                    }
+                # After sell, we have quote currency (usually USDC)
+                if price > 0:
+                    estimated_amount = estimated_amount * price
+                    # estimated_value_usd stays roughly the same (minus fees)
+            else:
+                # Buying with quote currency - check if we have enough USD value
+                if estimated_value_usd < min_notional:
+                    return {
+                        "error": f"Multi-hop step {i+1} value ${estimated_value_usd:.2f} < min ${min_notional:.2f} for {pair}",
+                        "failed_step": i,
+                        "pair": pair
+                    }
+                # After buy, we have base currency
+                if price > 0:
+                    estimated_amount = estimated_amount / price
+                    # estimated_value_usd stays roughly the same (minus fees)
+        
+        if self.dry_run:
+            return {"dryRun": True, "path": path, "trades": len(path)}
+        
+        results = []
+        # Reserve 2% for fees/rounding to avoid "insufficient balance" errors
+        remaining_amount = amount * 0.98
+        
+        for trade in path:
+            pair = trade["pair"]
+            side = trade["side"]
+            
+            try:
+                if side == "sell":
+                    result = self.place_market_order(pair, "SELL", quantity=remaining_amount)
+                else:
+                    result = self.place_market_order(pair, "BUY", quote_qty=remaining_amount)
+                
+                results.append({"trade": trade, "result": result, "status": "success"})
+                
+                exec_qty = float(result.get("executedQty", 0))
+                cumm_quote = float(result.get("cummulativeQuoteQty", 0))
+                remaining_amount = cumm_quote if side == "sell" else exec_qty
+                    
+            except Exception as e:
+                return {"error": f"Trade failed: {e}", "partial_results": results}
+        
+        return {"success": True, "trades": results, "final_amount": remaining_amount}
 
 
 def position_size_from_balance(client: BinanceClient, symbol: str, fraction: float, max_usdt: float) -> float:
@@ -1162,6 +1391,14 @@ class BinancePoolClient:
             if intermediate == from_asset or intermediate == to_asset:
                 continue
             
+            # 🐍 MEDUSA: Skip restricted intermediaries in UK mode
+            if self.uk_mode:
+                if intermediate in UK_RESTRICTED_TOKENS:
+                    continue
+                # Explicitly block USDC for UK users (often restricted/unavailable)
+                if intermediate == 'USDC':
+                    continue
+            
             # Check if we can go from_asset -> intermediate
             path1 = None
             p1_direct = f"{from_asset}{intermediate}"
@@ -1223,6 +1460,31 @@ class BinancePoolClient:
         if from_asset == to_asset:
             return {"error": "Cannot convert to same asset", "from": from_asset, "to": to_asset}
         
+        # 🚨 CRITICAL: Block stablecoin→stablecoin swaps - they ALWAYS lose to fees!
+        STABLECOINS = {'USD', 'USDT', 'USDC', 'TUSD', 'BUSD', 'DAI', 'FDUSD', 'USDP'}
+        if from_asset in STABLECOINS and to_asset in STABLECOINS:
+            return {"error": f"Stablecoin→stablecoin swap blocked ({from_asset}→{to_asset}) - always loses to fees!"}
+        
+        # REFRESH BALANCE & CLAMP AMOUNT
+        # This prevents "Insufficient Balance" errors when selling 100% of an asset
+        if not use_quote_amount:
+            try:
+                # Get fresh balance
+                balance_info = self.get_asset_balance(from_asset)
+                if balance_info:
+                    available = float(balance_info.get('free', 0))
+                    
+                    # If we're trying to sell more than we have (or very close to it)
+                    # Clamp to 99.9% to cover potential rounding/fees/dust
+                    if amount > available * 0.99:
+                        print(f"   ⚠️ Clamping amount {amount} to 99.9% of available {available} {from_asset}")
+                        amount = available * 0.999
+                        
+                        # Truncate to 8 decimals to avoid precision errors
+                        amount = float(f"{amount:.8f}")
+            except Exception as e:
+                print(f"   ⚠️ Could not refresh balance for {from_asset}: {e}")
+
         # Find conversion path
         path = self.find_conversion_path(from_asset, to_asset)
         

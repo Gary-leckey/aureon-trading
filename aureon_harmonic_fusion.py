@@ -46,6 +46,18 @@ from aureon_lighthouse import (
     LighthouseConfig
 )
 
+# ⏳🔮 TIMELINE ORACLE - 7-day future validation (branching timelines)
+try:
+    from aureon_timeline_oracle import (
+        TimelineOracle, TimelineBranch, TimelineAction,
+        timeline_select, timeline_validate
+    )
+    TIMELINE_ORACLE_AVAILABLE = True
+    print("⏳🔮 Harmonic Fusion: Timeline Oracle WIRED! (7-day vision)")
+except ImportError:
+    TIMELINE_ORACLE_AVAILABLE = False
+    TimelineOracle = None
+
 
 @dataclass
 class SchumannState:
@@ -493,6 +505,9 @@ def get_harmonic_fusion(config: HarmonicFusionConfig = None, mycelium=None) -> H
         _fusion_instance = HarmonicWaveFusion(config, mycelium)
     
     return _fusion_instance
+
+# Alias for compatibility with aureon_enigma_integration
+get_fusion = get_harmonic_fusion
 
 
 def initialize_harmonic_fusion(config: HarmonicFusionConfig = None, mycelium=None) -> bool:

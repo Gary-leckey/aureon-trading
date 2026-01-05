@@ -2,12 +2,14 @@
  * Live Data Dashboard - Real-Time Trading View
  * Shows live trades, accounts, P&L using WebSocket and API data
  * Now includes 🦆🪐 Platypus Planetary Coherence!
+ * 🌉 Updated with Aureon Live Bridge integration!
  */
 
 import { useGlobalState, useTradingState, useQuantumState, usePlatypusState } from '@/hooks/useGlobalState';
 import { useUserBalances } from '@/hooks/useUserBalances';
 import { useStrikeFeed } from '@/hooks/useStrikeFeed';
 import { useBinanceWebSocket } from '@/hooks/useBinanceWebSocket';
+import { useAureonLiveData } from '@/hooks/useAureonLiveData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,7 +25,12 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   RefreshCw,
-  Orbit
+  Orbit,
+  Wifi,
+  WifiOff,
+  Brain,
+  Target,
+  Sparkles
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -35,6 +42,9 @@ export default function LiveDataDashboard() {
   const { events, executionCount } = useStrikeFeed(50);
   const { balances, totalEquityUsd, connectedExchanges, isLoading: balancesLoading, lastUpdated } = useUserBalances(true, 10000);
   const { marketData, connected: wsConnected } = useBinanceWebSocket(['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT']);
+  
+  // 🌉 AUREON LIVE BRIDGE - Real-time data from Python systems
+  const bridgeData = useAureonLiveData();
 
   const winRate = tradingState.totalTrades > 0 
     ? ((tradingState.winningTrades / tradingState.totalTrades) * 100).toFixed(1)
@@ -54,6 +64,12 @@ export default function LiveDataDashboard() {
               <Badge variant="default" className="bg-green-500/20 text-green-400 border-green-500/50">
                 <Activity className="w-3 h-3 mr-1 animate-pulse" />
                 WS LIVE
+              </Badge>
+            )}
+            {bridgeData.connected && (
+              <Badge variant="default" className="bg-purple-500/20 text-purple-400 border-purple-500/50">
+                <Wifi className="w-3 h-3 mr-1 animate-pulse" />
+                BRIDGE LIVE
               </Badge>
             )}
             {globalState.isRunning && (
@@ -117,6 +133,64 @@ export default function LiveDataDashboard() {
           extra={platypusState.lighthouseActive ? '🔦' : undefined}
         />
       </div>
+
+      {/* 🌉 BRIDGE SYSTEMS STATUS - Trading system signals from Python */}
+      {bridgeData.connected && (
+        <div className="mb-6 p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Wifi className="w-5 h-5 text-purple-400 animate-pulse" />
+              <span className="font-bold text-purple-400">AUREON LIVE BRIDGE</span>
+              <Badge variant="outline" className="text-xs">
+                {bridgeData.updatesReceived} updates
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="default" className="bg-green-500/20 text-green-400">
+                ${bridgeData.totalPortfolioValue.toLocaleString(undefined, { maximumFractionDigits: 2 })} Total
+              </Badge>
+              <Badge variant="outline" className="text-yellow-400">
+                {bridgeData.signalCount} Signals
+              </Badge>
+            </div>
+          </div>
+          
+          {/* Systems Online */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            {bridgeData.systemsOnline.map(system => (
+              <Badge key={system} variant="default" className="text-xs bg-green-500/20 text-green-400">
+                {system === 'V14' ? '🏆' : system === 'Mycelium' ? '🍄' : system === 'Commando' ? '🦅' : 
+                 system === 'Nexus' ? '🔮' : system === 'Multiverse' ? '🌌' : system === 'MinerBrain' ? '🧠' : 
+                 system === 'Omega' ? '🔱' : '⚡'} {system}
+              </Badge>
+            ))}
+          </div>
+          
+          {/* Top Signals */}
+          {bridgeData.signals.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {bridgeData.signals.slice(0, 4).map((sig, i) => (
+                <div key={`${sig.system}-${sig.symbol}-${i}`} 
+                     className={`p-2 rounded border text-xs ${
+                       sig.signal_type === 'BUY' || sig.signal_type === 'CONVERT' 
+                         ? 'bg-green-500/10 border-green-500/30' 
+                         : sig.signal_type === 'SELL' 
+                         ? 'bg-red-500/10 border-red-500/30' 
+                         : 'bg-yellow-500/10 border-yellow-500/30'
+                     }`}>
+                  <div className="flex justify-between items-center">
+                    <span className="font-mono font-bold">{sig.symbol}</span>
+                    <Badge variant="outline" className="text-[10px]">{sig.signal_type}</Badge>
+                  </div>
+                  <div className="text-muted-foreground mt-1">
+                    {sig.system} • {(sig.confidence * 100).toFixed(0)}%
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Left: Live Market Data */}

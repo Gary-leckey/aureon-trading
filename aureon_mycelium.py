@@ -92,6 +92,29 @@ except ImportError:
     print("⚠️ Mycelium: Ultimate Intelligence not available")
     EnhancedProbabilityNexus = None
 
+# ⏳🔮 TIMELINE ORACLE - 7-day future validation (branching timelines)
+try:
+    from aureon_timeline_oracle import (
+        TimelineOracle, TimelineBranch, TimelineAction,
+        timeline_select, timeline_validate, get_timeline_oracle
+    )
+    TIMELINE_ORACLE_AVAILABLE = True
+    print("⏳🔮 Mycelium: Timeline Oracle WIRED! (7-day vision)")
+except ImportError:
+    TIMELINE_ORACLE_AVAILABLE = False
+    TimelineOracle = None
+    timeline_select = None
+
+# 👑🍄 QUEEN HIVE MIND - The Dreaming Queen who guides all children
+try:
+    from aureon_queen_hive_mind import QueenHiveMind, QueenWisdom, get_queen
+    QUEEN_HIVE_MIND_AVAILABLE = True
+    print("👑🍄 Mycelium: Queen Hive Mind WIRED! (The Dreaming Queen)")
+except ImportError:
+    QUEEN_HIVE_MIND_AVAILABLE = False
+    QueenHiveMind = None
+    get_queen = None
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONSTANTS
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -574,7 +597,18 @@ class MyceliumNetwork:
         self.queen_neuron = Neuron(id="queen", bias=0.0)
         self.hive_synapses: List[Synapse] = []
         
-        # 🔱🔮 ENHANCED PROBABILITY NEXUS - 100% WIN RATE INTEGRATION 🔮🔱
+        # �🍄 QUEEN HIVE MIND - The Dreaming Queen
+        self.queen_hive_mind = None
+        self.queen_wisdom_cache: Optional[Any] = None
+        if QUEEN_HIVE_MIND_AVAILABLE:
+            try:
+                # Don't create a new queen, get the global singleton
+                # The Queen will wire us, not the other way around
+                logger.info("👑🍄 Mycelium ready to receive wisdom from Queen Hive Mind")
+            except Exception as e:
+                logger.warning(f"⚠️ Queen Hive Mind not available: {e}")
+        
+        # �🔱🔮 ENHANCED PROBABILITY NEXUS - 100% WIN RATE INTEGRATION 🔮🔱
         self.enhanced_nexus = None
         self.profit_filter = None
         self.compounding_engine = None
@@ -1586,6 +1620,140 @@ class MyceliumNetwork:
             "aggression": self.GROWTH_AGGRESSION
         }
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # ⏳🔮 TIMELINE ORACLE INTEGRATION - 7-Day Future Validation
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def get_consensus(self, symbol: str, action: str = None) -> float:
+        """
+        Get hive consensus for a symbol/action pair.
+        
+        This is used by the Timeline Oracle to validate timeline branches.
+        Returns confidence score 0.0 to 1.0.
+        """
+        # Check if we have queen neuron activation
+        if self.queen_neuron:
+            base_consensus = (self.queen_neuron.activation + 1) / 2  # Normalize from [-1,1] to [0,1]
+        else:
+            base_consensus = 0.5
+        
+        # Check path performance if action implies a direction
+        if action:
+            path_perf = self.conversion_metrics.get('path_performance', {})
+            # Look for any path involving this symbol
+            symbol_performance = []
+            for path_key, perf in path_perf.items():
+                if symbol.upper() in path_key.upper():
+                    total = perf.get('wins', 0) + perf.get('losses', 0)
+                    if total > 0:
+                        win_rate = perf.get('wins', 0) / total
+                        symbol_performance.append(win_rate)
+            
+            if symbol_performance:
+                path_consensus = sum(symbol_performance) / len(symbol_performance)
+                # Blend with base consensus
+                base_consensus = (base_consensus + path_consensus) / 2
+        
+        return min(1.0, max(0.0, base_consensus))
+    
+    def query(self, query_string: str) -> Optional[Dict[str, Any]]:
+        """
+        Query the mycelium network for consensus on a specific topic.
+        
+        Used by Timeline Oracle for hive intelligence queries.
+        Query format: "FROM:TO" or "SYMBOL"
+        """
+        if ':' in query_string:
+            # Conversion path query
+            parts = query_string.split(':')
+            from_asset, to_asset = parts[0], parts[1]
+            path_key = f"{from_asset}→{to_asset}"
+            
+            path_perf = self.conversion_metrics.get('path_performance', {}).get(path_key)
+            if path_perf:
+                total = path_perf.get('wins', 0) + path_perf.get('losses', 0)
+                win_rate = path_perf.get('wins', 0) / total if total > 0 else 0.5
+                return {
+                    'consensus': win_rate,
+                    'confidence': min(total / 10, 1.0),  # More history = more confidence
+                    'path_key': path_key,
+                    'avg_profit': path_perf.get('avg_profit', 0),
+                    'executions': total
+                }
+        
+        # Symbol query - aggregate all paths involving this symbol
+        symbol = query_string.upper()
+        relevant_paths = []
+        for path_key, perf in self.conversion_metrics.get('path_performance', {}).items():
+            if symbol in path_key.upper():
+                total = perf.get('wins', 0) + perf.get('losses', 0)
+                if total > 0:
+                    relevant_paths.append({
+                        'path_key': path_key,
+                        'win_rate': perf.get('wins', 0) / total,
+                        'avg_profit': perf.get('avg_profit', 0),
+                        'executions': total
+                    })
+        
+        if relevant_paths:
+            avg_win_rate = sum(p['win_rate'] for p in relevant_paths) / len(relevant_paths)
+            total_executions = sum(p['executions'] for p in relevant_paths)
+            return {
+                'consensus': avg_win_rate,
+                'confidence': min(total_executions / 20, 1.0),
+                'symbol': symbol,
+                'paths_count': len(relevant_paths),
+                'total_executions': total_executions
+            }
+        
+        return None
+    
+    def get_health(self) -> Dict[str, Any]:
+        """
+        Get overall health/status of the mycelium network.
+        
+        Used by Timeline Oracle for environment signal.
+        """
+        current_equity = self.get_total_equity()
+        growth_stats = self.get_growth_stats()
+        
+        # Health score based on multiple factors
+        health_factors = []
+        
+        # Factor 1: Equity growth
+        growth_pct = growth_stats.get('growth_percentage', 0)
+        health_factors.append(min(1.0, max(0.0, (growth_pct + 10) / 20)))  # -10% to +10% mapped to 0-1
+        
+        # Factor 2: Win rate
+        metrics = self.conversion_metrics
+        total_conv = metrics.get('successful_conversions', 0) + metrics.get('failed_conversions', 0)
+        if total_conv > 0:
+            win_rate = metrics.get('successful_conversions', 0) / total_conv
+            health_factors.append(win_rate)
+        else:
+            health_factors.append(0.5)  # Neutral if no history
+        
+        # Factor 3: Velocity
+        velocity = metrics.get('velocity_per_hour', 0)
+        health_factors.append(min(1.0, velocity / 50))  # $50/hr = perfect health
+        
+        # Factor 4: Phase progress
+        phase_scores = {'BOOTSTRAP': 0.2, 'GROWTH': 0.4, 'SCALE': 0.6, 'COMPOUND': 0.8, 'MILLION': 1.0}
+        phase_score = phase_scores.get(self.s5_state.get('phase', 'BOOTSTRAP'), 0.2)
+        health_factors.append(phase_score)
+        
+        overall_health = sum(health_factors) / len(health_factors) if health_factors else 0.5
+        
+        return {
+            'score': overall_health,
+            'equity': current_equity,
+            'growth_pct': growth_pct,
+            'velocity': velocity,
+            'phase': self.s5_state.get('phase', 'BOOTSTRAP'),
+            'hives_count': len(self.hives),
+            'active': True
+        }
+    
     def boost_signal_for_profit(self, base_signal: float, expected_profit: float) -> float:
         """
         Boost signals that lead to more profit.
@@ -1771,6 +1939,47 @@ class MyceliumNetwork:
                 transmitted.append(signal)
         
         return self.queen_neuron.activate(transmitted)
+    
+    def receive_queen_wisdom(self, wisdom: Any) -> None:
+        """
+        👑 Receive wisdom from the Queen Hive Mind.
+        This adjusts the Queen Neuron's bias based on prophetic guidance.
+        """
+        if wisdom is None:
+            return
+        
+        self.queen_wisdom_cache = wisdom
+        
+        # Extract direction and confidence from wisdom
+        direction = getattr(wisdom, 'direction', None) or wisdom.get('direction', 'NEUTRAL') if isinstance(wisdom, dict) else 'NEUTRAL'
+        confidence = getattr(wisdom, 'confidence', 0.5) or wisdom.get('confidence', 0.5) if isinstance(wisdom, dict) else 0.5
+        
+        # Adjust queen neuron bias based on wisdom
+        # Positive bias = bullish tendency, negative = bearish
+        if direction == 'BULLISH':
+            bias_adjustment = confidence * 0.3  # Gentle influence
+        elif direction == 'BEARISH':
+            bias_adjustment = -confidence * 0.3
+        else:
+            bias_adjustment = 0.0
+        
+        # Apply to queen neuron
+        self.queen_neuron.bias = bias_adjustment
+        
+        logger.debug(f"👑 Mycelium received Queen wisdom: {direction} ({confidence:.0%}) → bias={bias_adjustment:.3f}")
+    
+    def connect_to_queen(self, queen: Any) -> bool:
+        """
+        👑 Connect this Mycelium Network to the Queen Hive Mind.
+        The Queen becomes the central consciousness.
+        """
+        try:
+            self.queen_hive_mind = queen
+            logger.info("👑🍄 Mycelium Network CONNECTED to Queen Hive Mind")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to connect to Queen: {e}")
+            return False
     
     def get_network_coherence(self) -> float:
         """
@@ -2028,6 +2237,24 @@ def create_mycelium_for_nexus(initial_capital: float = 100.0) -> MyceliumNetwork
         agents_per_hive=5,
         target_multiplier=2.0
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# GLOBAL SINGLETON
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_mycelium_instance: MyceliumNetwork = None
+
+def get_mycelium(initial_capital: float = 100.0) -> MyceliumNetwork:
+    """Get or create the global Mycelium Network instance."""
+    global _mycelium_instance
+    if _mycelium_instance is None:
+        _mycelium_instance = MyceliumNetwork(
+            initial_capital=initial_capital,
+            agents_per_hive=5,
+            target_multiplier=2.0
+        )
+    return _mycelium_instance
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

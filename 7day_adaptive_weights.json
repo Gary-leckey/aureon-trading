@@ -1,0 +1,11 @@
+{
+  "hourly_weight": 1.5,
+  "daily_weight": 1.0,
+  "symbol_weight": 1.0,
+  "correlation_weight": 1.0,
+  "momentum_weight": 1.0,
+  "validation_count": 287,
+  "accuracy_7d": 1.0,
+  "accuracy_30d": 0.5,
+  "last_updated": "2026-01-05T07:12:14.138073"
+}

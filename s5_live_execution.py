@@ -29,10 +29,7 @@ os.environ['KRAKEN_DRY_RUN'] = 'false'
 try:
     import websockets
 except ImportError:
-    print("Installing websockets...")
-    import subprocess
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'websockets', '-q'])
-    import websockets
+    websockets = None
 
 import requests
 

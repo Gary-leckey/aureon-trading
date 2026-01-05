@@ -1752,6 +1752,192 @@ class HNCProbabilityIntegration:
         
         return base_result
 
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 👑🐝 QUEEN BEE METRICS INTEGRATION - Tina B's Consciousness Feeds the Matrix!
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def wire_queen_metrics(self, queen) -> None:
+        """
+        🐝👑 Wire the Queen Hive Mind to the Probability Matrix!
+        
+        The Matrix becomes aware of ALL the Queen's metrics:
+        - Auris coherence from 9 sacred nodes
+        - Emotional spectrum (LOVE alignment)
+        - Gaia's blessing
+        - Dream visions
+        - Historical wisdom
+        - Sandbox evolution
+        - 11 Civilizations alignment
+        """
+        self.queen = queen
+        print(f"   👑🐝 Queen Hive Mind: WIRED to Probability Matrix!")
+    
+    def feed_queen_metrics(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        🐝 Feed Queen's comprehensive metrics to enhance probability calculations.
+        
+        This allows the Matrix to use the Queen's consciousness signals:
+        - auris_coherence: Coherence from 9 Auris nodes (0-1)
+        - emotional_love: LOVE frequency alignment (0-1)
+        - gaia_blessing: Earth's blessing level (0-1)
+        - historical_wisdom: Learned patterns count
+        - sandbox_evolution: Sandbox generation
+        - civilizations_alignment: 11 civilizations blessing (0-1)
+        - luck_score: Current luck field (0-1)
+        - dream_confidence: Dream vision confidence (0-1)
+        
+        Returns:
+            Dict with queen_boost and enhanced probability adjustment
+        """
+        if not hasattr(self, 'queen_metrics'):
+            self.queen_metrics = {}
+        
+        timestamp = time.time()
+        self.queen_metrics = {
+            **metrics,
+            'timestamp': timestamp
+        }
+        
+        # Calculate Queen-enhanced probability boost
+        queen_boost = 0.0
+        signals = []
+        
+        # Auris Coherence (9 sacred nodes)
+        auris = metrics.get('auris_coherence', 0.5)
+        if auris > 0.7:
+            queen_boost += 0.03
+            signals.append(f"🦉 Auris HIGH ({auris:.0%})")
+        elif auris < 0.3:
+            queen_boost -= 0.02
+            signals.append(f"🦉 Auris LOW ({auris:.0%})")
+        
+        # Emotional Spectrum (LOVE alignment)
+        love = metrics.get('emotional_love', 0.5)
+        if love > 0.8:
+            queen_boost += 0.02
+            signals.append("🌈 LOVE RESONANCE")
+        
+        # Gaia's Blessing
+        gaia = metrics.get('gaia_blessing', 0.5)
+        if gaia > 0.75:
+            queen_boost += 0.02
+            signals.append(f"🌍 Gaia BLESSING ({gaia:.0%})")
+        
+        # Dream Vision Confidence
+        dream = metrics.get('dream_confidence', 0.5)
+        if dream > 0.7:
+            queen_boost += 0.02
+            signals.append(f"💭 Dream CLEAR ({dream:.0%})")
+        
+        # 11 Civilizations Alignment
+        civs = metrics.get('civilizations_alignment', 0.5)
+        if civs > 0.8:
+            queen_boost += 0.02
+            signals.append(f"🏛️ Civilizations ALIGNED")
+        
+        # Luck Field
+        luck = metrics.get('luck_score', 0.5)
+        if luck > 0.75:
+            queen_boost += 0.01
+            signals.append(f"🍀 Luck HIGH ({luck:.0%})")
+        
+        # Historical Wisdom (patterns learned)
+        patterns = metrics.get('historical_patterns', 0)
+        trades = metrics.get('historical_trades', 0)
+        if patterns > 5 and trades > 50:
+            queen_boost += 0.02
+            signals.append(f"📚 {patterns} patterns, {trades} trades")
+        
+        # Sandbox Evolution
+        sandbox_gen = metrics.get('sandbox_generation', 0)
+        if sandbox_gen > 100:
+            queen_boost += 0.01
+            signals.append(f"🧬 Gen {sandbox_gen}")
+        
+        queen_boost = max(-0.10, min(0.10, queen_boost))
+        
+        result = {
+            'queen_boost': queen_boost,
+            'signals': signals,
+            'timestamp': timestamp,
+            'message': f"👑 Queen contributes {queen_boost:+.1%} to probability"
+        }
+        
+        # Apply to all active matrices
+        for symbol, matrix in self.matrices.items():
+            if not hasattr(matrix, 'queen_boost'):
+                matrix.queen_boost = 0.0
+            matrix.queen_boost = queen_boost
+            
+            # Adjust fine-tuned probability
+            old_prob = matrix.fine_tuned_probability
+            matrix.fine_tuned_probability = max(0.1, min(0.9, old_prob + queen_boost))
+            
+            if queen_boost != 0.0:
+                matrix.fine_tune_reason += f" | Queen: {', '.join(signals)}"
+        
+        return result
+    
+    def get_queen_enhanced_forecast(self, symbol: str, opportunity: Dict = None) -> Dict:
+        """
+        🐝🔮 Get probability forecast enhanced by Queen's consciousness.
+        
+        This combines:
+        1. HNC temporal analysis
+        2. Labyrinth market patterns
+        3. Queen's dream vision for this specific opportunity
+        
+        Args:
+            symbol: Asset symbol
+            opportunity: Optional dict with opportunity details for dream vision
+            
+        Returns:
+            Enhanced forecast with queen_signals, dream_vision, and adjusted probability
+        """
+        # Get base forecast
+        forecast = self.get_symbol_forecast(symbol)
+        
+        # Add Queen metrics if available
+        if hasattr(self, 'queen_metrics') and self.queen_metrics:
+            metrics = self.queen_metrics
+            
+            # Calculate queen signal strength
+            auris = metrics.get('auris_coherence', 0.5)
+            love = metrics.get('emotional_love', 0.5)
+            gaia = metrics.get('gaia_blessing', 0.5)
+            luck = metrics.get('luck_score', 0.5)
+            
+            queen_signal = (auris * 0.3 + love * 0.2 + gaia * 0.3 + luck * 0.2)
+            
+            forecast['queen_signal'] = queen_signal
+            forecast['queen_metrics'] = metrics
+            
+            # Boost probability if Queen signals are strong
+            if queen_signal > 0.65:
+                old_bull = forecast['bullish_probability']
+                boost = (queen_signal - 0.5) * 0.1
+                forecast['bullish_probability'] = min(0.95, old_bull * (1 + boost))
+                forecast['queen_boost_applied'] = boost
+        
+        # Dream of winning if Queen is wired and we have opportunity data
+        if hasattr(self, 'queen') and self.queen and opportunity:
+            try:
+                if hasattr(self.queen, 'dream_of_winning'):
+                    dream_vision = self.queen.dream_of_winning(opportunity)
+                    forecast['dream_vision'] = dream_vision
+                    
+                    # Apply dream vision to probability
+                    if dream_vision.get('will_win'):
+                        dream_conf = dream_vision.get('final_confidence', 0.5)
+                        if dream_conf > 0.6:
+                            forecast['bullish_probability'] = min(0.95, 
+                                forecast['bullish_probability'] * (1 + (dream_conf - 0.5) * 0.2))
+                            forecast['dream_boost_applied'] = True
+            except Exception as e:
+                forecast['dream_error'] = str(e)
+        
+        return forecast
+
 
 # ═══════════════════════════════════════════════════════════════
 # DEMO / TEST

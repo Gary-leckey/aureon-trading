@@ -936,7 +936,7 @@ class AureonKrakenEcosystem:
         self.dry_run = dry_run
         self.client = KrakenClient()
         self.auris = AurisEngine()
-        self.mycelium = MyceliumNetwork()
+        self.mycelium = MyceliumNetwork(initial_capital=initial_balance)
         self.lattice = LatticeEngine()
         self.tracker = PerformanceTracker(initial_balance)
         self.total_equity_gbp = initial_balance

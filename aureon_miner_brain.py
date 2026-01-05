@@ -70,6 +70,19 @@ except ImportError:
     CoinbaseHistoricalFeed = None
     GlobalFinancialFeed = None
 
+# ⏳🔮 TIMELINE ORACLE - 7-day future validation
+try:
+    from aureon_timeline_oracle import (
+        TimelineOracle, TimelineBranch, TimelineAction,
+        timeline_select, timeline_validate, get_timeline_oracle
+    )
+    TIMELINE_ORACLE_AVAILABLE = True
+    print("⏳🔮 Miner Brain: Timeline Oracle WIRED! (7-day vision)")
+except ImportError:
+    TIMELINE_ORACLE_AVAILABLE = False
+    TimelineOracle = None
+    timeline_select = None
+
 # ═══════════════════════════════════════════════════════════════════════════
 # CONFIGURE LOGGING WITH UTF-8 HANDLER (Windows fix)
 # ═══════════════════════════════════════════════════════════════════════════
@@ -5322,6 +5335,15 @@ class MinerBrain:
         # NEW: Sandbox Evolved Parameters - 454 generations of learning
         self.sandbox_evolution = get_sandbox_evolution()
         
+        # ⏳🔮 Timeline Oracle - 7-day future validation
+        self.timeline_oracle = None
+        if TIMELINE_ORACLE_AVAILABLE:
+            try:
+                self.timeline_oracle = get_timeline_oracle()
+                logger.info("⏳🔮 MinerBrain: Timeline Oracle initialized (7-day vision)")
+            except Exception as e:
+                logger.warning(f"⏳ Timeline Oracle init failed: {e}")
+        
         self.latest_prediction = None
         self.latest_analysis = None
 
@@ -6347,6 +6369,59 @@ class MinerBrain:
                 'truth_council_verdict': self.latest_analysis['council']['consensus'] if self.latest_analysis else 'UNKNOWN'
             }
         return None
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # ⏳🔮 TIMELINE ORACLE INTEGRATION - 7-Day Future Validation
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def select_timeline_branch(self, symbol: str, price: float, volume: float = 0, change_pct: float = 0):
+        """
+        Use Timeline Oracle to select the optimal future branch.
+        
+        "We're not predicting - we're acting out what has already come to be."
+        
+        Returns: (action, branch_id, confidence)
+        """
+        if not self.timeline_oracle:
+            return ('HOLD', None, 0.5)
+        
+        try:
+            action, branch = self.timeline_oracle.select_timeline(symbol, price, volume, change_pct)
+            if branch:
+                logger.info(f"⏳🔮 Timeline selected: {action.value} {symbol} (conf: {branch.branch_confidence:.2%})")
+                return (action.value, branch.branch_id, branch.branch_confidence)
+            return ('HOLD', None, 0.5)
+        except Exception as e:
+            logger.error(f"Timeline selection error: {e}")
+            return ('HOLD', None, 0.5)
+    
+    def validate_timeline(self, branch_id: str, actual_price: float, actual_pnl: float = 0) -> bool:
+        """
+        Validate a timeline branch - confirm we chose correctly.
+        
+        "Each jump is a new timeline - we create a new branch on each step."
+        """
+        if not self.timeline_oracle or not branch_id:
+            return False
+        
+        try:
+            validation = self.timeline_oracle.validate_timeline(branch_id, actual_price, actual_pnl)
+            if validation:
+                logger.info(f"⏳✅ Timeline validated: {validation.timeline_accuracy:.1%} accuracy")
+                return validation.timeline_accuracy > 0.5
+            return False
+        except Exception as e:
+            logger.error(f"Timeline validation error: {e}")
+            return False
+    
+    def get_timeline_status(self) -> dict:
+        """Get current Timeline Oracle status."""
+        if not self.timeline_oracle:
+            return {'available': False}
+        
+        status = self.timeline_oracle.get_status()
+        status['available'] = True
+        return status
 
 def run_brain_cycle():
     """Wrapper for backward compatibility."""

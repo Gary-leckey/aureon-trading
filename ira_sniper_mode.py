@@ -100,19 +100,40 @@ except ImportError:
     print("⚠️ Ultimate Intelligence not available")
 
 # =============================================================================
-# 🌍🍄 AUREON ULTIMATE ECOSYSTEM - Full Integration
+# 🌍🍄 AUREON ULTIMATE ECOSYSTEM - Full Integration (Lazy Loading)
 # =============================================================================
 
-try:
-    from aureon_ultimate_ecosystem_wiring import (
-        get_ultimate_ecosystem, ecosystem_predict, ecosystem_record_outcome,
-        EcosystemPrediction, AureonUltimateEcosystem
-    )
-    ECOSYSTEM_WIRED = True
-    print("🌍🍄 Aureon Ultimate Ecosystem WIRED! (world domination mode)")
-except ImportError:
-    ECOSYSTEM_WIRED = False
-    print("⚠️ Ultimate Ecosystem not available")
+# Lazy loading to avoid circular imports during module initialization
+ECOSYSTEM_WIRED = None  # Will be set on first use
+
+def _check_ecosystem_available():
+    """Check if ecosystem is available (lazy initialization)."""
+    global ECOSYSTEM_WIRED
+    if ECOSYSTEM_WIRED is None:
+        try:
+            from aureon_ultimate_ecosystem_wiring import get_ultimate_ecosystem
+            get_ultimate_ecosystem()  # Test that it works
+            ECOSYSTEM_WIRED = True
+        except ImportError:
+            ECOSYSTEM_WIRED = False
+    return ECOSYSTEM_WIRED
+
+def _get_ecosystem_functions():
+    """Get ecosystem functions lazily."""
+    try:
+        from aureon_ultimate_ecosystem_wiring import (
+            get_ultimate_ecosystem, ecosystem_predict, ecosystem_record_outcome,
+            EcosystemPrediction, AureonUltimateEcosystem
+        )
+        return {
+            'get_ultimate_ecosystem': get_ultimate_ecosystem,
+            'ecosystem_predict': ecosystem_predict,
+            'ecosystem_record_outcome': ecosystem_record_outcome,
+            'EcosystemPrediction': EcosystemPrediction,
+            'AureonUltimateEcosystem': AureonUltimateEcosystem
+        }
+    except ImportError:
+        return None
 
 # =============================================================================
 # ☘️ CELTIC WARFARE INTELLIGENCE WIRING

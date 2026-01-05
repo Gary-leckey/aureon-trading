@@ -178,7 +178,20 @@ def ecosystem_record_outcome(*args, **kwargs):
     except ImportError:
         pass
 
-print("⚠️ Ultimate Ecosystem not available for Patriots")
+# Ultimate Ecosystem availability will be checked lazily to avoid circular imports
+ECOSYSTEM_AVAILABLE = None
+
+def _check_ecosystem():
+    """Check ecosystem availability lazily."""
+    global ECOSYSTEM_AVAILABLE
+    if ECOSYSTEM_AVAILABLE is None:
+        try:
+            from aureon_ultimate_ecosystem_wiring import get_ultimate_ecosystem
+            _test_eco = get_ultimate_ecosystem()
+            ECOSYSTEM_AVAILABLE = True
+        except ImportError:
+            ECOSYSTEM_AVAILABLE = False
+    return ECOSYSTEM_AVAILABLE
 
 try:
     from multi_battlefront_coordinator import (

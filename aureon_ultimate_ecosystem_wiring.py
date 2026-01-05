@@ -141,17 +141,25 @@ except ImportError as e:
     logger.warning(f"⚠️ Improved ETA not available: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ☘️ WIRE IRISH PATRIOT SCOUTS
+# ☘️ WIRE IRISH PATRIOT SCOUTS (Lazy to avoid circular import)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-try:
-    from irish_patriot_scouts import PatriotScoutNetwork, PatriotScout, PATRIOT_CONFIG
-    PATRIOTS_AVAILABLE = True
-    logger.info("☘️ Irish Patriot Scouts WIRED! (Celtic warfare)")
-except ImportError as e:
-    PATRIOTS_AVAILABLE = False
-    PatriotScoutNetwork = None
-    logger.warning(f"⚠️ Irish Patriots not available: {e}")
+PATRIOTS_AVAILABLE = None  # Will be checked lazily
+PatriotScoutNetwork = None
+
+def _get_patriot_scouts():
+    """Get Patriot Scout classes lazily to avoid circular imports."""
+    global PATRIOTS_AVAILABLE, PatriotScoutNetwork
+    if PATRIOTS_AVAILABLE is None:
+        try:
+            from irish_patriot_scouts import PatriotScoutNetwork as _PSN, PatriotScout, PATRIOT_CONFIG
+            PatriotScoutNetwork = _PSN
+            PATRIOTS_AVAILABLE = True
+            logger.info("☘️ Irish Patriot Scouts WIRED! (Celtic warfare)")
+        except ImportError as e:
+            PATRIOTS_AVAILABLE = False
+            logger.warning(f"⚠️ Irish Patriots not available: {e}")
+    return PATRIOTS_AVAILABLE
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🇮🇪 WIRE IRA SNIPER MODE

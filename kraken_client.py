@@ -1265,7 +1265,7 @@ class KrakenClient:
         
         return results
 
-    def find_conversion_path(self, from_asset: str, to_asset: str) -> List[Dict[str, Any]]:
+    def find_conversion_path(self, from_asset: str, to_asset: str, _depth: int = 0) -> List[Dict[str, Any]]:
         """
         Find the best path to convert from one asset to another.
         
@@ -1276,10 +1276,15 @@ class KrakenClient:
         Args:
             from_asset: Source asset (e.g., 'BTC')
             to_asset: Target asset (e.g., 'ETH')
+            _depth: Internal recursion depth limiter
             
         Returns:
             List of {pair, side, description} for each trade needed
         """
+        # 🐍 MEDUSA: Prevent infinite recursion
+        if _depth > 2:
+            return []
+            
         from_asset = from_asset.upper()
         to_asset = to_asset.upper()
         
@@ -1290,20 +1295,54 @@ class KrakenClient:
         from_norm = 'XBT' if from_asset == 'BTC' else from_asset
         to_norm = 'XBT' if to_asset == 'BTC' else to_asset
         
+        # 🐍 MEDUSA: Normalize Kraken quote currencies
+        # ZUSD = USD (Kraken internal naming)
+        quote_currencies = ['USD', 'ZUSD', 'USDT', 'USDC', 'EUR', 'ZEUR']
+        from_is_quote = from_asset in quote_currencies
+        to_is_quote = to_asset in quote_currencies
+        
+        # Normalize ZUSD -> USD for matching purposes
+        from_match = 'USD' if from_asset == 'ZUSD' else from_asset
+        to_match = 'USD' if to_asset == 'ZUSD' else to_asset
+        
         pairs = self._load_asset_pairs()
         
         # Try direct pair: from_asset/to_asset (sell from, get to)
         for internal, info in pairs.items():
             alt = info.get("altname", internal)
-            base = info.get("base", "").lstrip("XZ")
-            quote = info.get("quote", "").lstrip("XZ")
+            raw_base = info.get("base", "")
+            raw_quote = info.get("quote", "")
             
-            # Normalize XBT
-            if base == 'XBT': base = 'BTC'
-            if quote == 'XBT': quote = 'BTC'
+            # 🐍 MEDUSA: Smarter Kraken name normalization
+            # XXBT -> BTC (not XBT or BT)
+            # XETH -> ETH
+            # ZUSD -> USD
+            def normalize_kraken_asset(name: str) -> str:
+                # Strip leading X or Z (Kraken prefixes)
+                if name.startswith('XX'):
+                    name = name[2:]  # XXBT -> BT
+                elif name.startswith('X') and len(name) > 3:
+                    name = name[1:]  # XETH -> ETH
+                elif name.startswith('Z') and name not in ('ZUSD', 'ZEUR', 'ZGBP'):
+                    name = name[1:]
+                # XBT/BT -> BTC
+                if name in ('XBT', 'BT'):
+                    name = 'BTC'
+                # Normalize quote currencies
+                if name == 'ZUSD':
+                    name = 'USD'
+                if name == 'ZEUR':
+                    name = 'EUR'
+                return name.upper()
+            
+            base = normalize_kraken_asset(raw_base)
+            quote = normalize_kraken_asset(raw_quote)
+            
+            # Normalize quote currencies for matching
+            quote_normalized = 'USD' if quote in ('ZUSD', 'USD') else quote
             
             # Direct: from_asset is base, to_asset is quote -> SELL from_asset for to_asset
-            if base.upper() == from_asset and quote.upper() == to_asset:
+            if base == from_match and quote_normalized == to_match:
                 return [{
                     "pair": alt,
                     "side": "sell",
@@ -1313,7 +1352,8 @@ class KrakenClient:
                 }]
             
             # Inverse: to_asset is base, from_asset is quote -> BUY to_asset with from_asset
-            if base.upper() == to_asset and quote.upper() == from_asset:
+            # 🐍 MEDUSA: When from_asset is USD/ZUSD, we BUY to_asset
+            if base.upper() == to_match and quote_normalized == from_match:
                 return [{
                     "pair": alt,
                     "side": "buy",
@@ -1323,9 +1363,13 @@ class KrakenClient:
                 }]
         
         # No direct pair - route through intermediary (USD, USDC, USDT, EUR)
+        # 🐍 MEDUSA: Skip intermediate routing if from_asset IS the intermediate
         for intermediate in ['USD', 'USDC', 'USDT', 'EUR']:
-            path1 = self.find_conversion_path(from_asset, intermediate)
-            path2 = self.find_conversion_path(intermediate, to_asset)
+            # Prevent infinite recursion: don't route through self
+            if from_match == intermediate or to_match == intermediate:
+                continue
+            path1 = self.find_conversion_path(from_asset, intermediate, _depth + 1)
+            path2 = self.find_conversion_path(intermediate, to_asset, _depth + 1)
             
             if path1 and path2 and len(path1) == 1 and len(path2) == 1:
                 return path1 + path2
@@ -1361,11 +1405,56 @@ class KrakenClient:
         if from_asset == to_asset:
             return {"error": "Cannot convert to same asset", "from": from_asset, "to": to_asset}
         
+        # 🚨 CRITICAL: Block stablecoin→stablecoin swaps - they ALWAYS lose to fees!
+        STABLECOINS = {'USD', 'ZUSD', 'USDT', 'USDC', 'TUSD', 'DAI', 'BUSD', 'EUR', 'ZEUR'}
+        if from_asset in STABLECOINS and to_asset in STABLECOINS:
+            return {"error": f"Stablecoin→stablecoin swap blocked ({from_asset}→{to_asset}) - always loses to fees!"}
+        
         # Find conversion path
         path = self.find_conversion_path(from_asset, to_asset)
         
         if not path:
             return {"error": f"No conversion path found from {from_asset} to {to_asset}"}
+        
+        # 👑 QUEEN MIND: Pre-flight validation for multi-step conversions
+        # Estimate if each step will meet minimum requirements
+        estimated_amount = amount
+        for i, trade in enumerate(path):
+            pair = trade["pair"]
+            filters = self.get_symbol_filters(pair)
+            ordermin = filters.get('min_qty', 0.0001)
+            costmin = filters.get('min_notional', 1.20)  # Kraken costmin ~$1.20
+            
+            # Estimate value at this step
+            try:
+                price_info = self.best_price(pair)
+                price = float(price_info.get("price", 0))
+            except Exception:
+                price = 0
+            
+            if trade["side"] == "sell":
+                # We're selling estimated_amount
+                if estimated_amount < ordermin:
+                    return {
+                        "error": f"Multi-hop step {i+1} would have {estimated_amount:.6f} < min {ordermin} for {pair}",
+                        "failed_step": i,
+                        "pair": pair
+                    }
+                # Estimate received amount
+                if price > 0:
+                    estimated_amount = estimated_amount * price
+            else:
+                # We're buying with estimated_amount as quote
+                estimated_value = estimated_amount
+                if estimated_value < costmin:
+                    return {
+                        "error": f"Multi-hop step {i+1} value ${estimated_value:.2f} < min ${costmin:.2f} for {pair}",
+                        "failed_step": i,
+                        "pair": pair
+                    }
+                # Estimate received amount
+                if price > 0:
+                    estimated_amount = estimated_amount / price
         
         if self.dry_run:
             return {
@@ -1398,18 +1487,47 @@ class KrakenClient:
                         # Use quote_qty to spend remaining_amount of from_asset
                         result = self.place_market_order(pair, "buy", quote_qty=remaining_amount)
                 
+                # Check for errors in result
+                if result.get("error"):
+                    results.append({
+                        "trade": trade,
+                        "result": result,
+                        "status": "failed",
+                        "error": result.get("error")
+                    })
+                    return {
+                        "error": f"Trade failed: {result.get('error')}",
+                        "from_asset": from_asset,
+                        "to_asset": to_asset,
+                        "partial_results": results
+                    }
+
+                # Calculate the RECEIVED amount for this trade
+                received_amount = 0.0
+                if side == "sell":
+                    # For SELL, we receive quote currency (base_qty * price)
+                    exec_qty = float(result.get("executedQty", 0))
+                    price = float(self.best_price(pair).get("price", 0))
+                    if price > 0 and exec_qty > 0:
+                        received_amount = exec_qty * price
+                else:
+                    # For BUY, we receive base currency (executedQty)
+                    received_amount = float(result.get("executedQty", 0))
+                
+                # Store the received amount in result for verification
+                result['receivedQty'] = received_amount
+                
                 results.append({
                     "trade": trade,
                     "result": result,
-                    "status": "success"
+                    "status": "success",
+                    "receivedQty": received_amount  # Include for easy access
                 })
                 
                 # Update remaining amount for next trade in chain
                 if side == "sell":
-                    # Estimate received amount
-                    price = float(self.best_price(pair).get("price", 0))
-                    if price > 0:
-                        remaining_amount = remaining_amount * price
+                    # Use the calculated received amount
+                    remaining_amount = received_amount if received_amount > 0 else remaining_amount
                 else:
                     # We spent remaining_amount, received the bought asset
                     exec_qty = float(result.get("executedQty", 0))
@@ -1476,3 +1594,16 @@ class KrakenClient:
         
         # Convert sets to sorted lists
         return {k: sorted(v) for k, v in conversions.items()}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SINGLETON INSTANCE - for easy import
+# ══════════════════════════════════════════════════════════════════════════════
+_kraken_instance: KrakenClient = None
+
+def get_kraken_client() -> KrakenClient:
+    """Get singleton Kraken client instance."""
+    global _kraken_instance
+    if _kraken_instance is None:
+        _kraken_instance = KrakenClient()
+    return _kraken_instance
