@@ -12041,11 +12041,143 @@
         "warnings": []
       },
       "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T10:50:24.631819",
+      "conversion_num": 1,
+      "exchange": "binance",
+      "from_asset": "BROCCOLI714",
+      "to_asset": "TST",
+      "from_amount": 1618.359064,
+      "to_amount": 2623.8,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 62087530,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 76690917,
+          "exchange": "binance",
+          "pair": "TSTUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 1585.0,
+        "total_bought": 2623.8,
+        "avg_sell_price": 0.0295,
+        "avg_buy_price": 0.01782,
+        "total_fees": 0.0889376446,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.15712434505452064,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.09032164460000161,
+        "discrepancy": 0.09032164460000161,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T10:50:34.736546",
+      "conversion_num": 2,
+      "exchange": "binance",
+      "from_asset": "TST",
+      "to_asset": "VIRTUAL",
+      "from_amount": 2677.1016523999997,
+      "to_amount": 44.2,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 76690923,
+          "exchange": "binance",
+          "pair": "TSTUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 436729932,
+          "exchange": "binance",
+          "pair": "VIRTUALUSDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 2623.5,
+        "total_bought": 44.2,
+        "avg_sell_price": 0.017779999999999997,
+        "avg_buy_price": 1.0543,
+        "total_fees": 0.08861299,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.3334929774004513,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.13438298999998322,
+        "discrepancy": 0.13438298999998322,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-05T10:50:44.076733",
+      "conversion_num": 3,
+      "exchange": "binance",
+      "from_asset": "VIRTUAL",
+      "to_asset": "BROCCOLI714",
+      "from_amount": 45.1068373,
+      "to_amount": 1574.0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": 436729983,
+          "exchange": "binance",
+          "pair": "VIRTUALUSDC",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": 62087777,
+          "exchange": "binance",
+          "pair": "BROCCOLI714USDC",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 44.2,
+        "total_bought": 1574.0,
+        "avg_sell_price": 1.0527,
+        "avg_buy_price": 0.02956,
+        "total_fees": 0.08837403199999999,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.5087209977635744,
+        "calculated_pnl": 0.0,
+        "verified_pnl": -0.09027403200000622,
+        "discrepancy": 0.09027403200000622,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
     }
   ],
   "summary": {
-    "total": 292,
-    "verified": 271,
+    "total": 295,
+    "verified": 274,
     "discrepancies": 21
   }
 }

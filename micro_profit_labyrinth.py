@@ -766,10 +766,15 @@ class LiveBarterMatrix:
     - The BARTER value differs from pure USD math!
     """
     
-    # 👑 QUEEN'S SACRED CONSTANTS
-    MIN_WIN_RATE_REQUIRED = 0.35  # Path must win >35% of the time to be allowed
-    MIN_PATH_PROFIT = -0.50      # Path must not have lost more than $0.50 total
-    MAX_CONSECUTIVE_LOSSES = 2   # Block path after 2 losses in a row
+    # 👑 QUEEN'S SACRED CONSTANTS - LEARNED FROM REAL LOSSES!
+    MIN_WIN_RATE_REQUIRED = 0.50  # Path must win >50% of the time (was 35% - too loose!)
+    MIN_PATH_PROFIT = -0.10      # Path must not have lost more than $0.10 total (was $0.50)
+    MAX_CONSECUTIVE_LOSSES = 1   # Block path after FIRST loss in a row (was 2 - learned fast!)
+    
+    # 👑 QUEEN'S NEW LEARNING: Minimum expected profit to overcome fees + slippage
+    MIN_EXPECTED_PROFIT_NEW_PATH = 0.15   # New paths need 15%+ expected profit to try
+    MIN_EXPECTED_PROFIT_PROVEN = 0.05    # Proven paths (>50% win) only need 5% expected
+    LEARNING_RATE = 0.5                   # How fast to adapt (0=slow, 1=instant)
     
     # 👑🔢 QUEEN'S MATHEMATICAL CERTAINTY - NO FEAR, MATH IS ON HER SIDE
     # These are the REAL costs we've observed - use WORST CASE to guarantee profit
@@ -1049,12 +1054,16 @@ class LiveBarterMatrix:
         history = self.barter_history.get(key, {})
         trades = history.get('trades', 0)
         
-        # New paths get a chance (3 trades to prove themselves)
-        # 👑 Queen's dreams can accelerate approval!
-        if trades < 3:
-            if queen_dream_signal in ["STRONG_WIN", "FAVORABLE"]:
-                return True, f"👑 NEW_PATH + QUEEN DREAMS: Trial granted with blessing (conf: {queen_confidence:.0%})"
-            return True, "👑 NEW_PATH: Queen grants trial period"
+        # 👑 NEW LEARNING: New paths must have HIGHER expected profit to overcome uncertainty
+        # Only 1 trial trade allowed (not 3!) - we learn FAST now
+        if trades < 1:
+            # New path needs strong signal from Queen to even try
+            if queen_dream_signal in ["STRONG_WIN"]:
+                return True, f"👑 NEW_PATH + QUEEN DREAMS STRONG: ONE trial allowed (conf: {queen_confidence:.0%})"
+            elif queen_dream_signal == "FAVORABLE":
+                return True, f"👑 NEW_PATH + FAVORABLE: ONE trial with caution (conf: {queen_confidence:.0%})"
+            # Without strong Queen signal, reject new paths - too risky!
+            return False, "👑 NEW_PATH BLOCKED: Need Queen's strong blessing (STRONG_WIN or FAVORABLE) for untested paths"
         
         # Calculate win rate and total profit
         wins = history.get('wins', 0)
@@ -1579,16 +1588,27 @@ class LiveBarterMatrix:
         history['avg_slippage'] = alpha * actual_slippage + (1 - alpha) * history['avg_slippage']
         history['total_profit'] = history.get('total_profit', 0) + profit_usd
         
-        # 👑 QUEEN'S WIN/LOSS TRACKING
+        # 👑 QUEEN'S WIN/LOSS TRACKING WITH IMMEDIATE LEARNING
         if is_win:
             history['wins'] = history.get('wins', 0) + 1
             history['consecutive_losses'] = 0  # Reset on win
+            history['last_win_time'] = time.time()  # Remember when we last won
             # Unblock path if it was blocked and now winning
             if key in self.blocked_paths:
                 self.unblock_path(from_asset, to_asset)
+            # 🎉 Broadcast win through mycelium
+            self.queen_signals.append({
+                'type': 'PATH_WIN',
+                'path': f"{from_asset}→{to_asset}",
+                'profit_usd': profit_usd,
+                'win_rate': history['wins'] / history['trades'],
+                'timestamp': time.time()
+            })
+            logger.info(f"👑✅ PATH WIN: {from_asset}→{to_asset} +${profit_usd:.4f} (win rate: {history['wins']/history['trades']:.0%})")
         else:
             history['losses'] = history.get('losses', 0) + 1
             history['consecutive_losses'] = history.get('consecutive_losses', 0) + 1
+            history['last_loss_usd'] = profit_usd  # Remember how much we lost
             
             # 🍄 Broadcast loss through mycelium
             self.queen_signals.append({
@@ -1599,9 +1619,19 @@ class LiveBarterMatrix:
                 'timestamp': time.time()
             })
             
-            # Check if path should be blocked
-            if history['consecutive_losses'] >= self.MAX_CONSECUTIVE_LOSSES:
+            # 👑🧠 IMMEDIATE LEARNING: Block path after FIRST loss on new paths!
+            # For established paths, still use MAX_CONSECUTIVE_LOSSES
+            if history['trades'] <= 2:
+                # New path lost - block IMMEDIATELY to prevent further losses
+                self._block_path(key, f"First trade lost ${abs(profit_usd):.4f} - need time to cool down")
+                logger.warning(f"👑🚫 INSTANT BLOCK: {from_asset}→{to_asset} lost ${abs(profit_usd):.4f} on trade #{history['trades']}")
+            elif history['consecutive_losses'] >= self.MAX_CONSECUTIVE_LOSSES:
                 self._block_path(key, f"{history['consecutive_losses']} consecutive losses")
+            
+            # 👑 LEARN: If slippage is consistently high, increase expected slippage
+            if actual_slippage > history['avg_slippage'] * 1.5:
+                # Slippage much higher than expected - warn
+                logger.warning(f"👑⚠️ HIGH SLIPPAGE: {from_asset}→{to_asset} had {actual_slippage:.2f}% vs avg {history['avg_slippage']:.2f}%")
         
         # Record in ledger
         self.profit_ledger.append((
@@ -5184,13 +5214,38 @@ class MicroProfitLabyrinth:
             
             total_cost_estimate = from_value * total_cost_pct  # ~0.46% in fees
             
+            # 👑 QUEEN'S LEARNED WISDOM: Check if this path has ANY history
+            path_key = (from_asset.upper(), to_asset.upper())
+            path_history = self.barter_matrix.barter_history.get(path_key, {})
+            path_trades = path_history.get('trades', 0)
+            path_win_rate = path_history.get('wins', 0) / max(path_trades, 1)
+            path_profit = path_history.get('total_profit', 0)
+            
+            # 👑 ADAPTIVE MINIMUM PROFIT BASED ON PATH HISTORY
+            if path_trades == 0:
+                # NEW PATH: Need higher expected profit to overcome uncertainty
+                min_expected_profit = 0.10  # 10 cents minimum for untested paths
+            elif path_win_rate >= 0.6 and path_profit > 0:
+                # PROVEN WINNER: Be less strict
+                min_expected_profit = 0.01  # Just need to cover fees
+            elif path_win_rate < 0.4 or path_profit < -0.05:
+                # LOSING PATH: Reject unless huge profit expected
+                min_expected_profit = 0.25  # 25 cents minimum for losers
+            else:
+                # UNCERTAIN PATH: Be cautious
+                min_expected_profit = 0.05
+            
+            # 👑 LEARNING FILTER: Does expected profit overcome minimum?
+            if opp.expected_pnl_usd < min_expected_profit:
+                # Not profitable enough given this path's history
+                continue
+            
             # If we have strong signals (combined > 0.5), let Tina B see it
-            # Even if expected profit is low, she may see something we don't
-            if combined > 0.4 or opp.expected_pnl_usd >= 0.003:
-                # Strong signals or meets Tina B's goal - LET HER DECIDE!
+            if combined > 0.5 or opp.expected_pnl_usd >= min_expected_profit:
+                # Strong signals or meets learned minimum - LET HER DECIDE!
                 opportunities.append(opp)
-            elif opp.expected_pnl_usd > total_cost_estimate * 0.5:
-                # Expected profit is at least half the estimated cost - worth a look
+            elif opp.expected_pnl_usd > total_cost_estimate * 1.5:
+                # Expected profit is at least 1.5x the estimated cost - worth a look
                 opportunities.append(opp)
         
         return opportunities
