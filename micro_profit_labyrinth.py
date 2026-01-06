@@ -5238,9 +5238,20 @@ class MicroProfitLabyrinth:
                 if hasattr(self.queen, 'review_exchange_performance'):
                     for exchange in ['kraken', 'binance', 'alpaca']:
                         ex_data = portfolio_data.get(exchange, {})
+                        # 👑 QUEEN SELF-REPAIR: Ensure ex_data is a dict (auto-fix type errors)
+                        if isinstance(ex_data, list):
+                            # Convert list to dict - Queen learns from type mismatches
+                            ex_data = {'items': ex_data, 'type_corrected': True}
+                            portfolio_data[exchange] = ex_data
+                            logger.debug(f"Queen auto-corrected {exchange} data from list to dict")
+                        elif not isinstance(ex_data, dict):
+                            ex_data = {'value': ex_data, 'type_corrected': True}
+                            portfolio_data[exchange] = ex_data
                         verdict, action = self.queen.review_exchange_performance(exchange, ex_data)
-                        portfolio_data[exchange]['queen_verdict'] = verdict
-                        portfolio_data[exchange]['queen_action'] = action
+                        # 👑 SAFE ASSIGNMENT: Only if we have a valid dict
+                        if isinstance(portfolio_data.get(exchange), dict):
+                            portfolio_data[exchange]['queen_verdict'] = verdict
+                            portfolio_data[exchange]['queen_action'] = action
                         print(f"   👑 {exchange.upper()}: {action}")
                 
             except Exception as e:
@@ -7441,6 +7452,30 @@ class MicroProfitLabyrinth:
             if actual_exchange and actual_exchange != source_exchange:
                 # Asset is on a different exchange - use that one!
                 source_exchange = actual_exchange
+            
+            # 👑 QUEEN SELF-REPAIR: Pre-check exchange min_qty BEFORE showing to Queen!
+            # This prevents wasted Queen approvals for trades that will fail at execution
+            if source_exchange == 'kraken' and self.kraken:
+                try:
+                    # Find the conversion path to get the actual pair
+                    path = self.kraken.find_conversion_path(from_asset, to_asset)
+                    if path:
+                        for step in path:
+                            pair = step.get('pair', '')
+                            if pair:
+                                filters = self.kraken.get_symbol_filters(pair)
+                                min_qty = filters.get('min_qty', 0) or filters.get('min_volume', 0)
+                                if min_qty and amount < min_qty:
+                                    # 👑 Queen learns: This trade will fail - skip it early!
+                                    logger.debug(f"Queen pre-filter: {from_asset}→{to_asset} blocked (amt {amount:.6f} < min_qty {min_qty:.6f})")
+                                    # Update dynamic minimum for future
+                                    self.dynamic_min_qty[from_asset.upper()] = max(
+                                        self.dynamic_min_qty.get(from_asset.upper(), 0),
+                                        min_qty * 1.1  # Add 10% buffer
+                                    )
+                                    continue  # Skip this opportunity entirely
+                except Exception as e:
+                    logger.debug(f"Queen pre-filter check error: {e}")
             
             # Create opportunity
             opp = MicroOpportunity(

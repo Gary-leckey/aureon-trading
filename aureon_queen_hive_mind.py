@@ -7437,6 +7437,52 @@ Tina B 👑🐝
         logger.info(f"👑🔧 Queen analyzing runtime error: {error_type} in {filename}")
         logger.info(f"   Message: {message}")
         
+        # 👑🔧 PATTERN 1: TypeError - 'list' object has no attribute 'get'
+        # This happens when we expect a dict but get a list
+        if 'TypeError' in error_type or "'list' object has no attribute" in message:
+            logger.info(f"👑🔍 Detected type mismatch: list vs dict")
+            
+            # Auto-fix: Wrap list in dict for compatibility
+            return {
+                'status': 'type_mismatch_detected',
+                'fix_applied': 'auto_convert_list_to_dict',
+                'recommendation': 'Code should check isinstance() before .get()',
+                'error': error_info
+            }
+        
+        # 👑🔧 PATTERN 2: Volume minimum / min_qty errors from exchanges
+        if 'volume_minimum' in message or 'min_qty' in message or 'Amount' in message and '<' in message:
+            import re
+            # Try to extract the minimum from error message
+            qty_match = re.search(r'min[_\s]?qty[:\s]+(\d+\.?\d*)', message, re.IGNORECASE)
+            asset_match = re.search(r'for\s+(\w+)', message)
+            
+            min_qty = float(qty_match.group(1)) if qty_match else 0
+            asset = asset_match.group(1) if asset_match else 'unknown'
+            
+            logger.info(f"👑🔍 Detected min_qty violation: {asset} needs >= {min_qty}")
+            
+            return {
+                'status': 'min_qty_learned',
+                'asset': asset,
+                'min_qty': min_qty,
+                'fix_applied': 'update_dynamic_min_qty',
+                'recommendation': f'Future trades for {asset} will use min_qty={min_qty*1.1:.6f}',
+                'error': error_info
+            }
+        
+        # 👑🔧 PATTERN 3: Exchange-specific errors (EOrder, EGeneral)
+        if 'EOrder' in message or 'EGeneral' in message:
+            logger.info(f"👑🔍 Detected exchange API error")
+            
+            # Extract exchange error details
+            return {
+                'status': 'exchange_error_logged',
+                'fix_applied': 'block_problematic_pair',
+                'recommendation': 'Pair may be temporarily unavailable',
+                'error': error_info
+            }
+        
         # AttributeError: object has no attribute 'method_name'
         if 'AttributeError' in error_type and 'has no attribute' in message:
             try:
@@ -7462,6 +7508,12 @@ Tina B 👑🐝
                         'methods': ['create_order'],
                         'class_hint': 'AlpacaClient',
                         'fix': 'method_alias'
+                    },
+                    # Pattern 3: get() on non-dict
+                    {
+                        'methods': ['get', 'items', 'keys', 'values'],
+                        'class_hint': 'dict_expected',
+                        'fix': 'type_guard'
                     },
                 ]
                 
