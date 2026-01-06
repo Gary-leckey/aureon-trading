@@ -6423,6 +6423,33 @@ class MinerBrain:
         status['available'] = True
         return status
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 🧠 GLOBAL MINER BRAIN SINGLETON - One Brain to Rule Them All
+# ═══════════════════════════════════════════════════════════════════════════
+
+_GLOBAL_MINER_BRAIN: MinerBrain = None
+
+def get_miner_brain() -> MinerBrain:
+    """
+    Get or create the global MinerBrain singleton instance.
+    
+    This ensures all systems share the same brain for unified cognition.
+    The Queen can use this to access all 11 civilizations of wisdom.
+    
+    Returns:
+        MinerBrain: The global brain instance
+    """
+    global _GLOBAL_MINER_BRAIN
+    
+    if _GLOBAL_MINER_BRAIN is None:
+        logger.info("🧠🌍 Initializing Global Miner Brain (11 Civilizations)...")
+        _GLOBAL_MINER_BRAIN = MinerBrain()
+        logger.info("🧠✅ Global Miner Brain ONLINE")
+    
+    return _GLOBAL_MINER_BRAIN
+
+
 def run_brain_cycle():
     """Wrapper for backward compatibility."""
     brain = MinerBrain()

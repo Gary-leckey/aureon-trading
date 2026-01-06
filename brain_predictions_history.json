@@ -1,23 +1,6 @@
 {
   "predictions": [
     {
-      "timestamp": "2025-12-27T17:35:24.630063",
-      "validation_time": "2025-12-27T19:35:24.630066",
-      "btc_price_at_call": 87519.37,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.1,
-      "fear_greed": 23,
-      "predicted_direction": "BULLISH",
-      "confidence": 0.5721311475409836,
-      "validated": true,
-      "was_correct": true,
-      "actual_outcome": {
-        "price_at_validation": 87916.39,
-        "price_change_pct": 0.45363672064824523,
-        "direction": "UP"
-      }
-    },
-    {
       "timestamp": "2025-12-27T17:35:36.231932",
       "validation_time": "2025-12-27T19:35:36.231936",
       "btc_price_at_call": 87519.37,
@@ -1624,9 +1607,13 @@
       "fear_greed": 26,
       "predicted_direction": "BULLISH",
       "confidence": 0.5229508196721311,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 92077.49,
+        "price_change_pct": -0.5676373392954,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-01-05T09:41:56.799477",
@@ -1637,9 +1624,13 @@
       "fear_greed": 26,
       "predicted_direction": "BULLISH",
       "confidence": 0.5229508196721311,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 92077.49,
+        "price_change_pct": -0.6093456531594684,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-01-05T09:43:05.118564",
@@ -1650,9 +1641,13 @@
       "fear_greed": 26,
       "predicted_direction": "BULLISH",
       "confidence": 0.5229508196721311,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 92077.49,
+        "price_change_pct": -0.604936058021177,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-01-05T09:44:16.717474",
@@ -1663,9 +1658,13 @@
       "fear_greed": 26,
       "predicted_direction": "BULLISH",
       "confidence": 0.5229508196721311,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 92077.49,
+        "price_change_pct": -0.5964698261902135,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-01-05T09:45:28.218544",
@@ -1676,18 +1675,35 @@
       "fear_greed": 26,
       "predicted_direction": "BULLISH",
       "confidence": 0.5229508196721311,
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 92077.49,
+        "price_change_pct": -0.6141088637620582,
+        "direction": "DOWN"
+      }
+    },
+    {
+      "timestamp": "2026-01-06T19:53:16.784588",
+      "validation_time": "2026-01-06T21:53:16.784596",
+      "btc_price_at_call": 92077.49,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "fear_greed": 44,
+      "predicted_direction": "NEUTRAL",
+      "confidence": 0.5229508196721311,
       "validated": false,
       "was_correct": null,
       "actual_outcome": null
     }
   ],
   "bias_tracker": {
-    "bullish_calls": 144,
+    "bullish_calls": 149,
     "bullish_correct": 102,
     "bearish_calls": 0,
     "bearish_correct": 0,
     "neutral_calls": 0,
     "neutral_correct": 0
   },
-  "last_updated": "2026-01-05T09:45:28.224027"
+  "last_updated": "2026-01-06T19:53:16.785076"
 }

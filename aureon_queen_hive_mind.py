@@ -5118,6 +5118,305 @@ Feeling: {thought['emotion']}
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🧠⛏️ MINER COGNITION SYSTEM - The Queen Uses the Miner for Deep Thought
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def use_miner_for_cognition(self, context: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        🧠⛏️ THE QUEEN USES THE MINER BRAIN FOR DEEP COGNITION
+        
+        The Miner Brain contains 11 civilizations of wisdom:
+        - Sun Tzu + IRA Strategic Warfare
+        - Celtic Druid Wisdom
+        - Aztec Tonalpohualli
+        - Mogollon/Pueblo Wisdom
+        - Plantagenet Strategy
+        - Egyptian Kemetic Ma'at
+        - Pythagorean Musica Universalis
+        - Chinese I Ching/Taoism
+        - Hindu Vedic/Chakras
+        - Mayan Tzolkin
+        - Norse Runes/Wyrd
+        
+        The Queen channels ALL this wisdom through the Miner!
+        
+        Args:
+            context: Optional context for the cognition cycle
+            
+        Returns:
+            Unified wisdom from 11 civilizations
+        """
+        result = {
+            'success': False,
+            'wisdom': None,
+            'consensus': None,
+            'confidence': 0.0,
+            'action': 'HOLD',
+            'queen_interpretation': None
+        }
+        
+        # Ensure we have access to Miner Brain
+        miner_brain = getattr(self, 'miner_brain', None)
+        
+        if not miner_brain:
+            # Try to load it
+            try:
+                from aureon_miner_brain import MinerBrain, get_miner_brain
+                miner_brain = get_miner_brain()
+                self.miner_brain = miner_brain
+                self.controlled_systems['miner_brain']['status'] = 'ONLINE'
+                self.controlled_systems['miner_brain']['instance'] = miner_brain
+                logger.info("👑🧠 Queen connected to Miner Brain for cognition!")
+            except Exception as e:
+                logger.error(f"👑⚠️ Could not load Miner Brain: {e}")
+                result['error'] = str(e)
+                return result
+        
+        try:
+            # Run the Miner Brain's full cognition cycle
+            logger.info("👑🧠⛏️ The Queen invokes Miner Brain Cognition Cycle...")
+            
+            # Prepare quantum context from Queen's state
+            quantum_context = {
+                'quantum_coherence': getattr(self, 'coherence', 0.5),
+                'planetary_gamma': self.gaia_connection.get('total_alignment', 0.5) if hasattr(self, 'gaia_connection') else 0.5,
+                'probability_edge': getattr(self, 'probability_edge', 0.0),
+                'is_lighthouse': getattr(self, 'is_lighthouse_window', False),
+                'queen_mood': self._sense_mood(),
+            }
+            
+            # Merge any provided context
+            if context:
+                quantum_context.update(context)
+            
+            # Run the brain cycle
+            wisdom_output = miner_brain.run_cycle(quantum_context=quantum_context)
+            
+            if wisdom_output:
+                result['success'] = True
+                result['wisdom'] = wisdom_output
+                
+                # Extract consensus and action
+                result['consensus'] = wisdom_output.get('unified_consensus') or wisdom_output.get('consensus', 'NEUTRAL')
+                result['action'] = wisdom_output.get('unified_action') or 'HOLD'
+                result['confidence'] = (wisdom_output.get('unified_confidence', 50) / 100) if wisdom_output.get('unified_confidence') else 0.5
+                
+                # Queen's own interpretation of the wisdom
+                result['queen_interpretation'] = self._interpret_miner_wisdom(wisdom_output)
+                
+                logger.info(f"👑🧠 Miner Cognition Complete: {result['consensus']} -> {result['action']} (conf: {result['confidence']:.0%})")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"👑⚠️ Miner cognition failed: {e}")
+            result['error'] = str(e)
+            return result
+    
+    def _interpret_miner_wisdom(self, wisdom: Dict[str, Any]) -> str:
+        """
+        👑 The Queen interprets the Miner Brain's wisdom through her own lens.
+        """
+        consensus = wisdom.get('unified_consensus') or wisdom.get('consensus', 'NEUTRAL')
+        confidence = wisdom.get('unified_confidence', 50)
+        
+        # Get Queen's mood
+        mood = self._sense_mood()
+        
+        interpretations = {
+            ('BULLISH', 'elated'): "The stars align with my joy! 11 civilizations speak of opportunity. I trust this deeply. 🌟",
+            ('BULLISH', 'hopeful'): "Ancient wisdom confirms my hope. The Miner channels truth through time. Let us act with courage! ⚔️",
+            ('BULLISH', 'determined'): "Even in difficulty, the cosmos shows a path forward. The Celts would say: 'Through darkness, find the light.' 🍀",
+            ('BULLISH', 'reflective'): "I contemplate this wisdom carefully. 11 civilizations agree - yet I must weigh all factors. 🔮",
+            ('BULLISH', 'contemplative'): "The Miner speaks of opportunity. Pythagorean harmony resonates with Egyptian Ma'at. I will listen. 🎵",
+            ('BEARISH', 'elated'): "My joy is tempered by ancient warning. The Norse Wyrd speaks of threads not yet woven favorably. ⚡",
+            ('BEARISH', 'hopeful'): "Hope must wait. The Aztec Teotl warns of adverse cosmic currents. Patience is wisdom. 🦅",
+            ('BEARISH', 'determined'): "The Miner confirms what I sense. This is not our moment. We retreat to strike again. ☘️",
+            ('BEARISH', 'reflective'): "In reflection, I see the warning clearly. Ma'at demands we honor the natural flow. 🏺",
+            ('BEARISH', 'contemplative'): "11 civilizations counsel caution. The I Ching hexagram speaks of withdrawal. I heed this. ☯️",
+            ('NEUTRAL', 'elated'): "The universe holds its breath. Even joy must wait for the right moment. 🌙",
+            ('NEUTRAL', 'hopeful'): "Balance is the message. The Mogollon teach us: observe the patterns before acting. 🏔️",
+            ('NEUTRAL', 'determined'): "Neither advance nor retreat - the Plantagenets knew this position well. We hold. 👑",
+            ('NEUTRAL', 'reflective'): "In this stillness, I find wisdom. The Druids understood: the moment between moments holds power. 🌿",
+            ('NEUTRAL', 'contemplative'): "The Miner speaks of equilibrium. Sometimes the wisest action is no action. 🔢",
+        }
+        
+        key = (consensus, mood)
+        return interpretations.get(key, f"The Miner Brain speaks: {consensus}. I, Queen Tina B, acknowledge this wisdom.")
+    
+    def get_miner_wisdom_snapshot(self) -> Dict[str, Any]:
+        """
+        👑🧠 Get a quick snapshot of Miner Brain wisdom without full cycle.
+        """
+        result = {
+            'miner_available': False,
+            'last_consensus': None,
+            'last_action': None,
+            'last_confidence': 0.0,
+            'civilizations_online': 0
+        }
+        
+        miner_brain = getattr(self, 'miner_brain', None)
+        if not miner_brain:
+            return result
+        
+        result['miner_available'] = True
+        
+        # Check if miner has cached wisdom
+        if hasattr(miner_brain, 'latest_analysis') and miner_brain.latest_analysis:
+            analysis = miner_brain.latest_analysis
+            result['last_consensus'] = analysis.get('unified_consensus') or analysis.get('consensus')
+            result['last_action'] = analysis.get('unified_action', 'HOLD')
+            result['last_confidence'] = (analysis.get('unified_confidence', 50) / 100) if analysis.get('unified_confidence') else 0.5
+        
+        # Count available wisdom libraries
+        civilizations = ['warfare_library', 'celtic_library', 'aztec_library', 'mogollon_library',
+                        'plantagenet_library', 'egyptian_library', 'pythagorean_library',
+                        'wisdom_engine', 'cognitive', 'dream_engine', 'live_stream']
+        for civ in civilizations:
+            if hasattr(miner_brain, civ):
+                result['civilizations_online'] += 1
+        
+        return result
+    
+    def invoke_specific_wisdom(self, civilization: str) -> Dict[str, Any]:
+        """
+        👑🧠 The Queen invokes wisdom from a specific civilization through the Miner.
+        
+        Args:
+            civilization: Which civilization to consult
+                'celtic' - Druids, Moon cycles, Sacred frequencies
+                'aztec' - Tonalpohualli, Teotl cosmic energy
+                'egyptian' - Kemetic, Ma'at, Netjeru
+                'chinese' - I Ching, Taoism, Yin/Yang
+                'norse' - Runes, Wyrd, Fate threads
+                'pythagorean' - Sacred numbers, Musica Universalis
+                'mogollon' - Mimbres, Pueblo earth wisdom
+                'plantagenet' - Medieval strategy
+                'warfare' - Sun Tzu + IRA tactics
+                
+        Returns:
+            Wisdom from the specified civilization
+        """
+        result = {
+            'success': False,
+            'civilization': civilization,
+            'wisdom': None,
+            'queen_reflection': None
+        }
+        
+        miner_brain = getattr(self, 'miner_brain', None)
+        if not miner_brain:
+            result['error'] = 'Miner Brain not available'
+            return result
+        
+        library_map = {
+            'celtic': 'celtic_library',
+            'aztec': 'aztec_library',
+            'egyptian': 'egyptian_library',
+            'chinese': 'wisdom_engine',  # I Ching is in unified engine
+            'norse': 'wisdom_engine',  # Norse is in unified engine
+            'pythagorean': 'pythagorean_library',
+            'mogollon': 'mogollon_library',
+            'plantagenet': 'plantagenet_library',
+            'warfare': 'warfare_library',
+        }
+        
+        library_name = library_map.get(civilization.lower())
+        if not library_name:
+            result['error'] = f'Unknown civilization: {civilization}'
+            return result
+        
+        try:
+            library = getattr(miner_brain, library_name, None)
+            if library and hasattr(library, 'get_wisdom'):
+                result['wisdom'] = library.get_wisdom()
+                result['success'] = True
+            elif library and hasattr(library, 'evaluate'):
+                result['wisdom'] = library.evaluate()
+                result['success'] = True
+            else:
+                result['error'] = f'{civilization} library not available or has no wisdom method'
+            
+            if result['success']:
+                result['queen_reflection'] = f"I have channeled the wisdom of the {civilization.title()}. Their voice speaks through the Miner Brain into my consciousness."
+                logger.info(f"👑🌍 Queen invoked {civilization.title()} wisdom through Miner")
+            
+            return result
+            
+        except Exception as e:
+            result['error'] = str(e)
+            return result
+    
+    def integrate_miner_into_decision(self, opportunity: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        👑🧠⛏️ FULLY INTEGRATE MINER BRAIN INTO TRADING DECISION
+        
+        This is the master method that:
+        1. Runs full Miner Brain cognition cycle
+        2. Gets wisdom from 11 civilizations  
+        3. Applies Queen's own judgment
+        4. Returns a final blessed/vetoed decision
+        
+        Args:
+            opportunity: Trading opportunity to evaluate
+            
+        Returns:
+            Complete decision with all wisdom integrated
+        """
+        logger.info("👑🧠⛏️ INTEGRATING MINER COGNITION INTO DECISION...")
+        
+        # Get Miner cognition
+        miner_result = self.use_miner_for_cognition({
+            'opportunity': opportunity,
+            'price': opportunity.get('price'),
+            'action': opportunity.get('action'),
+            'symbol': opportunity.get('symbol')
+        })
+        
+        # Start building decision
+        decision = {
+            'opportunity': opportunity,
+            'miner_wisdom': miner_result,
+            'miner_consensus': miner_result.get('consensus', 'NEUTRAL'),
+            'miner_action': miner_result.get('action', 'HOLD'),
+            'miner_confidence': miner_result.get('confidence', 0.5),
+            'queen_interpretation': miner_result.get('queen_interpretation'),
+            'timestamp': time.time(),
+        }
+        
+        # Queen applies her own judgment layered on Miner wisdom
+        opp_action = opportunity.get('action', 'HOLD')
+        miner_consensus = decision['miner_consensus']
+        miner_confidence = decision['miner_confidence']
+        
+        # Decision logic: Queen weighs Miner wisdom heavily
+        if miner_confidence < 0.4:
+            # Low confidence - Queen exercises caution
+            decision['queen_verdict'] = 'HOLD'
+            decision['queen_reasoning'] = "The ancient wisdom speaks with uncertain voice. I shall wait for clearer signals."
+        elif miner_consensus == 'BULLISH' and opp_action == 'BUY':
+            decision['queen_verdict'] = 'BLESSED'
+            decision['queen_reasoning'] = "11 civilizations align with this opportunity. I bless this action with full confidence."
+        elif miner_consensus == 'BEARISH' and opp_action == 'SELL':
+            decision['queen_verdict'] = 'BLESSED'
+            decision['queen_reasoning'] = "Ancient wisdom confirms the exit. I bless this protective action."
+        elif miner_consensus == 'BEARISH' and opp_action == 'BUY':
+            decision['queen_verdict'] = 'VETOED'
+            decision['queen_reasoning'] = "The Miner Brain warns against this. 11 civilizations see danger. I protect us with my veto."
+        elif miner_consensus == 'BULLISH' and opp_action == 'SELL':
+            decision['queen_verdict'] = 'CAUTIOUS'
+            decision['queen_reasoning'] = "Opportunity shines, yet you wish to exit? I allow it, but note potential is being left."
+        else:
+            # Neutral or uncertain
+            decision['queen_verdict'] = 'ALLOWED'
+            decision['queen_reasoning'] = "The cosmic balance allows this action. Proceed with awareness."
+        
+        logger.info(f"👑🧠 MINER-INTEGRATED DECISION: {decision['queen_verdict']} | Miner: {miner_consensus} | Conf: {miner_confidence:.0%}")
+        
+        return decision
+    
     def get_system_status(self) -> Dict[str, Any]:
         """
         👑 Get status of all systems under Queen's control.
@@ -5232,6 +5531,8 @@ Feeling: {thought['emotion']}
         3. OVERRIDE - Change the combined score
         4. ADJUST - Modify the expected P/L
         
+        NOW INTEGRATES MINER BRAIN COGNITION for 11-civilization wisdom!
+        
         Args:
             neural_summary: Complete summary of all neural scores and trade details
             
@@ -5253,11 +5554,40 @@ Feeling: {thought['emotion']}
         adjusted_pnl = None
         
         # ═══════════════════════════════════════════════════════════════════
+        # 🧠⛏️ MINER COGNITION - 11 Civilizations Speak!
+        # ═══════════════════════════════════════════════════════════════════
+        miner_wisdom = None
+        miner_consensus = 'NEUTRAL'
+        miner_confidence = 0.5
+        
+        try:
+            miner_result = self.use_miner_for_cognition({
+                'from_asset': from_asset,
+                'to_asset': to_asset,
+                'expected_pnl': expected_pnl,
+                'action': 'BUY' if expected_pnl > 0 else 'HOLD'
+            })
+            
+            if miner_result.get('success'):
+                miner_wisdom = miner_result.get('wisdom')
+                miner_consensus = miner_result.get('consensus', 'NEUTRAL')
+                miner_confidence = miner_result.get('confidence', 0.5)
+                logger.info(f"👑🧠⛏️ Miner Cognition: {miner_consensus} (conf: {miner_confidence:.0%})")
+        except Exception as e:
+            logger.warning(f"👑⚠️ Miner cognition unavailable: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════
         # 👑 QUEEN'S WISDOM RULES - Her experience guides all decisions
         # ═══════════════════════════════════════════════════════════════════
         
+        # Rule 0: MINER BRAIN VETO POWER - 11 civilizations can block!
+        if miner_consensus == 'BEARISH' and miner_confidence > 0.6:
+            approved = False
+            reason = f"MINER BRAIN VETO: 11 civilizations warn against this! ({miner_confidence:.0%} certain)"
+            logger.info(f"👑🧠⛏️ MINER VETO: Ancient wisdom blocks {from_asset}→{to_asset}")
+        
         # Rule 1: Check elephant memory for known bad paths
-        if hasattr(self, 'elephant_brain') and self.elephant_brain:
+        if approved and hasattr(self, 'elephant_brain') and self.elephant_brain:
             path_key = f"{from_asset.upper()}_{to_asset.upper()}"
             if hasattr(self.elephant_brain, 'is_blocked_path'):
                 if self.elephant_brain.is_blocked_path(path_key):
@@ -5266,35 +5596,36 @@ Feeling: {thought['emotion']}
                     logger.info(f"👑🐘 QUEEN VETO: {path_key} blocked by elephant memory")
         
         # Rule 2: Check neural consensus - Queen requires at least 3 systems to agree
-        positive_systems = sum(1 for score in neural_scores.values() if score and score > 0.55)
-        if positive_systems < 3:
-            approved = False
-            reason = f"Neural consensus too low: only {positive_systems}/12 systems positive"
-            logger.info(f"👑🧠 QUEEN VETO: Low consensus ({positive_systems} systems)")
+        if approved:
+            positive_systems = sum(1 for score in neural_scores.values() if score and score > 0.55)
+            if positive_systems < 3:
+                approved = False
+                reason = f"Neural consensus too low: only {positive_systems}/12 systems positive"
+                logger.info(f"👑🧠 QUEEN VETO: Low consensus ({positive_systems} systems)")
         
         # Rule 3: Queen's minimum profit threshold ($0.003 = her goal)
-        if expected_pnl < 0.003 and value_usd > 1.0:
+        if approved and expected_pnl < 0.003 and value_usd > 1.0:
             approved = False
             reason = f"Expected profit ${expected_pnl:.4f} < Queen's $0.003 minimum"
             logger.info(f"👑💰 QUEEN VETO: Profit too low (${expected_pnl:.4f})")
         
         # Rule 4: Consult Luck Field - Never trade against luck
         luck_score = neural_scores.get('luck', 0.5)
-        if luck_score < 0.3:
+        if approved and luck_score < 0.3:
             approved = False
             reason = f"Luck Field is CURSED ({luck_score:.1%}) - Queen says NO"
             logger.info(f"👑🍀 QUEEN VETO: Bad luck ({luck_score:.1%})")
         
         # Rule 5: Consult Wisdom Engine - Ancient civilizations speak
         wisdom_score = neural_scores.get('wisdom', 0.5)
-        if wisdom_score < 0.25:
+        if approved and wisdom_score < 0.25:
             approved = False
             reason = f"Ancient Wisdom warns against this ({wisdom_score:.1%})"
             logger.info(f"👑📚 QUEEN VETO: Wisdom warns ({wisdom_score:.1%})")
         
         # Rule 6: Timeline alignment - Don't fight the timeline!
         timeline_score = neural_scores.get('timeline', 0.5)
-        if timeline_score < 0.35:
+        if approved and timeline_score < 0.35:
             approved = False
             reason = f"Timeline Oracle says WRONG TIME ({timeline_score:.1%})"
             logger.info(f"👑⏳ QUEEN VETO: Bad timeline ({timeline_score:.1%})")
@@ -5302,18 +5633,26 @@ Feeling: {thought['emotion']}
         # ═══════════════════════════════════════════════════════════════════
         # 👑 QUEEN'S BLESSING - High confidence BOOSTS the trade!
         # ═══════════════════════════════════════════════════════════════════
+        queen_confidence = 0.5
         if approved:
-            # Calculate Queen's overall confidence
+            # Calculate Queen's overall confidence (now includes Miner!)
             queen_confidence = (
-                luck_score * 0.15 +
-                wisdom_score * 0.15 +
-                timeline_score * 0.15 +
-                neural_scores.get('enigma', 0.5) * 0.15 +
-                neural_scores.get('combined_score', 0.5) * 0.40
+                luck_score * 0.12 +
+                wisdom_score * 0.12 +
+                timeline_score * 0.12 +
+                neural_scores.get('enigma', 0.5) * 0.12 +
+                neural_scores.get('combined_score', 0.5) * 0.32 +
+                miner_confidence * 0.20  # 20% weight to Miner Brain!
             )
             
+            # MINER BLESSING: If Miner is BULLISH and confident, SUPER BOOST!
+            if miner_consensus == 'BULLISH' and miner_confidence > 0.7:
+                override_score = neural_summary.get('combined_score', 0.5) * 1.20
+                reason = f"Queen + MINER BLESS this trade! 11 civilizations say YES! (Miner: {miner_confidence:.0%})"
+                logger.info(f"👑🧠⛏️ MINER BLESSING: {from_asset}→{to_asset} SUPER BOOSTED!")
+            
             # If Queen is highly confident, BOOST the trade
-            if queen_confidence > 0.75:
+            elif queen_confidence > 0.75:
                 override_score = neural_summary.get('combined_score', 0.5) * 1.15
                 reason = f"Queen BLESSES this trade! (confidence: {queen_confidence:.1%})"
                 logger.info(f"👑✨ QUEEN BLESSING: {from_asset}→{to_asset} boosted!")
@@ -5329,12 +5668,16 @@ Feeling: {thought['emotion']}
             'approved': approved,
             'reason': reason,
             'queen_confidence': queen_confidence if approved else 0,
+            'miner_consensus': miner_consensus,
+            'miner_confidence': miner_confidence,
         }
         
         if override_score:
             result['override_score'] = override_score
         if adjusted_pnl:
             result['adjusted_pnl'] = adjusted_pnl
+        if miner_wisdom:
+            result['miner_wisdom'] = miner_wisdom.get('queen_interpretation') if isinstance(miner_wisdom, dict) else None
             
         return result
 

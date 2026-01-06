@@ -1294,6 +1294,15 @@
       "brain_accuracy": 1.0,
       "recommended_bias": "TRUST_BULLISH_CALLS",
       "confidence_adjustment": 1.2
+    },
+    {
+      "timestamp": "2026-01-06T19:53:16.796156",
+      "fear_greed": 44,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
     }
   ],
   "metadata": {
