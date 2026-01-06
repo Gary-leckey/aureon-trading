@@ -34,10 +34,13 @@ class QueenCodeArchitect:
     The Queen's "Hands". Allows safe modification of the repository.
     """
     
-    def __init__(self, repo_path: str = "/workspaces/aureon-trading"):
+    def __init__(self, repo_path: str = None):
+        # Use current working directory if no path specified (works on Windows & Linux)
+        if repo_path is None:
+            repo_path = os.getcwd()
         self.repo_path = Path(repo_path)
         self.backup_dir = self.repo_path / "queen_backups"
-        self.backup_dir.mkdir(exist_ok=True)
+        self.backup_dir.mkdir(exist_ok=True, parents=True)
         self.active_modifications = []
         
     def read_file_content(self, file_path: str) -> Optional[str]:
