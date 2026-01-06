@@ -7411,17 +7411,28 @@ class MicroProfitLabyrinth:
             # 2. We have actual cross-exchange arbitrage
             # 3. Path has historically been profitable
             
-            # Check if we predict price will move in our favor
+            # 👑 TINA B FIX: Use ACTUAL momentum from price tracker, not just dream score!
+            # Get real momentum for target asset (in %/min)
+            real_momentum = self.get_momentum(to_asset)  # Already exists in class!
+            # Convert momentum %/min to expected price move over ~5 min holding period
+            # If momentum is +8%/min, expect ~8% move in ~5 minutes (aggressive but that's the signal)
+            momentum_edge = real_momentum / 100.0 * 5.0  # 5 minute hold assumption
+            
+            # Cap momentum edge at 5% to avoid crazy outliers
+            momentum_edge = min(max(momentum_edge, -0.05), 0.05)
+            
+            # Also check dream score for additional confirmation
             dream_score_target = self.calculate_dream_score(to_asset) if hasattr(self, 'calculate_dream_score') else 0
-            momentum_bonus = dream_score_target * 0.01 if dream_score_target > 0.2 else 0  # Up to 1% if UP signal
+            dream_bonus = dream_score_target * 0.005 if dream_score_target > 0.2 else 0  # Small bonus from dreams
             
             # 👑 LET THE QUEEN DECIDE - Give her realistic estimates, she'll decide if we win
             # Base profit from signals - the Queen's minimum is $0.003
             # Combined score 0-1 maps to 0.1%-1% expected edge (realistic for good signals)
             signal_edge = combined * 0.01  # Up to 1% edge from signals
             
-            # Base profit: signal edge + momentum - expected costs
-            base_profit_pct = signal_edge + momentum_bonus - total_cost_pct
+            # 👑 TINA B: Use REAL momentum + signals - costs to calculate expected profit
+            # If BSX has +8%/min momentum, that's HUGE potential!
+            base_profit_pct = signal_edge + momentum_edge + dream_bonus - total_cost_pct
             
             # 👑 QUEEN'S SLIPPAGE ADJUSTMENT - Use ACTUAL historical slippage, not theoretical
             key = (from_asset.upper(), to_asset.upper())
@@ -7439,8 +7450,9 @@ class MicroProfitLabyrinth:
                 # Path is losing - reduce expected profit but don't block (Queen decides)
                 expected_pnl_pct *= 0.5  # Halve expectations for losing paths
             
-            # Expected profit in USD - Can be negative, Queen will reject if < $0.003
-            expected_pnl_usd = from_value * max(expected_pnl_pct, 0.0001)  # Min tiny positive for routing
+            # Expected profit in USD - Use actual percentage, don't force tiny minimum
+            # Let Queen see negative expected profits too - she'll decide!
+            expected_pnl_usd = from_value * expected_pnl_pct
             
             # 🌍💰 ADAPTIVE GATE CHECK: Does this trade meet the PRIME target?
             if gate_required > 0:
