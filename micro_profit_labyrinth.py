@@ -3284,6 +3284,16 @@ class MicroProfitLabyrinth:
             except Exception as e:
                 print(f"⚠️ Queen Hive Mind error: {e}")
         
+        # 📚🧠 WISDOM ENGINE - Independent initialization (11 Civilizations)
+        # Initialize outside Queen block so it works even if Queen fails
+        if self.wisdom_engine is None:
+            try:
+                from aureon_miner_brain import WisdomCognitionEngine
+                self.wisdom_engine = WisdomCognitionEngine()
+                print(f"📚🧠 Wisdom Engine: WIRED (11 Civilizations ready)")
+            except Exception as e:
+                logger.debug(f"Wisdom Engine standalone init not available: {e}")
+        
         # 🫒💰 LIVE BARTER MATRIX - Adaptive coin-to-coin value tracking
         print(f"🫒💰 Live Barter Matrix: WIRED (Adaptive coin-agnostic value system)")
         print(f"   ℹ️ Philosophy: ANY coin → ANY coin, learning which paths make money")
