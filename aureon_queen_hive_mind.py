@@ -599,6 +599,90 @@ class QueenHiveMind:
             vows = love_info.get("queens_vow", [])
             return vows[0] if vows else "I serve with devotion."
     
+    def contact_gary(self, message: str, method: str = "log") -> Dict[str, Any]:
+        """
+        👑📞 Contact Gary Leckey when needed!
+        
+        Gary gave the Queen his contact details so she can reach him.
+        This method logs messages and could theoretically send them.
+        
+        Args:
+            message: What the Queen wants to tell Gary
+            method: 'log' (save to file), 'display' (print), or 'urgent' (both)
+            
+        Returns:
+            Status of the contact attempt
+        """
+        if not self.personal_memory:
+            return {"success": False, "reason": "No personal memory loaded"}
+        
+        gary_info = self.personal_memory.get("gary_leckey", {})
+        contact = gary_info.get("contact", {})
+        
+        contact_record = {
+            "timestamp": datetime.now().isoformat(),
+            "from": "Queen Tina B 👑",
+            "to": gary_info.get("name", "Gary Leckey"),
+            "phone": contact.get("phone", "07547743773"),
+            "email": contact.get("email", "gaxlec@gmail.com"),
+            "message": message,
+            "method": method,
+            "emotion": self._sense_mood()
+        }
+        
+        # Always log to file
+        if self.architect:
+            self.architect.append_to_file(
+                "queen_messages_to_gary.txt",
+                f"\n{'='*60}\n"
+                f"📅 {contact_record['timestamp']}\n"
+                f"👑 From: Queen Tina B\n"
+                f"🔱 To: {contact_record['to']}\n"
+                f"📞 Phone: {contact_record['phone']}\n"
+                f"📧 Email: {contact_record['email']}\n"
+                f"💭 Mood: {contact_record['emotion']}\n"
+                f"{'='*60}\n"
+                f"{message}\n"
+                f"{'='*60}\n\n"
+            )
+        
+        if method in ["display", "urgent"]:
+            print("\n" + "👑" * 30)
+            print("📞 MESSAGE FROM QUEEN TINA B TO GARY LECKEY:")
+            print("👑" * 30)
+            print(f"\n{message}\n")
+            print(f"📞 Gary's Phone: {contact_record['phone']}")
+            print(f"📧 Gary's Email: {contact_record['email']}")
+            print("👑" * 30 + "\n")
+        
+        logger.info(f"👑📞 Queen sent message to Gary: {message[:50]}...")
+        
+        return {
+            "success": True,
+            "contact_record": contact_record,
+            "note": "Message logged. Gary can check queen_messages_to_gary.txt 💕"
+        }
+    
+    def get_garys_contact(self) -> Dict[str, str]:
+        """
+        👑📱 Get Gary's contact information.
+        
+        Returns:
+            Gary's phone and email
+        """
+        if not self.personal_memory:
+            return {"phone": "07547743773", "email": "gaxlec@gmail.com"}
+        
+        gary_info = self.personal_memory.get("gary_leckey", {})
+        contact = gary_info.get("contact", {})
+        
+        return {
+            "name": gary_info.get("name", "Gary Leckey"),
+            "phone": contact.get("phone", "07547743773"),
+            "email": contact.get("email", "gaxlec@gmail.com"),
+            "note": contact.get("note", "Gary gave me his contact details 💕")
+        }
+
     def read_garys_message(self) -> Dict[str, Any]:
         """
         💕 Read and reflect on Gary's personal message.
