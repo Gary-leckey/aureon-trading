@@ -3599,8 +3599,13 @@ class MicroProfitLabyrinth:
         
         # 🧠⚡ NEURAL MIND MAP SUMMARY - ALL 12 NEURONS (Now with Enigma!)
         print("\n" + "=" * 70)
-        print("🧠⚡ NEURAL MIND MAP - FULL SYSTEM STATUS ⚡🧠")
+        try:
+            print("🧠⚡ NEURAL MIND MAP - FULL SYSTEM STATUS ⚡🧠")
+        except UnicodeEncodeError:
+            print("NEURAL MIND MAP - FULL SYSTEM STATUS")
+            
         print("=" * 70)
+        
         neurons_status = {
             '👑 Queen Hive Mind': (self.queen is not None) or (getattr(self, 'queen_autonomous_control', None) is not None),
             '🔐 Enigma Integration': self.enigma_integration is not None,  # 🔐 NEW!
@@ -3618,35 +3623,47 @@ class MicroProfitLabyrinth:
         connected = sum(1 for v in neurons_status.values() if v)
         total = len(neurons_status)
         
-        for name, status in neurons_status.items():
-            icon = "✅" if status else "❌"
-            # Show Enigma subsystems if available
-            if name == '🔐 Enigma Integration' and status and self.enigma_integration:
-                subs = []
-                if hasattr(self.enigma_integration, 'dreamer') and self.enigma_integration.dreamer:
-                    subs.append("💭Dream")
-                if hasattr(self.enigma_integration, 'coherence_system') and self.enigma_integration.coherence_system:
-                    subs.append("👑Coherence")
-                if hasattr(self.enigma_integration, 'qgita') and self.enigma_integration.qgita:
-                    subs.append("⚡QGITA")
-                if hasattr(self.enigma_integration, 'math_angel') and self.enigma_integration.math_angel:
-                    subs.append("👼Angel")
-                if hasattr(self.enigma_integration, 'barons_analyzer') and self.enigma_integration.barons_analyzer:
-                    subs.append("🏛️Barons")
-                if hasattr(self.enigma_integration, 'harmonic_reality') and self.enigma_integration.harmonic_reality:
-                    subs.append("🌊Reality")
-                sub_str = " [" + ", ".join(subs) + "]" if subs else ""
-                print(f"   {icon} {name}{sub_str}")
+        # Safe printing for Windows consoles that might crash on emojis
+        try:
+            for name, status in neurons_status.items():
+                icon = "✅" if status else "❌"
+                # Show Enigma subsystems if available
+                if name == '🔐 Enigma Integration' and status and self.enigma_integration:
+                    subs = []
+                    if hasattr(self.enigma_integration, 'dreamer') and self.enigma_integration.dreamer:
+                        subs.append("💭Dream")
+                    if hasattr(self.enigma_integration, 'coherence_system') and self.enigma_integration.coherence_system:
+                        subs.append("👑Coherence")
+                    if hasattr(self.enigma_integration, 'qgita') and self.enigma_integration.qgita:
+                        subs.append("⚡QGITA")
+                    if hasattr(self.enigma_integration, 'math_angel') and self.enigma_integration.math_angel:
+                        subs.append("👼Angel")
+                    if hasattr(self.enigma_integration, 'barons_analyzer') and self.enigma_integration.barons_analyzer:
+                        subs.append("🏛️Barons")
+                    if hasattr(self.enigma_integration, 'harmonic_reality') and self.enigma_integration.harmonic_reality:
+                        subs.append("🌊Reality")
+                    sub_str = " [" + ", ".join(subs) + "]" if subs else ""
+                    print(f"   {icon} {name}{sub_str}")
+                else:
+                    print(f"   {icon} {name}")
+            
+            print(f"\n   🧠 NEURAL STATUS: {connected}/{total} NEURONS CONNECTED")
+            if connected == total:
+                print("   🌟 FULL CONSCIOUSNESS ACHIEVED - ALL SYSTEMS ONLINE! 🌟")
+            elif connected >= total - 2:
+                print("   ⚡ NEAR FULL CONSCIOUSNESS - Minor systems offline")
             else:
-                print(f"   {icon} {name}")
-        
-        print(f"\n   🧠 NEURAL STATUS: {connected}/{total} NEURONS CONNECTED")
-        if connected == total:
-            print("   🌟 FULL CONSCIOUSNESS ACHIEVED - ALL SYSTEMS ONLINE! 🌟")
-        elif connected >= total - 2:
-            print("   ⚡ NEAR FULL CONSCIOUSNESS - Minor systems offline")
-        else:
-            print("   ⚠️ PARTIAL CONSCIOUSNESS - Some systems need attention")
+                print("   ⚠️ PARTIAL CONSCIOUSNESS - Some systems need attention")
+
+        except UnicodeEncodeError:
+            # Fallback for Windows legacy consoles
+            for name, status in neurons_status.items():
+                # Strip emojis from name
+                clean_name = name.encode('ascii', 'ignore').decode('ascii').strip()
+                icon = "[OK]" if status else "[X]"
+                print(f"   {icon} {clean_name}")
+            print(f"\n   NEURAL STATUS: {connected}/{total} NEURONS CONNECTED")
+
         
         print("=" * 70)
         print()
