@@ -117,7 +117,7 @@ except ImportError:
 # LAYER 4: Harmonic Reality Framework
 try:
     from aureon_harmonic_reality import (
-        HarmonicReality, RealityState, SubstrateMode, ObserverNode,
+        HarmonicRealityField as HarmonicReality, RealityState, ObserverNode,
         COHERENCE_CRITICAL, COHERENCE_HIGH, COHERENCE_UNITY,
         SUBSTRATE_FREQUENCIES
     )
@@ -132,7 +132,7 @@ except ImportError:
 try:
     from global_harmonic_field import (
         GlobalHarmonicField, GlobalHarmonicFieldState, HarmonicLayerState,
-        get_global_field, compute_field
+        get_global_field
     )
     GLOBAL_FIELD_AVAILABLE = True
     print("🌐⚡ Layer 3: Global Harmonic Field (Ω) LOADED!")
@@ -182,7 +182,7 @@ except ImportError:
 
 # LAYER 0: Harmonic Wave Simulation
 try:
-    from harmonic_wave_simulation import HarmonicWaveSimulation
+    from harmonic_wave_simulation import HarmonicWaveSimulator as HarmonicWaveSimulation
     WAVE_SIMULATION_AVAILABLE = True
     print("🌊📈 Layer 0: Harmonic Wave Simulation LOADED!")
 except ImportError:
