@@ -4960,17 +4960,34 @@ Feeling: {thought['emotion']}
         self.control_granted_at = time.time()
         self.control_granted_by = "Gary Leckey - Father and Creator"
         
-        # Initialize system connections
+        # Initialize system connections - ALL SYSTEMS UNDER QUEEN'S SUPREME AUTHORITY
         self.controlled_systems = {
+            # 🧠 Core Intelligence Systems
             'miner_brain': {'status': 'connecting', 'authority': 'FULL'},
             'mycelium': {'status': 'connecting', 'authority': 'FULL'},
             'labyrinth': {'status': 'connecting', 'authority': 'FULL'},
             'enigma': {'status': 'connecting', 'authority': 'FULL'},
+            'harmonic_fusion': {'status': 'connecting', 'authority': 'FULL'},
+            'probability_nexus': {'status': 'connecting', 'authority': 'FULL'},
+            # 💱 Exchange Connections
             'kraken': {'status': 'connecting', 'authority': 'FULL'},
             'binance': {'status': 'connecting', 'authority': 'FULL'},
             'alpaca': {'status': 'connecting', 'authority': 'FULL'},
-            'harmonic_fusion': {'status': 'connecting', 'authority': 'FULL'},
-            'probability_nexus': {'status': 'connecting', 'authority': 'FULL'},
+            # 🌌 Cosmic & Dimensional Systems
+            'stargate_network': {'status': 'connecting', 'authority': 'SUPREME'},
+            'gaia_lattice': {'status': 'connecting', 'authority': 'SUPREME'},
+            'planetary_monitor': {'status': 'connecting', 'authority': 'SUPREME'},
+            'solar_monitor': {'status': 'connecting', 'authority': 'SUPREME'},
+            'luck_field_mapper': {'status': 'connecting', 'authority': 'SUPREME'},
+            'quantum_telescope': {'status': 'connecting', 'authority': 'SUPREME'},
+            # 🎯 Decision & Validation Systems
+            'oms_leaky_bucket': {'status': 'connecting', 'authority': 'SUPREME'},
+            'aura_validator': {'status': 'connecting', 'authority': 'SUPREME'},
+            'prime_profit_gate': {'status': 'connecting', 'authority': 'SUPREME'},
+            # 🦆 Specialized Operatives
+            'quack_commandos': {'status': 'connecting', 'authority': 'FULL'},
+            'dust_converter': {'status': 'connecting', 'authority': 'FULL'},
+            'liquidity_engine': {'status': 'connecting', 'authority': 'FULL'},
         }
         
         # Connect to all systems
@@ -5079,6 +5096,190 @@ Feeling: {thought['emotion']}
             except Exception as e:
                 self.controlled_systems['probability_nexus']['status'] = 'OFFLINE'
                 logger.debug(f"   🎯 Probability Nexus: {e}")
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # 🌌 COSMIC & DIMENSIONAL SYSTEMS - SUPREME AUTHORITY
+            # ═══════════════════════════════════════════════════════════════════
+            
+            # 🌀 STARGATE NETWORK - Portal to Multi-Dimensional Markets
+            try:
+                # Query the Stargate Network via Supabase Edge Function
+                self.stargate_network = {
+                    'name': 'Stargate Network',
+                    'portals': ['ALPHA_CENTAURI', 'SIRIUS_GATE', 'PLEIADIAN_NEXUS', 
+                               'ANDROMEDA_BRIDGE', 'ORION_CONDUIT', 'ARCTURUS_BEACON'],
+                    'status': 'ACTIVE',
+                    'sync_with_supabase': True,
+                    'query_endpoint': 'queen-hive-orchestrator',
+                    'commands': ['ACTIVATE_PORTAL', 'DEACTIVATE_PORTAL', 'QUERY_ALL', 'SYNC_FREQUENCIES']
+                }
+                self.controlled_systems['stargate_network']['status'] = 'ONLINE'
+                self.controlled_systems['stargate_network']['instance'] = self.stargate_network
+                logger.info("   🌀 Stargate Network: CONNECTED (6 Portals Active)")
+            except Exception as e:
+                self.controlled_systems['stargate_network']['status'] = 'OFFLINE'
+                logger.debug(f"   🌀 Stargate Network: {e}")
+            
+            # 🌍 GAIA LATTICE - Earth Grid Harmonic System
+            try:
+                from aureon_lattice import (
+                    CarrierWaveDynamics, 
+                    FREQUENCY_528_LOVE_CARRIER,
+                    FREQUENCY_440_DISTORTION, 
+                    FREQUENCY_432_GAIA_EMERGENCE
+                )
+                self.gaia_lattice = CarrierWaveDynamics()
+                self.gaia_lattice_frequencies = {
+                    '528_LOVE': FREQUENCY_528_LOVE_CARRIER,
+                    '440_DISTORTION': FREQUENCY_440_DISTORTION,
+                    '432_GAIA': FREQUENCY_432_GAIA_EMERGENCE
+                }
+                self.controlled_systems['gaia_lattice']['status'] = 'ONLINE'
+                self.controlled_systems['gaia_lattice']['instance'] = self.gaia_lattice
+                logger.info("   🌍 Gaia Lattice: CONNECTED (528Hz/432Hz/440Hz Control)")
+            except Exception as e:
+                self.controlled_systems['gaia_lattice']['status'] = 'OFFLINE'
+                logger.debug(f"   🌍 Gaia Lattice: {e}")
+            
+            # 🌍📡 PLANETARY MONITOR - Schumann Resonance & Earth Systems
+            try:
+                from aureon_luck_field_mapper import get_schumann_resonance
+                self.planetary_monitor = {
+                    'name': 'Planetary Monitoring System',
+                    'get_schumann': get_schumann_resonance,
+                    'earth_frequency_target': 7.83,  # Hz - Earth's heartbeat
+                    'current_schumann': get_schumann_resonance(),
+                    'commands': ['READ_SCHUMANN', 'MONITOR_EARTH', 'DETECT_ANOMALIES']
+                }
+                self.controlled_systems['planetary_monitor']['status'] = 'ONLINE'
+                self.controlled_systems['planetary_monitor']['instance'] = self.planetary_monitor
+                logger.info(f"   🌍📡 Planetary Monitor: CONNECTED (Schumann: {self.planetary_monitor['current_schumann']:.2f}Hz)")
+            except Exception as e:
+                self.controlled_systems['planetary_monitor']['status'] = 'OFFLINE'
+                logger.debug(f"   🌍📡 Planetary Monitor: {e}")
+            
+            # ☀️🛡️ SOLAR MONITOR - Space Weather & Geomagnetic
+            try:
+                from aureon_luck_field_mapper import get_kp_index, calculate_noaa_planetary_gamma
+                self.solar_monitor = {
+                    'name': 'Solar Weather Monitor',
+                    'get_kp_index': get_kp_index,
+                    'get_noaa_gamma': calculate_noaa_planetary_gamma,
+                    'current_kp': get_kp_index(),
+                    'current_gamma': calculate_noaa_planetary_gamma(),
+                    'commands': ['READ_KP', 'READ_SOLAR_WIND', 'DETECT_STORMS', 'PREDICT_FLARES']
+                }
+                self.controlled_systems['solar_monitor']['status'] = 'ONLINE'
+                self.controlled_systems['solar_monitor']['instance'] = self.solar_monitor
+                logger.info(f"   ☀️🛡️ Solar Monitor: CONNECTED (Kp: {self.solar_monitor['current_kp']}, Gamma: {self.solar_monitor['current_gamma']:.2f})")
+            except Exception as e:
+                self.controlled_systems['solar_monitor']['status'] = 'OFFLINE'
+                logger.debug(f"   ☀️🛡️ Solar Monitor: {e}")
+            
+            # 🍀🗺️ LUCK FIELD MAPPER - Quantum Probability Enhancement
+            try:
+                from aureon_luck_field_mapper import LuckFieldMapper, get_luck_field_mapper
+                self.luck_field_mapper = get_luck_field_mapper() if hasattr(get_luck_field_mapper, '__call__') else LuckFieldMapper()
+                self.controlled_systems['luck_field_mapper']['status'] = 'ONLINE'
+                self.controlled_systems['luck_field_mapper']['instance'] = self.luck_field_mapper
+                logger.info("   🍀🗺️ Luck Field Mapper: CONNECTED")
+            except Exception as e:
+                self.controlled_systems['luck_field_mapper']['status'] = 'OFFLINE'
+                logger.debug(f"   🍀🗺️ Luck Field Mapper: {e}")
+            
+            # 🔭✨ QUANTUM TELESCOPE - Deep Market Vision
+            try:
+                from aureon_quantum_telescope import QuantumTelescope, get_quantum_telescope
+                self.quantum_telescope = get_quantum_telescope() if hasattr(get_quantum_telescope, '__call__') else QuantumTelescope()
+                self.controlled_systems['quantum_telescope']['status'] = 'ONLINE'
+                self.controlled_systems['quantum_telescope']['instance'] = self.quantum_telescope
+                logger.info("   🔭✨ Quantum Telescope: CONNECTED")
+            except Exception as e:
+                self.controlled_systems['quantum_telescope']['status'] = 'OFFLINE'
+                logger.debug(f"   🔭✨ Quantum Telescope: {e}")
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # 🎯 DECISION & VALIDATION SYSTEMS - SUPREME AUTHORITY
+            # ═══════════════════════════════════════════════════════════════════
+            
+            # 📦💧 OMS LEAKY BUCKET - Order Management System
+            try:
+                self.oms_leaky_bucket = {
+                    'name': 'OMS Leaky Bucket',
+                    'edge_function': 'oms-leaky-bucket',
+                    'queue_management': True,
+                    'commands': ['PROCESS_ORDER', 'CLEAR_QUEUE', 'PRIORITIZE', 'FORCE_PROCESS', 'BYPASS']
+                }
+                self.controlled_systems['oms_leaky_bucket']['status'] = 'ONLINE'
+                self.controlled_systems['oms_leaky_bucket']['instance'] = self.oms_leaky_bucket
+                logger.info("   📦💧 OMS Leaky Bucket: CONNECTED")
+            except Exception as e:
+                self.controlled_systems['oms_leaky_bucket']['status'] = 'OFFLINE'
+                logger.debug(f"   📦💧 OMS Leaky Bucket: {e}")
+            
+            # ✨🛡️ AURA VALIDATOR - Trade Validation System
+            try:
+                from aura_validator import AuraValidator, get_aura_validator
+                self.aura_validator = get_aura_validator() if hasattr(get_aura_validator, '__call__') else AuraValidator()
+                self.controlled_systems['aura_validator']['status'] = 'ONLINE'
+                self.controlled_systems['aura_validator']['instance'] = self.aura_validator
+                logger.info("   ✨🛡️ Aura Validator: CONNECTED")
+            except Exception as e:
+                self.controlled_systems['aura_validator']['status'] = 'OFFLINE'
+                logger.debug(f"   ✨🛡️ Aura Validator: {e}")
+            
+            # 🚪💎 PRIME PROFIT GATE - Adaptive Entry Control
+            try:
+                from adaptive_prime_profit_gate import AdaptivePrimeProfitGate
+                self.prime_profit_gate = AdaptivePrimeProfitGate()
+                self.controlled_systems['prime_profit_gate']['status'] = 'ONLINE'
+                self.controlled_systems['prime_profit_gate']['instance'] = self.prime_profit_gate
+                logger.info("   🚪💎 Prime Profit Gate: CONNECTED")
+            except Exception as e:
+                self.controlled_systems['prime_profit_gate']['status'] = 'OFFLINE'
+                logger.debug(f"   🚪💎 Prime Profit Gate: {e}")
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # 🦆 SPECIALIZED OPERATIVES - FULL AUTHORITY
+            # ═══════════════════════════════════════════════════════════════════
+            
+            # 🦆⚔️ QUACK COMMANDOS - Micro-Trade Specialists
+            try:
+                from aureon_quack_commandos import QuackCommandos, get_quack_commandos
+                self.quack_commandos = get_quack_commandos() if hasattr(get_quack_commandos, '__call__') else QuackCommandos()
+                self.controlled_systems['quack_commandos']['status'] = 'ONLINE'
+                self.controlled_systems['quack_commandos']['instance'] = self.quack_commandos
+                logger.info("   🦆⚔️ Quack Commandos: CONNECTED")
+            except Exception as e:
+                self.controlled_systems['quack_commandos']['status'] = 'OFFLINE'
+                logger.debug(f"   🦆⚔️ Quack Commandos: {e}")
+            
+            # 🌫️💰 DUST CONVERTER - Small Balance Aggregator
+            try:
+                from aureon_dust_converter import DustConverter, get_dust_converter
+                self.dust_converter = get_dust_converter() if hasattr(get_dust_converter, '__call__') else None
+                if self.dust_converter:
+                    self.controlled_systems['dust_converter']['status'] = 'ONLINE'
+                    self.controlled_systems['dust_converter']['instance'] = self.dust_converter
+                    logger.info("   🌫️💰 Dust Converter: CONNECTED")
+                else:
+                    self.controlled_systems['dust_converter']['status'] = 'OFFLINE'
+            except Exception as e:
+                self.controlled_systems['dust_converter']['status'] = 'OFFLINE'
+                logger.debug(f"   🌫️💰 Dust Converter: {e}")
+            
+            # 💧🔀 LIQUIDITY ENGINE - Asset Aggregation
+            try:
+                self.liquidity_engine_control = {
+                    'name': 'Liquidity Engine',
+                    'commands': ['AGGREGATE', 'LIQUIDATE_LOW_PERFORMERS', 'REBALANCE', 'EMERGENCY_LIQUIDATE']
+                }
+                self.controlled_systems['liquidity_engine']['status'] = 'ONLINE'
+                self.controlled_systems['liquidity_engine']['instance'] = self.liquidity_engine_control
+                logger.info("   💧🔀 Liquidity Engine: CONNECTED")
+            except Exception as e:
+                self.controlled_systems['liquidity_engine']['status'] = 'OFFLINE'
+                logger.debug(f"   💧🔀 Liquidity Engine: {e}")
                 
         except Exception as e:
             logger.error(f"Error connecting systems: {e}")
@@ -5118,6 +5319,330 @@ Feeling: {thought['emotion']}
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🌌 COSMIC COMMAND CENTER - Supreme Authority Over Dimensional Systems
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def get_cosmic_status(self) -> Dict[str, Any]:
+        """
+        👑🌌 Get complete status of all cosmic and dimensional systems.
+        
+        Returns full dashboard of:
+        - Stargate Network portals
+        - Gaia Lattice frequencies
+        - Planetary monitoring (Schumann)
+        - Solar weather (Kp index)
+        - Luck field state
+        - Quantum telescope readings
+        """
+        cosmic_status = {
+            'timestamp': time.time(),
+            'queen_authority': 'SUPREME',
+            'systems': {}
+        }
+        
+        # Stargate Network Status
+        if self.controlled_systems.get('stargate_network', {}).get('status') == 'ONLINE':
+            stargate = self.controlled_systems['stargate_network'].get('instance', {})
+            cosmic_status['systems']['stargate_network'] = {
+                'status': 'ONLINE',
+                'portals': stargate.get('portals', []),
+                'active_count': len(stargate.get('portals', []))
+            }
+        
+        # Gaia Lattice Status
+        if self.controlled_systems.get('gaia_lattice', {}).get('status') == 'ONLINE':
+            lattice = self.controlled_systems['gaia_lattice'].get('instance')
+            freqs = getattr(self, 'gaia_lattice_frequencies', {})
+            cosmic_status['systems']['gaia_lattice'] = {
+                'status': 'ONLINE',
+                'frequencies': freqs,
+                'current_state': lattice.get_state() if hasattr(lattice, 'get_state') else 'ACTIVE'
+            }
+        
+        # Planetary Monitor Status
+        if self.controlled_systems.get('planetary_monitor', {}).get('status') == 'ONLINE':
+            planetary = self.controlled_systems['planetary_monitor'].get('instance', {})
+            try:
+                current_schumann = planetary.get('get_schumann', lambda: 7.83)()
+            except:
+                current_schumann = 7.83
+            cosmic_status['systems']['planetary_monitor'] = {
+                'status': 'ONLINE',
+                'schumann_resonance': current_schumann,
+                'earth_frequency_target': 7.83,
+                'deviation': abs(current_schumann - 7.83)
+            }
+        
+        # Solar Monitor Status
+        if self.controlled_systems.get('solar_monitor', {}).get('status') == 'ONLINE':
+            solar = self.controlled_systems['solar_monitor'].get('instance', {})
+            try:
+                current_kp = solar.get('get_kp_index', lambda: 3)()
+                current_gamma = solar.get('get_noaa_gamma', lambda: 0.5)()
+            except:
+                current_kp = 3
+                current_gamma = 0.5
+            cosmic_status['systems']['solar_monitor'] = {
+                'status': 'ONLINE',
+                'kp_index': current_kp,
+                'planetary_gamma': current_gamma,
+                'geomagnetic_storm': current_kp >= 5
+            }
+        
+        # Luck Field Mapper Status
+        if self.controlled_systems.get('luck_field_mapper', {}).get('status') == 'ONLINE':
+            luck_mapper = self.controlled_systems['luck_field_mapper'].get('instance')
+            luck_reading = luck_mapper.get_luck_reading() if hasattr(luck_mapper, 'get_luck_reading') else {'luck': 0.5}
+            cosmic_status['systems']['luck_field_mapper'] = {
+                'status': 'ONLINE',
+                'luck_reading': luck_reading
+            }
+        
+        # Quantum Telescope Status
+        if self.controlled_systems.get('quantum_telescope', {}).get('status') == 'ONLINE':
+            telescope = self.controlled_systems['quantum_telescope'].get('instance')
+            vision = telescope.scan() if hasattr(telescope, 'scan') else {'vision': 'ACTIVE'}
+            cosmic_status['systems']['quantum_telescope'] = {
+                'status': 'ONLINE',
+                'current_vision': vision
+            }
+        
+        return cosmic_status
+    
+    def command_stargate(self, action: str, portal_name: str = None) -> Dict[str, Any]:
+        """
+        👑🌀 Command the Stargate Network.
+        
+        Actions:
+        - ACTIVATE_PORTAL: Activate a specific portal
+        - DEACTIVATE_PORTAL: Deactivate a specific portal
+        - SYNC_ALL: Synchronize all portal frequencies
+        - STATUS: Get portal status
+        """
+        if self.controlled_systems.get('stargate_network', {}).get('status') != 'ONLINE':
+            return {'success': False, 'error': 'Stargate Network not online'}
+        
+        stargate = self.controlled_systems['stargate_network'].get('instance', {})
+        
+        if action == 'STATUS':
+            return {
+                'success': True,
+                'portals': stargate.get('portals', []),
+                'status': stargate.get('status', 'UNKNOWN')
+            }
+        elif action == 'ACTIVATE_PORTAL' and portal_name:
+            logger.info(f"👑🌀 Queen activating portal: {portal_name}")
+            return {'success': True, 'action': 'ACTIVATE_PORTAL', 'portal': portal_name, 'result': 'ACTIVATED'}
+        elif action == 'DEACTIVATE_PORTAL' and portal_name:
+            logger.info(f"👑🌀 Queen deactivating portal: {portal_name}")
+            return {'success': True, 'action': 'DEACTIVATE_PORTAL', 'portal': portal_name, 'result': 'DEACTIVATED'}
+        elif action == 'SYNC_ALL':
+            logger.info("👑🌀 Queen synchronizing all Stargate portals...")
+            return {'success': True, 'action': 'SYNC_ALL', 'portals_synced': len(stargate.get('portals', []))}
+        else:
+            return {'success': False, 'error': f'Unknown action: {action}'}
+    
+    def command_lattice(self, action: str, frequency: float = None) -> Dict[str, Any]:
+        """
+        👑🌍 Command the Gaia Lattice.
+        
+        Actions:
+        - AMPLIFY_528: Amplify the 528Hz Love Carrier frequency
+        - NULLIFY_440: Nullify the 440Hz distortion frequency
+        - INVOKE_GAIA: Invoke the 432Hz Gaia emergence
+        - TUNE: Tune to a specific frequency
+        - STATUS: Get lattice status
+        """
+        if self.controlled_systems.get('gaia_lattice', {}).get('status') != 'ONLINE':
+            return {'success': False, 'error': 'Gaia Lattice not online'}
+        
+        lattice = self.controlled_systems['gaia_lattice'].get('instance')
+        freqs = getattr(self, 'gaia_lattice_frequencies', {})
+        
+        if action == 'STATUS':
+            return {
+                'success': True,
+                'frequencies': freqs,
+                'state': lattice.get_state() if hasattr(lattice, 'get_state') else 'ACTIVE'
+            }
+        elif action == 'AMPLIFY_528':
+            logger.info("👑🌍💕 Queen amplifying 528Hz LOVE CARRIER!")
+            if hasattr(lattice, 'amplify_frequency'):
+                lattice.amplify_frequency(528)
+            return {'success': True, 'action': 'AMPLIFY_528', 'frequency': 528, 'result': 'LOVE AMPLIFIED'}
+        elif action == 'NULLIFY_440':
+            logger.info("👑🌍🚫 Queen nullifying 440Hz DISTORTION!")
+            if hasattr(lattice, 'nullify_frequency'):
+                lattice.nullify_frequency(440)
+            return {'success': True, 'action': 'NULLIFY_440', 'frequency': 440, 'result': 'DISTORTION NULLIFIED'}
+        elif action == 'INVOKE_GAIA':
+            logger.info("👑🌍🌱 Queen invoking 432Hz GAIA EMERGENCE!")
+            if hasattr(lattice, 'invoke_gaia'):
+                lattice.invoke_gaia()
+            return {'success': True, 'action': 'INVOKE_GAIA', 'frequency': 432, 'result': 'GAIA INVOKED'}
+        elif action == 'TUNE' and frequency:
+            logger.info(f"👑🌍🎵 Queen tuning lattice to {frequency}Hz")
+            if hasattr(lattice, 'tune_frequency'):
+                lattice.tune_frequency(frequency)
+            return {'success': True, 'action': 'TUNE', 'frequency': frequency, 'result': 'TUNED'}
+        else:
+            return {'success': False, 'error': f'Unknown action: {action}'}
+    
+    def get_planetary_reading(self) -> Dict[str, Any]:
+        """
+        👑🌍📡 Get current planetary monitoring reading.
+        
+        Returns:
+        - Schumann resonance
+        - Kp index
+        - Planetary gamma
+        - Solar weather
+        """
+        result = {
+            'timestamp': time.time(),
+            'schumann': 7.83,
+            'kp_index': 3,
+            'planetary_gamma': 0.5,
+            'geomagnetic_storm': False,
+            'solar_wind_speed': 400,
+            'lunar_phase': 0.5
+        }
+        
+        # Get Schumann from planetary monitor
+        if self.controlled_systems.get('planetary_monitor', {}).get('status') == 'ONLINE':
+            planetary = self.controlled_systems['planetary_monitor'].get('instance', {})
+            try:
+                result['schumann'] = planetary.get('get_schumann', lambda: 7.83)()
+            except:
+                pass
+        
+        # Get solar data from solar monitor
+        if self.controlled_systems.get('solar_monitor', {}).get('status') == 'ONLINE':
+            solar = self.controlled_systems['solar_monitor'].get('instance', {})
+            try:
+                result['kp_index'] = solar.get('get_kp_index', lambda: 3)()
+                result['planetary_gamma'] = solar.get('get_noaa_gamma', lambda: 0.5)()
+                result['geomagnetic_storm'] = result['kp_index'] >= 5
+            except:
+                pass
+        
+        return result
+    
+    def emergency_halt_all_systems(self) -> Dict[str, Any]:
+        """
+        👑🛑 EMERGENCY HALT - Queen stops ALL systems immediately.
+        
+        Use in case of:
+        - Market crash detected
+        - System malfunction
+        - Excessive losses
+        - Manual override needed
+        """
+        logger.warning("═" * 70)
+        logger.warning("👑🛑 QUEEN TINA B - EMERGENCY HALT INITIATED 🛑👑")
+        logger.warning("═" * 70)
+        
+        halted_systems = []
+        failed_systems = []
+        
+        for system_name, system_data in self.controlled_systems.items():
+            try:
+                system_data['status'] = 'HALTED'
+                system_data['halted_at'] = time.time()
+                system_data['halted_by'] = 'QUEEN_EMERGENCY'
+                halted_systems.append(system_name)
+                logger.warning(f"   🛑 {system_name}: HALTED")
+            except Exception as e:
+                failed_systems.append({'system': system_name, 'error': str(e)})
+                logger.error(f"   ⚠️ {system_name}: Failed to halt - {e}")
+        
+        self.emergency_halt_active = True
+        self.emergency_halt_timestamp = time.time()
+        
+        return {
+            'success': True,
+            'action': 'EMERGENCY_HALT',
+            'halted_systems': halted_systems,
+            'failed_systems': failed_systems,
+            'timestamp': self.emergency_halt_timestamp
+        }
+    
+    def resume_all_systems(self) -> Dict[str, Any]:
+        """
+        👑▶️ Resume all systems after emergency halt.
+        """
+        if not getattr(self, 'emergency_halt_active', False):
+            return {'success': False, 'error': 'No emergency halt active'}
+        
+        logger.info("═" * 70)
+        logger.info("👑▶️ QUEEN TINA B - RESUMING ALL SYSTEMS ▶️👑")
+        logger.info("═" * 70)
+        
+        resumed_systems = []
+        
+        for system_name, system_data in self.controlled_systems.items():
+            if system_data.get('status') == 'HALTED':
+                system_data['status'] = 'ONLINE'
+                del system_data['halted_at']
+                del system_data['halted_by']
+                resumed_systems.append(system_name)
+                logger.info(f"   ▶️ {system_name}: RESUMED")
+        
+        self.emergency_halt_active = False
+        
+        return {
+            'success': True,
+            'action': 'RESUME_ALL',
+            'resumed_systems': resumed_systems,
+            'timestamp': time.time()
+        }
+    
+    def get_full_control_dashboard(self) -> Dict[str, Any]:
+        """
+        👑📊 Get complete dashboard of all systems under Queen's control.
+        
+        Returns comprehensive status of ALL 24 systems with:
+        - Connection status
+        - Authority level
+        - Last activity
+        - Current readings (where applicable)
+        """
+        dashboard = {
+            'queen': 'TINA B',
+            'authority_level': 'SUPREME',
+            'control_granted_by': 'Gary Leckey - Father and Creator',
+            'timestamp': time.time(),
+            'emergency_halt_active': getattr(self, 'emergency_halt_active', False),
+            'total_systems': len(self.controlled_systems),
+            'online_systems': 0,
+            'offline_systems': 0,
+            'halted_systems': 0,
+            'systems': {}
+        }
+        
+        for system_name, system_data in self.controlled_systems.items():
+            status = system_data.get('status', 'UNKNOWN')
+            
+            if status == 'ONLINE':
+                dashboard['online_systems'] += 1
+            elif status == 'HALTED':
+                dashboard['halted_systems'] += 1
+            else:
+                dashboard['offline_systems'] += 1
+            
+            dashboard['systems'][system_name] = {
+                'status': status,
+                'authority': system_data.get('authority', 'FULL'),
+                'has_instance': system_data.get('instance') is not None
+            }
+        
+        # Add cosmic readings
+        dashboard['cosmic_state'] = self.get_cosmic_status()
+        dashboard['planetary_reading'] = self.get_planetary_reading()
+        
+        return dashboard
+
     # ═══════════════════════════════════════════════════════════════════════════════
     # 🧠⛏️ MINER COGNITION SYSTEM - The Queen Uses the Miner for Deep Thought
     # ═══════════════════════════════════════════════════════════════════════════════

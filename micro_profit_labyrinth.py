@@ -5416,6 +5416,10 @@ class MicroProfitLabyrinth:
                     await self.queen_learn_from_trade(best, success=True)
                     print(f"   👑💰 TINA B WINS: ${actual_pnl:+.4f}")
                     
+                    # 🔧 CRITICAL: Record pair result for dynamic blocking!
+                    pair_key = f"{best.from_asset.upper()}_{best.to_asset.upper()}"
+                    self.barter_matrix.record_pair_result(pair_key, current_exchange, won=(actual_pnl >= 0))
+                    
                     # 👑💕 Let Queen celebrate the win!
                     if self.queen and hasattr(self.queen, 'speak_from_heart'):
                         try:
@@ -5432,7 +5436,11 @@ class MicroProfitLabyrinth:
                     await self.queen_learn_from_trade(best, success=False)
                     print(f"   👑📚 Tina B learned from this experience")
                     
-                    # 👑💪 Let Queen provide encouragement after a loss!
+                    # � CRITICAL: Record failed execution as a LOSS for blocking!
+                    pair_key = f"{best.from_asset.upper()}_{best.to_asset.upper()}"
+                    self.barter_matrix.record_pair_result(pair_key, current_exchange, won=False)
+                    
+                    # �👑💪 Let Queen provide encouragement after a loss!
                     if self.queen and hasattr(self.queen, 'speak_from_heart'):
                         try:
                             queen_message = self.queen.speak_from_heart('after_loss')
@@ -7130,6 +7138,11 @@ class MicroProfitLabyrinth:
         for to_asset, to_price in target_assets.items():
             if to_asset == from_asset:
                 continue
+            
+            # 🚨 BLOCK GARBAGE SYMBOLS - Single letters are NOT real coins!
+            # U, C, S, T, F, AT, etc. are matching partial symbol names, not real assets
+            if len(to_asset) <= 2 and to_asset.upper() not in ['BT', 'OP']:  # Allow real 2-char like OP
+                continue  # Skip garbage single-letter "coins"
             
             # 🚨 CRITICAL FIX: Check if path is blocked BEFORE doing any work!
             # This prevents the S↔C ping-pong problem from repeating
@@ -9816,7 +9829,13 @@ class MicroProfitLabyrinth:
                 pass
         self.path_memory.record(opp.from_asset, opp.to_asset, actual_pnl >= 0)
         
-        # 👑 Update Queen's path memory with new data
+        # � CRITICAL FIX: Record pair result for DYNAMIC BLOCKING!
+        # This was missing - pairs kept losing without being blocked!
+        pair_key = f"{opp.from_asset.upper()}_{opp.to_asset.upper()}"
+        exchange = opp.source_exchange if hasattr(opp, 'source_exchange') else 'kraken'
+        self.barter_matrix.record_pair_result(pair_key, exchange, won=(actual_pnl >= 0))
+        
+        # �👑 Update Queen's path memory with new data
         if hasattr(self, 'queen') and self.queen and hasattr(self.queen, 'path_memory'):
             path_key = f"{opp.from_asset.upper()}->{opp.to_asset.upper()}"
             if not hasattr(self.queen, 'path_memory') or self.queen.path_memory is None:
