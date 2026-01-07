@@ -131,6 +131,11 @@ class SignalDirection(Enum):
     UP = "up"      # Responses flow up (Whale → Queen)
 
 
+# Forward declaration alias for backward compatibility
+# HarmonicSignal is now ChainSignal - alias defined after ChainSignal class
+    UP = "up"      # Responses flow up (Whale → Queen)
+
+
 @dataclass
 class ChainSignal:
     """
@@ -192,6 +197,10 @@ class ChainSignal:
             return self.current_content
         signals = [(h["freq"], h["amp"]) for h in self.harmonics]
         return from_harmonics(signals)
+
+
+# Backward compatibility alias - HarmonicSignal is now ChainSignal
+HarmonicSignal = ChainSignal
 
 
 @dataclass

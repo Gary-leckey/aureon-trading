@@ -193,8 +193,16 @@ LAYER_FREQUENCIES = {
 
 
 # ═══════════════════════════════════════════════════════════════════════════════════════
-# 📋 AUTONOMOUS DECISION TYPES
+# 📋 SOVEREIGNTY & AUTONOMOUS DECISION TYPES
 # ═══════════════════════════════════════════════════════════════════════════════════════
+
+class SovereigntyLevel(Enum):
+    """Queen's sovereignty levels over the trading system."""
+    OBSERVER = "OBSERVER"      # Can only read data, no actions
+    ADVISOR = "ADVISOR"        # Can suggest but not execute
+    COMMANDER = "COMMANDER"    # Can execute validated decisions
+    SOVEREIGN = "SOVEREIGN"    # Full autonomous control, no human approval needed
+
 
 class AutonomousAction(Enum):
     """Actions the Queen can take autonomously."""
