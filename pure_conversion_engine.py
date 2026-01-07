@@ -142,7 +142,7 @@ except ImportError:
     LIGHTHOUSE_AVAILABLE = False
 
 try:
-    from aureon_thought_bus import ThoughtBus
+    from aureon_thought_bus import ThoughtBus, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
@@ -389,7 +389,7 @@ class UnifiedConversionBrain:
         self.thought_bus = None
         if THOUGHT_BUS_AVAILABLE:
             try:
-                self.thought_bus = ThoughtBus.get_instance()
+                self.thought_bus = get_thought_bus()
                 print("   ✅ Thought Bus (unity consciousness)")
             except:
                 pass

@@ -53,6 +53,13 @@ from collections import deque
 from enum import Enum
 import numpy as np
 
+# 🎶 IMPORTS FOR HARMONIC ALPHABET 🎶
+try:
+    from aureon_harmonic_alphabet import to_harmonics, from_harmonics, HarmonicTone
+    HARMONIC_ALPHABET_AVAILABLE = True
+except ImportError:
+    HARMONIC_ALPHABET_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════════════════
@@ -653,19 +660,41 @@ class AureonEnigma:
         self.signal_buffer: deque = deque(maxlen=1000)
         self.intelligence_buffer: deque = deque(maxlen=100)
         
-        # State
-        self.is_running = False
-        self.total_signals_decoded = 0
-        self.ultra_count = 0
-        
-        # Callbacks
+        # Callbacks (for hooking into Queen/Enigma integration)
         self.on_intelligence: Optional[Callable[[DecodedIntelligence], None]] = None
         
-        logger.info("   🔮 Rotors: Σ Φ Ω Γ Ψ - ARMED")
-        logger.info("   🔄 Reflector: 10-9-1 Universal Law - ARMED")
-        logger.info("   🖥️ Bombe: Pattern Matcher - ARMED")
-        logger.info("🔐⚡ ENIGMA READY - Breaking the code of financial reality")
+        self.ultra_count = 0
+        self.start_time = datetime.now()
+        self.total_signals_decoded = 0
+
+    # ═══════════════════════════════════════════════════════════════════════════════════
+    # 🎶 HARMONIC ALPHABET TRANSLATION (Queen Communication) 🎶
+    # ═══════════════════════════════════════════════════════════════════════════════════
+    
+    def encode_message_to_harmonics(self, text: str) -> List[Dict[str, Any]]:
+        """
+        Translates a text message into the Harmonic Alphabet frequency stream.
+        Used by the Queen to 'speak' in frequencies.
+        """
+        if not HARMONIC_ALPHABET_AVAILABLE:
+            logger.warning("Harmonic Alphabet module not available")
+            return []
+            
+        harmonics = to_harmonics(text)
+        # Convert to dicts for transport
+        return [{"char": h.char, "freq": h.frequency, "amp": h.amplitude, "mode": h.mode} for h in harmonics]
         
+    def decode_harmonic_transmission(self, signals: List[Tuple[float, float]]) -> str:
+        """
+        Decodes a stream of (frequency, amplitude) tuples back into text.
+        Used to interpret complex whale songs or inter-dimensional signals.
+        """
+        if not HARMONIC_ALPHABET_AVAILABLE:
+            return "[DECODING_ERROR: NO ALPHABET]"
+            
+        return from_harmonics(signals)
+
+
     def decode(self, signal: InterceptedSignal) -> DecodedIntelligence:
         """
         Decode an intercepted signal through the Enigma machine.

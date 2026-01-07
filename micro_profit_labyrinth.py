@@ -482,12 +482,16 @@ except ImportError:
 # 👑🍄 Queen Hive Mind - The Dreaming Queen who guides all children
 try:
     from aureon_queen_hive_mind import QueenHiveMind, QueenWisdom, get_queen
+    from queen_harmonic_voice import QueenHarmonicVoice
+    from aureon_harmonic_signal_chain import HarmonicSignalChain, HarmonicSignal
     QUEEN_HIVE_MIND_AVAILABLE = True
-    print("👑🍄 Queen Hive Mind LOADED! (The Dreaming Queen)")
+    print("👑🍄 Queen Hive Mind LOADED! (The Dreaming Queen + Harmonic Voice)")
 except Exception as e:
     QUEEN_HIVE_MIND_AVAILABLE = False
     QueenHiveMind = None
     get_queen = None
+    QueenHarmonicVoice = None
+    HarmonicSignalChain = None
     # Log the actual error for debugging on Windows
     import logging
     logging.getLogger(__name__).warning(f"Queen Hive Mind import failed: {e}")
@@ -2712,6 +2716,10 @@ class MicroProfitLabyrinth:
         self.path_memory = PathMemory()
         self.thought_bus = ThoughtBus(persist_path="thoughts.jsonl") if THOUGHT_BUS_AVAILABLE else None
         
+        # 👑 BOOTSTRAP QUEEN
+        self.queen = None
+        self.queen_voice = None  # 👑🎤 THE HARMONIC VOICE
+        
         # 👑🎓 QUEEN LOSS LEARNING - Learn from every loss, never forget
         self.loss_learning = None  # Will initialize in initialize() with exchange clients
         
@@ -3323,6 +3331,19 @@ class MicroProfitLabyrinth:
                         print(f"   🏗️ Code Architect: ❌ Not available")
                 except Exception as e:
                     logger.debug(f"Queen Code Architect wiring error: {e}")
+
+                # 👑🎤 THE HARMONIC VOICE - Autonomous Control
+                if QueenHarmonicVoice and HarmonicSignalChain:
+                    try:
+                        self.queen_voice = QueenHarmonicVoice()
+                        self.queen_voice.awaken()
+                        print(f"   👑🎤 Harmonic Voice: ✅ WIRED (Autonomous Control Active!)")
+                        # Also wire to the main Queen if she doesn't have it
+                        if hasattr(self.queen, 'set_voice'):
+                            self.queen.set_voice(self.queen_voice)
+                            print(f"   👑🎤 Voice -> Queen: ✅ WIRED")
+                    except Exception as e:
+                        print(f"   ⚠️ Harmonic Voice error: {e}")
                 
                 # 👑🎮 QUEEN TAKES FULL CONTROL - She commands ALL systems! 🎮👑
                 try:
@@ -3391,6 +3412,17 @@ class MicroProfitLabyrinth:
         # 📡 Thought Bus Aggregator Status
         if self.bus_aggregator:
             print("📡 Thought Bus Aggregator: WIRED (Neural Signal Collector)")
+
+        # 🍄🐋 WHALE SONAR - Start per-system sonar to send compact signals to Queen
+        try:
+            from mycelium_whale_sonar import create_and_start_sonar
+            if self.thought_bus:
+                self.whale_sonar = create_and_start_sonar(thought_bus=self.thought_bus)
+                print("🍄🐋 Whale Sonar: STARTED (listening for subsystem signals)")
+            else:
+                print("🍄🐋 Whale Sonar: SKIPPED (no ThoughtBus available)")
+        except Exception as e:
+            print(f"🍄🐋 Whale Sonar: ERROR starting sonar: {e}")
         
         # ════════════════════════════════════════════════════════════════════════════
         # 👑🎓 QUEEN LOSS LEARNING SYSTEM - Learn from every loss, never forget
@@ -8867,8 +8899,13 @@ class MicroProfitLabyrinth:
                         # Only exact matches for stablecoins - skip ALL fuzzy logic
                         continue
         
+        # 🔇 Only print asset location once per asset (prevent spam)
         if len(candidates) > 1 and asset.upper() not in ['USD', 'USDT', 'USDC', 'ZUSD']:
-            print(f"   🔎 Asset location check for {asset}: {', '.join(candidates)} -> Best: {best_exchange}")
+            if not hasattr(self, '_asset_location_logged'):
+                self._asset_location_logged = set()
+            if asset.upper() not in self._asset_location_logged:
+                self._asset_location_logged.add(asset.upper())
+                print(f"   🔎 Asset location: {asset} on {len(candidates)} exchanges -> Best: {best_exchange}")
             
         return best_exchange
     
@@ -10360,17 +10397,23 @@ class MicroProfitLabyrinth:
             last_wave_scan_time = 0  # Track last wave scanner update
             wave_scan_interval = 60  # Run full A-Z sweep every 60 seconds
             
-            # 👑🌐 QUEEN'S ONLINE RESEARCH - Every 5 minutes, she learns and enhances herself
+            # 👑🌐 QUEEN'S ONLINE RESEARCH - Every 2 minutes, she learns and enhances herself
             last_research_time = 0
-            research_interval = 300  # Research every 5 minutes
+            research_interval = 120  # Research every 2 minutes (was 5 mins)
+            print(f"\n👑🌐 Queen's Research Schedule: Every {research_interval}s (next in {research_interval}s)")
             
             while duration_s == 0 or time.time() - start_time < duration_s:
                 elapsed = time.time() - start_time
                 
                 # 👑🌐 QUEEN'S PERIODIC ONLINE RESEARCH & SELF-ENHANCEMENT
-                if (time.time() - last_research_time) >= research_interval:
+                time_since_research = time.time() - last_research_time
+                time_until_research = max(0, research_interval - time_since_research)
+                
+                if time_since_research >= research_interval:
                     try:
-                        print(f"\n👑🌐 Queen initiating online research & self-enhancement...")
+                        print(f"\n{'='*70}")
+                        print(f"👑🌐🔬 QUEEN ONLINE RESEARCH & CODE GENERATION CYCLE")
+                        print(f"{'='*70}")
                         research_result = await self.queen_research_online_and_enhance()
                         last_research_time = time.time()
                         
@@ -10384,6 +10427,30 @@ class MicroProfitLabyrinth:
                 
                 # Refresh prices (shared across all exchanges)
                 await self.fetch_prices()
+                
+                # 👑🎤 HARMONIC VOICE - Autonomous Guidance
+                if self.queen_voice:
+                    try:
+                        # 1. Speak to the ecosystem
+                        signal = self.queen_voice.speak("OBSERVE_MARKET")
+                        
+                        # 2. Check Chain Integrity (Coherence)
+                        # If the Queen's voice doesn't resonate (low coherence), we pause
+                        if signal and signal.coherence < 0.4:  # Threshold
+                            print(f"   🛑 HARMONIC PAUSE: Chain Coherence {signal.coherence:.2f} too low")
+                            # We can still fetch prices, but maybe skip execution logic
+                            # For now, we continue but warn, or sleep a bit
+                            await asyncio.sleep(1)
+                        
+                        # 3. Check for specific commands in the echo
+                        if signal and "HALT" in signal.content:
+                             print(f"   🛑 VOICE COMMAND: HALT (Pausing execution flow...)")
+                             await asyncio.sleep(5)
+                             continue
+                             
+                    except Exception as e:
+                        # Don't crash on voice errors
+                        logger.debug(f"Voice speak error: {e}")
                 
                 # 🌊🔭 PERIODIC WAVE SCANNER UPDATE (every 60s)
                 if self.wave_scanner and (time.time() - last_wave_scan_time) >= wave_scan_interval:
@@ -10515,7 +10582,10 @@ class MicroProfitLabyrinth:
                 blocked_count = len(self.barter_matrix.blocked_paths)
                 queen_status = f" 👑Block:{blocked_count}" if blocked_count > 0 else ""
                 
-                print(f"🔬 {mode} | {elapsed:.0f}s | Turn:{turn_display} | {neural_str}{cosmic_status} | Conv:{self.conversions_made} | Actual:${actual_pnl:+.2f}{drain_warning}{queen_status}")
+                # 🌐 Research countdown
+                research_status = f" 🔬{int(time_until_research)}s" if time_until_research > 0 else " 🔬NOW!"
+                
+                print(f"🔬 {mode} | {elapsed:.0f}s | Turn:{turn_display} | {neural_str}{cosmic_status} | Conv:{self.conversions_made} | Actual:${actual_pnl:+.2f}{drain_warning}{queen_status}{research_status}")
                 
                 await asyncio.sleep(scan_interval)
         

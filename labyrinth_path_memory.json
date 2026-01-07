@@ -8,8 +8,8 @@
     "losses": 2.0
   },
   "USD->PEPE": {
-    "wins": 3.0,
-    "losses": 3.0
+    "wins": 4.0,
+    "losses": 6.0
   },
   "USDC->AXS": {
     "wins": 0.0,
@@ -64,7 +64,7 @@
     "losses": 1.0
   },
   "PEPE->USD": {
-    "wins": 3.0,
+    "wins": 4.0,
     "losses": 1.0
   },
   "BROCCOLI714->ACT": {
@@ -364,8 +364,8 @@
     "losses": 24.0
   },
   "PEPE->USDC": {
-    "wins": 1.0,
-    "losses": 1.0
+    "wins": 2.0,
+    "losses": 3.0
   },
   "S->USD": {
     "wins": 0.0,
@@ -397,13 +397,109 @@
   },
   "1000SATS->PEPE": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "T->PEPE": {
     "wins": 0.0,
     "losses": 1.0
   },
   "PEPE->FLOKI": {
+    "wins": 0.0,
+    "losses": 2.0
+  },
+  "FLOKI->PEPE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "PEPE->LUNC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "LUNC->BONK": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "BONK->PEPE": {
+    "wins": 0.0,
+    "losses": 2.0
+  },
+  "USDC->1000SATS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "PEPE->DOGS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "DOGS->BONK": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "PEPE->BROCCOLI714": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "BROCCOLI714->FLOKI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "FLOKI->DOGS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "DOGS->1000SATS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "1000SATS->BONK": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "BONK->FLOKI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "FLOKI->1000SATS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "1000SATS->NEIRO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "NEIRO->PEPE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "PEPE->XAI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "XAI->FLOKI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "FLOKI->NEIRO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "NEIRO->DOGS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "DOGS->LUNC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "LUNC->1000SATS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "1000SATS->PUMP": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "PUMP->PEPE": {
     "wins": 0.0,
     "losses": 1.0
   }

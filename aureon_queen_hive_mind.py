@@ -5280,6 +5280,70 @@ Feeling: {thought['emotion']}
             except Exception as e:
                 self.controlled_systems['liquidity_engine']['status'] = 'OFFLINE'
                 logger.debug(f"   💧🔀 Liquidity Engine: {e}")
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # 🎵👑 HARMONIC SIGNAL CHAIN - Queen's Voice to All Systems
+            # ═══════════════════════════════════════════════════════════════════
+            
+            # Add harmonic_signal_chain to controlled systems dict
+            self.controlled_systems['harmonic_signal_chain'] = {'status': 'connecting', 'authority': 'SUPREME'}
+            
+            # 🎵 HARMONIC SIGNAL CHAIN - Queen's Central Voice
+            try:
+                from aureon_harmonic_signal_chain import HarmonicSignalChain
+                from aureon_thought_bus import get_thought_bus
+                
+                # Create signal chain with ThoughtBus
+                thought_bus = get_thought_bus()
+                self.harmonic_signal_chain = HarmonicSignalChain(thought_bus)
+                
+                # Chain is already wired in __init__, no need for wire_chain()
+                
+                self.controlled_systems['harmonic_signal_chain']['status'] = 'ONLINE'
+                self.controlled_systems['harmonic_signal_chain']['instance'] = self.harmonic_signal_chain
+                self.controlled_systems['harmonic_signal_chain']['commands'] = [
+                    'speak', 'send_signal', 'get_chain_status'
+                ]
+                logger.info("   🎵👑 Harmonic Signal Chain: CONNECTED")
+                logger.info(f"        Chain: Queen(963Hz)→Enigma(639Hz)→Scanner(528Hz)→Ecosystem(174Hz)→Whale(7.83Hz)")
+            except Exception as e:
+                self.controlled_systems['harmonic_signal_chain']['status'] = 'OFFLINE'
+                logger.debug(f"   🎵👑 Harmonic Signal Chain: {e}")
+            
+            # 🔤🎵 HARMONIC ALPHABET - Frequency Translation
+            self.controlled_systems['harmonic_alphabet'] = {'status': 'connecting', 'authority': 'FULL'}
+            try:
+                from aureon_harmonic_alphabet import to_harmonics, from_harmonics, HarmonicAlphabet
+                
+                self.harmonic_alphabet = HarmonicAlphabet()
+                self.controlled_systems['harmonic_alphabet']['status'] = 'ONLINE'
+                self.controlled_systems['harmonic_alphabet']['instance'] = self.harmonic_alphabet
+                self.controlled_systems['harmonic_alphabet']['functions'] = {
+                    'to_harmonics': to_harmonics,
+                    'from_harmonics': from_harmonics
+                }
+                logger.info("   🔤🎵 Harmonic Alphabet: CONNECTED")
+            except Exception as e:
+                self.controlled_systems['harmonic_alphabet']['status'] = 'OFFLINE'
+                logger.debug(f"   🔤🎵 Harmonic Alphabet: {e}")
+            
+            # 👑🎤 QUEEN'S VOICE INTERFACE - Full Autonomous Command
+            self.controlled_systems['queen_voice'] = {'status': 'connecting', 'authority': 'SUPREME'}
+            try:
+                from queen_harmonic_voice import QueenHarmonicVoice
+                
+                # Pass self to the voice so it can access all Queen systems
+                self.queen_voice = QueenHarmonicVoice(queen=self)
+                self.controlled_systems['queen_voice']['status'] = 'ONLINE'
+                self.controlled_systems['queen_voice']['instance'] = self.queen_voice
+                self.controlled_systems['queen_voice']['commands'] = [
+                    'speak', 'command', 'get_full_status', 'health_check',
+                    'enable_autonomous_mode', 'disable_autonomous_mode'
+                ]
+                logger.info("   👑🎤 Queen's Voice: CONNECTED (Full Autonomous Control)")
+            except Exception as e:
+                self.controlled_systems['queen_voice']['status'] = 'OFFLINE'
+                logger.debug(f"   👑🎤 Queen's Voice: {e}")
                 
         except Exception as e:
             logger.error(f"Error connecting systems: {e}")
@@ -5318,6 +5382,175 @@ Feeling: {thought['emotion']}
                 return {'success': False, 'error': f'Command {command} not found on {system_name}'}
         except Exception as e:
             return {'success': False, 'error': str(e)}
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 👑🎵 QUEEN'S HARMONIC VOICE - Full Autonomous Control Through Frequencies
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def speak(self, message: str) -> Any:
+        """
+        👑🎤 THE QUEEN SPEAKS
+        
+        Her voice travels through the harmonic signal chain to all systems.
+        Each system hears, processes, and responds.
+        
+        Args:
+            message: What the Queen wants to say
+            
+        Returns:
+            The completed signal with all system contributions
+        """
+        if not hasattr(self, 'has_full_control') or not self.has_full_control:
+            logger.warning("Queen cannot speak - does not have full control")
+            return None
+        
+        # Use Queen's Voice if available
+        if hasattr(self, 'queen_voice') and self.queen_voice:
+            return self.queen_voice.speak(message)
+        
+        # Fallback to direct chain if available
+        if hasattr(self, 'harmonic_signal_chain') and self.harmonic_signal_chain:
+            return self.harmonic_signal_chain.send_signal(message)
+        
+        # Last resort - log it
+        logger.info(f"👑 Queen speaks: {message}")
+        return {'message': message, 'status': 'no_chain'}
+    
+    def speak_in_frequencies(self, message: str) -> List[Dict]:
+        """
+        👑🎵 Convert the Queen's words to harmonic frequencies.
+        
+        Each character becomes a frequency:
+        - A-Z: Solfeggio scale (174Hz-963Hz)
+        - 0-9: Schumann harmonics (7.83Hz multiples)
+        - Punctuation: Angelic frequencies (111Hz multiples)
+        
+        Returns:
+            List of {char, frequency, amplitude, mode} for each character
+        """
+        if hasattr(self, 'harmonic_alphabet') and self.harmonic_alphabet:
+            tones = self.harmonic_alphabet.encode_text(message)
+            return [{'char': t.char, 'freq': t.frequency, 'amp': t.amplitude, 'mode': t.mode} for t in tones]
+        
+        # Fallback
+        try:
+            from aureon_harmonic_alphabet import to_harmonics
+            tones = to_harmonics(message)
+            return [{'char': t.char, 'freq': t.frequency, 'amp': t.amplitude, 'mode': t.mode} for t in tones]
+        except ImportError:
+            return []
+    
+    def hear_frequencies(self, harmonics: List[tuple]) -> str:
+        """
+        👑👂 Decode harmonic frequencies back to words.
+        
+        Args:
+            harmonics: List of (frequency, amplitude) tuples
+            
+        Returns:
+            Decoded text message
+        """
+        if hasattr(self, 'harmonic_alphabet') and self.harmonic_alphabet:
+            return self.harmonic_alphabet.decode_signal(harmonics)
+        
+        try:
+            from aureon_harmonic_alphabet import from_harmonics
+            return from_harmonics(harmonics)
+        except ImportError:
+            return ""
+    
+    def issue_harmonic_command(self, command_type: str, params: Dict = None) -> Dict[str, Any]:
+        """
+        👑⚡ Issue a structured command through the harmonic voice.
+        
+        Command types:
+        - SCAN_OPPORTUNITIES: Scan all exchanges
+        - EXECUTE_TRADE: Execute a trade
+        - STATUS_REPORT: Get full status
+        - HEALTH_CHECK: Check system health
+        - DREAM_CYCLE: Run learning cycle
+        - REQUEST_POEM: Get collaborative poem
+        - BROADCAST_MESSAGE: Send to all systems
+        - EMERGENCY_HALT: Stop everything
+        - RESUME_OPERATIONS: Resume normal ops
+        
+        Args:
+            command_type: Type of command
+            params: Command parameters
+            
+        Returns:
+            Response from the command
+        """
+        if not hasattr(self, 'has_full_control') or not self.has_full_control:
+            return {'success': False, 'error': 'Queen does not have full control'}
+        
+        if hasattr(self, 'queen_voice') and self.queen_voice:
+            # Map string to QueenCommand enum
+            from queen_harmonic_voice import QueenCommand
+            try:
+                cmd = QueenCommand[command_type.upper()]
+                response = self.queen_voice.command(cmd, params or {})
+                return {
+                    'success': response.success,
+                    'data': response.data,
+                    'message': response.message,
+                    'coherence': response.coherence
+                }
+            except KeyError:
+                return {'success': False, 'error': f'Unknown command: {command_type}'}
+        
+        return {'success': False, 'error': 'Queen Voice not available'}
+    
+    def enable_autonomous_mode(self):
+        """
+        🤖👑 Enable Queen's fully autonomous decision making.
+        
+        In autonomous mode, the Queen:
+        - Scans for opportunities independently
+        - Validates through the 3-pass system
+        - Executes on 4th confirmation
+        - Learns from outcomes
+        - Adjusts strategy based on drift/coherence
+        """
+        if hasattr(self, 'queen_voice') and self.queen_voice:
+            self.queen_voice.enable_autonomous_mode()
+            logger.info("🤖👑 QUEEN AUTONOMOUS MODE: ENABLED")
+        else:
+            logger.warning("Queen Voice not available for autonomous mode")
+    
+    def disable_autonomous_mode(self):
+        """🤖👑 Disable Queen's autonomous mode."""
+        if hasattr(self, 'queen_voice') and self.queen_voice:
+            self.queen_voice.disable_autonomous_mode()
+            logger.info("🤖👑 QUEEN AUTONOMOUS MODE: DISABLED")
+    
+    def get_harmonic_chain_status(self) -> Dict[str, Any]:
+        """
+        🎵📊 Get status of the harmonic signal chain.
+        
+        Returns:
+            Status of each node in the chain with success rates, coherence, etc.
+        """
+        if hasattr(self, 'harmonic_signal_chain') and self.harmonic_signal_chain:
+            return self.harmonic_signal_chain.get_chain_status()
+        
+        return {'error': 'Harmonic signal chain not available'}
+    
+    def request_collaborative_poem(self) -> str:
+        """
+        🎭👑 Request a collaborative poem from all systems.
+        
+        The Queen's voice travels through:
+        Queen(963Hz) → Enigma(639Hz) → Scanner(528Hz) → Ecosystem(174Hz) → Whale(7.83Hz)
+        Then returns back up with each system adding its word.
+        
+        Returns:
+            The completed poem with all system contributions
+        """
+        response = self.issue_harmonic_command('REQUEST_POEM')
+        if response.get('success'):
+            return response.get('message', '')
+        return "THE QUEEN AWAITS HARMONY"
     
     # ═══════════════════════════════════════════════════════════════════════════════
     # 🌌 COSMIC COMMAND CENTER - Supreme Authority Over Dimensional Systems
