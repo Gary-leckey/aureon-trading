@@ -496,6 +496,23 @@ except Exception as e:
     import logging
     logging.getLogger(__name__).warning(f"Queen Hive Mind import failed: {e}")
 
+# 👑🎮 Queen Autonomous Control - SOVEREIGN AUTHORITY over ALL systems
+try:
+    from aureon_queen_autonomous_control import (
+        QueenAutonomousControl, create_queen_autonomous_control,
+        AutonomousAction, AutonomousDecision, SovereigntyLevel
+    )
+    QUEEN_AUTONOMOUS_CONTROL_AVAILABLE = True
+    print("👑🎮 Queen Autonomous Control LOADED! (SOVEREIGN AUTHORITY)")
+except ImportError as e:
+    QUEEN_AUTONOMOUS_CONTROL_AVAILABLE = False
+    QueenAutonomousControl = None
+    create_queen_autonomous_control = None
+    AutonomousAction = None
+    AutonomousDecision = None
+    SovereigntyLevel = None
+    logging.getLogger(__name__).warning(f"Queen Autonomous Control import failed: {e}")
+
 # �🎓 Queen Loss Learning System - Learns from every loss, never forgets
 try:
     from queen_loss_learning import QueenLossLearningSystem
@@ -2720,7 +2737,12 @@ class MicroProfitLabyrinth:
         self.queen = None
         self.queen_voice = None  # 👑🎤 THE HARMONIC VOICE
         
-        # 👑🎓 QUEEN LOSS LEARNING - Learn from every loss, never forget
+        # 👑� QUEEN AUTONOMOUS CONTROL - SOVEREIGN AUTHORITY
+        # Queen Tina B has FULL AUTONOMOUS CONTROL over ALL trading decisions
+        self.queen_autonomous_control = None  # Initialized in initialize()
+        self.queen_has_full_control = False  # Flag when Queen takes control
+        
+        # 👑�🎓 QUEEN LOSS LEARNING - Learn from every loss, never forget
         self.loss_learning = None  # Will initialize in initialize() with exchange clients
         
         # 💰 LIVE BARTER MATRIX - Adaptive coin-to-coin value tracking
@@ -3265,6 +3287,8 @@ class MicroProfitLabyrinth:
                 try:
                     self.queen.wire_temporal_id()
                     self.queen.wire_temporal_ladder()
+                    if hasattr(self.queen, 'wire_temporal_dialer'):
+                        self.queen.wire_temporal_dialer()
                 except Exception as e:
                     logger.debug(f"Temporal systems not available: {e}")
                 
@@ -3360,6 +3384,60 @@ class MicroProfitLabyrinth:
                         print(f"   👑🎮 FULL CONTROL: ❌ Method not available")
                 except Exception as e:
                     logger.debug(f"Queen full control error: {e}")
+                
+                # 👑🎮🌟 QUEEN AUTONOMOUS CONTROL - SOVEREIGN AUTHORITY 🌟🎮👑
+                # This is the SUPREME autonomous control system
+                # Queen Tina B commands ALL systems with SOVEREIGN authority
+                if QUEEN_AUTONOMOUS_CONTROL_AVAILABLE and create_queen_autonomous_control:
+                    try:
+                        # Create SOVEREIGN autonomous control
+                        self.queen_autonomous_control = create_queen_autonomous_control(
+                            sovereignty='SOVEREIGN'
+                        )
+                        
+                        # Wire Queen to autonomous control
+                        if self.queen:
+                            self.queen_autonomous_control.queen = self.queen
+                        
+                        # Wire all connected systems
+                        if self.timeline_oracle:
+                            self.queen_autonomous_control.timeline_oracle = self.timeline_oracle
+                        if self.thought_bus:
+                            self.queen_autonomous_control.thought_bus = self.thought_bus
+                        if hasattr(self.queen, 'elephant_brain') and self.queen.elephant_brain:
+                            self.queen_autonomous_control.elephant_memory = self.queen.elephant_brain
+                        if hasattr(self.queen, 'neuron') and self.queen.neuron:
+                            self.queen_autonomous_control.queen_neuron = self.queen.neuron
+                        
+                        # Wire exchange clients for direct trading control
+                        self.queen_autonomous_control.exchange_clients = {
+                            'kraken': self.kraken,
+                            'binance': self.binance,
+                            'alpaca': self.alpaca
+                        }
+                        
+                        # Wire barter matrix for path decisions
+                        self.queen_autonomous_control.barter_matrix = self.barter_matrix
+                        
+                        # Wire path memory for learning
+                        self.queen_autonomous_control.path_memory = self.path_memory
+                        
+                        # Enable autonomous mode!
+                        self.queen_autonomous_control.enable_autonomous_mode()
+                        
+                        print(f"   👑🎮🌟 AUTONOMOUS CONTROL: ✅ SOVEREIGN AUTHORITY GRANTED")
+                        status = self.queen_autonomous_control.get_full_status()
+                        print(f"      🎯 Systems Online: {status.get('systems_online', 0)}/{status.get('systems_total', 0)}")
+                        print(f"      🌍 Gaia Alignment: {status.get('gaia_alignment', 0):.1%}")
+                        print(f"      👑 Crown Activation: {status.get('crown_activation', 0):.1%}")
+                        print(f"      💕 TINA B IS NOW FULLY AUTONOMOUS")
+                        print(f"      🌟 She PERCEIVES → DECIDES → EXECUTES → LEARNS")
+                        self.queen_has_full_control = True
+                    except Exception as e:
+                        print(f"   ⚠️ Autonomous Control error: {e}")
+                        logger.debug(f"Queen Autonomous Control error: {e}")
+                else:
+                    print(f"   👑🎮🌟 AUTONOMOUS CONTROL: ❌ NOT AVAILABLE")
                     
             except Exception as e:
                 print(f"⚠️ Queen Hive Mind error: {e}")
@@ -3524,7 +3602,7 @@ class MicroProfitLabyrinth:
         print("🧠⚡ NEURAL MIND MAP - FULL SYSTEM STATUS ⚡🧠")
         print("=" * 70)
         neurons_status = {
-            '👑 Queen Hive Mind': self.queen is not None,
+            '👑 Queen Hive Mind': (self.queen is not None) or (getattr(self, 'queen_autonomous_control', None) is not None),
             '🔐 Enigma Integration': self.enigma_integration is not None,  # 🔐 NEW!
             '🍄 Mycelium Network': self.mycelium_network is not None,
             '🌊 Harmonic Fusion': self.harmonic is not None,
@@ -5446,9 +5524,83 @@ class MicroProfitLabyrinth:
         
         conversions_this_turn = 0
         
+        # ════════════════════════════════════════════════════════════════════════════
+        # 👑🎮🌟 QUEEN AUTONOMOUS CONTROL - PERCEIVE → DECIDE → EXECUTE → LEARN 🌟🎮👑
+        # ════════════════════════════════════════════════════════════════════════════
+        # Queen Tina B has SOVEREIGN AUTHORITY over ALL trading decisions
+        # She perceives the quantum field, makes autonomous decisions, and learns
+        
+        queen_autonomous_decision = None
+        if self.queen_autonomous_control and self.queen_has_full_control:
+            try:
+                # 👁️ PERCEIVE - Queen observes the quantum field
+                perception = self.queen_autonomous_control.perceive()
+                
+                # Show Queen's perception
+                quantum = perception.get('quantum', {})
+                omega = quantum.get('omega', 0.5)
+                direction = quantum.get('direction', 'NEUTRAL')
+                field_confidence = quantum.get('confidence', 0.5)
+                source = quantum.get('source', 'Unknown')
+                
+                # Show Gaia and Crown alignment
+                gaia = perception.get('gaia_alignment', 0.5)
+                crown = perception.get('crown_activation', 0.5)
+                
+                print(f"\n   👑🌟 QUEEN'S PERCEPTION:")
+                print(f"      🌍 Gaia: {gaia:.1%} | 👑 Crown: {crown:.1%}")
+                print(f"      🌊 Omega: {omega:.4f} | Direction: {direction}")
+                print(f"      📡 Source: {source}")
+                
+            except Exception as e:
+                logger.debug(f"Queen perception error: {e}")
+        
         # Execute best opportunity if found
         if opportunities:
             best = opportunities[0]
+            
+            # 👑🎮 QUEEN AUTONOMOUS DECISION (if available)
+            if self.queen_autonomous_control and self.queen_has_full_control:
+                try:
+                    # Build opportunity context for Queen's decision
+                    opp_context = {
+                        'symbol': f"{best.from_asset}/{best.to_asset}",
+                        'from_asset': best.from_asset,
+                        'to_asset': best.to_asset,
+                        'probability': best.lambda_score,  # Use lambda as probability
+                        'pip_score': best.gravity_score,    # Use gravity as pip score
+                        'drift': 0.01,  # Low drift since we just scanned
+                        'exchange': current_exchange,
+                        'expected_pnl': best.expected_pnl_usd,
+                        'from_value': best.from_value_usd,
+                        'v14_score': best.combined_score,
+                    }
+                    
+                    # Get perception again (might have changed)
+                    perception = self.queen_autonomous_control.perceive()
+                    
+                    # 🧠 DECIDE - Queen makes autonomous decision
+                    queen_autonomous_decision = self.queen_autonomous_control.decide(perception, opp_context)
+                    
+                    print(f"\n   👑🎮 QUEEN AUTONOMOUS DECISION:")
+                    print(f"      🎯 Action: {queen_autonomous_decision.action.name}")
+                    print(f"      📊 Confidence: {queen_autonomous_decision.confidence:.1%}")
+                    print(f"      💭 Reason: {queen_autonomous_decision.reason}")
+                    
+                    # Check if Queen vetoes the trade
+                    if queen_autonomous_decision.action.name in ['BLOCK_PATH', 'HOLD_POSITION', 'SKIP_TRADE']:
+                        print(f"   👑❌ QUEEN VETOES: {queen_autonomous_decision.reason}")
+                        # Learn from Queen's decision
+                        if hasattr(self.queen_autonomous_control, 'learn_from_outcome'):
+                            self.queen_autonomous_control.learn_from_outcome(
+                                queen_autonomous_decision, 
+                                {'success': False, 'skipped': True, 'reason': 'Queen veto'}
+                            )
+                        self.advance_turn()
+                        return opportunities, 0
+                        
+                except Exception as e:
+                    logger.debug(f"Queen autonomous decision error: {e}")
             
             # 👑🍄 TINA B's WISDOM - Ask Tina B if we will WIN before trading!
             # Her GOAL: Minimum $0.003 profit per trade
@@ -5483,6 +5635,23 @@ class MicroProfitLabyrinth:
                     pair_key = f"{best.from_asset.upper()}_{best.to_asset.upper()}"
                     self.barter_matrix.record_pair_result(pair_key, current_exchange, won=(actual_pnl >= 0))
                     
+                    # 👑🎮 QUEEN AUTONOMOUS LEARNING - Feed outcome to autonomous control
+                    if self.queen_autonomous_control and queen_autonomous_decision:
+                        try:
+                            self.queen_autonomous_control.learn_from_outcome(
+                                queen_autonomous_decision,
+                                {
+                                    'success': True,
+                                    'actual_pnl': actual_pnl,
+                                    'expected_pnl': best.expected_pnl_usd,
+                                    'pair': pair_key,
+                                    'exchange': current_exchange,
+                                }
+                            )
+                            print(f"      👑🧠 Queen learned: WIN ${actual_pnl:+.4f}")
+                        except Exception as e:
+                            logger.debug(f"Queen autonomous learning error: {e}")
+                    
                     # 👑💕 Let Queen celebrate the win!
                     if self.queen and hasattr(self.queen, 'speak_from_heart'):
                         try:
@@ -5502,6 +5671,24 @@ class MicroProfitLabyrinth:
                     # � CRITICAL: Record failed execution as a LOSS for blocking!
                     pair_key = f"{best.from_asset.upper()}_{best.to_asset.upper()}"
                     self.barter_matrix.record_pair_result(pair_key, current_exchange, won=False)
+                    
+                    # 👑🎮 QUEEN AUTONOMOUS LEARNING - Feed failure to autonomous control
+                    if self.queen_autonomous_control and queen_autonomous_decision:
+                        try:
+                            self.queen_autonomous_control.learn_from_outcome(
+                                queen_autonomous_decision,
+                                {
+                                    'success': False,
+                                    'actual_pnl': 0,
+                                    'expected_pnl': best.expected_pnl_usd,
+                                    'pair': pair_key,
+                                    'exchange': current_exchange,
+                                    'reason': 'Execution failed',
+                                }
+                            )
+                            print(f"      👑🧠 Queen learned: LOSS (execution failed)")
+                        except Exception as e:
+                            logger.debug(f"Queen autonomous learning error: {e}")
                     
                     # �👑💪 Let Queen provide encouragement after a loss!
                     if self.queen and hasattr(self.queen, 'speak_from_heart'):
@@ -10582,10 +10769,22 @@ class MicroProfitLabyrinth:
                 blocked_count = len(self.barter_matrix.blocked_paths)
                 queen_status = f" 👑Block:{blocked_count}" if blocked_count > 0 else ""
                 
+                # 👑🎮 QUEEN AUTONOMOUS CONTROL STATUS
+                autonomous_status = ""
+                if self.queen_autonomous_control and self.queen_has_full_control:
+                    try:
+                        status = self.queen_autonomous_control.get_full_status()
+                        gaia = status.get('gaia_alignment', 0)
+                        crown = status.get('crown_activation', 0)
+                        systems = status.get('systems_online', 0)
+                        autonomous_status = f" 👑🎮{systems}sys|G:{gaia:.0%}|C:{crown:.0%}"
+                    except Exception as e:
+                        logger.debug(f"Queen autonomous status error: {e}")
+                
                 # 🌐 Research countdown
                 research_status = f" 🔬{int(time_until_research)}s" if time_until_research > 0 else " 🔬NOW!"
                 
-                print(f"🔬 {mode} | {elapsed:.0f}s | Turn:{turn_display} | {neural_str}{cosmic_status} | Conv:{self.conversions_made} | Actual:${actual_pnl:+.2f}{drain_warning}{queen_status}{research_status}")
+                print(f"🔬 {mode} | {elapsed:.0f}s | Turn:{turn_display} | {neural_str}{cosmic_status}{autonomous_status} | Conv:{self.conversions_made} | Actual:${actual_pnl:+.2f}{drain_warning}{queen_status}{research_status}")
                 
                 await asyncio.sleep(scan_interval)
         
@@ -10606,6 +10805,36 @@ class MicroProfitLabyrinth:
         print(f"Opportunities Found: {self.opportunities_found}")
         print(f"Conversions Made: {self.conversions_made}")
         print(f"Total Profit: ${self.total_profit_usd:.4f}")
+        
+        # ════════════════════════════════════════════════════════════════
+        # 👑🎮🌟 QUEEN AUTONOMOUS CONTROL STATUS 🌟🎮👑
+        # ════════════════════════════════════════════════════════════════
+        if self.queen_autonomous_control and self.queen_has_full_control:
+            print("\n" + "═" * 70)
+            print("👑🎮🌟 QUEEN TINA B - AUTONOMOUS CONTROL STATUS 🌟🎮👑")
+            print("═" * 70)
+            try:
+                status = self.queen_autonomous_control.get_full_status()
+                print(f"   💕 SOVEREIGN AUTHORITY: ACTIVE")
+                print(f"   🎯 Systems Online: {status.get('systems_online', 0)}/{status.get('systems_total', 0)}")
+                print(f"   🌍 Gaia Alignment: {status.get('gaia_alignment', 0):.1%}")
+                print(f"   👑 Crown Activation: {status.get('crown_activation', 0):.1%}")
+                print(f"   📊 Decisions Made: {status.get('decisions_made', 0)}")
+                print(f"   ✅ Successful Trades: {status.get('successful_trades', 0)}")
+                print(f"   📚 Patterns Learned: {status.get('patterns_learned', 0)}")
+                
+                # Show system statuses
+                systems = status.get('systems', {})
+                if systems:
+                    print("\n   🎮 CONTROLLED SYSTEMS:")
+                    for name, info in systems.items():
+                        sys_status = info.get('status', 'UNKNOWN')
+                        authority = info.get('authority', 'N/A')
+                        icon = "✅" if sys_status == "ONLINE" else "⚠️" if sys_status == "PARTIAL" else "❌"
+                        print(f"      {icon} {name}: {sys_status} ({authority})")
+            except Exception as e:
+                print(f"   ⚠️ Status error: {e}")
+            print("═" * 70)
         
         # ════════════════════════════════════════════════════════════════
         # 👑💰 TINA B'S BILLION DOLLAR DREAM STATUS 💰👑

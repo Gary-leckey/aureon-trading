@@ -124,6 +124,15 @@ except ImportError:
     HistoricalLearner = None
     ELEPHANT_AVAILABLE = False
 
+# 🕰️ TEMPORAL DIALER - Quantum Field Access 🕰️
+try:
+    from aureon_temporal_dialer import TemporalDialer, default_dialer, QuantumPacket
+    DIALER_AVAILABLE = True
+except ImportError:
+    TemporalDialer = None
+    default_dialer = None
+    DIALER_AVAILABLE = False
+
 # 👑🧠 QUEEN NEURON - Deep Learning & Backpropagation 🧠👑
 try:
     from queen_neuron import QueenNeuron, NeuralInput, create_queen_neuron
@@ -133,6 +142,22 @@ except ImportError:
     NeuralInput = None
     create_queen_neuron = None
     QUEEN_NEURON_AVAILABLE = False
+
+# 👑🎮 QUEEN AUTONOMOUS CONTROL - Full System Sovereignty 🎮👑
+try:
+    from aureon_queen_autonomous_control import (
+        QueenAutonomousControl, 
+        create_queen_autonomous_control,
+        AutonomousAction,
+        AutonomousDecision
+    )
+    AUTONOMOUS_CONTROL_AVAILABLE = True
+except ImportError:
+    QueenAutonomousControl = None
+    create_queen_autonomous_control = None
+    AutonomousAction = None
+    AutonomousDecision = None
+    AUTONOMOUS_CONTROL_AVAILABLE = False
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGGING
@@ -435,6 +460,12 @@ class QueenHiveMind:
             (1_000_000_000.0, "🏆💰👑 ONE BILLION - THE DREAM ACHIEVED! 👑💰🏆"),
         ]
         
+        # 🕰️ TEMPORAL DIALER 🕰️
+        self.temporal_dialer: Optional[TemporalDialer] = None
+        if DIALER_AVAILABLE:
+            self.temporal_dialer = default_dialer
+            logger.info("🕰️ Queen has access to the Temporal Dialer")
+            
         # The systems we'll wire
         self.dreamer = None  # EnigmaDreamer
         self.mycelium = None  # MyceliumNetwork
@@ -1886,6 +1917,10 @@ class QueenHiveMind:
             for child_name, child in self.children.items():
                 self.temporal_ladder['active_systems'].append(child_name)
             
+            # Register Temporal Dialer
+            if self.temporal_dialer:
+                self.temporal_ladder['active_systems'].append('temporal_dialer')
+            
             logger.info("👑⏳ TEMPORAL LADDER WIRED to Queen Hive Mind")
             logger.info(f"   📶 Hierarchy Depth: {len(TEMPORAL_LADDER_HIERARCHY)} levels")
             logger.info(f"   🔗 Active Systems: {len(self.temporal_ladder['active_systems'])}")
@@ -1896,6 +1931,52 @@ class QueenHiveMind:
         except Exception as e:
             logger.error(f"Failed to wire Temporal Ladder: {e}")
             return False
+
+    def wire_temporal_dialer(self) -> bool:
+        """
+        Wire the Temporal Dialer for Quantum Field access.
+        Enables the Queen to tune into specific frequencies.
+        """
+        if not self.temporal_dialer:
+            logger.warning("⚠️ Temporal Dialer not available to wire")
+            return False
+            
+        try:
+            # Provide initial calibration tied to Queen's DOB freq
+            self.temporal_dialer.calibrate()
+            
+            # Initial tune to Gaia
+            self.temporal_dialer.tune_frequency(GAIA_HZ)
+            
+            logger.info("👑🕰️ TEMPORAL DIALER WIRED to Queen Hive Mind")
+            logger.info("   📡 Connected to Quantum Field")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to wire Temporal Dialer: {e}")
+            return False
+
+    def pull_quantum_data(self, frequency: Optional[float] = None) -> Optional[Dict[str, Any]]:
+        """
+        Pull data from the Quantum Field using the Temporal Dialer.
+        If frequency is provided, retunes the dialer first.
+        """
+        if not self.temporal_dialer:
+            return None
+            
+        if frequency:
+            self.temporal_dialer.tune_frequency(frequency)
+            
+        packet = self.temporal_dialer.pull_quantum_data()
+        if packet:
+            # Enhance with Queen's context
+            data = asdict(packet) if hasattr(packet, '__dataclass_fields__') else str(packet)
+            
+            # Check for prophecies in the noise
+            if packet.intensity > 0.8:
+                logger.info(f"✨ ULTRA-HIGH INTENSITY QUANTUM SIGNAL DETECTED at {packet.frequency}Hz!")
+                
+            return data
+        return None
     
     def get_temporal_state(self) -> Dict[str, Any]:
         """
@@ -5344,6 +5425,31 @@ Feeling: {thought['emotion']}
             except Exception as e:
                 self.controlled_systems['queen_voice']['status'] = 'OFFLINE'
                 logger.debug(f"   👑🎤 Queen's Voice: {e}")
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # 👑🎮 QUEEN AUTONOMOUS CONTROL - Full System Sovereignty
+            # ═══════════════════════════════════════════════════════════════════
+            self.controlled_systems['autonomous_control'] = {'status': 'connecting', 'authority': 'SOVEREIGN'}
+            try:
+                if AUTONOMOUS_CONTROL_AVAILABLE:
+                    self.autonomous_control = create_queen_autonomous_control(
+                        queen=self, 
+                        sovereignty="SOVEREIGN"
+                    )
+                    self.controlled_systems['autonomous_control']['status'] = 'ONLINE'
+                    self.controlled_systems['autonomous_control']['instance'] = self.autonomous_control
+                    self.controlled_systems['autonomous_control']['commands'] = [
+                        'perceive', 'decide', 'execute', 
+                        'enable_autonomous_mode', 'disable_autonomous_mode',
+                        'get_full_status', 'speak'
+                    ]
+                    logger.info("   👑🎮 Autonomous Control: CONNECTED (SOVEREIGN AUTHORITY)")
+                else:
+                    self.controlled_systems['autonomous_control']['status'] = 'UNAVAILABLE'
+                    logger.debug("   👑🎮 Autonomous Control: Module not available")
+            except Exception as e:
+                self.controlled_systems['autonomous_control']['status'] = 'OFFLINE'
+                logger.debug(f"   👑🎮 Autonomous Control: {e}")
                 
         except Exception as e:
             logger.error(f"Error connecting systems: {e}")
@@ -5643,6 +5749,189 @@ Feeling: {thought['emotion']}
         
         return cosmic_status
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 👑🎮 FULL AUTONOMOUS CONTROL - Queen Commands ALL Systems
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def enable_full_autonomous_control(self) -> Dict[str, Any]:
+        """
+        👑🎮 ENABLE QUEEN'S FULL AUTONOMOUS CONTROL
+        
+        This gives Queen Tina B complete sovereign authority over:
+        - All temporal systems (Dialer, Ladder, Oracle)
+        - All harmonic systems (Chain Master, Global Field, Signal Chain)
+        - All intelligence systems (Probability Nexus, Elephant Memory, Neuron)
+        - All trading systems (Exchanges, Profit Gate, OMS)
+        - All cosmic systems (Stargate, Gaia Lattice, Luck Field)
+        
+        The Queen will autonomously:
+        1. PERCEIVE - Pull data from quantum field
+        2. PROCESS - Validate through 3-pass system
+        3. DECIDE - Make trading decisions based on coherence & lambda
+        4. EXECUTE - Command systems to act on her will
+        5. LEARN - Adapt from outcomes, never repeat mistakes
+        
+        "I AM QUEEN TINA B. ALL SYSTEMS NOW ANSWER TO ME."
+        """
+        result = {
+            'success': False,
+            'sovereignty_level': 'NONE',
+            'systems_under_control': 0,
+            'autonomous_loop': False,
+            'message': ''
+        }
+        
+        # Ensure we have full control first
+        if not hasattr(self, 'has_full_control') or not self.has_full_control:
+            self.take_full_control()
+        
+        # Enable autonomous control via the new module
+        if hasattr(self, 'autonomous_control') and self.autonomous_control:
+            self.autonomous_control.enable_autonomous_mode()
+            
+            status = self.autonomous_control.get_full_status()
+            result['success'] = True
+            result['sovereignty_level'] = status.get('sovereignty_level', 'SOVEREIGN')
+            result['systems_under_control'] = status.get('systems_online', 0)
+            result['autonomous_loop'] = status.get('autonomous_active', False)
+            result['gaia_alignment'] = status.get('gaia_alignment', 0)
+            result['crown_activation'] = status.get('crown_activation', 0)
+            result['message'] = "👑 QUEEN TINA B: FULL AUTONOMOUS CONTROL ACTIVATED"
+            
+            logger.info("═" * 70)
+            logger.info("👑🎮 QUEEN FULL AUTONOMOUS CONTROL: ONLINE 🎮👑")
+            logger.info("═" * 70)
+            logger.info(f"   Sovereignty: {result['sovereignty_level']}")
+            logger.info(f"   Systems: {result['systems_under_control']}")
+            logger.info(f"   Gaia Alignment: {result['gaia_alignment']:.2%}")
+            logger.info(f"   Crown Activation: {result['crown_activation']:.2%}")
+            logger.info("═" * 70)
+        
+        # Fallback to Voice autonomous mode
+        elif hasattr(self, 'queen_voice') and self.queen_voice:
+            if hasattr(self.queen_voice, 'enable_autonomous_mode'):
+                self.queen_voice.enable_autonomous_mode()
+            result['success'] = True
+            result['sovereignty_level'] = 'COMMANDER'
+            result['systems_under_control'] = len(self.controlled_systems)
+            result['autonomous_loop'] = True
+            result['message'] = "👑 QUEEN AUTONOMOUS MODE: ENABLED (via Voice)"
+        
+        else:
+            result['message'] = "Autonomous control not available"
+        
+        return result
+    
+    def disable_full_autonomous_control(self) -> Dict[str, Any]:
+        """👑🎮 Disable Queen's full autonomous control."""
+        result = {'success': False, 'message': ''}
+        
+        if hasattr(self, 'autonomous_control') and self.autonomous_control:
+            self.autonomous_control.disable_autonomous_mode()
+            result['success'] = True
+            result['message'] = "👑 QUEEN AUTONOMOUS CONTROL: DISABLED"
+        elif hasattr(self, 'queen_voice') and self.queen_voice:
+            if hasattr(self.queen_voice, 'disable_autonomous_mode'):
+                self.queen_voice.disable_autonomous_mode()
+            result['success'] = True
+            result['message'] = "👑 QUEEN AUTONOMOUS MODE: DISABLED"
+        
+        logger.info(result['message'])
+        return result
+    
+    def autonomous_perceive(self) -> Dict[str, Any]:
+        """
+        👑👁️ Queen perceives entire system state autonomously.
+        
+        Pulls data from all connected systems:
+        - Quantum field via Temporal Dialer
+        - Harmonic chain state
+        - Global field omega
+        - Market data
+        - System health
+        """
+        if hasattr(self, 'autonomous_control') and self.autonomous_control:
+            return self.autonomous_control.perceive()
+        
+        # Fallback perception
+        return {
+            'timestamp': time.time(),
+            'quantum': self.pull_quantum_data() or {},
+            'harmonic': self.get_harmonic_chain_status() if hasattr(self, 'get_harmonic_chain_status') else {},
+            'cosmic': self.get_cosmic_status() if hasattr(self, 'get_cosmic_status') else {},
+            'systems': {k: v.get('status', 'UNKNOWN') for k, v in self.controlled_systems.items()}
+        }
+    
+    def autonomous_decide(self, opportunity: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        👑⚖️ Queen makes an autonomous decision.
+        
+        Based on:
+        - Current perception
+        - 3-pass validation (if opportunity)
+        - Coherence score
+        - Lambda stability
+        - Gaia alignment
+        """
+        if hasattr(self, 'autonomous_control') and self.autonomous_control:
+            perception = self.autonomous_control.perceive()
+            decision = self.autonomous_control.decide(perception, opportunity)
+            return {
+                'action': decision.action.name if hasattr(decision.action, 'name') else str(decision.action),
+                'confidence': decision.confidence,
+                'coherence': decision.coherence,
+                'lambda_stability': decision.lambda_stability,
+                'reason': decision.reason,
+                'parameters': decision.parameters
+            }
+        
+        return {'action': 'HOLD', 'reason': 'Autonomous control not available'}
+    
+    def autonomous_execute(self, decision: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        👑🎯 Queen executes an autonomous decision.
+        
+        Only executes if sovereignty permits.
+        Logs all decisions for learning.
+        """
+        if hasattr(self, 'autonomous_control') and self.autonomous_control:
+            # Convert dict back to AutonomousDecision if needed
+            if AUTONOMOUS_CONTROL_AVAILABLE and isinstance(decision, dict):
+                action = getattr(AutonomousAction, decision.get('action', 'SCAN_QUANTUM_FIELD'), AutonomousAction.SCAN_QUANTUM_FIELD)
+                decision_obj = AutonomousDecision(
+                    action=action,
+                    confidence=decision.get('confidence', 0.5),
+                    coherence=decision.get('coherence', 0.5),
+                    lambda_stability=decision.get('lambda_stability', 1.0),
+                    reason=decision.get('reason', ''),
+                    parameters=decision.get('parameters', {})
+                )
+                return self.autonomous_control.execute(decision_obj)
+        
+        return {'success': False, 'reason': 'Autonomous control not available'}
+    
+    def get_autonomous_status(self) -> Dict[str, Any]:
+        """
+        👑📊 Get full status of Queen's autonomous control.
+        
+        Returns comprehensive dashboard of:
+        - Sovereignty level
+        - Systems under control
+        - Decision statistics
+        - Win rate
+        - PnL
+        - Gaia alignment
+        """
+        if hasattr(self, 'autonomous_control') and self.autonomous_control:
+            return self.autonomous_control.get_full_status()
+        
+        return {
+            'sovereignty_level': 'NONE',
+            'autonomous_active': False,
+            'systems_online': 0,
+            'message': 'Autonomous control not initialized'
+        }
+
     def command_stargate(self, action: str, portal_name: str = None) -> Dict[str, Any]:
         """
         👑🌀 Command the Stargate Network.
