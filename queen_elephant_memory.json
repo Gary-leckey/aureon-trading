@@ -942,10 +942,10 @@
     "USD\u2192USDC": {
       "from": "USD",
       "to": "USDC",
-      "reason": "Only 0.0% win rate after 611 trades",
-      "loss_count": 611,
+      "reason": "Only 0.0% win rate after 613 trades",
+      "loss_count": 613,
       "total_loss": 0.0,
-      "blocked_at": "2026-01-08T20:17:37.064729",
+      "blocked_at": "2026-01-08T20:27:54.305088",
       "permanent": true
     },
     "PEPE\u2192FLOKI": {
@@ -1005,10 +1005,10 @@
     "BONK\u2192FLOKI": {
       "from": "BONK",
       "to": "FLOKI",
-      "reason": "Only 0.0% win rate after 10 trades",
-      "loss_count": 10,
+      "reason": "Only 0.0% win rate after 12 trades",
+      "loss_count": 12,
       "total_loss": 0.0,
-      "blocked_at": "2026-01-08T20:17:48.101742",
+      "blocked_at": "2026-01-08T20:28:04.249664",
       "permanent": true
     }
   },
@@ -1303,9 +1303,9 @@
       "win_rate": 100.0
     },
     "USD\u2192USDC": {
-      "trades": 611,
+      "trades": 613,
       "wins": 0,
-      "losses": 611,
+      "losses": 613,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
@@ -1367,57 +1367,57 @@
       "win_rate": 0.0
     },
     "BONK\u2192FLOKI": {
-      "trades": 10,
+      "trades": 12,
       "wins": 0,
-      "losses": 10,
+      "losses": 12,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USD\u2192PEPE": {
-      "trades": 1,
+      "trades": 3,
       "wins": 0,
-      "losses": 1,
+      "losses": 3,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USD\u2192FLOKI": {
-      "trades": 1,
+      "trades": 3,
       "wins": 0,
-      "losses": 1,
+      "losses": 3,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USD\u2192EUS": {
-      "trades": 1,
+      "trades": 3,
       "wins": 0,
-      "losses": 1,
+      "losses": 3,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USD\u2192BONK": {
-      "trades": 1,
+      "trades": 3,
       "wins": 0,
-      "losses": 1,
+      "losses": 3,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USD\u2192NEIRO": {
-      "trades": 1,
+      "trades": 3,
       "wins": 0,
-      "losses": 1,
+      "losses": 3,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USD\u2192PENGU": {
-      "trades": 1,
+      "trades": 2,
       "wins": 0,
-      "losses": 1,
+      "losses": 2,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
@@ -1439,9 +1439,9 @@
       "win_rate": 0.0
     },
     "USD\u2192DOGS": {
-      "trades": 1,
+      "trades": 2,
       "wins": 0,
-      "losses": 1,
+      "losses": 2,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
@@ -1455,5 +1455,5 @@
       "win_rate": 0.0
     }
   },
-  "last_saved": "2026-01-08T20:20:31.225167"
+  "last_saved": "2026-01-08T20:29:10.288333"
 }

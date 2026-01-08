@@ -5484,44 +5484,55 @@ class MicroProfitLabyrinth:
             icon = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡'}.get(opp.source_exchange, '📊')
             print(f"      {i+1}. {icon} {opp.from_asset}→{opp.to_asset} | PnL: ${opp.expected_pnl_usd:+.4f} | Score: {opp.combined_score:.1f}")
         
-        # 🎯 EXECUTE THE BEST ONE IMMEDIATELY!
-        best = all_opportunities[0]
-        icon = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡'}.get(best.source_exchange, '📊')
-        
-        print(f"\n   🏁 FIRST PAST THE POST: {icon} {best.source_exchange.upper()}")
-        print(f"      {best.from_asset} → {best.to_asset}")
-        print(f"      Expected: ${best.expected_pnl_usd:+.4f}")
-        
-        # 👑🍄 SERO's WISDOM - Quick check
-        queen_says_win, queen_confidence, queen_reason = await self.ask_queen_will_we_win(best)
-        
-        if not queen_says_win:
-            print(f"   👑❌ SERO SAYS NO: {queen_reason}")
-            # Try next best opportunity
-            for opp in all_opportunities[1:5]:
-                queen_says_win, queen_confidence, queen_reason = await self.ask_queen_will_we_win(opp)
-                if queen_says_win:
-                    best = opp
-                    print(f"   👑✅ SERO APPROVED ALTERNATIVE: {best.from_asset}→{best.to_asset}")
-                    break
-        
+        # ════════════════════════════════════════════════════════════════════════
+        # 🎯 IRA SNIPER MODE - Keep shooting until we hit a winner or exhaust all!
+        # Cycle through ALL opportunities, execute FIRST one that passes ALL gates
+        # ════════════════════════════════════════════════════════════════════════
         conversions = 0
-        if queen_says_win:
-            print(f"   👑✅ SERO SAYS WIN: {queen_reason} ({queen_confidence:.0%})")
-            print(f"   🏁🐝 EXECUTING IMMEDIATELY!")
+        executed_opportunity = None
+        
+        for idx, opp in enumerate(all_opportunities):
+            icon = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡'}.get(opp.source_exchange, '📊')
             
-            success = await self.execute_conversion(best)
+            # Only show details for first 5, then just try silently
+            if idx < 5:
+                print(f"\n   🎯 SNIPER TARGET #{idx+1}: {icon} {opp.source_exchange.upper()}")
+                print(f"      {opp.from_asset} → {opp.to_asset}")
+                print(f"      Expected: ${opp.expected_pnl_usd:+.4f}")
+            
+            # 👑 Quick Queen check
+            queen_says_win, queen_confidence, queen_reason = await self.ask_queen_will_we_win(opp)
+            
+            if not queen_says_win:
+                if idx < 5:
+                    print(f"   👑❌ SERO SAYS NO: {queen_reason}")
+                continue  # Try next opportunity
+            
+            # 👑 Queen approved! Try to execute
+            if idx < 5:
+                print(f"   👑✅ SERO SAYS WIN: {queen_reason}")
+                print(f"   🎯🔫 SNIPER TAKING THE SHOT!")
+            
+            success = await self.execute_conversion(opp)
+            
             if success:
                 conversions = 1
-                actual_pnl = getattr(best, 'actual_pnl_usd', best.expected_pnl_usd)
-                self.exchange_stats[best.source_exchange]['conversions'] += 1
-                self.exchange_stats[best.source_exchange]['profit'] += actual_pnl
-                print(f"   🏁💰 FPTP WIN: ${actual_pnl:+.4f}")
-                await self.queen_learn_from_trade(best, success=True)
+                executed_opportunity = opp
+                actual_pnl = getattr(opp, 'actual_pnl_usd', opp.expected_pnl_usd)
+                self.exchange_stats[opp.source_exchange]['conversions'] += 1
+                self.exchange_stats[opp.source_exchange]['profit'] += actual_pnl
+                print(f"\n   🎯💀 SNIPER KILL! ${actual_pnl:+.4f} - {opp.from_asset}→{opp.to_asset}")
+                await self.queen_learn_from_trade(opp, success=True)
+                break  # 🎯 HIT! Move to next scan cycle
             else:
-                await self.queen_learn_from_trade(best, success=False)
-        else:
-            print(f"   👑🛑 All opportunities vetoed by Sero")
+                if idx < 5:
+                    print(f"   ❌ Shot missed - trying next target...")
+                await self.queen_learn_from_trade(opp, success=False)
+                continue  # Try next opportunity
+        
+        if conversions == 0:
+            print(f"\n   🎯😤 SNIPER: No valid targets from {len(all_opportunities)} opportunities")
+            print(f"      → All blocked by costs, spreads, or Queen veto")
         
         self.turns_completed += 1
         return all_opportunities, conversions
