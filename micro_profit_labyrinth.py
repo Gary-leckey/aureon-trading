@@ -3399,7 +3399,23 @@ class MicroProfitLabyrinth:
                 print(f"   🗺️ Barter Matrix: {'✅' if hasattr(self.queen, 'barter_matrix') and self.queen.barter_matrix else '❌'} (Sector Pulse Dream Signal!)")
                 print(f"   📚 Path Memory: {'✅' if hasattr(self.queen, 'path_memory') and self.queen.path_memory else '❌'} (Learned trade paths!)")
                 
-                # 📊🐝 Wire Queen to HNC Probability Matrix - The Matrix knows ALL the Queen's metrics!
+                # �🔮 Wire 7-Day Planner to Queen - Every validated prediction feeds her learning!
+                if self.seven_day_planner and hasattr(self.queen, 'wire_7day_planner'):
+                    try:
+                        self.queen.wire_7day_planner(self.seven_day_planner)
+                        print(f"   📅 7-Day Planner ↔ Queen: ✅ WIRED (Validations feed Queen's learning!)")
+                    except Exception as e:
+                        logger.debug(f"Queen-7DayPlanner wiring error: {e}")
+                
+                # 🔮📊 Wire Probability Nexus to Queen - Predictions flow to Queen!
+                if self.probability_nexus and hasattr(self.queen, 'wire_probability_nexus'):
+                    try:
+                        self.queen.wire_probability_nexus(self.probability_nexus)
+                        print(f"   🔮 Probability Nexus ↔ Queen: ✅ WIRED (Predictions flow to Queen!)")
+                    except Exception as e:
+                        logger.debug(f"Queen-Nexus wiring error: {e}")
+                
+                # �📊🐝 Wire Queen to HNC Probability Matrix - The Matrix knows ALL the Queen's metrics!
                 if self.hnc_matrix and hasattr(self.hnc_matrix, 'wire_queen_metrics'):
                     try:
                         self.hnc_matrix.wire_queen_metrics(self.queen)
@@ -11068,6 +11084,26 @@ if __name__ == "__main__":
                     # Log adaptive weight updates
                     weights = self.seven_day_planner.adaptive_weights
                     print(f"   🧠 Adaptive: h={weights['hourly_weight']:.2f}, s={weights['symbol_weight']:.2f}, acc={weights['accuracy_7d']:.0%}")
+                    
+                    # 👑📊 FEED VALIDATED PREDICTION TO QUEEN! 
+                    # Every verified prediction feeds Queen's neural learning!
+                    if self.queen and hasattr(self.queen, 'receive_validated_prediction'):
+                        validation_data = {
+                            'symbol': opp.to_asset,
+                            'predicted_edge': result.predicted_edge,
+                            'actual_edge': result.actual_edge,
+                            'direction_correct': result.direction_correct,
+                            'timing_score': result.timing_score,
+                            'confidence': weights.get('accuracy_7d', 0.5),
+                            'hour': datetime.now().hour,
+                            'day_of_week': datetime.now().weekday(),
+                            'source': '7day_planner',
+                            'pair': f"{opp.from_asset}->{opp.to_asset}",
+                            'pnl': actual_pnl
+                        }
+                        queen_result = self.queen.receive_validated_prediction(validation_data)
+                        if queen_result.get('neural_trained'):
+                            print(f"   👑🧠 Queen learned from validated prediction!")
             except Exception as e:
                 logger.debug(f"7-day planner validation error: {e}")
 

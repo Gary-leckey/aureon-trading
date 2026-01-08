@@ -503,14 +503,18 @@ class QueenHiveMind:
         except ImportError:
             logger.warning("⚠️ Queen's Code Architect unavailable")
         
-        # �🔮 PROBABILITY SYSTEMS - Navigate the Labyrinth
+        # 🔮📊 PROBABILITY SYSTEMS - Navigate the Labyrinth
         self.probability_nexus = None  # EnhancedProbabilityNexus (80%+ win rate)
         self.hnc_matrix = None  # HNC Probability Matrix (Pattern Recognition)
+        self.seven_day_planner = None  # 7-Day Planner (Forward/Back Validation)
+        
+        # 📊🔮 VALIDATION MEMORY - Every verified prediction feeds learning!
+        self.validation_memory = []  # Store validated predictions for neural learning
         
         # 🧠 ADAPTIVE LEARNING - Self-Optimization
         self.adaptive_learner = None  # AdaptiveLearningEngine
         
-        # �📚 TRADING EDUCATION SYSTEM 📚👑
+        # 👑📚 TRADING EDUCATION SYSTEM 📚👑
         # Queen learns from Wikipedia, APIs, and online resources!
         self.education_system = None
         if EDUCATION_AVAILABLE:
@@ -1262,6 +1266,209 @@ class QueenHiveMind:
         except Exception as e:
             logger.error(f"Failed to wire HNC Matrix: {e}")
             return False
+    
+    def wire_7day_planner(self, planner) -> bool:
+        """
+        Wire the 7-Day Planner to the Queen.
+        The Queen gains forward/backward validation of all predictions.
+        Every verified prediction feeds her neural learning!
+        """
+        try:
+            self.seven_day_planner = planner
+            self._register_child("seven_day_planner", "7DAY_VALIDATION", planner)
+            logger.info("👑📅 7-Day Planner WIRED to Queen Hive Mind")
+            logger.info("   The Queen can now VALIDATE predictions forward & back!")
+            logger.info("   Every verified prediction will feed her learning loop!")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to wire 7-Day Planner: {e}")
+            return False
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 📊🔮 PREDICTION VALIDATION SYSTEM - Feed Every Verified Prediction to Queen
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def receive_validated_prediction(self, validation_data: Dict) -> Dict:
+        """
+        👑📊 Receive a validated prediction from the 7-Day Planner or Probability Matrix.
+        This feeds the Queen's neural learning with verified outcomes!
+        
+        Args:
+            validation_data: {
+                'symbol': str,
+                'predicted_edge': float (% expected),
+                'actual_edge': float (% actual),
+                'direction_correct': bool,
+                'timing_score': float (0-1),
+                'confidence': float (0-1),
+                'hour': int,
+                'day_of_week': int,
+                'source': str ('7day_planner', 'probability_nexus', etc.)
+            }
+        
+        Returns:
+            Learning result from Queen's neural brain
+        """
+        source = validation_data.get('source', 'unknown')
+        symbol = validation_data.get('symbol', 'UNKNOWN')
+        predicted = validation_data.get('predicted_edge', 0)
+        actual = validation_data.get('actual_edge', 0)
+        direction_correct = validation_data.get('direction_correct', False)
+        timing_score = validation_data.get('timing_score', 0.5)
+        
+        logger.info(f"👑📊 Queen receiving validated prediction from {source}:")
+        logger.info(f"   Symbol: {symbol} | Predicted: {predicted:.2f}% | Actual: {actual:.2f}%")
+        logger.info(f"   Direction: {'✅ CORRECT' if direction_correct else '❌ WRONG'} | Timing: {timing_score:.0%}")
+        
+        # Store in validation memory
+        if not hasattr(self, 'validation_memory'):
+            self.validation_memory = []
+        
+        self.validation_memory.append({
+            'timestamp': time.time(),
+            'validation_data': validation_data,
+            'direction_correct': direction_correct
+        })
+        
+        # Keep last 1000 validations
+        if len(self.validation_memory) > 1000:
+            self.validation_memory = self.validation_memory[-1000:]
+        
+        # Calculate rolling accuracy
+        recent = self.validation_memory[-100:]
+        if recent:
+            accuracy = sum(1 for v in recent if v['direction_correct']) / len(recent)
+            logger.info(f"   👑 Queen's prediction accuracy (last 100): {accuracy:.1%}")
+        
+        # Feed to neural brain if available
+        result = {'status': 'recorded', 'direction_correct': direction_correct}
+        
+        if self.neural_brain:
+            try:
+                # Create neural input from validation data
+                from queen_neuron import NeuralInput
+                neural_input = NeuralInput(
+                    coherence=validation_data.get('confidence', 0.5),
+                    momentum=actual / 100 if actual else 0,  # Normalize to 0-1 range
+                    volatility=abs(actual - predicted) / 100,  # Error as volatility proxy
+                    price_position=timing_score,
+                    harmonic_frequency=0.5,  # Default
+                    gaia_alignment=0.5,  # Default
+                    win_rate=accuracy if recent else 0.5,
+                    recent_pnl=actual,
+                    market_regime=1.0 if direction_correct else 0.0,
+                    timestamp=time.time()
+                )
+                
+                # Train on this outcome (async in background)
+                import asyncio
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        asyncio.create_task(self.learn_from_trade(neural_input, direction_correct, validation_data))
+                    else:
+                        loop.run_until_complete(self.learn_from_trade(neural_input, direction_correct, validation_data))
+                except Exception:
+                    # Sync fallback
+                    self.neural_brain.train_on_example(neural_input, direction_correct)
+                
+                result['neural_trained'] = True
+                logger.info(f"   👑🧠 Queen's neural brain trained on validated prediction!")
+            except Exception as e:
+                logger.debug(f"Neural training skipped: {e}")
+                result['neural_trained'] = False
+        
+        # Emit to ThoughtBus if available
+        if self.thought_bus:
+            try:
+                self.thought_bus.think(
+                    topic='queen.validation.received',
+                    message=f"Validated {symbol}: {'WIN' if direction_correct else 'LOSS'}",
+                    metadata=validation_data
+                )
+            except Exception:
+                pass
+        
+        return result
+    
+    def get_validation_stats(self) -> Dict:
+        """
+        👑📊 Get Queen's prediction validation statistics.
+        
+        Returns:
+            {
+                'total_validations': int,
+                'accuracy_all': float,
+                'accuracy_recent': float,
+                'by_source': {source: {count, accuracy}},
+                'by_hour': {hour: accuracy},
+                'by_day': {day: accuracy}
+            }
+        """
+        if not hasattr(self, 'validation_memory') or not self.validation_memory:
+            return {'status': 'no_validations', 'total_validations': 0}
+        
+        validations = self.validation_memory
+        
+        # Overall stats
+        total = len(validations)
+        correct = sum(1 for v in validations if v['direction_correct'])
+        accuracy_all = correct / total if total > 0 else 0
+        
+        # Recent stats (last 100)
+        recent = validations[-100:]
+        recent_correct = sum(1 for v in recent if v['direction_correct'])
+        accuracy_recent = recent_correct / len(recent) if recent else 0
+        
+        # By source
+        by_source = {}
+        for v in validations:
+            source = v['validation_data'].get('source', 'unknown')
+            if source not in by_source:
+                by_source[source] = {'count': 0, 'correct': 0}
+            by_source[source]['count'] += 1
+            if v['direction_correct']:
+                by_source[source]['correct'] += 1
+        
+        for source in by_source:
+            by_source[source]['accuracy'] = by_source[source]['correct'] / by_source[source]['count']
+        
+        # By hour
+        by_hour = {}
+        for v in validations:
+            hour = v['validation_data'].get('hour', -1)
+            if hour >= 0:
+                if hour not in by_hour:
+                    by_hour[hour] = {'count': 0, 'correct': 0}
+                by_hour[hour]['count'] += 1
+                if v['direction_correct']:
+                    by_hour[hour]['correct'] += 1
+        
+        for hour in by_hour:
+            by_hour[hour]['accuracy'] = by_hour[hour]['correct'] / by_hour[hour]['count']
+        
+        # By day of week
+        by_day = {}
+        for v in validations:
+            day = v['validation_data'].get('day_of_week', -1)
+            if day >= 0:
+                if day not in by_day:
+                    by_day[day] = {'count': 0, 'correct': 0}
+                by_day[day]['count'] += 1
+                if v['direction_correct']:
+                    by_day[day]['correct'] += 1
+        
+        for day in by_day:
+            by_day[day]['accuracy'] = by_day[day]['correct'] / by_day[day]['count']
+        
+        return {
+            'total_validations': total,
+            'accuracy_all': accuracy_all,
+            'accuracy_recent': accuracy_recent,
+            'by_source': by_source,
+            'by_hour': by_hour,
+            'by_day': by_day
+        }
     
     # ═══════════════════════════════════════════════════════════════════════════════
     # 🧠 ADAPTIVE LEARNING WIRING - The Brain that Evolves
