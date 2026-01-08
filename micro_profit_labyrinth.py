@@ -1647,7 +1647,11 @@ class LiveBarterMatrix:
         # Use the WORSE spread of the two assets
         from_spread = spread_table.get(from_type, 0.02 if is_binance else 0.01)
         to_spread = spread_table.get(to_type, 0.02 if is_binance else 0.01)
-        total_spread = max(from_spread, to_spread)  # Worst case
+        # 🔧 FIX: For volatile assets (meme), we pay spread on BOTH sides
+        if from_type == 'meme' or to_type == 'meme':
+            total_spread = from_spread + to_spread  # Both spreads apply
+        else:
+            total_spread = max(from_spread, to_spread)  # Max for stable/major
         
         # 👑🔶 BINANCE: Apply slippage multiplier (3x worse execution)
         if is_binance:
@@ -2518,8 +2522,15 @@ class AggregationPlan:
         
         from_spread = spread_table.get(from_type, 0.01)
         to_spread = spread_table.get(to_type, 0.01)
-        # We pay spread on both sides of a conversion usually (sell source, buy target)
-        total_spread = max(from_spread, to_spread)
+        # 🔧 FIX: We pay spread on BOTH sides of a conversion (sell source @ from_spread, buy target @ to_spread)
+        # For meme→meme, this is 1.5% + 1.5% = 3% total spread cost!
+        # Only use max() for stable→major (one side is negligible)
+        if from_type == 'meme' or to_type == 'meme':
+            # Both spreads matter for volatile assets
+            total_spread = from_spread + to_spread
+        else:
+            # For stable/major pairs, max is reasonable (one side dominates)
+            total_spread = max(from_spread, to_spread)
         
         # 3. LEARNED SLIPPAGE (The "Mistake" Factor)
         # Check history used by PathMemory or internal barter history
@@ -9977,6 +9988,77 @@ if __name__ == "__main__":
              # Usually blocked by cost > profit (0 gain). But if we have huge arbitrage...
              print(f"   ⚠️ STABLE→STABLE ADVISORY: {from_upper}→{to_upper} only makes sense if arbitrage > fees!")
              # No block - if calculate_true_cost allowed it, there must be profit (or arb)
+        
+        # ════════════════════════════════════════════════════════════════════════
+        # 🛑 CRITICAL PRE-EXECUTION GATE: CONSERVATIVE PROFIT CHECK
+        # ════════════════════════════════════════════════════════════════════════
+        # This is the FINAL check BEFORE sending the order. We calculate profit
+        # using PESSIMISTIC assumptions (NO momentum edge, REAL costs).
+        # If we'd lose money, DON'T EXECUTE - even if Queen said yes.
+        # Reason: Queen's decision was based on SPECULATIVE expected_pnl_usd.
+        # ════════════════════════════════════════════════════════════════════════
+        if self.live:
+            # Calculate TRUE costs using learned history
+            approved, reason, cost_breakdown = self.barter_matrix.calculate_true_cost(
+                opp.from_asset, opp.to_asset, opp.from_value_usd, opp.source_exchange or 'kraken'
+            )
+            
+            total_cost_pct = cost_breakdown.get('total_cost_pct', 0.5) / 100.0  # Convert to decimal
+            total_cost_usd = opp.from_value_usd * total_cost_pct
+            
+            # CONSERVATIVE check: We need ACTUAL arbitrage or price advantage to profit
+            # Without momentum speculation, a simple swap ALWAYS loses fees.
+            # Only proceed if: (1) Arbitrage opportunity exists, OR (2) Costs are negligible
+            
+            # Calculate "floor" profit (worst case: NO price movement)
+            # In a swap without price movement, we LOSE total_cost_usd
+            floor_pnl = -total_cost_usd
+            
+            # Only grant positive edge if there's actual price difference (arbitrage)
+            to_price = self.prices.get(opp.to_asset, 0)
+            from_price = self.prices.get(opp.from_asset, 0)
+            
+            arbitrage_edge = 0.0
+            if from_price > 0 and to_price > 0:
+                # Check if we're getting MORE value than we're giving (arbitrage)
+                # E.g., if 1000SATS can buy MORE IOTA than the cost of the conversion
+                expected_to_amount = (opp.from_value_usd - total_cost_usd) / to_price if to_price > 0 else 0
+                actual_to_value = expected_to_amount * to_price
+                arbitrage_edge = actual_to_value - opp.from_value_usd
+            
+            conservative_pnl = floor_pnl + arbitrage_edge
+            
+            # Apply path history penalty (learned failures)
+            pair_key = (from_upper, to_upper)
+            if hasattr(self.barter_matrix, 'barter_history') and pair_key in self.barter_matrix.barter_history:
+                hist = self.barter_matrix.barter_history.get(pair_key, {})
+                if hist.get('total_profit', 0) < 0 and hist.get('trades', 0) > 2:
+                    # Path historically loses - add penalty
+                    historical_loss_rate = abs(hist['total_profit']) / max(hist.get('trades', 1), 1)
+                    conservative_pnl -= historical_loss_rate * 0.5  # 50% of historical avg loss
+            
+            # FINAL GATE: Block if conservative estimate shows loss
+            min_profit_threshold = 0.001  # $0.001 minimum profit required
+            
+            if conservative_pnl < -min_profit_threshold:
+                print(f"\n   🛑 PRE-EXECUTION GATE BLOCKED!")
+                print(f"   ├── Conservative P&L: ${conservative_pnl:+.4f}")
+                print(f"   ├── Total Costs: ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
+                print(f"   ├── Cost breakdown: fee={cost_breakdown.get('base_fee', 0):.2f}% spread={cost_breakdown.get('spread', 0):.2f}% slip={cost_breakdown.get('learned_slippage', 0):.2f}%")
+                print(f"   ├── Arbitrage Edge: ${arbitrage_edge:+.4f}")
+                print(f"   └── Reason: Trade would LOSE money even without market movement")
+                print(f"   ⛔ TRADE REJECTED - Protecting your capital!")
+                
+                # Track rejection for learning
+                if hasattr(self, '_record_preexec_rejection'):
+                    self._record_preexec_rejection(opp.from_asset, opp.to_asset, 'conservative_pnl_negative')
+                
+                return False
+            else:
+                print(f"\n   ✅ PRE-EXECUTION GATE PASSED:")
+                print(f"   ├── Conservative P&L: ${conservative_pnl:+.4f}")
+                print(f"   ├── Total Costs: ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
+                print(f"   └── Proceeding with execution...")
         
         # ════════════════════════════════════════════════════════════════════════
         
