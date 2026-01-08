@@ -1884,9 +1884,7 @@ class LiveBarterMatrix:
         if rejection['count'] >= self.PREEXEC_MAX_REJECTIONS:
             rejection['blocked_at_turn'] = self.current_turn
             logger.warning(f"🚫 PRE-EXEC BLOCK: {from_asset}→{to_asset} after {rejection['count']} failures: {reason}")
-            print(f"   🚫 PATH TEMPORARILY BLOCKED: {from_asset}→{to_asset} (failed {rejection['count']}x)")
-            print(f"      Reason: {reason}")
-            print(f"      Will retry after {self.PREEXEC_COOLDOWN_TURNS} turns")
+            # Note: Blocking info logged to file for background learning (winners_only mode)
             return True
         
         return False
@@ -1962,9 +1960,7 @@ class LiveBarterMatrix:
         if source['count'] >= self.SOURCE_BLOCK_THRESHOLD:
             source['blocked_turn'] = self.current_turn
             logger.warning(f"🚫 SOURCE BLOCKED: {asset} on {exchange} after {source['count']} failures")
-            print(f"   🚫 SOURCE BLOCKED: {asset} on {exchange}")
-            print(f"      Current: ${current_value:.2f} | Min needed: ${source['min_needed']:.2f}")
-            print(f"      Will retry after {self.SOURCE_BLOCK_COOLDOWN} turns or if balance increases")
+            # Note: Using verbose logging - caller's class has rejection_print
             return True
         
         return False
@@ -3064,6 +3060,9 @@ class MicroProfitLabyrinth:
         }
         self.turn_cooldown_seconds = 0.05  # ⚡ TURBO: 50ms between exchanges (was 0.2)
         
+        # 🏆 WINNERS ONLY MODE - Show only wins, log rejections to file
+        self.winners_only_mode = False  # Set by CLI flag --winners-only
+        
         # Signal aggregation from ALL systems
         self.all_signals: Dict[str, List[Dict]] = defaultdict(list)
         
@@ -3077,6 +3076,41 @@ class MicroProfitLabyrinth:
         
         # 👑 Queen's guidance on position sizing (fed from portfolio reviews)
         self.queen_position_multiplier = 1.0  # Adjusted by Queen based on performance
+    
+    # ════════════════════════════════════════════════════════════════════════
+    # 🏆 WINNERS ONLY MODE - Verbose printing control
+    # ════════════════════════════════════════════════════════════════════════
+    def verbose_print(self, message: str, force: bool = False):
+        """
+        Print message only if NOT in winners_only mode.
+        In winners_only mode: logs to file instead (for background learning).
+        
+        Args:
+            message: The message to print
+            force: If True, always print (for critical errors, wins, etc.)
+        """
+        if force or not self.winners_only_mode:
+            print(message)
+        else:
+            # In winners_only mode, log silently for background learning
+            logger.debug(f"[QUIET] {message}")
+    
+    def win_print(self, message: str):
+        """
+        🏆 WINNERS ONLY: Always print winning trades (the good stuff!).
+        """
+        print(message)  # Winners always shown
+    
+    def rejection_print(self, message: str):
+        """
+        🔇 REJECTION: Only print if NOT in winners_only mode.
+        Rejections/failures go to log file for background learning.
+        """
+        if not self.winners_only_mode:
+            print(message)
+        else:
+            # Silent logging for Queen's learning
+            logger.info(f"[REJECTED] {message}")
     
     def _load_uk_allowed_pairs(self):
         """Load UK-allowed Binance pairs from cached JSON file."""
@@ -10061,13 +10095,13 @@ if __name__ == "__main__":
             min_profit_threshold = 0.001  # $0.001 minimum profit required
             
             if conservative_pnl < -min_profit_threshold:
-                print(f"\n   🛑 PRE-EXECUTION GATE BLOCKED!")
-                print(f"   ├── Conservative P&L: ${conservative_pnl:+.4f}")
-                print(f"   ├── Total Costs: ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
-                print(f"   ├── Cost breakdown: fee={cost_breakdown.get('base_fee', 0):.2f}% spread={cost_breakdown.get('spread', 0):.2f}% slip={cost_breakdown.get('learned_slippage', 0):.2f}%")
-                print(f"   ├── Arbitrage Edge: ${arbitrage_edge:+.4f}")
-                print(f"   └── Reason: Trade would LOSE money even without market movement")
-                print(f"   ⛔ TRADE REJECTED - Protecting your capital!")
+                self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE BLOCKED!")
+                self.rejection_print(f"   ├── Conservative P&L: ${conservative_pnl:+.4f}")
+                self.rejection_print(f"   ├── Total Costs: ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
+                self.rejection_print(f"   ├── Cost breakdown: fee={cost_breakdown.get('base_fee', 0):.2f}% spread={cost_breakdown.get('spread', 0):.2f}% slip={cost_breakdown.get('learned_slippage', 0):.2f}%")
+                self.rejection_print(f"   ├── Arbitrage Edge: ${arbitrage_edge:+.4f}")
+                self.rejection_print(f"   └── Reason: Trade would LOSE money even without market movement")
+                self.rejection_print(f"   ⛔ TRADE REJECTED - Protecting your capital!")
                 
                 # Track rejection for learning - BLOCK THIS PAIR immediately!
                 self.barter_matrix.record_preexec_rejection(
@@ -10075,7 +10109,7 @@ if __name__ == "__main__":
                     f'cost_exceeds_profit: ${total_cost_usd:.4f} > edge',
                     opp.from_value_usd
                 )
-                print(f"   🚫 Path {opp.from_asset}→{opp.to_asset} BLOCKED - will try others!")
+                self.rejection_print(f"   🚫 Path {opp.from_asset}→{opp.to_asset} BLOCKED - will try others!")
                 
                 # 🚫 HIGH SPREAD SOURCE BLOCK - If spread is the problem, block ALL trades from this source!
                 spread_pct = cost_breakdown.get('spread', 0)
@@ -10087,8 +10121,8 @@ if __name__ == "__main__":
                         'blocked_turn': self.barter_matrix.current_turn,
                         'reason': f'{spread_pct:.1f}% spread'
                     }
-                    print(f"   🚫🔴 SOURCE BLOCKED: {opp.from_asset} on {exchange} has {spread_pct:.1f}% spread!")
-                    print(f"      ALL {opp.from_asset}→* trades will fail - blocking source for {self.barter_matrix.HIGH_SPREAD_COOLDOWN} turns")
+                    self.rejection_print(f"   🚫🔴 SOURCE BLOCKED: {opp.from_asset} on {exchange} has {spread_pct:.1f}% spread!")
+                    self.rejection_print(f"      ALL {opp.from_asset}→* trades will fail - blocking source for {self.barter_matrix.HIGH_SPREAD_COOLDOWN} turns")
                 
                 return False
             else:
@@ -12887,6 +12921,7 @@ async def main():
     parser.add_argument("--yes", "-y", action="store_true", help="Auto-confirm live mode (skip MICRO prompt)")
     parser.add_argument("--turn-based", action="store_true", help="🐢 Turn-Based Mode: Scan exchanges sequentially (Safety First)")
     parser.add_argument("--fptp", action="store_true", help="[Deprecated] Alias for default mode")
+    parser.add_argument("--winners-only", "-w", action="store_true", help="🏆 WINNERS ONLY: Show ONLY successful trades (quiet mode)")
     parser.add_argument("--sync-cia", action="store_true", help="👑🧠 Sync CIA declassified intelligence")
     parser.add_argument("--cia-report", action="store_true", help="👑🧠 Show CIA intelligence report")
     parser.add_argument("--cia-wisdom", action="store_true", help="👑🧠 Show Queen's trading wisdom from CIA intel")
@@ -12930,7 +12965,16 @@ async def main():
     
     engine = MicroProfitLabyrinth(live=args.live)
     engine.fptp_mode = not args.turn_based
+    engine.winners_only_mode = args.winners_only  # 🏆 Winners Only mode
     
+    if args.winners_only:
+        print("\n" + "🏆" * 35)
+        print("🏆 WINNERS ONLY MODE ACTIVATED! 🏆")
+        print("   → Rejections/failures logged to file (background)")
+        print("   → Console shows ONLY winning trades")
+        print("   → Good for the mind. Good for marketing. 💎")
+        print("🏆" * 35)
+
     if args.turn_based:
         print("\n" + "=" * 60)
         print("🐢 TURN-BASED MODE ACTIVATED (Safe & Sequential)")
