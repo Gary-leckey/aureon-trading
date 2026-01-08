@@ -1358,6 +1358,12 @@ class LiveBarterMatrix:
         # When an asset repeatedly fails due to size, block it as a source until balance increases
         self.blocked_sources: Dict[Tuple[str, str], Dict] = {}  # (asset, exchange) -> {count, threshold, blocked_turn}
         self.SOURCE_BLOCK_THRESHOLD = 999  # 💀 SURVIVAL: NEVER block sources - we need EVERY opportunity!
+        
+        # 🚫 HIGH SPREAD SOURCE BLOCKING - Block assets with crazy spreads (ALL trades will fail!)
+        # When an asset has spread > 3%, ALL trades from it will lose money - block the source!
+        self.high_spread_sources: Dict[Tuple[str, str], Dict] = {}  # (asset, exchange) -> {spread, blocked_turn}
+        self.HIGH_SPREAD_THRESHOLD = 3.0  # Block source if spread > 3%
+        self.HIGH_SPREAD_COOLDOWN = 10  # Try again after 10 turns (spreads change)
         self.SOURCE_BLOCK_COOLDOWN = 100  # Try again after 100 turns (or if balance increases)
         
         # 💰👑 SERO'S BILLION DOLLAR DREAM 💰👑
@@ -8404,6 +8410,20 @@ if __name__ == "__main__":
             if is_source_blocked:
                 continue  # Source is blocked - skip all paths from this asset on this exchange
             
+            # 🚫 CHECK HIGH SPREAD SOURCE BLOCKING - Skip if spread is too high for this source
+            spread_key = (from_asset.upper(), exchange.lower())
+            if spread_key in self.barter_matrix.high_spread_sources:
+                spread_info = self.barter_matrix.high_spread_sources[spread_key]
+                blocked_turn = spread_info.get('blocked_turn', 0)
+                turns_since = self.barter_matrix.current_turn - blocked_turn
+                if turns_since < self.barter_matrix.HIGH_SPREAD_COOLDOWN:
+                    # Still in cooldown - skip ALL trades from this source
+                    continue
+                else:
+                    # Cooldown expired - remove block and try again
+                    del self.barter_matrix.high_spread_sources[spread_key]
+                    logger.info(f"🚫→✅ HIGH SPREAD UNBLOCK: {from_asset} on {exchange} - cooldown expired")
+            
             # Skip assets below exchange minimum QUANTITY
             if exchange == 'kraken':
                 # Check dynamic learned minimums first
@@ -10056,6 +10076,19 @@ if __name__ == "__main__":
                     opp.from_value_usd
                 )
                 print(f"   🚫 Path {opp.from_asset}→{opp.to_asset} BLOCKED - will try others!")
+                
+                # 🚫 HIGH SPREAD SOURCE BLOCK - If spread is the problem, block ALL trades from this source!
+                spread_pct = cost_breakdown.get('spread', 0)
+                if spread_pct > self.barter_matrix.HIGH_SPREAD_THRESHOLD:
+                    exchange = opp.source_exchange or 'unknown'
+                    key = (opp.from_asset.upper(), exchange.lower())
+                    self.barter_matrix.high_spread_sources[key] = {
+                        'spread': spread_pct,
+                        'blocked_turn': self.barter_matrix.current_turn,
+                        'reason': f'{spread_pct:.1f}% spread'
+                    }
+                    print(f"   🚫🔴 SOURCE BLOCKED: {opp.from_asset} on {exchange} has {spread_pct:.1f}% spread!")
+                    print(f"      ALL {opp.from_asset}→* trades will fail - blocking source for {self.barter_matrix.HIGH_SPREAD_COOLDOWN} turns")
                 
                 return False
             else:
