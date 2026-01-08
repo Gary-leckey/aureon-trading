@@ -199,7 +199,8 @@ ZERO_FEAR = True
 ONE_GOAL = "GROW_NET_PROFIT_FAST"
 GROWTH_AGGRESSION = 0.95
 COMPOUND_RATE = 0.95
-MIN_PROFIT_TARGET = 0.01  # Penny profit gate
+# Global epsilon profit policy: accept any net-positive edge after costs.
+MIN_PROFIT_TARGET = 0.0001
 
 # Commando Types (each world can embody one)
 COMMANDO_TYPES = {

@@ -44,6 +44,10 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
+# Global epsilon profit policy: accept any net-positive edge after costs.
+EPSILON_PROFIT_USD = 0.0001
+
+
 # ═══════════════════════════════════════════════════════════════
 # 📊 EXCHANGE FEE PROFILES (BASE TIERS - UPDATED LIVE)
 # ═══════════════════════════════════════════════════════════════
@@ -196,7 +200,7 @@ class AdaptivePrimeProfitGate:
     
     def __init__(
         self,
-        default_prime: float = 0.0,       # 🚀 COMPOUND MODE: $0 minimum - take ANY profit!
+        default_prime: float = EPSILON_PROFIT_USD,
         default_buffer: float = 0.0,      # 🚀 COMPOUND MODE: $0 buffer - compound everything!
         use_maker_fees: bool = True,      # Assume limit orders
     ):
@@ -219,8 +223,8 @@ class AdaptivePrimeProfitGate:
         self.last_calculation_time = 0.0
         
         logger.info("🌍💰 Adaptive Prime Profit Gate initialized")
-        logger.info(f"   Default prime target: ${default_prime:.2f}")
-        logger.info(f"   Default buffer: ${default_buffer:.2f}")
+        logger.info(f"   Default prime target: ${default_prime:.6f}")
+        logger.info(f"   Default buffer: ${default_buffer:.6f}")
         logger.info(f"   Using {'maker' if use_maker_fees else 'taker'} fees")
     
     def update_fee_profile(

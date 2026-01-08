@@ -801,7 +801,8 @@ except ImportError as e:
 
 PENNY_PROFIT_CONFIG = {}  # Optional overrides from JSON
 PENNY_PROFIT_ENABLED = True  # Always enabled - dynamic calculation works without config
-PENNY_TARGET_NET = 0.01  # Default target: $0.01 net profit per trade
+# Global epsilon profit policy: accept any net-positive edge after costs.
+PENNY_TARGET_NET = 0.0001
 
 # Shared-goal net target guardrails: 1–3 pennies after all costs.
 GLOBAL_NET_PROFIT_RANGE = (0.01, 0.03)
@@ -17544,7 +17545,7 @@ class AureonKrakenEcosystem:
         
         # Use penny profit thresholds when available; otherwise fall back to dynamic calculation
         min_gross_win = 0.01
-        target_net = 0.01
+        target_net = 0.0001
         if penny_threshold:
             min_gross_win = penny_threshold.get('win_gte', min_gross_win)
             target_net = penny_threshold.get('target_net', target_net)
@@ -20908,7 +20909,7 @@ class AureonKrakenEcosystem:
                         penny_threshold = None
                         penny_check = check_penny_exit(pos.exchange, pos.entry_value, gross_pnl, symbol)
                         penny_threshold = penny_check.get('threshold') if isinstance(penny_check, dict) else None
-                        target_net = 0.01
+                        target_net = 0.0001
                         if penny_threshold:
                             target_net = penny_threshold.get('target_net', target_net)
                         else:
@@ -20962,7 +20963,7 @@ class AureonKrakenEcosystem:
                     except Exception:
                         penny_threshold = None
 
-                    target_net = 0.01
+                    target_net = 0.0001
                     if isinstance(penny_threshold, dict):
                         target_net = float(penny_threshold.get('target_net', target_net))
 
@@ -21460,7 +21461,7 @@ class AureonKrakenEcosystem:
         # 🌊 RESONANCE HOLDING: Don't exit before MIN_HOLD_MINUTES unless emergency
         # From miner blueprint: 50+ min hold times achieve best efficiency
         # 💰 PENNY PROFIT OVERRIDE: If we have a penny profit, we take it regardless of time!
-        is_penny_profitable = net_pnl >= 0.01
+        is_penny_profitable = net_pnl >= 0.0001
         
         # TIMEBOXED MODE: never block exits with resonance holding.
         try:
@@ -21486,7 +21487,7 @@ class AureonKrakenEcosystem:
                 except Exception:
                     penny_threshold = None
 
-                target_net = 0.01
+                target_net = 0.0001
                 if isinstance(penny_threshold, dict):
                     target_net = float(penny_threshold.get('target_net', target_net))
 
@@ -21716,7 +21717,7 @@ class AureonKrakenEcosystem:
             'gross_pnl': float(gross_pnl or 0.0),
             'net_pnl': float(net_pnl or 0.0),
             'hold_time_min': float(hold_time_min or 0.0),
-            'penny_hit': bool(net_pnl >= 0.01),
+            'penny_hit': bool(net_pnl >= 0.0001),
         })
         # Refresh equity to keep tracker in sync with realised trade
         self.refresh_equity()

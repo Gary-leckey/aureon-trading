@@ -172,7 +172,7 @@ class PennyProfitSimulator:
             net_pnl = gross_pnl - pos.entry_fee - exit_fee
             
             # Decision based on penny profit rules
-            if net_pnl >= 0.01:
+            if net_pnl >= 0.0001:
                 # TAKE PROFIT - We made our penny!
                 wins += 1
                 total_pnl += net_pnl

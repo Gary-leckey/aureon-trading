@@ -56,7 +56,8 @@ ZERO_FEAR = True  # The system has ZERO fear - it just DOES
 ONE_GOAL = "GROW_NET_PROFIT_FAST"
 GROWTH_AGGRESSION = 0.9999  # 99.99% MAXIMUM AGGRESSION - SPEED TO MILLION 👑
 COMPOUND_RATE = 0.99        # 99% of profits compound back
-MIN_PROFIT_TARGET = 0.01    # Minimum $0.01 net profit per rotation (penny)
+# Global epsilon profit policy: accept any net-positive edge after costs.
+MIN_PROFIT_TARGET = 0.0001
 
 # ALL exchanges we connect to - NO LIMITS
 ALL_EXCHANGES = ['binance', 'kraken', 'alpaca', 'capital']

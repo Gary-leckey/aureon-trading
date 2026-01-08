@@ -72,7 +72,7 @@ LIVE_CONFIG = {
     # Trading
     'min_trade_usd': 5.0,           # Minimum trade size
     'max_trade_usd': 50.0,          # Maximum trade size per conversion
-    'min_profit_target': 0.01,      # Minimum $0.01 net profit
+    'min_profit_target': 0.0001,    # Global epsilon profit policy: accept any net-positive edge after costs.
     
     # Signal thresholds
     'min_hub_score': 0.55,          # Minimum unified score from hub

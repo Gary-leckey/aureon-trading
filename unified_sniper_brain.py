@@ -69,7 +69,7 @@ class TrainedSniperParams:
     COMBINED_RATE = 0.007  # 0.70% (fee + slippage + spread)
     REQUIRED_R = 0.015162532490778702  # Required price move
     WIN_GTE = 0.15162532490778702  # Gross P&L threshold
-    TARGET_NET = 0.01  # $0.01 net profit target
+    TARGET_NET = 0.0001  # Global epsilon profit policy: accept any net-positive edge after costs.
     AVG_HOLD_BARS = 40.945536  # Average hold time in bars
     
     @classmethod

@@ -276,7 +276,7 @@ class AdaptiveBrain:
         net_pnl = gross_pnl - entry_fee - exit_fee
         
         # Outcome
-        if net_pnl >= 0.01:
+        if net_pnl >= 0.0001:
             outcome = "WIN"
         elif net_pnl <= -0.01:
             outcome = "LOSS"

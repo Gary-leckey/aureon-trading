@@ -289,7 +289,7 @@ class TestPositionAdjustment:
             entry_value=1000.0,
             current_price=10.01,  # +$1 gross
             # Provide cost context: 0.3% per leg => ~$6 costs total => net negative
-            target_net=0.01,
+            target_net=0.0001,
             total_rate=0.003,
         )
 

@@ -137,7 +137,8 @@ except ImportError:
     ONE_GOAL = "GROW_NET_PROFIT_FAST"
     GROWTH_AGGRESSION = 0.95
     COMPOUND_RATE = 0.95
-    MIN_PROFIT_TARGET = 0.01
+    # Global epsilon profit policy: accept any net-positive edge after costs.
+    MIN_PROFIT_TARGET = 0.0001
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🧠 MINER BRAIN - Critical Thinking & Speculation
@@ -407,7 +408,7 @@ class PennyProfitLedger:
         net_pnl = gross_pnl - fees
         
         # Validation: Net must be positive for penny profit
-        validated = net_pnl >= 0.01  # At least 1 cent net
+        validated = net_pnl >= MIN_PROFIT_TARGET
         validation_method = "NET_POSITIVE" if validated else "INSUFFICIENT"
         
         entry = PennyProfitEntry(

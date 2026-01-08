@@ -79,8 +79,21 @@ class WhaleSonar:
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
 
-        # Hook Enigma if available
-        self.enigma_integration = get_enigma_integration() if ENIGMA_AVAILABLE else None
+        # Hook Enigma lazily (avoid circular import deadlock during ThoughtBus init)
+        self._enigma_integration: Optional[Any] = None
+        self._enigma_checked = False
+
+    @property
+    def enigma_integration(self):
+        """Lazily fetch enigma integration to avoid circular import during __init__."""
+        if not self._enigma_checked:
+            self._enigma_checked = True
+            if ENIGMA_AVAILABLE:
+                try:
+                    self._enigma_integration = get_enigma_integration()
+                except Exception:
+                    self._enigma_integration = None
+        return self._enigma_integration
 
         # Subscribe to ThoughtBus
         if self.thought_bus:

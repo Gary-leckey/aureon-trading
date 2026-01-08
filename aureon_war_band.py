@@ -146,7 +146,7 @@ class WarBand:
                 net_pnl = gross_pnl - fees
                 
                 # KILL CONDITION: Net Profit >= $0.01
-                if net_pnl >= 0.01:
+                if net_pnl >= 0.0001:
                     print(f"   🔫 SNIPER: Target Acquired {symbol} (+${net_pnl:.4f})")
                     self._execute_kill(exchange, symbol, qty, entry_value, current_value, net_pnl, state)
                     

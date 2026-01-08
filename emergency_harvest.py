@@ -124,7 +124,7 @@ def main() -> Tuple[int, float]:
         net_pnl_est = gross_pnl - total_cost
 
         # 🔒 NO-FORCED-LOSS: only sell on confirmed penny profit.
-        should_sell = (action == 'TAKE_PROFIT') and (net_pnl_est >= 0.01)
+        should_sell = (action == 'TAKE_PROFIT') and (net_pnl_est >= 0.0001)
 
         if should_sell:
             print(f"✅ {exchange.upper():7s} {symbol:12s} | Gross: ${gross_pnl:+.4f} ({pnl_pct:+.2f}%) | Net≈ ${net_pnl_est:+.4f}")

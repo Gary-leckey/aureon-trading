@@ -293,7 +293,7 @@ except ImportError as e:
     AdaptiveConversionCommando = None
     PairScanner = None
     DualProfitPathEvaluator = None
-    MIN_PROFIT_TARGET = 0.01  # 💀 SURVIVAL MODE: $0.01 minimum!
+    MIN_PROFIT_TARGET = 0.0001  # Epsilon mode: accept any net-positive trade
 
 try:
     from aureon_conversion_ladder import ConversionLadder
@@ -657,18 +657,18 @@ except ImportError as e:
 # ════════════════════════════════════════════════════════════════════════════
 # 🔬 MICRO PROFIT CONFIG - AGGRESSIVE ENERGY HARVESTING
 # ════════════════════════════════════════════════════════════════════════════
-# 👑 QUEEN'S FLOOR IS 8! Fees are ~$0.05-0.06, so minimum profit is $0.08!
-# If we're RIGHT and clear the floor, TAKE IT!
+# Epsilon profit policy: any net-positive trade after real costs is acceptable.
+# Global epsilon (USD) used across gating.
+EPSILON_PROFIT_USD = 0.0001
+
 # Speed is key - small gains compound fast!
 MICRO_CONFIG = {
     # LOWER than V14's 8+ - we trust our math
     'entry_score_threshold': 2,  # 2+ (was 3+) - COMPOUND MODE: let math gate decide
     
-    # 👑🔢 QUEEN'S FLOOR: $0.08 MINIMUM PROFIT!
-    # The Queen KNOWS fees are ~$0.05-0.06, so floor MUST be $0.08
-    # This is NET profit AFTER all fees and slippage
-    'min_profit_usd': 0.08,    # $0.08 minimum - QUEEN'S FLOOR!
-    'min_profit_pct': 0.008,   # 0.8% = 8 pips OVER costs
+    # Net profit floor (after costs) — epsilon mode
+    'min_profit_usd': EPSILON_PROFIT_USD,
+    'min_profit_pct': 0.0,
     
     # Kraken fees (maker = 0.16%)
     'maker_fee': 0.0016,
@@ -679,8 +679,8 @@ MICRO_CONFIG = {
     'total_cost_rate': 0.0060,  # 0.60% (was 0.85%) - PRIME PROFIT: realistic costs
     
     # So min_profit_pct (0.20%) is NET profit AFTER 0.60% costs
-    # Meaning we need raw spread of 0.80%+ to be profitable
-    'min_spread_required': 0.008,  # 0.80%
+    # Any spread requirement is enforced by conservative cost model, not a fixed floor
+    'min_spread_required': 0.0,
 }
 
 logging.basicConfig(
@@ -1143,9 +1143,9 @@ class LiveBarterMatrix:
     
     # 👑� SURVIVAL MODE: MUST FIND PROFIT OR DIE!
     # Queen learned: Fees are $0.05-0.06, expected profit was $0.01-0.02 = LOSS!
-    # SURVIVAL: Lower profit floor - we MUST execute trades to find winners!
-    MIN_EXPECTED_PROFIT_NEW_PATH = 0.01    # $0.01 min - ANY profit counts in survival mode!
-    MIN_EXPECTED_PROFIT_PROVEN = 0.01      # $0.01 min - we're desperate, take ANY win!
+    # Epsilon policy: accept any net-positive edge after costs
+    MIN_EXPECTED_PROFIT_NEW_PATH = EPSILON_PROFIT_USD
+    MIN_EXPECTED_PROFIT_PROVEN = EPSILON_PROFIT_USD
     LEARNING_RATE = 1.0                    # INSTANT adaptation - learn or die!
     
     # 👑🔢 QUEEN'S MATHEMATICAL CERTAINTY - NO FEAR, MATH IS ON HER SIDE
@@ -1159,8 +1159,8 @@ class LiveBarterMatrix:
     # 👑� KRAKEN - SURVIVAL MODE: KILL OR BE KILLED!
     # DESPERATE TIMES: Lower ALL thresholds, we MUST find profit!
     KRAKEN_CONFIG = {
-        'min_profit_usd': 0.01,        # $0.01 minimum - SURVIVAL MODE: ANY PROFIT!
-        'min_profit_pct': 0.001,       # 0.1% = 1 pip - take ANYTHING positive!
+        'min_profit_usd': EPSILON_PROFIT_USD,
+        'min_profit_pct': 0.0,
         # 💀 SURVIVAL: NEVER BLOCK! Keep trying until we find profit!
         'consecutive_losses_to_block': 999,  # Effectively never block - we must WIN!
         'timeout_turns': 1,                  # Minimal timeout - keep executing!
@@ -1181,8 +1181,8 @@ class LiveBarterMatrix:
     # 👑� BINANCE - SURVIVAL MODE: NO MERCY!
     # DESPERATE: We need ANY profit, lower all safety nets!
     BINANCE_CONFIG = {
-        'min_profit_usd': 0.01,        # $0.01 minimum - SURVIVAL: ANY WIN COUNTS!
-        'min_profit_pct': 0.001,       # 0.1% = 1 pip - TAKE EVERYTHING!
+        'min_profit_usd': EPSILON_PROFIT_USD,
+        'min_profit_pct': 0.0,
         # 💀 SURVIVAL: NEVER BLOCK! We must keep fighting!
         'consecutive_losses_to_block': 999,  # Never block - keep trying until we WIN!
         'timeout_turns': 1,                  # Minimal timeout - rapid execution!
@@ -1198,7 +1198,7 @@ class LiveBarterMatrix:
     # 👑💀💀 ALPACA - STARVATION MODE: TRADE OR STARVE!
     # STARVING: Anything above $0 is food!
     ALPACA_CONFIG = {
-        'min_profit_usd': 0.001,       # $0.001 minimum - STARVATION: ANYTHING!
+        'min_profit_usd': EPSILON_PROFIT_USD,
         'min_order_usd': 5.0,          # $5 minimum - lower to enable more trades!
         'blocked_pairs': {            # These don't exist on Alpaca!
             'USD_USDT', 'USD_USDC', 'USDT_USDC', 'USDC_USDT',  # No stablecoin swaps!
@@ -1327,8 +1327,8 @@ class LiveBarterMatrix:
     def __init__(self):
         # Initialize Adaptive Profit Gate (The Mathematical Arbiter)
         self.profit_gate = AdaptivePrimeProfitGate(
-            default_prime=0.08,    # Queen's Floor ($0.08) as default target
-            default_buffer=0.04    # Safety buffer
+            default_prime=EPSILON_PROFIT_USD,
+            default_buffer=0.0,
         )
 
         # Live barter rates: {(from, to): {'rate': X, 'updated': timestamp, 'spread': Y}}
@@ -1442,7 +1442,7 @@ class LiveBarterMatrix:
                 logger.debug(f"Could not consult Queen's dreams in approves_path: {e}")
         
         # 👑 QUEEN HAS FULL CONTROL FOR PROFIT!
-        # Her $0.08 floor is the ONLY hard requirement
+        # Her epsilon floor is the ONLY hard requirement
         # All other blocks are just advisory - Queen can override
         
         # Check if already blocked - but Queen can ALWAYS override!
@@ -1462,8 +1462,8 @@ class LiveBarterMatrix:
         
         # 👑 FULL CONTROL: New paths are WELCOME - Queen's floor filters bad ones
         if trades < 1:
-            # New path - Queen's $0.08 floor will protect us
-            return True, f"👑 NEW_PATH ALLOWED: Queen's $0.08 floor will filter (conf: {queen_confidence:.0%})"
+            # New path - Queen's epsilon floor will filter
+            return True, f"👑 NEW_PATH ALLOWED: Queen's eps=${EPSILON_PROFIT_USD:.6f} floor will filter (conf: {queen_confidence:.0%})"
         
         # Calculate win rate and total profit - advisory only
         wins = history.get('wins', 0)
@@ -1486,9 +1486,9 @@ class LiveBarterMatrix:
         if consecutive_losses >= 3:
             logger.info(f"👑⚠️ Advisory: {from_asset}→{to_asset} has {consecutive_losses} consecutive losses")
         
-        # 👑 QUEEN APPROVES! Her $0.08 floor is the real gate
+        # 👑 QUEEN APPROVES! Her epsilon floor is the real gate
         dream_msg = f" | 👑🔮 {queen_dream_signal}" if queen_dream_signal != "NEUTRAL" else ""
-        return True, f"👑 FULL CONTROL: {win_rate:.0%} history, ${total_profit:+.2f} total - Floor is 8!{dream_msg}"
+        return True, f"👑 FULL CONTROL: {win_rate:.0%} history, ${total_profit:+.2f} total - eps=${EPSILON_PROFIT_USD:.6f}{dream_msg}"
     
     def check_pair_allowed(self, pair_key: str, exchange: str) -> Tuple[bool, str]:
         """
@@ -1700,12 +1700,8 @@ class LiveBarterMatrix:
         
         total_cost_usd = from_value_usd * total_cost_pct
         
-        # 👑� SURVIVAL MODE: 0.1 pip floor - ANY PROFIT COUNTS!
-        # We're desperate - need to execute trades to find winners!
-        QUEEN_FLOOR = 0.001  # 0.1% = 1 pip - SURVIVAL MODE!
-        min_profit_pct = QUEEN_FLOOR  # Queen fighting for survival!
-        min_profit_usd = from_value_usd * min_profit_pct
-        min_profit_usd = max(min_profit_usd, 0.01)  # 💀 SURVIVAL: $0.01 minimum!
+        # Epsilon policy: require only an ultra-micro net-positive edge after costs
+        min_profit_usd = EPSILON_PROFIT_USD
         
         # 👑💀 SURVIVAL: Does this trade give us ANY edge?
         # For a trade to be worth trying: value_gained > total_cost + 0.1_pips
@@ -1782,7 +1778,7 @@ class LiveBarterMatrix:
             return False, f"👑🔢 BLOCKED: {from_type}→Altcoin not allowed! Entry from stablecoin/major only!", math_breakdown
         
         # 👑 QUEEN HAS FULL CONTROL FOR PROFIT!
-        # Her $0.08 floor is the ONLY hard gate - all other limits are advisory
+        # Her epsilon floor is the ONLY hard gate - all other limits are advisory
         
         # 👑 FINAL STRICT MATH GATING - THE "HARD TRUTH" LOGIC
         # We compare the rigorous class calculation vs our local worst-case estimates
@@ -2828,7 +2824,7 @@ class LiquidityEngine:
         # Actual profit = expected - total fees paid
         actual_profit = expected_profit_usd - total_fees
         
-        is_profitable = actual_profit > 0.01  # Need at least $0.01 profit
+        is_profitable = actual_profit >= EPSILON_PROFIT_USD
         
         # Build execution steps
         steps = []
@@ -3062,6 +3058,17 @@ class MicroProfitLabyrinth:
         
         # 🏆 WINNERS ONLY MODE - Show only wins, log rejections to file
         self.winners_only_mode = False  # Set by CLI flag --winners-only
+
+        # 🔗⛓️ CHAIN SNIPER MODE - Multi-hop compounding without bleeding
+        # After a successful conversion, keep hopping on the SAME exchange
+        # as long as the conservative net P&L remains positive.
+        self.chain_sniper_mode = True
+        self.max_chain_hops = 25
+
+        # 🎯 FPTP ANTI-REPEAT - Avoid retrying the same failed target every scan
+        # (Some failures are transient and don't trigger pre-exec blocking)
+        self.fptp_recent_attempts: Dict[Tuple[str, str, str], int] = {}  # (exchange, from, to) -> last_turn
+        self.fptp_recent_attempt_cooldown_turns = 3
         
         # Signal aggregation from ALL systems
         self.all_signals: Dict[str, List[Dict]] = defaultdict(list)
@@ -3163,7 +3170,7 @@ class MicroProfitLabyrinth:
         print("=" * 70)
         print(f"MODE: {'🔴 LIVE TRADING' if self.live else '🔵 DRY RUN'}")
         print(f"Entry Threshold: Score {self.config['entry_score_threshold']}+ (vs V14's 8+)")
-        print(f"Min Profit: ${self.config['min_profit_usd']:.2f} or {self.config['min_profit_pct']*100:.2f}%")
+        print(f"Min Profit: ${self.config['min_profit_usd']:.6f} or {self.config['min_profit_pct']*100:.4f}%")
         print("=" * 70)
         
         # ════════════════════════════════════════════════════════════════
@@ -4763,7 +4770,7 @@ class MicroProfitLabyrinth:
         
         Calculates a dynamic profit floor based on Queen's Learnings & Path Memory.
         
-        Base Floor: $0.08 (The Standard)
+        Base Floor: epsilon (accept any net-positive after costs)
         
         Adaptations:
         1. 🐘 Elephant Memory (Win Rate):
@@ -4777,48 +4784,7 @@ class MicroProfitLabyrinth:
         3. 🌊 Volatility/Momentum:
            - If target is a Stablecoin: Lower floor (banking profit is safer)
         """
-        # Default Queen's Floor
-        floor = 0.08
-        
-        # 1. Checkpoint/Stablecoin Logic
-        stables = {'USD', 'ZUSD', 'USDT', 'USDC', 'EUR', 'GBP', 'DAI', 'USDS'}
-        if to_asset in stables:
-            # Banking profit is valuable even if small
-            floor = 0.05
-            
-        # 2. Elephant Memory / Path Memory
-        if self.path_memory:
-            # Stats for this specific path
-            key = (from_asset.upper(), to_asset.upper())
-            stats = self.path_memory.memory.get(key)
-            if stats:
-                wins = stats.get('wins', 0.0)
-                losses = stats.get('losses', 0.0)
-                total = wins + losses
-                
-                if total >= 3:
-                    win_rate = wins / total
-                    if win_rate >= 0.80:
-                        # We win here often - be aggressive!
-                        floor = max(0.01, floor - 0.03)  # e.g. 0.08 -> 0.05, stable -> 0.02
-                    elif win_rate <= 0.40:
-                        # We lose here often - be strict!
-                        floor += 0.05  # e.g. 0.08 -> 0.13
-                    elif win_rate == 0.0 and total >= 5:
-                        # Never won here? Require huge margin!
-                        floor = 0.25
-
-        # 3. Check Loss Learning (Global Defensive Mode)
-        if self.loss_learning and hasattr(self.loss_learning, 'losses'):
-             # If we've had recent losses (learning implies caution)
-             try:
-                 recent_losses = len([l for l in self.loss_learning.losses if isinstance(l, dict) and (time.time() - l.get('timestamp', 0)) < 3600])
-                 if recent_losses > 3:
-                     floor += 0.04 # Defensive mode: +$0.04 to floor
-             except Exception:
-                 pass
-
-        return floor
+        return EPSILON_PROFIT_USD
 
     def calculate_hub_score(self, from_asset: str, to_asset: str) -> float:
         """Get consensus score from Mycelium Hub."""
@@ -5476,6 +5442,8 @@ class MicroProfitLabyrinth:
         if not all_opportunities:
             print(f"   📭 No opportunities across {len(connected_exchanges)} exchanges")
             self.turns_completed += 1
+            if hasattr(self, 'barter_matrix') and self.barter_matrix:
+                self.barter_matrix.current_turn = self.turns_completed
             return [], 0
         
         # 🏆 SHOW TOP OPPORTUNITIES FROM ALL EXCHANGES
@@ -5493,6 +5461,13 @@ class MicroProfitLabyrinth:
         
         for idx, opp in enumerate(all_opportunities):
             icon = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡'}.get(opp.source_exchange, '📊')
+
+            # 🔄 Avoid immediately re-attempting the same target across consecutive scans
+            attempt_key = (opp.source_exchange, opp.from_asset.upper(), opp.to_asset.upper())
+            last_attempt_turn = self.fptp_recent_attempts.get(attempt_key)
+            if last_attempt_turn is not None:
+                if (self.turns_completed - last_attempt_turn) < self.fptp_recent_attempt_cooldown_turns:
+                    continue
             
             # Only show details for first 5, then just try silently
             if idx < 5:
@@ -5507,6 +5482,22 @@ class MicroProfitLabyrinth:
                 if idx < 5:
                     print(f"   👑❌ SERO SAYS NO: {queen_reason}")
                 continue  # Try next opportunity
+
+            # 🔗⛓️ Chain-sniper also enforces conservative cost gating in DRY RUN
+            # (Live mode already does this inside execute_conversion)
+            hop_cost = None
+            if self.chain_sniper_mode and not self.live:
+                hop_cost = self._estimate_conservative_trade_outcome(opp)
+                if not hop_cost['ok']:
+                    # Mirror live behavior: record and move on
+                    self.barter_matrix.record_preexec_rejection(
+                        opp.from_asset,
+                        opp.to_asset,
+                        hop_cost['reason'],
+                        opp.from_value_usd,
+                    )
+                    self.fptp_recent_attempts[attempt_key] = self.turns_completed
+                    continue
             
             # 👑 Queen approved! Try to execute
             if idx < 5:
@@ -5523,10 +5514,29 @@ class MicroProfitLabyrinth:
                 self.exchange_stats[opp.source_exchange]['profit'] += actual_pnl
                 print(f"\n   🎯💀 SNIPER KILL! ${actual_pnl:+.4f} - {opp.from_asset}→{opp.to_asset}")
                 await self.queen_learn_from_trade(opp, success=True)
+
+                # 🔵 DRY RUN: simulate balances so chaining can actually progress
+                if not self.live and self.chain_sniper_mode:
+                    if hop_cost is None:
+                        hop_cost = self._estimate_conservative_trade_outcome(opp)
+                    self._simulate_balance_after_trade(opp, hop_cost)
+
+                # 🔗⛓️ CHAIN SNIPER: keep hopping while we don't bleed
+                if self.chain_sniper_mode:
+                    try:
+                        initial_outcome = hop_cost or self._estimate_conservative_trade_outcome(opp)
+                        await self._execute_chain_sniper_from_asset(
+                            exchange=opp.source_exchange,
+                            start_asset=opp.to_asset,
+                            starting_conservative_pnl_usd=max(0.0, initial_outcome.get('conservative_pnl_usd', 0.0)),
+                        )
+                    except Exception as e:
+                        logger.debug(f"Chain sniper error after {opp.from_asset}→{opp.to_asset}: {e}")
                 break  # 🎯 HIT! Move to next scan cycle
             else:
                 if idx < 5:
                     print(f"   ❌ Shot missed - trying next target...")
+                self.fptp_recent_attempts[attempt_key] = self.turns_completed
                 await self.queen_learn_from_trade(opp, success=False)
                 continue  # Try next opportunity
         
@@ -5535,7 +5545,184 @@ class MicroProfitLabyrinth:
             print(f"      → All blocked by costs, spreads, or Queen veto")
         
         self.turns_completed += 1
+        if hasattr(self, 'barter_matrix') and self.barter_matrix:
+            self.barter_matrix.current_turn = self.turns_completed
         return all_opportunities, conversions
+
+    def _estimate_conservative_trade_outcome(self, opp: 'MicroOpportunity') -> Dict[str, Any]:
+        """Estimate conservative net P&L for a hop using LiveBarterMatrix true-cost math."""
+        exchange = (opp.source_exchange or 'kraken').lower()
+        approved, reason, cost_breakdown = self.barter_matrix.calculate_true_cost(
+            opp.from_asset,
+            opp.to_asset,
+            opp.from_value_usd,
+            exchange,
+        )
+
+        spread_pct = float(cost_breakdown.get('spread', 0.0))
+        total_cost_pct = float(cost_breakdown.get('total_cost_pct', 0.0)) / 100.0
+        total_cost_usd = opp.from_value_usd * total_cost_pct
+        scanner_expected_pnl = float(getattr(opp, 'expected_pnl_usd', 0.0) or 0.0)
+        conservative_pnl = scanner_expected_pnl - total_cost_usd
+
+        # Apply the same simple history penalty used in the live pre-exec gate
+        pair_key = (opp.from_asset.upper(), opp.to_asset.upper())
+        hist = getattr(self.barter_matrix, 'barter_history', {}).get(pair_key, {})
+        if hist.get('total_profit', 0) < 0 and hist.get('trades', 0) > 2:
+            historical_loss_rate = abs(hist['total_profit']) / max(hist.get('trades', 1), 1)
+            conservative_pnl -= historical_loss_rate * 0.5
+
+        if spread_pct > 5.0:
+            return {
+                'ok': False,
+                'reason': f'spread_too_high: {spread_pct:.1f}%',
+                'approved': approved,
+                'cost_breakdown': cost_breakdown,
+                'total_cost_usd': total_cost_usd,
+                'conservative_pnl_usd': conservative_pnl,
+            }
+
+        if not approved:
+            return {
+                'ok': False,
+                'reason': f'true_cost_reject: {reason}',
+                'approved': approved,
+                'cost_breakdown': cost_breakdown,
+                'total_cost_usd': total_cost_usd,
+                'conservative_pnl_usd': conservative_pnl,
+            }
+
+        if conservative_pnl < 0.0001:
+            return {
+                'ok': False,
+                'reason': f'cost_exceeds_profit: ${total_cost_usd:.4f} > ${scanner_expected_pnl:.4f}',
+                'approved': approved,
+                'cost_breakdown': cost_breakdown,
+                'total_cost_usd': total_cost_usd,
+                'conservative_pnl_usd': conservative_pnl,
+            }
+
+        return {
+            'ok': True,
+            'reason': 'ok',
+            'approved': approved,
+            'cost_breakdown': cost_breakdown,
+            'total_cost_usd': total_cost_usd,
+            'conservative_pnl_usd': conservative_pnl,
+        }
+
+    def _simulate_balance_after_trade(self, opp: 'MicroOpportunity', outcome: Dict[str, Any]):
+        """Dry-run only: mutate exchange balances to allow multi-hop chaining to progress."""
+        exchange = (opp.source_exchange or '').lower()
+        if not exchange:
+            return
+        bal = self.exchange_balances.get(exchange)
+        if not isinstance(bal, dict):
+            return
+
+        from_asset = opp.from_asset.upper()
+        to_asset = opp.to_asset.upper()
+        from_amt = float(getattr(opp, 'from_amount', 0.0) or 0.0)
+
+        # Remove source amount
+        if from_amt > 0:
+            bal[from_asset] = max(0.0, float(bal.get(from_asset, 0.0) or 0.0) - from_amt)
+            if bal[from_asset] == 0.0:
+                bal.pop(from_asset, None)
+
+        # Add target amount using conservative net USD after costs
+        to_price = float(self.prices.get(to_asset, 0.0) or 0.0)
+        if to_price <= 0:
+            return
+
+        cost_breakdown = outcome.get('cost_breakdown', {}) if isinstance(outcome, dict) else {}
+        total_cost_pct = float(cost_breakdown.get('total_cost_pct', 0.0)) / 100.0
+        net_value_usd = float(opp.from_value_usd) * max(0.0, (1.0 - total_cost_pct))
+        to_amt = net_value_usd / to_price
+
+        if to_amt > 0:
+            bal[to_asset] = float(bal.get(to_asset, 0.0) or 0.0) + to_amt
+
+        self.exchange_balances[exchange] = bal
+
+    async def _execute_chain_sniper_from_asset(self, exchange: str, start_asset: str, starting_conservative_pnl_usd: float = 0.0):
+        """After a win, keep hopping on the same exchange while net-positive, up to max_chain_hops."""
+        if not exchange:
+            return
+        exchange = exchange.lower()
+
+        cumulative_conservative_pnl = float(starting_conservative_pnl_usd or 0.0)
+        current_asset = start_asset.upper()
+        last_asset = None
+        hops_taken = 0
+
+        # Prevent trivial loops: track last few assets
+        recent_assets = deque([current_asset], maxlen=6)
+
+        while hops_taken < max(0, int(self.max_chain_hops) - 1):
+            # Refresh balances between hops in live mode
+            if self.live:
+                try:
+                    await self.refresh_exchange_balances(exchange)
+                except Exception:
+                    pass
+
+            opportunities = await self.find_opportunities_for_exchange(exchange)
+            for o in opportunities:
+                o.source_exchange = exchange
+
+            candidates = [o for o in opportunities if o.from_asset.upper() == current_asset]
+            if not candidates:
+                return
+
+            candidates.sort(key=lambda x: x.expected_pnl_usd, reverse=True)
+
+            executed = False
+            for opp in candidates:
+                # Avoid immediate back-and-forth ping-pong
+                if last_asset and opp.to_asset.upper() == last_asset:
+                    continue
+                if opp.to_asset.upper() in recent_assets and opp.to_asset.upper() != 'USD' and opp.to_asset.upper() not in ('USDT', 'USDC', 'DAI'):
+                    continue
+
+                attempt_key = (exchange, opp.from_asset.upper(), opp.to_asset.upper())
+                last_attempt_turn = self.fptp_recent_attempts.get(attempt_key)
+                if last_attempt_turn is not None:
+                    if (self.turns_completed - last_attempt_turn) < self.fptp_recent_attempt_cooldown_turns:
+                        continue
+
+                # Conservative no-bleed check
+                outcome = self._estimate_conservative_trade_outcome(opp)
+                if not outcome['ok']:
+                    self.fptp_recent_attempts[attempt_key] = self.turns_completed
+                    continue
+
+                if (cumulative_conservative_pnl + outcome['conservative_pnl_usd']) < 0.0001:
+                    continue
+
+                queen_says_win, _, _ = await self.ask_queen_will_we_win(opp)
+                if not queen_says_win:
+                    continue
+
+                success = await self.execute_conversion(opp)
+                if not success:
+                    self.fptp_recent_attempts[attempt_key] = self.turns_completed
+                    continue
+
+                # Update chain state
+                if not self.live:
+                    self._simulate_balance_after_trade(opp, outcome)
+
+                cumulative_conservative_pnl += float(outcome.get('conservative_pnl_usd', 0.0) or 0.0)
+                hops_taken += 1
+                last_asset = current_asset
+                current_asset = opp.to_asset.upper()
+                recent_assets.append(current_asset)
+                executed = True
+                break
+
+            if not executed:
+                return
     
     async def _scan_exchange_for_fptp(self, exchange: str) -> List['MicroOpportunity']:
         """Scan a single exchange for FPTP mode."""
@@ -6530,8 +6717,8 @@ class MicroProfitLabyrinth:
         confidence_normalized = max(0, min(1, (confidence_so_far - 0.5) / 0.4))  # 0.5→0, 0.9→1
         ladder_pip = MAX_PIP - (confidence_normalized * (MAX_PIP - MIN_PIP))
         ladder_pct = ladder_pip * 0.0001  # Convert pips to percentage
-        # 👑💀💀 STARVATION MODE! Floor is $0.001 - TAKE ANYTHING OR DIE!
-        QUEEN_MIN_PROFIT = max(0.001, trade_value * ladder_pct)  # 💀💀 STARVATION: $0.001 floor!
+        # 👑💀 STARVATION MODE (EPSILON)! Floor is epsilon net-positive.
+        QUEEN_MIN_PROFIT = max(EPSILON_PROFIT_USD, trade_value * ladder_pct)
         
         # Update opportunity with ladder info for logging
         opportunity.ladder_pip = ladder_pip
@@ -7614,11 +7801,11 @@ if __name__ == "__main__":
         
         elif best_timeline['action'] == 'SKIP':
             # 👑 QUEEN OVERRIDE: If Queen dreams FAVORABLE and math is positive, TRUST HER!
-            if queen_timeline_blessing == 'FAVORABLE' and opportunity.expected_pnl_usd > 0.005:
+            if queen_timeline_blessing == 'FAVORABLE' and opportunity.expected_pnl_usd >= EPSILON_PROFIT_USD:
                 return True, f"👑 QUEEN OVERRIDE: Timeline SKIP but Queen dreams WIN! (+${opportunity.expected_pnl_usd:.4f})"
             # PRIME PROFIT: Only trust Math Gate if expected profit is ACTUALLY positive
             # Don't trade if we're expected to lose money!
-            if opportunity.expected_pnl_usd > 0.01:  # Must expect >$0.01 REAL profit
+            if opportunity.expected_pnl_usd >= EPSILON_PROFIT_USD:
                 return True, f"Timeline SKIP but Math Gate says +${opportunity.expected_pnl_usd:.4f} - TRUSTING MATH!"
             return False, f"Timeline SKIP is safer (execute would: ${timeline_execute['predicted_actual']:.4f}) | 👑 {queen_timeline_blessing}"
         
@@ -8601,7 +8788,7 @@ if __name__ == "__main__":
             
             # 👑 QUEEN ALLOWS STABLECOIN SWAPS - but they MUST meet her floor!
             # This enables moving funds across the board when needed
-            # The $0.08 floor will filter out unprofitable swaps later
+            # The epsilon floor will filter out unprofitable swaps later
             # (No longer blocking here - let Queen's math gate decide)
             
             # Skip blocked target assets on Binance
@@ -9049,26 +9236,9 @@ if __name__ == "__main__":
             path_win_rate = path_history.get('wins', 0) / max(path_trades, 1)
             path_profit = path_history.get('total_profit', 0)
             
-            # 👑 ADAPTIVE MINIMUM PROFIT BASED ON PATH HISTORY & TRADE SIZE
-            # 🔧 FIX: Use PERCENTAGE-based minimum for small balances!
-            # Old: $0.002 fixed = blocked all small balance trades
-            # New: 0.01% of trade value OR $0.001 (whichever is smaller)
-            
-            # Calculate percentage-based minimum (0.01% of trade value)
-            pct_based_min = from_value * 0.0001  # 0.01% = 1 basis point
-            
-            if path_trades == 0:
-                # NEW PATH: Queen will test it if signals are good
-                min_expected_profit = min(pct_based_min, 0.002)  # Smaller of 0.01% or 2 cents
-            elif path_win_rate >= 0.6 and path_profit > 0:
-                # PROVEN WINNER: Be very lenient - she knows these win!
-                min_expected_profit = min(pct_based_min * 0.5, 0.001)  # 0.005% or 1 cent
-            elif path_win_rate < 0.4 or path_profit < -0.05:
-                # LOSING PATH: Still let Queen see, but she'll probably reject
-                min_expected_profit = min(pct_based_min * 2.5, 0.005)  # 0.025% or 0.5 cents
-            else:
-                # UNCERTAIN PATH: Let Sero evaluate
-                min_expected_profit = min(pct_based_min, 0.002)  # 0.01% or 2 cents
+            # Epsilon policy: allow ultra-micro positive opportunities through;
+            # conservative cost checks later decide if it truly doesn't bleed.
+            min_expected_profit = EPSILON_PROFIT_USD
             
             # 👑 LEARNING FILTER: Does expected profit overcome minimum?
             # Also allow if expected profit is POSITIVE (even if below absolute minimum)
@@ -9076,12 +9246,10 @@ if __name__ == "__main__":
                 # BOTH below minimum AND negative/zero - definitely skip
                 continue
             
-            # If we have strong signals (combined > 0.5), let Sero see it
-            if combined > 0.5 or opp.expected_pnl_usd >= min_expected_profit:
-                # Strong signals or meets learned minimum - LET HER DECIDE!
+            # If expected profit is positive (even tiny), let downstream gates decide.
+            if opp.expected_pnl_usd >= min_expected_profit:
                 opportunities.append(opp)
-            elif opp.expected_pnl_usd > total_cost_estimate * 1.5:
-                # Expected profit is at least 1.5x the estimated cost - worth a look
+            elif combined > 0.5:
                 opportunities.append(opp)
         
         return opportunities
@@ -9172,7 +9340,7 @@ if __name__ == "__main__":
                 
                 # 👑 QUEEN ALLOWS STABLECOIN SWAPS - but they MUST meet her floor!
                 # This enables moving funds across the board when needed
-                # The $0.08 floor will filter out unprofitable swaps later
+                # The epsilon floor will filter out unprofitable swaps later
                 # (No longer blocking here - let Queen's math gate decide)
                 
                 # Skip blocked target assets on Binance
@@ -9633,21 +9801,13 @@ if __name__ == "__main__":
                     from_asset, to_asset, amount
                 )
                 
-                # 🏦 For checkpoints, profit is "securing value" - always positive
-                if is_checkpoint_target and expected_pnl_usd <= 0:
-                    # Estimate fee as profit (we're securing, not gaining)
-                    expected_pnl_usd = from_value * 0.001  # 0.1% minimum "secure" value
-                    expected_pnl_pct = 0.001
-                
                 # ⚡ QUEEN'S ADAPTIVE FLOOR (Learned from experience)
                 gate_required = self.get_queen_adaptive_floor(from_asset, to_asset)
                 
                 # Check gate
                 gate_ok = expected_pnl_usd >= gate_required
                 
-                # Checkpoint exception: Moving to stable/base is banking profit -> always good if > $0.005
-                if is_checkpoint_target and expected_pnl_usd > 0.005:
-                     gate_ok = True
+                 # No checkpoint exception in epsilon mode; rely on net-positive gates
 
                 if self.adaptive_gate:
                     gate_result = self.adaptive_gate.calculate_gates(
@@ -9814,42 +9974,14 @@ if __name__ == "__main__":
                     # Update expected P/L based on REAL math (not theoretical)
                     real_cost_usd = math_breakdown['total_cost_usd']
                     
-                    # 👑 LOSS PREVENTION: Ensure expected profit covers REAL costs
-                    # STRICT MODE: Must be significantly profitable or safe stablecoin move
-                    is_stable = from_asset.upper() in ['USD', 'USDT', 'USDC', 'ZUSD', 'EUR', 'ZEUR'] and to_asset.upper() in ['USD', 'USDT', 'USDC', 'ZUSD', 'EUR', 'ZEUR']
-                    
-                    if is_stable:
-                        # Stablecoins: Must cover cost at least + 50% buffer
-                        if expected_pnl_usd < (real_cost_usd * 1.5):
-                             if debug_first_scans:
-                                print(f"         🚫 STABLE LOSS: {from_asset}→{to_asset} | cost=${real_cost_usd:.6f}*1.5 > pnl=${expected_pnl_usd:.6f}")
-                             continue
-                    else:
-                        # Volatile: Must have 150% margin over cost (2.5x total) to cover volatility risk
-                        # This ensures we don't trade on razor-thin margins that turn into losses from slippage/fees
-                        if expected_pnl_usd < (real_cost_usd * 2.5):
-                             if debug_first_scans:
-                                print(f"         🚫 RISK LOSS: {from_asset}→{to_asset} | cost=${real_cost_usd:.6f} * 2.5 > pnl=${expected_pnl_usd:.6f}")
-                             continue
-
                     # Don't pad expected_pnl - use actual value, accept if positive after costs
                     adjusted_pnl = expected_pnl_usd - real_cost_usd
-                    
-                    # Exchange-specific absolute floor so fees are truly covered
-                    if source_exchange == 'binance' and adjusted_pnl < 0.01:
-                        if debug_first_scans:
-                            print(f"         🚫 BINANCE NET LOSS: adjusted ${adjusted_pnl:.4f} < $0.01 floor")
-                        continue
-                    if source_exchange == 'alpaca' and adjusted_pnl < 0.005:
-                        if debug_first_scans:
-                            print(f"         🚫 ALPACA NET LOSS: adjusted ${adjusted_pnl:.4f} < $0.005 floor")
-                        continue
 
-                    # ⚡ MICRO PROFIT CAPTURE: Even $0.00001 is profit if math says so!
-                    if adjusted_pnl <= 0.000001:  # Basically zero or negative
+                    # Epsilon policy: trade only if net-positive after conservative costs
+                    if adjusted_pnl < EPSILON_PROFIT_USD:
                         if debug_first_scans:
-                            print(f"         🚫 NO NET PROFIT: {from_asset}→{to_asset} | cost=${real_cost_usd:.6f} vs pnl=${expected_pnl_usd:.6f}")
-                        continue  # Math says we'll lose money
+                            print(f"         🚫 NO NET PROFIT: {from_asset}→{to_asset} | net=${adjusted_pnl:.6f} < eps=${EPSILON_PROFIT_USD:.6f} (cost=${real_cost_usd:.6f})")
+                        continue
                     
                     # ════════════════════════════════════════════════════════════════
                     # 👑🎮 QUEEN'S FINAL DECISION - SHE HAS ABSOLUTE AUTHORITY 👑🎮
@@ -11712,7 +11844,7 @@ if __name__ == "__main__":
                 
                 # Estimate loss amount (what we expected vs what happened)
                 # If the conversion failed completely, the loss is the opportunity cost
-                expected_profit = opp.expected_pnl_usd if opp.expected_pnl_usd > 0 else 0.01
+                expected_profit = opp.expected_pnl_usd if opp.expected_pnl_usd > 0 else EPSILON_PROFIT_USD
                 
                 # Get prices
                 from_price = self.prices.get(opp.from_asset, opp.from_value_usd / opp.from_amount if opp.from_amount > 0 else 1)
@@ -11748,7 +11880,7 @@ if __name__ == "__main__":
                 fees_paid = opp.from_value_usd * MICRO_CONFIG['total_cost_rate']
                 
                 # Loss amount = expected profit (opportunity cost) + any slippage
-                loss_amount = max(expected_profit, 0.001)  # At least $0.001 for tracking
+                loss_amount = max(expected_profit, EPSILON_PROFIT_USD)
                 
                 # Schedule async analysis (don't block the main loop)
                 import asyncio
@@ -11782,7 +11914,7 @@ if __name__ == "__main__":
                 kwargs['from_asset'],
                 kwargs['to_asset'],
                 kwargs['exchange'],
-                kwargs.get('expected_profit', 0.01)
+                    kwargs.get('expected_profit', EPSILON_PROFIT_USD)
             )
             
             if avoid:
@@ -11981,17 +12113,30 @@ if __name__ == "__main__":
     
     async def run(self, duration_s: int = 60):
         """Run the micro profit labyrinth."""
+        # Timeouts: prevent a single hung await (API/research) from freezing the run.
+        LOAD_PAIRS_TIMEOUT_S = 60.0
+        FETCH_PRICES_TIMEOUT_S = 30.0
+        FETCH_BALANCES_TIMEOUT_S = 45.0
+        WAVE_SCAN_TIMEOUT_S = 45.0
+        QUEEN_RESEARCH_TIMEOUT_S = 45.0
+
         await self.initialize()
         
         # 🐍 MEDUSA: Load ALL tradeable pairs for proper routing
         # This ensures we can find pairs for assets we don't hold yet
-        await self._load_all_tradeable_pairs()
+        try:
+            await asyncio.wait_for(self._load_all_tradeable_pairs(), timeout=LOAD_PAIRS_TIMEOUT_S)
+        except asyncio.TimeoutError:
+            logger.warning(f"⏱️ Timeout loading tradeable pairs after {LOAD_PAIRS_TIMEOUT_S:.0f}s; continuing with partial routing")
         
         # Initial data fetch - ALL EXCHANGES
         print("\n" + "=" * 70)
         print("📊 FETCHING DATA FROM ALL EXCHANGES...")
         print("=" * 70)
-        await self.fetch_prices()
+        try:
+            await asyncio.wait_for(self.fetch_prices(), timeout=FETCH_PRICES_TIMEOUT_S)
+        except asyncio.TimeoutError:
+            logger.warning(f"⏱️ Timeout fetching prices after {FETCH_PRICES_TIMEOUT_S:.0f}s; continuing")
         print(f"   ✅ {len(self.prices)} assets priced")
         print(f"   ✅ {len(self.ticker_cache)} pairs in ticker cache")
         
@@ -12007,7 +12152,7 @@ if __name__ == "__main__":
             print("=" * 70)
             try:
                 # Build universe from all connected exchanges
-                universe_size = await self.wave_scanner.build_universe()
+                universe_size = await asyncio.wait_for(self.wave_scanner.build_universe(), timeout=WAVE_SCAN_TIMEOUT_S)
                 print(f"   ✅ Universe built: {universe_size} symbols for A-Z/Z-A sweeps")
                 
                 # Wire Queen to scanner (if not already done)
@@ -12017,7 +12162,7 @@ if __name__ == "__main__":
                 
                 # Do initial A-Z sweep with ticker cache
                 print("\n🐝 INITIAL BEE SWEEP (A-Z coverage)...")
-                await self.wave_scanner.full_az_sweep(self.ticker_cache)
+                await asyncio.wait_for(self.wave_scanner.full_az_sweep(self.ticker_cache), timeout=WAVE_SCAN_TIMEOUT_S)
                 
                 # Show wave allocation
                 allocation = self.wave_scanner.get_wave_allocation()
@@ -12036,7 +12181,10 @@ if __name__ == "__main__":
                 print(f"   ⚠️ Wave Scanner error: {e}")
         
         print("\n📊 FETCHING BALANCES FROM ALL EXCHANGES...")
-        await self.fetch_balances()
+        try:
+            await asyncio.wait_for(self.fetch_balances(), timeout=FETCH_BALANCES_TIMEOUT_S)
+        except asyncio.TimeoutError:
+            logger.warning(f"⏱️ Timeout fetching balances after {FETCH_BALANCES_TIMEOUT_S:.0f}s; continuing")
         
         # Show exchange status
         print("\n📡 EXCHANGE STATUS:")
@@ -12127,7 +12275,10 @@ if __name__ == "__main__":
                         print(f"\n{'='*70}")
                         print(f"👑🌐🔬 QUEEN ONLINE RESEARCH & CODE GENERATION CYCLE")
                         print(f"{'='*70}")
-                        research_result = await self.queen_research_online_and_enhance()
+                        research_result = await asyncio.wait_for(
+                            self.queen_research_online_and_enhance(),
+                            timeout=QUEEN_RESEARCH_TIMEOUT_S,
+                        )
                         last_research_time = time.time()
                         
                         if research_result.get('status') == 'success':
@@ -12153,7 +12304,10 @@ if __name__ == "__main__":
                         logger.debug(f"Global feed pulse error: {e}")
                 
                 # Refresh prices (shared across all exchanges)
-                await self.fetch_prices()
+                try:
+                    await asyncio.wait_for(self.fetch_prices(), timeout=FETCH_PRICES_TIMEOUT_S)
+                except asyncio.TimeoutError:
+                    logger.debug(f"⏱️ fetch_prices timeout after {FETCH_PRICES_TIMEOUT_S:.0f}s")
                 
                 # 👑🎤 HARMONIC VOICE - Autonomous Guidance
                 if self.queen_voice:
@@ -12182,7 +12336,7 @@ if __name__ == "__main__":
                 # 🌊🔭 PERIODIC WAVE SCANNER UPDATE (every 60s)
                 if self.wave_scanner and (time.time() - last_wave_scan_time) >= wave_scan_interval:
                     try:
-                        await self.wave_scanner.full_az_sweep(self.ticker_cache)
+                        await asyncio.wait_for(self.wave_scanner.full_az_sweep(self.ticker_cache), timeout=WAVE_SCAN_TIMEOUT_S)
                         last_wave_scan_time = time.time()
                         
                         # Show top opportunities on each wave sweep
@@ -12971,6 +13125,8 @@ async def main():
     parser.add_argument("--turn-based", action="store_true", help="🐢 Turn-Based Mode: Scan exchanges sequentially (Safety First)")
     parser.add_argument("--fptp", action="store_true", help="[Deprecated] Alias for default mode")
     parser.add_argument("--winners-only", "-w", action="store_true", help="🏆 WINNERS ONLY: Show ONLY successful trades (quiet mode)")
+    parser.add_argument("--no-chain-sniper", action="store_true", help="Disable multi-hop chain sniper")
+    parser.add_argument("--max-hops", type=int, default=25, help="Max hops for chain sniper (default: 25)")
     parser.add_argument("--sync-cia", action="store_true", help="👑🧠 Sync CIA declassified intelligence")
     parser.add_argument("--cia-report", action="store_true", help="👑🧠 Show CIA intelligence report")
     parser.add_argument("--cia-wisdom", action="store_true", help="👑🧠 Show Queen's trading wisdom from CIA intel")
@@ -13015,6 +13171,8 @@ async def main():
     engine = MicroProfitLabyrinth(live=args.live)
     engine.fptp_mode = not args.turn_based
     engine.winners_only_mode = args.winners_only  # 🏆 Winners Only mode
+    engine.chain_sniper_mode = not args.no_chain_sniper
+    engine.max_chain_hops = max(1, int(args.max_hops))
     
     if args.winners_only:
         print("\n" + "🏆" * 35)
@@ -13035,7 +13193,16 @@ async def main():
         print("   → Executing on FIRST profitable opportunity")
         print("   → No waiting - CAPTURE PROFIT IMMEDIATELY!")
         print("🏁" * 35)
-    await engine.run(duration_s=args.duration)
+    # Guardrail: enforce a hard upper-bound so --duration can't be defeated by a hung await.
+    # (engine.run already tracks duration inside the loop, but blocking calls can prevent loop progress.)
+    try:
+        if args.duration and args.duration > 0:
+            await asyncio.wait_for(engine.run(duration_s=args.duration), timeout=float(args.duration) + 15.0)
+        else:
+            await engine.run(duration_s=args.duration)
+    except asyncio.TimeoutError:
+        print(f"\n⏱️ Duration reached ({args.duration}s). Stopping.")
+        return
 
 
 if __name__ == "__main__":

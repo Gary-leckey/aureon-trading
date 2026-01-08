@@ -1424,12 +1424,17 @@ class EnigmaIntegration:
 # ═══════════════════════════════════════════════════════════════════════════════════════
 
 _integration_instance: Optional[EnigmaIntegration] = None
+_integration_lock = threading.Lock()
 
 def get_enigma_integration() -> EnigmaIntegration:
     """Get or create the global Enigma Integration instance."""
     global _integration_instance
     if _integration_instance is None:
-        _integration_instance = EnigmaIntegration()
+        # Thread-safe singleton init: multiple subsystems can request Enigma
+        # concurrently during startup.
+        with _integration_lock:
+            if _integration_instance is None:
+                _integration_instance = EnigmaIntegration()
     return _integration_instance
 
 

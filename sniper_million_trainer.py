@@ -32,7 +32,7 @@ FEE_RATE = 0.0040  # 0.40%
 SLIPPAGE = 0.0020  # 0.20%
 SPREAD = 0.0010    # 0.10%
 COMBINED_RATE = FEE_RATE + SLIPPAGE + SPREAD  # 0.70%
-TARGET_NET = 0.01  # $0.01 net profit
+TARGET_NET = 0.0001  # Global epsilon profit policy: accept any net-positive edge after costs.
 
 # Calculate required price increase: r = ((1 + P/A) / (1-f)²) - 1
 def calc_required_r(position_size, combined_rate, target_net):

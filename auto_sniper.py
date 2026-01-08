@@ -103,7 +103,7 @@ def check_and_kill(client, state: Dict) -> Tuple[int, float]:
         pnl_pct = (gross_pnl / entry_value * 100) if entry_value > 0 else 0
         
         # 🎯 KILL CONDITION: Net profit >= $0.01 (one penny)
-        if net_pnl >= 0.01:
+        if net_pnl >= 0.0001:
             print(f"   🎯 KILL TARGET: {exchange.upper()} {symbol}")
             print(f"      Entry: ${entry_value:.2f} | Now: ${current_value:.2f}")
             print(f"      Gross: ${gross_pnl:+.4f} ({pnl_pct:+.2f}%) | Net: ${net_pnl:+.4f}")
@@ -179,7 +179,7 @@ def show_status(client, state: Dict):
             exit_fee = current_value * total_rate
             net_pnl = gross_pnl - entry_fee - exit_fee
             
-            if net_pnl >= 0.01:
+            if net_pnl >= 0.0001:
                 status = "🎯 KILL READY"
             elif gross_pnl > 0:
                 status = "⏳ Waiting"

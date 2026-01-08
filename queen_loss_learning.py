@@ -607,7 +607,7 @@ class QueenLossLearningSystem:
                             'category': cat_name,
                             'tactic': tactic.to_dict()
                         })
-                        
+                        MIN_EXPECTED_PROFIT = 0.0001  # Global epsilon profit policy: accept any net-positive edge after costs.
                         # Store in elephant memory
                         if self.elephant:
                             self._store_in_elephant(tactic)
@@ -1055,7 +1055,7 @@ class QueenLossLearningSystem:
         pattern_key = f"{from_asset}→{to_asset}_{exchange}"
         
         # 👑� SURVIVAL MODE! Lower floor to $0.01 - we MUST execute trades!
-        MIN_EXPECTED_PROFIT = 0.01  # $0.01 - SURVIVAL MODE: ANY PROFIT OR DIE!
+        MIN_EXPECTED_PROFIT = 0.0001  # Epsilon mode: accept any net-positive edge after costs.
         if expected_profit < MIN_EXPECTED_PROFIT:
             return True, f"👑💀 SURVIVAL: Expected ${expected_profit:.4f} < ${MIN_EXPECTED_PROFIT} - too risky!"
         

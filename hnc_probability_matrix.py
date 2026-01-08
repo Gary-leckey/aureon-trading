@@ -1002,7 +1002,7 @@ class HNCProbabilityIntegration:
         # If the caller supplies total_rate (fee+slippage+spread per leg), we compute:
         # net_est = gross_pnl - (entry_fee + exit_fee)
         # where entry_fee defaults to entry_value * total_rate when not provided.
-        derived_target_net = 0.01 if target_net is None else float(target_net)
+        derived_target_net = 0.0001 if target_net is None else float(target_net)
         net_unrealized_pnl = None
         net_unrealized_pnl_pct = None
         net_penny_distance = None
@@ -1094,7 +1094,7 @@ class HNCProbabilityIntegration:
 
         # Penny objective: a "win" is ONLY a net penny+ after all costs
         # Default target is $0.01 unless the caller provides a clamped/validated target.
-        derived_target_net = 0.01 if target_net is None else float(target_net)
+        derived_target_net = 0.0001 if target_net is None else float(target_net)
         derived_penny_hit = (realized_pnl >= derived_target_net) if penny_hit is None else bool(penny_hit)
 
         # Quick-kill: penny hit within the configured timebox (default 5 minutes)

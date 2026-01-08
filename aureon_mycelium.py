@@ -487,7 +487,8 @@ class MyceliumNetwork:
     TARGET_MILLION = 1_000_000.0
     GROWTH_AGGRESSION = 0.9999  # 99.99% MAXIMUM AGGRESSION - SPEED TO MILLION
     COMPOUND_RATE = 0.995      # 99.5% of profits compound back (aggressive!)
-    MIN_PROFIT_TARGET = 0.001  # Minimum $0.001 net profit per conversion (micro profits)
+    # Global epsilon profit policy: accept any net-positive edge after costs.
+    MIN_PROFIT_TARGET = 0.0001
     
     # S5 Velocity Constants
     S5_VELOCITY_THRESHOLD = 100.0  # $/hour threshold for acceleration
