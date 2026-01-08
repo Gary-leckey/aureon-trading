@@ -8852,10 +8852,20 @@ if __name__ == "__main__":
             to_amount = from_value / to_price if to_price > 0 else 0
             to_value = to_amount * to_price
             
-            # Fee calculation (realistic)
-            spread_pct = 0.002  # 0.2% estimated spread (conservative)
-            fee_pct = 0.0026   # 0.26% Kraken fee
-            total_cost_pct = spread_pct + fee_pct  # ~0.46% total cost
+            # 🔧 FIX: Use ACTUAL spread costs from barter_matrix (same as pre-exec gate!)
+            # This prevents scanner promising profit that gate will reject
+            if hasattr(self, 'barter_matrix') and self.barter_matrix:
+                _, _, cost_breakdown = self.barter_matrix.calculate_true_cost(
+                    from_asset, to_asset, from_value, source_exchange
+                )
+                total_cost_pct = cost_breakdown.get('total_cost_pct', 0.46) / 100.0  # Convert to decimal
+                fee_pct = cost_breakdown.get('base_fee', 0.26) / 100.0
+                spread_pct = cost_breakdown.get('spread', 0.20) / 100.0
+            else:
+                # Fallback if barter_matrix not available
+                spread_pct = 0.002  # 0.2% estimated spread (conservative)
+                fee_pct = 0.0026   # 0.26% Kraken fee
+                total_cost_pct = spread_pct + fee_pct  # ~0.46% total cost
             
             # 👑 PRIME PROFIT REALITY CHECK:
             # A simple conversion has NO inherent profit - we're just swapping coins

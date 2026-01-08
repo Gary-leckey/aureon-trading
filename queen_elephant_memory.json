@@ -942,10 +942,10 @@
     "USD\u2192USDC": {
       "from": "USD",
       "to": "USDC",
-      "reason": "Only 0.0% win rate after 613 trades",
-      "loss_count": 613,
+      "reason": "Only 0.0% win rate after 615 trades",
+      "loss_count": 615,
       "total_loss": 0.0,
-      "blocked_at": "2026-01-08T20:27:54.305088",
+      "blocked_at": "2026-01-08T20:37:57.897756",
       "permanent": true
     },
     "PEPE\u2192FLOKI": {
@@ -996,19 +996,73 @@
     "BONK\u21921000SATS": {
       "from": "BONK",
       "to": "1000SATS",
-      "reason": "Only 0.0% win rate after 16 trades",
-      "loss_count": 16,
+      "reason": "Only 0.0% win rate after 18 trades",
+      "loss_count": 18,
       "total_loss": 0.0,
-      "blocked_at": "2026-01-08T18:06:09.341866",
+      "blocked_at": "2026-01-08T20:37:57.912899",
       "permanent": true
     },
     "BONK\u2192FLOKI": {
       "from": "BONK",
       "to": "FLOKI",
-      "reason": "Only 0.0% win rate after 12 trades",
-      "loss_count": 12,
+      "reason": "Only 0.0% win rate after 14 trades",
+      "loss_count": 14,
       "total_loss": 0.0,
-      "blocked_at": "2026-01-08T20:28:04.249664",
+      "blocked_at": "2026-01-08T20:37:57.937610",
+      "permanent": true
+    },
+    "USD\u2192PEPE": {
+      "from": "USD",
+      "to": "PEPE",
+      "reason": "Only 0.0% win rate after 7 trades",
+      "loss_count": 7,
+      "total_loss": 0.0,
+      "blocked_at": "2026-01-08T20:37:57.994756",
+      "permanent": true
+    },
+    "USD\u2192FLOKI": {
+      "from": "USD",
+      "to": "FLOKI",
+      "reason": "Only 0.0% win rate after 7 trades",
+      "loss_count": 7,
+      "total_loss": 0.0,
+      "blocked_at": "2026-01-08T20:37:58.061061",
+      "permanent": true
+    },
+    "USD\u2192EUS": {
+      "from": "USD",
+      "to": "EUS",
+      "reason": "Only 0.0% win rate after 7 trades",
+      "loss_count": 7,
+      "total_loss": 0.0,
+      "blocked_at": "2026-01-08T20:37:58.085190",
+      "permanent": true
+    },
+    "USD\u2192BONK": {
+      "from": "USD",
+      "to": "BONK",
+      "reason": "Only 0.0% win rate after 7 trades",
+      "loss_count": 7,
+      "total_loss": 0.0,
+      "blocked_at": "2026-01-08T20:37:58.118471",
+      "permanent": true
+    },
+    "USD\u2192NEIRO": {
+      "from": "USD",
+      "to": "NEIRO",
+      "reason": "Only 0.0% win rate after 5 trades",
+      "loss_count": 5,
+      "total_loss": 0.0,
+      "blocked_at": "2026-01-08T20:33:54.659216",
+      "permanent": true
+    },
+    "USD\u2192DOGS": {
+      "from": "USD",
+      "to": "DOGS",
+      "reason": "Only 0.0% win rate after 5 trades",
+      "loss_count": 5,
+      "total_loss": 0.0,
+      "blocked_at": "2026-01-08T20:37:58.142502",
       "permanent": true
     }
   },
@@ -1199,12 +1253,12 @@
       "win_rate": 100.0
     },
     "BONK\u2192PEPE": {
-      "trades": 5,
+      "trades": 7,
       "wins": 3,
-      "losses": 2,
+      "losses": 4,
       "total_profit": -0.07758777416000014,
       "total_loss": 0.0,
-      "win_rate": 60.0
+      "win_rate": 42.857142857142854
     },
     "PEPE\u2192FLOKI": {
       "trades": 298,
@@ -1263,12 +1317,12 @@
       "win_rate": 100.0
     },
     "BONK\u2192DOGS": {
-      "trades": 1,
+      "trades": 2,
       "wins": 1,
-      "losses": 0,
+      "losses": 1,
       "total_profit": -0.013218449999999915,
-      "total_loss": 0,
-      "win_rate": 100.0
+      "total_loss": 0.0,
+      "win_rate": 50.0
     },
     "DOGS\u21921000SATS": {
       "trades": 2,
@@ -1303,9 +1357,9 @@
       "win_rate": 100.0
     },
     "USD\u2192USDC": {
-      "trades": 613,
+      "trades": 615,
       "wins": 0,
-      "losses": 613,
+      "losses": 615,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
@@ -1359,65 +1413,65 @@
       "win_rate": 0.0
     },
     "BONK\u21921000SATS": {
-      "trades": 16,
+      "trades": 18,
       "wins": 0,
-      "losses": 16,
+      "losses": 18,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "BONK\u2192FLOKI": {
-      "trades": 12,
+      "trades": 14,
       "wins": 0,
-      "losses": 12,
+      "losses": 14,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USD\u2192PEPE": {
-      "trades": 3,
+      "trades": 7,
       "wins": 0,
-      "losses": 3,
+      "losses": 7,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USD\u2192FLOKI": {
-      "trades": 3,
+      "trades": 7,
       "wins": 0,
-      "losses": 3,
+      "losses": 7,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USD\u2192EUS": {
-      "trades": 3,
+      "trades": 7,
       "wins": 0,
-      "losses": 3,
+      "losses": 7,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USD\u2192BONK": {
-      "trades": 3,
+      "trades": 7,
       "wins": 0,
-      "losses": 3,
+      "losses": 7,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USD\u2192NEIRO": {
-      "trades": 3,
+      "trades": 5,
       "wins": 0,
-      "losses": 3,
+      "losses": 5,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USD\u2192PENGU": {
-      "trades": 2,
+      "trades": 4,
       "wins": 0,
-      "losses": 2,
+      "losses": 4,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
@@ -1439,6 +1493,54 @@
       "win_rate": 0.0
     },
     "USD\u2192DOGS": {
+      "trades": 5,
+      "wins": 0,
+      "losses": 5,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192DOG": {
+      "trades": 4,
+      "wins": 0,
+      "losses": 4,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "BONK\u2192SHELL": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "BONK\u2192PENGU": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "BONK\u2192NEIRO": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192ODOS": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192ZUSD": {
       "trades": 2,
       "wins": 0,
       "losses": 2,
@@ -1446,7 +1548,159 @@
       "total_loss": 0.0,
       "win_rate": 0.0
     },
-    "USD\u2192DOG": {
+    "USD\u2192JASMY": {
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192XCN": {
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192TRUST": {
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192CRV": {
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192FORTH": {
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192DAI": {
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192USDT": {
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192WMTX": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192XRP": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192WLFI": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192ORA": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192SNX": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192TURBO": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192GOMINING": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192PONKE": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192BREV": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "BONK\u2192BROCCOLI714": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192ZKP": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192PNUT": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192XLM": {
       "trades": 1,
       "wins": 0,
       "losses": 1,
@@ -1455,5 +1709,5 @@
       "win_rate": 0.0
     }
   },
-  "last_saved": "2026-01-08T20:29:10.288333"
+  "last_saved": "2026-01-08T20:37:58.206255"
 }
