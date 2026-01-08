@@ -942,10 +942,10 @@
     "USD\u2192USDC": {
       "from": "USD",
       "to": "USDC",
-      "reason": "Only 0.0% win rate after 576 trades",
-      "loss_count": 576,
+      "reason": "Only 0.0% win rate after 584 trades",
+      "loss_count": 584,
       "total_loss": 0.0,
-      "blocked_at": "2026-01-08T17:11:40.738472",
+      "blocked_at": "2026-01-08T17:34:46.202697",
       "permanent": true
     },
     "PEPE\u2192FLOKI": {
@@ -1285,9 +1285,9 @@
       "win_rate": 100.0
     },
     "USD\u2192USDC": {
-      "trades": 576,
+      "trades": 584,
       "wins": 0,
-      "losses": 576,
+      "losses": 584,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
@@ -1339,7 +1339,15 @@
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
+    },
+    "BONK\u21921000SATS": {
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
     }
   },
-  "last_saved": "2026-01-08T17:13:41.180500"
+  "last_saved": "2026-01-08T17:34:46.207403"
 }
