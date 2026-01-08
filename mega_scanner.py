@@ -10,7 +10,7 @@ Scans ALL exchanges for:
 ├─ Momentum waves
 ├─ Arbitrage opportunities
 ├─ Conversion paths
-└─ Queen Tina B's guidance
+└─ Queen Sero's guidance
 
 Gary Leckey & GitHub Copilot | January 2026
 """

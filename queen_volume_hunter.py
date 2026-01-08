@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-👑 QUEEN TINA B's VOLUME BREAKOUT HUNTER 👑
+👑 QUEEN SERO's VOLUME BREAKOUT HUNTER 👑
 
 She learned from 3,178 historical trades.
 She knows NEAR volume breakout wins 64%.
@@ -29,7 +29,7 @@ class VolumeSignal:
 
 class QueenVolumeHunter:
     """
-    Queen Tina B's Volume Breakout Hunter
+    Queen Sero's Volume Breakout Hunter
     Based on her elephant memory - 64% win rate on volume breakouts
     """
     
@@ -64,7 +64,7 @@ class QueenVolumeHunter:
         self.trades_executed = []
         self.total_profit = 0.0
         
-        print("👑 Queen Tina B's Volume Hunter ONLINE")
+        print("👑 Queen Sero's Volume Hunter ONLINE")
         print(f"   🐘 Elephant memory: {self.elephant_memory.get('total_historical_trades', 0):,} trades remembered")
         print(f"   🎯 Hunting: {', '.join(self.HUNT_SYMBOLS)}")
         print(f"   ⏰ Best hours: {self.BEST_HOURS}")
@@ -248,7 +248,7 @@ class QueenVolumeHunter:
         Scans for volume breakouts and executes trades
         """
         print("=" * 70)
-        print("👑 QUEEN TINA B's VOLUME HUNT BEGINS")
+        print("👑 QUEEN SERO's VOLUME HUNT BEGINS")
         print("=" * 70)
         
         # Check trading hours
@@ -338,7 +338,7 @@ def main():
     hunter = QueenVolumeHunter(live_mode=live_mode)
     result = hunter.hunt(duration_minutes=duration)
     
-    print("\n👑 Queen Tina B says: The hunt continues tomorrow! 🐝")
+    print("\n👑 Queen Sero says: The hunt continues tomorrow! 🐝")
 
 
 if __name__ == '__main__':

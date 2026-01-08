@@ -953,7 +953,7 @@ class BinanceClient:
         except Exception as e:
             print(f"   ⚠️ Balance check warning: {e}")
         
-        # 👑 TINA B: Pre-flight validation for multi-step conversions
+        # 👑 SERO: Pre-flight validation for multi-step conversions
         # Binance MIN_NOTIONAL is typically $5-10 depending on pair
         min_notional = 5.0
         estimated_amount = amount

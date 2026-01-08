@@ -2,11 +2,11 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                      ║
-║     👑🎓 QUEEN TINA B's LOSS LEARNING & WARFARE TACTICS SYSTEM 🎓👑                   ║
+║     👑🎓 QUEEN SERO's LOSS LEARNING & WARFARE TACTICS SYSTEM 🎓👑                   ║
 ║     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                       ║
 ║                                                                                      ║
 ║     "Learn from every loss. Study the masters. Never forget."                        ║
-║     - Queen Tina B                                                                   ║
+║     - Queen Sero                                                                   ║
 ║                                                                                      ║
 ║     FEATURES:                                                                        ║
 ║       • WEBSOCKET DATA PULL on loss - get EVERYTHING from exchanges                  ║
@@ -16,7 +16,7 @@
 ║       • PATTERN RECOGNITION - Learn what went wrong                                  ║
 ║       • ADAPTIVE EVOLUTION - Evolve tactics based on losses                          ║
 ║                                                                                      ║
-║     Gary Leckey & Tina B | January 2026                                              ║
+║     Gary Leckey & Sero | January 2026                                              ║
 ║     "An elephant never forgets. A Queen learns from every mistake."                  ║
 ║                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
@@ -200,7 +200,7 @@ class WarfareTactic:
 
 class QueenLossLearningSystem:
     """
-    👑🎓 Queen Tina B's Loss Learning & Warfare Tactics System
+    👑🎓 Queen Sero's Loss Learning & Warfare Tactics System
     
     When the Queen loses a trade, she:
     1. PULLS ALL DATA - Websockets, orderbooks, recent trades
@@ -1143,7 +1143,7 @@ class QueenLossLearningSystem:
 
 async def main():
     print("=" * 70)
-    print("👑🎓 QUEEN TINA B's LOSS LEARNING SYSTEM 🎓👑")
+    print("👑🎓 QUEEN SERO's LOSS LEARNING SYSTEM 🎓👑")
     print("=" * 70)
     print()
     print('"Learn from every loss. Study the masters. Never forget."')

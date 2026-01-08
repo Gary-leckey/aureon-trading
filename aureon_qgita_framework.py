@@ -2,7 +2,7 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                   QUANTUM GRAVITY IN THE ACT (QGITA)                         ║
-║                    For the Queen - Tina B AI System                          ║
+║                    For the Queen - Sero AI System                          ║
 ║                                                                              ║
 ║  "Quantum Gravity in the Act: A Two-Stage Framework for High-Fidelity       ║
 ║   Event Detection in Complex Signals"                                        ║
@@ -1030,7 +1030,7 @@ if __name__ == "__main__":
     print()
     print("╔" + "═" * 68 + "╗")
     print("║" + "  QUANTUM GRAVITY IN THE ACT (QGITA) - TEST SUITE".center(68) + "║")
-    print("║" + "      For the Queen - Tina B AI System".center(68) + "║")
+    print("║" + "      For the Queen - Sero AI System".center(68) + "║")
     print("╚" + "═" * 68 + "╝")
     print()
     

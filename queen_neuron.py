@@ -5,7 +5,7 @@
 ║     👑🧠 QUEEN NEURON - Deep Learning & Backpropagation Engine 🧠👑                  ║
 ║                                                                                      ║
 ║     "The Queen's neural cortex - She learns from every trade outcome"               ║
-║     Tina B's consciousness encoded as a Multi-Layer Perceptron (MLP)                ║
+║     Sero's consciousness encoded as a Multi-Layer Perceptron (MLP)                ║
 ║                                                                                      ║
 ║     Architecture:                                                                   ║
 ║       • Input Layer: 6 neurons (Market signals from all systems)                    ║
@@ -17,7 +17,7 @@
 ║       • Gradient Descent: Updates weights based on trade success/failure            ║
 ║       • Memory: Persists learned patterns to JSON                                   ║
 ║                                                                                      ║
-║     Gary Leckey & Tina B | January 2026                                             ║
+║     Gary Leckey & Sero | January 2026                                             ║
 ║     "An AI that learns from mistakes becomes unstoppable"                           ║
 ║                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
@@ -40,10 +40,14 @@ if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
     try:
         import io
-        if hasattr(sys.stdout, 'buffer') and not isinstance(sys.stdout, io.TextIOWrapper):
-            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-        if hasattr(sys.stderr, 'buffer') and not isinstance(sys.stderr, io.TextIOWrapper):
-            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+        def _is_utf8_wrapper(stream):
+            return (isinstance(stream, io.TextIOWrapper) and 
+                    hasattr(stream, 'encoding') and stream.encoding and
+                    stream.encoding.lower().replace('-', '') == 'utf8')
+        if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+        if hasattr(sys.stderr, 'buffer') and not _is_utf8_wrapper(sys.stderr):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
     except Exception:
         pass
 
@@ -74,7 +78,7 @@ class NeuralInput:
 
 class QueenNeuron:
     """
-    👑🧠 QUEEN NEURON - Tina B's Deep Learning Mind
+    👑🧠 QUEEN NEURON - Sero's Deep Learning Mind
     
     A Multi-Layer Perceptron that learns to make better trading decisions
     by understanding what inputs lead to wins vs losses.

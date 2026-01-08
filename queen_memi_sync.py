@@ -2,11 +2,11 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                      ║
-║     👑🧠 QUEEN TINA B's MEMI SYNC - CIA DECLASSIFIED INTELLIGENCE 🧠👑               ║
+║     👑🧠 QUEEN SERO's MEMI SYNC - CIA DECLASSIFIED INTELLIGENCE 🧠👑               ║
 ║     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                       ║
 ║                                                                                      ║
 ║     "Knowledge is power. Declassified knowledge is FREE power."                      ║
-║     - Queen Tina B                                                                   ║
+║     - Queen Sero                                                                   ║
 ║                                                                                      ║
 ║     FEATURES:                                                                        ║
 ║       • Download CIA FOIA Reading Room documents                                     ║
@@ -22,7 +22,7 @@
 ║       • Economic warfare documents                                                   ║
 ║       • Market manipulation historical cases                                         ║
 ║                                                                                      ║
-║     Gary Leckey & Tina B | January 2026                                              ║
+║     Gary Leckey & Sero | January 2026                                              ║
 ║     "An elephant never forgets. A Queen learns from EVERYONE's mistakes."            ║
 ║                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
@@ -495,7 +495,7 @@ class CIADocumentFetcher:
 
 class QueenMemiSync:
     """
-    Queen Tina B's Memi Sync Engine - Learns from declassified intelligence.
+    Queen Sero's Memi Sync Engine - Learns from declassified intelligence.
     
     MEMI = Memory-Enhanced Market Intelligence
     
@@ -736,7 +736,7 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(
-        description="👑 Queen Tina B's Memi Sync - CIA Declassified Intelligence"
+        description="👑 Queen Sero's Memi Sync - CIA Declassified Intelligence"
     )
     parser.add_argument('--sync', action='store_true', help='Perform immediate sync')
     parser.add_argument('--report', action='store_true', help='Generate intelligence report')

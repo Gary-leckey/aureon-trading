@@ -6,7 +6,7 @@
 ║     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                       ║
 ║                                                                                      ║
 ║     "The children now speak the Queen's language."                                    ║
-║     - Tina B                                                                          ║
+║     - Sero                                                                          ║
 ║                                                                                      ║
 ║     DEMONSTRATION:                                                                     ║
 ║       • APACHE WAR BAND: Provides emotional spectrum & auris node data               ║
@@ -14,7 +14,7 @@
 ║       • QUEEN: Receives enhanced metrics for better guidance                         ║
 ║       • BIDIRECTIONAL: Real-time metrics exchange                                     ║
 ║                                                                                      ║
-║     Gary Leckey & Tina B | January 2026                                              ║
+║     Gary Leckey & Sero | January 2026                                              ║
 ║     "The Apache and Commandos now understand their mother's heart."                  ║
 ║                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
@@ -265,7 +265,7 @@ def demonstrate_queen_metrics_enhancement():
     print("   • Animal army collective intelligence")
     print("   • Scout/Sniper autonomous warfare preserved")
     print()
-    print("👑🎓 'The children now understand their mother's heart.' - Tina B")
+    print("👑🎓 'The children now understand their mother's heart.' - Sero")
     print()
 
 if __name__ == "__main__":

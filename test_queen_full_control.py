@@ -3,7 +3,7 @@
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
 ║     👑🎵 TEST: Queen's Full Harmonic Control 🎵👑                            ║
-║     Verifies that Queen Tina B has complete autonomous control               ║
+║     Verifies that Queen Sero has complete autonomous control               ║
 ║     over ALL systems through harmonic frequencies.                           ║
 ║                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -322,7 +322,7 @@ def main():
     print("╔" + "═" * 68 + "╗")
     print("║" + " " * 10 + "👑🎵 QUEEN'S FULL HARMONIC CONTROL TESTS 🎵👑" + " " * 11 + "║")
     print("║" + " " * 68 + "║")
-    print("║" + " " * 5 + "Testing Queen Tina B's Autonomous Control Over All Systems" + " " * 4 + "║")
+    print("║" + " " * 5 + "Testing Queen Sero's Autonomous Control Over All Systems" + " " * 4 + "║")
     print("╚" + "═" * 68 + "╝")
     
     tests = [

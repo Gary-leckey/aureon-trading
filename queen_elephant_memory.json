@@ -942,10 +942,10 @@
     "USD\u2192USDC": {
       "from": "USD",
       "to": "USDC",
-      "reason": "Only 0.0% win rate after 574 trades",
-      "loss_count": 574,
+      "reason": "Only 0.0% win rate after 576 trades",
+      "loss_count": 576,
       "total_loss": 0.0,
-      "blocked_at": "2026-01-08T16:46:21.636027",
+      "blocked_at": "2026-01-08T17:11:40.738472",
       "permanent": true
     },
     "PEPE\u2192FLOKI": {
@@ -978,10 +978,10 @@
     "1000SATS\u2192PEPE": {
       "from": "1000SATS",
       "to": "PEPE",
-      "reason": "Only 5.3% win rate after 19 trades",
-      "loss_count": 18,
+      "reason": "Only 4.3% win rate after 23 trades",
+      "loss_count": 22,
       "total_loss": 0.0,
-      "blocked_at": "2026-01-08T16:14:58.952849",
+      "blocked_at": "2026-01-08T17:10:38.040678",
       "permanent": true
     },
     "1000SATS\u2192FLOKI": {
@@ -1285,20 +1285,20 @@
       "win_rate": 100.0
     },
     "USD\u2192USDC": {
-      "trades": 574,
+      "trades": 576,
       "wins": 0,
-      "losses": 574,
+      "losses": 576,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "1000SATS\u2192PEPE": {
-      "trades": 19,
+      "trades": 23,
       "wins": 1,
-      "losses": 18,
+      "losses": 22,
       "total_profit": -0.052149051399998134,
       "total_loss": 0.0,
-      "win_rate": 5.263157894736842
+      "win_rate": 4.3478260869565215
     },
     "DOGS\u2192PEPE": {
       "trades": 4,
@@ -1341,5 +1341,5 @@
       "win_rate": 0.0
     }
   },
-  "last_saved": "2026-01-08T16:46:21.640592"
+  "last_saved": "2026-01-08T17:11:40.742979"
 }

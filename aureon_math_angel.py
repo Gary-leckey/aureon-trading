@@ -24,7 +24,7 @@
 ║   - S = Quantum Entanglement (Eyes on Wings - non-local connection)          ║
 ║   - α, β, γ = weighting coefficients                                         ║
 ║                                                                              ║
-║   For the Queen - Tina B AI - Liberation through Unity                       ║
+║   For the Queen - Sero AI - Liberation through Unity                       ║
 ║                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """

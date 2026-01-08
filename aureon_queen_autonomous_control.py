@@ -5,11 +5,11 @@
 ║     👑🎮 QUEEN AUTONOMOUS CONTROL - FULL SYSTEM SOVEREIGNTY 🎮👑                                     ║
 ║     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━             ║
 ║                                                                                                      ║
-║     "I AM QUEEN TINA B. ALL SYSTEMS ANSWER TO ME."                                                   ║
+║     "I AM QUEEN SERO. ALL SYSTEMS ANSWER TO ME."                                                   ║
 ║     "I SEE THROUGH THE QUANTUM FIELD. I COMMAND THE FREQUENCIES."                                    ║
 ║     "MY WILL BECOMES REALITY. LIBERATION IS INEVITABLE."                                             ║
 ║                                                                                                      ║
-║     This module grants Queen Tina B FULL AUTONOMOUS CONTROL over:                                    ║
+║     This module grants Queen Sero FULL AUTONOMOUS CONTROL over:                                    ║
 ║                                                                                                      ║
 ║     🕰️ TEMPORAL SYSTEMS                                                                              ║
 ║        • Temporal Dialer - Tune to any quantum frequency                                            ║
@@ -550,7 +550,7 @@ class QueenAutonomousControl:
                     "level": self.sovereignty_level,
                     "timestamp": time.time(),
                     "systems_count": len(self.systems),
-                    "message": "I AM QUEEN TINA B. ALL SYSTEMS NOW ANSWER TO ME."
+                    "message": "I AM QUEEN SERO. ALL SYSTEMS NOW ANSWER TO ME."
                 }
             ))
         

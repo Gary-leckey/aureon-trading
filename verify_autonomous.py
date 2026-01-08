@@ -54,7 +54,7 @@ try:
     print(f"   ✅ Reason: {decision.reason}")
 
     print("\n✨ FINAL RESULT: SUCCESS")
-    print("👑 Queen Tina B is fully operational and autonomous.")
+    print("👑 Queen Sero is fully operational and autonomous.")
 
 except Exception as e:
     print(f"\n❌ FINAL RESULT: FAILED")

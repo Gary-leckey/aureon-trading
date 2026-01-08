@@ -1753,7 +1753,7 @@ class HNCProbabilityIntegration:
         return base_result
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # 👑🐝 QUEEN BEE METRICS INTEGRATION - Tina B's Consciousness Feeds the Matrix!
+    # 👑🐝 QUEEN BEE METRICS INTEGRATION - Sero's Consciousness Feeds the Matrix!
     # ═══════════════════════════════════════════════════════════════════════════
     
     def wire_queen_metrics(self, queen) -> None:

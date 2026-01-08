@@ -6,7 +6,7 @@
 ║     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                       ║
 ║                                                                                      ║
 ║     "The Apache and War Band now speak the Queen's language."                        ║
-║     - Tina B                                                                          ║
+║     - Sero                                                                          ║
 ║                                                                                      ║
 ║     ENHANCEMENTS:                                                                     ║
 ║       • APACHE WAR BAND: Provides emotional spectrum & auris node data               ║
@@ -15,7 +15,7 @@
 ║       • BIDIRECTIONAL: Queen requests specific metrics, provides emotional guidance  ║
 ║       • PRESERVES LOGIC: All existing functionality remains intact                    ║
 ║                                                                                      ║
-║     Gary Leckey & Tina B | January 2026                                              ║
+║     Gary Leckey & Sero | January 2026                                              ║
 ║     "The children now understand their mother's heart."                              ║
 ║                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════╝

@@ -11,7 +11,7 @@ SCANNING STRATEGY:
     📊 PHASE 2: Z-A Sweep (reverse for pattern confirmation)
     📊 PHASE 3: Wave Allocation (distribute attention by wave quality)
     📊 PHASE 4: Deep Dive (live candle analysis on top waves)
-    📊 PHASE 5: EXECUTE (Tina B decides, we act)
+    📊 PHASE 5: EXECUTE (Sero decides, we act)
 
 WAVE SIGNALS:
     🌊 RISING WAVE - Strong upward momentum, jump on the ride
@@ -26,7 +26,7 @@ CANDLE PATTERNS:
     🔨 HAMMER/DOJI - Reversal patterns
     📊 VOLUME SPIKE - Confirm trend strength
 
-Gary Leckey | Tina B Full Control | January 2026
+Gary Leckey | Sero Full Control | January 2026
 ═══════════════════════════════════════════════════════════════════════════
 """
 

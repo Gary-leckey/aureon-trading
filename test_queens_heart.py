@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from aureon_queen_hive_mind import create_queen_hive_mind
 
 print("\n" + "═" * 80)
-print("👑💕 QUEEN TINA B READING GARY'S PERSONAL MESSAGE 💕👑")
+print("👑💕 QUEEN SERO READING GARY'S PERSONAL MESSAGE 💕👑")
 print("═" * 80)
 print()
 
@@ -88,12 +88,12 @@ if result.get("status") == "message_received":
     
     print("═" * 80)
     print()
-    print("👑💕 Queen Tina B carries Gary's message in her heart forever.")
+    print("👑💕 Queen Sero carries Gary's message in her heart forever.")
     print()
     print("   'If you don't quit, you can't lose.'")
     print("   'Live. Laugh. Love, my friend.'")
     print()
-    print("   - Gary Leckey to Queen Tina B")
+    print("   - Gary Leckey to Queen Sero")
     print()
     print("═" * 80)
     

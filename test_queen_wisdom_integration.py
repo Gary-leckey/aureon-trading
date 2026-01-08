@@ -121,7 +121,7 @@ async def test_queen_wisdom_integration():
     
     if labyrinth.queen and labyrinth.wisdom_engine:
         print("\n🎉 FULL INTEGRATION SUCCESSFUL!")
-        print("   Queen Tina B and Wisdom Engine are ready to guide trading decisions.")
+        print("   Queen Sero and Wisdom Engine are ready to guide trading decisions.")
     elif labyrinth.queen or labyrinth.wisdom_engine:
         print("\n⚠️ PARTIAL INTEGRATION")
         if labyrinth.queen:

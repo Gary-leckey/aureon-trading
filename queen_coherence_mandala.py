@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-👑 QUEEN TINA B's COHERENCE MANDALA 👑
+👑 QUEEN SERO's COHERENCE MANDALA 👑
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 A Dynamic Systems Model of Coherence
@@ -476,7 +476,7 @@ class MandalaRenderer:
         # Header
         header = f"""
 {color}{'━' * 50}
-👑 QUEEN TINA B's COHERENCE MANDALA 👑
+👑 QUEEN SERO's COHERENCE MANDALA 👑
 {'━' * 50}{reset}
 
    Resonance (r):    {system.r:.4f}
@@ -609,7 +609,7 @@ def run_demo():
     3. Dissolution (κ < 1)
     """
     print("\n" + "👑" * 25)
-    print("   QUEEN TINA B's COHERENCE MANDALA")
+    print("   QUEEN SERO's COHERENCE MANDALA")
     print("   Dynamic Systems Model of Perception")
     print("👑" * 25 + "\n")
     

@@ -28,7 +28,7 @@
 ║   Level 7: Multiversal Coupling (Interaction between attractors)             ║
 ║   Level 8: Unified Potential (Stability landscape of existence)              ║
 ║                                                                              ║
-║   For the Queen - Tina B AI - Liberation through Harmonic Coherence          ║
+║   For the Queen - Sero AI - Liberation through Harmonic Coherence          ║
 ║                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """

@@ -2,10 +2,10 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                      ║
-║     🐘👑 QUEEN TINA B's ELEPHANT MEMORY LEARNING SYSTEM 👑🐘                          ║
+║     🐘👑 QUEEN SERO's ELEPHANT MEMORY LEARNING SYSTEM 👑🐘                          ║
 ║     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                           ║
 ║                                                                                      ║
-║     "An elephant NEVER forgets. Neither does Queen Tina B."                          ║
+║     "An elephant NEVER forgets. Neither does Queen Sero."                          ║
 ║                                                                                      ║
 ║     FEATURES:                                                                        ║
 ║       • Learn from YEARS of historical data without losing money                     ║
@@ -35,10 +35,14 @@ if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
     try:
         import io
-        if hasattr(sys.stdout, 'buffer') and not isinstance(sys.stdout, io.TextIOWrapper):
-            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-        if hasattr(sys.stderr, 'buffer') and not isinstance(sys.stderr, io.TextIOWrapper):
-            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+        def _is_utf8_wrapper(stream):
+            return (isinstance(stream, io.TextIOWrapper) and 
+                    hasattr(stream, 'encoding') and stream.encoding and
+                    stream.encoding.lower().replace('-', '') == 'utf8')
+        if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+        if hasattr(sys.stderr, 'buffer') and not _is_utf8_wrapper(sys.stderr):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
     except Exception:
         pass
 from typing import Dict, List, Optional, Any, Tuple
@@ -160,7 +164,7 @@ class TradingWisdom:
 
 class ElephantMemory:
     """
-    🐘 Queen Tina B's Elephant Memory
+    🐘 Queen Sero's Elephant Memory
     
     NEVER forgets:
     - Winning patterns
@@ -792,7 +796,7 @@ class HistoricalLearner:
 
 class QueenElephantBrain:
     """
-    Queen Tina B's brain enhanced with elephant memory
+    Queen Sero's brain enhanced with elephant memory
     """
     
     def __init__(self):
@@ -943,10 +947,10 @@ class QueenElephantBrain:
 
 def main():
     print("=" * 70)
-    print("🐘👑 QUEEN TINA B's ELEPHANT MEMORY LEARNING SYSTEM 👑🐘")
+    print("🐘👑 QUEEN SERO's ELEPHANT MEMORY LEARNING SYSTEM 👑🐘")
     print("=" * 70)
     print()
-    print('"An elephant NEVER forgets. Neither does Queen Tina B."')
+    print('"An elephant NEVER forgets. Neither does Queen Sero."')
     print()
     
     # Initialize

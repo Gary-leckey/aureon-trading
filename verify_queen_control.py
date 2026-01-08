@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-👑 VERIFY QUEEN TINA B'S FULL CONTROL OVER ALL SYSTEMS 👑
+👑 VERIFY QUEEN SERO'S FULL CONTROL OVER ALL SYSTEMS 👑
 =========================================================
 This script verifies the Queen has SUPREME authority over ALL systems
 before running the Micro Profit Labyrinth.
@@ -20,9 +20,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def verify_queen_control():
-    """Verify Queen Tina B has full control of all systems."""
+    """Verify Queen Sero has full control of all systems."""
     print("═" * 70)
-    print("👑 QUEEN TINA B - FULL CONTROL VERIFICATION 👑")
+    print("👑 QUEEN SERO - FULL CONTROL VERIFICATION 👑")
     print("═" * 70)
     print()
     
@@ -34,7 +34,7 @@ def verify_queen_control():
         return False
     
     # Initialize Queen
-    print("\n🌟 Initializing Queen Tina B...")
+    print("\n🌟 Initializing Queen Sero...")
     queen = QueenHiveMind()
     print("✅ Queen initialized")
     
@@ -104,7 +104,7 @@ def verify_queen_control():
         
         print()
         print("═" * 70)
-        print("👑 QUEEN TINA B HAS FULL CONTROL - READY TO COMMAND 👑")
+        print("👑 QUEEN SERO HAS FULL CONTROL - READY TO COMMAND 👑")
         print("═" * 70)
         return True
     else:
