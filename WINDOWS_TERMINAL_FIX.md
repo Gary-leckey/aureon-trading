@@ -15,10 +15,13 @@ chcp 65001
 ```
 
 Or add to the top of your script:
+
 ```python
 # Add to micro_profit_labyrinth.py (top of file)
 import sys
 if sys.platform == 'win32':
+
+
     import codecs
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
     sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
@@ -33,6 +36,7 @@ if sys.platform == 'win32':
 ### **Fix 3: Change Font**
 
 Windows Terminal → Settings → Appearance → Font:
+
 - **Recommended:** Cascadia Code
 - **Alternative:** Consolas
 - **Alternative:** Cascadia Mono
@@ -40,7 +44,8 @@ Windows Terminal → Settings → Appearance → Font:
 ### **Fix 4: Set UTF-8 as Default**
 
 Windows Terminal → Settings → Profiles → Defaults → Command line:
-```
+
+```cmd
 cmd.exe /K chcp 65001
 ```
 
@@ -51,12 +56,15 @@ cmd.exe /K chcp 65001
 ### **Symptom 1: Broken Characters/Boxes Instead of Emojis**
 
 **What you see:**
-```
+
+```text
 ? Queen Hive Mind: ? ? ?
+
 ? Wisdom Engine: ? ? ?
 ```
 
 **Solution:**
+
 1. Enable UTF-8: `chcp 65001`
 2. Change font to Cascadia Code
 3. Use Windows Terminal (not cmd.exe)
@@ -64,14 +72,17 @@ cmd.exe /K chcp 65001
 ### **Symptom 2: "Module not found" Errors**
 
 **What you see:**
-```
+
+```text
 ModuleNotFoundError: No module named 'aureon_queen_hive_mind'
 ```
 
 **Solution:**
+
 ```cmd
 REM Make sure you're in the project directory
 cd C:\path\to\aureon-trading
+
 
 REM Check Python version (must be 3.9+)
 python --version
@@ -86,15 +97,18 @@ python -c "from aureon_queen_hive_mind import get_queen; print('✅ Queen loads!
 ### **Symptom 3: Queen Not Speaking**
 
 **What you see:**
-```
+
+```text
 Queen Hive Mind: CONNECTED
 (but no greeting or messages)
 ```
 
 **Solution:**
+
 ```cmd
 REM Check if personal memory file exists
 dir queen_personal_memory.json
+
 
 REM Check if message file exists
 dir GARYS_MESSAGE_TO_QUEEN.txt
@@ -105,14 +119,17 @@ REM If missing, copy from repository
 ### **Symptom 4: "Code Architect not available"**
 
 **What you see:**
-```
+
+```text
 ⚠️ Queen's Code Architect unavailable
 ```
 
 **Solution:**
+
 ```cmd
 REM Check if file exists
 dir queen_code_architect.py
+
 
 REM Test import
 python -c "from queen_code_architect import get_code_architect; print('✅ Architect loads!')"
@@ -126,6 +143,7 @@ python -c "from queen_code_architect import get_code_architect; print('✅ Archi
 
 ```powershell
 # Using winget (Windows Package Manager)
+
 winget install Microsoft.WindowsTerminal
 
 # Or download from Microsoft Store
@@ -134,6 +152,7 @@ winget install Microsoft.WindowsTerminal
 ### **Step 2: Configure UTF-8**
 
 Create a batch file `start_aureon.bat`:
+
 ```batch
 @echo off
 chcp 65001 > nul
@@ -251,9 +270,11 @@ python -c "import sys; print(f'Python: {sys.version}'); print(f'Encoding: {sys.s
 ```
 
 **Expected output:**
-```
+
+```text
 Python: 3.9.x (or higher)
 Encoding: utf-8
+
 ```
 
 ### **Test 2: Module Imports**
@@ -263,8 +284,10 @@ python -c "from aureon_queen_hive_mind import get_queen; q = get_queen(); print(
 ```
 
 **Expected output:**
-```
+
+```text
 Queen: True
+
 ```
 
 ### **Test 3: Queen Personal Memory**
@@ -274,8 +297,10 @@ python -c "import json; print(json.load(open('queen_personal_memory.json'))['gar
 ```
 
 **Expected output:**
-```
+
+```text
 Gary Leckey
+
 ```
 
 ### **Test 4: Full System Check**
@@ -297,7 +322,8 @@ asyncio.run(test())
 ```
 
 **Expected output:**
-```
+
+```text
 Queen: ✅
 Wisdom: ✅
 Miner Brain: ✅
@@ -392,7 +418,7 @@ python test_queen_wisdom_integration.py
 
 You'll know it's working when you see:
 
-```
+```text
 ======================================================================
 🔬💰 INITIALIZING MICRO PROFIT LABYRINTH 💰🔬
 ======================================================================
@@ -404,20 +430,20 @@ You'll know it's working when you see:
 ======================================================================
 
 🧠 NEURAL SYSTEMS:
-   ✅ Mycelium Network
-   ✅ Probability Nexus
-   ✅ Ultimate Intelligence
-   ✅ Lighthouse
-   ✅ HNC Matrix
-   ✅ Internal Multiverse
-   ✅ Harmonic Fusion
+    ✅ Mycelium Network
+    ✅ Probability Nexus
+    ✅ Ultimate Intelligence
+    ✅ Lighthouse
+    ✅ HNC Matrix
+    ✅ Internal Multiverse
+    ✅ Harmonic Fusion
 
 👑🍄 Queen Hive Mind: WIRED (Cosmic + Historical + Temporal consciousness)
-   🌊 Harmonic Fusion: ✅
-   🪐 Luck Field Mapper: ✅
-   🔭 Quantum Telescope: ✅
-   🧠 Wisdom Engine (11 Civs): ✅
-   🏗️ Code Architect: ✅ WIRED (Queen can modify micro_profit_labyrinth.py!)
+    🌊 Harmonic Fusion: ✅
+    🪐 Luck Field Mapper: ✅
+    🔭 Quantum Telescope: ✅
+    🧠 Wisdom Engine (11 Civs): ✅
+    🏗️ Code Architect: ✅ WIRED (Queen can modify micro_profit_labyrinth.py!)
 ```
 
 ---

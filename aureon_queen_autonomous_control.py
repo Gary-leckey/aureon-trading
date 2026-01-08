@@ -94,21 +94,23 @@ try:
     DIALER_AVAILABLE = True
 except ImportError:
     DIALER_AVAILABLE = False
-    TemporalDialer = None
+    TemporalDialer = Any
+    QuantumPacket = Any
+    DialMode = Any
 
 try:
-    from aureon_temporal_ladder import TemporalLadder
+    from aureon_temporal_ladder import TemporalLadder  # pyright: ignore[reportMissingImports]
     LADDER_AVAILABLE = True
 except ImportError:
     LADDER_AVAILABLE = False
-    TemporalLadder = None
+    TemporalLadder = Any
 
 try:
     from aureon_timeline_oracle import TimelineOracle
     ORACLE_AVAILABLE = True
 except ImportError:
     ORACLE_AVAILABLE = False
-    TimelineOracle = None
+    TimelineOracle = Any
 
 # 🎵 HARMONIC SYSTEMS
 try:
@@ -324,7 +326,7 @@ class QueenAutonomousControl:
         
         # Autonomous loop control
         self.autonomous_active = False
-        self.autonomous_thread: Optional[threading.Thread] = None
+        self.autonomous_thread = None
         self.loop_interval = 0.1  # ⚡ TURBO: 100ms between autonomous cycles (was 1.0)
         
         # Real-time perception
@@ -347,13 +349,13 @@ class QueenAutonomousControl:
         self.thought_bus = get_thought_bus() if THOUGHT_BUS_AVAILABLE else None
         
         # Initialize temporal systems
-        self.temporal_dialer: Optional[TemporalDialer] = None
+        self.temporal_dialer = None
         self.temporal_ladder = None
         self.timeline_oracle = None
         
         # Initialize harmonic systems
-        self.harmonic_chain_master: Optional[HarmonicChainMaster] = None
-        self.global_field: Optional[GlobalHarmonicField] = None
+        self.harmonic_chain_master = None
+        self.global_field = None
         self.signal_chain = None
         self.harmonic_fusion = None
         

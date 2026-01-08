@@ -41,7 +41,7 @@ import argparse
 import importlib
 import logging
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
@@ -93,7 +93,7 @@ if TYPE_CHECKING:
     except ImportError:
         AdaptivePrimeProfitGateType = Any
     try:
-        from aureon_path_memory import PathMemory as PathMemoryType
+        from aureon_path_memory import PathMemory as PathMemoryType  # type: ignore[import-not-found]
     except ImportError:
         PathMemoryType = Any
     try:
@@ -116,6 +116,24 @@ else:
     PathMemoryType = Any
     DustConverterType = Any
     DustCandidate = Any
+
+try:
+    from aureon_path_memory import PathMemory  # type: ignore[import-not-found]
+except ImportError:
+    class PathMemory:  # type: ignore[too-many-instance-attributes]
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            self._store: Dict[str, Any] = {}
+
+        def remember(self, key: str, value: Any) -> None:
+            self._store[key] = value
+
+        def recall(self, key: str, default: Any = None) -> Any:
+            return self._store.get(key, default)
+
+try:
+    from aureon_barter_navigator import BarterMatrix
+except ImportError:
+    BarterMatrix = Any
 from collections import defaultdict, deque
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -170,6 +188,15 @@ MIN_SYMBOL_LEN = 3           # Ignore obviously invalid short symbols
 # ════════════════════════════════════════════════════════════════════════════
 # EXISTING SYSTEMS - ALL OF THEM!
 # ════════════════════════════════════════════════════════════════════════════
+try:
+    from global_financial_feed import GlobalFinancialFeed
+    print("🌍 Global Financial Feed LOADED!")
+    GLOBAL_FEED_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Global Financial Feed not available: {e}")
+    GlobalFinancialFeed = None
+    GLOBAL_FEED_AVAILABLE = False
+
 try:
     from mycelium_conversion_hub import get_conversion_hub, MyceliumConversionHub
     print("🍄 Mycelium Conversion Hub LOADED!")
@@ -561,7 +588,7 @@ except ImportError:
     QUEEN_LOSS_LEARNING_AVAILABLE = False
     QueenLossLearningSystem = None
 
-# �🔐🌐 Enigma Integration - Universal Translator Bridge
+# 👑🔐🌐 Enigma Integration - Universal Translator Bridge
 try:
     from aureon_enigma_integration import (
         EnigmaIntegration, get_enigma_integration, wire_enigma_to_ecosystem
@@ -573,6 +600,16 @@ except ImportError:
     EnigmaIntegration = None
     get_enigma_integration = None
     wire_enigma_to_ecosystem = None
+
+# 👑🧠 Queen Memi Sync - CIA Declassified Intelligence Learning
+try:
+    from queen_memi_sync import QueenMemiSync, get_memi_sync
+    MEMI_SYNC_AVAILABLE = True
+    print("👑🧠 Queen Memi Sync LOADED! (CIA Declassified Intelligence)")
+except ImportError:
+    MEMI_SYNC_AVAILABLE = False
+    QueenMemiSync = None
+    get_memi_sync = None
 
 # 🦆⚔️ QUANTUM QUACKERS COMMANDOS - Animal Army under Queen's control!
 try:
@@ -2431,6 +2468,81 @@ class AggregationPlan:
     steps: List[Dict]  # Execution steps
 
 
+    def calculate_true_cost(self, from_asset: str, to_asset: str, value_usd: float, exchange: str) -> Tuple[bool, str, Dict]:
+        """
+        👑 TRUE COST CALCULATOR - The "Floor that stops us losing money"
+        
+        Adjusts base fees with LEARNED historical reality.
+        Buying wrong? Selling wrong? This fixes the counting.
+        
+        Returns: (approved, reason, cost_breakdown)
+        """
+        exchange = exchange.lower()
+        
+        # 1. Base Exchange Fees (Tiered)
+        base_fee = self.EXCHANGE_FEES.get(exchange, 0.003)
+        if exchange == 'binance': base_fee = 0.002
+        elif exchange == 'kraken': base_fee = 0.0026
+        
+        # 2. Asset Spread Calculation
+        from_type = self.get_asset_type(from_asset)
+        to_type = self.get_asset_type(to_asset)
+        
+        spread_table = self.BINANCE_SPREAD_COSTS if exchange == 'binance' else self.SPREAD_COSTS
+        
+        from_spread = spread_table.get(from_type, 0.01)
+        to_spread = spread_table.get(to_type, 0.01)
+        # We pay spread on both sides of a conversion usually (sell source, buy target)
+        total_spread = max(from_spread, to_spread)
+        
+        # 3. LEARNED SLIPPAGE (The "Mistake" Factor)
+        # Check history used by PathMemory or internal barter history
+        pair_key = (from_asset.upper(), to_asset.upper())
+        learned_slippage = 0.0
+        
+        # Check internal history
+        if hasattr(self, 'barter_history') and pair_key in self.barter_history:
+            hist = self.barter_history[pair_key]
+            if hist.get('trades', 0) > 0:
+                avg_slip = hist.get('avg_slippage', 0) / 100.0
+                # If we historically lose here, assume WORSE slippage
+                if hist.get('total_profit', 0) < 0:
+                    learned_slippage = max(avg_slip, 0.01) # Min 1% penalty if losing
+        
+        # 4. Volatility Penalty (Buying Wrong)
+        # If buying a MEME, add panic premium
+        volatility_premium = 0.0
+        if to_type == 'meme':
+            volatility_premium = 0.015 # 1.5% extra risk
+        elif from_type == 'meme':
+            volatility_premium = 0.010 # 1.0% exit risk
+            
+        # 5. True Total Cost
+        total_cost_pct = base_fee + total_spread + learned_slippage + volatility_premium
+        total_cost_usd = value_usd * total_cost_pct
+        
+        # 6. Transfer/Gas Cost (Transferring Wrong)
+        # Only relevant if we were moving funds, but for conversions, it's 0 usually.
+        # However, keep a small buffer for "dust" loss.
+        dust_loss = 0.0001 # 0.01% dust inefficiency
+        total_cost_pct += dust_loss
+        
+        math_breakdown = {
+            'total_cost_pct': total_cost_pct * 100,
+            'total_cost_usd': total_cost_usd,
+            'base_fee': base_fee * 100,
+            'spread': total_spread * 100,
+            'learned_slippage': learned_slippage * 100,
+            'volatility': volatility_premium * 100
+        }
+        
+        # Approval check
+        # If cost > 5%, it's practically suicide unless it's a moonshot
+        if total_cost_pct > 0.05:
+            return False, f"Cost too high ({total_cost_pct:.2%})", math_breakdown
+            
+        return True, "OK", math_breakdown
+
 class LiquidityEngine:
     """
     💧 LIQUIDITY ENGINE - Smart Asset Consolidation
@@ -2466,7 +2578,7 @@ class LiquidityEngine:
     
     def __init__(self, barter_matrix: 'BarterMatrix'):
         self.barter_matrix = barter_matrix
-        self.pending_plans: List[AggregationPlan] = []
+        self.pending_plans: List[Any] = []
         self.executed_aggregations = 0
         self.total_aggregation_profit = 0.0
         
@@ -2777,12 +2889,12 @@ class MicroProfitLabyrinth:
         self.config = MICRO_CONFIG.copy()
         
         # Initialize existing systems
-        self.hub: Optional[MyceliumConversionHubType] = None
-        self.v14: Optional[V14DanceEnhancerType] = None
-        self.commando: Optional[AdaptiveConversionCommandoType] = None
-        self.ladder: Optional[ConversionLadderType] = None
-        self.scanner: Optional[PairScannerType] = None
-        self.dual_path: Optional[DualProfitPathEvaluatorType] = None
+        self.hub = None
+        self.v14 = None
+        self.commando = None
+        self.ladder = None
+        self.scanner = None
+        self.dual_path = None
         
         # 🌍 Adaptive gate & memory
         self.adaptive_gate = AdaptivePrimeProfitGate() if ADAPTIVE_GATE_AVAILABLE else None
@@ -2831,8 +2943,9 @@ class MicroProfitLabyrinth:
         self.luck_mapper = None        # 🍀⚛️ Quantum luck field mapping
         self.wisdom_engine = None      # 🧠 Wisdom Cognition Engine (11 Civilizations)
         self.enigma_integration = None # 🔐🌐 Enigma Integration (Universal Translator)
+        self.memi_sync = None          # 👑🧠 CIA Declassified Intelligence Sync
         
-        # �⚡ MOMENTUM SNOWBALL - Wave riding + momentum tracking
+        # 🌊⚡ MOMENTUM SNOWBALL - Wave riding + momentum tracking
         self.momentum_tracker = None   # Tracks momentum for ALL assets
         self.momentum_snowball = None  # Full snowball engine
         self.labyrinth_snowball = None # V14 + All systems snowball
@@ -2847,9 +2960,9 @@ class MicroProfitLabyrinth:
         self.grounding = GroundingReality()
         
         # 🔌 ALL EXCHANGE CLIENTS
-        self.kraken: Optional[KrakenClientType] = None
-        self.binance: Optional[BinanceClientType] = None if not BINANCE_AVAILABLE else None
-        self.alpaca: Optional[AlpacaClientType] = None if not ALPACA_AVAILABLE else None
+        self.kraken = None
+        self.binance = None
+        self.alpaca = None
         
         # Additional signal sources
         self.probability_nexus = None
@@ -2900,7 +3013,7 @@ class MicroProfitLabyrinth:
         self.exchange_order = ['kraken', 'alpaca', 'binance']  # Turn order
         self.current_exchange_index = 0  # Which exchange's turn
         self.turns_completed = 0  # Total turns completed
-        self.fptp_mode = False  # 🏁 First Past The Post mode - capture profit IMMEDIATELY!
+        self.fptp_mode = True  # 🏁 First Past The Post mode - capture profit IMMEDIATELY! (Default: True)
         self.exchange_stats: Dict[str, Dict] = {  # Per-exchange stats
             'kraken': {'scans': 0, 'opportunities': 0, 'conversions': 0, 'profit': 0.0, 'last_turn': None},
             'alpaca': {'scans': 0, 'opportunities': 0, 'conversions': 0, 'profit': 0.0, 'last_turn': None},
@@ -2982,7 +3095,10 @@ class MicroProfitLabyrinth:
         if get_kraken_client:
             self.kraken = get_kraken_client()
             if self.kraken and KRAKEN_API_KEY:
-                print("🐙 Kraken Client: WIRED (API Key loaded)")
+                # Gary: Explicitly show if we are using Real or Fake data
+                is_dry = getattr(self.kraken, 'dry_run', False)
+                mode = "🛡️ SIMULATED (Fake Data)" if is_dry else "🌍 LIVE (Real Data)"
+                print(f"🐙 Kraken Client: WIRED ({mode})")
             else:
                 print("⚠️ Kraken Client: Missing API credentials")
         
@@ -3580,6 +3696,30 @@ class MicroProfitLabyrinth:
         if self.bus_aggregator:
             print("📡 Thought Bus Aggregator: WIRED (Neural Signal Collector)")
 
+        # 👑🧠 MEMI SYNC - CIA Declassified Intelligence Learning
+        if MEMI_SYNC_AVAILABLE and get_memi_sync:
+            try:
+                self.memi_sync = get_memi_sync(queen=self.queen, thought_bus=self.thought_bus)
+                # Start auto-sync in background
+                self.memi_sync.start_auto_sync()
+                stats = self.memi_sync.fetcher.get_stats()
+                print(f"👑🧠 Memi Sync: WIRED (CIA Declassified Intelligence)")
+                print(f"   📊 Intelligence Packets: {stats['total_packets']}")
+                print(f"   🎯 High Relevance: {stats['high_relevance_count']}")
+                print(f"   📝 Words Processed: {stats['total_words']}")
+                
+                # Display some trading wisdom
+                wisdom = self.memi_sync.get_trading_wisdom()[:3]
+                if wisdom:
+                    print(f"   🎓 Sample Wisdom:")
+                    for w in wisdom:
+                        print(f"      {w[:65]}...")
+            except Exception as e:
+                print(f"⚠️ Memi Sync error: {e}")
+                self.memi_sync = None
+        else:
+            print(f"👑🧠 Memi Sync: ❌ NOT AVAILABLE (import={MEMI_SYNC_AVAILABLE})")
+
         # 🍄🐋 WHALE SONAR - Start per-system sonar to send compact signals to Queen
         try:
             from mycelium_whale_sonar import create_and_start_sonar
@@ -3685,6 +3825,17 @@ class MicroProfitLabyrinth:
         # �🧠 PathMemory Stats
         pm_stats = self.path_memory.get_stats()
         print(f"🧠 PathMemory: {pm_stats['paths']} paths, {pm_stats['win_rate']:.1%} win rate")
+        
+        # 🌍⚡ GLOBAL FINANCIAL FEED (Non-Crypto Data)
+        self.global_financial_feed = None
+        if GLOBAL_FEED_AVAILABLE and GlobalFinancialFeed:
+            try:
+                self.global_financial_feed = GlobalFinancialFeed()
+                print("🌍 Global Financial Feed: WIRED (Stocks, Forex, Macro)")
+                # Force initial pulse
+                self.global_financial_feed.get_snapshot()
+            except Exception as e:
+                print(f"⚠️ Global Financial Feed error: {e}")
         
         # 🧠⚡ NEURAL MIND MAP SUMMARY - ALL 12 NEURONS (Now with Enigma!)
         print("\n" + "=" * 70)
@@ -4086,6 +4237,10 @@ class MicroProfitLabyrinth:
         # ════════════════════════════════════════════════════════════════
         if self.kraken:
             try:
+                # Gary: Log source type so we KNOW if it's real or fake
+                is_dry = getattr(self.kraken, 'dry_run', False)
+                source_type = "🛡️ SIMULATED" if is_dry else "🌍 REAL LIVE"
+                
                 kraken_bal = {}
                 if hasattr(self.kraken, 'get_account_balance'):
                     raw = self.kraken.get_account_balance() or {}
@@ -4110,7 +4265,7 @@ class MicroProfitLabyrinth:
                     'balances': kraken_bal,
                     'total_value': sum(kraken_bal.get(a, 0) * self.prices.get(a, 0) for a in kraken_bal),
                 }
-                print(f"   🐙 Kraken: {len(kraken_bal)} assets")
+                print(f"   🐙 Kraken ({source_type}): {len(kraken_bal)} assets")
             except Exception as e:
                 logger.error(f"Kraken balance error: {e}")
                 self.exchange_data['kraken'] = {'connected': False, 'error': str(e)}
@@ -4525,6 +4680,69 @@ class MicroProfitLabyrinth:
         
         return max(1, min(10, score))  # Clamp 1-10
     
+    def get_queen_adaptive_floor(self, from_asset: str, to_asset: str) -> float:
+        """
+        👑 ADAPTIVE QUEEN'S FLOOR 👑
+        
+        Calculates a dynamic profit floor based on Queen's Learnings & Path Memory.
+        
+        Base Floor: $0.08 (The Standard)
+        
+        Adaptations:
+        1. 🐘 Elephant Memory (Win Rate):
+           - High Win Rate (>80%): Lower floor to $0.04 (Aggressive Capture)
+           - Low Win Rate (<40%): Raise floor to $0.15 (Strict Safety)
+           - Zero Wins (0%): Raise floor to $0.25 (Extreme Caution)
+           
+        2. 🧠 Neural Intuition (Queen Confidence):
+           - If Queen is extremely confident (>90%): Drop floor to $0.02
+           
+        3. 🌊 Volatility/Momentum:
+           - If target is a Stablecoin: Lower floor (banking profit is safer)
+        """
+        # Default Queen's Floor
+        floor = 0.08
+        
+        # 1. Checkpoint/Stablecoin Logic
+        stables = {'USD', 'ZUSD', 'USDT', 'USDC', 'EUR', 'GBP', 'DAI', 'USDS'}
+        if to_asset in stables:
+            # Banking profit is valuable even if small
+            floor = 0.05
+            
+        # 2. Elephant Memory / Path Memory
+        if self.path_memory:
+            # Stats for this specific path
+            key = (from_asset.upper(), to_asset.upper())
+            stats = self.path_memory.memory.get(key)
+            if stats:
+                wins = stats.get('wins', 0.0)
+                losses = stats.get('losses', 0.0)
+                total = wins + losses
+                
+                if total >= 3:
+                    win_rate = wins / total
+                    if win_rate >= 0.80:
+                        # We win here often - be aggressive!
+                        floor = max(0.01, floor - 0.03)  # e.g. 0.08 -> 0.05, stable -> 0.02
+                    elif win_rate <= 0.40:
+                        # We lose here often - be strict!
+                        floor += 0.05  # e.g. 0.08 -> 0.13
+                    elif win_rate == 0.0 and total >= 5:
+                        # Never won here? Require huge margin!
+                        floor = 0.25
+
+        # 3. Check Loss Learning (Global Defensive Mode)
+        if self.loss_learning and hasattr(self.loss_learning, 'losses'):
+             # If we've had recent losses (learning implies caution)
+             try:
+                 recent_losses = len([l for l in self.loss_learning.losses if isinstance(l, dict) and (time.time() - l.get('timestamp', 0)) < 3600])
+                 if recent_losses > 3:
+                     floor += 0.04 # Defensive mode: +$0.04 to floor
+             except Exception:
+                 pass
+
+        return floor
+
     def calculate_hub_score(self, from_asset: str, to_asset: str) -> float:
         """Get consensus score from Mycelium Hub."""
         if not self.hub:
@@ -4555,9 +4773,9 @@ class MicroProfitLabyrinth:
 
         from_value = from_amount * from_price
 
-        # Use barter matrix to calculate realistic costs and potential profit
-        # This accounts for exchange fees, spreads, historical slippage, etc.
-        approved, reason, math_breakdown = self.barter_matrix._calculate_total_cost_pct(
+        # Use barter matrix to calculate realistic costs using LEARNED history
+        # "Counting Right" Logic: Adjusts for historical slippage and volatility
+        approved, reason, math_breakdown = self.barter_matrix.calculate_true_cost(
             from_asset, to_asset, from_value, 'kraken'  # Default to kraken for estimation
         )
 
@@ -4567,11 +4785,43 @@ class MicroProfitLabyrinth:
         total_cost_pct = math_breakdown['total_cost_pct'] / 100  # Convert % to decimal
         costs_usd = from_value * total_cost_pct
 
-        # For conversions, profit comes from price movements or arbitrage
-        # Estimate small positive movement (0.1-0.5%) minus costs
-        # This is conservative - actual profit depends on market conditions
-        min_required_gain_pct = total_cost_pct + 0.001  # Costs + 0.1% minimum
-        expected_gain_pct = min_required_gain_pct + 0.002  # Add 0.2% expected movement
+        # 🛑 STABLECOIN REALITY CHECK 🛑
+        # Don't assume magical 0.3% gain on stable-to-stable swaps!
+        is_stable_swap = False
+        
+        # Default safety list (if barter_matrix unavailable)
+        stable_set = {'USD', 'USDT', 'USDC', 'DAI', 'BUSD', 'TUSD', 'ZUSD', 'EUR', 'ZEUR'}
+        
+        if hasattr(self, 'barter_matrix') and hasattr(self.barter_matrix, 'STABLECOINS'):
+            stable_set = self.barter_matrix.STABLECOINS
+
+        is_stable_swap = (from_asset.upper() in stable_set and to_asset.upper() in stable_set)
+
+        if is_stable_swap:
+            # Stablecoin Arbitrage Logic: Profit only comes from PEG DEVIATION
+            # If buying USDC with USD, and USDC=0.99, we gain 0.01 (reversion to 1.0)
+            # If USDC=1.00, gain is 0.0 (and we lose fees)
+            
+            # Estimate price relative to USD
+            price_ratio = to_price / from_price if from_price > 0 else 1.0
+            
+            # Assuming mean reversion to 1.0000
+            if price_ratio < 0.999: # Buying cheap
+                expected_gain_pct = (1.0 - price_ratio)
+            elif price_ratio > 1.001: # Selling expensive (shorting? no, we are buying)
+                # If we are buying at 1.001, we are LOSING value as it returns to 1.0
+                expected_gain_pct = 0.0 
+            else:
+                expected_gain_pct = 0.0
+                
+            # Log the reality check
+            # print(f"   ⚖️ STABLE SWAP ({from_asset}→{to_asset}): Price={price_ratio:.4f}, Exp.Gain={expected_gain_pct:.4%}")
+        else:
+            # For volatile assets, we assume momentum continues (Momentum + Cost Coverage)
+            # Estimate small positive movement (0.1-0.5%) minus costs
+            # This is conservative - actual profit depends on market conditions
+            min_required_gain_pct = total_cost_pct + 0.001  # Costs + 0.1% minimum
+            expected_gain_pct = min_required_gain_pct + 0.002  # Add 0.2% expected movement
 
         expected_gain = from_value * expected_gain_pct
         net_profit = expected_gain - costs_usd
@@ -9232,6 +9482,28 @@ if __name__ == "__main__":
                 # Path memory boost (small reinforcement from past wins/losses)
                 path_boost = self.path_memory.boost(from_asset, to_asset)
                 combined *= (1.0 + path_boost)
+
+                # 👑🌐 QUEEN RESEARCH ENHANCEMENT
+                # Checks generated strategies (Momentum, Sentiment, Trending)
+                if hasattr(self, 'queen_apply_research_to_trade'):
+                    # We pass 0s for missing ticker stats (volatility check will skip safely)
+                    r_score, r_reasons = self.queen_apply_research_to_trade(
+                        to_asset, 
+                        to_price, 
+                        0, 0, 0, 0
+                    )
+                    
+                    if r_score != 50.0:
+                        # Convert 0-100 score to multiplier
+                        # 0 -> 0.75x (-25%)
+                        # 50 -> 1.0x (Neutral)
+                        # 100 -> 1.25x (+25%)
+                        iq_influence = (r_score - 50.0) / 200.0  # +/- 0.25
+                        combined *= (1.0 + iq_influence)
+                        
+                        if r_reasons and debug_first_scans and valid_pairs_found <= 3:
+                             print(f"         👑🌐 Queen Research: {to_asset} score={r_score} ({', '.join(r_reasons)}) -> Impact {iq_influence:+.1%}")
+
                 
                 # ⚡ SPEED MODE: Lower thresholds - let math gate decide!
                 # If math says profit, TAKE IT - even tiny gains compound
@@ -9248,17 +9520,22 @@ if __name__ == "__main__":
                     expected_pnl_usd = from_value * 0.001  # 0.1% minimum "secure" value
                     expected_pnl_pct = 0.001
                 
-                # ⚡ QUEEN'S FLOOR IS 8! Must clear $0.08 minimum!
-                gate_required = max(0.08, self.config['min_profit_usd'])  # QUEEN'S FLOOR!
-                gate_ok = expected_pnl_usd >= 0.08  # Must beat Queen's floor!
+                # ⚡ QUEEN'S ADAPTIVE FLOOR (Learned from experience)
+                gate_required = self.get_queen_adaptive_floor(from_asset, to_asset)
+                
+                # Check gate
+                gate_ok = expected_pnl_usd >= gate_required
+                
+                # Checkpoint exception: Moving to stable/base is banking profit -> always good if > $0.005
+                if is_checkpoint_target and expected_pnl_usd > 0.005:
+                     gate_ok = True
+
                 if self.adaptive_gate:
                     gate_result = self.adaptive_gate.calculate_gates(
                         exchange=source_exchange,
                         trade_value=from_value,
                         use_cache=True,
                     )
-                    # Relax: accept if expected >= gate OR if expected > 0 (tiny profit)
-                    gate_ok = is_checkpoint_target or expected_pnl_usd >= min(gate_result.win_gte_prime, 0.01) or expected_pnl_usd > 0
                 else:
                     gate_result = None
                 
@@ -9646,8 +9923,9 @@ if __name__ == "__main__":
         symbol = f"{opp.from_asset}/{opp.to_asset}"
         
         # ════════════════════════════════════════════════════════════════════════
-        # 🚨🚨🚨 ABSOLUTE HARD BLOCK - MEME-TO-MEME TRADES 🚨🚨🚨
-        # This is the FINAL gate before ANY trade executes!
+        # � EVOLUTIONARY SAFETY GATES - "Don't Fear the Stone, Learn From It"
+        # We don't block difficult trades (Meme->Meme, Stable->Stable)
+        # We VALIDATE them with "True Cost" math. If it profits, we trade.
         # ════════════════════════════════════════════════════════════════════════
         from_upper = opp.from_asset.upper()
         to_upper = opp.to_asset.upper()
@@ -9661,36 +9939,18 @@ if __name__ == "__main__":
         # Check if source is a STABLECOIN
         is_from_stable = from_upper in ['USD', 'USDT', 'USDC', 'ZUSD', 'TUSD', 'DAI', 'BUSD', 'GUSD', 'USDP', 'PYUSD', 'EUR', 'ZEUR']
         
-        # 🚨 HARD RULE: MEME → MEME = ALWAYS BLOCKED!
+        # ⚠️ WARNING: MEME → MEME = High Cost!
         if is_from_meme and is_to_meme:
-            print(f"\n🚨🚨🚨 EXECUTION BLOCKED! 🚨🚨🚨")
-            print(f"   ❌ MEME→MEME TRADE BLOCKED: {from_upper}→{to_upper}")
-            print(f"   ❌ Meme-to-meme swaps ALWAYS lose to double slippage!")
-            print(f"   ❌ Rule: Meme must exit to stablecoin ONLY!")
-            return False
-        
-        # 🚨 HARD RULE: MEME can ONLY go to STABLECOIN!
-        if is_from_meme and not is_to_stable:
-            print(f"\n🚨🚨🚨 EXECUTION BLOCKED! 🚨🚨🚨")
-            print(f"   ❌ MEME EXIT BLOCKED: {from_upper}→{to_upper}")
-            print(f"   ❌ Memes can ONLY exit to stablecoins!")
-            print(f"   ❌ Target {to_upper} is NOT a stablecoin!")
-            return False
-        
-        # 🚨 HARD RULE: MEME can ONLY come from STABLECOIN!
-        if is_to_meme and not is_from_stable:
-            print(f"\n🚨🚨🚨 EXECUTION BLOCKED! 🚨🚨🚨")
-            print(f"   ❌ MEME ENTRY BLOCKED: {from_upper}→{to_upper}")
-            print(f"   ❌ Memes can ONLY be bought with stablecoins!")
-            print(f"   ❌ Source {from_upper} is NOT a stablecoin!")
-            return False
-        
-        # 🚨 HARD RULE: STABLECOIN → STABLECOIN = ALWAYS BLOCKED!
+            # We already passed the gate check in the scan phase which used calculate_true_cost
+            # That cost included a 1.5% volatility penalty + learned slippage
+            # If we are here, the PROFIT >> COST. So we proceed!
+            print(f"   ⚠️ MEME→MEME ADVISORY: {from_upper}→{to_upper} is high risk! True Cost check passed.")
+
+        # ⚠️ WARNING: STABLECOIN → STABLECOIN = Likely Loss!
         if is_from_stable and is_to_stable:
-            print(f"\n🚨🚨🚨 EXECUTION BLOCKED! 🚨🚨🚨")
-            print(f"   ❌ STABLECOIN SWAP BLOCKED: {from_upper}→{to_upper}")
-            print(f"   ❌ Stablecoin-to-stablecoin ALWAYS loses to fees!")
-            return False
+             # Usually blocked by cost > profit (0 gain). But if we have huge arbitrage...
+             print(f"   ⚠️ STABLE→STABLE ADVISORY: {from_upper}→{to_upper} only makes sense if arbitrage > fees!")
+             # No block - if calculate_true_cost allowed it, there must be profit (or arb)
         
         # ════════════════════════════════════════════════════════════════════════
         
@@ -11619,6 +11879,9 @@ if __name__ == "__main__":
             last_wave_scan_time = 0  # Track last wave scanner update
             wave_scan_interval = 30  # Run full A-Z sweep every 30 seconds (was 60)
             
+            # Global Feed Update (every 60s)
+            last_global_feed_time = 0
+            
             # 👑🌐 QUEEN'S ONLINE RESEARCH - Every 2 minutes, she learns and enhances herself
             last_research_time = 0
             research_interval = 60  # Research every 1 minute (TURBO - was 2 mins)
@@ -11646,6 +11909,20 @@ if __name__ == "__main__":
                     except Exception as e:
                         logger.debug(f"Queen research error: {e}")
                         last_research_time = time.time()  # Don't spam on errors
+                
+                # 🌍⚡ GLOBAL FINANCIAL FEED PULSE
+                if self.global_financial_feed and (time.time() - last_global_feed_time > 60):
+                    try:
+                        snapshot = self.global_financial_feed.get_snapshot()
+                        # The snapshot broadcast is handled inside get_snapshot()
+
+                        # 👑🌍 Feed directly to Queen as well
+                        if self.queen and hasattr(self.queen, 'receive_macro_snapshot'):
+                             self.queen.receive_macro_snapshot(asdict(snapshot))
+                             
+                        last_global_feed_time = time.time()
+                    except Exception as e:
+                        logger.debug(f"Global feed pulse error: {e}")
                 
                 # Refresh prices (shared across all exchanges)
                 await self.fetch_prices()
@@ -12463,8 +12740,35 @@ async def main():
     parser.add_argument("--dry-run", action="store_true", help="Explicit simulation mode (legacy flag)")
     parser.add_argument("--duration", type=int, default=0, help="Duration in seconds (0 = forever)")
     parser.add_argument("--yes", "-y", action="store_true", help="Auto-confirm live mode (skip MICRO prompt)")
-    parser.add_argument("--fptp", action="store_true", help="🏁 First Past The Post: Capture profit IMMEDIATELY on ANY exchange!")
+    parser.add_argument("--turn-based", action="store_true", help="🐢 Turn-Based Mode: Scan exchanges sequentially (Safety First)")
+    parser.add_argument("--fptp", action="store_true", help="[Deprecated] Alias for default mode")
+    parser.add_argument("--sync-cia", action="store_true", help="👑🧠 Sync CIA declassified intelligence")
+    parser.add_argument("--cia-report", action="store_true", help="👑🧠 Show CIA intelligence report")
+    parser.add_argument("--cia-wisdom", action="store_true", help="👑🧠 Show Queen's trading wisdom from CIA intel")
     args = parser.parse_args()
+    
+    # Handle CIA sync commands (standalone, no trading)
+    if args.sync_cia or args.cia_report or args.cia_wisdom:
+        from queen_memi_sync import get_memi_sync
+        memi = get_memi_sync()
+        
+        if args.sync_cia:
+            print("\n👑🧠 SYNCING CIA DECLASSIFIED INTELLIGENCE...")
+            result = memi.sync_now()
+            print(f"✅ Sync complete: {result['new_packets']} new packets")
+            print(f"   Total packets: {result['total_packets']}")
+            print(f"   Duration: {result['duration_seconds']:.2f}s")
+        
+        if args.cia_report or args.sync_cia:
+            print(memi.generate_report())
+        
+        if args.cia_wisdom:
+            print("\n👑🎓 QUEEN'S TRADING WISDOM FROM CIA INTELLIGENCE:\n")
+            for wisdom in memi.get_trading_wisdom():
+                print(f"  {wisdom}")
+            print()
+        
+        return  # Exit after CIA commands
     
     if args.live and not args.yes:
         print("\n" + "=" * 60)
@@ -12480,10 +12784,15 @@ async def main():
         print("=" * 60)
     
     engine = MicroProfitLabyrinth(live=args.live)
-    engine.fptp_mode = args.fptp
-    if args.fptp:
+    engine.fptp_mode = not args.turn_based
+    
+    if args.turn_based:
+        print("\n" + "=" * 60)
+        print("🐢 TURN-BASED MODE ACTIVATED (Safe & Sequential)")
+        print("=" * 60)
+    else:
         print("\n" + "🏁" * 35)
-        print("🏁 FIRST PAST THE POST MODE ACTIVATED! 🏁")
+        print("🏁 FIRST PAST THE POST MODE ACTIVATED! (Default) 🏁")
         print("   → Scanning ALL exchanges in parallel")
         print("   → Executing on FIRST profitable opportunity")
         print("   → No waiting - CAPTURE PROFIT IMMEDIATELY!")

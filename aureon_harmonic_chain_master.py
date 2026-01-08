@@ -99,7 +99,7 @@ try:
     print("🎵📖 Layer 6: Harmonic Alphabet (7-Mode) LOADED!")
 except ImportError:
     HARMONIC_ALPHABET_AVAILABLE = False
-    HarmonicAlphabet = None
+    HarmonicAlphabet = Any
 
 # LAYER 5: Harmonic Signal Chain
 try:
@@ -336,7 +336,7 @@ class HarmonicChainMaster:
         
         # Layer instances (populated during initialization)
         self.queen_voice: Optional[Any] = None
-        self.alphabet: Optional[HarmonicAlphabet] = None
+        self.alphabet = None
         self.signal_chain: Optional[Any] = None
         self.reality: Optional[Any] = None
         self.global_field: Optional[Any] = None
