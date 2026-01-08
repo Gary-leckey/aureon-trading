@@ -2460,44 +2460,6 @@ class LiveBarterMatrix:
         ]
         return "\n".join(lines)
 
-
-# ════════════════════════════════════════════════════════════════════════════
-# �🔀 LIQUIDITY ENGINE - Dynamic Asset Aggregation ("Top-Up" Mechanism)
-# ════════════════════════════════════════════════════════════════════════════
-# When we find an opportunity but don't have enough balance:
-# 1. Find "victim" assets to liquidate (low performers, dust, stablecoins)
-# 2. Calculate if selling them to fund the trade is PROFITABLE after fees
-# 3. Execute multi-step atomic trades: SELL VICTIM → BUY TARGET
-# ════════════════════════════════════════════════════════════════════════════
-
-@dataclass
-class FundingCandidate:
-    """A potential source of funds (asset to liquidate)."""
-    asset: str
-    exchange: str
-    amount: float
-    value_usd: float
-    momentum: float  # -1 to +1 (negative = falling = good victim)
-    sell_fee_pct: float
-    reason: str  # Why this is a good victim
-    priority: int  # Higher = better victim
-
-
-@dataclass 
-class AggregationPlan:
-    """A plan to aggregate funds for a target trade."""
-    target_asset: str
-    target_exchange: str
-    amount_needed_usd: float
-    victims: List[FundingCandidate]
-    total_victim_value: float
-    total_fees_usd: float
-    net_funds_available: float
-    is_profitable: bool
-    profit_after_fees: float
-    steps: List[Dict]  # Execution steps
-
-
     def calculate_true_cost(self, from_asset: str, to_asset: str, value_usd: float, exchange: str) -> Tuple[bool, str, Dict]:
         """
         👑 TRUE COST CALCULATOR - The "Floor that stops us losing money"
@@ -2579,6 +2541,44 @@ class AggregationPlan:
             return False, f"Cost too high ({total_cost_pct:.2%})", math_breakdown
             
         return True, "OK", math_breakdown
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# �🔀 LIQUIDITY ENGINE - Dynamic Asset Aggregation ("Top-Up" Mechanism)
+# ════════════════════════════════════════════════════════════════════════════
+# When we find an opportunity but don't have enough balance:
+# 1. Find "victim" assets to liquidate (low performers, dust, stablecoins)
+# 2. Calculate if selling them to fund the trade is PROFITABLE after fees
+# 3. Execute multi-step atomic trades: SELL VICTIM → BUY TARGET
+# ════════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class FundingCandidate:
+    """A potential source of funds (asset to liquidate)."""
+    asset: str
+    exchange: str
+    amount: float
+    value_usd: float
+    momentum: float  # -1 to +1 (negative = falling = good victim)
+    sell_fee_pct: float
+    reason: str  # Why this is a good victim
+    priority: int  # Higher = better victim
+
+
+@dataclass 
+class AggregationPlan:
+    """A plan to aggregate funds for a target trade."""
+    target_asset: str
+    target_exchange: str
+    amount_needed_usd: float
+    victims: List[FundingCandidate]
+    total_victim_value: float
+    total_fees_usd: float
+    net_funds_available: float
+    is_profitable: bool
+    profit_after_fees: float
+    steps: List[Dict]  # Execution steps
+
 
 class LiquidityEngine:
     """
