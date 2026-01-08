@@ -707,6 +707,12 @@ class MicroOpportunity:
     temporal_jump_power: float = 0.0   # How far AHEAD we are (0-1)
     timeline_jump_active: bool = False # True = we're in a WINNING timeline
     
+    # 🔮📊 PROBABILITY NEXUS PREDICTION TRACKING (For Queen's Neural Learning)
+    nexus_probability: float = 0.5     # Raw probability from nexus (0-1)
+    nexus_direction: str = "NEUTRAL"   # BULLISH/BEARISH/NEUTRAL from nexus
+    nexus_factors: dict = None         # Factor breakdown for learning
+    nexus_confidence: float = 0.0      # Nexus prediction confidence
+    
     # Execution
     executed: bool = False
     actual_pnl_usd: float = 0.0
@@ -9174,7 +9180,29 @@ if __name__ == "__main__":
                     except Exception as e:
                         logger.debug(f"Wisdom engine error: {e}")
                 
-                # 🗺️ MARKET MAP SCORING (correlations, sectors, lead/lag)
+                # �📊 PROBABILITY NEXUS PREDICTION (Track for Queen's Learning!)
+                nexus_probability = 0.5
+                nexus_direction = "NEUTRAL"
+                nexus_factors = {}
+                nexus_confidence = 0.0
+                if self.probability_nexus and hasattr(self.probability_nexus, 'predict'):
+                    try:
+                        nexus_pred = self.probability_nexus.predict()
+                        if nexus_pred:
+                            nexus_probability = getattr(nexus_pred, 'probability', 0.5)
+                            nexus_confidence = getattr(nexus_pred, 'confidence', 0.0)
+                            # Determine direction from probability
+                            if nexus_probability > 0.6:
+                                nexus_direction = "BULLISH"
+                            elif nexus_probability < 0.4:
+                                nexus_direction = "BEARISH"
+                            # Store factors for neural learning
+                            if hasattr(nexus_pred, 'factors'):
+                                nexus_factors = dict(nexus_pred.factors) if nexus_pred.factors else {}
+                    except Exception as e:
+                        logger.debug(f"Nexus prediction error: {e}")
+                
+                # �🗺️ MARKET MAP SCORING (correlations, sectors, lead/lag)
                 map_score = 0.0
                 map_reasons = []
                 if self.market_map:
@@ -9544,6 +9572,11 @@ if __name__ == "__main__":
                         wisdom_engine_score=wisdom_engine_score,
                         civilization_insight=civilization_insight,
                         wisdom_pattern=wisdom_pattern,
+                        # 🔮📊 PROBABILITY NEXUS PREDICTION (For Queen's Neural Learning!)
+                        nexus_probability=nexus_probability,
+                        nexus_direction=nexus_direction,
+                        nexus_factors=nexus_factors if nexus_factors else None,
+                        nexus_confidence=nexus_confidence,
                     )
                     opportunities.append(opp)
                     self.opportunities_found += 1
@@ -11106,6 +11139,45 @@ if __name__ == "__main__":
                             print(f"   👑🧠 Queen learned from validated prediction!")
             except Exception as e:
                 logger.debug(f"7-day planner validation error: {e}")
+
+        # 🔮📊 PROBABILITY NEXUS VALIDATION - Feed to Queen's Neural Learning!
+        # Track nexus prediction accuracy and let Queen learn from it
+        if self.queen and hasattr(self.queen, 'receive_validated_prediction'):
+            try:
+                # Get nexus prediction that was stored with the opportunity
+                nexus_prob = getattr(opp, 'nexus_probability', 0.5)
+                nexus_dir = getattr(opp, 'nexus_direction', 'NEUTRAL')
+                nexus_conf = getattr(opp, 'nexus_confidence', 0.0)
+                nexus_factors = getattr(opp, 'nexus_factors', None)
+                
+                # Validate: Did the nexus prediction match the actual outcome?
+                actual_direction = 'BULLISH' if actual_pnl > 0 else ('BEARISH' if actual_pnl < 0 else 'NEUTRAL')
+                direction_correct = (nexus_dir == actual_direction) or (nexus_dir == 'NEUTRAL')
+                
+                # Timing score based on confidence vs outcome
+                timing_score = 1.0 if direction_correct else 0.0
+                if nexus_conf > 0:
+                    timing_score *= nexus_conf  # Weight by confidence
+                
+                nexus_validation_data = {
+                    'symbol': opp.to_asset,
+                    'predicted_edge': (nexus_prob - 0.5) * 100,  # Convert 0-1 to edge %
+                    'actual_edge': (actual_pnl / sold_value * 100) if sold_value > 0 else 0,
+                    'direction_correct': direction_correct,
+                    'timing_score': timing_score,
+                    'confidence': nexus_conf,
+                    'hour': datetime.now().hour,
+                    'day_of_week': datetime.now().weekday(),
+                    'source': 'probability_nexus',
+                    'pair': f"{opp.from_asset}->{opp.to_asset}",
+                    'pnl': actual_pnl,
+                    'factors': nexus_factors
+                }
+                nexus_queen_result = self.queen.receive_validated_prediction(nexus_validation_data)
+                if nexus_queen_result.get('neural_trained'):
+                    print(f"   🔮👑 Queen learned from Nexus prediction validation!")
+            except Exception as e:
+                logger.debug(f"Nexus validation feed error: {e}")
 
         # Publish observability
         if self.thought_bus:
