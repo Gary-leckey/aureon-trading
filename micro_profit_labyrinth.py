@@ -10060,27 +10060,22 @@ if __name__ == "__main__":
             total_cost_pct = cost_breakdown.get('total_cost_pct', 0.5) / 100.0  # Convert to decimal
             total_cost_usd = opp.from_value_usd * total_cost_pct
             
-            # CONSERVATIVE check: We need ACTUAL arbitrage or price advantage to profit
-            # Without momentum speculation, a simple swap ALWAYS loses fees.
-            # Only proceed if: (1) Arbitrage opportunity exists, OR (2) Costs are negligible
+            # ════════════════════════════════════════════════════════════════════════
+            # 🔧 FIX: TRUST THE SCANNER'S EXPECTED P&L!
+            # The scanner already calculated expected_pnl_usd including momentum/signals.
+            # We just need to verify: expected_profit > total_cost
+            # OLD BUG: arbitrage_edge formula was ALWAYS = -cost (mathematical error)
+            # ════════════════════════════════════════════════════════════════════════
             
-            # Calculate "floor" profit (worst case: NO price movement)
-            # In a swap without price movement, we LOSE total_cost_usd
-            floor_pnl = -total_cost_usd
+            # The opportunity's expected_pnl_usd comes from the scanner (includes momentum, signals, etc.)
+            scanner_expected_pnl = opp.expected_pnl_usd if hasattr(opp, 'expected_pnl_usd') else 0.0
             
-            # Only grant positive edge if there's actual price difference (arbitrage)
-            to_price = self.prices.get(opp.to_asset, 0)
-            from_price = self.prices.get(opp.from_asset, 0)
+            # SIMPLE GATE: Does expected profit exceed real costs?
+            # Add a small buffer (25%) for safety
+            cost_with_buffer = total_cost_usd * 1.25
             
-            arbitrage_edge = 0.0
-            if from_price > 0 and to_price > 0:
-                # Check if we're getting MORE value than we're giving (arbitrage)
-                # E.g., if 1000SATS can buy MORE IOTA than the cost of the conversion
-                expected_to_amount = (opp.from_value_usd - total_cost_usd) / to_price if to_price > 0 else 0
-                actual_to_value = expected_to_amount * to_price
-                arbitrage_edge = actual_to_value - opp.from_value_usd
-            
-            conservative_pnl = floor_pnl + arbitrage_edge
+            # Net profit after REAL costs
+            conservative_pnl = scanner_expected_pnl - total_cost_usd
             
             # Apply path history penalty (learned failures)
             pair_key = (from_upper, to_upper)
@@ -10091,28 +10086,52 @@ if __name__ == "__main__":
                     historical_loss_rate = abs(hist['total_profit']) / max(hist.get('trades', 1), 1)
                     conservative_pnl -= historical_loss_rate * 0.5  # 50% of historical avg loss
             
-            # FINAL GATE: Block if conservative estimate shows loss
-            min_profit_threshold = 0.001  # $0.001 minimum profit required
+            # FINAL GATE: Block if expected profit doesn't cover costs with buffer
+            # OR if spread is ridiculously high (>5%)
+            spread_pct = cost_breakdown.get('spread', 0)
             
-            if conservative_pnl < -min_profit_threshold:
+            if spread_pct > 5.0:
+                # High spread = illiquid market, block immediately
+                self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE: SPREAD TOO HIGH!")
+                self.rejection_print(f"   ├── Spread: {spread_pct:.1f}% (max 5%)")
+                self.rejection_print(f"   └── Market too illiquid for this trade")
+                
+                # Block high spread source
+                exchange = opp.source_exchange or 'unknown'
+                key = (opp.from_asset.upper(), exchange.lower())
+                self.barter_matrix.high_spread_sources[key] = {
+                    'spread': spread_pct,
+                    'blocked_turn': self.barter_matrix.current_turn,
+                    'reason': f'{spread_pct:.1f}% spread'
+                }
+                self.rejection_print(f"   🚫🔴 SOURCE BLOCKED: {opp.from_asset} on {exchange} has {spread_pct:.1f}% spread!")
+                
+                # Record rejection
+                self.barter_matrix.record_preexec_rejection(
+                    opp.from_asset, opp.to_asset,
+                    f'spread_too_high: {spread_pct:.1f}%',
+                    opp.from_value_usd
+                )
+                return None
+            
+            if conservative_pnl < 0.0001:  # Must net at least $0.0001 after costs
                 self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE BLOCKED!")
-                self.rejection_print(f"   ├── Conservative P&L: ${conservative_pnl:+.4f}")
+                self.rejection_print(f"   ├── Scanner Expected: ${scanner_expected_pnl:+.4f}")
                 self.rejection_print(f"   ├── Total Costs: ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
-                self.rejection_print(f"   ├── Cost breakdown: fee={cost_breakdown.get('base_fee', 0):.2f}% spread={cost_breakdown.get('spread', 0):.2f}% slip={cost_breakdown.get('learned_slippage', 0):.2f}%")
-                self.rejection_print(f"   ├── Arbitrage Edge: ${arbitrage_edge:+.4f}")
-                self.rejection_print(f"   └── Reason: Trade would LOSE money even without market movement")
+                self.rejection_print(f"   ├── Cost breakdown: fee={cost_breakdown.get('base_fee', 0):.2f}% spread={spread_pct:.2f}% slip={cost_breakdown.get('learned_slippage', 0):.2f}%")
+                self.rejection_print(f"   ├── Net P&L: ${conservative_pnl:+.4f}")
+                self.rejection_print(f"   └── Reason: Expected profit doesn't cover costs")
                 self.rejection_print(f"   ⛔ TRADE REJECTED - Protecting your capital!")
                 
                 # Track rejection for learning - BLOCK THIS PAIR immediately!
                 self.barter_matrix.record_preexec_rejection(
                     opp.from_asset, opp.to_asset,
-                    f'cost_exceeds_profit: ${total_cost_usd:.4f} > edge',
+                    f'cost_exceeds_profit: ${total_cost_usd:.4f} > ${scanner_expected_pnl:.4f}',
                     opp.from_value_usd
                 )
                 self.rejection_print(f"   🚫 Path {opp.from_asset}→{opp.to_asset} BLOCKED - will try others!")
                 
                 # 🚫 HIGH SPREAD SOURCE BLOCK - If spread is the problem, block ALL trades from this source!
-                spread_pct = cost_breakdown.get('spread', 0)
                 if spread_pct > self.barter_matrix.HIGH_SPREAD_THRESHOLD:
                     exchange = opp.source_exchange or 'unknown'
                     key = (opp.from_asset.upper(), exchange.lower())
@@ -10126,10 +10145,12 @@ if __name__ == "__main__":
                 
                 return False
             else:
+                # ✅ GATE PASSED! Show the good news!
                 print(f"\n   ✅ PRE-EXECUTION GATE PASSED:")
-                print(f"   ├── Conservative P&L: ${conservative_pnl:+.4f}")
+                print(f"   ├── Scanner Expected: ${scanner_expected_pnl:+.4f}")
                 print(f"   ├── Total Costs: ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
-                print(f"   └── Proceeding with execution...")
+                print(f"   ├── Net P&L: ${conservative_pnl:+.4f}")
+                print(f"   └── Proceeding with execution... 🚀")
         
         # ════════════════════════════════════════════════════════════════════════
         
