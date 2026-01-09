@@ -347,13 +347,19 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_bin_log'):
                     self._last_bin_log = {}
                 
-                # TURBO MODE: Take profit at 0.005% OR rotate to better momentum
+                # TURBO MODE: Take profit at 0.005% OR stop-loss at -0.3% OR rotate
                 best_mom = self._get_best_momentum()
-                should_sell = pnl_pct > 0.005  # Lower threshold
+                should_profit = pnl_pct > 0.005  # Take profit
+                should_stop = pnl_pct < -0.3  # Stop loss
                 should_rotate = best_mom and best_mom[0] != asset and best_mom[1] > 1.0  # Better opportunity
                 
-                if should_sell or should_rotate:
-                    reason = f"{pnl_pct:+.2f}%" if should_sell else f"ROTATE→{best_mom[0]}"
+                if should_profit or should_stop or should_rotate:
+                    if should_stop:
+                        reason = f"STOP {pnl_pct:+.2f}%"
+                    elif should_profit:
+                        reason = f"{pnl_pct:+.2f}%"
+                    else:
+                        reason = f"ROTATE→{best_mom[0]}"
                     self.log(f"🔥 BINANCE SELL {asset}: ${value:.2f} ({reason})")
                     
                     result = self.binance.place_market_order(pair, 'SELL', quantity=bal * 0.999)
@@ -395,11 +401,15 @@ class PlanetaryReclaimer:
             except:
                 pass
         
-        if best_pair:
+        if best_pair and best_mom > 0:  # Only buy positive momentum
             asset = best_pair.replace('USDC', '')
-            self.log(f"📥 BINANCE BUY {asset}: ${usdc:.2f} ({best_mom:+.1f}%)")
+            # Use 90% to leave room for fees and avoid insufficient balance
+            buy_amount = usdc * 0.90
+            if buy_amount < 2:
+                return
+            self.log(f"📥 BINANCE BUY {asset}: ${buy_amount:.2f} ({best_mom:+.1f}%)")
             
-            result = self.binance.place_market_order(best_pair, 'BUY', quote_qty=usdc * 0.98)
+            result = self.binance.place_market_order(best_pair, 'BUY', quote_qty=buy_amount)
             
             if result and ('orderId' in result or result.get('status') == 'FILLED'):
                 t = self.binance.get_ticker_price(best_pair)
@@ -452,9 +462,13 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_alp_log'):
                     self._last_alp_log = {}
                 
-                # TURBO MODE: Lower threshold
-                if pnl_pct > 0.005:
-                    self.log(f"🔥 ALPACA SELL {asset}: ${value:.2f} ({pnl_pct:+.2f}%)")
+                # TURBO MODE: Take profit OR stop-loss
+                should_take_profit = pnl_pct > 0.005
+                should_stop_loss = pnl_pct < -0.3  # Stop loss at -0.3%
+                
+                if should_take_profit or should_stop_loss:
+                    action = "PROFIT" if should_take_profit else "STOP-LOSS"
+                    self.log(f"🔥 ALPACA {action} {asset}: ${value:.2f} ({pnl_pct:+.2f}%)")
                     
                     result = self.alpaca.place_order(sym, qty, 'sell', 'market', 'ioc')
                     
@@ -582,9 +596,13 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_krk_log'):
                     self._last_krk_log = {}
                 
-                # TURBO MODE: Lower threshold
-                if pnl_pct > 0.005:
-                    self.log(f"🔥 KRAKEN SELL {asset}/{quote}: ${value:.2f} ({pnl_pct:+.2f}%)")
+                # TURBO MODE: Take profit OR stop-loss
+                should_profit = pnl_pct > 0.005
+                should_stop = pnl_pct < -0.3  # Stop loss at -0.3%
+                
+                if should_profit or should_stop:
+                    action = "PROFIT" if should_profit else "STOP-LOSS"
+                    self.log(f"🔥 KRAKEN {action} {asset}/{quote}: ${value:.2f} ({pnl_pct:+.2f}%)")
                     
                     result = self.kraken.place_market_order(f'{asset}{quote}', 'sell', quantity=free * 0.999)
                     
