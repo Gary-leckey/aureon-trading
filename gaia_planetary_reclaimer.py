@@ -117,6 +117,29 @@ except ImportError:
     MinerBrain = None
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 🌊⚡ MOMENTUM SNOWBALL - Ride the Wave (Energy Acceleration)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+MOMENTUM_AVAILABLE = False
+try:
+    from momentum_snowball_engine import MomentumTracker, CONFIG as MOMENTUM_CONFIG
+    MOMENTUM_AVAILABLE = True
+except ImportError:
+    MomentumTracker = None
+    MOMENTUM_CONFIG = None
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ⚡ RAPID CONVERSION STREAM - 10x Speed Enhancement  
+# ═══════════════════════════════════════════════════════════════════════════════
+
+RAPID_STREAM_AVAILABLE = False
+try:
+    from rapid_conversion_stream import SPEED_CONFIG
+    RAPID_STREAM_AVAILABLE = True
+except ImportError:
+    SPEED_CONFIG = None
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # 🌊 GLOBAL WAVE SCANNER - A-Z Market Sweep Intelligence  
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -666,6 +689,15 @@ class PlanetaryReclaimer:
         # EUR/USD rate (approximate)
         self.eur_usd = 1.08
         
+        # 🌊⚡ MOMENTUM TRACKER - Ride the Wave (Energy Acceleration)
+        self.momentum_tracker = None
+        if MOMENTUM_AVAILABLE and MomentumTracker:
+            try:
+                self.momentum_tracker = MomentumTracker(window_seconds=60)
+                print("✅ MOMENTUM - Energy Wave Accelerator ONLINE")
+            except Exception as e:
+                print(f"⚠️ MOMENTUM - Offline ({e})")
+        
         print("✅ BINANCE - Eastern Stargate ONLINE")
         print("✅ ALPACA  - Western Stargate ONLINE")
         print("✅ KRAKEN  - Northern Stargate ONLINE (USD + EUR)")
@@ -723,22 +755,58 @@ class PlanetaryReclaimer:
             pass  # Don't break trading loop for truth errors
 
     def _get_best_momentum(self):
-        """Get the asset with best 24h momentum"""
+        """Get the asset with best momentum - uses advanced tracker if available"""
         try:
-            pairs = ['SOLUSDC', 'BTCUSDC', 'ETHUSDC', 'AVAXUSDC', 'DOGEUSDC', 'XRPUSDC']
+            pairs = ['SOLUSDC', 'BTCUSDC', 'ETHUSDC', 'AVAXUSDC', 'DOGEUSDC', 'XRPUSDC', 'ADAUSDC', 'ATOMUSDC', 'DOTUSDC']
             best_asset, best_mom = None, -999
+            
             for pair in pairs:
                 try:
+                    asset = pair.replace('USDC', '')
                     t = self.binance.get_24h_ticker(pair)
+                    price = float(t.get('lastPrice', 0))
                     mom = float(t.get('priceChangePercent', 0))
+                    
+                    # 🌊 Feed momentum tracker for wave analysis
+                    if self.momentum_tracker and price > 0:
+                        self.momentum_tracker.update_price(asset, price)
+                    
                     if mom > best_mom:
-                        best_asset = pair.replace('USDC', '')
+                        best_asset = asset
                         best_mom = mom
                 except:
                     pass
+            
+            # 🌊 Use advanced momentum tracker if available (per-minute momentum)
+            if self.momentum_tracker:
+                try:
+                    strongest = self.momentum_tracker.get_strongest_rising()
+                    if strongest:
+                        top_asset, wave_momentum = strongest[0]
+                        # Wave momentum is per-minute, convert to comparable scale
+                        wave_score = wave_momentum * 100  # % per minute
+                        # If wave momentum is strong (>0.05%/min), prefer it
+                        if wave_score > 0.05 and top_asset in [p.replace('USDC', '') for p in pairs]:
+                            return (top_asset, best_mom)
+                except Exception:
+                    pass
+            
             return (best_asset, best_mom) if best_asset else None
         except:
             return None
+    
+    def _get_momentum_boost(self, asset: str) -> float:
+        """Get momentum boost for an asset (energy acceleration factor)"""
+        if not self.momentum_tracker:
+            return 1.0
+        try:
+            mom = self.momentum_tracker.get_momentum(asset)
+            # Positive momentum = boost, negative = reduction
+            # Range: 0.5 to 1.5
+            boost = 1.0 + (mom * 10)  # Scale momentum to boost factor
+            return max(0.5, min(1.5, boost))
+        except:
+            return 1.0
 
     # ═══════════════════════════════════════════════════════════════
     # PORTFOLIO TRACKER - ROAD TO $1 BILLION
@@ -974,15 +1042,24 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_bin_log'):
                     self._last_bin_log = {}
                 
-                # TURBO MODE: Take profit at 0.01% - NO STOP LOSS (wait for recovery)
+                # 🌊⚡ MOMENTUM-ENHANCED PROFIT: Take profit faster when wave is strong
                 best_mom = self._get_best_momentum()
-                should_profit = pnl_pct > 0.01  # Take profit at 0.01%
+                momentum_boost = self._get_momentum_boost(asset)
+                
+                # Base threshold 0.01%, boost adjusts it
+                # Strong upward momentum (boost > 1.2): threshold becomes ~0.008% (take profit faster, ride wave)
+                # Weak/negative momentum (boost < 0.8): threshold stays 0.01% (wait for recovery)
+                profit_threshold = 0.01 / max(0.8, momentum_boost)
+                
+                should_profit = pnl_pct > profit_threshold
                 # NO STOP LOSS - small positions can wait for market to recover
                 should_rotate = best_mom and best_mom[0] != asset and pnl_pct > 0 and best_mom[1] > 1.5  # Only rotate when in profit
                 
                 if should_profit or should_rotate:
                     if should_profit:
                         reason = f"{pnl_pct:+.2f}%"
+                        if momentum_boost > 1.1:
+                            reason += " 🌊"  # Wave indicator
                     else:
                         reason = f"ROTATE→{best_mom[0]}"
                     self.log(f"🔥 BINANCE SELL {asset}: ${value:.2f} ({reason})")
@@ -1220,12 +1297,15 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_krk_log'):
                     self._last_krk_log = {}
                 
-                # TURBO MODE: Take profit only - NO STOP LOSS (wait for recovery)
-                should_profit = pnl_pct > 0.01  # Take profit at 0.01%
+                # 🌊⚡ MOMENTUM-ENHANCED PROFIT: Take profit faster when wave is strong
+                momentum_boost = self._get_momentum_boost(asset)
+                profit_threshold = 0.01 / max(0.8, momentum_boost)
+                should_profit = pnl_pct > profit_threshold
                 # NO STOP LOSS - small positions can wait for market to recover
                 
                 if should_profit:
-                    self.log(f"🔥 KRAKEN PROFIT {asset}/{quote}: ${value:.2f} ({pnl_pct:+.2f}%)")
+                    wave_indicator = " 🌊" if momentum_boost > 1.1 else ""
+                    self.log(f"🔥 KRAKEN PROFIT {asset}/{quote}: ${value:.2f} ({pnl_pct:+.2f}%{wave_indicator})")
                     
                     result = self.kraken.place_market_order(f'{asset}{quote}', 'sell', quantity=free * 0.999)
                     
@@ -1336,9 +1416,10 @@ class PlanetaryReclaimer:
     
     def run(self):
         print("🔥 MODE: TURBO V3 - MAXIMUM SPEED")
-        print("⚡ PROFIT THRESHOLD: 0.01% (stable)")
+        print("⚡ PROFIT THRESHOLD: 0.01% (momentum-adjusted)")
         print("⚡ CYCLE SPEED: 0.3 seconds")
         print("⚡ KRAKEN: USD + EUR pairs enabled")
+        print("🌊 MOMENTUM: Wave Surfing ACTIVE" if self.momentum_tracker else "🌊 MOMENTUM: Offline")
         print("👑 QUEEN: Advanced Intelligence Layer ACTIVE")
         print("💎 TRUTH: Continuous verification ACTIVE")
         print("🎯 GOAL: $1,000,000,000")
