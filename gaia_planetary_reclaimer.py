@@ -140,7 +140,43 @@ except ImportError:
     SPEED_CONFIG = None
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 🌊 GLOBAL WAVE SCANNER - A-Z Market Sweep Intelligence  
+# � LUCK FIELD MAPPER - Quantum Luck Probability (Favorable Windows)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+LUCK_FIELD_AVAILABLE = False
+try:
+    from aureon_luck_field_mapper import LuckFieldMapper, LuckState
+    LUCK_FIELD_AVAILABLE = True
+except ImportError:
+    LuckFieldMapper = None
+    LuckState = None
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🏮 LIGHTHOUSE - Pattern Detection & Convergence Alerts
+# ═══════════════════════════════════════════════════════════════════════════════
+
+LIGHTHOUSE_AVAILABLE = False
+try:
+    from aureon_lighthouse import LighthousePatternDetector, LighthouseEventType
+    LIGHTHOUSE_AVAILABLE = True
+except ImportError:
+    LighthousePatternDetector = None
+    LighthouseEventType = None
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🦉 AURIS ENGINE - 9-Node Coherence Calculator
+# ═══════════════════════════════════════════════════════════════════════════════
+
+AURIS_AVAILABLE = False
+try:
+    from aureon_auris_trader import AurisEngine, MarketSnapshot
+    AURIS_AVAILABLE = True
+except ImportError:
+    AurisEngine = None
+    MarketSnapshot = None
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# �🌊 GLOBAL WAVE SCANNER - A-Z Market Sweep Intelligence  
 # ═══════════════════════════════════════════════════════════════════════════════
 
 WAVE_SCANNER_AVAILABLE = False
@@ -698,6 +734,34 @@ class PlanetaryReclaimer:
             except Exception as e:
                 print(f"⚠️ MOMENTUM - Offline ({e})")
         
+        # 🍀 LUCK FIELD MAPPER - Quantum Luck Windows
+        self.luck_mapper = None
+        self.current_luck_state = None
+        if LUCK_FIELD_AVAILABLE and LuckFieldMapper:
+            try:
+                self.luck_mapper = LuckFieldMapper()
+                print("✅ LUCK FIELD - Quantum Probability Mapper ONLINE")
+            except Exception as e:
+                print(f"⚠️ LUCK FIELD - Offline ({e})")
+        
+        # 🏮 LIGHTHOUSE - Pattern Detection
+        self.lighthouse = None
+        if LIGHTHOUSE_AVAILABLE and LighthousePatternDetector:
+            try:
+                self.lighthouse = LighthousePatternDetector()
+                print("✅ LIGHTHOUSE - Pattern Detector ONLINE")
+            except Exception as e:
+                print(f"⚠️ LIGHTHOUSE - Offline ({e})")
+        
+        # 🦉 AURIS ENGINE - 9-Node Coherence
+        self.auris = None
+        if AURIS_AVAILABLE and AurisEngine:
+            try:
+                self.auris = AurisEngine()
+                print("✅ AURIS - 9-Node Coherence Engine ONLINE")
+            except Exception as e:
+                print(f"⚠️ AURIS - Offline ({e})")
+        
         print("✅ BINANCE - Eastern Stargate ONLINE")
         print("✅ ALPACA  - Western Stargate ONLINE")
         print("✅ KRAKEN  - Northern Stargate ONLINE (USD + EUR)")
@@ -807,6 +871,93 @@ class PlanetaryReclaimer:
             return max(0.5, min(1.5, boost))
         except:
             return 1.0
+    
+    def _get_luck_field_boost(self) -> float:
+        """Get luck field confidence boost (0.8 to 1.3)"""
+        if not self.luck_mapper:
+            return 1.0
+        try:
+            reading = self.luck_mapper.get_current_reading()
+            self.current_luck_state = reading.luck_state
+            
+            # Map luck states to confidence multipliers
+            luck_boosts = {
+                'VOID': 0.8,       # Avoid action
+                'CHAOS': 0.9,      # High risk
+                'NEUTRAL': 1.0,    # Standard
+                'FAVORABLE': 1.15, # Enhanced probability
+                'BLESSED': 1.3,    # Synchronicity lock!
+            }
+            return luck_boosts.get(reading.luck_state.value, 1.0)
+        except:
+            return 1.0
+    
+    def _get_auris_coherence(self, price: float, volume: float, volatility: float, momentum: float) -> float:
+        """Get Auris 9-node coherence score (0 to 1)"""
+        if not self.auris or not MarketSnapshot:
+            return 0.5  # Neutral
+        try:
+            snapshot = MarketSnapshot(
+                symbol='',
+                price=price,
+                volume=min(1.0, volume / 1000000) if volume > 0 else 0.5,  # Normalize
+                volatility=min(1.0, volatility * 10) if volatility > 0 else 0.3,
+                momentum=max(-1, min(1, momentum / 5)) if momentum else 0,  # Normalize to -1 to 1
+                spread=0.1,  # Default spread
+                timestamp=time.time()
+            )
+            coherence = self.auris.calculate_coherence(snapshot)
+            return coherence
+        except:
+            return 0.5
+    
+    def _get_combined_confidence_boost(self, asset: str = '', price: float = 0, 
+                                        volume: float = 0, volatility: float = 0, 
+                                        momentum_pct: float = 0) -> tuple:
+        """
+        Get combined confidence boost from all enhancement systems.
+        Returns: (total_boost, indicators_string)
+        
+        Systems:
+        - 🌊 Momentum: 0.5x - 1.5x based on wave direction
+        - 🍀 Luck Field: 0.8x - 1.3x based on quantum luck state
+        - 🦉 Auris: Entry gate (Γ > 0.938 = strong signal)
+        """
+        boosts = []
+        indicators = []
+        
+        # 🌊 Momentum Wave
+        mom_boost = self._get_momentum_boost(asset) if asset else 1.0
+        if mom_boost > 1.1:
+            indicators.append("🌊")
+        boosts.append(mom_boost)
+        
+        # 🍀 Luck Field
+        luck_boost = self._get_luck_field_boost()
+        if luck_boost >= 1.15:
+            indicators.append("🍀")
+        elif luck_boost >= 1.3:
+            indicators.append("✨")  # BLESSED
+        boosts.append(luck_boost)
+        
+        # 🦉 Auris Coherence (as confidence gate, not multiplier)
+        if price > 0:
+            coherence = self._get_auris_coherence(price, volume, volatility, momentum_pct)
+            if coherence >= 0.938:  # Heart coherence threshold
+                indicators.append("🦉")
+                boosts.append(1.1)  # 10% boost on high coherence
+            elif coherence < 0.8:
+                boosts.append(0.95)  # Slight reduction on low coherence
+        
+        # Calculate combined boost (product of all)
+        total_boost = 1.0
+        for b in boosts:
+            total_boost *= b
+        
+        # Cap at reasonable range
+        total_boost = max(0.5, min(2.0, total_boost))
+        
+        return total_boost, ''.join(indicators)
 
     # ═══════════════════════════════════════════════════════════════
     # PORTFOLIO TRACKER - ROAD TO $1 BILLION
@@ -1042,24 +1193,33 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_bin_log'):
                     self._last_bin_log = {}
                 
-                # 🌊⚡ MOMENTUM-ENHANCED PROFIT: Take profit faster when wave is strong
+                # 🌊🍀🦉 COMBINED CONFIDENCE BOOST - All systems enhance profit-taking
                 best_mom = self._get_best_momentum()
-                momentum_boost = self._get_momentum_boost(asset)
+                try:
+                    ticker_24h = self.binance.get_24h_ticker(pair)
+                    volume = float(ticker_24h.get('volume', 0))
+                    volatility = float(ticker_24h.get('priceChangePercent', 0)) / 100
+                except:
+                    volume, volatility = 0, 0
                 
-                # Base threshold 0.01%, boost adjusts it
-                # Strong upward momentum (boost > 1.2): threshold becomes ~0.008% (take profit faster, ride wave)
-                # Weak/negative momentum (boost < 0.8): threshold stays 0.01% (wait for recovery)
-                profit_threshold = 0.01 / max(0.8, momentum_boost)
+                combined_boost, indicators = self._get_combined_confidence_boost(
+                    asset=asset, price=price, volume=volume, 
+                    volatility=abs(volatility), momentum_pct=pnl_pct
+                )
+                
+                # Base threshold 0.01%, combined boost adjusts it
+                # High confidence = lower threshold = take profits faster
+                profit_threshold = 0.01 / max(0.8, combined_boost)
                 
                 should_profit = pnl_pct > profit_threshold
                 # NO STOP LOSS - small positions can wait for market to recover
-                should_rotate = best_mom and best_mom[0] != asset and pnl_pct > 0 and best_mom[1] > 1.5  # Only rotate when in profit
+                should_rotate = best_mom and best_mom[0] != asset and pnl_pct > 0 and best_mom[1] > 1.5
                 
                 if should_profit or should_rotate:
                     if should_profit:
                         reason = f"{pnl_pct:+.2f}%"
-                        if momentum_boost > 1.1:
-                            reason += " 🌊"  # Wave indicator
+                        if indicators:
+                            reason += f" {indicators}"
                     else:
                         reason = f"ROTATE→{best_mom[0]}"
                     self.log(f"🔥 BINANCE SELL {asset}: ${value:.2f} ({reason})")
@@ -1297,15 +1457,19 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_krk_log'):
                     self._last_krk_log = {}
                 
-                # 🌊⚡ MOMENTUM-ENHANCED PROFIT: Take profit faster when wave is strong
-                momentum_boost = self._get_momentum_boost(asset)
-                profit_threshold = 0.01 / max(0.8, momentum_boost)
+                # 🌊🍀🦉 COMBINED CONFIDENCE BOOST - All systems enhance profit-taking
+                combined_boost, indicators = self._get_combined_confidence_boost(
+                    asset=asset, price=price, volume=0, volatility=0, momentum_pct=pnl_pct
+                )
+                profit_threshold = 0.01 / max(0.8, combined_boost)
                 should_profit = pnl_pct > profit_threshold
                 # NO STOP LOSS - small positions can wait for market to recover
                 
                 if should_profit:
-                    wave_indicator = " 🌊" if momentum_boost > 1.1 else ""
-                    self.log(f"🔥 KRAKEN PROFIT {asset}/{quote}: ${value:.2f} ({pnl_pct:+.2f}%{wave_indicator})")
+                    reason = f"{pnl_pct:+.2f}%"
+                    if indicators:
+                        reason += f" {indicators}"
+                    self.log(f"🔥 KRAKEN PROFIT {asset}/{quote}: ${value:.2f} ({reason})")
                     
                     result = self.kraken.place_market_order(f'{asset}{quote}', 'sell', quantity=free * 0.999)
                     
@@ -1420,6 +1584,9 @@ class PlanetaryReclaimer:
         print("⚡ CYCLE SPEED: 0.3 seconds")
         print("⚡ KRAKEN: USD + EUR pairs enabled")
         print("🌊 MOMENTUM: Wave Surfing ACTIVE" if self.momentum_tracker else "🌊 MOMENTUM: Offline")
+        print("🍀 LUCK FIELD: Active" if self.luck_mapper else "🍀 LUCK FIELD: Offline")
+        print("🏮 LIGHTHOUSE: Active" if self.lighthouse else "🏮 LIGHTHOUSE: Offline")
+        print("🦉 AURIS: 9-Node Coherence Active" if self.auris else "🦉 AURIS: Offline")
         print("👑 QUEEN: Advanced Intelligence Layer ACTIVE")
         print("💎 TRUTH: Continuous verification ACTIVE")
         print("🎯 GOAL: $1,000,000,000")
