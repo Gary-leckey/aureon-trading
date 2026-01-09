@@ -1009,42 +1009,63 @@ class PlanetaryReclaimer:
             if amount < 2:
                 return
             
-            # Get best momentum from Binance
-            pairs = ['SOLUSDC', 'BTCUSDC', 'ETHUSDC']
+            # Kraken minimum order sizes (to avoid rejection)
+            # Format: {asset: (min_qty, price_approx)} - we skip if amount < min_qty * price
+            KRAKEN_MIN_USD = {
+                'SOL': 3.0,    # 0.02 × $138 = $2.76 → buffer to $3
+                'ADA': 2.0,    # 4.4 × $0.40 = $1.76 → buffer to $2  
+                'ATOM': 1.50,  # 0.5 × $2.60 = $1.30 → buffer to $1.50
+                'DOT': 1.50,   # 0.5 × $2.10 = $1.05 → buffer to $1.50
+                'XRP': 4.0,    # 1.65 × $2.10 = $3.47 → buffer to $4
+                'ETH': 4.0,    # 0.001 × $3100 = $3.10 → buffer to $4
+                'BTC': 5.0,    # 0.00005 × $91000 = $4.55 → buffer to $5
+            }
+            
+            # Get best momentum from Binance - only for assets we CAN buy
+            pairs = ['SOLUSDC', 'ADAUSDC', 'ATOMUSDC', 'DOTUSDC', 'XRPUSDC', 'BTCUSDC', 'ETHUSDC']
             best_asset, best_mom = None, -999
             
             for pair in pairs:
                 try:
+                    asset = pair.replace('USDC', '')
+                    min_usd = KRAKEN_MIN_USD.get(asset, 10)  # Default high if unknown
+                    
+                    # Skip if we don't have enough to meet minimum
+                    if amount < min_usd:
+                        continue
+                        
                     t = self.binance.get_24h_ticker(pair)
                     mom = float(t.get('priceChangePercent', 0))
                     if mom > best_mom:
-                        best_asset = pair.replace('USDC', '')
+                        best_asset = asset
                         best_mom = mom
                 except:
                     pass
             
-            if best_asset:
-                kraken_pair = f'{best_asset}{quote}'
-                self.log(f"📥 KRAKEN BUY {best_asset}/{quote}: ${amount:.2f} ({best_mom:+.1f}%)")
-                
-                result = self.kraken.place_market_order(kraken_pair, 'buy', quote_qty=amount * 0.95)
-                
-                # Detect success - Kraken returns orderId and status=FILLED
-                success = False
-                if result:
-                    success = (result.get('orderId') or result.get('txid') or 
-                              result.get('status') == 'FILLED' or 'dryRun' in result)
-                
-                if success:
-                    try:
-                        ticker = self.kraken.get_ticker(kraken_pair)
-                        price = float(ticker.get('price', 0))
-                        if quote == 'EUR':
-                            price *= self.eur_usd
-                        self.entries[f'krk_{best_asset}_{quote}'] = price
-                        self.log(f"   ✅ DEPLOYED @ ${price:.4f}")
-                    except:
-                        pass
+            if not best_asset:
+                return  # No asset meets minimum, skip
+            
+            kraken_pair = f'{best_asset}{quote}'
+            self.log(f"📥 KRAKEN BUY {best_asset}/{quote}: ${amount:.2f} ({best_mom:+.1f}%)")
+            
+            result = self.kraken.place_market_order(kraken_pair, 'buy', quote_qty=amount * 0.95)
+            
+            # Detect success - Kraken returns orderId and status=FILLED
+            success = False
+            if result:
+                success = (result.get('orderId') or result.get('txid') or 
+                          result.get('status') == 'FILLED' or 'dryRun' in result)
+            
+            if success:
+                try:
+                    ticker = self.kraken.get_ticker(kraken_pair)
+                    price = float(ticker.get('price', 0))
+                    if quote == 'EUR':
+                        price *= self.eur_usd
+                    self.entries[f'krk_{best_asset}_{quote}'] = price
+                    self.log(f"   ✅ DEPLOYED @ ${price:.4f}")
+                except:
+                    pass
         except Exception as e:
             pass
 
