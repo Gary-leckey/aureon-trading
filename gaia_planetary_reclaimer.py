@@ -84,6 +84,17 @@ except ImportError:
     Thought = None
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 🧭 LABYRINTH NAVIGATION - Path Memory & Market Intelligence
+# ═══════════════════════════════════════════════════════════════════════════════
+
+PATH_MEMORY_AVAILABLE = False
+try:
+    from micro_profit_labyrinth import PathMemory
+    PATH_MEMORY_AVAILABLE = True
+except ImportError:
+    PathMemory = None
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # 👑 QUEEN VERIFICATION SYSTEM - Timeline Energy Reclamation 
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -128,6 +139,9 @@ class QueenVerifier:
         self.gaia_resonance = 0.5     # Default neutral
         self.love_frequency_active = False
         
+        # 🧭 Labyrinth Navigation Systems
+        self.path_memory = None  # Track winning/losing asset paths
+        
         self._init_queen_systems()
     
     def _init_queen_systems(self):
@@ -168,6 +182,15 @@ class QueenVerifier:
                 print("   📡 ThoughtBus: ONLINE (broadcasting)")
             except Exception as e:
                 print(f"   ⚠️ ThoughtBus: Offline ({e})")
+        
+        # 🧭 Labyrinth PathMemory - Track winning paths
+        if PATH_MEMORY_AVAILABLE and PathMemory:
+            try:
+                self.path_memory = PathMemory(persist_path="gaia_path_memory.json")
+                stats = self.path_memory.get_stats()
+                print(f"   🧭 PathMemory: ONLINE ({stats['paths']} paths, {stats['win_rate']*100:.0f}% win rate)")
+            except Exception as e:
+                print(f"   ⚠️ PathMemory: Offline ({e})")
     
     def _build_neural_input(self) -> 'NeuralInput':
         """Build NeuralInput from current reclaimer metrics"""
@@ -213,7 +236,7 @@ class QueenVerifier:
             mycelium_signal=mycelium
         )
     
-    def record_trade(self, exchange: str, profit: float, won: bool):
+    def record_trade(self, exchange: str, profit: float, won: bool, asset: str = None):
         """Record a trade outcome for Queen's verification + learning"""
         self.trades_total += 1
         if won:
@@ -230,6 +253,18 @@ class QueenVerifier:
         self.coherence_history.append(1 if won else 0)
         if len(self.coherence_history) > 100:
             self.coherence_history.pop(0)
+        
+        # 🧭 LABYRINTH PATH MEMORY - Track winning/losing paths
+        if self.path_memory and asset:
+            try:
+                # Track: USD -> ASSET (buy) or ASSET -> USD (sell)
+                path_key = f"USD->{asset}" if not won else f"{asset}->USD"
+                self.path_memory.record('USD', asset, won)
+                # Save path memory periodically
+                if self.trades_total % 10 == 0:
+                    self.path_memory.save()
+            except Exception:
+                pass
         
         # 👑 QUEEN NEURAL LEARNING - Train on every trade
         if self.neuron and NeuralInput:
@@ -327,6 +362,33 @@ class QueenVerifier:
         phi_distance = abs(ratio - PHI) / PHI
         return max(0, 1 - phi_distance)
     
+    def get_path_boost(self, asset: str) -> float:
+        """🧭 Get labyrinth path boost for an asset (-0.05 to +0.10)"""
+        if not self.path_memory:
+            return 0.0
+        try:
+            return self.path_memory.boost('USD', asset)
+        except Exception:
+            return 0.0
+    
+    def is_path_blocked(self, asset: str) -> bool:
+        """🧭 Check if an asset path is blocked by labyrinth"""
+        if not self.path_memory:
+            return False
+        try:
+            return self.path_memory.is_blocked('USD', asset)
+        except Exception:
+            return False
+    
+    def get_path_stats(self) -> dict:
+        """🧭 Get labyrinth path memory statistics"""
+        if not self.path_memory:
+            return {'paths': 0, 'wins': 0, 'losses': 0, 'win_rate': 0.0}
+        try:
+            return self.path_memory.get_stats()
+        except Exception:
+            return {'paths': 0, 'wins': 0, 'losses': 0, 'win_rate': 0.0}
+    
     def verify_timeline(self) -> dict:
         """
         👑 Queen's verification of current timeline
@@ -399,6 +461,11 @@ class QueenVerifier:
         loss_status = "🐘" if self.loss_learner else "○"
         bus_status = "📡" if self.thought_bus else "○"
         love_hz = "💜" if self.love_frequency_active else "○"
+        path_status = "🧭" if self.path_memory else "○"
+        
+        # Labyrinth path stats
+        path_stats = self.get_path_stats()
+        path_info = f"🧭 Paths: {path_stats['paths']} ({path_stats['win_rate']*100:.0f}%)"
         
         return f"""
 ╔══════════════════════════════════════════════════════════════╗
@@ -409,7 +476,8 @@ class QueenVerifier:
 ║  Energy Reclaimed: ${status['energy_reclaimed']:.4f}                      ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  🧠 Neural: {status['neural_confidence']*100:.0f}% | 🌍 Gaia: {status['gaia_resonance']*100:.0f}% | φ Harmony: {status['harmony']*100:.0f}%    ║
-║  Alignment: {status['alignment']*100:.0f}% | Systems: {neuron_status}{hive_status}{loss_status}{bus_status}{love_hz}                       ║
+║  Alignment: {status['alignment']*100:.0f}% | Systems: {neuron_status}{hive_status}{loss_status}{bus_status}{path_status}{love_hz}                      ║
+║  {path_info:<56} ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  {status['message']:<56} ║
 ╚══════════════════════════════════════════════════════════════╝"""
@@ -487,9 +555,9 @@ class PlanetaryReclaimer:
         self.platform_stats[platform]['verified'] += 1
         self.platform_stats[platform]['last_trade'] = trade
         
-        # 👑 Feed Queen for timeline verification
+        # 👑 Feed Queen for timeline verification + labyrinth path learning
         won = profit > 0
-        self.queen.record_trade(platform, profit, won)
+        self.queen.record_trade(platform, profit, won, asset=symbol)
 
     def _get_best_momentum(self):
         """Get the asset with best 24h momentum"""
