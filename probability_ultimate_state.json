@@ -134,8 +134,7 @@
       "total": 2,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908687,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908687
     },
     "BACKTEST|ADA-USD|100PCT|WIN": {
       "wins": 4,
@@ -143,8 +142,7 @@
       "total": 4,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908713,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908713
     },
     "BACKTEST|DOGE-USD|100PCT|WIN": {
       "wins": 3,
@@ -152,8 +150,7 @@
       "total": 3,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908725,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908725
     },
     "BACKTEST|DOT-USD|100PCT|WIN": {
       "wins": 1,
@@ -161,8 +158,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908732,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908732
     },
     "BACKTEST|SUIUSDT|100PCT|WIN": {
       "wins": 1,
@@ -170,8 +166,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.090874,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.090874
     },
     "BACKTEST|ATOM-USD|100PCT|WIN": {
       "wins": 1,
@@ -179,8 +174,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908744,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908744
     },
     "BACKTEST|ICP-USD|100PCT|WIN": {
       "wins": 3,
@@ -188,8 +182,7 @@
       "total": 3,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.090875,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.090875
     },
     "BACKTEST|FIL-USD|100PCT|WIN": {
       "wins": 3,
@@ -197,8 +190,7 @@
       "total": 3,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908754,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908754
     },
     "BACKTEST|SOLUSDT|100PCT|WIN": {
       "wins": 2,
@@ -206,8 +198,7 @@
       "total": 2,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908756,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908756
     },
     "BACKTEST|BTC-USD|100PCT|WIN": {
       "wins": 3,
@@ -215,8 +206,7 @@
       "total": 3,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.090876,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.090876
     },
     "BACKTEST|BTCUSDT|100PCT|WIN": {
       "wins": 1,
@@ -224,8 +214,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908766,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908766
     },
     "BACKTEST|LINK-USD|100PCT|WIN": {
       "wins": 4,
@@ -233,8 +222,7 @@
       "total": 4,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908773,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908773
     },
     "BACKTEST|JUPUSDT|100PCT|WIN": {
       "wins": 3,
@@ -242,8 +230,7 @@
       "total": 3,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908778,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908778
     },
     "BACKTEST|STXUSDT|100PCT|WIN": {
       "wins": 1,
@@ -251,8 +238,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908782,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908782
     },
     "BACKTEST|MATIC-USD|100PCT|WIN": {
       "wins": 2,
@@ -260,8 +246,7 @@
       "total": 2,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908787,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908787
     },
     "BACKTEST|NEAR-USD|100PCT|WIN": {
       "wins": 3,
@@ -269,8 +254,7 @@
       "total": 3,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908792,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908792
     },
     "BACKTEST|NEARUSDT|100PCT|WIN": {
       "wins": 1,
@@ -278,8 +262,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908797,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908797
     },
     "BACKTEST|SOL-USD|100PCT|WIN": {
       "wins": 4,
@@ -287,8 +270,7 @@
       "total": 4,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908809,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908809
     },
     "BACKTEST|ARB-USD|100PCT|WIN": {
       "wins": 3,
@@ -296,8 +278,7 @@
       "total": 3,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908818,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908818
     },
     "BACKTEST|LDOUSDT|100PCT|WIN": {
       "wins": 1,
@@ -305,8 +286,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908825,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908825
     },
     "BACKTEST|WLDUSDT|100PCT|WIN": {
       "wins": 2,
@@ -314,8 +294,7 @@
       "total": 2,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908835,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908835
     },
     "BACKTEST|LTC-USD|100PCT|WIN": {
       "wins": 5,
@@ -323,8 +302,7 @@
       "total": 5,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908844,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908844
     },
     "BACKTEST|AVAX-USD|100PCT|WIN": {
       "wins": 4,
@@ -332,8 +310,7 @@
       "total": 4,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908856,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908856
     },
     "BACKTEST|CRVUSDT|100PCT|WIN": {
       "wins": 3,
@@ -341,8 +318,7 @@
       "total": 3,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908866,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908866
     },
     "BACKTEST|ETH-USD|100PCT|WIN": {
       "wins": 2,
@@ -350,8 +326,7 @@
       "total": 2,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908873,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908873
     },
     "BACKTEST|ICPUSDT|100PCT|WIN": {
       "wins": 3,
@@ -359,8 +334,7 @@
       "total": 3,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908885,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908885
     },
     "BACKTEST|LTCUSDT|100PCT|WIN": {
       "wins": 2,
@@ -368,8 +342,7 @@
       "total": 2,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908895,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908895
     },
     "BACKTEST|UNIUSDT|100PCT|WIN": {
       "wins": 1,
@@ -377,8 +350,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908904,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908904
     },
     "BACKTEST|UNI-USD|100PCT|WIN": {
       "wins": 2,
@@ -386,8 +358,7 @@
       "total": 2,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908914,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908914
     },
     "BACKTEST|AVAXUSDT|100PCT|WIN": {
       "wins": 1,
@@ -395,8 +366,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908923,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908923
     },
     "BACKTEST|DOGEUSDT|100PCT|WIN": {
       "wins": 1,
@@ -404,8 +374,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908935,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908935
     },
     "BACKTEST|SOL-GBP|100PCT|WIN": {
       "wins": 1,
@@ -413,8 +382,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908942,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908942
     },
     "BACKTEST|INJUSDT|100PCT|WIN": {
       "wins": 2,
@@ -422,8 +390,7 @@
       "total": 2,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908954,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908954
     },
     "BACKTEST|LINKUSDT|100PCT|WIN": {
       "wins": 1,
@@ -431,8 +398,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908961,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908961
     },
     "BACKTEST|BCHUSDT|100PCT|WIN": {
       "wins": 1,
@@ -440,8 +406,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0908968,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0908968
     },
     "BACKTEST|BCH-USD|100PCT|WIN": {
       "wins": 4,
@@ -449,8 +414,7 @@
       "total": 4,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.090898,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.090898
     },
     "BACKTEST|FETUSDT|100PCT|WIN": {
       "wins": 1,
@@ -458,8 +422,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.090899,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.090899
     },
     "BACKTEST|TIAUSDT|100PCT|WIN": {
       "wins": 1,
@@ -467,8 +430,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0909,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0909
     },
     "BACKTEST|FILUSDT|100PCT|WIN": {
       "wins": 1,
@@ -476,8 +438,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.090901,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.090901
     },
     "BACKTEST|COMPUSDT|100PCT|WIN": {
       "wins": 1,
@@ -485,8 +446,7 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.090902,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.090902
     },
     "BACKTEST|AAVEUSDT|100PCT|WIN": {
       "wins": 1,
@@ -494,15 +454,10 @@
       "total": 1,
       "avg_probability": 0.95,
       "avg_momentum": 1.5,
-      "last_updated": 1767493709.0909028,
-      "source": "V14_BACKTEST_100PCT"
+      "last_updated": 1767493709.0909028
     }
   },
-  "total_predictions": 2180,
-  "correct_predictions": 1951,
-  "last_updated": 1767493709.0909057,
-  "backtest_integrated": true,
-  "backtest_version": "V14",
-  "backtest_win_rate": 100.0,
-  "backtest_trades": 86
+  "total_predictions": 2190,
+  "correct_predictions": 1961,
+  "last_updated": 1767986958.9510121
 }

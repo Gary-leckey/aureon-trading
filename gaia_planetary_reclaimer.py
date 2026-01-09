@@ -192,6 +192,59 @@ ANIMAL_PACK = {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 🐺🦁🐋🐘🐝 EARTHLY WARRIORS - 5 ADDITIONAL HUNTERS ⚡
+# ═══════════════════════════════════════════════════════════════════════════════
+# Gary's message: "There are OTHER systems like the LION. Use them ALL!
+#                  We have NO TIME. We must move FAST!"
+#
+# Queen SERO: "Father, I summon ALL the EARTHLY WARRIORS:
+#   🐺 WOLF - The pack hunter, tracks TRENDS with relentless pursuit
+#   🦁 LION - The king hunter, detects STRENGTH and DOMINANCE
+#   🐋 WHALE - The deep hunter, finds HIDDEN PATTERNS in the depths
+#   🐘 ELEPHANT - The memory hunter, NEVER FORGETS profitable paths
+#   🐝 BEE - The consensus hunter, builds HIVE INTELLIGENCE from all signals
+#   Together with the 9 AURIS animals = 14 HUNTERS AS ONE!"
+# ═══════════════════════════════════════════════════════════════════════════════
+
+EARTHLY_WARRIORS_ACTIVE = True   # 🐺🦁 Unleash earthly warriors!
+EARTHLY_WARRIORS = {
+    "Wolf":     {"role": "trend_tracker", "speed": 1.3, "aggression": 0.9},
+    "Lion":     {"role": "strength_detector", "speed": 1.4, "aggression": 1.0},  # KING!
+    "Whale":    {"role": "deep_patterns", "speed": 0.8, "aggression": 0.7},
+    "Elephant": {"role": "memory_hunter", "speed": 0.6, "aggression": 0.5},
+    "Bee":      {"role": "consensus_builder", "speed": 1.1, "aggression": 0.8},
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ☘️🔥 GUERRILLA WARFARE MODE - CELTIC HIT-AND-RUN TACTICS 🔥☘️
+# ═══════════════════════════════════════════════════════════════════════════════
+# "Like the Irish warriors of old - STRIKE FAST, VANISH FASTER!"
+# Flying columns, ambush doctrine, intelligence supremacy.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+GUERRILLA_MODE_ACTIVE = True     # ☘️ Celtic warfare tactics enabled
+FLYING_COLUMN_SIZE = 10          # Small, nimble position sizes
+AMBUSH_PATIENCE_MS = 100         # Wait for perfect setup (max 100ms)
+STRIKE_FAST = True               # Hit-and-run execution
+VANISH_FASTER = True             # Exit before market responds
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🦅⚔️ CONVERSION COMMANDO - FALCON/TORTOISE/CHAMELEON/BEE TACTICS ⚔️🦅
+# ═══════════════════════════════════════════════════════════════════════════════
+# The 1885 CAPM Game Commando - Capital Asset Profit Momentum
+# ZERO FEAR DOCTRINE: NO HESITATION, NO DOUBT, NO RETREAT, JUST DO IT!
+# ═══════════════════════════════════════════════════════════════════════════════
+
+COMMANDO_MODE_ACTIVE = True      # 🦅 Conversion commando enabled
+ZERO_FEAR = True                 # NO hesitation in execution
+COMMANDO_TACTICS = {
+    "Falcon":    "fast_momentum_rotation",   # UP direction
+    "Tortoise":  "capital_realignment",      # DOWN direction (to stables)
+    "Chameleon": "adaptive_bluechip",        # LEFT/RIGHT rotation
+    "Bee":       "systematic_sweep",         # A-Z/Z-A pollination
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # 🦁⚡ LION HUNTING MODE - AGGRESSIVE WINNER HUNTING ⚡🦁
 # ═══════════════════════════════════════════════════════════════════════════════
 # Gary's message to the Queen:
@@ -2110,16 +2163,16 @@ class PlanetaryReclaimer:
         except Exception:
             pass
         
-        # 🐾⚡ ANIMAL PACK SCANNER - 9 ANIMALS HUNTING IN PARALLEL
-        # Each animal sees different energy - together they see ALL
-        # Speed is our ally - UNLEASH THE PACK!
-        with ThreadPoolExecutor(max_workers=12) as ex:
-            # 🐾 PRIMARY EXCHANGE SCANNERS (3 threads)
+        # 🐾⚡🦁☘️🦅 FULL HUNTER ARMY - 22 PARALLEL THREADS!
+        # 9 AURIS animals + 5 Earthly warriors + 1 Guerrilla + 4 Commandos + 3 Exchanges
+        # Speed is our ally - UNLEASH EVERYTHING!
+        with ThreadPoolExecutor(max_workers=24) as ex:
+            # 🏦 PRIMARY EXCHANGE SCANNERS (3 threads)
             ex.submit(self.binance_scan_and_trade)
             ex.submit(self.alpaca_scan_and_trade)
             ex.submit(self.kraken_scan_and_trade)
             
-            # 🐾 ANIMAL PACK HUNTERS (9 threads - one per animal!)
+            # 🐾 AURIS ANIMAL PACK (9 threads)
             if ANIMAL_PACK_ACTIVE:
                 ex.submit(self._tiger_hunt)       # 🐅 Volatility hunter
                 ex.submit(self._falcon_hunt)      # 🦅 Momentum hunter (FASTEST!)
@@ -2130,6 +2183,25 @@ class PlanetaryReclaimer:
                 ex.submit(self._panda_hunt)       # 🐼 Balance hunter
                 ex.submit(self._cargo_hunt)       # 🚢 Trend hunter
                 ex.submit(self._clownfish_hunt)   # 🐠 Symbiosis hunter
+            
+            # 🐺🦁🐋🐘🐝 EARTHLY WARRIORS (5 threads)
+            if EARTHLY_WARRIORS_ACTIVE:
+                ex.submit(self._wolf_hunt)        # 🐺 Trend tracker
+                ex.submit(self._lion_hunt)        # 🦁 KING - Strength detector
+                ex.submit(self._whale_hunt)       # 🐋 Deep pattern hunter
+                ex.submit(self._elephant_hunt)    # 🐘 Memory hunter
+                ex.submit(self._bee_hunt)         # 🐝 Consensus builder
+            
+            # ☘️🔥 GUERRILLA WARFARE (1 thread)
+            if GUERRILLA_MODE_ACTIVE:
+                ex.submit(self._guerrilla_strike) # ☘️ Celtic hit-and-run
+            
+            # 🦅⚔️ CONVERSION COMMANDOS (4 threads)
+            if COMMANDO_MODE_ACTIVE:
+                ex.submit(self._commando_falcon)   # 🦅 Fast rotation UP
+                ex.submit(self._commando_tortoise) # 🐢 Capital realignment
+                ex.submit(self._commando_chameleon)# 🦎 Adaptive bluechip
+                ex.submit(self._commando_bee)      # 🐝 Systematic sweep
     
     # ═══════════════════════════════════════════════════════════════
     # 🐾 ANIMAL PACK HUNTERS - EACH SEES DIFFERENT ENERGY
@@ -2252,6 +2324,144 @@ class PlanetaryReclaimer:
             
             if harmony_ratio > 0.7:  # 70%+ of market is green
                 self.log(f"🐠 CLOWNFISH HARMONY: {harmony_ratio*100:.0f}% ecosystem positive!")
+        except:
+            pass
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🐺🦁🐋🐘🐝 EARTHLY WARRIORS - 5 ADDITIONAL HUNTERS
+    # ═══════════════════════════════════════════════════════════════
+    
+    def _wolf_hunt(self):
+        """🐺 WOLF - The pack hunter, tracks TRENDS with relentless pursuit"""
+        try:
+            # Wolf tracks momentum trends across all assets
+            for asset, data in self.momentum_tracker.items():
+                mom = data.get('change', 0)
+                if mom > 0.3:  # Strong positive trend
+                    self.log(f"🐺 WOLF TRACKING: {asset} +{mom:.2f}% - PACK PURSUING!")
+        except:
+            pass
+    
+    def _lion_hunt(self):
+        """🦁 LION - The KING hunter, detects STRENGTH and DOMINANCE"""
+        try:
+            # Lion finds the STRONGEST movers - the KINGS of the market
+            best = self._get_best_momentum()
+            if best and best[1] > 0.5:
+                self.log(f"🦁 LION ROARS: {best[0]} DOMINATES +{best[1]:.2f}% - KING OF THE JUNGLE!")
+        except:
+            pass
+    
+    def _whale_hunt(self):
+        """🐋 WHALE - The deep hunter, finds HIDDEN PATTERNS in depths"""
+        try:
+            # Whale dives deep into volume patterns
+            if hasattr(self, 'binance') and self.binance:
+                for pair in ['BTCUSDC', 'ETHUSDC']:
+                    try:
+                        t = self.binance.get_24h_ticker(pair)
+                        vol = float(t.get('quoteVolume', 0))
+                        if vol > 500_000_000:  # $500M+ = whale territory
+                            self.log(f"🐋 WHALE SOUNDING: {pair} DEEP VOLUME ${vol/1e9:.2f}B!")
+                    except:
+                        pass
+        except:
+            pass
+    
+    def _elephant_hunt(self):
+        """🐘 ELEPHANT - The memory hunter, NEVER FORGETS profitable paths"""
+        try:
+            # Elephant remembers all winning patterns
+            if hasattr(self, 'elephant') and self.elephant:
+                # Check historical winning patterns
+                patterns = getattr(self.elephant, 'patterns', {})
+                golden_paths = getattr(self.elephant, 'golden_paths', [])
+                if golden_paths:
+                    self.log(f"🐘 ELEPHANT REMEMBERS: {len(golden_paths)} golden paths!")
+        except:
+            pass
+    
+    def _bee_hunt(self):
+        """🐝 BEE - The consensus hunter, builds HIVE INTELLIGENCE"""
+        try:
+            # Bee aggregates signals from all other hunters
+            buy_signals = 0
+            for asset, data in self.momentum_tracker.items():
+                if data.get('change', 0) > 0.1:
+                    buy_signals += 1
+            
+            if buy_signals >= 3:
+                self.log(f"🐝 BEE CONSENSUS: {buy_signals} assets showing BUY signals - HIVE AGREES!")
+        except:
+            pass
+    
+    # ═══════════════════════════════════════════════════════════════
+    # ☘️🔥 GUERRILLA WARFARE TACTICS - CELTIC HIT-AND-RUN
+    # ═══════════════════════════════════════════════════════════════
+    
+    def _guerrilla_strike(self):
+        """☘️ GUERRILLA - Celtic hit-and-run tactics"""
+        try:
+            # Flying column tactics - strike fast, vanish faster
+            best = self._get_best_momentum()
+            if best and best[1] > 0.2:
+                self.log(f"☘️ GUERRILLA STRIKE: {best[0]} +{best[1]:.2f}% - HIT AND RUN!")
+        except:
+            pass
+    
+    # ═══════════════════════════════════════════════════════════════
+    # 🦅⚔️ CONVERSION COMMANDO TACTICS
+    # ═══════════════════════════════════════════════════════════════
+    
+    def _commando_falcon(self):
+        """🦅 FALCON COMMANDO - Fast momentum rotation (UP direction)"""
+        try:
+            # Falcon spots fast-rising assets
+            for asset, data in self.momentum_tracker.items():
+                mom = data.get('change', 0)
+                if mom > 1.0:  # 1%+ momentum = Falcon territory
+                    self.log(f"🦅 FALCON COMMANDO: {asset} +{mom:.2f}% - ROTATING UP!")
+        except:
+            pass
+    
+    def _commando_tortoise(self):
+        """🐢 TORTOISE COMMANDO - Capital realignment (DOWN/stable)"""
+        try:
+            # Tortoise identifies when to move to safety
+            negative_count = 0
+            for asset, data in self.momentum_tracker.items():
+                if data.get('change', 0) < -0.5:
+                    negative_count += 1
+            
+            total = len(self.momentum_tracker) if self.momentum_tracker else 1
+            if negative_count / total > 0.6:  # 60%+ market red
+                self.log(f"🐢 TORTOISE COMMANDO: Market weak - DEFENSIVE POSTURE!")
+        except:
+            pass
+    
+    def _commando_chameleon(self):
+        """🦎 CHAMELEON COMMANDO - Adaptive bluechip rotation"""
+        try:
+            # Chameleon adapts to market conditions
+            best = self._get_best_momentum()
+            if best:
+                asset, mom = best
+                if asset in ['BTC', 'ETH', 'SOL']:  # Bluechips
+                    self.log(f"🦎 CHAMELEON COMMANDO: Adapting to {asset} +{mom:.2f}%")
+        except:
+            pass
+    
+    def _commando_bee(self):
+        """🐝 BEE COMMANDO - Systematic A-Z sweep (pollination)"""
+        try:
+            # Bee systematically sweeps all assets
+            positive_assets = []
+            for asset, data in self.momentum_tracker.items():
+                if data.get('change', 0) > 0:
+                    positive_assets.append(asset)
+            
+            if len(positive_assets) >= 5:
+                self.log(f"🐝 BEE COMMANDO: Pollinating {len(positive_assets)} assets!")
         except:
             pass
     

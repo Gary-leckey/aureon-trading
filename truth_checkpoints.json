@@ -887,5 +887,37 @@
       }
     },
     "grand_total": 39.03
+  },
+  {
+    "timestamp": "2026-01-09T19:26:17.536247",
+    "binance": {
+      "total": 13.44,
+      "details": {
+        "BTC": 0.7671,
+        "USDC": 10.5816,
+        "SOL": 0.028,
+        "LDUSDC": 1.9208,
+        "AVAX": 0.1388
+      }
+    },
+    "alpaca": {
+      "total": 10.55,
+      "details": {
+        "USD": 0.54,
+        "SOL": 10.0057
+      }
+    },
+    "kraken": {
+      "total": 15.04,
+      "details": {
+        "ATOM": 2.3093,
+        "DAI": 0.0617,
+        "TUSD": 11.8016,
+        "USDC": 0.7278,
+        "USDT": 0.0254,
+        "ZUSD": 0.1125
+      }
+    },
+    "grand_total": 39.03
   }
 ]
