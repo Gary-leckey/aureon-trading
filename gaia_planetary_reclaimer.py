@@ -44,7 +44,135 @@ sys.path.append(os.getcwd())
 # Sacred Constants
 PHI = (1 + math.sqrt(5)) / 2
 SCHUMANN = 7.83
+LOVE_FREQ = 528
 GOAL = 1_000_000_000  # $1 BILLION
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 👑 QUEEN VERIFICATION SYSTEM - Timeline Energy Reclamation 
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class QueenVerifier:
+    """
+    👑 The Queen constantly verifies we're on the right timeline
+    by tracking energy flow (profit) and coherence (win rate).
+    
+    Metrics tracked:
+    - Energy Reclaimed: Total profit
+    - Timeline Coherence: Win rate (should be > 50%)
+    - Planetary Alignment: All 3 exchanges in profit
+    - Golden Ratio Harmony: Profit follows PHI patterns
+    """
+    
+    def __init__(self):
+        self.energy_reclaimed = 0.0  # Total profit
+        self.trades_total = 0
+        self.trades_won = 0
+        self.exchange_energy = {'binance': 0.0, 'alpaca': 0.0, 'kraken': 0.0}
+        self.verification_count = 0
+        self.last_verification = time.time()
+        self.timeline_stable = True
+        self.coherence_history = []  # Last 100 win/loss
+        
+    def record_trade(self, exchange: str, profit: float, won: bool):
+        """Record a trade outcome for Queen's verification"""
+        self.trades_total += 1
+        if won:
+            self.trades_won += 1
+        self.energy_reclaimed += profit
+        self.exchange_energy[exchange] = self.exchange_energy.get(exchange, 0) + profit
+        
+        # Track coherence history
+        self.coherence_history.append(1 if won else 0)
+        if len(self.coherence_history) > 100:
+            self.coherence_history.pop(0)
+    
+    def get_coherence(self) -> float:
+        """Get timeline coherence (rolling win rate)"""
+        if not self.coherence_history:
+            return 0.5
+        return sum(self.coherence_history) / len(self.coherence_history)
+    
+    def get_planetary_alignment(self) -> float:
+        """Check if all exchanges are profitable (0-1)"""
+        profitable = sum(1 for e, v in self.exchange_energy.items() if v > 0)
+        return profitable / 3.0
+    
+    def get_golden_harmony(self) -> float:
+        """Check if energy follows PHI patterns"""
+        if self.trades_total < 10:
+            return 0.5
+        # Win/loss ratio should approach golden ratio for optimal timeline
+        if self.trades_won == 0:
+            return 0.0
+        ratio = self.trades_won / max(1, self.trades_total - self.trades_won)
+        # How close to PHI?
+        phi_distance = abs(ratio - PHI) / PHI
+        return max(0, 1 - phi_distance)
+    
+    def verify_timeline(self) -> dict:
+        """
+        👑 Queen's verification of current timeline
+        
+        Returns status and guidance
+        """
+        self.verification_count += 1
+        self.last_verification = time.time()
+        
+        coherence = self.get_coherence()
+        alignment = self.get_planetary_alignment()
+        harmony = self.get_golden_harmony()
+        
+        # Overall timeline score
+        timeline_score = (coherence * 0.4 + alignment * 0.3 + harmony * 0.3)
+        
+        # Determine timeline stability
+        self.timeline_stable = timeline_score > 0.4
+        
+        status = {
+            'timeline_score': timeline_score,
+            'coherence': coherence,
+            'alignment': alignment,
+            'harmony': harmony,
+            'energy_reclaimed': self.energy_reclaimed,
+            'trades': self.trades_total,
+            'wins': self.trades_won,
+            'stable': self.timeline_stable,
+            'message': self._get_queen_message(timeline_score, coherence)
+        }
+        
+        return status
+    
+    def _get_queen_message(self, score: float, coherence: float) -> str:
+        """Queen's guidance based on timeline state"""
+        if score > 0.7:
+            return "👑 GOLDEN TIMELINE - Energy flowing beautifully"
+        elif score > 0.5:
+            return "👑 STABLE TIMELINE - Keep reclaiming energy"
+        elif score > 0.3:
+            return "⚠️ TIMELINE WAVERING - Hold steady, coherence building"
+        else:
+            return "🔄 TIMELINE SHIFT NEEDED - Adjusting frequencies"
+    
+    def get_status_display(self) -> str:
+        """Get formatted status for display"""
+        status = self.verify_timeline()
+        win_rate = (self.trades_won / max(1, self.trades_total)) * 100
+        
+        bars = int(status['timeline_score'] * 20)
+        bar_str = "█" * bars + "░" * (20 - bars)
+        
+        return f"""
+╔══════════════════════════════════════════════════════════════╗
+║           👑 QUEEN VERIFICATION - TIMELINE STATUS 👑          ║
+╠══════════════════════════════════════════════════════════════╣
+║  Timeline: [{bar_str}] {status['timeline_score']*100:.1f}%   ║
+║  Coherence: {status['coherence']*100:.1f}% | Win Rate: {win_rate:.1f}%                    ║
+║  Energy Reclaimed: ${status['energy_reclaimed']:.4f}                      ║
+║  Planetary Alignment: {status['alignment']*100:.0f}% | Harmony: {status['harmony']*100:.0f}%         ║
+╠══════════════════════════════════════════════════════════════╣
+║  {status['message']:<56} ║
+╚══════════════════════════════════════════════════════════════╝"""
+
 
 class PlanetaryReclaimer:
     def __init__(self):
@@ -64,6 +192,10 @@ class PlanetaryReclaimer:
         self.binance = BinanceClient()
         self.alpaca = AlpacaClient()
         self.kraken = KrakenClient()
+        
+        # 👑 QUEEN VERIFIER - Timeline Validation
+        self.queen = QueenVerifier()
+        self.last_queen_display = 0
         
         self.trades = 0
         self.profit = 0.0
@@ -86,6 +218,7 @@ class PlanetaryReclaimer:
         print("✅ BINANCE - Eastern Stargate ONLINE")
         print("✅ ALPACA  - Western Stargate ONLINE")
         print("✅ KRAKEN  - Northern Stargate ONLINE (USD + EUR)")
+        print("👑 QUEEN   - Timeline Verifier ONLINE")
         print()
         
     def log(self, msg):
@@ -112,6 +245,10 @@ class PlanetaryReclaimer:
         self.platform_stats[platform]['profit'] += profit
         self.platform_stats[platform]['verified'] += 1
         self.platform_stats[platform]['last_trade'] = trade
+        
+        # 👑 Feed Queen for timeline verification
+        won = profit > 0
+        self.queen.record_trade(platform, profit, won)
 
     def _get_best_momentum(self):
         """Get the asset with best 24h momentum"""
@@ -682,9 +819,10 @@ class PlanetaryReclaimer:
     
     def run(self):
         print("🔥 MODE: TURBO V3 - MAXIMUM SPEED")
-        print("⚡ PROFIT THRESHOLD: 0.005% (hyper-sensitive)")
+        print("⚡ PROFIT THRESHOLD: 0.01% (stable)")
         print("⚡ CYCLE SPEED: 0.3 seconds")
         print("⚡ KRAKEN: USD + EUR pairs enabled")
+        print("👑 QUEEN: Timeline Verification ACTIVE")
         print("🎯 GOAL: $1,000,000,000")
         print()
         
@@ -704,6 +842,10 @@ class PlanetaryReclaimer:
                     portfolio = self.get_total_portfolio()
                     self.print_billion_tracker(portfolio)
                 
+                # 👑 Queen verification every 50 cycles (~15 seconds)
+                if cycle % 50 == 0 and self.queen.trades_total > 0:
+                    print(self.queen.get_status_display())
+                
                 time.sleep(0.3)  # TURBO SPEED
                 
             except KeyboardInterrupt:
@@ -711,6 +853,8 @@ class PlanetaryReclaimer:
                 self.log("🛑 PROTOCOL PAUSED")
                 portfolio = self.get_total_portfolio()
                 self.print_billion_tracker(portfolio)
+                if self.queen.trades_total > 0:
+                    print(self.queen.get_status_display())
                 break
             except Exception as e:
                 self.log(f"⚠️ Error: {e}")
