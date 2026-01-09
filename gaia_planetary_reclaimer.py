@@ -84,6 +84,18 @@ except ImportError:
     Thought = None
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 🍄 MYCELIUM NEURAL NETWORK - Underground Connection Mesh
+# ═══════════════════════════════════════════════════════════════════════════════
+
+MYCELIUM_AVAILABLE = False
+try:
+    from aureon_mycelium import MyceliumNetwork, get_mycelium
+    MYCELIUM_AVAILABLE = True
+except ImportError:
+    MyceliumNetwork = None
+    get_mycelium = None
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # 🧭 LABYRINTH NAVIGATION - Path Memory & Market Intelligence
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -762,6 +774,16 @@ class PlanetaryReclaimer:
             except Exception as e:
                 print(f"⚠️ AURIS - Offline ({e})")
         
+        # 🍄 MYCELIUM NEURAL NETWORK - Wire All Systems Together
+        self.mycelium = None
+        if MYCELIUM_AVAILABLE:
+            try:
+                self.mycelium = get_mycelium() if get_mycelium else MyceliumNetwork(initial_capital=25.0)
+                self._wire_mycelium_mesh()
+                print("✅ MYCELIUM - Neural Mesh Network ONLINE")
+            except Exception as e:
+                print(f"⚠️ MYCELIUM - Offline ({e})")
+        
         print("✅ BINANCE - Eastern Stargate ONLINE")
         print("✅ ALPACA  - Western Stargate ONLINE")
         print("✅ KRAKEN  - Northern Stargate ONLINE (USD + EUR)")
@@ -796,6 +818,10 @@ class PlanetaryReclaimer:
         # 👑 Feed Queen for timeline verification + labyrinth path learning
         won = profit > 0
         self.queen.record_trade(platform, profit, won, asset=symbol)
+        
+        # 🍄 Broadcast to Mycelium mesh for collective learning
+        boost, indicators = self._get_combined_confidence_boost()
+        self._broadcast_trade_to_mycelium(platform, symbol, side, profit, boost)
     
     # ═══════════════════════════════════════════════════════════════
     # 💎 TRUTH VERIFICATION - NO LIES, ONLY REAL BALANCES
@@ -958,6 +984,127 @@ class PlanetaryReclaimer:
         total_boost = max(0.5, min(2.0, total_boost))
         
         return total_boost, ''.join(indicators)
+    
+    def _wire_mycelium_mesh(self):
+        """
+        🍄 Wire all enhancement systems into the Mycelium Neural Network.
+        This creates a unified consciousness mesh where all systems can communicate.
+        
+        Connected Systems:
+        - 🌊 Momentum Tracker → Provides wave direction signals
+        - 🍀 Luck Field Mapper → Quantum probability windows  
+        - 🏮 Lighthouse → Pattern detection alerts
+        - 🦉 Auris Engine → 9-node coherence calculations
+        - 👑 Queen Hive Mind → Central decision authority
+        - 📡 Thought Bus → Message propagation
+        - 🧠 Miner Brain → 11 civilizations wisdom
+        """
+        if not self.mycelium:
+            return
+        
+        try:
+            wired_count = 0
+            
+            # 🌊 Wire Momentum Tracker
+            if self.momentum_tracker:
+                self.mycelium.connect_subsystem('momentum_tracker', self.momentum_tracker)
+                wired_count += 1
+            
+            # 🍀 Wire Luck Field Mapper
+            if self.luck_mapper:
+                self.mycelium.connect_subsystem('luck_field_mapper', self.luck_mapper)
+                wired_count += 1
+            
+            # 🏮 Wire Lighthouse Pattern Detector
+            if self.lighthouse:
+                self.mycelium.connect_subsystem('lighthouse', self.lighthouse)
+                wired_count += 1
+            
+            # 🦉 Wire Auris 9-Node Coherence Engine
+            if self.auris:
+                self.mycelium.connect_subsystem('auris_coherence', self.auris)
+                wired_count += 1
+            
+            # 👑 Wire Queen Hive Mind
+            if hasattr(self, 'queen') and self.queen:
+                if hasattr(self.queen, 'hive_mind') and self.queen.hive_mind:
+                    self.mycelium.connect_to_queen(self.queen.hive_mind)
+                    wired_count += 1
+            
+            # 📡 Wire Thought Bus for message propagation
+            if THOUGHT_BUS_AVAILABLE and get_thought_bus:
+                try:
+                    bus = get_thought_bus()
+                    self.mycelium.connect_subsystem('thought_bus', bus)
+                    wired_count += 1
+                except:
+                    pass
+            
+            # 🧠 Wire Miner Brain (if available)
+            if MINER_BRAIN_AVAILABLE and MinerBrain:
+                try:
+                    brain = MinerBrain()
+                    self.mycelium.connect_subsystem('miner_brain', brain)
+                    wired_count += 1
+                except:
+                    pass
+            
+            # 💎 Wire Ultimate Intelligence
+            if ULTIMATE_INTEL_AVAILABLE and ProbabilityUltimateIntelligence:
+                try:
+                    intel = ProbabilityUltimateIntelligence()
+                    self.mycelium.connect_subsystem('ultimate_intel', intel)
+                    wired_count += 1
+                except:
+                    pass
+            
+            print(f"   🍄 Mycelium Mesh: {wired_count} systems wired")
+            
+        except Exception as e:
+            print(f"   ⚠️ Mycelium wiring partial: {e}")
+    
+    def _broadcast_trade_to_mycelium(self, platform: str, symbol: str, side: str, 
+                                      profit: float, confidence: float):
+        """
+        📡 Broadcast a trade signal to the Mycelium mesh.
+        All connected systems will receive the signal for learning.
+        """
+        if not self.mycelium:
+            return
+        
+        try:
+            signal_data = {
+                'platform': platform,
+                'symbol': symbol,
+                'side': side,
+                'profit': profit,
+                'confidence': confidence,
+                'won': profit > 0,
+                'timestamp': time.time()
+            }
+            
+            # Broadcast for collective learning
+            self.mycelium.broadcast_signal('trade_executed', signal_data)
+            
+            # Send external signal for queen neuron adjustment
+            signal_strength = 0.5 + (confidence * 0.5) if profit > 0 else -(0.5 + (confidence * 0.5))
+            self.mycelium.receive_external_signal('gaia_reclaimer', signal_strength, confidence)
+            
+        except:
+            pass  # Silent fail - mycelium is enhancement only
+    
+    def _get_mycelium_unified_signal(self, asset: str) -> dict:
+        """
+        🍄 Get a unified signal from the Mycelium mesh.
+        Combines all wired systems for optimal decision.
+        """
+        if not self.mycelium:
+            return {'signal': 0, 'confidence': 0.5, 'action': 'HOLD'}
+        
+        try:
+            return self.mycelium.get_unified_signal(asset=asset, include_external=True)
+        except:
+            return {'signal': 0, 'confidence': 0.5, 'action': 'HOLD'}
 
     # ═══════════════════════════════════════════════════════════════
     # PORTFOLIO TRACKER - ROAD TO $1 BILLION
@@ -1587,6 +1734,7 @@ class PlanetaryReclaimer:
         print("🍀 LUCK FIELD: Active" if self.luck_mapper else "🍀 LUCK FIELD: Offline")
         print("🏮 LIGHTHOUSE: Active" if self.lighthouse else "🏮 LIGHTHOUSE: Offline")
         print("🦉 AURIS: 9-Node Coherence Active" if self.auris else "🦉 AURIS: Offline")
+        print("🍄 MYCELIUM: Neural Mesh ONLINE" if self.mycelium else "🍄 MYCELIUM: Offline")
         print("👑 QUEEN: Advanced Intelligence Layer ACTIVE")
         print("💎 TRUTH: Continuous verification ACTIVE")
         print("🎯 GOAL: $1,000,000,000")
