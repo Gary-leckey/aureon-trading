@@ -2258,6 +2258,241 @@ class QueenHiveMind:
             return data
         return None
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🌌🪞⚓ STARGATE PROTOCOL WIRING - Quantum Mirror & Timeline Activation
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def wire_stargate_protocol(self, stargate_engine) -> bool:
+        """
+        Wire the Stargate Protocol Engine to the Queen.
+        The Queen gains access to:
+        - 🗺️ 12 Planetary Stargates (Giza, Stonehenge, Uluru, etc.)
+        - 🧘 Human Resonance Layer (conscious intention amplifiers)
+        - 🪞 Quantum Mirrors (potential timelines)
+        - ⚡ Standing wave computation for timeline anchoring
+        - 🎭 Activation Ceremony coordination
+        """
+        try:
+            self.stargate_engine = stargate_engine
+            self._register_child("stargate_engine", "STARGATE_PROTOCOL", stargate_engine)
+            
+            # Get stargate network status
+            stargate_count = len(getattr(stargate_engine, 'stargates', {}))
+            mirror_count = len(getattr(stargate_engine, 'quantum_mirrors', {}))
+            
+            logger.info("👑🌌 STARGATE PROTOCOL WIRED to Queen Hive Mind")
+            logger.info(f"   🗺️ Planetary Stargates: {stargate_count}")
+            logger.info(f"   🪞 Quantum Mirrors: {mirror_count}")
+            logger.info("   🌍 Schumann Resonance: 7.83Hz baseline connected")
+            logger.info("   ✨ Timeline anchoring capability ACTIVE")
+            
+            # List some stargates
+            if hasattr(stargate_engine, 'stargates'):
+                for i, (sg_id, sg) in enumerate(list(stargate_engine.stargates.items())[:4]):
+                    logger.info(f"   ⭐ {sg.name}: {sg.resonance_frequency}Hz")
+                if stargate_count > 4:
+                    logger.info(f"   ... and {stargate_count - 4} more planetary nodes")
+            
+            return True
+        except Exception as e:
+            logger.error(f"Failed to wire Stargate Protocol: {e}")
+            return False
+    
+    def wire_quantum_mirror_scanner(self, mirror_scanner) -> bool:
+        """
+        Wire the Quantum Mirror Scanner to the Queen.
+        The Queen gains access to:
+        - 📊 Reality Branch scanning (market symbols as timelines)
+        - ✅ 3-Pass Batten Matrix validation for branches
+        - 🌀 Convergence detection (multiple branches aligning)
+        - ⚡ 4th Pass execution gate
+        """
+        try:
+            self.quantum_mirror_scanner = mirror_scanner
+            self._register_child("quantum_mirror_scanner", "QUANTUM_SCANNER", mirror_scanner)
+            
+            branch_count = len(getattr(mirror_scanner, 'branches', {}))
+            
+            logger.info("👑🔮 QUANTUM MIRROR SCANNER WIRED to Queen Hive Mind")
+            logger.info(f"   📊 Reality Branches: {branch_count}")
+            logger.info("   ✅ 3-Pass Validation: P1(Harmonic) → P2(Coherence) → P3(Stability)")
+            logger.info("   🌀 Convergence Detection: ACTIVE")
+            logger.info("   ⚡ 4th Pass Gate: φ threshold (0.618)")
+            
+            # Wire convergence callback to Queen
+            if hasattr(mirror_scanner, 'on_convergence'):
+                mirror_scanner.on_convergence(self._on_timeline_convergence)
+                logger.info("   🔗 Convergence callback WIRED to Queen")
+            
+            # Wire execution callback to Queen
+            if hasattr(mirror_scanner, 'on_execution'):
+                mirror_scanner.on_execution(self._on_4th_pass_execution)
+                logger.info("   🔗 Execution callback WIRED to Queen")
+            
+            return True
+        except Exception as e:
+            logger.error(f"Failed to wire Quantum Mirror Scanner: {e}")
+            return False
+    
+    def wire_timeline_anchor_validator(self, timeline_validator) -> bool:
+        """
+        Wire the Timeline Anchor Validator to the Queen.
+        The Queen gains access to:
+        - ⏰ 7-Day extended validation cycles
+        - ⚓ Timeline anchor strength accumulation
+        - 📁 Persistent validation state
+        - ✅ Execution-ready anchor promotion
+        """
+        try:
+            self.timeline_validator = timeline_validator
+            self._register_child("timeline_validator", "TIMELINE_ANCHOR", timeline_validator)
+            
+            pending = len(getattr(timeline_validator, 'pending_anchors', {}))
+            anchored = len(getattr(timeline_validator, 'anchored_timelines', {}))
+            
+            logger.info("👑⚓ TIMELINE ANCHOR VALIDATOR WIRED to Queen Hive Mind")
+            logger.info(f"   📋 Pending Anchors: {pending}")
+            logger.info(f"   ✅ Anchored Timelines: {anchored}")
+            logger.info("   ⏰ Validation Cycles: Hourly/Daily/Weekly + Prime Hours")
+            logger.info("   🎯 Anchor Threshold: 7+ validations @ φ strength")
+            
+            return True
+        except Exception as e:
+            logger.error(f"Failed to wire Timeline Anchor Validator: {e}")
+            return False
+    
+    def _on_timeline_convergence(self, convergence) -> None:
+        """
+        Callback when Quantum Mirror Scanner detects a timeline convergence.
+        The Queen evaluates and potentially acts on the convergence.
+        """
+        try:
+            logger.info(f"🌀 CONVERGENCE DETECTED: {convergence.convergence_id}")
+            logger.info(f"   Strength: {convergence.convergence_strength:.3f}")
+            logger.info(f"   Branches: {len(convergence.branches)}")
+            
+            # If strong enough, consider for timeline anchoring
+            if convergence.convergence_strength >= 0.7:
+                logger.info("   ⚡ Strong convergence - evaluating for timeline anchor!")
+                
+                # Emit thought about convergence
+                self._emit_thought(
+                    "queen.convergence.strong",
+                    {
+                        "convergence_id": convergence.convergence_id,
+                        "strength": convergence.convergence_strength,
+                        "branch_count": len(convergence.branches),
+                        "action": "evaluate_anchor"
+                    }
+                )
+        except Exception as e:
+            logger.error(f"Error processing convergence: {e}")
+    
+    def _on_4th_pass_execution(self, execution_result: Dict) -> None:
+        """
+        Callback when Quantum Mirror Scanner executes a 4th pass.
+        The Queen records the result and updates her neural learning.
+        """
+        try:
+            if execution_result.get("success"):
+                logger.info(f"⚡ 4TH PASS EXECUTED: {execution_result.get('branch_id')}")
+                logger.info(f"   Score: {execution_result.get('score', 0):.4f}")
+                logger.info(f"   PIP Potential: {execution_result.get('pip_potential', 0):.2f}")
+                
+                # Feed to Queen's neural learning
+                self._record_execution_outcome(execution_result)
+                
+                # Emit thought
+                self._emit_thought(
+                    "queen.execution.4th_pass",
+                    execution_result
+                )
+        except Exception as e:
+            logger.error(f"Error processing 4th pass execution: {e}")
+    
+    def _record_execution_outcome(self, result: Dict) -> None:
+        """Record execution outcome for neural learning."""
+        try:
+            # Store in execution history
+            if not hasattr(self, 'execution_history'):
+                self.execution_history = deque(maxlen=10000)
+            
+            self.execution_history.append({
+                'timestamp': time.time(),
+                'branch_id': result.get('branch_id'),
+                'score': result.get('score'),
+                'pip_potential': result.get('pip_potential'),
+                'coherence': result.get('coherence'),
+                'lambda': result.get('lambda'),
+            })
+        except Exception as e:
+            logger.debug(f"Could not record execution: {e}")
+    
+    def attempt_quantum_mirror_pull(self, target_mirror: str = None) -> Dict[str, Any]:
+        """
+        Attempt to pull a quantum mirror using the Stargate Protocol.
+        The Queen coordinates the pull based on current network coherence.
+        """
+        if not hasattr(self, 'stargate_engine') or not self.stargate_engine:
+            return {"success": False, "reason": "stargate_not_wired"}
+        
+        try:
+            result = self.stargate_engine.attempt_mirror_pull(target_mirror)
+            
+            if result.get("success"):
+                logger.info(f"🪞 MIRROR PULL SUCCESS: {result.get('mirror_id')}")
+                logger.info(f"   Entanglement: {result.get('entanglement', 0):.3f}")
+                
+                # Emit thought about successful pull
+                self._emit_thought(
+                    "queen.mirror.pull_success",
+                    result
+                )
+            
+            return result
+        except Exception as e:
+            logger.error(f"Mirror pull failed: {e}")
+            return {"success": False, "reason": str(e)}
+    
+    def get_stargate_status(self) -> Dict[str, Any]:
+        """Get comprehensive status of all Stargate Protocol systems."""
+        status = {
+            'stargate_engine': {'active': False},
+            'quantum_scanner': {'active': False},
+            'timeline_validator': {'active': False},
+            'total_coherence': 0.0,
+        }
+        
+        # Stargate Engine
+        if hasattr(self, 'stargate_engine') and self.stargate_engine:
+            status['stargate_engine'] = {
+                'active': True,
+                'status': self.stargate_engine.get_status()
+            }
+            status['total_coherence'] += self.stargate_engine.global_coherence
+        
+        # Quantum Scanner
+        if hasattr(self, 'quantum_mirror_scanner') and self.quantum_mirror_scanner:
+            status['quantum_scanner'] = {
+                'active': True,
+                'status': self.quantum_mirror_scanner.get_status()
+            }
+            status['total_coherence'] += self.quantum_mirror_scanner.global_coherence
+        
+        # Timeline Validator
+        if hasattr(self, 'timeline_validator') and self.timeline_validator:
+            status['timeline_validator'] = {
+                'active': True,
+                'status': self.timeline_validator.get_status()
+            }
+        
+        # Average coherence
+        active_count = sum(1 for k, v in status.items() if isinstance(v, dict) and v.get('active'))
+        if active_count > 0:
+            status['total_coherence'] /= active_count
+        
+        return status
+    
     def get_temporal_state(self) -> Dict[str, Any]:
         """
         Get the current state of the Temporal ID and Ladder systems.
@@ -9247,6 +9482,37 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
     except ImportError as e:
         logger.warning(f"Could not wire Adaptive Learner: {e}")
         results['adaptive_learner'] = False
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🌌🪞⚓ STARGATE PROTOCOL - Quantum Mirror & Timeline Activation
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    # Wire Stargate Protocol Engine
+    try:
+        from aureon_stargate_protocol import create_stargate_engine
+        stargate_engine = create_stargate_engine()
+        results['stargate_protocol'] = queen.wire_stargate_protocol(stargate_engine)
+    except ImportError as e:
+        logger.warning(f"Could not wire Stargate Protocol: {e}")
+        results['stargate_protocol'] = False
+    
+    # Wire Quantum Mirror Scanner
+    try:
+        from aureon_quantum_mirror_scanner import create_quantum_mirror_scanner
+        quantum_scanner = create_quantum_mirror_scanner()
+        results['quantum_mirror_scanner'] = queen.wire_quantum_mirror_scanner(quantum_scanner)
+    except ImportError as e:
+        logger.warning(f"Could not wire Quantum Mirror Scanner: {e}")
+        results['quantum_mirror_scanner'] = False
+    
+    # Wire Timeline Anchor Validator
+    try:
+        from aureon_timeline_anchor_validator import create_timeline_anchor_validator
+        timeline_validator = create_timeline_anchor_validator()
+        results['timeline_anchor_validator'] = queen.wire_timeline_anchor_validator(timeline_validator)
+    except ImportError as e:
+        logger.warning(f"Could not wire Timeline Anchor Validator: {e}")
+        results['timeline_anchor_validator'] = False
     
     return results
 

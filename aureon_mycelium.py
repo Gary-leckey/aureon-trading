@@ -1909,6 +1909,8 @@ class MyceliumNetwork:
         """
         Get the Queen Neuron's aggregated signal.
         This is the MASTER SIGNAL that combines all hives and agents.
+        
+        🌌 ENHANCED: Now includes Stargate Protocol coherence!
         """
         if not self.hives:
             return 0.0
@@ -1916,30 +1918,116 @@ class MyceliumNetwork:
         # If market data provided, do a full step first
         if market_data:
             result = self.step(market_data)
-            return result.get('queen_signal', 0.0)
+            base_signal = result.get('queen_signal', 0.0)
+        else:
+            # Otherwise, get cached queen signal from last step
+            # Aggregate all hive signals through synapses
+            hive_signals = []
+            for hive in self.hives:
+                # Get aggregate signal from hive's agents
+                agent_signals = [a.last_signal for a in hive.agents if hasattr(a, 'last_signal')]
+                if agent_signals:
+                    hive_signal = sum(agent_signals) / len(agent_signals)
+                    hive_signals.append(hive_signal)
+            
+            if not hive_signals:
+                return 0.0
+            
+            # Queen aggregates all signals
+            transmitted = []
+            for i, signal in enumerate(hive_signals):
+                if i < len(self.hive_synapses):
+                    transmitted.append(self.hive_synapses[i].transmit(signal))
+                else:
+                    transmitted.append(signal)
+            
+            base_signal = self.queen_neuron.activate(transmitted)
         
-        # Otherwise, get cached queen signal from last step
-        # Aggregate all hive signals through synapses
-        hive_signals = []
-        for hive in self.hives:
-            # Get aggregate signal from hive's agents
-            agent_signals = [a.last_signal for a in hive.agents if hasattr(a, 'last_signal')]
-            if agent_signals:
-                hive_signal = sum(agent_signals) / len(agent_signals)
-                hive_signals.append(hive_signal)
+        # 🌌 STARGATE PROTOCOL INTEGRATION - Enhance signal with quantum coherence
+        stargate_boost = self._get_stargate_coherence_boost()
+        if stargate_boost != 0.0:
+            # Apply boost as a small adjustment (±0.1 max)
+            adjusted_signal = base_signal + (stargate_boost * 0.1)
+            # Clamp to [-1, 1]
+            adjusted_signal = max(-1.0, min(1.0, adjusted_signal))
+            return adjusted_signal
         
-        if not hive_signals:
-            return 0.0
+        return base_signal
+    
+    def _get_stargate_coherence_boost(self) -> float:
+        """
+        🌌 Get coherence boost from Stargate Protocol.
+        Returns: -1 to +1 boost factor based on quantum coherence.
+        """
+        boost = 0.0
         
-        # Queen aggregates all signals
-        transmitted = []
-        for i, signal in enumerate(hive_signals):
-            if i < len(self.hive_synapses):
-                transmitted.append(self.hive_synapses[i].transmit(signal))
-            else:
-                transmitted.append(signal)
+        # Check if Queen has Stargate systems wired
+        if hasattr(self, 'queen_hive_mind') and self.queen_hive_mind:
+            queen = self.queen_hive_mind
+            
+            # Get Stargate Engine coherence
+            if hasattr(queen, 'stargate_engine') and queen.stargate_engine:
+                try:
+                    status = queen.stargate_engine.get_status()
+                    global_coherence = status.get('global_coherence', 0.0)
+                    standing_wave = status.get('standing_wave_intensity', 0.0)
+                    
+                    # High coherence = positive boost, low = negative
+                    coherence_factor = (global_coherence - 0.5) * 2  # Map 0.5-1.0 to 0-1
+                    wave_factor = (standing_wave - 0.5) * 2
+                    
+                    boost += (coherence_factor * 0.6 + wave_factor * 0.4)
+                except Exception:
+                    pass
+            
+            # Get Quantum Mirror Scanner coherence
+            if hasattr(queen, 'quantum_mirror_scanner') and queen.quantum_mirror_scanner:
+                try:
+                    status = queen.quantum_mirror_scanner.get_status()
+                    scanner_coherence = status.get('global_coherence', 0.5)
+                    
+                    # PHI-aligned branches give extra boost
+                    if scanner_coherence >= 0.618:  # Golden ratio threshold
+                        boost += 0.2
+                    else:
+                        boost += (scanner_coherence - 0.5) * 0.5
+                except Exception:
+                    pass
+            
+            # Get Timeline Anchor ready status
+            if hasattr(queen, 'timeline_validator') and queen.timeline_validator:
+                try:
+                    status = queen.timeline_validator.get_status()
+                    execution_ready = status.get('execution_ready', 0)
+                    
+                    if execution_ready > 0:
+                        boost += 0.15 * min(execution_ready, 3)  # Cap at 3 ready anchors
+                except Exception:
+                    pass
         
-        return self.queen_neuron.activate(transmitted)
+        # Clamp boost to [-1, 1]
+        return max(-1.0, min(1.0, boost))
+    
+    def wire_stargate_protocol(self, stargate_engine, quantum_scanner=None, timeline_validator=None) -> bool:
+        """
+        🌌 Wire Stargate Protocol systems directly to Mycelium.
+        This enables quantum coherence to influence the neural network.
+        """
+        try:
+            self.stargate_engine = stargate_engine
+            self.quantum_mirror_scanner = quantum_scanner
+            self.timeline_anchor_validator = timeline_validator
+            
+            logger.info("🍄🌌 Mycelium Network: Stargate Protocol WIRED")
+            logger.info(f"   ⭐ Stargate Engine: {'✅' if stargate_engine else '❌'}")
+            logger.info(f"   🔮 Quantum Scanner: {'✅' if quantum_scanner else '❌'}")
+            logger.info(f"   ⚓ Timeline Validator: {'✅' if timeline_validator else '❌'}")
+            
+            return True
+        except Exception as e:
+            logger.error(f"Failed to wire Stargate Protocol to Mycelium: {e}")
+            return False
+    
     
     def receive_queen_wisdom(self, wisdom: Any) -> None:
         """

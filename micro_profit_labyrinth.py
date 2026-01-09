@@ -654,6 +654,55 @@ except ImportError as e:
     LionHunt = None
     print(f"⚠️ Quack Commandos not available: {e}")
 
+# 🌌🪞⚓ STARGATE PROTOCOL - Quantum Mirror & Timeline Activation
+try:
+    from aureon_stargate_protocol import (
+        StargateProtocolEngine, create_stargate_engine,
+        StargateNode, QuantumMirror, ConsciousNode
+    )
+    STARGATE_PROTOCOL_AVAILABLE = True
+    print("🌌 Stargate Protocol LOADED! (12 Planetary Nodes + Quantum Mirrors)")
+except ImportError as e:
+    STARGATE_PROTOCOL_AVAILABLE = False
+    StargateProtocolEngine = None
+    create_stargate_engine = None
+    StargateNode = None
+    QuantumMirror = None
+    ConsciousNode = None
+    logging.getLogger(__name__).debug(f"Stargate Protocol not available: {e}")
+
+# 🔮 QUANTUM MIRROR SCANNER - Reality Branch Validation
+try:
+    from aureon_quantum_mirror_scanner import (
+        QuantumMirrorScanner, create_quantum_mirror_scanner,
+        RealityBranch, TimelineConvergence
+    )
+    QUANTUM_MIRROR_SCANNER_AVAILABLE = True
+    print("🔮 Quantum Mirror Scanner LOADED! (3-Pass Batten Matrix + Convergence)")
+except ImportError as e:
+    QUANTUM_MIRROR_SCANNER_AVAILABLE = False
+    QuantumMirrorScanner = None
+    create_quantum_mirror_scanner = None
+    RealityBranch = None
+    TimelineConvergence = None
+    logging.getLogger(__name__).debug(f"Quantum Mirror Scanner not available: {e}")
+
+# ⚓ TIMELINE ANCHOR VALIDATOR - 7-Day Extended Validation
+try:
+    from aureon_timeline_anchor_validator import (
+        TimelineAnchorValidator, create_timeline_anchor_validator,
+        TimelineAnchor, ValidationRecord
+    )
+    TIMELINE_ANCHOR_VALIDATOR_AVAILABLE = True
+    print("⚓ Timeline Anchor Validator LOADED! (7-Day Validation Cycles)")
+except ImportError as e:
+    TIMELINE_ANCHOR_VALIDATOR_AVAILABLE = False
+    TimelineAnchorValidator = None
+    create_timeline_anchor_validator = None
+    TimelineAnchor = None
+    ValidationRecord = None
+    logging.getLogger(__name__).debug(f"Timeline Anchor Validator not available: {e}")
+
 # ════════════════════════════════════════════════════════════════════════════
 # 🔬 MICRO PROFIT CONFIG - AGGRESSIVE ENERGY HARVESTING
 # ════════════════════════════════════════════════════════════════════════════
@@ -3991,6 +4040,77 @@ class MicroProfitLabyrinth:
         
         print("=" * 70)
         print()
+        
+        # ════════════════════════════════════════════════════════════════════════════
+        # 🌌🪞⚓ STARGATE PROTOCOL - Quantum Mirror & Timeline Activation
+        # ════════════════════════════════════════════════════════════════════════════
+        # Wire Stargate Protocol for revenue generation through quantum coherence
+        self.stargate_engine = None
+        self.quantum_mirror_scanner = None
+        self.timeline_anchor_validator = None
+        
+        if STARGATE_PROTOCOL_AVAILABLE and create_stargate_engine:
+            try:
+                self.stargate_engine = create_stargate_engine(with_integrations=True)
+                if self.queen and hasattr(self.queen, 'wire_stargate_protocol'):
+                    self.queen.wire_stargate_protocol(self.stargate_engine)
+                print("🌌 Stargate Protocol: WIRED (12 Planetary Nodes + Quantum Mirrors)")
+                print(f"   ⭐ Giza: 432Hz | Stonehenge: 396Hz | Machu Picchu: 528Hz")
+                print(f"   🪞 Mirrors: Golden Age, Unity, Abundance, Liberation")
+            except Exception as e:
+                print(f"⚠️ Stargate Protocol error: {e}")
+                logger.debug(f"Stargate Protocol init error: {e}")
+        
+        if QUANTUM_MIRROR_SCANNER_AVAILABLE and create_quantum_mirror_scanner:
+            try:
+                self.quantum_mirror_scanner = create_quantum_mirror_scanner(with_integrations=True)
+                if self.queen and hasattr(self.queen, 'wire_quantum_mirror_scanner'):
+                    self.queen.wire_quantum_mirror_scanner(self.quantum_mirror_scanner)
+                print("🔮 Quantum Mirror Scanner: WIRED (3-Pass Batten Matrix)")
+                print(f"   ✅ P1(Harmonic) → P2(Coherence) → P3(Stability) → 4th Gate")
+            except Exception as e:
+                print(f"⚠️ Quantum Mirror Scanner error: {e}")
+                logger.debug(f"Quantum Mirror Scanner init error: {e}")
+        
+        if TIMELINE_ANCHOR_VALIDATOR_AVAILABLE and create_timeline_anchor_validator:
+            try:
+                self.timeline_anchor_validator = create_timeline_anchor_validator(with_integrations=True)
+                if self.queen and hasattr(self.queen, 'wire_timeline_anchor_validator'):
+                    self.queen.wire_timeline_anchor_validator(self.timeline_anchor_validator)
+                status = self.timeline_anchor_validator.get_status()
+                print("⚓ Timeline Anchor Validator: WIRED (7-Day Extended Validation)")
+                print(f"   📋 Pending: {status.get('pending_count', 0)} | Anchored: {status.get('anchored_count', 0)}")
+            except Exception as e:
+                print(f"⚠️ Timeline Anchor Validator error: {e}")
+                logger.debug(f"Timeline Anchor Validator init error: {e}")
+        
+        # 🌌 STARGATE PROTOCOL STATUS SUMMARY
+        stargate_status = {
+            'engine': self.stargate_engine is not None,
+            'scanner': self.quantum_mirror_scanner is not None,
+            'validator': self.timeline_anchor_validator is not None,
+        }
+        stargate_active = sum(1 for v in stargate_status.values() if v)
+        if stargate_active == 3:
+            print("🌌✨ STARGATE PROTOCOL: FULLY ACTIVE (All 3 systems online)")
+            print("   🎯 Market symbols → Reality Branches → Validation → Timeline Anchoring")
+            
+            # 🍄🌌 WIRE STARGATE TO MYCELIUM - Revenue generation through quantum coherence!
+            if hasattr(self, 'mycelium_network') and self.mycelium_network:
+                if hasattr(self.mycelium_network, 'wire_stargate_protocol'):
+                    try:
+                        self.mycelium_network.wire_stargate_protocol(
+                            self.stargate_engine,
+                            self.quantum_mirror_scanner,
+                            self.timeline_anchor_validator
+                        )
+                        print("   🍄🌌 Stargate → Mycelium: WIRED (Quantum coherence feeds neural network)")
+                    except Exception as e:
+                        logger.debug(f"Stargate-Mycelium wiring error: {e}")
+        elif stargate_active > 0:
+            print(f"🌌⚠️ STARGATE PROTOCOL: PARTIAL ({stargate_active}/3 systems)")
+        else:
+            print("🌌❌ STARGATE PROTOCOL: NOT AVAILABLE")
     
     async def _load_all_tradeable_pairs(self):
         """Load tradeable pairs from ALL exchanges for proper routing."""
@@ -6664,6 +6784,74 @@ class MicroProfitLabyrinth:
                     reasons.append(f"{emoji} {emotion} @ {freq:.0f}Hz (caution)")
             except Exception as e:
                 logger.debug(f"Emotional spectrum error: {e}")
+        
+        # 10. 🌌 STARGATE PROTOCOL - Quantum Coherence & Timeline Alignment
+        # Use Stargate network coherence as a trading signal
+        if hasattr(self, 'stargate_engine') and self.stargate_engine:
+            try:
+                stargate_status = self.stargate_engine.get_status()
+                global_coherence = stargate_status.get('global_coherence', 0.0)
+                standing_wave = stargate_status.get('standing_wave_intensity', 0.0)
+                
+                # Combine coherence and standing wave for signal
+                stargate_signal = (global_coherence * 0.6 + standing_wave * 0.4)
+                signals.append(stargate_signal)
+                
+                if stargate_signal >= 0.7:
+                    reasons.append(f"🌌 Stargate HIGH ({stargate_signal:.0%})")
+                elif stargate_signal >= 0.5:
+                    reasons.append(f"🌌 Stargate ALIGNED ({stargate_signal:.0%})")
+                else:
+                    reasons.append(f"🌌 Stargate low ({stargate_signal:.0%})")
+                    
+                # 🌌 BONUS: Check if any planetary node is at peak activation
+                for sg_id, sg in self.stargate_engine.stargates.items():
+                    if sg.activation_level > 0.8:
+                        signals.append(0.75)  # Bonus for peak activation
+                        reasons.append(f"⭐ {sg.name} PEAK")
+                        break  # Only count first peak
+                        
+            except Exception as e:
+                logger.debug(f"Stargate coherence error: {e}")
+        
+        # 11. 🔮 QUANTUM MIRROR SCANNER - Reality Branch Coherence
+        # Check if this opportunity has strong branch coherence
+        if hasattr(self, 'quantum_mirror_scanner') and self.quantum_mirror_scanner:
+            try:
+                # Check if there's an active branch for this trading pair
+                branch_key = f"{from_asset}_{to_asset}_{source_exchange}"
+                
+                # Get global scanner coherence
+                scanner_status = self.quantum_mirror_scanner.get_status()
+                scanner_coherence = scanner_status.get('global_coherence', 0.5)
+                
+                signals.append(scanner_coherence)
+                if scanner_coherence >= 0.618:  # PHI threshold
+                    reasons.append(f"🔮 Branch φ-aligned ({scanner_coherence:.2f})")
+                else:
+                    reasons.append(f"🔮 Branch coherence ({scanner_coherence:.2f})")
+                    
+            except Exception as e:
+                logger.debug(f"Quantum Mirror Scanner error: {e}")
+        
+        # 12. ⚓ TIMELINE ANCHOR - Check if timeline is execution-ready
+        if hasattr(self, 'timeline_anchor_validator') and self.timeline_anchor_validator:
+            try:
+                validator_status = self.timeline_anchor_validator.get_status()
+                execution_ready = validator_status.get('execution_ready', 0)
+                
+                if execution_ready > 0:
+                    signals.append(0.85)  # Strong signal if execution-ready anchors exist
+                    reasons.append(f"⚓ {execution_ready} anchors READY")
+                else:
+                    # Check pending anchors
+                    pending = validator_status.get('pending_count', 0)
+                    if pending > 0:
+                        signals.append(0.6)
+                        reasons.append(f"⚓ {pending} anchors pending")
+                        
+            except Exception as e:
+                logger.debug(f"Timeline Anchor error: {e}")
         
         # 👑 SERO's VERDICT - Her logic decides, we trust her math!
         if not signals:

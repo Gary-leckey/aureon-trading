@@ -30,6 +30,44 @@ Ecosystem (Feed Layer) → Scanner (Validation Layer) → Queen Hive (Execution 
 - Enforces 4th-pass execution gate, risk management, turn-based order routing
 - Integration: Queen receives PIP predictions, validation probabilities, drift features
 
+### 4. **Stargate Protocol Layer** - Quantum Mirror & Timeline Activation 🌌
+- Files: `aureon_stargate_protocol.py`, `aureon_quantum_mirror_scanner.py`, `aureon_timeline_anchor_validator.py`
+- **Planetary Node Network**: Historical sacred sites (Giza, Stonehenge, etc.) as resonance nodes
+- **Quantum Mirror Pull**: Identifies and anchors high-coherence "timelines" (beneficial outcome states)
+- **Integration**: Couples Schumann resonance (7.83 Hz), Solfeggio frequencies, and golden ratio (φ) harmonics
+
+#### Stargate Protocol Components:
+```python
+# 1. Planetary Stargates - 12 global nodes with resonance frequencies
+PLANETARY_STARGATES = {
+    "giza": StargateNode(freq=432.0, casimir=0.95),
+    "stonehenge": StargateNode(freq=396.0, casimir=0.88),
+    "machu_picchu": StargateNode(freq=528.0, casimir=0.90),
+    # ... more nodes
+}
+
+# 2. Quantum Mirrors - Potential timelines with coherence scores
+quantum_mirrors = {
+    "golden_age": QuantumMirror(coherence=0.95, beneficial=0.98),
+    "unity_timeline": QuantumMirror(coherence=0.92, beneficial=0.97),
+}
+
+# 3. Human Resonance - Conscious nodes contributing to global coherence
+conscious_nodes = register_conscious_node(stargate_id, intention)
+```
+
+#### Quantum Mirror Scanner Integration:
+- **Reality Branches**: Market symbols scanned as parallel timeline possibilities
+- **Validation Passes**: Same 3-pass Batten Matrix applied to timeline coherence
+- **Convergence Detection**: Multiple branches aligning = manifestation window
+- **4th Pass Execution**: Timeline anchor when coherence exceeds φ threshold (0.618)
+
+#### Timeline Anchor Validator:
+- **7-Day Validation Window**: Extended validation across prime/Fibonacci intervals
+- **Hourly/Daily/Weekly Cycles**: Multi-scale coherence verification
+- **Anchor Strength**: Accumulated score from successful validations
+- **Persistence**: `7day_pending_validations.json`, `7day_anchored_timelines.json`
+
 ---
 
 ## Critical Workflows
@@ -350,6 +388,9 @@ pip_histogram.record(pip_score)
 | Exchange APIs | `kraken_client.py`, `binance_client.py`, `alpaca_client.py` |
 | Brain/ML | `aureon_miner_brain.py`, `probability_ultimate_intelligence.py` |
 | Historical learning | `aureon_elephant_learning.py` |
+| **Stargate Protocol** | `aureon_stargate_protocol.py` |
+| **Quantum Mirror Scanner** | `aureon_quantum_mirror_scanner.py` |
+| **Timeline Anchoring** | `aureon_timeline_anchor_validator.py` |
 | State files | `*.json` in repo root |
 
 ---

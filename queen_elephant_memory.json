@@ -1707,7 +1707,143 @@
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
+    },
+    "USDC\u2192MIM": {
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDC\u2192AIR": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDC\u2192JST": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDC\u2192MUBARAK": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDC\u2192USD": {
+      "trades": 4,
+      "wins": 0,
+      "losses": 4,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDC\u2192USDT": {
+      "trades": 4,
+      "wins": 0,
+      "losses": 4,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDC\u2192DAI": {
+      "trades": 4,
+      "wins": 0,
+      "losses": 4,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDC\u2192ZUSD": {
+      "trades": 4,
+      "wins": 0,
+      "losses": 4,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDC\u2192RENDER": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDC\u2192XRP": {
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDC\u2192USDD": {
+      "trades": 4,
+      "wins": 0,
+      "losses": 4,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDC\u2192AAVE": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDC\u2192EUR": {
+      "trades": 4,
+      "wins": 0,
+      "losses": 4,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDC\u2192GBP": {
+      "trades": 4,
+      "wins": 0,
+      "losses": 4,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "MELANIA\u2192USD": {
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "MELANIA\u2192USDC": {
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "MELANIA\u2192ACA": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
     }
   },
-  "last_saved": "2026-01-08T20:37:58.206255"
+  "last_saved": "2026-01-09T10:00:29.316043"
 }
