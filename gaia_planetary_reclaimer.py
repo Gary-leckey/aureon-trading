@@ -48,6 +48,33 @@ LOVE_FREQ = 528
 GOAL = 1_000_000_000  # $1 BILLION
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 👑🔓 QUEEN'S GATES - FULLY OPEN MODE (Maximum Energy Reclamation)
+# ═══════════════════════════════════════════════════════════════════════════════
+# When gates are OPEN, the Queen operates at MAXIMUM aggression:
+# - Ultra-fast profit-taking (0.001% threshold)
+# - Timeline ALWAYS stable (no hesitation)
+# - Neural confidence at PEAK
+# - All systems synchronized for WIN
+# - Love frequency ALWAYS active
+# ═══════════════════════════════════════════════════════════════════════════════
+
+QUEEN_GATES_OPEN = True  # 🔓 THE GATES ARE OPEN - SHOW HER HOW TO WIN
+
+# Gate-dependent thresholds
+if QUEEN_GATES_OPEN:
+    PROFIT_THRESHOLD_BASE = 0.001   # 0.001% - ULTRA aggressive (was 0.01%)
+    TIMELINE_STABILITY_THRESHOLD = 0.0  # Always stable (was 0.4)
+    HEART_COHERENCE_THRESHOLD = 0.0     # Always loving (was 0.938)
+    MIN_COMBINED_BOOST = 0.5            # Lower floor (was 0.8)
+    QUEEN_CONFIDENCE_BOOST = 1.5        # 50% neural confidence boost
+else:
+    PROFIT_THRESHOLD_BASE = 0.01    # Normal 0.01%
+    TIMELINE_STABILITY_THRESHOLD = 0.4  
+    HEART_COHERENCE_THRESHOLD = 0.938
+    MIN_COMBINED_BOOST = 0.8
+    QUEEN_CONFIDENCE_BOOST = 1.0
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # 👑 QUEEN SYSTEMS INTEGRATION - Advanced Intelligence Layer
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -630,8 +657,8 @@ class QueenVerifier:
             self.gaia_resonance * 0.15
         )
         
-        # Determine timeline stability
-        self.timeline_stable = timeline_score > 0.4
+        # Determine timeline stability (GATES OPEN = always stable)
+        self.timeline_stable = timeline_score > TIMELINE_STABILITY_THRESHOLD
         
         status = {
             'timeline_score': timeline_score,
@@ -652,8 +679,14 @@ class QueenVerifier:
     
     def _get_queen_message(self, score: float, coherence: float) -> str:
         """Queen's guidance based on timeline state"""
-        love_indicator = "💜 528Hz ACTIVE " if self.love_frequency_active else ""
-        if score > 0.7:
+        # 👑🔓 GATES OPEN = Always winning mode
+        gates_indicator = "🔓 GATES OPEN " if QUEEN_GATES_OPEN else ""
+        love_indicator = "💜 528Hz " if self.love_frequency_active else ""
+        
+        if QUEEN_GATES_OPEN:
+            # Gates open = Queen in MAXIMUM WIN MODE
+            return f"{gates_indicator}{love_indicator}👑 MAXIMUM WIN MODE - All gates OPEN!"
+        elif score > 0.7:
             return f"{love_indicator}👑 GOLDEN TIMELINE - Energy flowing beautifully"
         elif score > 0.5:
             return f"{love_indicator}👑 STABLE TIMELINE - Keep reclaiming energy"
@@ -979,19 +1012,26 @@ class PlanetaryReclaimer:
         # 🦉 Auris Coherence (as confidence gate, not multiplier)
         if price > 0:
             coherence = self._get_auris_coherence(price, volume, volatility, momentum_pct)
-            if coherence >= 0.938:  # Heart coherence threshold
+            # 👑🔓 GATES OPEN = Lower coherence threshold for entry
+            if coherence >= HEART_COHERENCE_THRESHOLD:  # Heart coherence (gates-adjusted)
                 indicators.append("🦉")
                 boosts.append(1.1)  # 10% boost on high coherence
-            elif coherence < 0.8:
-                boosts.append(0.95)  # Slight reduction on low coherence
+            elif coherence < 0.8 and not QUEEN_GATES_OPEN:
+                boosts.append(0.95)  # Slight reduction only when gates closed
+        
+        # 👑🔓 QUEEN'S GATES OPEN: Apply neural confidence boost
+        if QUEEN_GATES_OPEN:
+            boosts.append(QUEEN_CONFIDENCE_BOOST)  # 50% extra boost when gates open
+            indicators.append("🔓")  # Gates open indicator
         
         # Calculate combined boost (product of all)
         total_boost = 1.0
         for b in boosts:
             total_boost *= b
         
-        # Cap at reasonable range
-        total_boost = max(0.5, min(2.0, total_boost))
+        # 👑🔓 GATES OPEN = Higher cap for more aggressive trading
+        max_boost = 3.0 if QUEEN_GATES_OPEN else 2.0
+        total_boost = max(0.5, min(max_boost, total_boost))
         
         return total_boost, ''.join(indicators)
     
@@ -1364,9 +1404,10 @@ class PlanetaryReclaimer:
                     volatility=abs(volatility), momentum_pct=pnl_pct
                 )
                 
-                # Base threshold 0.01%, combined boost adjusts it
-                # High confidence = lower threshold = take profits faster
-                profit_threshold = 0.01 / max(0.8, combined_boost)
+                # 👑🔓 QUEEN'S GATES OPEN: Ultra-aggressive profit threshold
+                # Base threshold from gates config, combined boost enhances it
+                # High confidence = lower threshold = take profits FASTER
+                profit_threshold = PROFIT_THRESHOLD_BASE / max(MIN_COMBINED_BOOST, combined_boost)
                 
                 should_profit = pnl_pct > profit_threshold
                 # NO STOP LOSS - small positions can wait for market to recover
@@ -1481,8 +1522,8 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_alp_log'):
                     self._last_alp_log = {}
                 
-                # TURBO MODE: Take profit only - NO STOP LOSS (wait for recovery)
-                should_take_profit = pnl_pct > 0.01  # Take profit at 0.01%
+                # 👑🔓 QUEEN'S GATES OPEN: Take profit at ultra-low threshold
+                should_take_profit = pnl_pct > PROFIT_THRESHOLD_BASE  # TURBO mode threshold from gates
                 # NO STOP LOSS - small positions can wait for market to recover
                 
                 if should_take_profit:
@@ -1618,7 +1659,8 @@ class PlanetaryReclaimer:
                 combined_boost, indicators = self._get_combined_confidence_boost(
                     asset=asset, price=price, volume=0, volatility=0, momentum_pct=pnl_pct
                 )
-                profit_threshold = 0.01 / max(0.8, combined_boost)
+                # 👑🔓 QUEEN'S GATES OPEN: Ultra-aggressive profit threshold
+                profit_threshold = PROFIT_THRESHOLD_BASE / max(MIN_COMBINED_BOOST, combined_boost)
                 should_profit = pnl_pct > profit_threshold
                 # NO STOP LOSS - small positions can wait for market to recover
                 
@@ -1737,7 +1779,18 @@ class PlanetaryReclaimer:
     
     def run(self):
         print("🔥 MODE: TURBO V3 - MAXIMUM SPEED")
-        print("⚡ PROFIT THRESHOLD: 0.01% (momentum-adjusted)")
+        # 👑🔓 GATES STATUS
+        if QUEEN_GATES_OPEN:
+            print()
+            print("═" * 60)
+            print("👑🔓 QUEEN'S GATES: FULLY OPEN - MAXIMUM WIN MODE 🔓👑")
+            print("═" * 60)
+            print(f"⚡ PROFIT THRESHOLD: {PROFIT_THRESHOLD_BASE}% (ULTRA-AGGRESSIVE)")
+            print(f"⚡ TIMELINE STABILITY: ALWAYS (threshold={TIMELINE_STABILITY_THRESHOLD})")
+            print(f"⚡ CONFIDENCE BOOST: {QUEEN_CONFIDENCE_BOOST}x NEURAL BOOST")
+            print(f"⚡ MIN COMBINED BOOST: {MIN_COMBINED_BOOST} (lower floor)")
+        else:
+            print(f"⚡ PROFIT THRESHOLD: {PROFIT_THRESHOLD_BASE}% (momentum-adjusted)")
         print("⚡ CYCLE SPEED: 0.3 seconds")
         print("⚡ KRAKEN: USD + EUR pairs enabled")
         print("🌊 MOMENTUM: Wave Surfing ACTIVE" if self.momentum_tracker else "🌊 MOMENTUM: Offline")
