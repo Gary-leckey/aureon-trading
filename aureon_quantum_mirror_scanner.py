@@ -740,6 +740,152 @@ class QuantumMirrorScanner:
             return {"synced": False, "reason": str(e)}
             
     # ═══════════════════════════════════════════════════════════════
+    # BATCH UPDATE FROM TRADING LOOP
+    # ═══════════════════════════════════════════════════════════════
+    
+    def update_from_market_data(self, opportunities: List[Dict], prices: Dict[str, float]) -> Dict[str, Any]:
+        """
+        🔮 BATCH UPDATE: Feed market opportunities into quantum mirror scanner.
+        
+        This is the CRITICAL integration point that connects the trading loop
+        to the quantum mirror validation system.
+        
+        Args:
+            opportunities: List of trading opportunities with from_asset, to_asset, exchange
+            prices: Current price map {symbol: price}
+            
+        Returns:
+            Summary of branches updated and ready for execution
+        """
+        with self._lock:
+            registered = 0
+            updated = 0
+            validated = 0
+            ready_branches = []
+            
+            for opp in opportunities:
+                # Extract opportunity data
+                from_asset = opp.get('from_asset', '') if isinstance(opp, dict) else getattr(opp, 'from_asset', '')
+                to_asset = opp.get('to_asset', '') if isinstance(opp, dict) else getattr(opp, 'to_asset', '')
+                exchange = opp.get('source_exchange', 'kraken') if isinstance(opp, dict) else getattr(opp, 'source_exchange', 'kraken')
+                expected_pnl = opp.get('expected_pnl_usd', 0) if isinstance(opp, dict) else getattr(opp, 'expected_pnl_usd', 0)
+                
+                if not from_asset or not to_asset:
+                    continue
+                    
+                symbol = f"{from_asset}/{to_asset}"
+                branch_id = f"{exchange}:{symbol}"
+                price = prices.get(to_asset, prices.get(from_asset, 100.0))
+                
+                # Register or get existing branch
+                if branch_id not in self.branches:
+                    branch = self.register_branch(symbol, exchange, price)
+                    registered += 1
+                else:
+                    branch = self.branches[branch_id]
+                    updated += 1
+                    
+                # Update branch with current price and derive frequency from price pattern
+                self.update_branch(
+                    branch_id,
+                    price=price,
+                    frequency=(price % 100) + SCHUMANN_BASE * PHI,
+                    phase=(price % math.pi)
+                )
+                
+                # Run 3-pass Batten Matrix validation
+                p1 = self.validation_pass_1_harmonic(branch_id)
+                if p1 >= 0.3:  # Only continue if P1 passes
+                    p2 = self.validation_pass_2_coherence(branch_id)
+                    if p2 >= 0.3:  # Only continue if P2 passes
+                        p3 = self.validation_pass_3_stability(branch_id)
+                        validated += 1
+                        
+                        # Check if ready for 4th pass
+                        if branch.is_ready_for_execution(self.COHERENCE_THRESHOLD * 0.8):  # Slightly relaxed threshold
+                            ready_branches.append({
+                                "branch_id": branch_id,
+                                "symbol": symbol,
+                                "exchange": exchange,
+                                "score": branch.compute_branch_score(),
+                                "pip_potential": branch.pip_potential,
+                                "expected_pnl": expected_pnl,
+                            })
+            
+            # Update global coherence from validated branches
+            if self.branches:
+                coherences = [b.coherence_score for b in self.branches.values() if b.coherence_score > 0]
+                if coherences:
+                    self.global_coherence = np.mean(coherences)
+                    
+            # Scan for convergences among validated branches
+            convergences = self.scan_for_convergences()
+            
+            result = {
+                "registered": registered,
+                "updated": updated,
+                "validated": validated,
+                "ready_count": len(ready_branches),
+                "ready_branches": ready_branches[:10],  # Top 10
+                "convergences_detected": len(convergences),
+                "global_coherence": self.global_coherence,
+            }
+            
+            if ready_branches:
+                logger.info(f"🔮 Quantum Mirror: {len(ready_branches)} branches ready for 4th pass!")
+                for rb in ready_branches[:3]:
+                    logger.info(f"   ⚡ {rb['branch_id']}: score={rb['score']:.3f}")
+                    
+            return result
+    
+    def get_quantum_boost(self, from_asset: str, to_asset: str, exchange: str) -> Tuple[float, str]:
+        """
+        Get quantum coherence boost for a specific trading opportunity.
+        
+        Returns:
+            (boost_score, reason_string)
+        """
+        with self._lock:
+            symbol = f"{from_asset}/{to_asset}"
+            branch_id = f"{exchange}:{symbol}"
+            
+            if branch_id not in self.branches:
+                return 0.0, "no_branch"
+                
+            branch = self.branches[branch_id]
+            
+            # Calculate boost based on branch state
+            boost = 0.0
+            reasons = []
+            
+            if branch.branch_phase == BranchPhase.READY_FOR_4TH:
+                boost += 0.3
+                reasons.append("4TH_READY")
+            elif branch.branch_phase == BranchPhase.VALIDATED_P3:
+                boost += 0.2
+                reasons.append("P3_VALID")
+            elif branch.branch_phase == BranchPhase.VALIDATED_P2:
+                boost += 0.1
+                reasons.append("P2_VALID")
+                
+            # Coherence bonus
+            if branch.coherence_score >= 0.618:
+                boost += 0.15
+                reasons.append(f"φ_COHERENT({branch.coherence_score:.2f})")
+                
+            # Lambda stability bonus
+            if branch.lambda_stability >= 0.8:
+                boost += 0.1
+                reasons.append(f"Λ_STABLE({branch.lambda_stability:.2f})")
+                
+            # Pip potential bonus
+            if branch.pip_potential >= 0.07:
+                boost += 0.05
+                reasons.append(f"PIP({branch.pip_potential:.2f})")
+                
+            return min(1.0, boost), "+".join(reasons) if reasons else "neutral"
+    
+    # ═══════════════════════════════════════════════════════════════
     # CALLBACKS & INTEGRATION
     # ═══════════════════════════════════════════════════════════════
     

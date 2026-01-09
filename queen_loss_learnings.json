@@ -927,6 +927,88 @@
         "Fees ($0.0881) were >30% of expected profit - increase minimum"
       ],
       "tactics_applied": []
+    },
+    {
+      "timestamp": 1767956246.2559023,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "USDC",
+      "from_amount": 14.39801,
+      "from_value_usd": 14.39801,
+      "executed_price": 1.0008,
+      "expected_price": 1.0008,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.08638806,
+      "loss_amount": 0.144131658,
+      "loss_pct": 1.0010526315789474,
+      "market_data": {
+        "symbol": "USDUSDC",
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.954,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.52
+      },
+      "combined_score": 1.431,
+      "expected_profit": 0.144131658,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0864) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": []
+    },
+    {
+      "timestamp": 1767956254.0716832,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "ZUSD",
+      "from_amount": 14.39801,
+      "from_value_usd": 14.39801,
+      "executed_price": 1.0,
+      "expected_price": 1.0,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.08638806,
+      "loss_amount": 0.049332129000000016,
+      "loss_pct": 0.3426315789473685,
+      "market_data": {
+        "symbol": "USDZUSD",
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.537,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.81
+      },
+      "combined_score": 0.8055000000000001,
+      "expected_profit": 0.049332129000000016,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0864) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": []
     }
   ],
   "patterns": {
@@ -952,14 +1034,14 @@
       "last_seen": 1767780710.57673
     },
     "USD\u2192USDC_kraken": {
-      "losses": 17,
-      "total_loss": 1.18762764,
+      "losses": 18,
+      "total_loss": 1.3317592980000001,
       "avg_slippage": 0.0,
       "causes": [
         "Fees ate most of expected profit"
       ],
       "first_seen": 1767840508.7615757,
-      "last_seen": 1767904678.4995131
+      "last_seen": 1767956246.2559023
     },
     "USDC\u2192USD_kraken": {
       "losses": 3,
@@ -970,15 +1052,25 @@
       ],
       "first_seen": 1767948030.2496412,
       "last_seen": 1767948399.2389154
+    },
+    "USD\u2192ZUSD_kraken": {
+      "losses": 1,
+      "total_loss": 0.049332129000000016,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1767956254.0716832,
+      "last_seen": 1767956254.0716832
     }
   },
   "stats": {
-    "total_losses_analyzed": 23,
-    "patterns_identified": 16,
+    "total_losses_analyzed": 25,
+    "patterns_identified": 17,
     "tactics_learned": 0,
-    "wikipedia_researches": 0,
-    "lessons_broadcast": 7,
+    "wikipedia_researches": 6,
+    "lessons_broadcast": 8,
     "money_saved_by_learning": 0.0
   },
-  "last_saved": "2026-01-09T10:03:44.306641"
+  "last_saved": "2026-01-09T11:42:27.789559"
 }

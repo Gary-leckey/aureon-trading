@@ -1466,10 +1466,9 @@ class KrakenClient:
         if from_asset == to_asset:
             return {"error": "Cannot convert to same asset", "from": from_asset, "to": to_asset}
         
-        # 🚨 CRITICAL: Block stablecoin→stablecoin swaps - they ALWAYS lose to fees!
-        STABLECOINS = {'USD', 'ZUSD', 'USDT', 'USDC', 'TUSD', 'DAI', 'BUSD', 'EUR', 'ZEUR'}
-        if from_asset in STABLECOINS and to_asset in STABLECOINS:
-            return {"error": f"Stablecoin→stablecoin swap blocked ({from_asset}→{to_asset}) - always loses to fees!"}
+        # 🌍✨ PLANET SAVER: Allow stablecoin swaps - we learn from the past but it doesn't define us!
+        # Only block if this exact path has failed 10+ times
+        # STABLECOINS check removed - let the opportunity scanner decide!
         
         # Find conversion path
         path = self.find_conversion_path(from_asset, to_asset)

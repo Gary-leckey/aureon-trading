@@ -26517,11 +26517,215 @@
         "warnings": []
       },
       "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-09T11:02:47.506988",
+      "conversion_num": 1,
+      "exchange": "kraken",
+      "from_asset": "USD",
+      "to_asset": "USDC",
+      "from_amount": 14.39801,
+      "to_amount": 14.40377151,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "O3ZCT4-Y2WWM-DWYDM3",
+          "exchange": "kraken",
+          "pair": "USDCUSD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 14.40377151,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.9997000001008763,
+        "total_fees": 0.0374385709842222,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.144131658,
+        "calculated_pnl": 0.017284527208,
+        "verified_pnl": -0.03599819098422218,
+        "discrepancy": 0.05328271819222218,
+        "discrepancy_pct": 308.2683000294085,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0173 vs verified $-0.0360 (308.3%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-09T11:03:04.760785",
+      "conversion_num": 2,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "USDT",
+      "from_amount": 11.589999999999998,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "3b042a56-1e82-49b0-8f40-907f16574662",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.013724999999999994,
+        "calculated_pnl": -0.001444596010298227,
+        "verified_pnl": -0.001444596010298227,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-09T11:03:06.875407",
+      "conversion_num": 3,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "USDC",
+      "from_amount": 10.995459092699999,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "b87204df-018a-4e31-9803-e06ed9e3e632",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.06461807464380998,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-09T11:03:23.359380",
+      "conversion_num": 4,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "USDC",
+      "from_amount": 10.42602909365,
+      "to_amount": 0,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "b0e5c795-1c2b-4f3d-b348-871753189e98",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "73465a8c-08d1-45bb-9741-ec79c65bed4e",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.09125073298882153,
+        "calculated_pnl": -9.224681756355738,
+        "verified_pnl": -9.224681756355738,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-09T11:07:05.698255",
+      "conversion_num": 1,
+      "exchange": "kraken",
+      "from_asset": "USDC",
+      "to_asset": "USD",
+      "from_amount": 13.8277019245,
+      "to_amount": 13.82217084,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "OBJ4IO-VWZNA-IHOYXX",
+          "exchange": "kraken",
+          "pair": "USDCUSD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 13.82770192,
+        "total_bought": 13.82217084,
+        "avg_sell_price": 0.9996000000555406,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0359376441820032,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.13853331206130168,
+        "calculated_pnl": -0.04423758603959804,
+        "verified_pnl": -0.0359376441820032,
+        "discrepancy": 0.00829994185759484,
+        "discrepancy_pct": 18.76219432535351,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0442 vs verified $-0.0359 (18.8%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
     }
   ],
   "summary": {
-    "total": 633,
-    "verified": 589,
-    "discrepancies": 44
+    "total": 638,
+    "verified": 592,
+    "discrepancies": 46
   }
 }

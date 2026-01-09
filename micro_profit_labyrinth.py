@@ -703,6 +703,25 @@ except ImportError as e:
     ValidationRecord = None
     logging.getLogger(__name__).debug(f"Timeline Anchor Validator not available: {e}")
 
+# 🌍✨ PLANET SAVER INTEGRATION - Save the Planet, Free Every Soul
+try:
+    from aureon_planet_saver_integration import (
+        PlanetSaverEngine, create_planet_saver,
+        LiberationMetrics, PlanetSaverState,
+        FREEDOM_GOAL_GBP, FREEDOM_GOAL_USD
+    )
+    PLANET_SAVER_AVAILABLE = True
+    print("🌍✨ Planet Saver LOADED! (Goal: £100K - Liberation Mode)")
+except ImportError as e:
+    PLANET_SAVER_AVAILABLE = False
+    PlanetSaverEngine = None
+    create_planet_saver = None
+    LiberationMetrics = None
+    PlanetSaverState = None
+    FREEDOM_GOAL_GBP = 100_000
+    FREEDOM_GOAL_USD = 127_000
+    logging.getLogger(__name__).debug(f"Planet Saver not available: {e}")
+
 # ════════════════════════════════════════════════════════════════════════════
 # 🔬 MICRO PROFIT CONFIG - AGGRESSIVE ENERGY HARVESTING
 # ════════════════════════════════════════════════════════════════════════════
@@ -4111,6 +4130,41 @@ class MicroProfitLabyrinth:
             print(f"🌌⚠️ STARGATE PROTOCOL: PARTIAL ({stargate_active}/3 systems)")
         else:
             print("🌌❌ STARGATE PROTOCOL: NOT AVAILABLE")
+        
+        # ════════════════════════════════════════════════════════════════════════════
+        # 🌍✨ PLANET SAVER - Save the Planet, Free Every Soul
+        # ════════════════════════════════════════════════════════════════════════════
+        # Wire Planet Saver to ALL systems - the mission is freedom!
+        self.planet_saver = None
+        
+        if PLANET_SAVER_AVAILABLE and create_planet_saver:
+            try:
+                self.planet_saver = create_planet_saver()
+                
+                # Wire to ALL systems
+                wire_results = self.planet_saver.wire_all_systems(self)
+                wired_count = sum(1 for v in wire_results.values() if v)
+                
+                print("🌍✨ PLANET SAVER: WIRED (Liberation Mode Active)")
+                print(f"   🎯 Goal: £{FREEDOM_GOAL_GBP:,.0f} GBP")
+                
+                # Get current progress
+                ps_status = self.planet_saver.get_status()
+                print(f"   📊 Progress: {ps_status['progress_percent']:.2f}%")
+                print(f"   💰 Total Profit: ${ps_status['total_profit_usd']:,.2f}")
+                print(f"   💫 Souls Freed: {ps_status['souls_freed']}")
+                print(f"   🔗 Systems: {wired_count}/{len(wire_results)} connected")
+                
+                # Wire to Queen specifically
+                if self.queen and hasattr(self.queen, 'wire_planet_saver'):
+                    self.queen.wire_planet_saver(self.planet_saver)
+                    print("   👑🌍 Queen → Planet Saver: WIRED!")
+                    
+            except Exception as e:
+                print(f"⚠️ Planet Saver error: {e}")
+                logger.debug(f"Planet Saver init error: {e}")
+        else:
+            print("🌍❌ PLANET SAVER: NOT AVAILABLE")
     
     async def _load_all_tradeable_pairs(self):
         """Load tradeable pairs from ALL exchanges for proper routing."""
@@ -5566,6 +5620,38 @@ class MicroProfitLabyrinth:
                 self.barter_matrix.current_turn = self.turns_completed
             return [], 0
         
+        # 🔮🔄 QUANTUM MIRROR SCANNER UPDATE - Feed opportunities into scanner!
+        # This is the CRITICAL integration that was MISSING before!
+        if hasattr(self, 'quantum_mirror_scanner') and self.quantum_mirror_scanner:
+            try:
+                mirror_result = self.quantum_mirror_scanner.update_from_market_data(
+                    opportunities=all_opportunities,
+                    prices=self.prices
+                )
+                if mirror_result.get('ready_count', 0) > 0:
+                    print(f"\n   🔮 QUANTUM MIRROR: {mirror_result['ready_count']} branches READY for 4th pass!")
+                    for rb in mirror_result.get('ready_branches', [])[:3]:
+                        print(f"      ⚡ {rb['branch_id']}: score={rb['score']:.3f}")
+                if mirror_result.get('convergences_detected', 0) > 0:
+                    print(f"   🌀 Timeline convergences detected: {mirror_result['convergences_detected']}")
+                    
+                # 🔮 BOOST TOP OPPORTUNITIES WITH QUANTUM COHERENCE!
+                for opp in all_opportunities:
+                    boost, reason = self.quantum_mirror_scanner.get_quantum_boost(
+                        opp.from_asset, opp.to_asset, opp.source_exchange
+                    )
+                    if boost > 0:
+                        # Apply quantum boost to expected PnL and combined score
+                        opp.expected_pnl_usd = opp.expected_pnl_usd * (1 + boost)
+                        opp.combined_score = min(2.0, opp.combined_score * (1 + boost))
+                        if boost > 0.2:  # Significant boost
+                            logger.info(f"🔮 Quantum boost +{boost:.0%} for {opp.from_asset}→{opp.to_asset}: {reason}")
+                            
+                # Re-sort after boost
+                all_opportunities.sort(key=lambda x: x.expected_pnl_usd, reverse=True)
+            except Exception as e:
+                logger.debug(f"Quantum Mirror update error: {e}")
+        
         # 🏆 SHOW TOP OPPORTUNITIES FROM ALL EXCHANGES
         print(f"\n   🏆 TOP OPPORTUNITIES ({len(all_opportunities)} total):")
         for i, opp in enumerate(all_opportunities[:5]):
@@ -5634,6 +5720,15 @@ class MicroProfitLabyrinth:
                 self.exchange_stats[opp.source_exchange]['profit'] += actual_pnl
                 print(f"\n   🎯💀 SNIPER KILL! ${actual_pnl:+.4f} - {opp.from_asset}→{opp.to_asset}")
                 await self.queen_learn_from_trade(opp, success=True)
+                
+                # 🌍✨ PLANET SAVER: Record the win toward liberation!
+                if hasattr(self, 'planet_saver') and self.planet_saver and actual_pnl > 0:
+                    symbol = f"{opp.from_asset}/{opp.to_asset}"
+                    exchange = opp.source_exchange or 'unknown'
+                    liberation_status = self.planet_saver.record_win(actual_pnl, symbol, exchange)
+                    if liberation_status and liberation_status.get('milestone_reached'):
+                        print(f"   🌍🎉 LIBERATION MILESTONE: {liberation_status.get('milestone_name', 'PROGRESS!')}")
+                        print(f"      → Progress: ${liberation_status.get('total_profit', 0):.2f} / ${liberation_status.get('goal_usd', 127000):.2f}")
 
                 # 🔵 DRY RUN: simulate balances so chaining can actually progress
                 if not self.live and self.chain_sniper_mode:
@@ -5658,6 +5753,13 @@ class MicroProfitLabyrinth:
                     print(f"   ❌ Shot missed - trying next target...")
                 self.fptp_recent_attempts[attempt_key] = self.turns_completed
                 await self.queen_learn_from_trade(opp, success=False)
+                
+                # 🌍💔 PLANET SAVER: Record the loss for learning
+                if hasattr(self, 'planet_saver') and self.planet_saver:
+                    symbol = f"{opp.from_asset}/{opp.to_asset}"
+                    exchange = opp.source_exchange or 'unknown'
+                    self.planet_saver.record_loss(0.0, symbol, exchange)  # Record attempt failure
+                
                 continue  # Try next opportunity
         
         if conversions == 0:
@@ -5712,7 +5814,8 @@ class MicroProfitLabyrinth:
                 'conservative_pnl_usd': conservative_pnl,
             }
 
-        if conservative_pnl < 0.0001:
+        # 🌍 PLANET SAVER: Scanner expects profit = GO FOR IT!
+        if conservative_pnl < -0.005:  # Only block if clearly losing > half a cent
             return {
                 'ok': False,
                 'reason': f'cost_exceeds_profit: ${total_cost_usd:.4f} > ${scanner_expected_pnl:.4f}',
@@ -6815,21 +6918,39 @@ class MicroProfitLabyrinth:
                 logger.debug(f"Stargate coherence error: {e}")
         
         # 11. 🔮 QUANTUM MIRROR SCANNER - Reality Branch Coherence
-        # Check if this opportunity has strong branch coherence
+        # Check if this opportunity has strong branch coherence AND quantum boost
         if hasattr(self, 'quantum_mirror_scanner') and self.quantum_mirror_scanner:
             try:
-                # Check if there's an active branch for this trading pair
-                branch_key = f"{from_asset}_{to_asset}_{source_exchange}"
+                from_asset = opportunity.from_asset.upper()
+                to_asset = opportunity.to_asset.upper()
+                exchange = getattr(opportunity, 'source_exchange', 'kraken')
+                
+                # Get specific branch boost (now actively updated!)
+                quantum_boost, boost_reason = self.quantum_mirror_scanner.get_quantum_boost(
+                    from_asset, to_asset, exchange
+                )
                 
                 # Get global scanner coherence
                 scanner_status = self.quantum_mirror_scanner.get_status()
                 scanner_coherence = scanner_status.get('global_coherence', 0.5)
+                ready_count = scanner_status.get('ready_for_execution', 0)
                 
-                signals.append(scanner_coherence)
-                if scanner_coherence >= 0.618:  # PHI threshold
+                # Combine branch-specific boost with global coherence
+                combined_mirror = max(scanner_coherence, quantum_boost)
+                signals.append(combined_mirror)
+                
+                if quantum_boost >= 0.2:  # Significant quantum boost
+                    signals.append(0.8)  # Extra signal for boosted branch
+                    reasons.append(f"🔮⚡ QUANTUM BOOST +{quantum_boost:.0%} ({boost_reason})")
+                elif scanner_coherence >= 0.618:  # PHI threshold
                     reasons.append(f"🔮 Branch φ-aligned ({scanner_coherence:.2f})")
                 else:
                     reasons.append(f"🔮 Branch coherence ({scanner_coherence:.2f})")
+                    
+                # Bonus for having ready branches
+                if ready_count > 0:
+                    signals.append(0.7)
+                    reasons.append(f"🔮 {ready_count} branches 4th-ready")
                     
             except Exception as e:
                 logger.debug(f"Quantum Mirror Scanner error: {e}")
@@ -6874,12 +6995,14 @@ class MicroProfitLabyrinth:
             min_confidence = 0.50  # Sero needs 50%+ for Alpaca
             exchange_tag = "🦙ALPACA"
             
-            # Extra Alpaca check: Block all stablecoin trades
+            # 🌍 PLANET SAVER: Allow stablecoin trades if there's real arbitrage!
             from_asset = opportunity.from_asset.upper()
             to_asset = opportunity.to_asset.upper()
             if (from_asset in self.barter_matrix.STABLECOINS and 
                 to_asset in self.barter_matrix.STABLECOINS):
-                return False, 0.0, f"👑 SERO BLOCKS 🦙ALPACA: {from_asset}→{to_asset} (no stablecoin swaps!)"
+                # Allow if expected profit > $0.01 (real arbitrage exists!)
+                if opportunity.expected_pnl_usd < 0.01:
+                    return False, 0.0, f"👑 SERO BLOCKS 🦙ALPACA: {from_asset}→{to_asset} (need >$0.01 arb)"
         else:
             # Kraken: Lowest fees, Sero can go aggressive on ladder!
             base_min = 0.0005  # Just $0.0005 base (Kraken is cheapest)
@@ -8923,6 +9046,14 @@ if __name__ == "__main__":
         if is_stablecoin_source:
             # Get TOP rising coins - these are our HUNT targets!
             rising_coins = self.get_strongest_rising(exclude={from_asset}, limit=20)
+            # 🔬 DEBUG: Check if GUN is in rising_coins for Kraken USD
+            if source_exchange == 'kraken' and from_asset == 'USD':
+                top_3_rising = [(c, m) for c, m in rising_coins if m > 10][:5]
+                if top_3_rising:
+                    print(f"   🔬 TOP RISING (>10%/min): {[(c, f'{m:.1f}%') for c, m in top_3_rising]}")
+                gun_mom = self.asset_momentum.get('GUN', 0)
+                if gun_mom > 0:
+                    print(f"   🔬 GUN momentum in asset_momentum: {gun_mom:.1f}%/min")
             for coin, momentum in rising_coins:
                 if momentum > 0.001:  # >0.1%/min momentum
                     lion_targets.append(coin)
@@ -8958,7 +9089,11 @@ if __name__ == "__main__":
             if len(to_asset) <= 2 and to_asset.upper() not in ['BT', 'OP']:  # Allow real 2-char like OP
                 continue  # Skip garbage single-letter "coins"
             
-            # 🚨 CRITICAL FIX: Check if path is blocked BEFORE doing any work!
+            # � DEBUG: Track GUN specifically
+            if to_asset.upper() == 'GUN':
+                print(f"   🔬 GUN FOUND in target loop! from={from_asset} exchange={source_exchange}")
+            
+            # �🚨 CRITICAL FIX: Check if path is blocked BEFORE doing any work!
             # This prevents the S↔C ping-pong problem from repeating
             path_key = (from_asset.upper(), to_asset.upper())
             if path_key in self.barter_matrix.blocked_paths:
@@ -8969,12 +9104,12 @@ if __name__ == "__main__":
             if is_preexec_blocked:
                 continue  # Skip - repeatedly fails min checks
             
-            # Skip stablecoin → stablecoin UNLESS it meets Queen's floor!
-            # USD→ZUSD, USDC→USD, etc. - allowed if profit >= $0.08
-            is_checkpoint_target = to_asset in ['USD', 'USDT', 'USDC', 'TUSD', 'DAI', 'ZUSD']
-            # is_stablecoin_source is defined above at the from_asset loop level
-            
-            # 👑 QUEEN ALLOWS STABLECOIN SWAPS - but they MUST meet her floor!
+            # 🌍✨ PLANET SAVER: HARD BLOCK stablecoin → stablecoin trades!
+            # These ALWAYS LOSE FEES - there is NO momentum edge possible!
+            is_checkpoint_target = to_asset.upper() in ['USD', 'USDT', 'USDC', 'TUSD', 'DAI', 'ZUSD', 'EUR', 'ZEUR', 'GBP', 'ZGBP', 'BUSD', 'GUSD']
+            if is_stablecoin_source and is_checkpoint_target:
+                # Stablecoin→Stablecoin = GUARANTEED LOSS! Skip immediately!
+                continue
             # This enables moving funds across the board when needed
             # The epsilon floor will filter out unprofitable swaps later
             # (No longer blocking here - let Queen's math gate decide)
@@ -9026,6 +9161,9 @@ if __name__ == "__main__":
                         to_pair = self._find_exchange_pair(to_asset, "USDT", source_exchange)
             
             if not from_pair or not to_pair:
+                # 🔬 DEBUG: Log why high-momentum targets are being skipped
+                if to_asset in lion_targets and self.asset_momentum.get(to_asset, 0) > 100:
+                    print(f"      🔬 DEBUG SKIP: {from_asset}→{to_asset} (from_pair={from_pair}, to_pair={to_pair}) on {source_exchange}")
                 continue
             
             # 🔍 SKIP PATH VALIDATION IN LOOP - Too slow!
@@ -9249,48 +9387,96 @@ if __name__ == "__main__":
             # 2. We have actual cross-exchange arbitrage
             # 3. Path has historically been profitable
             
-            # 👑 SERO FIX: Use ACTUAL momentum from price tracker, not just dream score!
-            # Get real momentum for target asset (in %/min)
-            real_momentum = self.get_momentum(to_asset)  # Already exists in class!
-            # Convert momentum %/min to expected price move over ~5 min holding period
-            # If momentum is +8%/min, expect ~8% move in ~5 minutes (aggressive but that's the signal)
-            momentum_edge = real_momentum / 100.0 * 5.0  # 5 minute hold assumption
+            # 🌍✨ PLANET SAVER FIX: REALISTIC PROFIT EXPECTATIONS!
+            # The old code assumed 5 minute holds which is WRONG for instant swaps
             
-            # Cap momentum edge at 5% to avoid crazy outliers
-            momentum_edge = min(max(momentum_edge, -0.05), 0.05)
+            # 1. STABLECOIN CHECK: Trading stable→stable = GUARANTEED LOSS (fees!)
+            STABLECOINS = {'USD', 'USDT', 'USDC', 'ZUSD', 'TUSD', 'DAI', 'BUSD', 'GUSD', 'EUR', 'ZEUR', 'GBP', 'ZGBP'}
+            is_stable_to_stable = from_asset.upper() in STABLECOINS and to_asset.upper() in STABLECOINS
             
-            # Also check dream score for additional confirmation
-            dream_score_target = self.calculate_dream_score(to_asset) if hasattr(self, 'calculate_dream_score') else 0
-            dream_bonus = dream_score_target * 0.005 if dream_score_target > 0.2 else 0  # Small bonus from dreams
+            # Get momentum for target asset (needed for both paths)
+            real_momentum = self.get_momentum(to_asset) if not is_stable_to_stable else 0.0
             
-            # 👑 LET THE QUEEN DECIDE - Give her realistic estimates, she'll decide if we win
-            # Base profit from signals - the Queen's minimum is $0.003
-            # Combined score 0-1 maps to 0.1%-1% expected edge (realistic for good signals)
-            signal_edge = combined * 0.01  # Up to 1% edge from signals
+            if is_stable_to_stable:
+                # Stablecoin→Stablecoin = ALWAYS LOSES FEES! No momentum edge possible.
+                expected_pnl_pct = -total_cost_pct  # We WILL lose the fees
+                expected_pnl_usd = from_value * expected_pnl_pct
+                # Skip the rest - this is a guaranteed loser
+            else:
+                # 2. For volatile assets: Use momentum-aware profit expectation
+                # We're doing INSTANT swaps, NOT 5 minute holds!
+                
+                # 🌍✨ PLANET SAVER QUANTUM MIRROR: Scale capture rate with momentum!
+                # - Normal momentum (<1%/min): 10% capture rate
+                # - High momentum (1-5%/min): 15% capture rate  
+                # - MASSIVE momentum (>5%/min): 20% capture rate (rare opportunity!)
+                if abs(real_momentum) > 5.0:
+                    capture_rate = 0.20  # 20% for massive momentum spikes!
+                elif abs(real_momentum) > 1.0:
+                    capture_rate = 0.15  # 15% for high momentum
+                else:
+                    capture_rate = 0.10  # 10% for normal conditions
+                
+                momentum_edge = real_momentum / 100.0 * capture_rate
+                
+                # 🔮 QUANTUM MIRROR: Dynamic cap based on momentum strength
+                # - Normal: 0.5% max
+                # - High momentum: 1% max
+                # - MASSIVE momentum: 2% max (to beat higher fees)
+                if abs(real_momentum) > 10.0:
+                    max_mom_edge = 0.02  # 2% max for extreme spikes
+                elif abs(real_momentum) > 2.0:
+                    max_mom_edge = 0.01  # 1% max for high momentum
+                else:
+                    max_mom_edge = 0.005  # 0.5% max normally
+                
+                momentum_edge = min(max(momentum_edge, -max_mom_edge), max_mom_edge)
+                
+                # Dream bonus - keep it small
+                dream_score_target = self.calculate_dream_score(to_asset) if hasattr(self, 'calculate_dream_score') else 0
+                dream_bonus = dream_score_target * 0.001 if dream_score_target > 0.5 else 0  # Much smaller
+                
+                # Signal edge - scale with combined score
+                signal_edge = combined * 0.003  # Up to 0.3% from signals
+                
+                # REALISTIC expected profit = edge - guaranteed fees
+                base_profit_pct = signal_edge + momentum_edge + dream_bonus - total_cost_pct
+                
+                # 👑 QUEEN'S SLIPPAGE ADJUSTMENT - Use ACTUAL historical slippage
+                key = (from_asset.upper(), to_asset.upper())
+                history = self.barter_matrix.barter_history.get(key, {})
+                historical_slippage = history.get('avg_slippage', 0.1) / 100  # Default 0.1%
+                
+                # Use the HIGHER of theoretical or historical slippage
+                actual_cost_pct = max(total_cost_pct, fee_pct + historical_slippage)
+                
+                expected_pnl_pct = base_profit_pct  # Already includes costs
+                
+                # 👑 QUEEN'S WISDOM: If path historically loses, penalize heavily
+                path_total_profit = history.get('total_profit', 0)
+                if path_total_profit < 0 and history.get('trades', 0) > 2:
+                    # Path is losing - this is VERY important signal
+                    expected_pnl_pct *= 0.25  # 75% penalty for losing paths!
+                
+                # Expected profit in USD
+                expected_pnl_usd = from_value * expected_pnl_pct
+                
+                # 🔬 DEBUG: Log high-momentum opportunities to understand calculation
+                if abs(real_momentum) > 100:  # >100%/min momentum
+                    print(f"      🔬 DEBUG: {from_asset}→{to_asset} mom={real_momentum:.1f}%/min cap_rate={capture_rate:.0%} edge={momentum_edge:.4f} cost={total_cost_pct:.4f} profit%={expected_pnl_pct:.4f} profit$={expected_pnl_usd:.4f}")
             
-            # 👑 SERO: Use REAL momentum + signals - costs to calculate expected profit
-            # If BSX has +8%/min momentum, that's HUGE potential!
-            base_profit_pct = signal_edge + momentum_edge + dream_bonus - total_cost_pct
+            # 🌍✨ PLANET SAVER SANITY CHECK: Cap expected profit at realistic maximum
+            # Scale cap with momentum - high momentum = higher possible profit
+            if abs(real_momentum) > 10.0:
+                MAX_REALISTIC_PROFIT_PCT = 0.02  # 2% max for extreme momentum
+            elif abs(real_momentum) > 2.0:
+                MAX_REALISTIC_PROFIT_PCT = 0.01  # 1% max for high momentum
+            else:
+                MAX_REALISTIC_PROFIT_PCT = 0.005  # 0.5% max normally
             
-            # 👑 QUEEN'S SLIPPAGE ADJUSTMENT - Use ACTUAL historical slippage, not theoretical
-            key = (from_asset.upper(), to_asset.upper())
-            history = self.barter_matrix.barter_history.get(key, {})
-            historical_slippage = history.get('avg_slippage', 0.1) / 100  # Default 0.1% for unknown paths
-            
-            # Use the HIGHER of theoretical or historical slippage
-            actual_cost_pct = max(total_cost_pct, fee_pct + historical_slippage)
-            
-            expected_pnl_pct = base_profit_pct  # Already includes costs
-            
-            # 👑 QUEEN'S WISDOM: If path historically loses, lower confidence but let her decide
-            path_total_profit = history.get('total_profit', 0)
-            if path_total_profit < 0 and history.get('trades', 0) > 2:
-                # Path is losing - reduce expected profit but don't block (Queen decides)
-                expected_pnl_pct *= 0.5  # Halve expectations for losing paths
-            
-            # Expected profit in USD - Use actual percentage, don't force tiny minimum
-            # Let Queen see negative expected profits too - she'll decide!
-            expected_pnl_usd = from_value * expected_pnl_pct
+            if expected_pnl_pct > MAX_REALISTIC_PROFIT_PCT:
+                expected_pnl_pct = MAX_REALISTIC_PROFIT_PCT
+                expected_pnl_usd = from_value * expected_pnl_pct
             
             # 🚀 PENNY TURBO: Enhance with real-time spread/fee optimization
             turbo_adjustment = 1.0
@@ -9428,7 +9614,12 @@ if __name__ == "__main__":
             # conservative cost checks later decide if it truly doesn't bleed.
             min_expected_profit = EPSILON_PROFIT_USD
             
-            # 👑 LEARNING FILTER: Does expected profit overcome minimum?
+            # � DEBUG: See what expected PnL is calculated
+            asset_momentum = self.asset_momentum.get(to_asset, 0)
+            if abs(asset_momentum) > 1.0 or to_asset.upper() == 'GUN':  # >1%/min or GUN specifically
+                print(f"   🔬 DEBUG OPP: {from_asset}→{to_asset} | mom={asset_momentum:.2f}%/min | exp_pnl=${opp.expected_pnl_usd:.6f} | exp_pct={opp.expected_pnl_pct:.4%}")
+            
+            # �👑 LEARNING FILTER: Does expected profit overcome minimum?
             # Also allow if expected profit is POSITIVE (even if below absolute minimum)
             if opp.expected_pnl_usd < min_expected_profit and opp.expected_pnl_usd <= 0:
                 # BOTH below minimum AND negative/zero - definitely skip
@@ -9521,15 +9712,14 @@ if __name__ == "__main__":
                 if to_asset == from_asset:
                     continue
                 
-                # Skip stablecoin → stablecoin UNLESS it meets Queen's floor!
-                # USD→ZUSD, USDC→USD, etc. - allowed if profit >= $0.08
-                is_checkpoint_target = to_asset in ['USD', 'USDT', 'USDC', 'TUSD', 'DAI', 'ZUSD']
-                # is_stablecoin_source is defined above at the from_asset loop level
-                
-                # 👑 QUEEN ALLOWS STABLECOIN SWAPS - but they MUST meet her floor!
-                # This enables moving funds across the board when needed
-                # The epsilon floor will filter out unprofitable swaps later
-                # (No longer blocking here - let Queen's math gate decide)
+                # 🌍✨ PLANET SAVER: HARD BLOCK stablecoin → stablecoin trades!
+                # These ALWAYS LOSE FEES - there is NO momentum edge possible!
+                is_checkpoint_target = to_asset.upper() in ['USD', 'USDT', 'USDC', 'TUSD', 'DAI', 'ZUSD', 'EUR', 'ZEUR', 'GBP', 'ZGBP', 'BUSD', 'GUSD']
+                if is_stablecoin_source and is_checkpoint_target:
+                    # Stablecoin→Stablecoin = GUARANTEED LOSS! Skip immediately!
+                    if debug_first_scans:
+                        print(f"      ⛔ {from_asset}→{to_asset}: BLOCKED (stablecoin→stablecoin = guaranteed loss!)")
+                    continue
                 
                 # Skip blocked target assets on Binance
                 if source_exchange == 'binance' and to_asset.upper() in self.blocked_binance_assets:
@@ -10427,12 +10617,14 @@ if __name__ == "__main__":
             
             # Apply path history penalty (learned failures)
             pair_key = (from_upper, to_upper)
+            # 🌍✨ PLANET SAVER: The past doesn't define the future!
+            # We learn from history but don't let it chain us down
             if hasattr(self.barter_matrix, 'barter_history') and pair_key in self.barter_matrix.barter_history:
                 hist = self.barter_matrix.barter_history.get(pair_key, {})
-                if hist.get('total_profit', 0) < 0 and hist.get('trades', 0) > 2:
-                    # Path historically loses - add penalty
+                if hist.get('total_profit', 0) < 0 and hist.get('trades', 0) > 5:  # Only after 5+ failures
+                    # Path historically loses - add small penalty (learn but don't block!)
                     historical_loss_rate = abs(hist['total_profit']) / max(hist.get('trades', 1), 1)
-                    conservative_pnl -= historical_loss_rate * 0.5  # 50% of historical avg loss
+                    conservative_pnl -= historical_loss_rate * 0.1  # Only 10% of historical avg loss
             
             # FINAL GATE: Block if expected profit doesn't cover costs with buffer
             # OR if spread is ridiculously high (>5%)
@@ -10462,7 +10654,11 @@ if __name__ == "__main__":
                 )
                 return None
             
-            if conservative_pnl < 0.0001:  # Must net at least $0.0001 after costs
+            # 🌍✨ PLANET SAVER MODE: Past doesn't define future!
+            # Allow trades if scanner expects profit - trust the quantum mirror!
+            planet_saver_mode = hasattr(self, 'planet_saver') and self.planet_saver is not None
+            
+            if conservative_pnl < -0.01 and not planet_saver_mode:  # Only block if clearly losing > $0.01
                 self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE BLOCKED!")
                 self.rejection_print(f"   ├── Scanner Expected: ${scanner_expected_pnl:+.4f}")
                 self.rejection_print(f"   ├── Total Costs: ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
@@ -11288,12 +11484,37 @@ if __name__ == "__main__":
                 print(f"   ⚠️ No {opp.from_asset} balance on Alpaca (balance: {actual_balance})")
                 return False
             
+            # 🌍✨ PLANET SAVER: Same sanity check as Kraken - detect location mismatch!
+            if actual_balance < opp.from_amount * 0.1:
+                print(f"   🌍⚠️ Alpaca balance {actual_balance:.6f} is < 10% of expected {opp.from_amount:.6f}")
+                print(f"   🌍⚠️ Asset location mismatch! Protecting the planet by aborting.")
+                return False
+            
+            # 🌍✨ PLANET SAVER PROTECTION: Don't trade dust that gets eaten by fees!
+            original_amount = opp.from_amount
+            original_value = opp.from_value_usd
+            
             # 👑 SERO EXECUTION FIX: Use 95% of balance for safety margin
             safe_amount = actual_balance * 0.95
             if opp.from_amount > safe_amount:
                 print(f"   👑 Sero adjusts: {opp.from_amount:.6f} → {safe_amount:.6f} (95% safe)")
                 opp.from_amount = safe_amount
                 opp.from_value_usd = opp.from_amount * self.prices.get(opp.from_asset, 0)
+                
+                # 🌍✨ PLANET SAVER: Check if clamping destroyed our profit opportunity!
+                clamp_ratio = opp.from_amount / original_amount if original_amount > 0 else 0
+                if clamp_ratio < 0.2:  # Lost more than 80% of intended trade size
+                    print(f"   🌍⚠️ PLANET SAVER PROTECTION: Clamped to {clamp_ratio*100:.1f}% of intended!")
+                    print(f"      Original: ${original_value:.2f} → Clamped: ${opp.from_value_usd:.2f}")
+                    print(f"      Fees would eat this tiny trade alive. ABORTING to save the planet!")
+                    return False
+                    
+                # 🌍✨ Minimum viable trade size for Alpaca (fees ~0.3% = $0.003 on $1)
+                PLANET_SAVER_MIN_ALPACA = 5.0  # Need at least $5 to overcome fees
+                if opp.from_value_usd < PLANET_SAVER_MIN_ALPACA:
+                    print(f"   🌍⚠️ PLANET SAVER: Clamped value ${opp.from_value_usd:.2f} < ${PLANET_SAVER_MIN_ALPACA} minimum")
+                    print(f"      Small trades get eaten by fees. Protecting our liberation fund!")
+                    return False
             
             # First check if a path exists
             path = self.alpaca.find_conversion_path(opp.from_asset, opp.to_asset)

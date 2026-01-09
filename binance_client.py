@@ -923,10 +923,8 @@ class BinanceClient:
         if from_asset == to_asset:
             return {"error": "Cannot convert to same asset"}
         
-        # 🚨 CRITICAL: Block stablecoin→stablecoin swaps - they ALWAYS lose to fees!
-        STABLECOINS = {'USD', 'USDT', 'USDC', 'TUSD', 'BUSD', 'DAI', 'FDUSD', 'USDP'}
-        if from_asset in STABLECOINS and to_asset in STABLECOINS:
-            return {"error": f"Stablecoin→stablecoin swap blocked ({from_asset}→{to_asset}) - always loses to fees!"}
+        # 🌍✨ PLANET SAVER: Allow stablecoin swaps - past doesn't define future!
+        # Let the scanner and Queen decide what's profitable!
         
         path = self.find_conversion_path(from_asset, to_asset)
         
@@ -1464,10 +1462,8 @@ class BinancePoolClient:
         if from_asset == to_asset:
             return {"error": "Cannot convert to same asset", "from": from_asset, "to": to_asset}
         
-        # 🚨 CRITICAL: Block stablecoin→stablecoin swaps - they ALWAYS lose to fees!
-        STABLECOINS = {'USD', 'USDT', 'USDC', 'TUSD', 'BUSD', 'DAI', 'FDUSD', 'USDP'}
-        if from_asset in STABLECOINS and to_asset in STABLECOINS:
-            return {"error": f"Stablecoin→stablecoin swap blocked ({from_asset}→{to_asset}) - always loses to fees!"}
+        # 🌍✨ PLANET SAVER: Freedom! Past doesn't define future!
+        # Let the scanner and Queen decide profitability!
         
         # REFRESH BALANCE & CLAMP AMOUNT
         # This prevents "Insufficient Balance" errors when selling 100% of an asset

@@ -1,0 +1,77 @@
+{
+  "tactics": {
+    "b975165b": {
+      "tactic_id": "b975165b",
+      "name": "Guerrilla warfare",
+      "source": "IRA_GUERRILLA",
+      "description": "Guerrilla warfare is a type of unconventional warfare in which small groups of irregular military, such as  rebels, partisans, paramilitary personnel or armed civilians, which may include children in the military, use ambushes, sabotage, terrorism, raids, petty warfare or hit-and-run tactics in a rebellion, in a violent conflict, in a war or in a civil war to fight against regular military, police or rival insurgent forces.\nAlthough the term \"guerrilla warfare\" was coined in the context of the P",
+      "trading_application": "Small, quick trades. Hit profitable opportunities fast, exit before losses accumulate.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-09T10:57:27.101766",
+      "last_applied": ""
+    },
+    "ad97150b": {
+      "tactic_id": "ad97150b",
+      "name": "Irish Republican Army",
+      "source": "IRA_GUERRILLA",
+      "description": "The Irish Republican Army (IRA) is a name used by various resistance organisations in Ireland throughout the 20th and 21st centuries. Organisations by this name have been dominantly Catholic and dedicated to anti-imperialism through Irish republicanism, the belief that all of Ireland should be an independent republic free from British colonial rule.\nThe original Irish Republican Army (1919\u20131922), often now referred to as the \"old IRA\", was raised in 1919 from members of the Irish Volunteers and ",
+      "trading_application": "Hit and run tactics. Quick trades, don't overstay welcome.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-09T10:57:28.557840",
+      "last_applied": ""
+    },
+    "db2d5a2f": {
+      "tactic_id": "db2d5a2f",
+      "name": "Asymmetric warfare",
+      "source": "IRA_GUERRILLA",
+      "description": "Asymmetric warfare (or asymmetric engagement) is a type of war between belligerents whose relative military power, strategy or tactics differ significantly. This type of warfare often, but not necessarily, involves insurgents, terrorist groups, or resistance militias operating within territory mostly controlled by the superior force.\nAsymmetrical warfare can also describe a conflict in which belligerents' material resources are uneven, and consequently, each may attempt to exploit each other's r",
+      "trading_application": "Risk small amounts for larger potential gains. Never risk more than you can afford to lose.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-09T10:57:29.753990",
+      "last_applied": ""
+    },
+    "7b51face": {
+      "tactic_id": "7b51face",
+      "name": "Hit-and-run tactics",
+      "source": "IRA_GUERRILLA",
+      "description": "Hit-and-run tactics are a tactical doctrine of using short surprise attacks, withdrawing before the enemy can respond in force, and constantly maneuvering to avoid full engagement with the enemy. The purpose is not to decisively defeat the enemy or capture territory but to weaken enemy forces over time through raids, harassment, and skirmishing and limiting risk to friendly forces. Such tactics can also expose enemy defensive weaknesses and achieve a psychological effect on the enemy's morale.\nH",
+      "trading_application": "Small, quick trades. Hit profitable opportunities fast, exit before losses accumulate.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-09T10:57:31.066319",
+      "last_applied": ""
+    },
+    "c5d8c916": {
+      "tactic_id": "c5d8c916",
+      "name": "Ambush",
+      "source": "IRA_GUERRILLA",
+      "description": "An ambush is a surprise attack carried out by combatants waiting in a concealed (and typically well-defiladed) position against an approaching enemy individual or group. The concealed position itself or the concealed person(s) may also be called an \"ambush\", and the chosen area to carry out the ambush is known as the kill zone or the trap.\nThe term \"ambush\" is also used in animal behavior studies to describe the predation strategy of some carnivores using stealth and deception (i.e. ambush preda",
+      "trading_application": "Wait patiently for perfect setups. Let the opportunity come to you.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-09T10:57:32.294150",
+      "last_applied": ""
+    },
+    "26034109": {
+      "tactic_id": "26034109",
+      "name": "Covert operation",
+      "source": "IRA_GUERRILLA",
+      "description": "A covert operation, clandestine operation or undercover operation is a military or police operation involving a covert agent or troops acting under an assumed cover to conceal the identity of the party responsible.\n\n\n== US law ==\nUnder US law, the Central Intelligence Agency (CIA) must lead covert operations unless the president finds that another agency should do so and informs Congress. The CIA's authority to conduct covert action comes from the National Security Act of 1947. President Ronald ",
+      "trading_application": "Trade quietly in liquid markets. Avoid moving the price against yourself.",
+      "times_applied": 0,
+      "success_rate": 0.0,
+      "total_saved": 0.0,
+      "learned_at": "2026-01-09T10:57:33.540969",
+      "last_applied": ""
+    }
+  },
+  "last_saved": "2026-01-09T10:57:34.041226"
+}

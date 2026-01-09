@@ -942,10 +942,10 @@
     "USD\u2192USDC": {
       "from": "USD",
       "to": "USDC",
-      "reason": "Only 0.0% win rate after 615 trades",
-      "loss_count": 615,
+      "reason": "Only 0.2% win rate after 617 trades",
+      "loss_count": 616,
       "total_loss": 0.0,
-      "blocked_at": "2026-01-08T20:37:57.897756",
+      "blocked_at": "2026-01-09T11:02:47.694396",
       "permanent": true
     },
     "PEPE\u2192FLOKI": {
@@ -1063,6 +1063,15 @@
       "loss_count": 5,
       "total_loss": 0.0,
       "blocked_at": "2026-01-08T20:37:58.142502",
+      "permanent": true
+    },
+    "USDC\u2192USD": {
+      "from": "USDC",
+      "to": "USD",
+      "reason": "Only 20.0% win rate after 5 trades",
+      "loss_count": 4,
+      "total_loss": 0.0,
+      "blocked_at": "2026-01-09T11:07:05.874433",
       "permanent": true
     }
   },
@@ -1357,12 +1366,12 @@
       "win_rate": 100.0
     },
     "USD\u2192USDC": {
-      "trades": 615,
-      "wins": 0,
-      "losses": 615,
-      "total_profit": 0,
+      "trades": 617,
+      "wins": 1,
+      "losses": 616,
+      "total_profit": -0.03599819098422218,
       "total_loss": 0.0,
-      "win_rate": 0.0
+      "win_rate": 0.1620745542949757
     },
     "1000SATS\u2192PEPE": {
       "trades": 24,
@@ -1541,9 +1550,9 @@
       "win_rate": 0.0
     },
     "USD\u2192ZUSD": {
-      "trades": 2,
+      "trades": 3,
       "wins": 0,
-      "losses": 2,
+      "losses": 3,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
@@ -1589,20 +1598,20 @@
       "win_rate": 0.0
     },
     "USD\u2192DAI": {
-      "trades": 2,
+      "trades": 3,
       "wins": 0,
-      "losses": 2,
+      "losses": 3,
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
     },
     "USD\u2192USDT": {
-      "trades": 2,
-      "wins": 0,
-      "losses": 2,
-      "total_profit": 0,
+      "trades": 4,
+      "wins": 1,
+      "losses": 3,
+      "total_profit": -0.001444596010298227,
       "total_loss": 0.0,
-      "win_rate": 0.0
+      "win_rate": 25.0
     },
     "USD\u2192WMTX": {
       "trades": 1,
@@ -1741,12 +1750,12 @@
       "win_rate": 0.0
     },
     "USDC\u2192USD": {
-      "trades": 4,
-      "wins": 0,
+      "trades": 5,
+      "wins": 1,
       "losses": 4,
-      "total_profit": 0,
+      "total_profit": -0.0359376441820032,
       "total_loss": 0.0,
-      "win_rate": 0.0
+      "win_rate": 20.0
     },
     "USDC\u2192USDT": {
       "trades": 4,
@@ -1843,7 +1852,63 @@
       "total_profit": 0,
       "total_loss": 0.0,
       "win_rate": 0.0
+    },
+    "USD\u2192BCN": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192GBP": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192MIM": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192PYUSD": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192USDD": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USD\u2192EUR": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_profit": 0,
+      "total_loss": 0.0,
+      "win_rate": 0.0
+    },
+    "USDT\u2192USDC": {
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "total_profit": -9.224681756355738,
+      "total_loss": 0,
+      "win_rate": 100.0
     }
   },
-  "last_saved": "2026-01-09T10:00:29.316043"
+  "last_saved": "2026-01-09T11:07:05.888437"
 }
