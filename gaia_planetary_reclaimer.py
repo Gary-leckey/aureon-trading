@@ -347,16 +347,14 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_bin_log'):
                     self._last_bin_log = {}
                 
-                # TURBO MODE: Take profit at 0.005% OR stop-loss at -0.3% OR rotate
+                # TURBO MODE: Take profit at 0.01% - NO STOP LOSS (wait for recovery)
                 best_mom = self._get_best_momentum()
-                should_profit = pnl_pct > 0.005  # Take profit
-                should_stop = pnl_pct < -0.3  # Stop loss
-                should_rotate = best_mom and best_mom[0] != asset and best_mom[1] > 1.0  # Better opportunity
+                should_profit = pnl_pct > 0.01  # Take profit at 0.01%
+                # NO STOP LOSS - small positions can wait for market to recover
+                should_rotate = best_mom and best_mom[0] != asset and pnl_pct > 0 and best_mom[1] > 1.5  # Only rotate when in profit
                 
-                if should_profit or should_stop or should_rotate:
-                    if should_stop:
-                        reason = f"STOP {pnl_pct:+.2f}%"
-                    elif should_profit:
+                if should_profit or should_rotate:
+                    if should_profit:
                         reason = f"{pnl_pct:+.2f}%"
                     else:
                         reason = f"ROTATE→{best_mom[0]}"
@@ -462,13 +460,12 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_alp_log'):
                     self._last_alp_log = {}
                 
-                # TURBO MODE: Take profit OR stop-loss
-                should_take_profit = pnl_pct > 0.005
-                should_stop_loss = pnl_pct < -0.3  # Stop loss at -0.3%
+                # TURBO MODE: Take profit only - NO STOP LOSS (wait for recovery)
+                should_take_profit = pnl_pct > 0.01  # Take profit at 0.01%
+                # NO STOP LOSS - small positions can wait for market to recover
                 
-                if should_take_profit or should_stop_loss:
-                    action = "PROFIT" if should_take_profit else "STOP-LOSS"
-                    self.log(f"🔥 ALPACA {action} {asset}: ${value:.2f} ({pnl_pct:+.2f}%)")
+                if should_take_profit:
+                    self.log(f"🔥 ALPACA PROFIT {asset}: ${value:.2f} ({pnl_pct:+.2f}%)")
                     
                     result = self.alpaca.place_order(sym, qty, 'sell', 'market', 'ioc')
                     
@@ -596,13 +593,12 @@ class PlanetaryReclaimer:
                 elif not hasattr(self, '_last_krk_log'):
                     self._last_krk_log = {}
                 
-                # TURBO MODE: Take profit OR stop-loss
-                should_profit = pnl_pct > 0.005
-                should_stop = pnl_pct < -0.3  # Stop loss at -0.3%
+                # TURBO MODE: Take profit only - NO STOP LOSS (wait for recovery)
+                should_profit = pnl_pct > 0.01  # Take profit at 0.01%
+                # NO STOP LOSS - small positions can wait for market to recover
                 
-                if should_profit or should_stop:
-                    action = "PROFIT" if should_profit else "STOP-LOSS"
-                    self.log(f"🔥 KRAKEN {action} {asset}/{quote}: ${value:.2f} ({pnl_pct:+.2f}%)")
+                if should_profit:
+                    self.log(f"🔥 KRAKEN PROFIT {asset}/{quote}: ${value:.2f} ({pnl_pct:+.2f}%)")
                     
                     result = self.kraken.place_market_order(f'{asset}{quote}', 'sell', quantity=free * 0.999)
                     
