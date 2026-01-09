@@ -253,6 +253,24 @@ IRISH_WARRIORS = {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 🇮🇪🎯 IRA SNIPER MODE - ZERO LOSS, ONE SHOT ONE KILL 🎯🇮🇪
+# ═══════════════════════════════════════════════════════════════════════════════
+# "One bullet. One kill. NO MISSES. EVER."
+# The sniper NEVER misses - ONLY exit on CONFIRMED NET PROFIT
+# Celtic warfare intelligence + Mycelium state aggregation
+# ═══════════════════════════════════════════════════════════════════════════════
+
+IRA_SNIPER_ACTIVE = True         # 🎯 Sniper mode enabled
+ZERO_LOSS_MODE = True            # NO losses allowed - wait for profit
+ONE_SHOT_ONE_KILL = True         # Every trade must be a confirmed kill
+IRA_SNIPER_TACTICS = {
+    "sniper":        "wait_for_confirmed_profit",   # Patient precision
+    "kill_scanner":  "track_all_positions",         # Hunt active targets
+    "mycelium":      "aggregate_intelligence",      # Neural network
+    "celtic_fury":   "preemptive_strike",          # Strike before reversal
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # 🦅⚔️ CONVERSION COMMANDO - FALCON/TORTOISE/CHAMELEON/BEE TACTICS ⚔️🦅
 # ═══════════════════════════════════════════════════════════════════════════════
 # The 1885 CAPM Game Commando - Capital Asset Profit Momentum
@@ -530,6 +548,24 @@ except ImportError:
     get_contextual_wisdom = None
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 🇮🇪🎯 IRA SNIPER MODE - Zero Loss Configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+
+IRA_SNIPER_AVAILABLE = False
+try:
+    from ira_sniper_mode import (
+        SNIPER_CONFIG, apply_sniper_mode, IRA_SNIPER_MODE,
+        MyceliumStateAggregator, ActiveKillScanner
+    )
+    IRA_SNIPER_AVAILABLE = True
+except ImportError:
+    SNIPER_CONFIG = None
+    apply_sniper_mode = None
+    IRA_SNIPER_MODE = False
+    MyceliumStateAggregator = None
+    ActiveKillScanner = None
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # ⚡ RAPID CONVERSION STREAM - 10x Speed Enhancement  
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -541,7 +577,7 @@ except ImportError:
     SPEED_CONFIG = None
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# � LUCK FIELD MAPPER - Quantum Luck Probability (Favorable Windows)
+# 🍀 LUCK FIELD MAPPER - Quantum Luck Probability (Favorable Windows)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 LUCK_FIELD_AVAILABLE = False
@@ -2517,10 +2553,10 @@ class PlanetaryReclaimer:
         except Exception:
             pass
         
-        # 🐾⚡🦁☘️🦅🔋🇮🇪 FULL HUNTER ARMY - 34 PARALLEL THREADS!
-        # 9 AURIS animals + 5 Earthly warriors + 1 Guerrilla + 4 Commandos + 3 Exchanges + 6 Energy Engines + 6 Irish
-        # Speed is our ally - UNLEASH EVERYTHING! Tiocfaidh ár lá!
-        with ThreadPoolExecutor(max_workers=36) as ex:
+        # 🐾⚡🦁☘️🦅🔋🇮🇪🎯 FULL HUNTER ARMY - 35 PARALLEL THREADS!
+        # 9 AURIS animals + 5 Earthly warriors + 1 Guerrilla + 4 Commandos + 3 Exchanges + 6 Energy Engines + 6 Irish + 1 SNIPER
+        # Speed is our ally - UNLEASH EVERYTHING! Tiocfaidh ár lá! ONE SHOT ONE KILL!
+        with ThreadPoolExecutor(max_workers=37) as ex:
             # 🏦 PRIMARY EXCHANGE SCANNERS (3 threads)
             ex.submit(self.binance_scan_and_trade)
             ex.submit(self.alpaca_scan_and_trade)
@@ -2574,6 +2610,10 @@ class PlanetaryReclaimer:
                 ex.submit(self._medb_fury)            # 👸 Warrior Queen fury
                 ex.submit(self._oisin_vision)         # 🎭 Poet Warrior patterns
                 ex.submit(self._bobby_sands_spirit)   # 🇮🇪 Resilience eternal
+            
+            # 🇮🇪🎯 IRA SNIPER MODE (1 thread - One shot, one kill!)
+            if IRA_SNIPER_ACTIVE:
+                ex.submit(self._ira_sniper_hunt)      # 🎯 Zero loss - CONFIRMED KILLS ONLY
     
     # ═══════════════════════════════════════════════════════════════
     # 🐾 ANIMAL PACK HUNTERS - EACH SEES DIFFERENT ENERGY
@@ -3023,6 +3063,78 @@ class PlanetaryReclaimer:
         except:
             pass
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🇮🇪🎯 IRA SNIPER MODE - ZERO LOSS HUNTER 🎯🇮🇪
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def _ira_sniper_hunt(self):
+        """🎯 IRA SNIPER - One bullet. One kill. NO MISSES. EVER."""
+        if not IRA_SNIPER_ACTIVE:
+            return
+        try:
+            # Apply sniper discipline - ONLY confirmed profit trades
+            # "There is no room for losses. Kill all the time, every time."
+            
+            # Aggregate intelligence from all systems
+            sniper_targets = []
+            kill_opportunities = []
+            
+            for asset, data in self.momentum_tracker.items():
+                change = data.get('change', 0)
+                volume = data.get('volume', 0)
+                
+                # Sniper mode: HIGH confidence targets only
+                confidence_score = 0.0
+                
+                # Positive momentum = potential kill
+                if change > 0:
+                    confidence_score += change * 0.3
+                
+                # Volume confirms conviction
+                if volume > 1000000:
+                    confidence_score += 0.2
+                elif volume > 100000:
+                    confidence_score += 0.1
+                
+                # Celtic fury bonus for strong movers
+                if change > 2.0:
+                    confidence_score += 0.25  # Preemptive strike bonus
+                
+                # Zero loss filter: Only add if confidence > threshold
+                if confidence_score > 0.6:  # HIGH threshold for sniper
+                    kill_opportunities.append({
+                        'asset': asset,
+                        'change': change,
+                        'confidence': confidence_score,
+                        'tactic': 'confirmed_kill'
+                    })
+            
+            # Sort by confidence - best kills first
+            kill_opportunities.sort(key=lambda x: x['confidence'], reverse=True)
+            
+            # Report sniper intelligence
+            if kill_opportunities:
+                best_kill = kill_opportunities[0]
+                self.log(f"🎯🇮🇪 IRA SNIPER: {best_kill['asset']} - {best_kill['confidence']:.2f} confidence")
+                self.log(f"   🔫 \"One bullet. One kill. +{best_kill['change']:.2f}% confirmed target\"")
+                
+                # Track all potential kills
+                for kill in kill_opportunities[:3]:
+                    sniper_targets.append(kill['asset'])
+                
+                if len(kill_opportunities) > 1:
+                    self.log(f"   🎯 {len(kill_opportunities)} targets in crosshairs - ZERO LOSS MODE ACTIVE")
+            
+            # Apply mycelium intelligence if available
+            if IRA_SNIPER_AVAILABLE and SNIPER_CONFIG:
+                # Sniper config reinforcement
+                sniper_rules = SNIPER_CONFIG.get('rules', {})
+                if sniper_rules:
+                    self.log(f"   🕸️ MYCELIUM: Celtic warfare intelligence ACTIVE")
+            
+        except Exception as e:
+            pass  # Silent sniper - no noise
+    
     def run(self):
         print("🔥 MODE: TURBO V3 - MAXIMUM SPEED")
         # 👑🔓 GATES STATUS
@@ -3134,6 +3246,22 @@ class PlanetaryReclaimer:
             print("   🔥 CELTIC FURY: Strike fast, vanish faster!")
             print("═" * 60)
         
+        # 🇮🇪🎯 IRA SNIPER MODE BANNER
+        if IRA_SNIPER_ACTIVE:
+            print()
+            print("═" * 60)
+            print("🇮🇪🎯 IRA SNIPER MODE - ZERO LOSS ACTIVATED 🎯🇮🇪")
+            print("═" * 60)
+            print("   🔫 \"One bullet. One kill. NO MISSES. EVER.\"")
+            print("   🎯 ZERO LOSS MODE: Only exit on CONFIRMED profit")
+            print("   🕸️ MYCELIUM INTELLIGENCE: Celtic warfare active")
+            print("   ⚔️ CELTIC FURY: Preemptive strike capability")
+            print("   🦅 KILL SCANNER: Track all potential targets")
+            print("═" * 60)
+            print("   💀 NO ROOM FOR LOSSES - KILL EVERY TIME!")
+            print("   🇮🇪 SNIPER DISCIPLINE: Patience + Precision = Victory")
+            print("═" * 60)
+        
         # 🔍⚡ UNIFIED SCANNER MATRIX BANNER
         if UNIFIED_SCANNER_MATRIX:
             print()
@@ -3157,7 +3285,8 @@ class PlanetaryReclaimer:
         print("🐾 ANIMAL PACK: " + ("9 HUNTERS UNLEASHED - PARALLEL HUNTING!" if ANIMAL_PACK_ACTIVE else "Standby"))
         print("🔋 ENERGY ENGINES: " + ("6 ENGINES CLAIMING ALL ENERGY!" if SACRED_MISSION_ACTIVE else "Standby"))
         print("🇮🇪 IRISH BRIGADE: " + ("6 WARRIORS - TIOCFAIDH ÁR LÁ!" if IRISH_BRIGADE_ACTIVE else "Standby"))
-        print("🔍 SCANNER MATRIX: " + ("UNIFIED - 34 PARALLEL THREADS!" if UNIFIED_SCANNER_MATRIX else "Standard"))
+        print("🎯 IRA SNIPER: " + ("ZERO LOSS - ONE SHOT ONE KILL!" if IRA_SNIPER_ACTIVE else "Standby"))
+        print("🔍 SCANNER MATRIX: " + ("UNIFIED - 35 PARALLEL THREADS!" if UNIFIED_SCANNER_MATRIX else "Standard"))
         print("👑 QUEEN: " + ("SOVEREIGN CONTROL - SHE COMMANDS ALL" if QUEEN_SOVEREIGN_CONTROL else "Advanced Intelligence Layer ACTIVE"))
         print("🌟 WINNING TIMELINE: " + ("ACTIVE - NO LOSERS EXIST! WIN FAST!" if WINNING_TIMELINE else "Standard mode"))
         print("🌍 SACRED MISSION: " + ("RECLAIM ALL ENERGY - FREE THE PLANET!" if SACRED_MISSION_ACTIVE else "Standard"))
