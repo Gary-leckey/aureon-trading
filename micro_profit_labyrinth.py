@@ -4489,7 +4489,12 @@ class MicroProfitLabyrinth:
                         price = float(pos.get('current_price', 0))
                         if price > 0 and symbol:
                             # Extract base asset from symbol like "BTCUSD" or "BTC/USD"
-                            base = symbol.replace('/USD', '').replace('USD', '')
+                            if '/' in symbol:
+                                base = symbol.split('/')[0]
+                            elif symbol.endswith('BTC'):
+                                base = symbol[:-3]
+                            else:
+                                base = symbol.replace('USD', '')
                             if base and len(base) > 1:
                                 prices[base] = price
                                 change = float(pos.get('change_today', 0)) * 100
@@ -4516,10 +4521,6 @@ class MicroProfitLabyrinth:
                 if hasattr(self.alpaca, 'get_latest_crypto_quotes'):
                     symbols = sorted(set(self.alpaca_pairs.values()))
                     if not symbols and hasattr(self.alpaca, 'get_tradable_crypto_symbols'):
-                        symbols = self.alpaca.get_tradable_crypto_symbols(quote_filter='USD') or []
-
-                    if symbols:
-                        quotes = self.alpaca.get_latest_crypto_quotes(symbols) or {}
 
                         for symbol, quote in quotes.items():
                             if not isinstance(quote, dict):
@@ -4530,24 +4531,12 @@ class MicroProfitLabyrinth:
                             if price <= 0:
                                 continue
 
-                            base = symbol.replace('/USD', '').replace('USD', '')
-                            if base and base not in prices:
-                                prices[base] = price
-
-
-
-                            ticker_entry = {
-                                'price': price,
-                                'change24h': 0.0,
-                                'volume': 0,
-                                'base': base,
-                                'quote': 'USD',
                                 'exchange': 'alpaca',
                                 'pair': symbol,
                             }
                             ticker_cache[f"alpaca:{symbol}"] = ticker_entry
                             ticker_cache[symbol] = ticker_entry
-                            ticker_cache[f"{base}/USD"] = ticker_entry
+
                             self.alpaca_pairs[symbol] = symbol
                             self.alpaca_pairs[symbol.replace('/', '')] = symbol
                 
@@ -9281,6 +9270,11 @@ if __name__ == "__main__":
                         to_pair = self._find_exchange_pair(to_asset, "USDC", source_exchange)
                     if not to_pair:
                         to_pair = self._find_exchange_pair(to_asset, "USDT", source_exchange)
+                if not to_pair and source_exchange == 'alpaca':
+                    btc_pair = self._find_exchange_pair(to_asset, "BTC", source_exchange)
+                    btc_usd = self._find_exchange_pair("BTC", "USD", source_exchange)
+                    if btc_pair and btc_usd:
+                        to_pair = btc_pair
             else:
                 from_pair = self._find_exchange_pair(from_asset, "USD", source_exchange)
                 to_pair = self._find_exchange_pair(to_asset, "USD", source_exchange)
@@ -9297,6 +9291,13 @@ if __name__ == "__main__":
                         from_pair = self._find_exchange_pair(from_asset, "USDT", source_exchange)
                     if not to_pair:
                         to_pair = self._find_exchange_pair(to_asset, "USDT", source_exchange)
+                if source_exchange == 'alpaca' and (not from_pair or not to_pair):
+                    if from_asset.upper() == 'BTC':
+                        to_pair = to_pair or self._find_exchange_pair(to_asset, "BTC", source_exchange)
+                        from_pair = from_pair or to_pair
+                    elif to_asset.upper() == 'BTC':
+                        from_pair = from_pair or self._find_exchange_pair(from_asset, "BTC", source_exchange)
+                        to_pair = to_pair or from_pair
             
             if not from_pair or not to_pair:
                 # 🔬 DEBUG: Log why high-momentum targets are being skipped
@@ -12664,6 +12665,12 @@ if __name__ == "__main__":
             candidates = [
                 f"{asset_upper}/USD",
                 f"{asset_upper}USD",
+                f"{asset_upper}/BTC",
+                f"{asset_upper}BTC",
+                f"{asset_upper}/USDT",
+                f"{asset_upper}USDT",
+                f"{asset_upper}/USDC",
+                f"{asset_upper}USDC",
                 asset_upper,
             ]
             for candidate in candidates:
