@@ -4511,6 +4511,56 @@ class MicroProfitLabyrinth:
                                 self.alpaca_pairs[f"{base}USD"] = f"{base}/USD"
                                 self.alpaca_pairs[f"{base}/USD"] = f"{base}/USD"
                                 alpaca_count += 1
+
+                # Pull prices for tradeable crypto pairs even if we have no positions.
+                if hasattr(self.alpaca, 'get_latest_crypto_quotes'):
+                    symbols = sorted(set(self.alpaca_pairs.values()))
+                    if not symbols and hasattr(self.alpaca, 'get_tradable_crypto_symbols'):
+                        symbols = self.alpaca.get_tradable_crypto_symbols(quote_filter='USD') or []
+
+                    if symbols:
+                        quotes = self.alpaca.get_latest_crypto_quotes(symbols) or {}
+                        bars = {}
+                        if hasattr(self.alpaca, 'get_crypto_bars'):
+                            bars = self.alpaca.get_crypto_bars(symbols, timeframe="1Min", limit=2).get('bars', {}) or {}
+                        for symbol, quote in quotes.items():
+                            if not isinstance(quote, dict):
+                                continue
+                            bid = float(quote.get('bp', 0) or quote.get('bid_price', 0) or 0)
+                            ask = float(quote.get('ap', 0) or quote.get('ask_price', 0) or 0)
+                            price = (bid + ask) / 2 if bid and ask else (bid or ask or 0)
+                            if price <= 0:
+                                continue
+
+                            base = symbol.replace('/USD', '').replace('USD', '')
+                            if base and base not in prices:
+                                prices[base] = price
+
+                            if base and bars.get(symbol):
+                                bar_series = bars.get(symbol, [])
+                                if len(bar_series) >= 2:
+                                    first_bar = bar_series[0]
+                                    last_bar = bar_series[-1]
+                                    first_price = float(first_bar.get('o', 0) or 0)
+                                    last_price = float(last_bar.get('c', 0) or 0)
+                                    if first_price > 0:
+                                        momentum_per_min = (last_price - first_price) / first_price
+                                        self.asset_momentum[base] = momentum_per_min
+
+                            ticker_entry = {
+                                'price': price,
+                                'change24h': 0.0,
+                                'volume': 0,
+                                'base': base,
+                                'quote': 'USD',
+                                'exchange': 'alpaca',
+                                'pair': symbol,
+                            }
+                            ticker_cache[f"alpaca:{symbol}"] = ticker_entry
+                            ticker_cache[symbol] = ticker_entry
+                            ticker_cache[f"{base}/USD"] = ticker_entry
+                            self.alpaca_pairs[symbol] = symbol
+                            self.alpaca_pairs[symbol.replace('/', '')] = symbol
                 
                 print(f"   🦙 Alpaca: {alpaca_count} positions loaded")
             except Exception as e:
@@ -9581,17 +9631,24 @@ if __name__ == "__main__":
             turbo_adjustment = 1.0
             if self.penny_turbo:
                 try:
+                    symbol_for_turbo = f"{from_asset}/{to_asset}"
+                    if is_stablecoin_source:
+                        quote_asset = from_asset.upper()
+                        if source_exchange == 'alpaca' and quote_asset == 'USD':
+                            quote_asset = 'USD'
+                        symbol_for_turbo = f"{to_asset}/{quote_asset}"
+
                     # Get turbo-enhanced threshold - uses real spread & fee tier
                     turbo_threshold = self.penny_turbo.get_enhanced_threshold(
                         exchange=source_exchange,
-                        symbol=f"{from_asset}/{to_asset}",
+                        symbol=symbol_for_turbo,
                         value_usd=from_value
                     )
                     
                     # Check for flash profit opportunity (momentum spike)
                     flash_signal = self.penny_turbo.get_flash_signal(
                         exchange=source_exchange,
-                        symbol=f"{from_asset}/{to_asset}"
+                        symbol=symbol_for_turbo
                     )
                     if flash_signal and flash_signal.get('is_flash', False):
                         # Flash detected - boost expected profit by flash strength
