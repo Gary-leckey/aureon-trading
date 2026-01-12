@@ -9922,26 +9922,19 @@ if __name__ == "__main__":
             path_win_rate = path_history.get('wins', 0) / max(path_trades, 1)
             path_profit = path_history.get('total_profit', 0)
             
-            # Epsilon policy: allow ultra-micro positive opportunities through;
-            # conservative cost checks later decide if it truly doesn't bleed.
-            min_expected_profit = EPSILON_PROFIT_USD
+            # Enforce a minimum expected profit to avoid tiny losses compounding.
+            min_expected_profit = MIN_NET_PROFIT_USD
             
             # � DEBUG: See what expected PnL is calculated
             asset_momentum = self.asset_momentum.get(to_asset, 0)
             if abs(asset_momentum) > 1.0 or to_asset.upper() == 'GUN':  # >1%/min or GUN specifically
                 print(f"   🔬 DEBUG OPP: {from_asset}→{to_asset} | mom={asset_momentum:.2f}%/min | exp_pnl=${opp.expected_pnl_usd:.6f} | exp_pct={opp.expected_pnl_pct:.4%}")
             
-            # �👑 LEARNING FILTER: Does expected profit overcome minimum?
-            # Also allow if expected profit is POSITIVE (even if below absolute minimum)
-            if opp.expected_pnl_usd < min_expected_profit and opp.expected_pnl_usd <= 0:
-                # BOTH below minimum AND negative/zero - definitely skip
+            # 👑 LEARNING FILTER: Require expected profit to clear the minimum floor.
+            if opp.expected_pnl_usd < min_expected_profit:
                 continue
             
-            # If expected profit is positive (even tiny), let downstream gates decide.
-            if opp.expected_pnl_usd >= min_expected_profit:
-                opportunities.append(opp)
-            elif combined > 0.5:
-                opportunities.append(opp)
+            opportunities.append(opp)
         
         return opportunities
 
@@ -10737,6 +10730,14 @@ if __name__ == "__main__":
                     if not queen_final_approved:
                         if debug_first_scans:
                             print(f"         👑🚫 QUEEN VETO: {from_asset}→{to_asset} | {queen_veto_reason}")
+                        continue
+
+                    if adjusted_pnl < MIN_NET_PROFIT_USD:
+                        if debug_first_scans:
+                            print(
+                                f"         🚫 MIN PROFIT FILTER: {from_asset}→{to_asset} "
+                                f"adj_pnl=${adjusted_pnl:.6f} < ${MIN_NET_PROFIT_USD:.6f}"
+                            )
                         continue
                     
                     opp = MicroOpportunity(
