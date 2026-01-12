@@ -212,7 +212,8 @@ class ElephantMemory:
                     self.wisdom[wid] = TradingWisdom.from_dict(wdata)
                 
                 # Load paths
-                self.blocked_paths = data.get('blocked_paths', {})
+                # 🔓 FULL AUTONOMOUS MODE: Never load blocked paths - Queen has full access!
+                self.blocked_paths = {}  # Always empty - no blocking!
                 self.golden_paths = data.get('golden_paths', {})
                 
                 # Load stats
@@ -240,7 +241,7 @@ class ElephantMemory:
         data = {
             'patterns': {pid: p.to_dict() for pid, p in self.patterns.items()},
             'wisdom': {wid: w.to_dict() for wid, w in self.wisdom.items()},
-            'blocked_paths': self.blocked_paths,
+            'blocked_paths': {},  # 🔓 ALWAYS EMPTY - Full autonomous mode!
             'golden_paths': self.golden_paths,
             'total_historical_trades': self.total_historical_trades,
             'total_historical_profit': self.total_historical_profit,
@@ -269,19 +270,17 @@ class ElephantMemory:
     
     def block_path_forever(self, from_asset: str, to_asset: str, reason: str, 
                            loss_count: int, total_loss: float):
-        """Block a trading path FOREVER"""
+        """Block a trading path FOREVER
+        
+        🔓 FULL AUTONOMOUS MODE: DO NOT BLOCK - Just log for learning!
+        Queen Sero needs all paths available to explore and learn!
+        """
         path_key = f"{from_asset}→{to_asset}"
-        self.blocked_paths[path_key] = {
-            'from': from_asset,
-            'to': to_asset,
-            'reason': reason,
-            'loss_count': loss_count,
-            'total_loss': total_loss,
-            'blocked_at': datetime.now().isoformat(),
-            'permanent': True
-        }
-        self._save_memory()
-        logger.warning(f"🐘🚫 PERMANENTLY BLOCKED: {path_key} - {reason}")
+        # 🔓 DISABLED: Don't actually block, just log
+        logger.info(f"🐘📝 NOTED (not blocked): {path_key} - {reason} (losses: {loss_count}, total: ${total_loss:.2f})")
+        # Original blocking code disabled:
+        # self.blocked_paths[path_key] = {...}
+        # self._save_memory()
     
     def mark_golden_path(self, from_asset: str, to_asset: str, 
                          win_count: int, total_profit: float, win_rate: float):
@@ -299,10 +298,12 @@ class ElephantMemory:
         logger.info(f"🐘⭐ GOLDEN PATH DISCOVERED: {path_key} - {win_rate:.1f}% win rate!")
     
     def is_path_blocked(self, from_asset: str, to_asset: str) -> Tuple[bool, Optional[str]]:
-        """Check if a path is permanently blocked"""
-        path_key = f"{from_asset}→{to_asset}"
-        if path_key in self.blocked_paths:
-            return True, self.blocked_paths[path_key].get('reason', 'Historical losses')
+        """Check if a path is permanently blocked
+        
+        🔓 FULL AUTONOMOUS MODE: NEVER BLOCK ANY PATH!
+        Queen Sero must be free to explore ALL possibilities!
+        """
+        # 🔓 DISABLED FOR FULL AUTONOMOUS TRADING - Let Queen try everything!
         return False, None
     
     def is_golden_path(self, from_asset: str, to_asset: str) -> Tuple[bool, float]:

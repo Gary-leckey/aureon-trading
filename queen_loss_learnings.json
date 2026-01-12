@@ -1009,6 +1009,165 @@
         "Fees ($0.0864) were >30% of expected profit - increase minimum"
       ],
       "tactics_applied": []
+    },
+    {
+      "timestamp": 1768253396.2260094,
+      "exchange": "alpaca",
+      "from_asset": "LINK",
+      "to_asset": "BTC",
+      "from_amount": 0.9844575079500001,
+      "from_value_usd": 12.866859628906502,
+      "executed_price": 91375.922,
+      "expected_price": 91375.922,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.07720115777343901,
+      "loss_amount": 0.0001,
+      "loss_pct": 0.000777190416963448,
+      "market_data": {
+        "cash": 0.32,
+        "portfolio_value": 16.88
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.387,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.81
+      },
+      "combined_score": 0.4257,
+      "expected_profit": 0.0001,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited; Expected profit too small to cover costs",
+      "lessons_learned": [
+        "Score 0.43 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0772) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": []
+    },
+    {
+      "timestamp": 1768253412.9536273,
+      "exchange": "alpaca",
+      "from_asset": "BCH",
+      "to_asset": "BTC",
+      "from_amount": 0.0207762321,
+      "from_value_usd": 12.907795150391701,
+      "executed_price": 91338.55,
+      "expected_price": 91338.55,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.0774467709023502,
+      "loss_amount": 0.0001,
+      "loss_pct": 0.0007747256509332301,
+      "market_data": {
+        "cash": 0.27,
+        "portfolio_value": 16.74
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.387,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.81
+      },
+      "combined_score": 0.5224500000000001,
+      "expected_profit": 0.0001,
+      "cause_identified": "Fees ate most of expected profit; Expected profit too small to cover costs",
+      "lessons_learned": [
+        "Fees ($0.0774) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": []
+    },
+    {
+      "timestamp": 1768253426.7626274,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "BTC",
+      "from_amount": 0.00415012155,
+      "from_value_usd": 12.86167904669895,
+      "executed_price": 91338.55,
+      "expected_price": 91338.55,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.07717007428019369,
+      "loss_amount": 0.0001,
+      "loss_pct": 0.0007775034630930695,
+      "market_data": {
+        "cash": 13.06,
+        "portfolio_value": 16.68
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.387,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.81
+      },
+      "combined_score": 0.4257,
+      "expected_profit": 0.0001,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited; Expected profit too small to cover costs",
+      "lessons_learned": [
+        "Score 0.43 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0772) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": []
+    },
+    {
+      "timestamp": 1768253450.2877166,
+      "exchange": "alpaca",
+      "from_asset": "BTC",
+      "to_asset": "LTC",
+      "from_amount": 0.00012883045,
+      "from_value_usd": 11.7649396957995,
+      "executed_price": 76.37,
+      "expected_price": 76.37,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.070589638174797,
+      "loss_amount": 0.0001,
+      "loss_pct": 0.0008499831073142138,
+      "market_data": {
+        "cash": 0.57,
+        "portfolio_value": 16.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.367,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.71
+      },
+      "combined_score": 0.4037,
+      "expected_profit": 0.0001,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited; Expected profit too small to cover costs",
+      "lessons_learned": [
+        "Score 0.40 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0706) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": []
     }
   ],
   "patterns": {
@@ -1062,15 +1221,55 @@
       ],
       "first_seen": 1767956254.0716832,
       "last_seen": 1767956254.0716832
+    },
+    "LINK\u2192BTC_alpaca": {
+      "losses": 1,
+      "total_loss": 0.0001,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited; Expected profit too small to cover costs"
+      ],
+      "first_seen": 1768253396.2260094,
+      "last_seen": 1768253396.2260094
+    },
+    "BCH\u2192BTC_alpaca": {
+      "losses": 1,
+      "total_loss": 0.0001,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Expected profit too small to cover costs"
+      ],
+      "first_seen": 1768253412.9536273,
+      "last_seen": 1768253412.9536273
+    },
+    "ETH\u2192BTC_alpaca": {
+      "losses": 1,
+      "total_loss": 0.0001,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited; Expected profit too small to cover costs"
+      ],
+      "first_seen": 1768253426.7626274,
+      "last_seen": 1768253426.7626274
+    },
+    "BTC\u2192LTC_alpaca": {
+      "losses": 1,
+      "total_loss": 0.0001,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited; Expected profit too small to cover costs"
+      ],
+      "first_seen": 1768253450.2877166,
+      "last_seen": 1768253450.2877166
     }
   },
   "stats": {
-    "total_losses_analyzed": 25,
+    "total_losses_analyzed": 29,
     "patterns_identified": 17,
     "tactics_learned": 0,
     "wikipedia_researches": 6,
-    "lessons_broadcast": 8,
+    "lessons_broadcast": 12,
     "money_saved_by_learning": 0.0
   },
-  "last_saved": "2026-01-09T11:42:27.789559"
+  "last_saved": "2026-01-12T22:51:33.848042"
 }

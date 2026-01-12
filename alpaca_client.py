@@ -54,11 +54,11 @@ class AlpacaClient:
             self.timeout_seconds = float(os.getenv("ALPACA_TIMEOUT", "10") or 10)
         except (TypeError, ValueError):
             self.timeout_seconds = 10.0
-        self.max_retries = 1
+        self.max_retries = 3  # 🛡️ Increased for rate limit retries
         try:
-            self.max_retries = max(0, int(os.getenv("ALPACA_RETRY_COUNT", "1") or 1))
+            self.max_retries = max(0, int(os.getenv("ALPACA_RETRY_COUNT", "3") or 3))
         except (TypeError, ValueError):
-            self.max_retries = 1
+            self.max_retries = 3
 
         if self.use_paper:
             self.base_url = "https://paper-api.alpaca.markets"
@@ -83,6 +83,16 @@ class AlpacaClient:
         for attempt in range(self.max_retries + 1):
             try:
                 resp = self.session.request(method, url, params=params, json=data, timeout=self.timeout_seconds)
+                
+                # 🛡️ RATE LIMIT HANDLING - Wait and retry on 429
+                if resp.status_code == 429:
+                    wait_time = 2 ** attempt  # Exponential backoff: 1, 2, 4, 8...
+                    logger.warning(f"Rate limited (429) - waiting {wait_time}s before retry {attempt + 1}")
+                    time.sleep(wait_time)
+                    if attempt < self.max_retries:
+                        continue
+                    # Fall through to error handling if out of retries
+                
                 if not resp.ok:
                     body_text = (resp.text or "").strip()
                     logger.error(f"Alpaca API Error {resp.status_code}: {body_text}")
@@ -1691,3 +1701,354 @@ class AlpacaClient:
             conversions[asset] = sorted(targets)
         
         return conversions
+    # ══════════════════════════════════════════════════════════════════════
+    # 🦙💰 EXTENDED FEE & COST TRACKING METHODS
+    # ══════════════════════════════════════════════════════════════════════
+
+    def get_all_crypto_pairs_extended(self) -> List[Dict[str, Any]]:
+        """
+        Get ALL crypto pairs with extended metadata.
+        
+        Returns list with:
+        - symbol: Trading pair (e.g., 'BTC/USD')
+        - base: Base asset (e.g., 'BTC')
+        - quote: Quote asset (e.g., 'USD')
+        - min_order_size: Minimum order quantity
+        - min_trade_increment: Minimum trade increment
+        - price_increment: Price tick size
+        - fractionable: Whether fractional trading is supported
+        - status: Active/inactive
+        """
+        assets = self.get_assets(status='active', asset_class='crypto')
+        if not assets:
+            return []
+        
+        pairs = []
+        for asset in assets:
+            if not asset.get('tradable'):
+                continue
+            
+            symbol = asset.get('symbol', '')
+            normalized = self._normalize_pair_symbol(symbol)
+            if not normalized or '/' not in normalized:
+                continue
+            
+            base, quote = normalized.split('/')
+            
+            pairs.append({
+                'symbol': normalized,
+                'base': base,
+                'quote': quote,
+                'min_order_size': float(asset.get('min_order_size', 0) or 0),
+                'min_trade_increment': float(asset.get('min_trade_increment', 0) or 0),
+                'price_increment': float(asset.get('price_increment', 0) or 0),
+                'fractionable': asset.get('fractionable', False),
+                'marginable': asset.get('marginable', False),
+                'shortable': asset.get('shortable', False),
+                'status': asset.get('status', 'unknown'),
+                'exchange': asset.get('exchange', 'ALPACA'),
+                'id': asset.get('id', ''),
+                'name': asset.get('name', symbol)
+            })
+        
+        logger.info(f"🦙 Found {len(pairs)} tradeable crypto pairs")
+        return pairs
+
+    def get_account_activities(
+        self, 
+        activity_types: str = None,
+        date: str = None,
+        after: str = None,
+        until: str = None,
+        direction: str = 'desc',
+        page_size: int = 100
+    ) -> List[Dict[str, Any]]:
+        """
+        Get account activities with filtering.
+        
+        Activity types:
+        - FILL: Order fills
+        - CFEE: Crypto fees
+        - FEE: Other fees
+        - DIV: Dividends
+        - TRANS: Transfers
+        - etc.
+        
+        Args:
+            activity_types: Comma-separated activity types (e.g., 'FILL,CFEE')
+            date: Filter to specific date (YYYY-MM-DD)
+            after: Filter after this datetime
+            until: Filter until this datetime
+            direction: 'asc' or 'desc'
+            page_size: Max results (max 100)
+        """
+        params = {
+            'direction': direction,
+            'page_size': page_size
+        }
+        
+        if activity_types:
+            params['activity_types'] = activity_types
+        if date:
+            params['date'] = date
+        if after:
+            params['after'] = after
+        if until:
+            params['until'] = until
+        
+        result = self._request("GET", "/v2/account/activities", params=params)
+        return result if isinstance(result, list) else []
+
+    def get_crypto_fees(self, days: int = 30) -> List[Dict[str, Any]]:
+        """
+        Get crypto fee activities (CFEE) for the specified period.
+        
+        Returns list of fee records with qty, price, symbol.
+        """
+        from datetime import datetime, timedelta
+        
+        after = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        
+        return self.get_account_activities(
+            activity_types='CFEE,FEE',
+            after=after,
+            page_size=100
+        )
+
+    def get_trading_volume(self, days: int = 30) -> Dict[str, Any]:
+        """
+        Calculate trading volume over the specified period.
+        
+        Returns:
+        - total_volume_usd: Total traded value
+        - trade_count: Number of trades
+        - by_symbol: Volume breakdown by symbol
+        - fee_tier: Estimated fee tier based on volume
+        """
+        from datetime import datetime, timedelta
+        
+        after = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        
+        fills = self.get_account_activities(
+            activity_types='FILL',
+            after=after,
+            page_size=100
+        )
+        
+        total_volume = 0.0
+        by_symbol: Dict[str, float] = {}
+        
+        for fill in fills:
+            qty = float(fill.get('qty', 0) or 0)
+            price = float(fill.get('price', 0) or 0)
+            symbol = fill.get('symbol', 'UNKNOWN')
+            
+            volume = qty * price
+            total_volume += volume
+            by_symbol[symbol] = by_symbol.get(symbol, 0) + volume
+        
+        # Estimate fee tier
+        fee_tier = 1
+        tier_thresholds = [0, 100_000, 500_000, 1_000_000, 10_000_000, 25_000_000, 50_000_000, 100_000_000]
+        for i, threshold in enumerate(tier_thresholds):
+            if total_volume >= threshold:
+                fee_tier = i + 1
+        
+        return {
+            'total_volume_usd': total_volume,
+            'trade_count': len(fills),
+            'by_symbol': by_symbol,
+            'fee_tier': min(fee_tier, 8),
+            'period_days': days
+        }
+
+    def get_orderbook(self, symbol: str) -> Dict[str, Any]:
+        """
+        Get real-time orderbook for a crypto symbol.
+        
+        Returns:
+        - a: Ask array [{p: price, s: size}, ...]
+        - b: Bid array [{p: price, s: size}, ...]
+        - t: Timestamp
+        """
+        symbol = self._normalize_pair_symbol(symbol) or symbol
+        
+        params = {'symbols': symbol}
+        result = self._request(
+            "GET",
+            "/v1beta3/crypto/us/latest/orderbooks",
+            params=params,
+            base_url=self.data_url
+        )
+        
+        orderbooks = result.get('orderbooks', result) if isinstance(result, dict) else {}
+        return orderbooks.get(symbol, {})
+
+    def get_spread(self, symbol: str) -> Dict[str, float]:
+        """
+        Get current spread for a symbol.
+        
+        Returns:
+        - bid: Best bid price
+        - ask: Best ask price
+        - mid: Midpoint price
+        - spread_abs: Absolute spread (ask - bid)
+        - spread_pct: Spread as percentage of mid
+        """
+        # Try orderbook first
+        ob = self.get_orderbook(symbol)
+        
+        if ob:
+            bids = ob.get('b', [])
+            asks = ob.get('a', [])
+            
+            if bids and asks:
+                bid = float(bids[0].get('p', 0) if isinstance(bids[0], dict) else bids[0][0])
+                ask = float(asks[0].get('p', 0) if isinstance(asks[0], dict) else asks[0][0])
+                
+                if bid > 0 and ask > 0:
+                    mid = (bid + ask) / 2
+                    spread_abs = ask - bid
+                    spread_pct = (spread_abs / mid) * 100 if mid > 0 else 0
+                    
+                    return {
+                        'bid': bid,
+                        'ask': ask,
+                        'mid': mid,
+                        'spread_abs': spread_abs,
+                        'spread_pct': spread_pct
+                    }
+        
+        # Fallback to quotes
+        symbol = self._normalize_pair_symbol(symbol) or symbol
+        quotes = self.get_latest_crypto_quotes([symbol])
+        
+        if symbol in quotes:
+            q = quotes[symbol]
+            bid = float(q.get('bp', 0) or 0)
+            ask = float(q.get('ap', 0) or 0)
+            
+            if bid > 0 and ask > 0:
+                mid = (bid + ask) / 2
+                spread_abs = ask - bid
+                spread_pct = (spread_abs / mid) * 100 if mid > 0 else 0
+                
+                return {
+                    'bid': bid,
+                    'ask': ask,
+                    'mid': mid,
+                    'spread_abs': spread_abs,
+                    'spread_pct': spread_pct
+                }
+        
+        return {'bid': 0, 'ask': 0, 'mid': 0, 'spread_abs': 0, 'spread_pct': 0}
+
+    def estimate_trade_cost(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        fee_tier: int = 1
+    ) -> Dict[str, Any]:
+        """
+        Estimate total cost for a trade including fees and spread.
+        
+        Args:
+            symbol: Trading pair
+            side: 'buy' or 'sell'
+            quantity: Trade quantity
+            fee_tier: Fee tier (1-8, default 1 = 25 bps taker)
+        
+        Returns:
+            Complete cost breakdown
+        """
+        # Fee rates by tier (taker fees in bps)
+        taker_bps = {1: 25, 2: 22, 3: 20, 4: 18, 5: 15, 6: 13, 7: 12, 8: 10}
+        fee_pct = taker_bps.get(fee_tier, 25) / 10000
+        
+        spread_data = self.get_spread(symbol)
+        
+        if spread_data['mid'] <= 0:
+            return {
+                'error': f'Could not get price for {symbol}',
+                'notional': 0,
+                'fee_pct': fee_pct,
+                'fee_usd': 0,
+                'spread_cost_pct': 0,
+                'spread_cost_usd': 0,
+                'total_cost_pct': fee_pct,
+                'total_cost_usd': 0
+            }
+        
+        # Execution price depends on side
+        if side.lower() == 'buy':
+            exec_price = spread_data['ask']
+        else:
+            exec_price = spread_data['bid']
+        
+        notional = quantity * exec_price
+        fee_usd = notional * fee_pct
+        
+        # Spread cost (half spread per side)
+        spread_cost_pct = (spread_data['spread_pct'] / 2) / 100
+        spread_cost_usd = notional * spread_cost_pct
+        
+        total_cost_pct = fee_pct + spread_cost_pct
+        total_cost_usd = fee_usd + spread_cost_usd
+        
+        return {
+            'symbol': symbol,
+            'side': side,
+            'quantity': quantity,
+            'exec_price': exec_price,
+            'mid_price': spread_data['mid'],
+            'notional': notional,
+            'fee_pct': fee_pct,
+            'fee_usd': fee_usd,
+            'fee_tier': fee_tier,
+            'spread_pct': spread_data['spread_pct'],
+            'spread_cost_pct': spread_cost_pct,
+            'spread_cost_usd': spread_cost_usd,
+            'total_cost_pct': total_cost_pct,
+            'total_cost_usd': total_cost_usd
+        }
+
+    def get_full_account_summary(self) -> Dict[str, Any]:
+        """
+        Get comprehensive account summary with all relevant data.
+        
+        Returns complete account state for cost tracking.
+        """
+        account = self.get_account()
+        positions = self.get_positions()
+        volume = self.get_trading_volume(days=30)
+        recent_fees = self.get_crypto_fees(days=7)
+        
+        # Sum up fees
+        total_fees_7d = sum(abs(float(f.get('qty', 0) or 0) * float(f.get('price', 0) or 0)) for f in recent_fees)
+        
+        return {
+            'account': {
+                'id': account.get('id'),
+                'status': account.get('status'),
+                'cash': float(account.get('cash', 0) or 0),
+                'portfolio_value': float(account.get('portfolio_value', 0) or 0),
+                'equity': float(account.get('equity', 0) or 0),
+                'buying_power': float(account.get('buying_power', 0) or 0),
+                'crypto_buying_power': float(account.get('non_marginable_buying_power', 0) or 0)
+            },
+            'positions': [{
+                'symbol': p.get('symbol'),
+                'qty': float(p.get('qty', 0) or 0),
+                'avg_entry_price': float(p.get('avg_entry_price', 0) or 0),
+                'market_value': float(p.get('market_value', 0) or 0),
+                'unrealized_pl': float(p.get('unrealized_pl', 0) or 0),
+                'unrealized_plpc': float(p.get('unrealized_plpc', 0) or 0)
+            } for p in positions] if isinstance(positions, list) else [],
+            'trading_volume': volume,
+            'fees_7d': {
+                'total_usd': total_fees_7d,
+                'count': len(recent_fees)
+            },
+            'fee_tier': volume.get('fee_tier', 1)
+        }

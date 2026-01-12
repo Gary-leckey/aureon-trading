@@ -94,9 +94,9 @@ CONFIG = {
     'PING_THRESHOLD': 0.005,      # 0.5% for entry
     'PONG_THRESHOLD': 0.01,       # 1% for exit
     
-    # v6 TIERED COHERENCE (from paper trades: 0.73-0.92 range won)
-    'COHERENCE_THRESHOLD': 0.70,  # v6: Lowered base - let freq filter do work
-    'COHERENCE_OPTIMAL': 0.88,    # v6: Full size at this coherence
+    # 🔓 FULL AUTONOMOUS: Lowered coherence threshold to allow more trades
+    'COHERENCE_THRESHOLD': 0.30,  # 🔓 LOWERED from 0.70 - let more pass
+    'COHERENCE_OPTIMAL': 0.60,    # 🔓 LOWERED from 0.88
     'COHERENCE_SCALING': True,    # v6: Scale position by coherence quality
     
     'COOLDOWN_MINUTES': 5,        # v4: Symbol cooldown

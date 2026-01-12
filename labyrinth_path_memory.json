@@ -164,7 +164,7 @@
     "losses": 1.0
   },
   "USD->ETH": {
-    "wins": 2.0,
+    "wins": 3.0,
     "losses": 0.0
   },
   "ETH->USDC": {
@@ -558,5 +558,93 @@
   "SAHARA->BONK": {
     "wins": 0.0,
     "losses": 1.0
+  },
+  "LINK->BTC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "LINK->BCH": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "BCH->BTC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "BCH->ETH": {
+    "wins": 2.0,
+    "losses": 0.0
+  },
+  "ETH->BTC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ETH->LTC": {
+    "wins": 7.0,
+    "losses": 0.0
+  },
+  "USD->BTC": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "BTC->LTC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "BTC->AVAX": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "AVAX->LTC": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "LTC->AAVE": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "AAVE->ETH": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "LTC->ETH": {
+    "wins": 6.0,
+    "losses": 0.0
+  },
+  "ETH->BCH": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "USD->AVAX": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "AVAX->BCH": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "ETH->SOL": {
+    "wins": 2.0,
+    "losses": 0.0
+  },
+  "USD->SOL": {
+    "wins": 2.0,
+    "losses": 0.0
+  },
+  "SOL->ETH": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "SOL->LTC": {
+    "wins": 3.0,
+    "losses": 0.0
+  },
+  "LTC->SOL": {
+    "wins": 2.0,
+    "losses": 0.0
+  },
+  "LTC->USDT": {
+    "wins": 1.0,
+    "losses": 0.0
   }
 }

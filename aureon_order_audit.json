@@ -26721,11 +26721,1903 @@
         ]
       },
       "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:29:55.442469",
+      "conversion_num": 1,
+      "exchange": "alpaca",
+      "from_asset": "LINK",
+      "to_asset": "BCH",
+      "from_amount": 0.9844575079500001,
+      "to_amount": 0.020723146,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "1d3f2305-05be-42a0-b741-077763a504a4",
+          "exchange": "alpaca",
+          "pair": "LINK/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "1458b5ea-afb3-48b0-a699-bfb40fee13f9",
+          "exchange": "alpaca",
+          "pair": "BCH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.98347305,
+        "total_bought": 0.020723146,
+        "avg_sell_price": 13.052,
+        "avg_buy_price": 621.277,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.06029410422105588,
+        "calculated_pnl": 0.01396406087549984,
+        "verified_pnl": 0.03852372884200328,
+        "discrepancy": 0.02455966796650344,
+        "discrepancy_pct": 175.87769192265378,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0140 vs verified $0.0385 (175.9%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:30:12.287394",
+      "conversion_num": 2,
+      "exchange": "alpaca",
+      "from_asset": "BCH",
+      "to_asset": "ETH",
+      "from_amount": 0.0207762321,
+      "to_amount": 0.004142767,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "cf076f6e-5ab8-4084-b7ac-74af14c72dfe",
+          "exchange": "alpaca",
+          "pair": "BCH/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "f3979435-05d9-43f9-8ad1-4ab355685428",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.020755455,
+        "total_bought": 0.004142767,
+        "avg_sell_price": 618.1,
+        "avg_buy_price": 3099.109,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.06048592807473552,
+        "calculated_pnl": -0.06547844471270103,
+        "verified_pnl": 0.009939759103000156,
+        "discrepancy": 0.07541820381570119,
+        "discrepancy_pct": 115.18020036458213,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0655 vs verified $0.0099 (115.2%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:30:26.171050",
+      "conversion_num": 3,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LTC",
+      "from_amount": 0.00415012155,
+      "to_amount": 12.830951050800001,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "19b767b9-5a74-4261-8ebe-0679b2311c1b",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.004145971,
+        "total_bought": 12.830951050800001,
+        "avg_sell_price": 3094.8,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": -0.06026982801283128,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 967.0687806987962,
+        "discrepancy": 967.0687806987962,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-12T21:30:31.065535",
+      "conversion_num": 4,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "BTC",
+      "from_amount": 12.407,
+      "to_amount": 0.000135951,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "360d6aa7-f30b-418a-b745-8126459ce562",
+          "exchange": "alpaca",
+          "pair": "BTC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0.000135951,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 91321.11,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.05153111527868996,
+        "calculated_pnl": 0.010567211050002356,
+        "verified_pnl": 0.008196225610001662,
+        "discrepancy": 0.0023709854400006947,
+        "discrepancy_pct": 22.437192072549415,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0106 vs verified $0.0082 (22.4%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:30:49.335207",
+      "conversion_num": 5,
+      "exchange": "alpaca",
+      "from_asset": "BTC",
+      "to_asset": "AVAX",
+      "from_amount": 0.00012883045,
+      "to_amount": 0.865027678,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "39bacb50-a957-4d2f-879a-8f40353d5cc3",
+          "exchange": "alpaca",
+          "pair": "BTC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "87a4fedf-c0e4-4b37-891f-761b14da47da",
+          "exchange": "alpaca",
+          "pair": "AVAX/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.000128701,
+        "total_bought": 0.865027678,
+        "avg_sell_price": 91221.064,
+        "avg_buy_price": 13.6142,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.054476624450370985,
+        "calculated_pnl": -0.015571505212799153,
+        "verified_pnl": 0.0364176559636018,
+        "discrepancy": 0.051989161176400955,
+        "discrepancy_pct": 333.873703703788,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0156 vs verified $0.0364 (333.9%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:31:04.432317",
+      "conversion_num": 6,
+      "exchange": "alpaca",
+      "from_asset": "AVAX",
+      "to_asset": "LTC",
+      "from_amount": 0.8197218526,
+      "to_amount": 0.14484123,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "7707d3d1-d5c1-4b02-a885-e6a2d12f3fc4",
+          "exchange": "alpaca",
+          "pair": "AVAX/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "a8b244b3-e410-4502-8516-5f5321c7a342",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.81890213,
+        "total_bought": 0.14484123,
+        "avg_sell_price": 13.53,
+        "avg_buy_price": 76.7216,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.05291534417169121,
+        "calculated_pnl": -0.09833251056692127,
+        "verified_pnl": 0.03270509266799948,
+        "discrepancy": 0.13103760323492075,
+        "discrepancy_pct": 133.25969456026618,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0983 vs verified $0.0327 (133.3%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:31:16.627337",
+      "conversion_num": 7,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "AAVE",
+      "from_amount": 0.1468041688,
+      "to_amount": 0.067765479,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "513a92b0-5af4-4d45-a9b0-c7ea8e88f0f6",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "962489d2-0eec-469c-97fd-a8ed548c8594",
+          "exchange": "alpaca",
+          "pair": "AAVE/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.146657364,
+        "total_bought": 0.067765479,
+        "avg_sell_price": 76.241,
+        "avg_buy_price": 165.2,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.042640056490746016,
+        "calculated_pnl": 0.0726908446349217,
+        "verified_pnl": 0.013553042075997723,
+        "discrepancy": 0.05913780255892398,
+        "discrepancy_pct": 81.35522823532216,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0727 vs verified $0.0136 (81.4%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:31:29.446838",
+      "conversion_num": 8,
+      "exchange": "alpaca",
+      "from_asset": "AAVE",
+      "to_asset": "ETH",
+      "from_amount": 0.06421626174999999,
+      "to_amount": 0.003413966,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "6ff8a5cf-fe6d-4a82-af24-04d6d2065ad7",
+          "exchange": "alpaca",
+          "pair": "AAVE/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "93fe023c-3ee8-4437-893b-3bfb54a9eec0",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.064152045,
+        "total_bought": 0.003413966,
+        "avg_sell_price": 164.805,
+        "avg_buy_price": 3098.52,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.050301165635721,
+        "calculated_pnl": -0.04298446429999636,
+        "verified_pnl": 0.0056641540949993185,
+        "discrepancy": 0.04864861839499568,
+        "discrepancy_pct": 113.17721224921675,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0430 vs verified $0.0057 (113.2%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:31:51.909812",
+      "conversion_num": 9,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LTC",
+      "from_amount": 0.00344660855,
+      "to_amount": 0.139339894,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "729e83c3-0571-42e2-995a-291b15c6f3d6",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "bb47c565-4fb9-42fa-875f-774467e6d403",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.003443161,
+        "total_bought": 0.139339894,
+        "avg_sell_price": 3092.94,
+        "avg_buy_price": 76.6563,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.05698523125998444,
+        "calculated_pnl": -0.055972665891999895,
+        "verified_pnl": 0.03179033309220003,
+        "discrepancy": 0.08776299898419992,
+        "discrepancy_pct": 156.79617467844028,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0560 vs verified $0.0318 (156.8%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:32:05.103749",
+      "conversion_num": 10,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "ETH",
+      "from_amount": 0.13952163979999999,
+      "to_amount": 0.003431871,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "639eea85-fafa-4b78-8645-a5de8507e3de",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "8072e354-be4a-45d2-b6a8-bf218f36e1be",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.139382118,
+        "total_bought": 0.003431871,
+        "avg_sell_price": 76.2057,
+        "avg_buy_price": 3096.8,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.05235339909289307,
+        "calculated_pnl": -0.08064158626073947,
+        "verified_pnl": 0.0061062431274017115,
+        "discrepancy": 0.08674782938814118,
+        "discrepancy_pct": 107.57207715093588,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0806 vs verified $0.0061 (107.6%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:32:18.303680",
+      "conversion_num": 11,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LTC",
+      "from_amount": 0.0034277320499999995,
+      "to_amount": 0.138647208,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "2d305f0c-f490-4086-9f89-bfa65aebafe7",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "ed26d446-1c7b-41ff-add1-eb108aa712c2",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.003424304,
+        "total_bought": 0.138647208,
+        "avg_sell_price": 3094.02,
+        "avg_buy_price": 76.66,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.050614590111815135,
+        "calculated_pnl": -0.049293073754400396,
+        "verified_pnl": 0.03382990319999912,
+        "discrepancy": 0.08312297695439952,
+        "discrepancy_pct": 168.63013527733017,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0493 vs verified $0.0338 (168.6%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:32:41.619233",
+      "conversion_num": 12,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "ETH",
+      "from_amount": 0.13849418724999998,
+      "to_amount": 0.003405587,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "603c3cbd-183f-4369-a597-3f03252d36b4",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "586f5ddf-000a-43be-958c-0fae37043e6b",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.138355693,
+        "total_bought": 0.003405587,
+        "avg_sell_price": 76.152,
+        "avg_buy_price": 3095.416,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.055387058690539205,
+        "calculated_pnl": -0.08001010484499993,
+        "verified_pnl": 0.005645755855999468,
+        "discrepancy": 0.0856558607009994,
+        "discrepancy_pct": 107.05630353433075,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0800 vs verified $0.0056 (107.1%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:32:54.265301",
+      "conversion_num": 13,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "BCH",
+      "from_amount": 0.0034018625999999996,
+      "to_amount": 10.511096934,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "821151fe-64b0-4ec2-93fe-9355b0b2c8e4",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.00339846,
+        "total_bought": 10.511096934,
+        "avg_sell_price": 3092.9,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": -0.03289661115144392,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 6524.2378669337995,
+        "discrepancy": 6524.2378669337995,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-12T21:33:00.025411",
+      "conversion_num": 14,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "AVAX",
+      "from_amount": 10.1745,
+      "to_amount": 0.750309725,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "de51d670-1573-4624-99f5-61c44a94b621",
+          "exchange": "alpaca",
+          "pair": "AVAX/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0.750309725,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 13.6008,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.025079298095967185,
+        "calculated_pnl": 0.02821164055000125,
+        "verified_pnl": 0.03031250777999972,
+        "discrepancy": 0.002100867229998471,
+        "discrepancy_pct": 7.446809859479718,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $0.0282 vs verified $0.0303 (7.4%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:33:13.817746",
+      "conversion_num": 15,
+      "exchange": "alpaca",
+      "from_asset": "AVAX",
+      "to_asset": "BCH",
+      "from_amount": 0.7527770815999999,
+      "to_amount": 0.016413192,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "5df2a604-d229-45f1-96b8-8b3c94b329ac",
+          "exchange": "alpaca",
+          "pair": "AVAX/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "4cdbeb73-0f1d-458a-89b1-5b858904d489",
+          "exchange": "alpaca",
+          "pair": "BCH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.752024304,
+        "total_bought": 0.016413192,
+        "avg_sell_price": 13.521,
+        "avg_buy_price": 621.418,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.03373548625481443,
+        "calculated_pnl": -0.03428906502527873,
+        "verified_pnl": 0.03133233187200091,
+        "discrepancy": 0.06562139689727964,
+        "discrepancy_pct": 191.3770376908847,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0343 vs verified $0.0313 (191.4%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:33:35.623734",
+      "conversion_num": 16,
+      "exchange": "alpaca",
+      "from_asset": "BCH",
+      "to_asset": "ETH",
+      "from_amount": 0.0166121009,
+      "to_amount": 0.003312976,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "e1cc35d2-b62c-4aff-85d8-735b176e1a8b",
+          "exchange": "alpaca",
+          "pair": "BCH/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "701fd54c-0089-4d15-99ec-18faca951dd3",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.016595488,
+        "total_bought": 0.003312976,
+        "avg_sell_price": 617.71,
+        "avg_buy_price": 3096.24,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.049378205319583486,
+        "calculated_pnl": -0.07635504667620019,
+        "verified_pnl": 0.006569917760000266,
+        "discrepancy": 0.08292496443620045,
+        "discrepancy_pct": 108.60443159423554,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0764 vs verified $0.0066 (108.6%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:33:48.176379",
+      "conversion_num": 17,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LTC",
+      "from_amount": 0.00331278395,
+      "to_amount": 0.133945349,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "af70fc2f-a246-49c1-b225-ab391fe7e10d",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "5504ca28-5a5b-4bf8-8357-8f6a9c7d1ac6",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.003309471,
+        "total_bought": 0.133945349,
+        "avg_sell_price": 3092.566,
+        "avg_buy_price": 76.6199,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.046996212675518574,
+        "calculated_pnl": -0.05696796029999973,
+        "verified_pnl": 0.028121753259100046,
+        "discrepancy": 0.08508971355909978,
+        "discrepancy_pct": 149.36415681903952,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0570 vs verified $0.0281 (149.4%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:34:00.909532",
+      "conversion_num": 18,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "ETH",
+      "from_amount": 0.13398623965,
+      "to_amount": 0.003294126,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "285bcfaa-96cb-49ae-af30-41846c9b1088",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "91310697-af35-4633-b523-905544432f3c",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.133852253,
+        "total_bought": 0.003294126,
+        "avg_sell_price": 76.1254,
+        "avg_buy_price": 3094.899,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.04809545042349608,
+        "calculated_pnl": -0.07871021604303685,
+        "verified_pnl": 0.005430962747798418,
+        "discrepancy": 0.08414117879083527,
+        "discrepancy_pct": 106.8999464374852,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0787 vs verified $0.0054 (106.9%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:34:17.298752",
+      "conversion_num": 19,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LTC",
+      "from_amount": 0.003290382,
+      "to_amount": 0.133159845,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "64835adc-72f8-498f-ba6c-87ddf25452b2",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "dcc888e0-02db-4289-94ef-c0b761bdd3c8",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.003287091,
+        "total_bought": 0.133159845,
+        "avg_sell_price": 3093.6,
+        "avg_buy_price": 76.593,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.04800341061689893,
+        "calculated_pnl": -0.046553496855000986,
+        "verified_pnl": 0.030167290485001885,
+        "discrepancy": 0.07672078734000287,
+        "discrepancy_pct": 164.80134151675693,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0466 vs verified $0.0302 (164.8%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:34:42.097342",
+      "conversion_num": 1,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "ETH",
+      "from_amount": 0.13301219705,
+      "to_amount": 0.003268591,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "a7879f18-9693-463a-a20c-2e56da18da55",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "25140110-dfef-42e8-9320-e3fe83521346",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.132879184,
+        "total_bought": 0.003268591,
+        "avg_sell_price": 76.1353,
+        "avg_buy_price": 3096.6,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.047740045835736954,
+        "calculated_pnl": -0.07609009105065212,
+        "verified_pnl": 0.004722353004797952,
+        "discrepancy": 0.08081244405545007,
+        "discrepancy_pct": 106.20626541457855,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0761 vs verified $0.0047 (106.2%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:34:57.662341",
+      "conversion_num": 2,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "SOL",
+      "from_amount": 0.0032650436,
+      "to_amount": 10.08975574074,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "ac99106e-d977-4aa8-9f11-7e2130f9646b",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.003261778,
+        "total_bought": 10.08975574074,
+        "avg_sell_price": 3093.33,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": -0.05015348617364135,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 1396.533181831564,
+        "discrepancy": 1396.533181831564,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-12T21:35:02.704783",
+      "conversion_num": 3,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "SOL",
+      "from_amount": 9.7755,
+      "to_amount": 0.070099389,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "d3851b04-1f52-4635-ad17-06b221ec31ea",
+          "exchange": "alpaca",
+          "pair": "SOL/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0.070099389,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 139.704,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.045672165,
+        "calculated_pnl": -5.171999717390463e-09,
+        "verified_pnl": 0.017665040856000402,
+        "discrepancy": 0.01766504602800012,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-12T21:35:14.917496",
+      "conversion_num": 4,
+      "exchange": "alpaca",
+      "from_asset": "SOL",
+      "to_asset": "ETH",
+      "from_amount": 0.066427933,
+      "to_amount": 0.00298508,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "829cc5e4-aa2e-479d-a003-b6a39974fc06",
+          "exchange": "alpaca",
+          "pair": "SOL/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "782d14a1-4a61-4b29-b7b5-be7b900c285b",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.066361505,
+        "total_bought": 0.00298508,
+        "avg_sell_price": 139.22,
+        "avg_buy_price": 3097.116,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.044441132518050736,
+        "calculated_pnl": -0.046410435431997854,
+        "verified_pnl": 0.006290303180000123,
+        "discrepancy": 0.05270073861199798,
+        "discrepancy_pct": 113.55363965334237,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0464 vs verified $0.0063 (113.6%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:35:34.034897",
+      "conversion_num": 5,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "SOL",
+      "from_amount": 0.00299509065,
+      "to_amount": 0.066365129,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "b96de025-a1e1-44a5-a2cb-f97145b8c137",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "8d52a2bb-b4df-43c6-bc92-495c90db136e",
+          "exchange": "alpaca",
+          "pair": "SOL/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.002992095,
+        "total_bought": 0.066365129,
+        "avg_sell_price": 3093.2,
+        "avg_buy_price": 139.706,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.04968803699630603,
+        "calculated_pnl": -0.03678991418540001,
+        "verified_pnl": 0.016458458073998372,
+        "discrepancy": 0.05324837225939838,
+        "discrepancy_pct": 144.7363317866337,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0368 vs verified $0.0165 (144.7%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:35:52.171974",
+      "conversion_num": 6,
+      "exchange": "alpaca",
+      "from_asset": "SOL",
+      "to_asset": "LTC",
+      "from_amount": 0.06627375845,
+      "to_amount": 0.120650047,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "80e3532d-ba1f-4a46-a943-f3b1f71a6d19",
+          "exchange": "alpaca",
+          "pair": "SOL/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "1a83d1db-e938-4f78-b9c1-323ecfae2de7",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.066207484,
+        "total_bought": 0.120650047,
+        "avg_sell_price": 139.151,
+        "avg_buy_price": 76.59,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.04287233552147502,
+        "calculated_pnl": -0.07311417465659886,
+        "verified_pnl": 0.02774949364599877,
+        "discrepancy": 0.10086366830259763,
+        "discrepancy_pct": 137.95364411392455,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0731 vs verified $0.0277 (138.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:36:05.162513",
+      "conversion_num": 7,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "ETH",
+      "from_amount": 0.1211079722,
+      "to_amount": 0.00297555,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "8708b649-bf7a-4303-8098-ca2b659e72a6",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "cb74c0ac-7b42-496b-93a5-2b07873e0012",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.120986864,
+        "total_bought": 0.00297555,
+        "avg_sell_price": 76.136,
+        "avg_buy_price": 3097.3,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.04322145334434211,
+        "calculated_pnl": -0.07168833079800052,
+        "verified_pnl": 0.004715137496001276,
+        "discrepancy": 0.0764034682940018,
+        "discrepancy_pct": 106.57727337701213,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0717 vs verified $0.0047 (106.6%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:36:17.708073",
+      "conversion_num": 8,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LTC",
+      "from_amount": 0.00297230585,
+      "to_amount": 0.120337836,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "7a0b7a00-619b-4e6d-8eba-af1a507c3642",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "802686d2-fe5a-40cf-bf6a-9fac7df7cf68",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.002969333,
+        "total_bought": 0.120337836,
+        "avg_sell_price": 3093.5999999999995,
+        "avg_buy_price": 76.57,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.04310904580091287,
+        "calculated_pnl": -0.0440814275090009,
+        "verified_pnl": 0.02833953372000053,
+        "discrepancy": 0.07242096122900143,
+        "discrepancy_pct": 164.28905623397503,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0441 vs verified $0.0283 (164.3%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:36:32.155283",
+      "conversion_num": 9,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "ETH",
+      "from_amount": 0.12020559285,
+      "to_amount": 0.002953997,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "f33125e1-c2b2-405b-8b68-26925179a7e3",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "de8b2408-174f-4386-a461-754fb7bd593b",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.120085387,
+        "total_bought": 0.002953997,
+        "avg_sell_price": 76.13999999999999,
+        "avg_buy_price": 3096.6000000000004,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.042248893269019386,
+        "calculated_pnl": -0.06565712532450085,
+        "verified_pnl": 0.004045744020000797,
+        "discrepancy": 0.06970286934450165,
+        "discrepancy_pct": 106.16192682820835,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0657 vs verified $0.0040 (106.2%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:36:45.902030",
+      "conversion_num": 10,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LTC",
+      "from_amount": 0.0029507209,
+      "to_amount": 9.1219332204,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "170579df-0780-4c0a-bdb4-0a20c514ba6c",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.00294777,
+        "total_bought": 9.1219332204,
+        "avg_sell_price": 3094.52,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": -0.041785466428584876,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 685.4220621808561,
+        "discrepancy": 685.4220621808561,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-12T21:36:56.774227",
+      "conversion_num": 11,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "ETH",
+      "from_amount": 8.854,
+      "to_amount": 0.002859585,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "25a99703-8c93-4385-b847-b5c64f887bc1",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0.002859585,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 3098.0999999999995,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.04004371722919654,
+        "calculated_pnl": -0.00495702579999957,
+        "verified_pnl": 0.005280288499999841,
+        "discrepancy": 0.010237314299999412,
+        "discrepancy_pct": 206.52130356070165,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0050 vs verified $0.0053 (206.5%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:37:12.121582",
+      "conversion_num": 12,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LTC",
+      "from_amount": 0.0028601536,
+      "to_amount": 0.115757382,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "7818ca0e-9864-4f0e-bd0d-dcfd9aacb70f",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "f644a6b0-449c-4fb4-ba5e-b58b14b9e055",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.002857293,
+        "total_bought": 0.115757382,
+        "avg_sell_price": 3094.42,
+        "avg_buy_price": 76.6054,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.04055648748471047,
+        "calculated_pnl": -0.04727480267999873,
+        "verified_pnl": 0.0259759460028004,
+        "discrepancy": 0.07325074868279913,
+        "discrepancy_pct": 154.94670422768456,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0473 vs verified $0.0260 (154.9%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:37:31.291958",
+      "conversion_num": 13,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "ETH",
+      "from_amount": 0.1158190638,
+      "to_amount": 0.002845327,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "d544201e-8608-45f4-8ca4-cb37379fc77d",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "deeea988-0537-49a0-b48a-b31a6b465fcf",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.115703244,
+        "total_bought": 0.002845327,
+        "avg_sell_price": 76.15,
+        "avg_buy_price": 3098.56,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.040229944521328914,
+        "calculated_pnl": -0.0677289346845189,
+        "verified_pnl": 0.005614398520000563,
+        "discrepancy": 0.07334333320451947,
+        "discrepancy_pct": 108.28951251950501,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0677 vs verified $0.0056 (108.3%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:37:43.757890",
+      "conversion_num": 14,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LTC",
+      "from_amount": 0.0028420276,
+      "to_amount": 0.115099581,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "7b3db0ad-c78e-43df-b052-b2f58315a673",
+          "exchange": "alpaca",
+          "pair": "ETH/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "127ea51d-b3d6-4797-939a-ad65ccae8dd4",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.002839185,
+        "total_bought": 0.115099581,
+        "avg_sell_price": 3095.0,
+        "avg_buy_price": 76.57,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.0399300871969091,
+        "calculated_pnl": -0.041359947105998884,
+        "verified_pnl": 0.025897342169999504,
+        "discrepancy": 0.06725728927599839,
+        "discrepancy_pct": 162.61454373630795,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0414 vs verified $0.0259 (162.6%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:37:55.336665",
+      "conversion_num": 15,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "SOL",
+      "from_amount": 0.11497222239999999,
+      "to_amount": 0.062728616,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "95e69151-7229-42ba-9b08-9dd7a3b97d84",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "8701fb1c-d3a3-440a-89ca-e6781842a362",
+          "exchange": "alpaca",
+          "pair": "SOL/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.11485725,
+        "total_bought": 0.062728616,
+        "avg_sell_price": 76.1,
+        "avg_buy_price": 139.581,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.04125284050212125,
+        "calculated_pnl": -0.07467342415199774,
+        "verified_pnl": 0.015086224896000644,
+        "discrepancy": 0.08975964904799838,
+        "discrepancy_pct": 120.20293707878271,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0747 vs verified $0.0151 (120.2%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:38:14.873848",
+      "conversion_num": 16,
+      "exchange": "alpaca",
+      "from_asset": "SOL",
+      "to_asset": "LTC",
+      "from_amount": 0.06281985295,
+      "to_amount": 0.114396001,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "aa1681c4-bb99-4059-a8fb-95aaaff8279f",
+          "exchange": "alpaca",
+          "pair": "SOL/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "8e53c4ef-4fe5-4b92-8cc3-7d57a80a1e6c",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.062757033,
+        "total_bought": 0.114396001,
+        "avg_sell_price": 139.11,
+        "avg_buy_price": 76.54,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.04144662803248464,
+        "calculated_pnl": -0.06292221851395219,
+        "verified_pnl": 0.025739055909998143,
+        "discrepancy": 0.08866127442395033,
+        "discrepancy_pct": 140.9061481268192,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0629 vs verified $0.0257 (140.9%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:38:26.242632",
+      "conversion_num": 17,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "SOL",
+      "from_amount": 0.1142623444,
+      "to_amount": 8.68552755938,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "25a08df8-22ef-4efc-bf46-b8fdcbc8e57c",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.114148082,
+        "total_bought": 8.68552755938,
+        "avg_sell_price": 76.09,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": -0.041106552730276635,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 1199.558211225972,
+        "discrepancy": 1199.558211225972,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-12T21:38:30.944574",
+      "conversion_num": 18,
+      "exchange": "alpaca",
+      "from_asset": "USD",
+      "to_asset": "SOL",
+      "from_amount": 8.417,
+      "to_amount": 0.060367209,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "49db8438-6340-40e0-94a8-a8bfd20d4adb",
+          "exchange": "alpaca",
+          "pair": "SOL/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0.060367209,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 139.683,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.03950634915590398,
+        "calculated_pnl": -0.019317556009999848,
+        "verified_pnl": 0.015272854746999798,
+        "discrepancy": 0.034590410756999646,
+        "discrepancy_pct": 179.0620445934968,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0193 vs verified $0.0153 (179.1%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:38:42.309418",
+      "conversion_num": 19,
+      "exchange": "alpaca",
+      "from_asset": "SOL",
+      "to_asset": "LTC",
+      "from_amount": 0.0604061471,
+      "to_amount": 0.110061154,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "caa3d054-a9a7-4f2b-b6ef-10900273896f",
+          "exchange": "alpaca",
+          "pair": "SOL/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "9dd681ca-0c28-424f-a450-c7e01bb806ac",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.06034574,
+        "total_bought": 0.110061154,
+        "avg_sell_price": 139.235,
+        "avg_buy_price": 76.57210000000002,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.040667183373484246,
+        "calculated_pnl": -0.06315863750930006,
+        "verified_pnl": 0.025374581303399424,
+        "discrepancy": 0.08853321881269949,
+        "discrepancy_pct": 140.17594790524578,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0632 vs verified $0.0254 (140.2%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:39:02.943219",
+      "conversion_num": 20,
+      "exchange": "alpaca",
+      "from_asset": "LTC",
+      "to_asset": "USDT",
+      "from_amount": 0.11011836744999999,
+      "to_amount": 8.382606053,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "39642b70-8733-408c-a86d-4ff8b57856d8",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "71f02801-8663-4780-84c6-0ca753c8fbe0",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.110008249,
+        "total_bought": 8.382606053,
+        "avg_sell_price": 76.1215,
+        "avg_buy_price": 0.9996999999999999,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.046165650044552364,
+        "calculated_pnl": -0.05578871093961091,
+        "verified_pnl": 0.006098344930599353,
+        "discrepancy": 0.06188705587021026,
+        "discrepancy_pct": 110.93114507915512,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-0.0558 vs verified $0.0061 (110.9%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:39:14.176586",
+      "conversion_num": 21,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "SOL",
+      "from_amount": 7.9435670601499995,
+      "to_amount": 0.32917549500000004,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "9038f329-d1d6-49c6-acff-79cf9442b474",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.32967,
+        "total_bought": 0.32917549500000004,
+        "avg_sell_price": 0.9985,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": -0.03435212669031301,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 45.50357455132501,
+        "discrepancy": 45.50357455132501,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-12T21:39:19.149349",
+      "conversion_num": 22,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "SOL",
+      "from_amount": 7.630380560149999,
+      "to_amount": 0.6482785725,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "8fd5d9d0-fbf4-48e9-a035-3f51017f05e6",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.64935,
+        "total_bought": 0.6482785725,
+        "avg_sell_price": 0.99835,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": -0.032528143057252275,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 89.6147884695375,
+        "discrepancy": 89.6147884695375,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-12T21:39:31.479318",
+      "conversion_num": 23,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "SOL",
+      "from_amount": 7.013498060149999,
+      "to_amount": 0.009226903,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "8aa2087a-27b6-4c23-ae59-ccd19d83a31f",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "f897c245-d288-4f93-af0c-2313c74cefcf",
+          "exchange": "alpaca",
+          "pair": "SOL/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 1.28871,
+        "total_bought": 0.009226903,
+        "avg_sell_price": 0.998509,
+        "avg_buy_price": 139.721,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.02985265658930553,
+        "calculated_pnl": -5.723004085045375,
+        "verified_pnl": 0.002403580673000061,
+        "discrepancy": 5.725407665718375,
+        "discrepancy_pct": 100.04199858391296,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-5.7230 vs verified $0.0024 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-12T21:39:37.735751",
+      "conversion_num": 24,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "LTC",
+      "from_amount": 5.789223560149999,
+      "to_amount": 0.016733092,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "2c065048-1892-45b9-8622-ba0d7332e832",
+          "exchange": "alpaca",
+          "pair": "USDT/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "12ef4cda-1948-410d-bd78-53ee59fbad79",
+          "exchange": "alpaca",
+          "pair": "LTC/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 1.27872,
+        "total_bought": 0.016733092,
+        "avg_sell_price": 0.9985000000000002,
+        "avg_buy_price": 76.53,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": -0.026158739279970582,
+        "calculated_pnl": -4.510844118623879,
+        "verified_pnl": 0.0037816107599999427,
+        "discrepancy": 4.514625729383879,
+        "discrepancy_pct": 100.08383377169667,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-4.5108 vs verified $0.0038 (100.1%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
     }
   ],
   "summary": {
-    "total": 638,
-    "verified": 592,
-    "discrepancies": 46
+    "total": 681,
+    "verified": 600,
+    "discrepancies": 81
   }
 }
