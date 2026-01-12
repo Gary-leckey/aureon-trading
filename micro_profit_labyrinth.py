@@ -4511,6 +4511,42 @@ class MicroProfitLabyrinth:
                                 self.alpaca_pairs[f"{base}USD"] = f"{base}/USD"
                                 self.alpaca_pairs[f"{base}/USD"] = f"{base}/USD"
                                 alpaca_count += 1
+
+                # Pull prices for tradeable crypto pairs even if we have no positions.
+                if hasattr(self.alpaca, 'get_latest_crypto_quotes'):
+                    symbols = sorted(set(self.alpaca_pairs.values()))
+                    if not symbols and hasattr(self.alpaca, 'get_tradable_crypto_symbols'):
+                        symbols = self.alpaca.get_tradable_crypto_symbols(quote_filter='USD') or []
+
+                    if symbols:
+                        quotes = self.alpaca.get_latest_crypto_quotes(symbols) or {}
+                        for symbol, quote in quotes.items():
+                            if not isinstance(quote, dict):
+                                continue
+                            bid = float(quote.get('bp', 0) or quote.get('bid_price', 0) or 0)
+                            ask = float(quote.get('ap', 0) or quote.get('ask_price', 0) or 0)
+                            price = (bid + ask) / 2 if bid and ask else (bid or ask or 0)
+                            if price <= 0:
+                                continue
+
+                            base = symbol.replace('/USD', '').replace('USD', '')
+                            if base and base not in prices:
+                                prices[base] = price
+
+                            ticker_entry = {
+                                'price': price,
+                                'change24h': 0.0,
+                                'volume': 0,
+                                'base': base,
+                                'quote': 'USD',
+                                'exchange': 'alpaca',
+                                'pair': symbol,
+                            }
+                            ticker_cache[f"alpaca:{symbol}"] = ticker_entry
+                            ticker_cache[symbol] = ticker_entry
+                            ticker_cache[f"{base}/USD"] = ticker_entry
+                            self.alpaca_pairs[symbol] = symbol
+                            self.alpaca_pairs[symbol.replace('/', '')] = symbol
                 
                 print(f"   🦙 Alpaca: {alpaca_count} positions loaded")
             except Exception as e:
