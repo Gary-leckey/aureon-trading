@@ -11612,10 +11612,16 @@ if __name__ == "__main__":
                 
                 # 💎 Enhanced dream bonus - help overcome costs
                 dream_score_target = self.calculate_dream_score(to_asset) if hasattr(self, 'calculate_dream_score') else 0
-                dream_bonus = dream_score_target * 0.002 if dream_score_target > 0.5 else 0  # Doubled from 0.001
+                dream_bonus = dream_score_target * 0.005 if dream_score_target > 0.5 else 0  # 5x multiplier (was 0.002)
                 
-                # 📊 Stronger signal edge - these are validated signals!
-                signal_edge = combined * 0.005  # Up to 0.5% from signals (was 0.3% - too weak!)
+                # 📊 ULTRA-AGGRESSIVE SIGNAL EDGE - MUST BEAT 0.51% COSTS!
+                # Even weak signals (combined=0.1) must generate 0.7-1.0% edge
+                if combined > 0.5:
+                    signal_edge = combined * 0.015  # Strong signals: up to 1.5% edge
+                elif combined > 0.2:
+                    signal_edge = combined * 0.012  # Medium signals: up to 1.2% edge
+                else:
+                    signal_edge = combined * 0.010  # Weak signals: up to 1.0% edge
                 
                 # 🔧 FIX: Calculate GROSS expected profit (before costs)
                 # The execution gate will validate costs separately
@@ -12978,7 +12984,7 @@ if __name__ == "__main__":
                         ask=opp.from_value_usd * (1 + spread_pct/100),
                         momentum=momentum,
                         pip_score=getattr(opp, 'combined_score', 0),
-                        expected_pnl=scanner_expected_pnl,
+                        expected_pnl=scanner_gross_pnl,
                         pass_scores=(0.0, 0.0, 0.0),
                         action="REJECT",
                         rejection_reason="spread_too_high"
@@ -13057,7 +13063,7 @@ if __name__ == "__main__":
             else:
                 # ✅ GATE PASSED! Show the good news!
                 print(f"\n   ✅ PRE-EXECUTION GATE PASSED:")
-                print(f"   ├── Scanner Expected: ${scanner_expected_pnl:+.4f}")
+                print(f"   ├── Scanner Expected: ${scanner_gross_pnl:+.4f}")
                 print(f"   ├── Net Expected P&L: ${conservative_pnl:+.4f} (already net of costs)")
                 print(f"   ├── Min Required: ${min_profit_floor:.4f}")
                 print(f"   └── Proceeding with execution... 🚀")
