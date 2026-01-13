@@ -118,14 +118,30 @@ except ImportError:
     QuantumPrism = None
     LightBeam = None
 
-# 🍄 Mycelium Neural Network - Distributed Intelligence
-try:
-    from aureon_mycelium import MyceliumNetwork, Synapse, Hive, Neuron
-    MYCELIUM_AVAILABLE = True
-    print("🍄 Timeline Oracle: Mycelium Network WIRED!")
-except ImportError:
-    MYCELIUM_AVAILABLE = False
-    MyceliumNetwork = None
+# 🍄 Mycelium Neural Network - Lazy load to avoid circular imports
+MYCELIUM_AVAILABLE = False
+MyceliumNetwork = None
+Synapse = None
+Hive = None
+Neuron = None
+
+def _lazy_load_mycelium():
+    """Lazy load mycelium to avoid circular imports"""
+    global MYCELIUM_AVAILABLE, MyceliumNetwork, Synapse, Hive, Neuron
+    if MyceliumNetwork is not None:
+        return MYCELIUM_AVAILABLE
+    try:
+        from aureon_mycelium import MyceliumNetwork as _MyceliumNetwork, Synapse as _Synapse, Hive as _Hive, Neuron as _Neuron
+        MyceliumNetwork = _MyceliumNetwork
+        Synapse = _Synapse
+        Hive = _Hive
+        Neuron = _Neuron
+        MYCELIUM_AVAILABLE = True
+        print("🍄 Timeline Oracle: Mycelium Network WIRED!")
+        return True
+    except ImportError:
+        MYCELIUM_AVAILABLE = False
+        return False
 
 # 🌊 Harmonic Wave Fusion - 7-day Seed Validation
 try:

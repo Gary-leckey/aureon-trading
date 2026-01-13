@@ -420,20 +420,38 @@ except ImportError:
     NEXUS_PREDICTOR_AVAILABLE = False
     print("⚠️  Nexus Predictor not available")
 
-# 🔱🔮 ENHANCED PROBABILITY NEXUS - 100% WIN RATE WITH PROFIT FILTER 🔮🔱
-try:
-    from aureon_probability_nexus import (
-        EnhancedProbabilityNexus,
-        ProfitFilter,
-        CompoundingEngine,
-        OptimalExitFinder,
-        AureonProbabilityNexus,
-    )
-    ENHANCED_NEXUS_AVAILABLE = True
-    print("🔱🔮 Enhanced Probability Nexus loaded - 100% win rate with profit filter!")
-except ImportError as e:
-    ENHANCED_NEXUS_AVAILABLE = False
-    print(f"⚠️  Enhanced Probability Nexus not available: {e}")
+# 🔱🔮 ENHANCED PROBABILITY NEXUS - Lazy load to avoid circular imports
+ENHANCED_NEXUS_AVAILABLE = False
+EnhancedProbabilityNexus = None
+ProfitFilter = None
+CompoundingEngine = None
+OptimalExitFinder = None
+AureonProbabilityNexus = None
+
+def _lazy_load_enhanced_nexus():
+    """Lazy load to avoid circular imports with aureon_probability_nexus"""
+    global ENHANCED_NEXUS_AVAILABLE, EnhancedProbabilityNexus, ProfitFilter, CompoundingEngine, OptimalExitFinder, AureonProbabilityNexus
+    if EnhancedProbabilityNexus is not None:
+        return ENHANCED_NEXUS_AVAILABLE
+    try:
+        from aureon_probability_nexus import (
+            EnhancedProbabilityNexus as _EnhancedProbabilityNexus,
+            ProfitFilter as _ProfitFilter,
+            CompoundingEngine as _CompoundingEngine,
+            OptimalExitFinder as _OptimalExitFinder,
+            AureonProbabilityNexus as _AureonProbabilityNexus,
+        )
+        EnhancedProbabilityNexus = _EnhancedProbabilityNexus
+        ProfitFilter = _ProfitFilter
+        CompoundingEngine = _CompoundingEngine
+        OptimalExitFinder = _OptimalExitFinder
+        AureonProbabilityNexus = _AureonProbabilityNexus
+        ENHANCED_NEXUS_AVAILABLE = True
+        print("🔱🔮 Enhanced Probability Nexus loaded - 100% win rate with profit filter!")
+        return True
+    except ImportError as e:
+        ENHANCED_NEXUS_AVAILABLE = False
+        return False
 
 # 🧠 MINER BRAIN - COGNITIVE TRADING INTELLIGENCE 🧠
 try:

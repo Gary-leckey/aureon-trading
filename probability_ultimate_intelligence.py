@@ -33,14 +33,25 @@ from probability_intelligence_matrix import (
     ProbabilityIntelligence
 )
 
-# 🐠 CLOWNFISH INTEGRATION - Import for micro-change detection
-try:
-    from aureon_unified_ecosystem import ClownfishNode, MarketState
-    CLOWNFISH_AVAILABLE = True
-except ImportError:
-    CLOWNFISH_AVAILABLE = False
-    ClownfishNode = None
-    MarketState = None
+# 🐠 CLOWNFISH INTEGRATION - Lazy load to avoid circular imports
+CLOWNFISH_AVAILABLE = False
+ClownfishNode = None
+MarketState = None
+
+def _lazy_load_clownfish():
+    """Lazy load to avoid circular imports with aureon_unified_ecosystem"""
+    global CLOWNFISH_AVAILABLE, ClownfishNode, MarketState
+    if ClownfishNode is not None:
+        return CLOWNFISH_AVAILABLE
+    try:
+        from aureon_unified_ecosystem import ClownfishNode as _ClownfishNode, MarketState as _MarketState
+        ClownfishNode = _ClownfishNode
+        MarketState = _MarketState
+        CLOWNFISH_AVAILABLE = True
+        return True
+    except ImportError:
+        CLOWNFISH_AVAILABLE = False
+        return False
 
 STATE_FILE = os.path.join(os.path.dirname(__file__), "probability_ultimate_state.json")
 

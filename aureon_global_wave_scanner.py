@@ -46,6 +46,18 @@ logger = logging.getLogger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# 💸 THE GOAL - MICRO-MOMENTUM COST THRESHOLDS (WE CANNOT BLEED!)
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Trading costs (Alpaca crypto)
+ROUND_TRIP_COST_PCT = 0.34  # 0.34% total cost per trade
+
+# Momentum tiers - coins must move MORE than cost to profit!
+TIER_1_THRESHOLD = 0.5   # > 0.5% in 1 min = HOT (immediate entry)
+TIER_2_THRESHOLD = 0.4   # > 0.4% in 5 min = STRONG (high priority)
+TIER_3_THRESHOLD = 0.34  # > 0.34% in 5 min = VALID (covers costs)
+
+# ═══════════════════════════════════════════════════════════════════════════
 # 🌊 WAVE STATE CLASSIFICATIONS
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -463,7 +475,12 @@ class GlobalWaveScanner:
         volume: float, 
         ticker: Dict
     ) -> Tuple[WaveState, float]:
-        """Classify the wave state based on momentum and volume."""
+        """
+        Classify the wave state based on momentum and volume.
+        
+        💸 THE GOAL: Only flag as actionable if momentum > cost threshold!
+        We need > 0.34% move to cover trading costs.
+        """
         
         # Extract additional data if available
         high = float(ticker.get('high', ticker.get('highPrice', 0)) or 0)
@@ -474,7 +491,13 @@ class GlobalWaveScanner:
         range_size = high - low if high > low else 1
         range_position = (price - low) / range_size if range_size > 0 else 0.5
         
-        # Strong upward momentum
+        # ═══════════════════════════════════════════════════════════════════
+        # 💸 COST-AWARE CLASSIFICATION (THE GOAL!)
+        # For 24h change, we need much bigger moves because this is long timeframe
+        # For micro-scalping, these thresholds scale down
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # Strong upward momentum - BREAKOUT
         if change_24h > 10:
             return WaveState.BREAKOUT_UP, min(1.0, change_24h / 20)
         elif change_24h > 3:
@@ -494,7 +517,7 @@ class GlobalWaveScanner:
         elif range_position < 0.15 and change_24h < 0:
             return WaveState.TROUGH, 1 - range_position
         
-        # Default: balanced
+        # Default: balanced (NOT ACTIONABLE for micro-scalping)
         return WaveState.BALANCED, 0.5
     
     def _calculate_jump_score(

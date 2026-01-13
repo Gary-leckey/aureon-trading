@@ -4435,6 +4435,15 @@ class MicroProfitLabyrinth:
                     except Exception as e:
                         logger.debug(f"Queen greeting error: {e}")
                 
+                # 🇬🇧💎 Wire Advanced Intelligence (The Missing Pieces)
+                if hasattr(self.queen, 'wire_advanced_intelligence'):
+                    try:
+                        wired = self.queen.wire_advanced_intelligence()
+                        if wired:
+                            print(f"   💎 Advanced Intelligence: ✅ WIRED (Mycelium + Piano + Golden Ratio)")
+                    except Exception as e:
+                        logger.warning(f"Failed to wire Advanced Intelligence: {e}")
+
                 # Wire Harmonic Fusion (waves, Schumann, lighthouse)
                 if hasattr(self, 'harmonic') and self.harmonic:
                     self.queen.wire_harmonic_fusion(self.harmonic)
@@ -4468,6 +4477,27 @@ class MicroProfitLabyrinth:
                 except Exception as e:
                     logger.debug(f"Wisdom Cognition Engine not available: {e}")
                 
+                # Wire Unified River Consciousness (The Flow)
+                try:
+                    from aureon_unified_river_consciousness import UnifiedRiverConsciousness
+                    self.river_consciousness = UnifiedRiverConsciousness()
+                    if hasattr(self.queen, 'wire_river_consciousness'):
+                        self.queen.wire_river_consciousness(self.river_consciousness)
+                        print(f"   🌊 River Consciousness: ✅ WIRED (Sensing the Flow)")
+                except Exception as e:
+                    logger.debug(f"River Consciousness not available: {e}")
+                
+                # 👑🔮 Wire Queen's Dream Engine (Monte Carlo Simulation + Validation)
+                try:
+                    from aureon_queen_dream_engine import QueenDreamEngine, create_queen_dream_engine
+                    self.dream_engine = create_queen_dream_engine()
+                    if hasattr(self.queen, 'wire_dream_engine_simulation'):
+                        self.queen.wire_dream_engine_simulation(self.dream_engine)
+                    print(f"   👑🔮 Dream Engine: ✅ WIRED (1000s simulations + validation)")
+                except Exception as e:
+                    self.dream_engine = None
+                    logger.debug(f"Queen Dream Engine not available: {e}")
+
                 # Dream Memory & Wisdom Collector
                 try:
                     from aureon_enigma_dream import DreamMemory, WisdomCollector, EnigmaDreamer
@@ -6968,6 +6998,14 @@ class MicroProfitLabyrinth:
     async def _scan_exchange_for_fptp(self, exchange: str) -> List['MicroOpportunity']:
         """Scan a single exchange for FPTP mode."""
         try:
+            # 🌊 RIVER CONSCIOUSNESS: Update before scanning to know where the water flows
+            if hasattr(self, 'river_consciousness') and self.river_consciousness:
+                # This finds the best rivers (cached) so we don't look too hard at dry beds
+                try:
+                    self.river_consciousness.find_best_river()
+                except Exception as e:
+                    logger.debug(f"River update failed: {e}")
+
             # Update stats
             self.exchange_stats[exchange]['scans'] += 1
             self.exchange_stats[exchange]['last_turn'] = time.time()
@@ -8136,6 +8174,45 @@ class MicroProfitLabyrinth:
                             
             except Exception as e:
                 logger.debug(f"Animal Pack signal error: {e}")
+        
+        # 14. 👑🔮 QUEEN'S DREAM ENGINE - Monte Carlo Simulation + Validation
+        # Run 100 quick simulations to validate this specific opportunity
+        if hasattr(self, 'dream_engine') and self.dream_engine:
+            try:
+                to_asset = opportunity.to_asset.upper()
+                current_price = self.prices.get(to_asset, 0)
+                
+                if current_price > 0:
+                    # Run quick simulation (100 sims for speed)
+                    dream = self.dream_engine.create_dream(
+                        symbol=to_asset,
+                        exchange=source_exchange,
+                        num_simulations=100,  # Quick validation
+                        current_price=current_price
+                    )
+                    
+                    if dream:
+                        # Use Monte Carlo win rate and EV as signals
+                        mc_win_rate = dream.monte_carlo_win_rate
+                        mc_ev = dream.monte_carlo_ev
+                        
+                        signals.append(mc_win_rate)
+                        
+                        if mc_win_rate >= 0.60 and mc_ev > 0:
+                            signals.append(0.85)
+                            reasons.append(f"👑🔮 DREAM VALIDATED: {mc_win_rate*100:.0f}% win, EV {mc_ev:+.3f}%")
+                        elif mc_win_rate >= 0.50 and mc_ev > 0:
+                            signals.append(0.65)
+                            reasons.append(f"👑🔮 Dream OK: {mc_win_rate*100:.0f}% win")
+                        else:
+                            signals.append(0.3)
+                            reasons.append(f"👑🔮 Dream warns: {mc_win_rate*100:.0f}% win, EV {mc_ev:+.3f}%")
+                            
+                        # Validate any pending predictions while we're here
+                        self.dream_engine.validate_predictions_with_ticker(to_asset, current_price)
+                        
+            except Exception as e:
+                logger.debug(f"Dream Engine signal error: {e}")
         
         # 👑 SERO's VERDICT - Her logic decides, we trust her math!
         if not signals:
@@ -10295,7 +10372,37 @@ if __name__ == "__main__":
         
         # Build target assets list
         checkpoint_stablecoins = {'USD': 1.0, 'USDT': 1.0, 'USDC': 1.0, 'ZUSD': 1.0}
-        target_assets = dict(self.prices)
+        
+        # 🌊 RIVER CONSCIOUSNESS: Filter targets to avoid "looking too hard" (Rate Limits)
+        filtered_targets = {}
+        used_river_filter = False
+        
+        if hasattr(self, 'river_consciousness') and self.river_consciousness:
+            flowing_rivers = self.river_consciousness.get_flowing_rivers()
+            if flowing_rivers:
+                # Include: Flowing Rivers + Stablecoins + Lion Targets
+                # This reduces the search space from ~500 to ~20-30 high-quality targets
+                for asset, price in self.prices.items():
+                    if (asset in flowing_rivers or 
+                        asset in checkpoint_stablecoins or 
+                        (lion_targets and asset in lion_targets)):
+                        filtered_targets[asset] = price
+                
+                if filtered_targets:
+                    target_assets = filtered_targets
+                    used_river_filter = True
+                else:
+                    target_assets = dict(self.prices) # Fallback
+            else:
+                target_assets = dict(self.prices)
+        else:
+            target_assets = dict(self.prices)
+
+        # 🔍 Debug log if filter is rigorous
+        if used_river_filter and len(target_assets) < len(self.prices):
+            # Only log occasionally or if very small
+            pass
+
         for stable, price in checkpoint_stablecoins.items():
             if stable not in target_assets:
                 target_assets[stable] = price

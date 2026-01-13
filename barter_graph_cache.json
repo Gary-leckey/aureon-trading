@@ -1,59 +1,59 @@
 {
-  "timestamp": "2026-01-12T22:43:21.389335",
+  "timestamp": "2026-01-12T23:00:10.729909",
   "assets": [
-    "USDG",
-    "YFI",
-    "USDT",
-    "DOGE",
-    "SUSHI",
-    "BAT",
-    "AAVE",
-    "SHIB",
-    "GRT",
-    "BCH",
-    "SOL",
-    "LTC",
-    "DOT",
-    "LINK",
-    "BTC",
-    "XRP",
     "UNI",
-    "SKY",
+    "LINK",
+    "USD",
+    "AAVE",
+    "DOT",
     "PEPE",
-    "XTZ",
-    "TRUMP",
-    "AVAX",
-    "CRV",
+    "SKY",
+    "XRP",
+    "BAT",
     "ETH",
+    "BCH",
+    "AVAX",
+    "SOL",
+    "XTZ",
     "USDC",
-    "USD"
+    "USDG",
+    "LTC",
+    "CRV",
+    "USDT",
+    "GRT",
+    "TRUMP",
+    "DOGE",
+    "SHIB",
+    "BTC",
+    "SUSHI",
+    "YFI"
   ],
   "prices": {
     "AAVE": 165.48,
     "AVAX": 13.5687,
     "BCH": 618.939,
-    "BTC": 91127.563,
-    "ETH": 3101.22,
-    "LINK": 13.0556,
-    "LTC": 76.72,
-    "SOL": 139.5,
+    "BTC": 91177.998,
+    "ETH": 3092.6,
+    "LINK": 13.04,
+    "LTC": 75.742,
+    "SOL": 139.319,
     "UNI": 5.3383,
-    "TRUMP": 5.35393,
-    "CRV": 0.390975,
-    "DOT": 2.05757,
-    "SUSHI": 0.31488499999999997,
-    "SKY": 0.054926,
-    "DOGE": 0.137,
-    "GRT": 0.0407625,
-    "SHIB": 8.405e-06,
-    "BAT": 0.19045499999999999,
-    "PEPE": 5.77e-06,
-    "YFI": 3356.437,
+    "SUSHI": 0.3144095,
+    "CRV": 0.3917015,
+    "DOT": 2.052845,
+    "GRT": 0.04056245,
+    "SKY": 0.0552649,
+    "DOGE": 0.1369955,
+    "PEPE": 5.755e-06,
+    "SHIB": 8.384999999999998e-06,
+    "BAT": 0.190997,
+    "TRUMP": 5.348845,
+    "YFI": 3356.165,
+    "XTZ": 0.554794,
+    "USDT": 0.9992365,
     "USDG": 1.0,
     "USDC": 0.9997499999999999,
-    "USDT": 0.9991654999999999,
-    "XTZ": 0.555385,
-    "XRP": 2.05395,
+    "XRP": 2.05175,
     "USD": 1.0,
     "ZUSD": 1.0,
     "TUSD": 1.0,
@@ -65,7 +65,7 @@
       "to": "USDC",
       "pair": "LTC/USDC",
       "exchange": "alpaca",
-      "rate": 76.72,
+      "rate": 75.742,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -74,7 +74,7 @@
       "to": "USD",
       "pair": "LTC/USD",
       "exchange": "alpaca",
-      "rate": 76.72,
+      "rate": 75.742,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -83,7 +83,7 @@
       "to": "USDT",
       "pair": "LTC/USDT",
       "exchange": "alpaca",
-      "rate": 76.72,
+      "rate": 75.742,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -92,7 +92,7 @@
       "to": "BTC",
       "pair": "LTC/BTC",
       "exchange": "alpaca",
-      "rate": 76.72,
+      "rate": 75.742,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -101,7 +101,7 @@
       "to": "LTC",
       "pair": "LTC/USDC",
       "exchange": "alpaca",
-      "rate": 0.013034410844629822,
+      "rate": 0.013202714478096697,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -110,7 +110,7 @@
       "to": "SHIB",
       "pair": "SHIB/USDC",
       "exchange": "alpaca",
-      "rate": 118976.7995240928,
+      "rate": 119260.58437686347,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -128,7 +128,7 @@
       "to": "USDT",
       "pair": "USDT/USDC",
       "exchange": "alpaca",
-      "rate": 1.0008351969718732,
+      "rate": 1.0007640833776588,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -146,7 +146,7 @@
       "to": "SUSHI",
       "pair": "SUSHI/USDC",
       "exchange": "alpaca",
-      "rate": 3.17576257998952,
+      "rate": 3.1805654727353976,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -155,7 +155,7 @@
       "to": "DOT",
       "pair": "DOT/USDC",
       "exchange": "alpaca",
-      "rate": 0.4860101964939224,
+      "rate": 0.48712883827079007,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -164,7 +164,7 @@
       "to": "YFI",
       "pair": "YFI/USDC",
       "exchange": "alpaca",
-      "rate": 0.00029793498284043466,
+      "rate": 0.00029795912894628246,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -173,7 +173,7 @@
       "to": "CRV",
       "pair": "CRV/USDC",
       "exchange": "alpaca",
-      "rate": 2.5577082933691413,
+      "rate": 2.552964438481854,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -182,7 +182,7 @@
       "to": "BAT",
       "pair": "BAT/USDC",
       "exchange": "alpaca",
-      "rate": 5.250584127484183,
+      "rate": 5.235684330120368,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -191,7 +191,7 @@
       "to": "GRT",
       "pair": "GRT/USDC",
       "exchange": "alpaca",
-      "rate": 24.532352039251762,
+      "rate": 24.653343178235044,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -209,7 +209,7 @@
       "to": "XTZ",
       "pair": "XTZ/USDC",
       "exchange": "alpaca",
-      "rate": 1.8005527697002979,
+      "rate": 1.8024708270096648,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -218,7 +218,7 @@
       "to": "DOGE",
       "pair": "DOGE/USDC",
       "exchange": "alpaca",
-      "rate": 7.2992700729927,
+      "rate": 7.299509837914385,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -227,7 +227,7 @@
       "to": "LINK",
       "pair": "LINK/USDC",
       "exchange": "alpaca",
-      "rate": 0.07659548393026747,
+      "rate": 0.07668711656441718,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -254,7 +254,7 @@
       "to": "BTC",
       "pair": "BTC/USDC",
       "exchange": "alpaca",
-      "rate": 1.0973628253396836e-05,
+      "rate": 1.0967558204118498e-05,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -263,7 +263,7 @@
       "to": "SOL",
       "pair": "SOL/USDC",
       "exchange": "alpaca",
-      "rate": 0.007168458781362007,
+      "rate": 0.0071777718760542356,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -272,14 +272,14 @@
       "to": "ETH",
       "pair": "ETH/USDC",
       "exchange": "alpaca",
-      "rate": 0.00032245374401042174,
+      "rate": 0.00032335251891612237,
       "fee": 0.0025,
       "spread": 0.002
     },
     {
       "from": "USDC",
-      "to": "USDT",
-      "pair": "USDC/USDT",
+      "to": "USD",
+      "pair": "USDC/USD",
       "exchange": "bridge",
       "rate": 0.999,
       "fee": 0.002,
@@ -287,8 +287,8 @@
     },
     {
       "from": "USDC",
-      "to": "USD",
-      "pair": "USDC/USD",
+      "to": "USDT",
+      "pair": "USDC/USDT",
       "exchange": "bridge",
       "rate": 0.999,
       "fee": 0.002,
@@ -326,7 +326,7 @@
       "to": "BTC",
       "pair": "BTC/USD",
       "exchange": "alpaca",
-      "rate": 1.0973628253396836e-05,
+      "rate": 1.0967558204118498e-05,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -335,7 +335,7 @@
       "to": "CRV",
       "pair": "CRV/USD",
       "exchange": "alpaca",
-      "rate": 2.5577082933691413,
+      "rate": 2.552964438481854,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -344,7 +344,7 @@
       "to": "LTC",
       "pair": "LTC/USD",
       "exchange": "alpaca",
-      "rate": 0.013034410844629822,
+      "rate": 0.013202714478096697,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -353,7 +353,7 @@
       "to": "BAT",
       "pair": "BAT/USD",
       "exchange": "alpaca",
-      "rate": 5.250584127484183,
+      "rate": 5.235684330120368,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -362,7 +362,7 @@
       "to": "ETH",
       "pair": "ETH/USD",
       "exchange": "alpaca",
-      "rate": 0.00032245374401042174,
+      "rate": 0.00032335251891612237,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -371,7 +371,7 @@
       "to": "SUSHI",
       "pair": "SUSHI/USD",
       "exchange": "alpaca",
-      "rate": 3.17576257998952,
+      "rate": 3.1805654727353976,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -389,7 +389,7 @@
       "to": "USDT",
       "pair": "USDT/USD",
       "exchange": "alpaca",
-      "rate": 1.0008351969718732,
+      "rate": 1.0007640833776588,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -398,7 +398,7 @@
       "to": "XRP",
       "pair": "XRP/USD",
       "exchange": "alpaca",
-      "rate": 0.48686676890868813,
+      "rate": 0.48738881442670884,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -407,7 +407,7 @@
       "to": "TRUMP",
       "pair": "TRUMP/USD",
       "exchange": "alpaca",
-      "rate": 0.18677868406945924,
+      "rate": 0.18695624943328887,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -416,7 +416,7 @@
       "to": "GRT",
       "pair": "GRT/USD",
       "exchange": "alpaca",
-      "rate": 24.532352039251762,
+      "rate": 24.653343178235044,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -425,7 +425,7 @@
       "to": "DOT",
       "pair": "DOT/USD",
       "exchange": "alpaca",
-      "rate": 0.4860101964939224,
+      "rate": 0.48712883827079007,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -434,7 +434,7 @@
       "to": "YFI",
       "pair": "YFI/USD",
       "exchange": "alpaca",
-      "rate": 0.00029793498284043466,
+      "rate": 0.00029795912894628246,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -452,7 +452,7 @@
       "to": "SOL",
       "pair": "SOL/USD",
       "exchange": "alpaca",
-      "rate": 0.007168458781362007,
+      "rate": 0.0071777718760542356,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -461,7 +461,7 @@
       "to": "SKY",
       "pair": "SKY/USD",
       "exchange": "alpaca",
-      "rate": 18.206313949677746,
+      "rate": 18.09466768238068,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -470,7 +470,7 @@
       "to": "PEPE",
       "pair": "PEPE/USD",
       "exchange": "alpaca",
-      "rate": 173310.2253032929,
+      "rate": 173761.9461337967,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -479,7 +479,7 @@
       "to": "SHIB",
       "pair": "SHIB/USD",
       "exchange": "alpaca",
-      "rate": 118976.7995240928,
+      "rate": 119260.58437686347,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -488,7 +488,7 @@
       "to": "LINK",
       "pair": "LINK/USD",
       "exchange": "alpaca",
-      "rate": 0.07659548393026747,
+      "rate": 0.07668711656441718,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -497,7 +497,7 @@
       "to": "DOGE",
       "pair": "DOGE/USD",
       "exchange": "alpaca",
-      "rate": 7.2992700729927,
+      "rate": 7.299509837914385,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -506,7 +506,7 @@
       "to": "XTZ",
       "pair": "XTZ/USD",
       "exchange": "alpaca",
-      "rate": 1.8005527697002979,
+      "rate": 1.8024708270096648,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -587,7 +587,7 @@
       "to": "USD",
       "pair": "BTC/USD",
       "exchange": "alpaca",
-      "rate": 91127.563,
+      "rate": 91177.998,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -596,7 +596,7 @@
       "to": "USDT",
       "pair": "BTC/USDT",
       "exchange": "alpaca",
-      "rate": 91127.563,
+      "rate": 91177.998,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -605,7 +605,7 @@
       "to": "LTC",
       "pair": "LTC/BTC",
       "exchange": "alpaca",
-      "rate": 0.013034410844629822,
+      "rate": 0.013202714478096697,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -614,7 +614,7 @@
       "to": "ETH",
       "pair": "ETH/BTC",
       "exchange": "alpaca",
-      "rate": 0.00032245374401042174,
+      "rate": 0.00032335251891612237,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -632,7 +632,7 @@
       "to": "USDC",
       "pair": "BTC/USDC",
       "exchange": "alpaca",
-      "rate": 91127.563,
+      "rate": 91177.998,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -641,7 +641,7 @@
       "to": "LINK",
       "pair": "LINK/BTC",
       "exchange": "alpaca",
-      "rate": 0.07659548393026747,
+      "rate": 0.07668711656441718,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -659,7 +659,7 @@
       "to": "USD",
       "pair": "CRV/USD",
       "exchange": "alpaca",
-      "rate": 0.390975,
+      "rate": 0.3917015,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -668,7 +668,7 @@
       "to": "USDC",
       "pair": "CRV/USDC",
       "exchange": "alpaca",
-      "rate": 0.390975,
+      "rate": 0.3917015,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -677,7 +677,7 @@
       "to": "USD",
       "pair": "BAT/USD",
       "exchange": "alpaca",
-      "rate": 0.19045499999999999,
+      "rate": 0.190997,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -686,7 +686,7 @@
       "to": "USDC",
       "pair": "BAT/USDC",
       "exchange": "alpaca",
-      "rate": 0.19045499999999999,
+      "rate": 0.190997,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -695,7 +695,7 @@
       "to": "USD",
       "pair": "ETH/USD",
       "exchange": "alpaca",
-      "rate": 3101.22,
+      "rate": 3092.6,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -704,7 +704,7 @@
       "to": "USDT",
       "pair": "ETH/USDT",
       "exchange": "alpaca",
-      "rate": 3101.22,
+      "rate": 3092.6,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -713,7 +713,7 @@
       "to": "BTC",
       "pair": "ETH/BTC",
       "exchange": "alpaca",
-      "rate": 3101.22,
+      "rate": 3092.6,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -722,7 +722,7 @@
       "to": "USDC",
       "pair": "ETH/USDC",
       "exchange": "alpaca",
-      "rate": 3101.22,
+      "rate": 3092.6,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -731,7 +731,7 @@
       "to": "BTC",
       "pair": "BTC/USDT",
       "exchange": "alpaca",
-      "rate": 1.0973628253396836e-05,
+      "rate": 1.0967558204118498e-05,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -749,7 +749,7 @@
       "to": "USDC",
       "pair": "USDT/USDC",
       "exchange": "alpaca",
-      "rate": 0.9991654999999999,
+      "rate": 0.9992365,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -758,7 +758,7 @@
       "to": "USD",
       "pair": "USDT/USD",
       "exchange": "alpaca",
-      "rate": 0.9991654999999999,
+      "rate": 0.9992365,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -776,7 +776,7 @@
       "to": "ETH",
       "pair": "ETH/USDT",
       "exchange": "alpaca",
-      "rate": 0.00032245374401042174,
+      "rate": 0.00032335251891612237,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -785,7 +785,7 @@
       "to": "LTC",
       "pair": "LTC/USDT",
       "exchange": "alpaca",
-      "rate": 0.013034410844629822,
+      "rate": 0.013202714478096697,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -794,7 +794,7 @@
       "to": "SHIB",
       "pair": "SHIB/USDT",
       "exchange": "alpaca",
-      "rate": 118976.7995240928,
+      "rate": 119260.58437686347,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -821,7 +821,7 @@
       "to": "LINK",
       "pair": "LINK/USDT",
       "exchange": "alpaca",
-      "rate": 0.07659548393026747,
+      "rate": 0.07668711656441718,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -830,7 +830,7 @@
       "to": "YFI",
       "pair": "YFI/USDT",
       "exchange": "alpaca",
-      "rate": 0.00029793498284043466,
+      "rate": 0.00029795912894628246,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -839,7 +839,7 @@
       "to": "DOGE",
       "pair": "DOGE/USDT",
       "exchange": "alpaca",
-      "rate": 7.2992700729927,
+      "rate": 7.299509837914385,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -848,7 +848,7 @@
       "to": "SOL",
       "pair": "SOL/USDT",
       "exchange": "alpaca",
-      "rate": 0.007168458781362007,
+      "rate": 0.0071777718760542356,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -857,18 +857,9 @@
       "to": "SUSHI",
       "pair": "SUSHI/USDT",
       "exchange": "alpaca",
-      "rate": 3.17576257998952,
+      "rate": 3.1805654727353976,
       "fee": 0.0025,
       "spread": 0.002
-    },
-    {
-      "from": "USDT",
-      "to": "USDC",
-      "pair": "USDT/USDC",
-      "exchange": "bridge",
-      "rate": 0.999,
-      "fee": 0.002,
-      "spread": 0.0001
     },
     {
       "from": "USDT",
@@ -880,11 +871,20 @@
       "spread": 0.0001
     },
     {
+      "from": "USDT",
+      "to": "USDC",
+      "pair": "USDT/USDC",
+      "exchange": "bridge",
+      "rate": 0.999,
+      "fee": 0.002,
+      "spread": 0.0001
+    },
+    {
       "from": "SUSHI",
       "to": "USD",
       "pair": "SUSHI/USD",
       "exchange": "alpaca",
-      "rate": 0.31488499999999997,
+      "rate": 0.3144095,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -893,7 +893,7 @@
       "to": "USDC",
       "pair": "SUSHI/USDC",
       "exchange": "alpaca",
-      "rate": 0.31488499999999997,
+      "rate": 0.3144095,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -902,7 +902,7 @@
       "to": "USDT",
       "pair": "SUSHI/USDT",
       "exchange": "alpaca",
-      "rate": 0.31488499999999997,
+      "rate": 0.3144095,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -911,7 +911,7 @@
       "to": "USDC",
       "pair": "SHIB/USDC",
       "exchange": "alpaca",
-      "rate": 8.405e-06,
+      "rate": 8.384999999999998e-06,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -920,7 +920,7 @@
       "to": "USDT",
       "pair": "SHIB/USDT",
       "exchange": "alpaca",
-      "rate": 8.405e-06,
+      "rate": 8.384999999999998e-06,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -929,7 +929,7 @@
       "to": "USD",
       "pair": "SHIB/USD",
       "exchange": "alpaca",
-      "rate": 8.405e-06,
+      "rate": 8.384999999999998e-06,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -992,7 +992,7 @@
       "to": "USD",
       "pair": "XRP/USD",
       "exchange": "alpaca",
-      "rate": 2.05395,
+      "rate": 2.05175,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1037,7 +1037,7 @@
       "to": "USD",
       "pair": "TRUMP/USD",
       "exchange": "alpaca",
-      "rate": 5.35393,
+      "rate": 5.348845,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1046,7 +1046,7 @@
       "to": "USDC",
       "pair": "DOT/USDC",
       "exchange": "alpaca",
-      "rate": 2.05757,
+      "rate": 2.052845,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1055,7 +1055,7 @@
       "to": "USD",
       "pair": "DOT/USD",
       "exchange": "alpaca",
-      "rate": 2.05757,
+      "rate": 2.052845,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1064,7 +1064,7 @@
       "to": "USDC",
       "pair": "YFI/USDC",
       "exchange": "alpaca",
-      "rate": 3356.437,
+      "rate": 3356.165,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1073,7 +1073,7 @@
       "to": "USD",
       "pair": "YFI/USD",
       "exchange": "alpaca",
-      "rate": 3356.437,
+      "rate": 3356.165,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1082,7 +1082,7 @@
       "to": "USDT",
       "pair": "YFI/USDT",
       "exchange": "alpaca",
-      "rate": 3356.437,
+      "rate": 3356.165,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1091,7 +1091,7 @@
       "to": "USD",
       "pair": "GRT/USD",
       "exchange": "alpaca",
-      "rate": 0.0407625,
+      "rate": 0.04056245,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1100,7 +1100,7 @@
       "to": "USDC",
       "pair": "GRT/USDC",
       "exchange": "alpaca",
-      "rate": 0.0407625,
+      "rate": 0.04056245,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1109,7 +1109,7 @@
       "to": "USD",
       "pair": "SOL/USD",
       "exchange": "alpaca",
-      "rate": 139.5,
+      "rate": 139.319,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1118,7 +1118,7 @@
       "to": "USDT",
       "pair": "SOL/USDT",
       "exchange": "alpaca",
-      "rate": 139.5,
+      "rate": 139.319,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1127,7 +1127,7 @@
       "to": "USDC",
       "pair": "SOL/USDC",
       "exchange": "alpaca",
-      "rate": 139.5,
+      "rate": 139.319,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1136,7 +1136,7 @@
       "to": "USD",
       "pair": "SKY/USD",
       "exchange": "alpaca",
-      "rate": 0.054926,
+      "rate": 0.0552649,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1145,7 +1145,7 @@
       "to": "USD",
       "pair": "PEPE/USD",
       "exchange": "alpaca",
-      "rate": 5.77e-06,
+      "rate": 5.755e-06,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1154,7 +1154,7 @@
       "to": "USDT",
       "pair": "LINK/USDT",
       "exchange": "alpaca",
-      "rate": 13.0556,
+      "rate": 13.04,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1163,7 +1163,7 @@
       "to": "USD",
       "pair": "LINK/USD",
       "exchange": "alpaca",
-      "rate": 13.0556,
+      "rate": 13.04,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1172,7 +1172,7 @@
       "to": "USDC",
       "pair": "LINK/USDC",
       "exchange": "alpaca",
-      "rate": 13.0556,
+      "rate": 13.04,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1181,7 +1181,7 @@
       "to": "BTC",
       "pair": "LINK/BTC",
       "exchange": "alpaca",
-      "rate": 13.0556,
+      "rate": 13.04,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1190,7 +1190,7 @@
       "to": "USDC",
       "pair": "XTZ/USDC",
       "exchange": "alpaca",
-      "rate": 0.555385,
+      "rate": 0.554794,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1199,7 +1199,7 @@
       "to": "USD",
       "pair": "XTZ/USD",
       "exchange": "alpaca",
-      "rate": 0.555385,
+      "rate": 0.554794,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1208,7 +1208,7 @@
       "to": "USDT",
       "pair": "DOGE/USDT",
       "exchange": "alpaca",
-      "rate": 0.137,
+      "rate": 0.1369955,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1217,7 +1217,7 @@
       "to": "USDC",
       "pair": "DOGE/USDC",
       "exchange": "alpaca",
-      "rate": 0.137,
+      "rate": 0.1369955,
       "fee": 0.0025,
       "spread": 0.002
     },
@@ -1226,7 +1226,7 @@
       "to": "USD",
       "pair": "DOGE/USD",
       "exchange": "alpaca",
-      "rate": 0.137,
+      "rate": 0.1369955,
       "fee": 0.0025,
       "spread": 0.002
     }

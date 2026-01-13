@@ -82,13 +82,22 @@ CLOWNFISH_AVAILABLE = False
 ClownfishNode = None
 ClownfishMarketState = None
 
-try:
-    from aureon_unified_ecosystem import ClownfishNode, MarketState as EcoMarketState
-    ClownfishMarketState = EcoMarketState
-    CLOWNFISH_AVAILABLE = True
-    print("🐠 Clownfish v2.0 LOADED - 12-Factor Micro-Detection Active!")
-except ImportError:
-    print("⚠️ Clownfish module not available - using fallback")
+def _lazy_load_clownfish():
+    """Lazy load Clownfish to avoid circular imports"""
+    global CLOWNFISH_AVAILABLE, ClownfishNode, ClownfishMarketState
+    if ClownfishNode is not None:
+        return True
+    try:
+        from aureon_unified_ecosystem import ClownfishNode as _ClownfishNode, MarketState as EcoMarketState
+        ClownfishNode = _ClownfishNode
+        ClownfishMarketState = EcoMarketState
+        CLOWNFISH_AVAILABLE = True
+        return True
+    except ImportError:
+        return False
+
+# Don't import at module load - lazy load when needed
+# This prevents circular import with aureon_unified_ecosystem
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # DATA STRUCTURES

@@ -90,6 +90,18 @@ from enum import Enum, auto
 from pathlib import Path
 from cost_basis_tracker import CostBasisTracker
 
+# 🇬🇧💎 MISSING PIECES INTEGRATION 💎🇬🇧
+try:
+    from aureon_advanced_intelligence import (
+        MyceliumNetwork as AdvancedMycelium,
+        HarmonicOrchestrator as AdvancedPiano,
+        NeuralAgent as AdvancedNeuralAgent,
+        calculate_golden_ratio_alignment
+    )
+    ADVANCED_INTEL_AVAILABLE = True
+except ImportError:
+    ADVANCED_INTEL_AVAILABLE = False
+
 # ═══════════════════════════════════════════════════════════════════════════
 # WINDOWS UTF-8 FIX - Must be at top before any logging/printing
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1231,6 +1243,39 @@ class QueenHiveMind:
     # SYSTEM WIRING - Connect the children to the Queen
     # ═══════════════════════════════════════════════════════════════════════════════
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🇬🇧💎 THE MISSING PIECES - Advanced Intelligence Integration 🇬🇧💎
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def wire_advanced_intelligence(self) -> bool:
+        """
+        🇬🇧💎 SUPERCHARGE Queen with Advanced Intelligence (The Missing Pieces)
+        Wires:
+        - Advanced Mycelium (Neural Agents)
+        - Harmonic Orchestrator (Piano)
+        - Golden Ratio Scanner
+        """
+        if not ADVANCED_INTEL_AVAILABLE:
+            return False
+            
+        try:
+            # 1. Advanced Mycelium
+            # Only replace if not already wired or if specific upgrade requested
+            if not hasattr(self, 'mycelium_network') or not self.mycelium_network:
+                self.mycelium_network = AdvancedMycelium(agent_count=7)
+                logger.info("👑🍄 Queen upgraded with ADVANCED Mycelium Network (7 Neural Agents)")
+            
+            # 2. Harmonic Orchestrator (Piano)
+            if not hasattr(self, 'harmonic_orchestrator'):
+                self.harmonic_orchestrator = AdvancedPiano()
+                logger.info("👑🎹 Queen upgraded with Harmonic Piano Orchestration")
+                
+            self.has_advanced_intelligence = True
+            return True
+        except Exception as e:
+            logger.error(f"Failed to wire Advanced Intelligence: {e}")
+            return False
+
     def wire_dream_engine(self, dreamer) -> bool:
         """
         Wire the Enigma Dream Engine to the Queen.
@@ -1243,6 +1288,20 @@ class QueenHiveMind:
             return True
         except Exception as e:
             logger.error(f"Failed to wire Dream Engine: {e}")
+            return False
+
+    def wire_river_consciousness(self, river) -> bool:
+        """
+        Wire the Unified River Consciousness to the Queen.
+        The Queen gains the ability to find the FLOW.
+        """
+        try:
+            self.river_consciousness = river
+            logger.info("👑🌊 Unified River Consciousness WIRED to Queen Hive Mind")
+            logger.info("   The Queen can now sense the FLOW of the river")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to wire River Consciousness: {e}")
             return False
     
     def wire_mycelium_network(self, mycelium) -> bool:
@@ -9647,6 +9706,19 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
     """Wire all available systems to the Queen"""
     results = {}
     
+    # 🇬🇧💎 Wire Advanced Intelligence (The Missing Pieces)
+    if hasattr(queen, 'wire_advanced_intelligence'):
+        results['advanced_intelligence'] = queen.wire_advanced_intelligence()
+    
+    # Wire Unified River Consciousness
+    try:
+        from aureon_unified_river_consciousness import UnifiedRiverConsciousness
+        river = UnifiedRiverConsciousness()
+        results['river_consciousness'] = queen.wire_river_consciousness(river)
+    except ImportError as e:
+        logger.warning(f"Could not wire River Consciousness: {e}")
+        results['river_consciousness'] = False
+        
     # Wire Dream Engine
     try:
         from aureon_enigma_dream import EnigmaDreamer

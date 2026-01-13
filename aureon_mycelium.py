@@ -67,17 +67,34 @@ from dataclasses import dataclass, field
 from collections import deque
 from aureon_memory_core import memory  # 🧠 MEMORY CORE INTEGRATION
 
-# 🔱🔮 ENHANCED PROBABILITY NEXUS - 100% WIN RATE WITH PROFIT FILTER 🔮🔱
-try:
-    from aureon_probability_nexus import (
-        EnhancedProbabilityNexus,
-        ProfitFilter,
-        CompoundingEngine,
-        AureonProbabilityNexus,
-    )
-    ENHANCED_NEXUS_AVAILABLE = True
-except ImportError:
-    ENHANCED_NEXUS_AVAILABLE = False
+# 🔱🔮 ENHANCED PROBABILITY NEXUS - Lazy load to avoid circular imports
+ENHANCED_NEXUS_AVAILABLE = False
+EnhancedProbabilityNexus = None
+ProfitFilter = None
+CompoundingEngine = None
+AureonProbabilityNexus = None
+
+def _lazy_load_probability_nexus():
+    """Lazy load probability nexus to avoid circular imports"""
+    global ENHANCED_NEXUS_AVAILABLE, EnhancedProbabilityNexus, ProfitFilter, CompoundingEngine, AureonProbabilityNexus
+    if EnhancedProbabilityNexus is not None:
+        return ENHANCED_NEXUS_AVAILABLE
+    try:
+        from aureon_probability_nexus import (
+            EnhancedProbabilityNexus as _EnhancedProbabilityNexus,
+            ProfitFilter as _ProfitFilter,
+            CompoundingEngine as _CompoundingEngine,
+            AureonProbabilityNexus as _AureonProbabilityNexus,
+        )
+        EnhancedProbabilityNexus = _EnhancedProbabilityNexus
+        ProfitFilter = _ProfitFilter
+        CompoundingEngine = _CompoundingEngine
+        AureonProbabilityNexus = _AureonProbabilityNexus
+        ENHANCED_NEXUS_AVAILABLE = True
+        return True
+    except ImportError:
+        ENHANCED_NEXUS_AVAILABLE = False
+        return False
 
 # 💎 PROBABILITY ULTIMATE INTELLIGENCE - 95% Accuracy Pattern Learning
 try:
@@ -90,7 +107,6 @@ try:
 except ImportError:
     ULTIMATE_INTELLIGENCE_AVAILABLE = False
     print("⚠️ Mycelium: Ultimate Intelligence not available")
-    EnhancedProbabilityNexus = None
 
 # ⏳🔮 TIMELINE ORACLE - 7-day future validation (branching timelines)
 try:

@@ -415,6 +415,14 @@ class UnifiedRiverConsciousness:
         - Clarity (spread/coherence)
         - Unity (system agreement)
         """
+        # 🛡️ RATE LIMIT PROTECTION: Check cache first!
+        # If we have analyzed this vessel recently, reuse the wisdom.
+        if symbol in self._vessel_cache:
+            cached = self._vessel_cache[symbol]
+            age = time.time() - cached.timestamp
+            if age < 60:  # Valid for 60 seconds
+                return cached
+
         analysis = VesselAnalysis(
             symbol=symbol,
             exchange=exchange,
@@ -545,6 +553,22 @@ class UnifiedRiverConsciousness:
         self._last_full_scan = time.time()
         return results
     
+    def get_flowing_rivers(self) -> Set[str]:
+        """
+        Get a set of symbols for rivers that are currently flowing.
+        Uses cached analysis to avoid API spam.
+        """
+        flowing = set()
+        valid_states = [VesselState.FLOWING, VesselState.RUSHING, VesselState.FLOODING]
+        
+        for vessel in self._vessel_cache.values():
+            # Check age
+            if (time.time() - vessel.timestamp) < 300: # 5 min cache for simple existence check
+                if vessel.vessel_state in valid_states:
+                    flowing.add(vessel.symbol)
+                    
+        return flowing
+
     # ═══════════════════════════════════════════════════════════════
     # 🎯 QUICK VERDICT - Instant decision
     # ═══════════════════════════════════════════════════════════════
