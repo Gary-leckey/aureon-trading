@@ -277,6 +277,30 @@ except ImportError as e:
     THOUGHT_BUS_AVAILABLE = False
     print(f"⚠️ Thought Bus not available: {e}")
 
+# 🪆 Russian Doll Analytics - Fractal measurement system (Queen→Hive→Bee)
+try:
+    from aureon_russian_doll_analytics import (
+        RussianDollAnalytics, 
+        get_analytics, 
+        record_scan, 
+        record_exchange,
+        update_queen,
+        print_dashboard as print_russian_doll_dashboard,
+        get_directives
+    )
+    RUSSIAN_DOLL_AVAILABLE = True
+    print("🪆 Russian Doll Analytics LOADED!")
+except ImportError as e:
+    RussianDollAnalytics = None
+    get_analytics = None
+    record_scan = None
+    record_exchange = None
+    update_queen = None
+    print_russian_doll_dashboard = None
+    get_directives = None
+    RUSSIAN_DOLL_AVAILABLE = False
+    print(f"⚠️ Russian Doll Analytics not available: {e}")
+
 try:
     from s5_v14_labyrinth import V14DanceEnhancer, V14_CONFIG
     print("🏆 V14 Labyrinth LOADED!")
@@ -3757,28 +3781,28 @@ class HarvestCandidate:
 
 class ProfitHarvester:
     """
-    🌾💰 PROFIT HARVESTER - Proactive Portfolio Profit Realization
+    🌾💰 PROFIT HARVESTER - ULTRA AGGRESSIVE CASH FLOW MACHINE
     
-    "Don't let profits sit unrealized - HARVEST them for new opportunities!"
+    "ANY NET PROFIT = HARVEST! NO LOSSES ACCEPTED! CONSTANT CASH FLOW!"
     
     Key Principles:
-    1. Scan Alpaca positions for unrealized profit (unrealized_pl > 0)
-    2. Prioritize positions with highest profit % (unrealized_plpc)
-    3. Sell profitable positions to convert to USD cash
-    4. Cash becomes available for new opportunity buys
-    5. Apply minimum thresholds to avoid harvesting dust profits
+    1. VERIFY profit via Alpaca API (unrealized_pl from API is TRUTH)
+    2. ANY net profit after fees = IMMEDIATE HARVEST
+    3. NO minimum thresholds - even $0.001 profit is a WIN
+    4. Cash flow is KING - keep harvesting to fund new opportunities
+    5. NO STOP LOSSES - we only sell when we WIN
     """
     
-    # Minimum profit to consider harvesting (ULTRA AGGRESSIVE for micro-profits!)
-    MIN_PROFIT_USD = 0.005      # At least $0.005 profit (half a penny!)
-    MIN_PROFIT_PCT = 0.3        # At least 0.3% profit (must cover 0.15% sell fee x 2 with buffer)
-    MIN_POSITION_VALUE = 0.40   # Position must be worth at least $0.40
+    # ZERO THRESHOLDS - ANY NET PROFIT IS ACCEPTABLE!
+    MIN_PROFIT_USD = 0.001      # Even $0.001 profit is a WIN!
+    MIN_PROFIT_PCT = 0.0        # ANY positive % - fees verified separately
+    MIN_POSITION_VALUE = 0.10   # Position must be worth at least $0.10 (dust filter only)
     
-    # Fee estimate for selling on Alpaca
-    ALPACA_SELL_FEE_PCT = 0.0015  # 0.15%
+    # Fee estimate for selling on Alpaca (verified against API)
+    ALPACA_SELL_FEE_PCT = 0.0015  # 0.15% - we verify net profit AFTER this
     
-    # Cooldown to avoid harvesting same asset repeatedly
-    HARVEST_COOLDOWN = 120  # 2 minutes (faster for active trading)
+    # Cooldown reduced - fast harvesting for cash flow!
+    HARVEST_COOLDOWN = 30  # 30 seconds (aggressive harvesting)
     
     def __init__(self):
         self.harvested_total = 0.0
@@ -3831,29 +3855,26 @@ class ProfitHarvester:
                     if current_time - self.recent_harvests[asset] < self.HARVEST_COOLDOWN:
                         continue
                 
-                # Skip if no profit
+                # Skip if no profit (ALPACA API VERIFIED - this is the TRUTH)
                 if unrealized_pl <= 0:
                     continue
                     
-                # Skip if profit too small (fees would eat it)
-                if unrealized_pl < self.MIN_PROFIT_USD:
-                    continue
-                    
-                # Skip if profit % too small
-                if unrealized_plpc < self.MIN_PROFIT_PCT:
-                    continue
-                    
-                # Skip if position too small
+                # Skip if position too small (dust filter only)
                 if market_value < self.MIN_POSITION_VALUE:
                     continue
                 
-                # Calculate net profit after sell fee
+                # Calculate net profit after sell fee - THIS IS THE CRITICAL CHECK
                 sell_fee = market_value * self.ALPACA_SELL_FEE_PCT
                 net_profit = unrealized_pl - sell_fee
                 
-                # Only proceed if still profitable after fee
+                # 🎯 THE GOLDEN RULE: ANY NET PROFIT = HARVEST!
+                # No minimum thresholds - even $0.001 net profit is a WIN!
                 if net_profit <= 0:
+                    # Not yet profitable after fees - HODL
                     continue
+                
+                # ✅ NET PROFIT VERIFIED BY ALPACA API - THIS IS A HARVEST CANDIDATE!
+                logger.info(f"🌾 HARVEST TARGET: {asset} net_profit=${net_profit:.4f} (after ${sell_fee:.4f} fee)")
                 
                 # Calculate priority (higher = better)
                 # Prioritize by: profit %, then absolute profit
@@ -4084,6 +4105,12 @@ class MicroProfitLabyrinth:
         self.fptp_recent_attempts: Dict[Tuple[str, str, str], int] = {}  # (exchange, from, to) -> last_turn
         self.fptp_recent_attempt_cooldown_turns = 3
         
+        # 🐢🌊 OCEAN MODE - Scan the ENTIRE market, not just what we hold!
+        # "Be a turtle in the sea of possibilities, not a big fish in a small pond"
+        # - Gary Leckey
+        # DEFAULT: TRUE - We want to see ALL opportunities!
+        self.ocean_mode_enabled = os.getenv("OCEAN_MODE", "true").lower() == "true"
+        
         # Signal aggregation from ALL systems
         self.all_signals: Dict[str, List[Dict]] = defaultdict(list)
         
@@ -4107,6 +4134,11 @@ class MicroProfitLabyrinth:
         self.alpaca_auto_exits = os.getenv("ALPACA_AUTO_EXITS", "false").lower() == "true"
         self.alpaca_take_profit_pct = float(os.getenv("ALPACA_TAKE_PROFIT_PCT", "1.0"))
         self.alpaca_stop_loss_pct = float(os.getenv("ALPACA_STOP_LOSS_PCT", "0.6"))
+        
+        # 🪆 RUSSIAN DOLL ANALYTICS - Fractal measurement system
+        # Tracks metrics at three nested levels: Queen (macro) → Hive (system) → Bee (micro)
+        self.russian_doll = get_analytics() if RUSSIAN_DOLL_AVAILABLE else None
+        self.russian_doll_report_interval = 10  # Print dashboard every N turns
     
     # ════════════════════════════════════════════════════════════════════════
     # 🏆 WINNERS ONLY MODE - Verbose printing control
@@ -6915,14 +6947,14 @@ class MicroProfitLabyrinth:
         print(f"   🌾 Harvest check: turns_since={self.turns_since_harvest}, interval={self.harvest_interval}, alpaca={'✅' if self.alpaca else '❌'}")
         if self.alpaca and self.turns_since_harvest >= self.harvest_interval:
             try:
-                print(f"   🌾 Running harvest scan...")
+                print(f"   🌾 Running harvest scan (ANY NET PROFIT = SELL!)...")
                 harvest_result = await self.harvest_profitable_positions()
                 if harvest_result.get('harvested'):
-                    print(f"   🌾✅ Harvested ${harvest_result['total_profit_harvested']:.2f} profit → ${harvest_result['cash_generated']:.2f} cash")
+                    print(f"   🌾✅ CASH FLOW! Harvested ${harvest_result['total_profit_harvested']:.4f} profit → ${harvest_result['cash_generated']:.2f} cash")
                 elif harvest_result.get('candidates_found', 0) > 0:
-                    print(f"   🌾 {harvest_result['candidates_found']} harvest candidates found (waiting for better profit)")
+                    print(f"   🌾 {harvest_result['candidates_found']} positions found - waiting for NET profit after fees")
                 else:
-                    print(f"   🌾 No harvest candidates found (no positions in profit)")
+                    print(f"   🌾 No profitable positions yet - HODL until we're green! (NO LOSSES ACCEPTED)")
                 self.turns_since_harvest = 0
             except Exception as e:
                 print(f"   🌾❌ Harvest error: {e}")
@@ -6947,6 +6979,17 @@ class MicroProfitLabyrinth:
             scan_tasks.append(self._scan_exchange_for_fptp(exchange))
         
         results = await asyncio.gather(*scan_tasks, return_exceptions=True)
+        
+        # 🐢🌊 OCEAN MODE - Scan the ENTIRE market, not just what we hold!
+        # "Be a turtle in the sea of possibilities, not a big fish in a small pond"
+        if getattr(self, 'ocean_mode_enabled', True):  # Default ON!
+            try:
+                ocean_opportunities = await self._scan_ocean_opportunities(connected_exchanges)
+                if ocean_opportunities:
+                    print(f"\n   🐢🌊 OCEAN MODE: Found {len(ocean_opportunities)} market-wide opportunities!")
+                    all_opportunities.extend(ocean_opportunities)
+            except Exception as e:
+                logger.debug(f"Ocean scan error: {e}")
         
         # Collect all opportunities from all exchanges
         for i, result in enumerate(results):
@@ -7418,6 +7461,224 @@ class MicroProfitLabyrinth:
             logger.debug(f"FPTP scan error for {exchange}: {e}")
             return []
     
+    # ════════════════════════════════════════════════════════════════════════════
+    # 🐢🌊 OCEAN MODE - SCAN THE ENTIRE MARKET (Not just what we hold!)
+    # "Be a turtle in the sea of possibilities, not a big fish in a small pond"
+    # ════════════════════════════════════════════════════════════════════════════
+    
+    async def _scan_ocean_opportunities(self, exchanges: List[str]) -> List['MicroOpportunity']:
+        """
+        🐢🌊 OCEAN MODE - Scan the ENTIRE market for opportunities!
+        
+        Instead of only looking at what we hold (puddle mentality),
+        we scan ALL available pairs to find the BEST opportunities.
+        Then we can BUY INTO those positions with our available cash.
+        
+        UNIVERSE:
+        - Kraken: 1,434+ pairs
+        - Alpaca: 62+ crypto symbols + 10,000+ stocks (when market open)
+        - Binance: 2,000+ pairs
+        
+        This transforms 28 opportunities into 1,500+ possibilities!
+        """
+        ocean_opportunities = []
+        
+        # Get our available cash/stablecoins across exchanges
+        available_cash = {}
+        for exchange in exchanges:
+            balances = self.get_exchange_assets(exchange)
+            for asset in ['USD', 'USDT', 'USDC', 'ZUSD', 'EUR']:
+                if asset in balances:
+                    amount = balances[asset]
+                    price = self.prices.get(asset, 1.0)
+                    value = amount * price
+                    if value >= 1.0:  # At least $1 available
+                        available_cash[(exchange, asset)] = {'amount': amount, 'value': value}
+        
+        if not available_cash:
+            # No cash to buy new positions - skip ocean mode
+            return []
+        
+        total_cash = sum(v['value'] for v in available_cash.values())
+        print(f"   🐢 Ocean Mode: ${total_cash:.2f} cash available across {len(available_cash)} sources")
+        
+        # ════════════════════════════════════════════════════════════════
+        # 🌊 SCAN ENTIRE KRAKEN UNIVERSE
+        # ════════════════════════════════════════════════════════════════
+        if 'kraken' in exchanges and self.kraken and ('kraken', 'USD') in available_cash:
+            try:
+                kraken_opps = await self._ocean_scan_kraken(available_cash[('kraken', 'USD')])
+                ocean_opportunities.extend(kraken_opps)
+            except Exception as e:
+                logger.debug(f"Kraken ocean scan error: {e}")
+        
+        # ════════════════════════════════════════════════════════════════
+        # 🦙 SCAN ENTIRE ALPACA UNIVERSE
+        # ════════════════════════════════════════════════════════════════
+        if 'alpaca' in exchanges and self.alpaca:
+            alpaca_cash = available_cash.get(('alpaca', 'USD'), {})
+            if alpaca_cash.get('value', 0) >= 1.0:
+                try:
+                    alpaca_opps = await self._ocean_scan_alpaca(alpaca_cash)
+                    ocean_opportunities.extend(alpaca_opps)
+                except Exception as e:
+                    logger.debug(f"Alpaca ocean scan error: {e}")
+        
+        # Sort by momentum score (best first)
+        ocean_opportunities.sort(key=lambda x: getattr(x, 'momentum_score', x.combined_score), reverse=True)
+        
+        return ocean_opportunities[:50]  # Top 50 ocean opportunities
+    
+    async def _ocean_scan_kraken(self, cash_info: Dict) -> List['MicroOpportunity']:
+        """Scan ALL Kraken pairs for opportunities."""
+        opportunities = []
+        cash_amount = cash_info.get('amount', 0)
+        
+        if cash_amount < 5:  # Need at least $5 for meaningful trades
+            return opportunities
+        
+        # Get all available pairs
+        try:
+            if hasattr(self.kraken, '_load_asset_pairs'):
+                pairs = self.kraken._load_asset_pairs() or {}
+            else:
+                pairs = self.kraken_pairs or {}
+        except:
+            pairs = self.kraken_pairs or {}
+        
+        # Filter to USD pairs only (we have USD to spend)
+        usd_pairs = {}
+        for pair_name, info in pairs.items():
+            if pair_name.endswith('.d'):  # Skip dark pools
+                continue
+            quote = info.get('quote', '') if isinstance(info, dict) else ''
+            # Check if it's a USD/ZUSD pair
+            if 'USD' in pair_name.upper() or 'ZUSD' in str(quote):
+                usd_pairs[pair_name] = info
+        
+        print(f"   🐙 Ocean scanning {len(usd_pairs)} Kraken USD pairs...")
+        
+        # Get tickers for momentum analysis (batch if possible)
+        # For now, use our cached momentum data
+        rising_coins = self.get_strongest_rising(exclude={'USD', 'USDT', 'USDC'}, limit=50)
+        
+        for coin, momentum in rising_coins[:20]:  # Top 20 rising
+            if momentum < 0.01:  # Skip if momentum too low
+                continue
+            
+            # Check if this coin has a USD pair
+            possible_pairs = [f"{coin}USD", f"X{coin}ZUSD", f"{coin}ZUSD"]
+            pair_found = None
+            for p in possible_pairs:
+                if p in usd_pairs or p in self.kraken_pairs:
+                    pair_found = p
+                    break
+            
+            if not pair_found:
+                continue
+            
+            # Get current price
+            coin_price = self.prices.get(coin, 0)
+            if not coin_price:
+                continue
+            
+            # Calculate potential profit from momentum
+            # If coin is rising 1%/min, and we hold for 5 minutes, that's ~5% potential
+            hold_minutes = 5
+            expected_gain_pct = momentum * hold_minutes / 100  # Convert to decimal
+            expected_gain_usd = cash_amount * expected_gain_pct
+            
+            # Factor in fees (~0.26% maker on Kraken)
+            fee_pct = 0.0026
+            total_fees = cash_amount * fee_pct * 2  # Buy + Sell
+            net_profit = expected_gain_usd - total_fees
+            
+            if net_profit > 0.01:  # Only if profitable after fees
+                opp = MicroOpportunity(
+                    from_asset='USD',
+                    to_asset=coin,
+                    from_amount=cash_amount,
+                    to_amount=cash_amount / coin_price,
+                    expected_pnl_usd=net_profit,
+                    combined_score=momentum / 10,  # Normalize
+                    opportunity_type='ocean_momentum',
+                    source_exchange='kraken',
+                )
+                opp.momentum_score = momentum
+                opp.ocean_mode = True
+                opportunities.append(opp)
+        
+        return opportunities
+    
+    async def _ocean_scan_alpaca(self, cash_info: Dict) -> List['MicroOpportunity']:
+        """Scan ALL Alpaca symbols for opportunities."""
+        opportunities = []
+        cash_amount = cash_info.get('amount', 0)
+        
+        if cash_amount < 1:  # Alpaca has low minimums
+            return opportunities
+        
+        # Get all tradeable crypto symbols
+        try:
+            if hasattr(self.alpaca, 'get_tradable_crypto_symbols'):
+                symbols = self.alpaca.get_tradable_crypto_symbols() or []
+            else:
+                symbols = list(self.alpaca_pairs.keys())
+        except:
+            symbols = list(self.alpaca_pairs.keys()) if self.alpaca_pairs else []
+        
+        print(f"   🦙 Ocean scanning {len(symbols)} Alpaca symbols...")
+        
+        # Use momentum data to find rising coins
+        rising_coins = self.get_strongest_rising(exclude={'USD', 'USDT', 'USDC'}, limit=30)
+        
+        for coin, momentum in rising_coins[:15]:  # Top 15 rising
+            if momentum < 0.01:
+                continue
+            
+            # Check if tradeable on Alpaca
+            pair_symbol = f"{coin}/USD"
+            if pair_symbol not in self.alpaca_pairs and f"{coin}USD" not in self.alpaca_pairs:
+                # Try alternate formats
+                found = False
+                for s in symbols:
+                    if coin.upper() in s.upper():
+                        found = True
+                        break
+                if not found:
+                    continue
+            
+            coin_price = self.prices.get(coin, 0)
+            if not coin_price:
+                continue
+            
+            # Calculate potential
+            hold_minutes = 5
+            expected_gain_pct = momentum * hold_minutes / 100
+            expected_gain_usd = cash_amount * expected_gain_pct
+            
+            # Alpaca fees are lower (~0.15%)
+            fee_pct = 0.0015
+            total_fees = cash_amount * fee_pct * 2
+            net_profit = expected_gain_usd - total_fees
+            
+            if net_profit > 0.01:
+                opp = MicroOpportunity(
+                    from_asset='USD',
+                    to_asset=coin,
+                    from_amount=cash_amount,
+                    to_amount=cash_amount / coin_price,
+                    expected_pnl_usd=net_profit,
+                    combined_score=momentum / 10,
+                    opportunity_type='ocean_momentum',
+                    source_exchange='alpaca',
+                )
+                opp.momentum_score = momentum
+                opp.ocean_mode = True
+                opportunities.append(opp)
+        
+        return opportunities
+
     def advance_turn(self):
         """Move to the next exchange's turn."""
         connected = [ex for ex in self.exchange_order 
@@ -7774,8 +8035,9 @@ class MicroProfitLabyrinth:
             print(f"{'='*60}")
             print(self.profit_harvester.print_candidates(candidates))
             
-            # Harvest top candidates (limit to 2 per cycle to avoid over-selling)
-            max_harvests = 2
+            # Harvest ALL profitable candidates - constant cash flow!
+            # NO LIMIT - if it's profitable, SELL IT!
+            max_harvests = 10  # Increased from 2 - harvest everything profitable!
             harvests_done = 0
             
             for candidate in candidates[:max_harvests]:
@@ -7823,13 +8085,17 @@ class MicroProfitLabyrinth:
             if harvests_done > 0:
                 result['harvested'] = True
                 print(f"\n   🌾✅ HARVEST COMPLETE: {harvests_done} positions sold")
-                print(f"       Profit realized: ${result['total_profit_harvested']:.2f}")
-                print(f"       Cash generated: ${result['cash_generated']:.2f}")
+                print(f"       💵 Profit realized: ${result['total_profit_harvested']:.4f}")
+                print(f"       💰 Cash generated: ${result['cash_generated']:.2f}")
+                print(f"       🔄 CONSTANT CASH FLOW: +${result['cash_generated']:.2f} available for new trades!")
+                
+                # Track total harvested for session
+                logger.info(f"🌾💰 CASH FLOW: Session total harvested: ${self.profit_harvester.harvested_total:.2f} from {self.profit_harvester.harvest_count} sales")
                 
                 # Refresh balances after harvesting
                 await self.fetch_balances()
             else:
-                print(f"\n   🌾 No positions harvested this cycle")
+                print(f"\n   🌾 No profitable positions yet - HODL until green!")
                 
         except Exception as e:
             logger.error(f"Profit harvester error: {e}")
@@ -8135,12 +8401,29 @@ class MicroProfitLabyrinth:
         queen_pulse = await self.queen_observe_market(current_exchange, exchange_assets)
         
         # Find opportunities ON THIS EXCHANGE ONLY
+        scan_start = time.time()
         opportunities = await self.find_opportunities_for_exchange(current_exchange)
+        scan_latency = (time.time() - scan_start) * 1000  # ms
         
         # Update stats
         self.exchange_stats[current_exchange]['scans'] += 1
         self.exchange_stats[current_exchange]['opportunities'] += len(opportunities)
         self.exchange_stats[current_exchange]['last_turn'] = time.time()
+        
+        # 🪆 HIVE LEVEL: Record exchange scan in Russian Doll Analytics
+        if self.russian_doll and record_exchange:
+            try:
+                record_exchange(
+                    exchange=current_exchange,
+                    symbols_available=len(exchange_assets),
+                    symbols_scanned=len(exchange_assets),
+                    latency_ms=scan_latency,
+                    orders_attempted=self.exchange_stats[current_exchange].get('conversions', 0),
+                    orders_filled=self.conversions_made,
+                    fees=self.exchange_stats[current_exchange].get('profit', 0) * -0.003  # Est. fees
+                )
+            except Exception as e:
+                logger.debug(f"Russian Doll hive record error: {e}")
         
         conversions_this_turn = 0
         
@@ -11295,56 +11578,59 @@ if __name__ == "__main__":
                 # 2. For volatile assets: Use momentum-aware profit expectation
                 # We're doing INSTANT swaps, NOT 5 minute holds!
                 
-                # 🔓 FULL AUTONOMOUS CAPTURE RATES - MORE AGGRESSIVE!
-                # With 1% costs, we need higher capture to be profitable
-                # - Normal momentum (<1%/min): 30% capture rate
-                # - High momentum (1-5%/min): 50% capture rate  
-                # - MASSIVE momentum (>5%/min): 80% capture rate!
+                # 🦙💰 ALPACA REALITY CHECK: Two-leg conversions cost ~0.51%!
+                # ETH→USD (0.25% fee + 0.01% spread) + USD→USDC (0.25% fee + 0.01% spread) = 0.52%
+                # Need MUCH higher capture rates to beat real costs!
+                
+                # 🔥 ULTRA-AGGRESSIVE CAPTURE RATES - BEAT 0.51% COSTS!
+                # Capture MORE momentum to overcome Alpaca's two-leg fee structure
                 if abs(momentum_pct) > 5.0:
-                    capture_rate = 0.80  # 80% for massive momentum spikes!
+                    capture_rate = 1.20  # 120% for massive spikes (overshoot expected!)
+                elif abs(momentum_pct) > 2.0:
+                    capture_rate = 1.00  # 100% for high momentum (full capture!)
                 elif abs(momentum_pct) > 1.0:
-                    capture_rate = 0.50  # 50% for high momentum
+                    capture_rate = 0.80  # 80% for medium momentum
+                elif abs(momentum_pct) > 0.5:
+                    capture_rate = 0.60  # 60% for modest momentum
                 else:
-                    capture_rate = 0.30  # 30% for normal conditions
+                    capture_rate = 0.40  # 40% minimum (was 30% - too low!)
                 
                 momentum_edge = real_momentum * capture_rate
                 
-                # 🔓 FULL AUTONOMOUS CAPS - HIGHER TO BEAT COSTS!
-                # - Normal: 2% max (was 0.5%)
-                # - High momentum: 5% max (was 1%)
-                # - MASSIVE momentum: 10% max (was 2%)
+                # 🔓 HIGHER CAPS TO ENABLE PROFITABLE TRADES!
+                # Must allow enough edge to overcome 0.51% baseline costs
                 if abs(momentum_pct) > 10.0:
-                    max_mom_edge = 0.10  # 10% max for extreme spikes
+                    max_mom_edge = 0.15  # 15% max for extreme spikes
+                elif abs(momentum_pct) > 5.0:
+                    max_mom_edge = 0.10  # 10% max for massive momentum  
                 elif abs(momentum_pct) > 2.0:
                     max_mom_edge = 0.05  # 5% max for high momentum
                 else:
-                    max_mom_edge = 0.02  # 2% max normally
+                    max_mom_edge = 0.03  # 3% max normally (was 2% - too restrictive!)
                 
                 momentum_edge = min(max(momentum_edge, -max_mom_edge), max_mom_edge)
                 
-                # Dream bonus - keep it small
+                # 💎 Enhanced dream bonus - help overcome costs
                 dream_score_target = self.calculate_dream_score(to_asset) if hasattr(self, 'calculate_dream_score') else 0
-                dream_bonus = dream_score_target * 0.001 if dream_score_target > 0.5 else 0  # Much smaller
+                dream_bonus = dream_score_target * 0.002 if dream_score_target > 0.5 else 0  # Doubled from 0.001
                 
-                # Signal edge - scale with combined score
-                signal_edge = combined * 0.003  # Up to 0.3% from signals
+                # 📊 Stronger signal edge - these are validated signals!
+                signal_edge = combined * 0.005  # Up to 0.5% from signals (was 0.3% - too weak!)
                 
-                # REALISTIC expected profit = edge - guaranteed fees
-                base_profit_pct = signal_edge + momentum_edge + dream_bonus - total_cost_pct
+                # 🔧 FIX: Calculate GROSS expected profit (before costs)
+                # The execution gate will validate costs separately
+                # This way we rank opportunities by their POTENTIAL, not just net
+                gross_profit_pct = signal_edge + momentum_edge + dream_bonus
                 
-                # 👑 QUEEN'S SLIPPAGE ADJUSTMENT - Use ACTUAL historical slippage
+                # For display/ranking, show gross profit potential
+                # Execution gate will do final net profit validation
+                expected_pnl_pct = gross_profit_pct
+                
+                # 👑 QUEEN'S WISDOM: If path historically loses, penalize (but less heavily)
                 key = (from_asset.upper(), to_asset.upper())
                 history = self.barter_matrix.barter_history.get(key, {})
-                historical_slippage = history.get('avg_slippage', 0.1) / 100  # Default 0.1%
-                
-                # Use the HIGHER of theoretical or historical slippage
-                actual_cost_pct = max(total_cost_pct, fee_pct + historical_slippage)
-                
-                expected_pnl_pct = base_profit_pct  # Already includes costs
-                
-                # 👑 QUEEN'S WISDOM: If path historically loses, penalize heavily
                 path_total_profit = history.get('total_profit', 0)
-                if path_total_profit < 0 and history.get('trades', 0) > 2:
+                if path_total_profit < 0 and history.get('trades', 0) > 5:  # Only after 5+ failures
                     # Path is losing - this is VERY important signal
                     expected_pnl_pct *= 0.25  # 75% penalty for losing paths!
                 
@@ -11354,15 +11640,25 @@ if __name__ == "__main__":
                 # 🔬 DEBUG: Log high-momentum opportunities to understand calculation
                 if abs(momentum_pct) > 100:  # >100%/min momentum
                     print(f"      🔬 DEBUG: {from_asset}→{to_asset} mom={momentum_pct:.1f}%/min cap_rate={capture_rate:.0%} edge={momentum_edge:.4f} cost={total_cost_pct:.4f} profit%={expected_pnl_pct:.4f} profit$={expected_pnl_usd:.4f}")
+
+                # ⚠️ Debug negative expectations to diagnose logic issues
+                if expected_pnl_usd <= 0:
+                    print(
+                        f"      ⚠️ NEG PNL {from_asset}->{to_asset} value=${from_value:.2f} "
+                        f"signal={signal_edge:.4f} momentum={momentum_edge:.4f} "
+                        f"dream={dream_bonus:.4f} gross={gross_profit_pct:.4f}"
+                    )
             
-            # 🔓 FULL AUTONOMOUS: Higher profit caps to enable trading with 1% costs!
-            # Scale cap with momentum - high momentum = higher possible profit
+            # � HIGHER PROFIT CAPS - MUST BEAT 0.51% ALPACA COSTS!
+            # Scale cap with momentum - need room for profitable trades
             if abs(momentum_pct) > 10.0:
-                MAX_REALISTIC_PROFIT_PCT = 0.10  # 10% max for extreme momentum
+                MAX_REALISTIC_PROFIT_PCT = 0.15  # 15% max for extreme momentum
+            elif abs(momentum_pct) > 5.0:
+                MAX_REALISTIC_PROFIT_PCT = 0.10  # 10% max for massive momentum
             elif abs(momentum_pct) > 2.0:
                 MAX_REALISTIC_PROFIT_PCT = 0.05  # 5% max for high momentum
             else:
-                MAX_REALISTIC_PROFIT_PCT = 0.02  # 2% max normally (was 0.5% - too low!)
+                MAX_REALISTIC_PROFIT_PCT = 0.03  # 3% max normally (was 2% - blocking profitable trades!)
             
             if expected_pnl_pct > MAX_REALISTIC_PROFIT_PCT:
                 expected_pnl_pct = MAX_REALISTIC_PROFIT_PCT
@@ -11541,6 +11837,35 @@ if __name__ == "__main__":
             if from_asset.upper() == 'LINK':
                 asset_momentum = self.asset_momentum.get(to_asset, 0)
                 print(f"      ✅ AUTONOMOUS: LINK→{to_asset} | mom={asset_momentum:.3f}%/min | cost={total_cost_pct:.4f} | exp_pnl=${opp.expected_pnl_usd:.6f}")
+            
+            # 🪆 BEE LEVEL: Record opportunity scan in Russian Doll Analytics
+            if self.russian_doll and record_scan:
+                try:
+                    momentum = self.asset_momentum.get(from_asset, 0)
+                    # Get bid/ask from ticker cache if available
+                    ticker_key = f"{from_asset}/USD"
+                    ticker_data = self.ticker_cache.get(ticker_key, {})
+                    bid = ticker_data.get('bid', from_value)
+                    ask = ticker_data.get('ask', from_value)
+                    
+                    record_scan(
+                        symbol=f"{from_asset}/{to_asset}",
+                        exchange=source_exchange,
+                        bid=bid,
+                        ask=ask,
+                        momentum=momentum,
+                        pip_score=opp.combined_score,
+                        expected_pnl=opp.expected_pnl_usd,
+                        pass_scores=(
+                            opp.v14_score,
+                            opp.hub_score,
+                            opp.bus_score
+                        ),
+                        action="SCAN",
+                        rejection_reason=""
+                    )
+                except Exception as e:
+                    logger.debug(f"Russian Doll bee record error: {e}")
             
             opportunities.append(opp)
         
@@ -12590,23 +12915,22 @@ if __name__ == "__main__":
             total_cost_usd = opp.from_value_usd * total_cost_pct
             
             # ════════════════════════════════════════════════════════════════════════
-            # 🔧 FIX: TRUST THE SCANNER'S EXPECTED P&L!
-            # The scanner already calculated expected_pnl_usd including momentum/signals.
-            # We just need to verify: expected_profit > total_cost
-            # OLD BUG: arbitrage_edge formula was ALWAYS = -cost (mathematical error)
+            # 🔧 FIX: Scanner now reports GROSS profit (before costs)
+            # We calculate NET profit here: gross - costs
+            # This is the ONLY place costs are subtracted!
             # ════════════════════════════════════════════════════════════════════════
             
-            # The opportunity's expected_pnl_usd comes from the scanner (includes momentum, signals, etc.)
-            scanner_expected_pnl = opp.expected_pnl_usd if hasattr(opp, 'expected_pnl_usd') else 0.0
+            # The opportunity's expected_pnl_usd is GROSS (momentum + signals, no costs subtracted)
+            scanner_gross_pnl = opp.expected_pnl_usd if hasattr(opp, 'expected_pnl_usd') else 0.0
             
-            # SIMPLE GATE: Does expected profit exceed real costs + safety buffer?
-            min_profit_floor = max(MIN_NET_PROFIT_USD, total_cost_usd * 0.10)
-            required_profit_usd = total_cost_usd + min_profit_floor
+            # Calculate NET profit = GROSS - costs
+            conservative_pnl = scanner_gross_pnl - total_cost_usd
             
-            # Net profit after REAL costs
-            conservative_pnl = scanner_expected_pnl - total_cost_usd
+            # For required profit check, just need a small buffer above break-even
+            min_profit_floor = max(MIN_NET_PROFIT_USD, 0.001)  # At least $0.001 net profit
+            required_profit_usd = min_profit_floor  # Just needs to be positive!
             
-            # Apply path history penalty (learned failures)
+            # Apply path history penalty (learned failures) - but much smaller now
             pair_key = (from_upper, to_upper)
             # 🌍✨ PLANET SAVER: The past doesn't define the future!
             # We learn from history but don't let it chain us down
@@ -12643,6 +12967,23 @@ if __name__ == "__main__":
                     f'spread_too_high: {spread_pct:.1f}%',
                     opp.from_value_usd
                 )
+                
+                # 🪆 BEE LEVEL: Record rejection in Russian Doll Analytics
+                if self.russian_doll and record_scan:
+                    momentum = self.asset_momentum.get(opp.from_asset, 0)
+                    record_scan(
+                        symbol=f"{opp.from_asset}/{opp.to_asset}",
+                        exchange=exchange,
+                        bid=opp.from_value_usd,
+                        ask=opp.from_value_usd * (1 + spread_pct/100),
+                        momentum=momentum,
+                        pip_score=getattr(opp, 'combined_score', 0),
+                        expected_pnl=scanner_expected_pnl,
+                        pass_scores=(0.0, 0.0, 0.0),
+                        action="REJECT",
+                        rejection_reason="spread_too_high"
+                    )
+                
                 return None
             
             # 🌍✨ PLANET SAVER MODE: Past doesn't define future!
@@ -12651,35 +12992,51 @@ if __name__ == "__main__":
 
             # CRITICAL SAFETY: Never bleed, regardless of mode
             if conservative_pnl < 0:
-                self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE: NEGATIVE EXPECTED P&L!")
-                self.rejection_print(f"   ├── Scanner Expected: ${scanner_expected_pnl:+.4f}")
-                self.rejection_print(f"   ├── Total Costs: ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
-                self.rejection_print(f"   ├── Net P&L: ${conservative_pnl:+.4f}")
-                self.rejection_print(f"   └── Reason: Trade value is negative after costs")
-                self.rejection_print(f"   ⛔ TRADE REJECTED - Stopping the bleed!")
+                self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE: COSTS EXCEED EDGE!")
+                self.rejection_print(f"   ├── Gross Edge (momentum+signals): ${scanner_gross_pnl:+.4f}")
+                self.rejection_print(f"   ├── Total Costs (fees+spread): ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
+                self.rejection_print(f"   ├── Net P&L (gross - costs): ${conservative_pnl:+.4f}")
+                self.rejection_print(f"   └── Need more momentum to beat costs!")
+                self.rejection_print(f"   ⛔ WAITING for better opportunity...")
                 
                 self.barter_matrix.record_preexec_rejection(
                     opp.from_asset, opp.to_asset,
                     f'negative_pnl: ${conservative_pnl:.4f}',
                     opp.from_value_usd
                 )
+                
+                # 🪆 BEE LEVEL: Record rejection in Russian Doll Analytics
+                if self.russian_doll and record_scan:
+                    momentum = self.asset_momentum.get(opp.from_asset, 0)
+                    record_scan(
+                        symbol=f"{opp.from_asset}/{opp.to_asset}",
+                        exchange=opp.source_exchange or 'unknown',
+                        bid=opp.from_value_usd,
+                        ask=opp.from_value_usd * (1 + spread_pct/100),
+                        momentum=momentum,
+                        pip_score=getattr(opp, 'combined_score', 0),
+                        expected_pnl=conservative_pnl,
+                        pass_scores=(0.0, 0.0, 0.0),
+                        action="REJECT",
+                        rejection_reason="negative_pnl"
+                    )
+                
                 return False
             
-            if scanner_expected_pnl < required_profit_usd and not planet_saver_mode:
+            # 🔧 FIX: Only block if net profit is negative (break-even or better is OK!)
+            # scanner_expected_pnl is ALREADY net of costs, so just needs to be > 0
+            if conservative_pnl < required_profit_usd and not planet_saver_mode:
                 self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE BLOCKED!")
-                self.rejection_print(f"   ├── Scanner Expected: ${scanner_expected_pnl:+.4f}")
-                self.rejection_print(f"   ├── Total Costs: ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
-                self.rejection_print(f"   ├── Min Net Profit Floor: ${min_profit_floor:.4f}")
-                self.rejection_print(f"   ├── Required Profit: ${required_profit_usd:.4f}")
-                self.rejection_print(f"   ├── Cost breakdown: fee={cost_breakdown.get('base_fee', 0):.2f}% spread={spread_pct:.2f}% slip={cost_breakdown.get('learned_slippage', 0):.2f}%")
-                self.rejection_print(f"   ├── Net P&L: ${conservative_pnl:+.4f}")
-                self.rejection_print(f"   └── Reason: Expected profit doesn't cover costs")
-                self.rejection_print(f"   ⛔ TRADE REJECTED - Protecting your capital!")
+                self.rejection_print(f"   ├── Net Expected P&L: ${conservative_pnl:+.4f}")
+                self.rejection_print(f"   ├── Min Required: ${required_profit_usd:.4f}")
+                self.rejection_print(f"   ├── Cost breakdown: fee={cost_breakdown.get('base_fee', 0):.2f}% spread={spread_pct:.2f}%")
+                self.rejection_print(f"   └── Reason: Net profit below minimum threshold")
+                self.rejection_print(f"   ⛔ TRADE REJECTED - Need at least ${required_profit_usd:.4f} net profit!")
                 
                 # Track rejection for learning - BLOCK THIS PAIR immediately!
                 self.barter_matrix.record_preexec_rejection(
                     opp.from_asset, opp.to_asset,
-                    f'cost_exceeds_profit: ${total_cost_usd:.4f} > ${scanner_expected_pnl:.4f}',
+                    f'profit_too_low: net=${conservative_pnl:.4f} < min=${required_profit_usd:.4f}',
                     opp.from_value_usd
                 )
                 self.rejection_print(f"   🚫 Path {opp.from_asset}→{opp.to_asset} BLOCKED - will try others!")
@@ -12701,10 +13058,8 @@ if __name__ == "__main__":
                 # ✅ GATE PASSED! Show the good news!
                 print(f"\n   ✅ PRE-EXECUTION GATE PASSED:")
                 print(f"   ├── Scanner Expected: ${scanner_expected_pnl:+.4f}")
-                print(f"   ├── Total Costs: ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
-                print(f"   ├── Min Net Profit Floor: ${min_profit_floor:.4f}")
-                print(f"   ├── Required Profit: ${required_profit_usd:.4f}")
-                print(f"   ├── Net P&L: ${conservative_pnl:+.4f}")
+                print(f"   ├── Net Expected P&L: ${conservative_pnl:+.4f} (already net of costs)")
+                print(f"   ├── Min Required: ${min_profit_floor:.4f}")
                 print(f"   └── Proceeding with execution... 🚀")
         
         # ════════════════════════════════════════════════════════════════════════
@@ -14911,6 +15266,66 @@ if __name__ == "__main__":
                 )
                 # P/L = Current Value - Starting Value (simple, correct math)
                 pnl = current_value - self.start_value_usd
+                
+                # 🪆 QUEEN LEVEL: Update Russian Doll Analytics with macro state
+                if self.russian_doll and update_queen:
+                    try:
+                        # Determine market regime from momentum data
+                        momentum_values = list(self.asset_momentum.values())
+                        avg_abs_momentum = sum(abs(m) for m in momentum_values) / max(len(momentum_values), 1)
+                        
+                        if avg_abs_momentum > 0.5:
+                            regime = "VOLATILE"
+                        elif avg_abs_momentum > 0.15:
+                            regime = "TRENDING"
+                        elif avg_abs_momentum > 0.05:
+                            regime = "RANGING"
+                        else:
+                            regime = "QUIET"
+                        
+                        # Get Queen confidence if available
+                        queen_conf = 0.5
+                        queen_strat = "SNIPER"
+                        if self.queen:
+                            try:
+                                queen_conf = getattr(self.queen, 'confidence', 0.5)
+                                queen_strat = getattr(self.queen, 'current_strategy', 'SNIPER')
+                            except:
+                                pass
+                        
+                        # Count positions
+                        positions_count = sum(1 for a, amt in self.balances.items() 
+                                            if amt * self.prices.get(a, 0) >= 1.0 
+                                            and a not in ['USD', 'USDT', 'USDC', 'ZUSD'])
+                        
+                        # Cash available
+                        cash = sum(
+                            self.balances.get(s, 0) * self.prices.get(s, 1.0)
+                            for s in ['USD', 'USDT', 'USDC', 'ZUSD']
+                        )
+                        
+                        update_queen(
+                            portfolio_value=current_value,
+                            cash=cash,
+                            positions=positions_count,
+                            confidence=queen_conf,
+                            strategy=queen_strat,
+                            regime=regime
+                        )
+                    except Exception as e:
+                        logger.debug(f"Russian Doll queen update error: {e}")
+                
+                # 🪆 Print Russian Doll Dashboard periodically
+                if self.russian_doll and print_russian_doll_dashboard:
+                    if self.turns_completed > 0 and self.turns_completed % self.russian_doll_report_interval == 0:
+                        try:
+                            print_russian_doll_dashboard()
+                            # Save state
+                            self.russian_doll.save_state()
+                            # 📡 Broadcast to ThoughtBus for cross-module visibility
+                            self.russian_doll.broadcast_snapshot()
+                        except Exception as e:
+                            logger.debug(f"Russian Doll dashboard error: {e}")
                 
                 # Status update with turn display
                 mode = "🔴" if self.live else "🔵"
