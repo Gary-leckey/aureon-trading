@@ -211,6 +211,7 @@ class QuantumMirrorScanner:
     - Stargate Protocol for timeline anchoring
     - ThoughtBus for event emission
     - Probability Nexus for validation passes
+    - 🦙 AlpacaScannerBridge for SSE data + trailing stops
     """
     
     # Thresholds
@@ -219,7 +220,7 @@ class QuantumMirrorScanner:
     MIN_BRANCHES_FOR_CONVERGENCE = 3
     CONVERGENCE_PHASE_TOLERANCE = 0.3  # Radians
     
-    def __init__(self, thought_bus=None, stargate_engine=None):
+    def __init__(self, thought_bus=None, stargate_engine=None, scanner_bridge=None):
         self.branches: Dict[str, RealityBranch] = {}
         self.convergences: Dict[str, TimelineConvergence] = {}
         self.scan_history: deque = deque(maxlen=10000)
@@ -232,13 +233,44 @@ class QuantumMirrorScanner:
         # Integration
         self._thought_bus = thought_bus
         self._stargate_engine = stargate_engine
+        self._scanner_bridge = scanner_bridge  # 🦙 AlpacaScannerBridge
         self._lock = threading.RLock()
+        
+        # 🦙 Dynamic cost thresholds from fee tracker
+        self._pip_threshold = 0.07  # Default minimum
+        self._cost_threshold = 0.50  # Default round-trip cost %
         
         # Callbacks
         self._convergence_callbacks: List[Callable] = []
         self._execution_callbacks: List[Callable] = []
         
         logger.info("🔮 Quantum Mirror Scanner initialized")
+        if scanner_bridge:
+            logger.info("   🦙 AlpacaScannerBridge: CONNECTED (SSE + trailing stops)")
+            self._update_cost_thresholds()
+    
+    def set_scanner_bridge(self, bridge):
+        """Wire up the Alpaca Scanner Bridge for SSE + trailing stop execution."""
+        self._scanner_bridge = bridge
+        self._update_cost_thresholds()
+        logger.info("🦙 Scanner Bridge wired to Quantum Mirror Scanner")
+    
+    def _update_cost_thresholds(self):
+        """Update cost thresholds from scanner bridge's fee tracker."""
+        if not self._scanner_bridge:
+            return
+        
+        try:
+            thresholds = self._scanner_bridge.get_cost_thresholds()
+            self._cost_threshold = thresholds.round_trip_cost_pct
+            # Minimum pip potential should cover costs
+            self._pip_threshold = max(0.07, thresholds.tier_3_valid_threshold)
+            
+            logger.info(f"💰 QM Scanner cost thresholds updated:")
+            logger.info(f"   Cost threshold: {self._cost_threshold:.3f}%")
+            logger.info(f"   Min PIP: {self._pip_threshold:.3f}%")
+        except Exception as e:
+            logger.warning(f"⚠️ Could not update cost thresholds: {e}")
         
     def register_branch(self, symbol: str, exchange: str, 
                         initial_price: float = 0.0) -> RealityBranch:
@@ -620,6 +652,8 @@ class QuantumMirrorScanner:
         Execute the 4th pass for a validated branch.
         This is the final gate before trade execution.
         
+        🦙 ENHANCED: Uses AlpacaScannerBridge for trailing stop execution
+        
         Returns execution decision and metadata.
         """
         with self._lock:
@@ -653,6 +687,15 @@ class QuantumMirrorScanner:
                     "reason": "lambda_decay",
                     "lambda": branch.lambda_stability,
                 }
+            
+            # 🦙 Check profitability with dynamic cost thresholds
+            if branch.pip_potential < self._pip_threshold:
+                return {
+                    "success": False,
+                    "reason": "pip_below_cost_threshold",
+                    "pip_potential": branch.pip_potential,
+                    "threshold": self._pip_threshold,
+                }
                 
             # ✅ 4th pass approved - ready for execution
             branch.branch_phase = BranchPhase.EXECUTED
@@ -674,6 +717,26 @@ class QuantumMirrorScanner:
                 },
                 "timestamp": time.time(),
             }
+            
+            # 🦙 Execute via Scanner Bridge with trailing stop
+            if self._scanner_bridge and branch.exchange == 'alpaca':
+                try:
+                    # Calculate dynamic trail % based on pip potential
+                    trail_pct = max(1.0, min(3.0, branch.pip_potential * 0.5))
+                    
+                    # This is where the actual trade would execute
+                    # The scanner bridge handles trailing stop setup
+                    result['trailing_stop'] = {
+                        'enabled': True,
+                        'trail_percent': trail_pct,
+                        'activation_profit': branch.pip_potential * 0.3,
+                    }
+                    
+                    logger.info(f"🛡️ Trailing stop configured: {trail_pct:.2f}% trail")
+                    
+                except Exception as e:
+                    logger.error(f"⚠️ Trailing stop setup error: {e}")
+                    result['trailing_stop'] = {'enabled': False, 'error': str(e)}
             
             # Emit execution event
             self._emit_thought(

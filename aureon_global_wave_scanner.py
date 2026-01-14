@@ -154,6 +154,11 @@ class GlobalWaveScanner:
     Full A-Z, Z-A coverage of the entire global market.
     Analyzes wave patterns and allocates attention to best opportunities.
     Deep dives into live candles for execution signals.
+    
+    🦙 ALPACA SSE INTEGRATION:
+    - Real-time tickers via SSE streaming
+    - Dynamic fee-tier cost thresholds
+    - Trailing stop execution on 4th-pass trades
     """
     
     def __init__(
@@ -163,12 +168,23 @@ class GlobalWaveScanner:
         alpaca_client=None,
         queen=None,
         harmonic_fusion=None,
+        scanner_bridge=None,  # 🦙 New: AlpacaScannerBridge integration
     ):
         self.kraken = kraken_client
         self.binance = binance_client
         self.alpaca = alpaca_client
         self.queen = queen
         self.harmonic = harmonic_fusion
+        
+        # 🦙 ALPACA SCANNER BRIDGE (SSE + Fee Tracker + Trailing Stops)
+        self.scanner_bridge = scanner_bridge
+        self._use_sse_tickers = scanner_bridge is not None
+        
+        # Dynamic cost thresholds (updated from fee tracker)
+        self._dynamic_round_trip_cost = ROUND_TRIP_COST_PCT
+        self._dynamic_tier_1 = TIER_1_THRESHOLD
+        self._dynamic_tier_2 = TIER_2_THRESHOLD
+        self._dynamic_tier_3 = TIER_3_THRESHOLD
         
         # Full universe of symbols per exchange
         self.universe: Dict[str, Set[str]] = {
@@ -207,7 +223,38 @@ class GlobalWaveScanner:
         # Scan batches (A-Z sweeps)
         self.batches: List[ScanBatch] = []
         
+        # 🦙 Update cost thresholds from scanner bridge
+        if self.scanner_bridge:
+            self._update_cost_thresholds_from_bridge()
+        
         logger.info("🌊🔭 Global Wave Scanner initialized")
+        if self.scanner_bridge:
+            logger.info("   🦙 SSE Bridge: ENABLED (real-time tickers + dynamic fees)")
+    
+    def set_scanner_bridge(self, bridge):
+        """Wire up the Alpaca Scanner Bridge for SSE + fee tracking."""
+        self.scanner_bridge = bridge
+        self._use_sse_tickers = True
+        self._update_cost_thresholds_from_bridge()
+        logger.info("🦙 Scanner Bridge wired to Global Wave Scanner")
+    
+    def _update_cost_thresholds_from_bridge(self):
+        """Update cost thresholds from scanner bridge's fee tracker."""
+        if not self.scanner_bridge:
+            return
+        
+        try:
+            thresholds = self.scanner_bridge.get_cost_thresholds()
+            self._dynamic_round_trip_cost = thresholds.round_trip_cost_pct
+            self._dynamic_tier_1 = thresholds.tier_1_hot_threshold
+            self._dynamic_tier_2 = thresholds.tier_2_strong_threshold
+            self._dynamic_tier_3 = thresholds.tier_3_valid_threshold
+            
+            logger.info(f"💰 Cost thresholds updated from Tier {thresholds.tier}:")
+            logger.info(f"   Round-trip: {self._dynamic_round_trip_cost:.3f}%")
+            logger.info(f"   HOT: >{self._dynamic_tier_1:.3f}% | STRONG: >{self._dynamic_tier_2:.3f}%")
+        except Exception as e:
+            logger.warning(f"⚠️ Could not update cost thresholds: {e}")
     
     async def build_universe(self):
         """
@@ -270,12 +317,40 @@ class GlobalWaveScanner:
         self.sorted_symbols_az = sorted(all_symbols, key=lambda x: x[0].upper())
         self.sorted_symbols_za = list(reversed(self.sorted_symbols_az))
         
+        # 🦙 Start SSE streaming for Alpaca symbols if bridge available
+        if self.scanner_bridge and self.universe['alpaca']:
+            alpaca_symbols = list(self.universe['alpaca'])
+            logger.info(f"   📡 Starting SSE stream for {len(alpaca_symbols)} Alpaca symbols...")
+            self.scanner_bridge.start_streaming(crypto_symbols=alpaca_symbols[:50])  # Limit to 50 for SSE
+        
         total = len(all_symbols)
         logger.info(f"🌍 Universe built: {total} total symbols (A-Z sorted)")
         logger.info(f"   📊 First: {self.sorted_symbols_az[0][0] if self.sorted_symbols_az else 'N/A'}")
         logger.info(f"   📊 Last: {self.sorted_symbols_az[-1][0] if self.sorted_symbols_az else 'N/A'}")
         
         return total
+    
+    def _get_ticker_from_bridge(self, symbol: str) -> Optional[Dict]:
+        """
+        🦙 Get ticker data from SSE bridge (real-time) if available.
+        Falls back to REST if SSE data is stale or unavailable.
+        """
+        if not self.scanner_bridge:
+            return None
+        
+        try:
+            ticker = self.scanner_bridge.get_ticker(symbol)
+            if ticker and ticker.get('source') == 'sse':
+                # Enhance with 1m/5m momentum from SSE
+                if 'change_1m' in ticker:
+                    # Check if move is profitable using dynamic thresholds
+                    is_profitable, tier = self.scanner_bridge.is_move_profitable(abs(ticker.get('change_1m', 0)))
+                    ticker['is_profitable'] = is_profitable
+                    ticker['profit_tier'] = tier
+            return ticker
+        except Exception as e:
+            logger.debug(f"SSE ticker fetch error for {symbol}: {e}")
+            return None
     
     async def full_az_sweep(self, ticker_cache: Dict[str, Dict] = None) -> List[ScanBatch]:
         """
@@ -411,15 +486,23 @@ class GlobalWaveScanner:
     ) -> Optional[WaveAnalysis]:
         """
         Analyze wave state for a single symbol.
+        
+        🦙 SSE INTEGRATION: Uses real-time data from SSE bridge when available
         """
         try:
             # Get ticker data
             ticker = None
-            if ticker_cache:
+            
+            # 🦙 PRIORITY 1: SSE Bridge (real-time, lowest latency)
+            if self._use_sse_tickers and exchange == 'alpaca':
+                ticker = self._get_ticker_from_bridge(symbol)
+            
+            # PRIORITY 2: Provided cache
+            if not ticker and ticker_cache:
                 ticker = ticker_cache.get(symbol)
             
+            # PRIORITY 3: Fetch fresh from exchange
             if not ticker:
-                # Try to fetch fresh
                 ticker = await self._fetch_ticker(symbol, exchange)
             
             if not ticker:
@@ -430,6 +513,10 @@ class GlobalWaveScanner:
             change_24h = float(ticker.get('change24h', ticker.get('priceChangePercent', 0)) or 0)
             volume_24h = float(ticker.get('volume', ticker.get('quoteVolume', 0)) or 0)
             
+            # 🦙 Extract SSE-specific momentum data
+            change_1m = float(ticker.get('change_1m', 0) or 0)
+            change_5m = float(ticker.get('change_5m', 0) or 0)
+            
             if price <= 0:
                 return None
             
@@ -438,12 +525,18 @@ class GlobalWaveScanner:
             if not base:
                 return None
             
-            # Calculate wave state
+            # Classify wave using DYNAMIC thresholds
             wave_state, wave_strength = self._classify_wave(change_24h, volume_24h, ticker)
             
             # Calculate scores
             jump_score = self._calculate_jump_score(wave_state, wave_strength, change_24h, volume_24h)
             exit_score = self._calculate_exit_score(wave_state, wave_strength, change_24h)
+            
+            # 🦙 BOOST score if SSE shows profitable 1m/5m move
+            if ticker.get('is_profitable') and ticker.get('profit_tier') == 'HOT':
+                jump_score = min(1.0, jump_score * 1.3)  # 30% boost for HOT moves
+            elif ticker.get('profit_tier') == 'STRONG':
+                jump_score = min(1.0, jump_score * 1.15)  # 15% boost for STRONG moves
             
             # Determine action
             action, reason = self._determine_action(wave_state, jump_score, exit_score)
@@ -455,6 +548,8 @@ class GlobalWaveScanner:
                 quote=quote,
                 timestamp=time.time(),
                 price=price,
+                change_1m=change_1m,  # 🦙 SSE momentum
+                change_5m=change_5m,  # 🦙 SSE momentum
                 change_24h=change_24h,
                 volume_24h=volume_24h,
                 wave_state=wave_state,
@@ -479,7 +574,7 @@ class GlobalWaveScanner:
         Classify the wave state based on momentum and volume.
         
         💸 THE GOAL: Only flag as actionable if momentum > cost threshold!
-        We need > 0.34% move to cover trading costs.
+        🦙 Now uses DYNAMIC thresholds from fee tracker tier.
         """
         
         # Extract additional data if available
@@ -487,17 +582,35 @@ class GlobalWaveScanner:
         low = float(ticker.get('low', ticker.get('lowPrice', 0)) or 0)
         price = float(ticker.get('price', ticker.get('lastPrice', 0)) or 0)
         
+        # 🦙 Get short-term momentum from SSE if available
+        change_1m = float(ticker.get('change_1m', 0) or 0)
+        change_5m = float(ticker.get('change_5m', 0) or 0)
+        
         # Calculate position in range
         range_size = high - low if high > low else 1
         range_position = (price - low) / range_size if range_size > 0 else 0.5
         
         # ═══════════════════════════════════════════════════════════════════
-        # 💸 COST-AWARE CLASSIFICATION (THE GOAL!)
-        # For 24h change, we need much bigger moves because this is long timeframe
-        # For micro-scalping, these thresholds scale down
+        # 💸 DYNAMIC COST-AWARE CLASSIFICATION (THE GOAL!)
+        # Uses thresholds from fee tracker: lower tier = need bigger moves
         # ═══════════════════════════════════════════════════════════════════
         
-        # Strong upward momentum - BREAKOUT
+        # 🦙 MICRO-SCALPING: Check 1m/5m momentum with dynamic thresholds
+        if change_1m != 0:
+            if abs(change_1m) >= self._dynamic_tier_1:
+                if change_1m > 0:
+                    return WaveState.BREAKOUT_UP, min(1.0, abs(change_1m) / 2)
+                else:
+                    return WaveState.BREAKOUT_DOWN, min(1.0, abs(change_1m) / 2)
+        
+        if change_5m != 0:
+            if abs(change_5m) >= self._dynamic_tier_2:
+                if change_5m > 0:
+                    return WaveState.RISING, min(1.0, abs(change_5m) / 3)
+                else:
+                    return WaveState.FALLING, min(1.0, abs(change_5m) / 3)
+        
+        # Strong upward momentum - BREAKOUT (24h scale)
         if change_24h > 10:
             return WaveState.BREAKOUT_UP, min(1.0, change_24h / 20)
         elif change_24h > 3:
