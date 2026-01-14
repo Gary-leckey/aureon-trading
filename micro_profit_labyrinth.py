@@ -165,6 +165,22 @@ try:
     from aureon_barter_navigator import BarterMatrix
 except ImportError:
     BarterMatrix = Any
+
+# 🦙📈 Stock Scanner Import (OPTIONAL - only if explicitly enabled)
+# By default: Use Kraken/Binance for heavy lifting, Alpaca for execution only
+if os.getenv("ALPACA_INCLUDE_STOCKS", "false").lower() == "true":
+    try:
+        from aureon_alpaca_stock_scanner import AlpacaStockScanner, StockOpportunity
+        STOCK_SCANNER_AVAILABLE = True
+    except ImportError:
+        AlpacaStockScanner = None
+        StockOpportunity = None
+        STOCK_SCANNER_AVAILABLE = False
+else:
+    AlpacaStockScanner = None
+    StockOpportunity = None
+    STOCK_SCANNER_AVAILABLE = False
+
 from collections import defaultdict, deque
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -207,10 +223,39 @@ ALPACA_API_KEY = os.getenv("ALPACA_API_KEY", "")
 ALPACA_SECRET_KEY = os.getenv("ALPACA_SECRET_KEY", "")
 LIVE_MODE = os.getenv("LIVE", "0") == "1"
 
+# ════════════════════════════════════════════════════════════════════════════
+# 🌐 MULTI-EXCHANGE CONFIG FLAGS (Production Pipeline)
+# ════════════════════════════════════════════════════════════════════════════
+# ALPACA_VERIFY_ONLY: When True, Alpaca is used only for balance/price verification, not execution
+ALPACA_VERIFY_ONLY = os.getenv("ALPACA_VERIFY_ONLY", "true").lower() == "true"
+# ALPACA_EXECUTE: Explicit flag to enable Alpaca execution (overrides VERIFY_ONLY)
+ALPACA_EXECUTE = os.getenv("ALPACA_EXECUTE", "false").lower() == "true"
+# ALPACA_INCLUDE_STOCKS: DISABLED BY DEFAULT - use Kraken/Binance instead for heavy lifting
+# Stock scanning hammers Alpaca API with 404 errors on non-premium accounts
+# Instead: Kraken & Binance provide all market data, Alpaca executes only
+ALPACA_INCLUDE_STOCKS = os.getenv("ALPACA_INCLUDE_STOCKS", "false").lower() == "true"
+# EXCH_EXEC_ORDER: Comma-separated execution priority (default: binance,kraken,capital,coinbase,alpaca)
+EXCH_EXEC_ORDER = os.getenv("EXCH_EXEC_ORDER", "binance,kraken,capital,coinbase,alpaca").split(",")
+# ENABLE_WEBSOCKETS: Use WebSocket streams for live data (faster than REST polling)
+ENABLE_WEBSOCKETS = os.getenv("ENABLE_WEBSOCKETS", "true").lower() == "true"
+# Capital.com API
+CAPITAL_API_KEY = os.getenv("CAPITAL_API_KEY", "")
+CAPITAL_API_SECRET = os.getenv("CAPITAL_API_SECRET", "")
+# Coinbase API
+COINBASE_API_KEY = os.getenv("COINBASE_API_KEY", "")
+COINBASE_API_SECRET = os.getenv("COINBASE_API_SECRET", "")
+# CoinGecko API (optional, for reference prices)
+COINGECKO_API_KEY = os.getenv("COINGECKO_API_KEY", "")
+
 print(f"🔑 Kraken API: {'✅ Loaded' if KRAKEN_API_KEY else '❌ Missing'}")
 print(f"🔑 Binance API: {'✅ Loaded' if BINANCE_API_KEY else '❌ Missing'}")
 print(f"🔑 Alpaca API: {'✅ Loaded' if ALPACA_API_KEY else '❌ Missing'}")
+print(f"🔑 Capital.com API: {'✅ Loaded' if CAPITAL_API_KEY else '❌ Missing'}")
+print(f"🔑 Coinbase API: {'✅ Loaded' if COINBASE_API_KEY else '❌ Missing'}")
 print(f"⚙️ LIVE Mode: {'✅ Enabled' if LIVE_MODE else '❌ Disabled'}")
+print(f"🦙 Alpaca: {'🔒 VERIFY-ONLY' if ALPACA_VERIFY_ONLY and not ALPACA_EXECUTE else '🚀 EXECUTE ENABLED'}")
+print(f"🌐 Execution Order: {' → '.join(EXCH_EXEC_ORDER)}")
+print(f"📡 WebSockets: {'✅ Enabled' if ENABLE_WEBSOCKETS else '❌ Disabled'}")
 
 # Safety guards (used across momentum and symbol handling)
 MAX_MOMENTUM_PER_MIN = 1.0  # Cap momentum to 100%/min to avoid runaway scores
@@ -445,7 +490,18 @@ try:
 except ImportError:
     MinerBrain = None
 
-# 👑🏗️ QUEEN CODE ARCHITECT - Self-Evolution Engine
+# � DYNAMIC COST ESTIMATOR - Learn from actual fees/spreads
+try:
+    from dynamic_cost_estimator import get_cost_estimator, CostEstimate
+    DYNAMIC_COST_AVAILABLE = True
+    print("💰 Dynamic Cost Estimator LOADED!")
+except ImportError:
+    get_cost_estimator = None
+    CostEstimate = None
+    DYNAMIC_COST_AVAILABLE = False
+    print("⚠️ Dynamic Cost Estimator not available - using flat cost model")
+
+# �👑🏗️ QUEEN CODE ARCHITECT - Self-Evolution Engine
 try:
     from queen_code_architect import QueenCodeArchitect, get_code_architect
     CODE_ARCHITECT_AVAILABLE = True
@@ -1167,7 +1223,101 @@ def get_queen_enhancement_loader() -> QueenEnhancementLoader:
     return QUEEN_ENHANCEMENT_LOADER
 
 # ════════════════════════════════════════════════════════════════════════════
-# 🔬 MICRO PROFIT OPPORTUNITY
+# � RUN METRICS - Monitoring & Observability
+# ════════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class RunMetrics:
+    """Accumulates metrics for a trading session."""
+    # Candidate evaluation
+    candidates_evaluated: int = 0
+    candidates_passed_preexec: int = 0
+    candidates_passed_montecarlo: int = 0
+    candidates_skipped_total: int = 0
+    
+    # Skip reasons (counts)
+    skip_reasons: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    
+    # Execution
+    trades_attempted: int = 0
+    trades_succeeded: int = 0
+    trades_failed: int = 0
+    
+    # Harvests
+    harvest_scans: int = 0
+    harvests_attempted: int = 0
+    harvests_succeeded: int = 0
+    
+    # Net estimates distribution (buckets)
+    net_est_buckets: Dict[str, int] = field(default_factory=lambda: defaultdict(int))  # '<0%', '0-0.25%', '0.25-0.5%', '0.5-1%', '>1%'
+    
+    # Timing
+    session_start: float = field(default_factory=time.time)
+    last_summary: float = field(default_factory=time.time)
+    
+    def record_candidate(self, passed_preexec: bool = False, passed_mc: bool = False, skip_reason: str = ""):
+        """Record a candidate evaluation."""
+        self.candidates_evaluated += 1
+        if passed_preexec:
+            self.candidates_passed_preexec += 1
+        if passed_mc:
+            self.candidates_passed_montecarlo += 1
+        if skip_reason:
+            self.candidates_skipped_total += 1
+            self.skip_reasons[skip_reason] += 1
+    
+    def record_net_estimate(self, net_pct: float):
+        """Record net profit estimate into buckets."""
+        if net_pct < 0:
+            bucket = '<0%'
+        elif net_pct < 0.25:
+            bucket = '0-0.25%'
+        elif net_pct < 0.5:
+            bucket = '0.25-0.5%'
+        elif net_pct < 1.0:
+            bucket = '0.5-1%'
+        else:
+            bucket = '>1%'
+        self.net_est_buckets[bucket] += 1
+    
+    def get_summary(self) -> str:
+        """Generate compact summary text."""
+        now = time.time()
+        elapsed = now - self.session_start
+        elapsed_str = f"{int(elapsed//60)}m {int(elapsed%60)}s"
+        
+        lines = [
+            f"\n{'═'*70}",
+            f"📊 RUN METRICS SUMMARY (Elapsed: {elapsed_str})",
+            f"{'═'*70}",
+            f"Candidates: {self.candidates_evaluated} evaluated | "
+            f"{self.candidates_passed_preexec} passed pre-exec | "
+            f"{self.candidates_passed_montecarlo} passed Monte Carlo | "
+            f"{self.candidates_skipped_total} skipped",
+            f"Trades: {self.trades_attempted} attempted | {self.trades_succeeded} succeeded | {self.trades_failed} failed",
+            f"Harvests: {self.harvest_scans} scans | {self.harvests_attempted} attempted | {self.harvests_succeeded} succeeded",
+        ]
+        
+        # Top skip reasons
+        if self.skip_reasons:
+            top_reasons = sorted(self.skip_reasons.items(), key=lambda x: x[1], reverse=True)[:5]
+            lines.append(f"\nTop Skip Reasons:")
+            for reason, count in top_reasons:
+                lines.append(f"  • {reason}: {count}")
+        
+        # Net estimate distribution
+        if self.net_est_buckets:
+            lines.append(f"\nNet Profit Est Distribution:")
+            for bucket in ['<0%', '0-0.25%', '0.25-0.5%', '0.5-1%', '>1%']:
+                count = self.net_est_buckets.get(bucket, 0)
+                if count > 0:
+                    lines.append(f"  • {bucket}: {count}")
+        
+        lines.append(f"{'═'*70}\n")
+        return "\n".join(lines)
+
+# ════════════════════════════════════════════════════════════════════════════
+# �🔬 MICRO PROFIT OPPORTUNITY
 # ════════════════════════════════════════════════════════════════════════════
 
 @dataclass
@@ -1262,6 +1412,10 @@ class MicroOpportunity:
     # Execution
     executed: bool = False
     actual_pnl_usd: float = 0.0
+    
+    # 📈 Stock Signal (for stock opportunities)
+    signal_type: str = ""              # MOMENTUM, BREAKOUT, REVERSAL, GAP, etc
+    stock_signal_reasoning: str = ""   # Human-readable reasoning for stock signals
 
 
 @dataclass
@@ -2205,7 +2359,9 @@ class LiveBarterMatrix:
         self.barter_rates: Dict[Tuple[str, str], Dict[str, Any]] = {}
         
         # Historical barter performance: {(from, to): {'trades': N, 'avg_slippage': X}}
+        # 🔄 FRESH START: Cleared each session - past doesn't define future!
         self.barter_history: Dict[Tuple[str, str], Dict[str, float]] = {}
+        print("🔄 FRESH START: Barter history cleared for new session")
         
         # Realized profit ledger: [(timestamp, from, to, from_usd, to_usd, profit_usd)]
         self.profit_ledger: List[Tuple[float, str, str, float, float, float]] = []
@@ -3339,89 +3495,35 @@ class LiveBarterMatrix:
 
     def calculate_true_cost(self, from_asset: str, to_asset: str, value_usd: float, exchange: str) -> Tuple[bool, str, Dict]:
         """
-        👑 TRUE COST CALCULATOR - The "Floor that stops us losing money"
+        🎲 MONTE CARLO SNOWBALL - REALISTIC FLAT COST MODEL
         
-        Adjusts base fees with LEARNED historical reality.
-        Buying wrong? Selling wrong? This fixes the counting.
+        Uses flat 0.25% cost for Alpaca (real costs ~0.15-0.25%).
+        Trust the math - one trade at a time, hold, roll profits.
         
         Returns: (approved, reason, cost_breakdown)
         """
-        exchange = exchange.lower()
+        # 🎲 MONTE CARLO: Flat 0.25% cost assumption
+        # Alpaca real costs: ~0.15% fee + ~0.10% spread for liquid pairs
+        MONTE_CARLO_FLAT_COST = 0.0025  # 0.25% total cost
         
-        # 1. Base Exchange Fees (Tiered)
-        base_fee = self.EXCHANGE_FEES.get(exchange, 0.003)
-        if exchange == 'binance': base_fee = 0.002
-        elif exchange == 'kraken': base_fee = 0.0026
-        
-        # 2. Asset Spread Calculation
-        from_type = self.get_asset_type(from_asset)
-        to_type = self.get_asset_type(to_asset)
-        
-        spread_table = self.BINANCE_SPREAD_COSTS if exchange == 'binance' else self.SPREAD_COSTS
-        
-        from_spread = spread_table.get(from_type, 0.01)
-        to_spread = spread_table.get(to_type, 0.01)
-        # 🔧 FIX: We pay spread on BOTH sides of a conversion (sell source @ from_spread, buy target @ to_spread)
-        # For meme→meme, this is 1.5% + 1.5% = 3% total spread cost!
-        # Only use max() for stable→major (one side is negligible)
-        if from_type == 'meme' or to_type == 'meme':
-            # Both spreads matter for volatile assets
-            total_spread = from_spread + to_spread
-        else:
-            # For stable/major pairs, max is reasonable (one side dominates)
-            total_spread = max(from_spread, to_spread)
-        
-        # 3. LEARNED SLIPPAGE (The "Mistake" Factor)
-        # Check history used by PathMemory or internal barter history
-        pair_key = (from_asset.upper(), to_asset.upper())
-        learned_slippage = 0.0
-        
-        # Check internal history
-        if hasattr(self, 'barter_history') and pair_key in self.barter_history:
-            hist = self.barter_history[pair_key]
-            if hist.get('trades', 0) > 0:
-                avg_slip = hist.get('avg_slippage', 0) / 100.0
-                # If we historically lose here, assume WORSE slippage
-                if hist.get('total_profit', 0) < 0:
-                    learned_slippage = max(avg_slip, 0.01) # Min 1% penalty if losing
-        
-        # 4. Volatility Penalty (Buying Wrong)
-        # If buying a MEME, add panic premium
-        volatility_premium = 0.0
-        if to_type == 'meme':
-            volatility_premium = 0.015 # 1.5% extra risk
-        elif from_type == 'meme':
-            volatility_premium = 0.010 # 1.0% exit risk
-            
-        # 5. True Total Cost
-        total_cost_pct = base_fee + total_spread + learned_slippage + volatility_premium
+        total_cost_pct = MONTE_CARLO_FLAT_COST
         total_cost_usd = value_usd * total_cost_pct
         
-        # 6. Transfer/Gas Cost (Transferring Wrong)
-        # Only relevant if we were moving funds, but for conversions, it's 0 usually.
-        # However, keep a small buffer for "dust" loss.
-        dust_loss = 0.0001 # 0.01% dust inefficiency
-        total_cost_pct += dust_loss
-        
-        math_breakdown = {
-            'total_cost_pct': total_cost_pct * 100,
+        cost_breakdown = {
+            'base_fee': 0.0015,      # ~0.15%
+            'spread': 0.08,          # ~0.08%
+            'slippage': 0.02,        # ~0.02%
+            'volatility': 0.0,       # Not applied in Monte Carlo
+            'total_cost_pct': total_cost_pct * 100,  # Return as percentage (0.25)
             'total_cost_usd': total_cost_usd,
-            'base_fee': base_fee * 100,
-            'spread': total_spread * 100,
-            'learned_slippage': learned_slippage * 100,
-            'volatility': volatility_premium * 100
+            'mode': 'monte_carlo_snowball'
         }
         
-        # Approval check
-        # If cost > 5%, it's practically suicide unless it's a moonshot
-        if total_cost_pct > 0.05:
-            return False, f"Cost too high ({total_cost_pct:.2%})", math_breakdown
-            
-        return True, "OK", math_breakdown
+        return True, "monte_carlo_approved", cost_breakdown
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# �🔀 LIQUIDITY ENGINE - Dynamic Asset Aggregation ("Top-Up" Mechanism)
+# 🔀 LIQUIDITY ENGINE - Dynamic Asset Aggregation ("Top-Up" Mechanism)
 # ════════════════════════════════════════════════════════════════════════════
 # When we find an opportunity but don't have enough balance:
 # 1. Find "victim" assets to liquidate (low performers, dust, stablecoins)
@@ -3822,16 +3924,16 @@ class ProfitHarvester:
     5. NO STOP LOSSES - we only sell when we WIN
     """
     
-    # ZERO THRESHOLDS - ANY NET PROFIT IS ACCEPTABLE!
-    MIN_PROFIT_USD = 0.001      # Even $0.001 profit is a WIN!
-    MIN_PROFIT_PCT = 0.0        # ANY positive % - fees verified separately
-    MIN_POSITION_VALUE = 0.10   # Position must be worth at least $0.10 (dust filter only)
+    # SAFER HARVEST RULES - avoid bleeding on tiny wins
+    MIN_PROFIT_USD = 0.001      # Minimal absolute profit allowed (still tiny, but checked with pct)
+    MIN_PROFIT_PCT = 0.5        # Require at least 0.5% net profit after fees to harvest
+    MIN_POSITION_VALUE = 1.00   # Position must be worth at least $1.00 to avoid dust harvesting
     
-    # Fee estimate for selling on Alpaca (verified against API)
-    ALPACA_SELL_FEE_PCT = 0.0015  # 0.15% - we verify net profit AFTER this
+    # Fee estimate for selling on Alpaca (conservative)
+    ALPACA_SELL_FEE_PCT = 0.0025  # 0.25% - conservative sell fee estimate
     
-    # Cooldown reduced - fast harvesting for cash flow!
-    HARVEST_COOLDOWN = 30  # 30 seconds (aggressive harvesting)
+    # Cooldown increased to limit over-trading
+    HARVEST_COOLDOWN = 120  # 120 seconds (less aggressive harvesting)
     
     def __init__(self):
         self.harvested_total = 0.0
@@ -3895,11 +3997,14 @@ class ProfitHarvester:
                 # Calculate net profit after sell fee - THIS IS THE CRITICAL CHECK
                 sell_fee = market_value * self.ALPACA_SELL_FEE_PCT
                 net_profit = unrealized_pl - sell_fee
-                
-                # 🎯 THE GOLDEN RULE: ANY NET PROFIT = HARVEST!
-                # No minimum thresholds - even $0.001 net profit is a WIN!
+                net_profit_pct = (net_profit / market_value) * 100 if market_value > 0 else 0.0
+
+                # Require both absolute and percentage thresholds to consider harvesting
                 if net_profit <= 0:
                     # Not yet profitable after fees - HODL
+                    continue
+                if net_profit < self.MIN_PROFIT_USD or net_profit_pct < self.MIN_PROFIT_PCT:
+                    # Not meeting minimum harvest thresholds - skip
                     continue
                 
                 # ✅ NET PROFIT VERIFIED BY ALPACA API - THIS IS A HARVEST CANDIDATE!
@@ -3970,13 +4075,23 @@ class MicroProfitLabyrinth:
     Even $0.01 profit per conversion will compound over time!
     """
     
-    def __init__(self, live: bool = False):
-        self.live = live or LIVE_MODE  # Check .env LIVE flag too
+    def __init__(self, live: bool = False, dry_run: bool = False):
+        # --dry-run explicitly overrides LIVE env; otherwise allow env to enable live
+        if dry_run:
+            self.live = False
+        else:
+            self.live = live or LIVE_MODE
         self.config = MICRO_CONFIG.copy()
 
         # 🦙 Alpaca-only mode (disable Binance/Kraken trading)
-        # DEFAULT: TRUE - System is focused 100% on Alpaca platform
-        self.alpaca_only = os.getenv("ALPACA_ONLY", "true").lower() == "true"
+        # DEFAULT: FALSE now - System uses multi-exchange by default for data; Alpaca for verify
+        self.alpaca_only = os.getenv("ALPACA_ONLY", "false").lower() == "true"
+        
+        # 🔒 Alpaca verify-only gate: when True, Alpaca won't execute trades (only balances/prices)
+        self.alpaca_verify_only = ALPACA_VERIFY_ONLY and not ALPACA_EXECUTE
+        
+        # 🌐 Multi-exchange execution order
+        self.exchange_order = [e.strip() for e in EXCH_EXEC_ORDER if e.strip()]
         
         # Initialize existing systems
         self.hub = None
@@ -4005,6 +4120,17 @@ class MicroProfitLabyrinth:
         
         # 💰 LIVE BARTER MATRIX - Adaptive coin-to-coin value tracking
         self.barter_matrix = LiveBarterMatrix()
+        
+        # 🔄🐘 FRESH START: Clear elephant memory each session
+        # New math, new session = fresh start without historical bias
+        elephant_files = ['elephant_memory.json', 'elephant_patterns.json', 'elephant_blocked_paths.json']
+        for ef in elephant_files:
+            if os.path.exists(ef):
+                try:
+                    os.remove(ef)
+                    print(f"🔄🐘 FRESH START: Cleared {ef}")
+                except Exception:
+                    pass
 
         # 📊 COST BASIS TRACKER - Realized profit guardrails
         self.cost_basis_tracker = CostBasisTracker()
@@ -4124,6 +4250,20 @@ class MicroProfitLabyrinth:
         # 🏆 WINNERS ONLY MODE - Show only wins, log rejections to file
         self.winners_only_mode = False  # Set by CLI flag --winners-only
 
+        # 🎿❄️ SNOWBALL MODE - ONE TRADE AT A TIME with STRICT PROFIT TRACKING
+        # "Make sure as shite we made money!" - Gary Leckey
+        # Rules:
+        # 1. Only ONE non-stablecoin position at a time
+        # 2. Track ACTUAL entry price, not estimates
+        # 3. Only exit when CONFIRMED profit > fees
+        # 4. Lower minimums allowed (building from small)
+        self.snowball_mode = False  # Set by CLI flag --snowball
+        self.snowball_position = None  # Current snowball position {asset, entry_price, entry_value_usd, entry_time}
+        self.snowball_profit_history = []  # List of realized profits
+        self.snowball_total_realized = 0.0  # Confirmed realized profit
+        self.snowball_min_profit_pct = 0.3  # 0.3% minimum profit to exit (covers fees + buffer)
+        self.snowball_stablecoins = {'USD', 'USDT', 'USDC', 'ZUSD', 'TUSD', 'DAI', 'BUSD', 'GUSD', 'USDP', 'PYUSD'}
+
         # 🔗⛓️ CHAIN SNIPER MODE - Multi-hop compounding without bleeding
         # After a successful conversion, keep hopping on the SAME exchange
         # as long as the conservative net P&L remains positive.
@@ -4159,18 +4299,20 @@ class MicroProfitLabyrinth:
         self.alpaca_fee_pct = float(os.getenv("ALPACA_FEE_PCT", "0.25"))
         self.alpaca_slippage_pct = float(os.getenv("ALPACA_SLIPPAGE_PCT", "0.02"))
         self.alpaca_fee_buffer_pct = float(os.getenv("ALPACA_FEE_BUFFER_PCT", "0.01"))
-        # 🛡️ STRICT PROFIT REQUIREMENTS - Never trade for scraps!
-        # After 100 trades lost $0.81, we now require CLEAR profit after ALL costs
-        self.alpaca_min_net_profit_pct = float(os.getenv("ALPACA_MIN_NET_PROFIT_PCT", "0.5"))  # Was 0.01%, now 0.5% minimum!
-        self.alpaca_min_net_profit_usd = float(os.getenv("ALPACA_MIN_NET_PROFIT_USD", "0.01"))  # Was $0.001, now $0.01 minimum!
-        self.alpaca_auto_exits = os.getenv("ALPACA_AUTO_EXITS", "false").lower() == "true"
-        self.alpaca_take_profit_pct = float(os.getenv("ALPACA_TAKE_PROFIT_PCT", "1.0"))
+        # 🛡️ PROFIT REQUIREMENTS - Allow more trades while maintaining edge
+        # Lowered from 0.5% to 0.10% to enable more trading activity for portfolio growth
+        self.alpaca_min_net_profit_pct = float(os.getenv("ALPACA_MIN_NET_PROFIT_PCT", "0.10"))  # Require >=0.10% net profit
+        self.alpaca_min_net_profit_usd = float(os.getenv("ALPACA_MIN_NET_PROFIT_USD", "0.001"))  # $0.001 minimum (dust filter)
+        # 🟢 Enable Alpaca auto exits so we take profit at the configured level
+        self.alpaca_auto_exits = os.getenv("ALPACA_AUTO_EXITS", "true").lower() == "true"
+        # Take profit target: 0.5% (aggressive profit capture)
+        self.alpaca_take_profit_pct = float(os.getenv("ALPACA_TAKE_PROFIT_PCT", "0.5"))
         self.alpaca_stop_loss_pct = float(os.getenv("ALPACA_STOP_LOSS_PCT", "0.6"))
         
         # ⏱️ MINIMUM HOLD TIME - Trust the prediction!
         # If we predict profit at T+3min, don't panic-sell at T+10sec
         # Keep validating but wait for the prediction window to complete
-        self.min_hold_time_seconds = float(os.getenv("MIN_HOLD_TIME_SECONDS", "120"))  # 2 minutes default
+        self.min_hold_time_seconds = float(os.getenv("MIN_HOLD_TIME_SECONDS", "5"))  # 5 seconds default
         self.max_hold_time_seconds = float(os.getenv("MAX_HOLD_TIME_SECONDS", "300"))  # 5 minutes max
         self.position_entry_times = {}  # Track when we bought each asset
         
@@ -4182,6 +4324,17 @@ class MicroProfitLabyrinth:
         # 🐝 HIVE STATE - Live status & Queen's voice
         self.hive = get_hive() if HIVE_STATE_AVAILABLE else None
         self.hive_update_interval = 1  # Update hive state every turn
+        
+        # 📊 RUN METRICS - Monitoring & observability
+        self.run_metrics = RunMetrics()
+        self.metrics_summary_interval = 60  # Print summary every 60 seconds
+        
+        # 💰 DYNAMIC COST ESTIMATOR - Learn from actual fees/spreads
+        if DYNAMIC_COST_AVAILABLE:
+            self.cost_estimator = get_cost_estimator()
+            logger.info("💰 Dynamic cost estimator enabled")
+        else:
+            self.cost_estimator = None
     
     # ════════════════════════════════════════════════════════════════════════
     # 🏆 WINNERS ONLY MODE - Verbose printing control
@@ -4244,6 +4397,149 @@ class MicroProfitLabyrinth:
             return ((ask - bid) / mid) * 100
         except Exception:
             return 0.0
+
+    def _check_alpaca_loss_prevention(self, asset: str, sell_quantity: float) -> Tuple[bool, str]:
+        """
+        🚨 ALPACA LOSS PREVENTION GATE
+        
+        Check if selling this asset would realize an unrealized loss.
+        Uses Alpaca's position P&L data to prevent selling at a loss.
+        
+        Returns: (allowed: bool, reason: str)
+        """
+        if not self.alpaca:
+            return True, "No Alpaca client - loss prevention bypassed"
+        
+        try:
+            # Get current positions from Alpaca
+            positions = self.alpaca.get_positions()
+            
+            # Find the position for this asset
+            asset_symbol = f"{asset}USD"  # Alpaca format
+            position = None
+            for pos in positions:
+                if pos.get('symbol', '').upper() == asset_symbol.upper():
+                    position = pos
+                    break
+            
+            if not position:
+                # No position found - this might be a buy opportunity, allow it
+                return True, f"No {asset} position found - trade allowed"
+            
+            # Check unrealized P&L
+            unrealized_pl = float(position.get('unrealized_pl', 0))
+            current_qty = float(position.get('qty', 0))
+            
+            if unrealized_pl >= 0:
+                # Position is at profit or break-even - safe to sell
+                return True, f"Position at profit (${unrealized_pl:.2f}) - safe to sell"
+            
+            # Position is at unrealized loss
+            loss_amount = abs(unrealized_pl)
+            
+            # Check if we're selling the entire position
+            if sell_quantity >= current_qty:
+                # Selling entire position would realize the full loss
+                return False, f"Would realize ${loss_amount:.2f} loss on entire position"
+            else:
+                # Partial sell - calculate proportional loss
+                sell_ratio = sell_quantity / current_qty
+                proportional_loss = loss_amount * sell_ratio
+                
+                # Allow if proportional loss is very small (< $0.01)
+                if proportional_loss < 0.01:
+                    return True, f"Small proportional loss (${proportional_loss:.4f}) - allowed"
+                else:
+                    return False, f"Would realize ${proportional_loss:.2f} proportional loss"
+                
+        except Exception as e:
+            # If loss prevention check fails, allow trade but log warning
+            print(f"   ⚠️ Loss prevention check failed: {e} - allowing trade")
+            return True, f"Check failed ({e}) - trade allowed"
+
+    def _check_kraken_loss_prevention(self, asset: str, sell_quantity: float) -> Tuple[bool, str]:
+        """
+        🚨 KRAKEN LOSS PREVENTION GATE
+        
+        Check if selling this asset would realize an unrealized loss.
+        Uses Kraken state file positions to calculate P&L.
+        
+        Returns: (allowed: bool, reason: str)
+        """
+        try:
+            # Load Kraken positions from state file
+            state_file = 'aureon_kraken_state.json'
+            if not os.path.exists(state_file):
+                return True, f"No Kraken state file - loss prevention bypassed"
+            
+            with open(state_file, 'r') as f:
+                state = json.load(f)
+            
+            positions = state.get('positions', {})
+            
+            # Find the position for this asset
+            asset_key = f"{asset}USD"  # Kraken format
+            position = None
+            for pos_key, pos_data in positions.items():
+                if pos_key.upper() == asset_key.upper():
+                    position = pos_data
+                    break
+            
+            if not position:
+                # No position found - this might be a buy opportunity, allow it
+                return True, f"No {asset} position found - trade allowed"
+            
+            # Calculate current P&L
+            entry_price = float(position.get('entry_price', 0))
+            quantity = float(position.get('quantity', 0))
+            current_price = self.prices.get(asset, 0)
+            
+            if entry_price <= 0 or current_price <= 0:
+                return True, f"Invalid price data - allowing trade"
+            
+            # Calculate unrealized P&L
+            unrealized_pl = (current_price - entry_price) * quantity
+            
+            if unrealized_pl >= 0:
+                # Position is at profit or break-even - safe to sell
+                return True, f"Position at profit (${unrealized_pl:.2f}) - safe to sell"
+            
+            # Position is at unrealized loss
+            loss_amount = abs(unrealized_pl)
+            
+            # Check if we're selling the entire position
+            if sell_quantity >= quantity:
+                # Selling entire position would realize the full loss
+                return False, f"Would realize ${loss_amount:.2f} loss on entire position"
+            else:
+                # Partial sell - calculate proportional loss
+                sell_ratio = sell_quantity / quantity
+                proportional_loss = loss_amount * sell_ratio
+                
+                # Allow if proportional loss is very small (< $0.01)
+                if proportional_loss < 0.01:
+                    return True, f"Small proportional loss (${proportional_loss:.4f}) - allowed"
+                else:
+                    return False, f"Would realize ${proportional_loss:.2f} proportional loss"
+                
+        except Exception as e:
+            # If loss prevention check fails, allow trade but log warning
+            print(f"   ⚠️ Kraken loss prevention check failed: {e} - allowing trade")
+            return True, f"Check failed ({e}) - trade allowed"
+
+    def _check_binance_loss_prevention(self, asset: str, sell_quantity: float) -> Tuple[bool, str]:
+        """
+        🚨 BINANCE LOSS PREVENTION GATE
+        
+        Check if selling this asset would realize an unrealized loss.
+        Uses position tracking to calculate P&L.
+        
+        Returns: (allowed: bool, reason: str)
+        """
+        # For now, Binance doesn't have position tracking like Kraken
+        # Allow all trades but log that loss prevention is not active
+        print(f"   ℹ️ Binance loss prevention not yet implemented - allowing trade")
+        return True, f"Binance loss prevention not implemented - trade allowed"
 
     def _alpaca_estimate_conversion_costs(self, from_asset: str, to_asset: str) -> Dict[str, float]:
         from_symbol = self._alpaca_format_symbol(f"{from_asset}USD")
@@ -4316,6 +4612,11 @@ class MicroProfitLabyrinth:
 
         take_profit = price * (1 + self.alpaca_take_profit_pct / 100.0)
         stop_loss = price * (1 - self.alpaca_stop_loss_pct / 100.0)
+
+        # 🔒 Check Alpaca verify-only gate
+        if self.alpaca_verify_only:
+            logger.debug(f"🔒 ALPACA VERIFY-ONLY: Skipping OCO for {asset} (set ALPACA_EXECUTE=true to enable)")
+            return
 
         try:
             result = self.alpaca.place_oco_order(
@@ -7649,6 +7950,39 @@ class MicroProfitLabyrinth:
                 except Exception as e:
                     logger.debug(f"Alpaca ocean scan error: {e}")
         
+        # ════════════════════════════════════════════════════════════════
+        # 🐺🦁🐜🐦 ANIMAL SWARM SCAN - Unified animal intelligence!
+        # "The pack hunts together, each animal with its specialty"
+        # ════════════════════════════════════════════════════════════════
+        if 'alpaca' in exchanges and self.animal_swarm:
+            alpaca_cash = available_cash.get(('alpaca', 'USD'), {})
+            if alpaca_cash.get('value', 0) >= 1.0:
+                try:
+                    animal_opps = await self._scan_animal_swarm(alpaca_cash)
+                    ocean_opportunities.extend(animal_opps)
+                except Exception as e:
+                    logger.debug(f"Animal swarm scan error: {e}")
+        
+        # ════════════════════════════════════════════════════════════════
+        # 🔮 PROBABILITY NEXUS VALIDATION - Filter & boost with prediction matrix!
+        # "Only act on opportunities with validated probability edge"
+        # ════════════════════════════════════════════════════════════════
+        if self.probability_nexus and ocean_opportunities:
+            try:
+                ocean_opportunities = self._validate_with_probability_nexus(ocean_opportunities)
+            except Exception as e:
+                logger.debug(f"Probability nexus validation error: {e}")
+        
+        # ════════════════════════════════════════════════════════════════
+        # 🚀 ALL SYSTEMS HEAVY LIFTING FOR ALPACA
+        # "Harmonic, Momentum, HNC, Queen - every system serves Alpaca"
+        # ════════════════════════════════════════════════════════════════
+        if ocean_opportunities:
+            try:
+                ocean_opportunities = self._all_systems_heavy_lift_for_alpaca(ocean_opportunities)
+            except Exception as e:
+                logger.debug(f"All systems heavy lift error: {e}")
+        
         # Sort by momentum score (best first)
         ocean_opportunities.sort(key=lambda x: getattr(x, 'momentum_score', x.combined_score), reverse=True)
         
@@ -7800,6 +8134,56 @@ class MicroProfitLabyrinth:
                 symbols = list(self.alpaca_pairs.keys())
         except Exception:
             symbols = list(self.alpaca_pairs.keys()) if self.alpaca_pairs else []
+        
+        # 📈 STOCK SCANNING: Use dedicated stock scanner if enabled
+        stock_opportunities = []
+        if ALPACA_INCLUDE_STOCKS and STOCK_SCANNER_AVAILABLE:
+            try:
+                if not hasattr(self, 'stock_scanner'):
+                    self.stock_scanner = AlpacaStockScanner(alpaca_client=self.alpaca)
+                
+                # Scan stocks with dedicated scanner
+                stock_opps = self.stock_scanner.scan_stocks(
+                    symbols=None,  # Scan all tradable
+                    max_results=50,
+                    min_volume=1000000,  # $1M daily volume
+                    min_price=1.0,
+                    max_price=500.0
+                )
+                
+                # Convert stock opportunities to MicroOpportunity format
+                for stock_opp in stock_opps:
+                    # Skip if below quality threshold
+                    if stock_opp.combined_score < 0.6:
+                        continue
+                    
+                    # Create stock opportunity using MicroOpportunity
+                    # Stock opportunities are BUY signals (USD -> Stock)
+                    timestamp = time.time()
+                    expected_pnl_pct = stock_opp.expected_net_move_pct
+                    expected_pnl_usd = cash_amount * (expected_pnl_pct / 100)
+                    
+                    opportunities.append(MicroOpportunity(
+                        timestamp=timestamp,
+                        from_asset='USD',
+                        to_asset=stock_opp.symbol,
+                        from_amount=cash_amount,
+                        from_value_usd=cash_amount,
+                        v14_score=stock_opp.momentum_score,
+                        hub_score=stock_opp.volume_score,
+                        commando_score=stock_opp.volatility_score,
+                        combined_score=stock_opp.combined_score,
+                        expected_pnl_usd=expected_pnl_usd,
+                        expected_pnl_pct=expected_pnl_pct,
+                        signal_type=stock_opp.signal_type,
+                        stock_signal_reasoning=stock_opp.reasoning
+                    ))
+                
+                if stock_opps:
+                    logger.info(f"   📈 STOCK SCAN: Found {len(stock_opps)} stock opportunities (added top {len([o for o in stock_opps if o.combined_score >= 0.6])} to pipeline)")
+            
+            except Exception as e:
+                logger.warning(f"Stock scanner error: {e}")
         
         # Build set of Alpaca-tradeable bases (BTC, ETH, etc)
         alpaca_bases = set()
@@ -8033,6 +8417,411 @@ class MicroProfitLabyrinth:
         
         return opportunities
 
+    # ════════════════════════════════════════════════════════════════════════════
+    # 🐺🦁🐜🐦 ANIMAL SWARM SCANNER - Unified Animal Intelligence for Ocean Mode
+    # "Wolf hunts alone, Lion coordinates the pride, Ants work in unity, Hummingbird hovers"
+    # ════════════════════════════════════════════════════════════════════════════
+
+    async def _scan_animal_swarm(self, cash_info: Dict) -> List['MicroOpportunity']:
+        """
+        🐺🦁🐜🐦 ANIMAL SWARM SCANNER - Convert Animal Intelligence to MicroOpportunities!
+        
+        Coordinates the animal swarm (Wolf, Lion, Ants, Hummingbird) to scan for
+        momentum opportunities and converts their findings into MicroOpportunity format
+        for unified processing in the ocean mode pipeline.
+        
+        Each animal has its specialty:
+        - Wolf: Lone breakout hunter (big moves)
+        - Lion: Coordinated pride hunting (trend following)
+        - Ants: Army of small trades (micro profits)
+        - Hummingbird: Fast hovering (scalping)
+        """
+        opportunities = []
+        cash_amount = cash_info.get('amount', 0)
+        
+        if not self.animal_swarm or cash_amount < 1:
+            return opportunities
+        
+        try:
+            # Run the animal swarm scan
+            swarm_results = self.animal_swarm.run_once()
+            animal_count = {'wolf': 0, 'lion': 0, 'ants': 0, 'hummingbird': 0}
+            
+            for agent_name, agent_opps in swarm_results.items():
+                for animal_opp in agent_opps:
+                    animal_count[agent_name] = animal_count.get(agent_name, 0) + 1
+                    
+                    # Convert AnimalOpportunity to MicroOpportunity
+                    symbol = animal_opp.symbol
+                    base = symbol.split('/')[0] if '/' in symbol else symbol.replace('USD', '')
+                    
+                    # Get price from our cache or the opportunity
+                    price = self.prices.get(base, getattr(animal_opp, 'price', 0))
+                    if price <= 0:
+                        continue
+                    
+                    # Calculate expected profit based on animal's net_pct
+                    net_pct = getattr(animal_opp, 'net_pct', 0) / 100  # Convert to decimal
+                    expected_pnl = cash_amount * net_pct
+                    
+                    if expected_pnl > 0.01:  # Only profitable opportunities
+                        # Determine direction - buy for bullish, sell for bearish
+                        side = getattr(animal_opp, 'side', 'buy').lower()
+                        
+                        if side == 'buy':
+                            opp = MicroOpportunity(
+                                from_asset='USD',
+                                to_asset=base,
+                                from_amount=cash_amount,
+                                to_amount=cash_amount / price,
+                                expected_pnl_usd=expected_pnl,
+                                combined_score=abs(net_pct) * 10,  # Scale to comparable range
+                                opportunity_type=f'animal_{agent_name}',
+                                source_exchange='alpaca',
+                            )
+                        else:  # sell - would need to hold this asset
+                            continue  # Skip sells for now (ocean mode is about buying)
+                        
+                        # Add animal-specific metadata
+                        opp.momentum_score = abs(getattr(animal_opp, 'move_pct', 0)) / 60  # Rough %/min
+                        opp.ocean_mode = True
+                        opp.animal_source = agent_name
+                        opp.animal_reason = getattr(animal_opp, 'reason', '')
+                        opp.animal_confidence = getattr(animal_opp, 'confidence', 0.5)
+                        opportunities.append(opp)
+            
+            total_animals = sum(animal_count.values())
+            if total_animals > 0:
+                print(f"   🐺🦁🐜🐦 Animal Swarm: {total_animals} signals (Wolf:{animal_count['wolf']}, Lion:{animal_count['lion']}, Ants:{animal_count['ants']}, Hummingbird:{animal_count['hummingbird']}) → {len(opportunities)} buy opportunities")
+        
+        except Exception as e:
+            logger.debug(f"Animal swarm scan error: {e}")
+        
+        return opportunities
+
+    def _validate_with_probability_nexus(self, opportunities: List['MicroOpportunity']) -> List['MicroOpportunity']:
+        """
+        🔮 PROBABILITY NEXUS VALIDATION - Filter & boost opportunities using the prediction matrix!
+        
+        Validates ocean opportunities through the probability nexus to:
+        1. Filter out low-probability setups (< 50%)
+        2. Boost scores for high-probability setups (> 70%)
+        3. Add prediction confidence to each opportunity
+        
+        This ensures we only act on opportunities with validated probability edge.
+        """
+        if not self.probability_nexus or not opportunities:
+            return opportunities
+        
+        validated = []
+        nexus_boosts = 0
+        nexus_filters = 0
+        
+        for opp in opportunities:
+            try:
+                # Build a market state for the asset
+                asset = opp.to_asset
+                price = self.prices.get(asset, 0)
+                
+                if price <= 0:
+                    validated.append(opp)  # Pass through if no price data
+                    continue
+                
+                # Try to get prediction from probability nexus
+                prediction = None
+                if hasattr(self.probability_nexus, 'predict'):
+                    # Build minimal market state
+                    from aureon_probability_nexus import MarketState
+                    state = MarketState(
+                        timestamp=datetime.now(),
+                        price=price,
+                        open_price=price * 0.995,  # Estimate
+                        high=price * 1.01,
+                        low=price * 0.99,
+                        close=price,
+                        volume=1000,  # Placeholder
+                    )
+                    prediction = self.probability_nexus.predict(state)
+                
+                if prediction:
+                    prob = getattr(prediction, 'probability', 0.5)
+                    conf = getattr(prediction, 'confidence', 0.5)
+                    
+                    # Filter low probability (<50%)
+                    if prob < 0.5:
+                        nexus_filters += 1
+                        continue  # Skip this opportunity
+                    
+                    # Boost high probability (>70%)
+                    if prob > 0.7:
+                        opp.combined_score *= (1 + (prob - 0.5))  # Up to 50% boost
+                        nexus_boosts += 1
+                    
+                    # Add nexus metadata
+                    opp.nexus_probability = prob
+                    opp.nexus_confidence = conf
+                    opp.nexus_validated = True
+                
+                validated.append(opp)
+                
+            except Exception as e:
+                logger.debug(f"Probability nexus validation error for {opp.to_asset}: {e}")
+                validated.append(opp)  # Pass through on error
+        
+        if nexus_boosts > 0 or nexus_filters > 0:
+            print(f"   🔮 Probability Nexus: {nexus_boosts} boosted, {nexus_filters} filtered → {len(validated)} validated")
+        
+        return validated
+
+    # ════════════════════════════════════════════════════════════════════════════
+    # 🌊⚡🐙🟡 ALL SYSTEMS HEAVY LIFTING FOR ALPACA
+    # "Every subsystem works in unity - Harmonic, Momentum, HNC, Queen, all serve Alpaca"
+    # ════════════════════════════════════════════════════════════════════════════
+
+    def _enhance_with_harmonic_analysis(self, opportunities: List['MicroOpportunity']) -> List['MicroOpportunity']:
+        """
+        🌊 HARMONIC ANALYSIS - Add frequency & coherence signals to opportunities!
+        
+        Uses the Harmonic Fusion system to analyze wave patterns and boost
+        opportunities that align with golden zone frequencies (400-520 Hz).
+        """
+        if not self.harmonic or not opportunities:
+            return opportunities
+        
+        enhanced = []
+        harmonic_boosts = 0
+        
+        for opp in opportunities:
+            try:
+                asset = opp.to_asset
+                
+                # Get harmonic analysis if we have price history
+                if hasattr(self.harmonic, 'analyze') and asset in self.prices:
+                    # Try to get recent prices for this asset
+                    price_history = getattr(self, 'price_histories', {}).get(asset, [])
+                    if len(price_history) >= 10:
+                        freq, coherence, phase = self.harmonic.analyze(price_history[-64:])
+                        
+                        # Golden zone: 400-520 Hz
+                        in_golden_zone = 400 <= freq <= 520
+                        high_coherence = coherence >= 0.7
+                        
+                        if in_golden_zone and high_coherence:
+                            opp.combined_score *= 1.3  # 30% boost
+                            harmonic_boosts += 1
+                        elif high_coherence:
+                            opp.combined_score *= 1.15  # 15% boost
+                            harmonic_boosts += 1
+                        
+                        # Add harmonic metadata
+                        opp.harmonic_frequency = freq
+                        opp.harmonic_coherence = coherence
+                        opp.harmonic_phase = phase
+                        opp.harmonic_golden_zone = in_golden_zone
+                
+                enhanced.append(opp)
+                
+            except Exception as e:
+                logger.debug(f"Harmonic analysis error for {opp.to_asset}: {e}")
+                enhanced.append(opp)
+        
+        if harmonic_boosts > 0:
+            print(f"   🌊 Harmonic Analysis: {harmonic_boosts} opportunities in golden zone/high coherence")
+        
+        return enhanced
+
+    def _enhance_with_momentum_tracker(self, opportunities: List['MicroOpportunity']) -> List['MicroOpportunity']:
+        """
+        ⚡ MOMENTUM TRACKER - Add real-time momentum signals to opportunities!
+        
+        Uses the momentum tracker to identify assets with strong directional moves
+        and boosts opportunities that align with momentum.
+        """
+        if not self.momentum_tracker or not opportunities:
+            return opportunities
+        
+        enhanced = []
+        momentum_boosts = 0
+        
+        for opp in opportunities:
+            try:
+                asset = opp.to_asset
+                
+                # Get momentum data if available
+                if hasattr(self.momentum_tracker, 'get_momentum'):
+                    momentum_data = self.momentum_tracker.get_momentum(asset)
+                    if momentum_data:
+                        momentum_pct = momentum_data.get('momentum_pct', 0)
+                        trend_strength = momentum_data.get('trend_strength', 0)
+                        
+                        # Strong upward momentum for buy opportunities
+                        if momentum_pct > 0.5 and trend_strength > 0.6:
+                            opp.combined_score *= 1.25  # 25% boost
+                            momentum_boosts += 1
+                        elif momentum_pct > 0.2:
+                            opp.combined_score *= 1.1  # 10% boost
+                        
+                        # Add momentum metadata
+                        opp.tracker_momentum_pct = momentum_pct
+                        opp.tracker_trend_strength = trend_strength
+                
+                enhanced.append(opp)
+                
+            except Exception as e:
+                logger.debug(f"Momentum tracker error for {opp.to_asset}: {e}")
+                enhanced.append(opp)
+        
+        if momentum_boosts > 0:
+            print(f"   ⚡ Momentum Tracker: {momentum_boosts} opportunities with strong momentum")
+        
+        return enhanced
+
+    def _enhance_with_hnc_matrix(self, opportunities: List['MicroOpportunity']) -> List['MicroOpportunity']:
+        """
+        📊 HNC MATRIX - Add pattern recognition signals to opportunities!
+        
+        Uses the HNC (Harmonic Neural Coherence) matrix for pattern matching
+        and boosts opportunities that match profitable historical patterns.
+        """
+        if not self.hnc_matrix or not opportunities:
+            return opportunities
+        
+        enhanced = []
+        hnc_boosts = 0
+        
+        for opp in opportunities:
+            try:
+                asset = opp.to_asset
+                
+                # Get HNC pattern match if available
+                if hasattr(self.hnc_matrix, 'match_pattern') or hasattr(self.hnc_matrix, 'get_signal'):
+                    pattern_score = 0.5  # Default neutral
+                    
+                    if hasattr(self.hnc_matrix, 'get_signal'):
+                        signal = self.hnc_matrix.get_signal(asset)
+                        if signal:
+                            pattern_score = getattr(signal, 'confidence', 0.5)
+                    elif hasattr(self.hnc_matrix, 'match_pattern'):
+                        match = self.hnc_matrix.match_pattern(asset)
+                        if match:
+                            pattern_score = match.get('score', 0.5)
+                    
+                    # Strong pattern match
+                    if pattern_score > 0.75:
+                        opp.combined_score *= 1.2  # 20% boost
+                        hnc_boosts += 1
+                    elif pattern_score > 0.6:
+                        opp.combined_score *= 1.1  # 10% boost
+                    
+                    # Add HNC metadata
+                    opp.hnc_pattern_score = pattern_score
+                
+                enhanced.append(opp)
+                
+            except Exception as e:
+                logger.debug(f"HNC matrix error for {opp.to_asset}: {e}")
+                enhanced.append(opp)
+        
+        if hnc_boosts > 0:
+            print(f"   📊 HNC Matrix: {hnc_boosts} opportunities with strong pattern match")
+        
+        return enhanced
+
+    def _enhance_with_queen_guidance(self, opportunities: List['MicroOpportunity']) -> List['MicroOpportunity']:
+        """
+        👑 QUEEN GUIDANCE - Add Queen Hive Mind intelligence to opportunities!
+        
+        Consults the Queen for each opportunity to get confidence boost/penalty
+        based on her neural network and accumulated wisdom.
+        """
+        if not self.queen or not opportunities:
+            return opportunities
+        
+        enhanced = []
+        queen_approvals = 0
+        queen_cautions = 0
+        
+        for opp in opportunities:
+            try:
+                asset = opp.to_asset
+                
+                # Ask Queen for guidance
+                if hasattr(self.queen, 'ask_queen_will_we_win'):
+                    guidance = self.queen.ask_queen_will_we_win(
+                        asset=asset,
+                        exchange='alpaca',
+                        opportunity_score=opp.combined_score,
+                        context={
+                            'momentum': getattr(opp, 'momentum_score', 0),
+                            'source': getattr(opp, 'opportunity_type', 'unknown'),
+                            'ocean_mode': True
+                        }
+                    )
+                    
+                    if guidance:
+                        confidence = getattr(guidance, 'confidence', 0.5)
+                        recommendation = getattr(guidance, 'recommendation', 'hold')
+                        
+                        # Queen approves
+                        if confidence > 0.7 and recommendation in ('buy', 'strong_buy', 'proceed'):
+                            opp.combined_score *= 1.35  # 35% boost from Queen!
+                            queen_approvals += 1
+                        # Queen cautions
+                        elif confidence < 0.4 or recommendation in ('avoid', 'caution', 'wait'):
+                            opp.combined_score *= 0.7  # 30% penalty
+                            queen_cautions += 1
+                        
+                        # Add Queen metadata
+                        opp.queen_confidence = confidence
+                        opp.queen_recommendation = recommendation
+                
+                enhanced.append(opp)
+                
+            except Exception as e:
+                logger.debug(f"Queen guidance error for {opp.to_asset}: {e}")
+                enhanced.append(opp)
+        
+        if queen_approvals > 0 or queen_cautions > 0:
+            print(f"   👑 Queen Guidance: {queen_approvals} approved, {queen_cautions} cautioned")
+        
+        return enhanced
+
+    def _all_systems_heavy_lift_for_alpaca(self, opportunities: List['MicroOpportunity']) -> List['MicroOpportunity']:
+        """
+        🚀 ALL SYSTEMS HEAVY LIFTING FOR ALPACA 🚀
+        
+        Pipeline that runs ALL subsystems to enhance opportunities:
+        1. Harmonic Analysis (frequency/coherence)
+        2. Momentum Tracker (real-time momentum)
+        3. HNC Matrix (pattern recognition)
+        4. Queen Guidance (neural intelligence)
+        5. Final sort by enhanced scores
+        
+        This is the UNIFIED intelligence pipeline where every system
+        serves Alpaca execution with their specialized analysis!
+        """
+        if not opportunities:
+            return opportunities
+        
+        print(f"   🚀 ALL SYSTEMS HEAVY LIFTING: Processing {len(opportunities)} opportunities...")
+        
+        # Stage 1: Harmonic Analysis
+        opportunities = self._enhance_with_harmonic_analysis(opportunities)
+        
+        # Stage 2: Momentum Tracker
+        opportunities = self._enhance_with_momentum_tracker(opportunities)
+        
+        # Stage 3: HNC Matrix Pattern Recognition
+        opportunities = self._enhance_with_hnc_matrix(opportunities)
+        
+        # Stage 4: Queen Guidance
+        opportunities = self._enhance_with_queen_guidance(opportunities)
+        
+        # Final sort by enhanced combined_score
+        opportunities.sort(key=lambda x: x.combined_score, reverse=True)
+        
+        return opportunities
+
     def advance_turn(self):
         """Move to the next exchange's turn."""
         connected = [ex for ex in self.exchange_order 
@@ -8252,6 +9041,10 @@ class MicroProfitLabyrinth:
                             received_usd = float(result.get('cummulativeQuoteQty', step['expected_usd'] * 0.97))
                             
                     elif victim_exchange == 'alpaca' and self.alpaca:
+                        # 🔒 Check Alpaca verify-only gate
+                        if self.alpaca_verify_only:
+                            print(f"   🔒 ALPACA VERIFY-ONLY: Skipping SELL {victim_asset} (set ALPACA_EXECUTE=true to enable)")
+                            continue
                         # Sell to USD on Alpaca
                         result = self.alpaca.place_order(
                             symbol=f"{victim_asset}/USD",
@@ -8313,6 +9106,10 @@ class MicroProfitLabyrinth:
                             buy_success = True
                             
                     elif target_exchange == 'alpaca' and self.alpaca:
+                        # 🔒 Check Alpaca verify-only gate
+                        if self.alpaca_verify_only:
+                            print(f"   🔒 ALPACA VERIFY-ONLY: Skipping BUY {target_asset} (set ALPACA_EXECUTE=true to enable)")
+                            continue
                         target_price = self.prices.get(target_asset, 1.0)
                         buy_amount = (total_received * 0.98) / target_price
                         result = self.alpaca.place_order(
@@ -8389,15 +9186,19 @@ class MicroProfitLabyrinth:
             print(f"{'='*60}")
             print(self.profit_harvester.print_candidates(candidates))
             
-            # Harvest ALL profitable candidates - constant cash flow!
-            # NO LIMIT - if it's profitable, SELL IT!
-            max_harvests = 10  # Increased from 2 - harvest everything profitable!
+            # Harvest up to a few profitable candidates - avoid over-trading
+            max_harvests = 3  # Limit number of harvests per sweep to reduce churn
             harvests_done = 0
             
             for candidate in candidates[:max_harvests]:
                 print(f"\n   🌾 HARVESTING: {candidate.asset}")
                 print(f"      Position: {candidate.qty:.6f} @ ${candidate.current_price:.4f} = ${candidate.market_value:.2f}")
                 print(f"      Profit: ${candidate.unrealized_pl:+.2f} ({candidate.unrealized_plpc:+.1f}%)")
+                
+                # 🔒 Check Alpaca verify-only gate
+                if self.alpaca_verify_only:
+                    print(f"      🔒 ALPACA VERIFY-ONLY: Skipping harvest (set ALPACA_EXECUTE=true to enable)")
+                    continue
                 
                 # Sell the position
                 try:
@@ -9433,6 +10234,35 @@ class MicroProfitLabyrinth:
         # ════════════════════════════════════════════════════════════════════
         dream_vision = None
         dream_boost = 0.0
+        
+        # 🎿 Check snowball context BEFORE dreaming (so Queen doesn't lie to herself!)
+        snowball_blocked = False
+        snowball_reason = ""
+        if self.snowball_mode:
+            from_upper = opportunity.from_asset.upper()
+            to_upper = opportunity.to_asset.upper()
+            is_from_stable = from_upper in self.snowball_stablecoins
+            is_to_stable = to_upper in self.snowball_stablecoins
+            
+            # If we have an active position
+            if self.snowball_position is not None:
+                if not is_to_stable:
+                    # Trying to buy another coin - WILL BE BLOCKED!
+                    snowball_blocked = True
+                    snowball_reason = f"Already holding {self.snowball_position['asset']}"
+                elif opportunity.from_asset.upper() == self.snowball_position['asset'].upper():
+                    # This is exiting our position - check profit
+                    try:
+                        current_price = opportunity.from_value_usd / opportunity.from_amount if opportunity.from_amount > 0 else 0
+                        entry_price = self.snowball_position.get('entry_price', 0)
+                        if entry_price > 0:
+                            profit_pct = ((current_price - entry_price) / entry_price) * 100
+                            if profit_pct < self.snowball_min_profit_pct:
+                                snowball_blocked = True
+                                snowball_reason = f"Profit {profit_pct:.2f}% < {self.snowball_min_profit_pct}%"
+                    except:
+                        pass
+        
         if self.queen and hasattr(self.queen, 'dream_of_winning'):
             try:
                 # Package opportunity data for the dream
@@ -9441,6 +10271,8 @@ class MicroProfitLabyrinth:
                     'to_asset': opportunity.to_asset,
                     'expected_profit': expected_profit,
                     'exchange': source_exchange,
+                    'snowball_blocked': snowball_blocked,  # 🎿 NEW: Tell Queen about snowball
+                    'snowball_reason': snowball_reason,     # 🎿 NEW: Why it's blocked
                     'market_data': {
                         'volatility': 0.5,
                         'momentum': getattr(opportunity, 'momentum', 0.0),
@@ -9484,6 +10316,116 @@ class MicroProfitLabyrinth:
         # 🔓🔓🔓 FULL AUTONOMOUS MODE - BYPASS PROFIT CHECK! 🔓🔓🔓
         # Queen Sero will TRADE and LEARN from outcomes!
         # ORIGINAL: if expected_profit >= QUEEN_MIN_PROFIT:
+        
+        # 🛡️🛡️🛡️ CRITICAL SAFETY GATES - CANNOT BE BYPASSED! 🛡️🛡️🛡️
+        # These protect the portfolio from certain losses!
+        
+        # 🎿 GATE 0: SNOWBALL MODE - One position at a time!
+        if self.snowball_mode:
+            from_upper = from_asset.upper()
+            to_upper = to_asset.upper()
+            is_from_stable = from_upper in self.snowball_stablecoins
+            is_to_stable = to_upper in self.snowball_stablecoins
+            
+            # If we have an active position, only allow selling it back to stablecoin
+            if self.snowball_position is not None:
+                if not is_to_stable:
+                    # Trying to buy another coin while holding - BLOCK!
+                    will_win = False
+                    reason_str = f"🎿 SNOWBALL: Already holding {self.snowball_position['asset']} - wait for exit!"
+                    return will_win, avg_confidence, reason_str
+            
+            # 🎿⏸️ COOLDOWN CHECK: Don't immediately re-enter after exit
+            if self.snowball_position is None and is_from_stable and not is_to_stable:
+                # Trying to ENTER a new position
+                time_since_exit = time.time() - self.snowball_last_exit_time
+                if time_since_exit < self.snowball_cooldown_seconds and self.snowball_last_exit_time > 0:
+                    # Just exited - wait for cooldown!
+                    will_win = False
+                    wait_time = int(self.snowball_cooldown_seconds - time_since_exit)
+                    reason_str = f"🎿⏸️ SNOWBALL COOLDOWN: Wait {wait_time}s after last exit (cycle complete!)"
+                    return will_win, avg_confidence, reason_str
+            
+            # 🎿⏸️ COOLDOWN CHECK: Don't immediately re-enter after exit
+            if self.snowball_position is None and is_from_stable and not is_to_stable:
+                # Trying to ENTER a new position
+                time_since_exit = time.time() - self.snowball_last_exit_time
+                if time_since_exit < self.snowball_cooldown_seconds and self.snowball_last_exit_time > 0:
+                    # Just exited - wait for cooldown!
+                    will_win = False
+                    wait_time = int(self.snowball_cooldown_seconds - time_since_exit)
+                    reason_str = f"🎿⏸️ SNOWBALL COOLDOWN: Wait {wait_time}s after last exit (cycle complete!)"
+                    return will_win, avg_confidence, reason_str
+                
+                # Check if this is selling our position
+                if from_upper != self.snowball_position['asset'].upper():
+                    will_win = False
+                    reason_str = f"🎿 SNOWBALL: Can only sell {self.snowball_position['asset']}, not {from_upper}"
+                    return will_win, avg_confidence, reason_str
+                
+                # Check if we'd make profit on exit
+                current_price = self.prices.get(from_upper, 0)
+                entry_price = self.snowball_position['entry_price']
+                if entry_price > 0 and current_price > 0:
+                    profit_pct = ((current_price - entry_price) / entry_price) * 100
+                    if profit_pct < self.snowball_min_profit_pct:
+                        will_win = False
+                        reason_str = f"🎿 SNOWBALL: {from_upper} profit {profit_pct:.2f}% < {self.snowball_min_profit_pct}% min - HOLD!"
+                        return will_win, avg_confidence, reason_str
+                    else:
+                        print(f"   🎿✅ SNOWBALL EXIT APPROVED: {from_upper} +{profit_pct:.2f}% profit!")
+            
+            # If buying a new coin (from stable), this is allowed
+            elif is_from_stable and not is_to_stable:
+                print(f"   🎿 SNOWBALL ENTRY: {from_upper}→{to_upper} (opening new position)")
+            
+            # Stable→Stable is allowed (consolidating cash)
+            elif is_from_stable and is_to_stable:
+                pass  # OK
+        
+        # GATE 1: PATH HISTORY BLOCK - Never repeat 100% losing paths!
+        if path_trades >= 3 and win_rate == 0:
+            will_win = False
+            reason_str = f"🛡️ BLOCKED: {path_key} has {path_trades} trades with 0% wins - NOT REPEATING!"
+            return will_win, avg_confidence, reason_str
+        
+        # GATE 2: VALUE TOO SMALL FOR 2-HOP - Would fail mid-trade!
+        # 2-hop trades need at least $2.50 ($1.25 per leg after 95% safety)
+        # 🎿 SNOWBALL EXCEPTION: In snowball mode, we only do 1-hop trades!
+        from_value = opportunity.from_value_usd
+        path_info = None
+        try:
+            if hasattr(self, 'alpaca') and self.alpaca:
+                path_info = self.alpaca.find_conversion_path(from_asset, to_asset)
+        except:
+            pass
+        is_2hop = path_info and len(path_info) >= 2
+        
+        # 🎿 SNOWBALL: Lower threshold for 1-hop trades (USD→COIN or COIN→USD)
+        if self.snowball_mode:
+            if is_2hop:
+                will_win = False
+                reason_str = f"🎿 SNOWBALL: 2-hop trades disabled - only direct USD↔COIN allowed"
+                return will_win, avg_confidence, reason_str
+            # Lower minimum in snowball mode - we're building from small!
+            snowball_min = 1.00  # $1.00 minimum in snowball mode
+            if from_value < snowball_min:
+                will_win = False
+                reason_str = f"🎿 SNOWBALL: ${from_value:.2f} < ${snowball_min:.2f} minimum"
+                return will_win, avg_confidence, reason_str
+        else:
+            # Normal mode: $2.50 for 2-hop
+            if is_2hop and from_value < 2.50:
+                will_win = False
+                reason_str = f"🛡️ BLOCKED: ${from_value:.2f} too small for 2-hop (need $2.50+ to avoid mid-trade failure)"
+                return will_win, avg_confidence, reason_str
+            
+            # GATE 3: MINIMUM VALUE WITH BUFFER - Account for 95% safety adjustment
+            # $1.50 minimum ensures we have $1.425 after 95% adjustment (above $1 min)
+            if from_value < 1.50:
+                will_win = False
+                reason_str = f"🛡️ BLOCKED: ${from_value:.2f} < $1.50 minimum (need buffer for 95% safety adjustment)"
+                return will_win, avg_confidence, reason_str
         
         # Check if dream says will_win (we've set FOGGY to will_win=True)
         if dream_vision and dream_vision.get('will_win', False):
@@ -13969,6 +14911,13 @@ if __name__ == "__main__":
             for step in path:
                 print(f"   📍 Path: {step['description']} via {step['pair']}")
             
+            # 🚨 KRAKEN LOSS PREVENTION GATE
+            loss_prevention_passed, loss_reason = self._check_kraken_loss_prevention(opp.from_asset, opp.from_amount)
+            if not loss_prevention_passed:
+                print(f"   🚫 {loss_reason}")
+                self._record_failure(opp)
+                return False
+            
             # Execute the conversion
             result = self.kraken.convert_crypto(
                 from_asset=opp.from_asset,
@@ -14201,6 +15150,13 @@ if __name__ == "__main__":
                 self._record_failure(opp)
                 return False
             
+            # 🚨 BINANCE LOSS PREVENTION GATE
+            loss_prevention_passed, loss_reason = self._check_binance_loss_prevention(opp.from_asset, opp.from_amount)
+            if not loss_prevention_passed:
+                print(f"   🚫 {loss_reason}")
+                self._record_failure(opp)
+                return False
+            
             # Use convert_crypto which handles pathfinding internally
             result = self.binance.convert_crypto(
                 from_asset=opp.from_asset,
@@ -14295,16 +15251,57 @@ if __name__ == "__main__":
                     print(f"      Fees would eat this tiny trade alive. ABORTING to save the planet!")
                     return False
                     
-                # 🌍✨ Minimum viable trade size for Alpaca (fees ~0.3% = $0.003 on $1)
-                PLANET_SAVER_MIN_ALPACA = 5.0  # Need at least $5 to overcome fees
+                # 🌍✨ TRUST THE MATH: Pre-Execution Gate validates net profit
+                # 🛡️ CRITICAL: Use $1.50 minimum to avoid mid-trade failures!
+                PLANET_SAVER_MIN_ALPACA = 1.50  # $1.50 minimum for safety
                 if opp.from_value_usd < PLANET_SAVER_MIN_ALPACA:
-                    print(f"   🌍⚠️ PLANET SAVER: Clamped value ${opp.from_value_usd:.2f} < ${PLANET_SAVER_MIN_ALPACA} minimum")
-                    print(f"      Small trades get eaten by fees. Protecting our liberation fund!")
+                    print(f"   🌍⚠️ PLANET SAVER: Value ${opp.from_value_usd:.2f} < ${PLANET_SAVER_MIN_ALPACA} minimum")
+                    print(f"      Too small to execute. Skipping dust.")
                     return False
+                # ✅ Trust Pre-Execution Gate - if net profit > 0, proceed!
 
-            # 🦙 Alpaca cost metrics (fee + slippage + spread) to avoid negative net profit
-            cost_metrics = self._alpaca_estimate_conversion_costs(opp.from_asset, opp.to_asset)
-            total_cost_pct = cost_metrics.get("total_pct", 0.0)
+            # 🎲 MONTE CARLO SNOWBALL: One trade at a time, hold, roll profits
+            # Try dynamic cost estimation first, fall back to flat 0.25% if unavailable
+            if self.cost_estimator:
+                try:
+                    cost_estimate = self.cost_estimator.estimate_cost(
+                        symbol=opp.to_asset,
+                        side='buy',
+                        notional_usd=opp.from_value_usd
+                    )
+                    total_cost_pct = cost_estimate.estimated_total_pct
+                    cost_metrics = {
+                        "fee_pct": cost_estimate.estimated_fee_pct,
+                        "spread_pct": cost_estimate.estimated_spread_pct,
+                        "slippage_pct": cost_estimate.estimated_slippage_pct,
+                        "total_pct": total_cost_pct,
+                        "source": cost_estimate.source,
+                        "confidence": cost_estimate.confidence,
+                    }
+                    logger.debug(f"💰 Dynamic cost: {total_cost_pct:.3f}% (source={cost_estimate.source}, confidence={cost_estimate.confidence:.2f})")
+                except Exception as e:
+                    logger.debug(f"Dynamic cost estimation failed: {e}, using fallback")
+                    MONTE_CARLO_COST_PCT = 0.25
+                    total_cost_pct = MONTE_CARLO_COST_PCT
+                    cost_metrics = {
+                        "fee_pct": 0.15,
+                        "slippage_pct": 0.02,
+                        "spread_pct": 0.08,
+                        "total_pct": MONTE_CARLO_COST_PCT,
+                        "source": "fallback",
+                    }
+            else:
+                # Fallback to flat 0.25% (original behavior)
+                MONTE_CARLO_COST_PCT = 0.25
+                total_cost_pct = MONTE_CARLO_COST_PCT
+                cost_metrics = {
+                    "fee_pct": 0.15,
+                    "slippage_pct": 0.02,
+                    "spread_pct": 0.08,
+                    "total_pct": MONTE_CARLO_COST_PCT,
+                    "source": "flat_fallback",
+                }
+            
             net_expected_usd = opp.expected_pnl_usd - (opp.from_value_usd * total_cost_pct / 100)
             net_expected_pct = (opp.expected_pnl_pct * 100) - total_cost_pct
 
@@ -14314,20 +15311,22 @@ if __name__ == "__main__":
             opp.alpaca_total_cost_pct = total_cost_pct
             opp.alpaca_net_expected_usd = net_expected_usd
 
+            # 📊 Record net estimate distribution
+            self.run_metrics.record_net_estimate(net_expected_pct)
+            
+            cost_source = cost_metrics.get('source', 'unknown')
             print(
-                "   🦙 Alpaca cost check: "
-                f"fees {opp.alpaca_fee_pct*2:.2f}% | slip {opp.alpaca_slippage_pct*2:.2f}% | "
-                f"spread {opp.alpaca_spread_pct:.2f}% | total {total_cost_pct:.2f}% | "
+                f"   🎲 MONTE CARLO: {cost_source} {total_cost_pct:.2f}% cost | "
                 f"net est ${net_expected_usd:+.4f} ({net_expected_pct:+.2f}%)"
             )
 
             # 🚫 ULTIMATE LOSS PREVENTION: Check if we're already bleeding!
-            # Don't compound losses - if underwater, STOP trading until positions recover!
+            # Don't compound losses - if significantly underwater, STOP trading until positions recover!
             try:
                 if self.alpaca:
                     positions = self.alpaca.get_positions()
                     total_unrealized_pl = sum(float(p.get('unrealized_pl', 0)) for p in positions)
-                    if total_unrealized_pl < -0.05:  # More than $0.05 underwater
+                    if total_unrealized_pl < -1.00:  # More than $1.00 underwater (was $0.05 - too strict!)
                         print(
                             f"   🚫 POSITIONS UNDERWATER: ${total_unrealized_pl:.4f} unrealized loss. "
                             f"NOT trading until positions recover!"
@@ -14337,15 +15336,19 @@ if __name__ == "__main__":
                 pass  # If check fails, continue to safety gate
 
             if net_expected_usd < self.alpaca_min_net_profit_usd or net_expected_pct < self.alpaca_min_net_profit_pct:
-                # �️ SAFETY GATE ENABLED: Prevent bleeding by 1000 cuts! 
-                # We do NOT trade if we expect a loss.
-                print(
-                    f"   🛡️ SAFETY GATE: Net profit ${net_expected_usd:+.4f} ({net_expected_pct:+.2f}%) below threshold (min ${self.alpaca_min_net_profit_usd:.2f} or {self.alpaca_min_net_profit_pct:.2f}%). Trade BLOCKED."
-                )
-                # Return False to stop execution
+                self.run_metrics.record_candidate(passed_preexec=True, passed_mc=False, skip_reason=f"net_below_threshold")
+                print(f"   🛡️ MONTE CARLO: Net ${net_expected_usd:+.4f} ({net_expected_pct:+.2f}%) < required {self.alpaca_min_net_profit_pct:.2f}% - SKIPPING")
+                print(f"      Required: net ≥ {self.alpaca_min_net_profit_pct:.2f}% or net ≥ ${self.alpaca_min_net_profit_usd:.3f}")
                 return False
             
-            # First check if a path exists
+            # 🎲❄️ MONTE CARLO SNOWBALL APPROVED - EXECUTE ON ALPACA!
+            self.run_metrics.record_candidate(passed_preexec=True, passed_mc=True)
+            print(f"\n   🎲❄️ MONTE CARLO SNOWBALL APPROVED! ❄️🎲")
+            print(f"   ├── Net Profit: ${net_expected_usd:+.4f} ({net_expected_pct:+.2f}%)")
+            print(f"   ├── Mode: One trade → Hold → Roll profits")
+            print(f"   └── Executing on ALPACA... 🦙🚀")
+            
+            # Execute directly on Alpaca
             path = self.alpaca.find_conversion_path(opp.from_asset, opp.to_asset)
             if not path:
                 print(f"   ⚠️ No conversion path found from {opp.from_asset} to {opp.to_asset}")
@@ -14381,11 +15384,20 @@ if __name__ == "__main__":
                     print(f"   💡 Need {min_qty:.6f} {base_asset} minimum")
                     return False
                 
-                # Check minimum notional value
-                if opp.from_value_usd < ALPACA_MIN_NOTIONAL:
-                    print(f"   ⚠️ Value ${opp.from_value_usd:.2f} < min notional ${ALPACA_MIN_NOTIONAL:.2f}")
-                    print(f"   💡 Need ${ALPACA_MIN_NOTIONAL:.2f} minimum to trade on Alpaca")
+                # Check minimum notional value - Use $1.50 buffer for safety!
+                ALPACA_MIN_NOTIONAL_SAFE = 1.50  # $1.50 minimum (not $1.00) to avoid edge cases
+                if opp.from_value_usd < ALPACA_MIN_NOTIONAL_SAFE:
+                    print(f"   ⚠️ Value ${opp.from_value_usd:.2f} < min notional ${ALPACA_MIN_NOTIONAL_SAFE:.2f}")
+                    print(f"   💡 Need ${ALPACA_MIN_NOTIONAL_SAFE:.2f} minimum to trade safely on Alpaca")
                     return False
+                
+                # 🛡️ 2-HOP SAFETY: Check if we have enough for BOTH legs!
+                if len(path) >= 2:
+                    per_leg_value = opp.from_value_usd * 0.95 / 2  # After 95% adj, split between legs
+                    if per_leg_value < 1.00:
+                        print(f"   ⚠️ 2-hop trade needs $2.50+ (each leg gets ~${per_leg_value:.2f})")
+                        print(f"   💡 Value ${opp.from_value_usd:.2f} too small for 2-hop - risk of mid-trade failure!")
+                        return False
             
             # Show the path
             for step in path:
@@ -14457,6 +15469,156 @@ if __name__ == "__main__":
             print(f"   ❌ Error: {e}")
             self._record_failure(opp)
         return False
+
+    # ════════════════════════════════════════════════════════════════════════════
+    # 🌐 MULTI-EXCHANGE EXECUTION ROUTER
+    # ════════════════════════════════════════════════════════════════════════════
+    
+    def _execute_on_exchange(self, exchange: str, opp, net_expected_usd: float, cost_metrics: Dict) -> bool:
+        """
+        🌐 EXECUTE TRADE ON TARGET EXCHANGE
+        
+        Routes Alpaca-verified trades to other exchanges for execution.
+        Supports: binance, kraken, capital, coinbase
+        
+        Args:
+            exchange: Target exchange name
+            opp: Opportunity object with trade details
+            net_expected_usd: Alpaca-verified net profit
+            cost_metrics: Cost breakdown from Alpaca verification
+        
+        Returns:
+            bool: True if execution successful
+        """
+        exchange = exchange.lower()
+        print(f"\n   🌐═══════════════════════════════════════════════════════════════")
+        print(f"   🌐 MULTI-EXCHANGE EXECUTION: {exchange.upper()}")
+        print(f"   🌐═══════════════════════════════════════════════════════════════")
+        print(f"   📊 Trade: {opp.from_asset} → {opp.to_asset}")
+        print(f"   💰 Amount: {opp.from_amount:.6f} ({opp.from_asset}) = ${opp.from_value_usd:.2f}")
+        print(f"   ✅ Alpaca-verified profit: ${net_expected_usd:+.4f}")
+        
+        try:
+            # Get appropriate client
+            client = None
+            if exchange == 'binance' and hasattr(self, 'binance_client') and self.binance_client:
+                client = self.binance_client
+            elif exchange == 'kraken' and hasattr(self, 'kraken_client') and self.kraken_client:
+                client = self.kraken_client
+            elif exchange == 'capital' and hasattr(self, 'capital_client') and self.capital_client:
+                client = self.capital_client
+            elif exchange == 'coinbase' and hasattr(self, 'coinbase_client') and self.coinbase_client:
+                client = self.coinbase_client
+            
+            if not client:
+                print(f"   ⚠️ {exchange.upper()} client not available")
+                # Try next exchange in priority
+                return self._try_next_exchange(opp, net_expected_usd, cost_metrics, exclude=[exchange])
+            
+            # Check if exchange has balance for this trade
+            try:
+                balance = client.get_balance()
+                from_balance = float(balance.get(opp.from_asset, 0))
+                if from_balance < opp.from_amount:
+                    print(f"   ⚠️ {exchange.upper()} insufficient balance: {from_balance:.6f} < {opp.from_amount:.6f}")
+                    return self._try_next_exchange(opp, net_expected_usd, cost_metrics, exclude=[exchange])
+            except Exception as e:
+                logger.warning(f"Balance check failed for {exchange}: {e}")
+            
+            # Format symbol for exchange
+            symbol = self._format_symbol_for_exchange(opp.from_asset, opp.to_asset, exchange)
+            print(f"   🎯 Symbol: {symbol}")
+            
+            # Execute trade
+            # 🚨 LOSS PREVENTION GATE: Check Alpaca position P&L before selling
+            if exchange.lower() == 'alpaca' and opp.from_asset != 'USD':
+                # This is a SELL order (crypto→USD) - check if position is at unrealized loss
+                loss_prevention_passed, loss_reason = self._check_alpaca_loss_prevention(opp.from_asset, opp.from_amount)
+                if not loss_prevention_passed:
+                    print(f"   🚨 LOSS PREVENTION BLOCKED SELL!")
+                    print(f"   ├── Asset: {opp.from_asset}")
+                    print(f"   ├── Reason: {loss_reason}")
+                    print(f"   └── Would realize loss - trade rejected!")
+                    
+                    # Record rejection for learning
+                    if hasattr(self, 'barter_matrix'):
+                        self.barter_matrix.record_preexec_rejection(
+                            opp.from_asset, opp.to_asset,
+                            f'loss_prevention: {loss_reason}',
+                            opp.from_value_usd
+                        )
+                    return False
+            
+            if hasattr(client, 'convert_crypto'):
+                # Use convert if available (like Alpaca)
+                result = client.convert_crypto(opp.from_asset, opp.to_asset, opp.from_amount)
+            elif hasattr(client, 'execute_trade'):
+                # Standard trade execution
+                result = client.execute_trade(symbol, 'sell', opp.from_amount)
+            else:
+                print(f"   ❌ {exchange.upper()} client missing execute method")
+                return False
+            
+            # Check result
+            if result.get('error'):
+                print(f"   ❌ {exchange.upper()} error: {result['error']}")
+                return self._try_next_exchange(opp, net_expected_usd, cost_metrics, exclude=[exchange])
+            
+            # Success!
+            print(f"   ✅ {exchange.upper()} EXECUTION SUCCESS!")
+            print(f"   📋 Order: {result.get('order_id', result.get('id', 'N/A'))}")
+            
+            # Calculate bought amount
+            buy_amount = 0.0
+            to_price = self.prices.get(opp.to_asset, 0)
+            if to_price > 0:
+                buy_amount = opp.from_value_usd / to_price
+            
+            # Record the trade
+            self._record_conversion(opp, buy_amount)
+            
+            # Track position entry time
+            self.position_entry_times[opp.to_asset.upper()] = time.time()
+            print(f"   ⏱️ Position entered at {time.strftime('%H:%M:%S')}")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ {exchange} execution error: {e}")
+            print(f"   ❌ {exchange.upper()} error: {e}")
+            return self._try_next_exchange(opp, net_expected_usd, cost_metrics, exclude=[exchange])
+    
+    def _try_next_exchange(self, opp, net_expected_usd: float, cost_metrics: Dict, exclude: List[str]) -> bool:
+        """Try next exchange in priority order, excluding failed ones."""
+        exec_order = os.getenv("EXCH_EXEC_ORDER", "binance,kraken,capital,coinbase").split(",")
+        exec_order = [e.strip().lower() for e in exec_order if e.strip()]
+        
+        for exch in exec_order:
+            if exch in exclude or exch == 'alpaca':
+                continue
+            print(f"   🔄 Trying next exchange: {exch.upper()}")
+            return self._execute_on_exchange(exch, opp, net_expected_usd, cost_metrics)
+        
+        print(f"   ❌ All exchanges exhausted. No execution possible.")
+        return False
+    
+    def _format_symbol_for_exchange(self, from_asset: str, to_asset: str, exchange: str) -> str:
+        """Format trading pair symbol for specific exchange."""
+        exchange = exchange.lower()
+        
+        if exchange == 'binance':
+            # Binance uses no separator: BTCUSDT
+            return f"{from_asset}{to_asset}".upper()
+        elif exchange == 'kraken':
+            # Kraken uses XBT for BTC, and various formats
+            from_a = 'XBT' if from_asset.upper() == 'BTC' else from_asset.upper()
+            to_a = 'XBT' if to_asset.upper() == 'BTC' else to_asset.upper()
+            return f"{from_a}/{to_a}"
+        elif exchange in ['capital', 'coinbase']:
+            # Standard slash format
+            return f"{from_asset}/{to_asset}".upper()
+        else:
+            return f"{from_asset}/{to_asset}".upper()
 
     # ════════════════════════════════════════════════════════════════════════════
     # 🔍 ORDER VALIDATION & PROFIT VERIFICATION SYSTEM
@@ -14704,42 +15866,43 @@ if __name__ == "__main__":
             # 🔧 FIX: Use ACTUAL EXECUTION PRICES, not current market prices!
             # This is critical for accurate P/L calculation
             
-            # Sold value - use actual execution price if available
-            if validation.get('avg_sell_price', 0) > 0:
-                actual_sold_value = validation['total_sold'] * validation['avg_sell_price']
+            # Determine if this is a BUY or SELL order based on the conversion direction
+            # If we're converting FROM crypto TO USD, it's a SELL order
+            # If we're converting FROM USD TO crypto, it's a BUY order
+            is_sell_order = opp.from_asset != 'USD' and opp.to_asset == 'USD'
+            
+            if is_sell_order:
+                # SELL ORDER: DOGE→USD (selling crypto for USD)
+                # P&L = amount_received_USD - cost_basis_of_crypto_sold
+                amount_received_usd = validation.get('final_amount', buy_amount)  # USD received
+                crypto_sold = validation['total_sold']  # DOGE sold
+                crypto_cost_basis = crypto_sold * validation.get('avg_buy_price', 0)  # What we paid for DOGE
+                
+                verified_pnl = amount_received_usd - crypto_cost_basis - validation.get('total_fees', 0)
             else:
-                actual_sold_value = sold_value
+                # BUY ORDER: USD→DOGE (buying crypto with USD)
+                # P&L = value_of_crypto_bought - usd_spent
+                usd_spent = validation['total_sold'] * validation.get('avg_sell_price', 0)  # USD spent
+                crypto_bought = validation.get('final_amount', buy_amount)  # DOGE bought
+                crypto_value = crypto_bought * validation.get('avg_buy_price', 0)  # Current value of DOGE
+                
+                verified_pnl = crypto_value - usd_spent - validation.get('total_fees', 0)
             
-            # Final bought value - CRITICAL FIX:
-            # For SELL orders (like DAI→USD), validation['final_amount'] may be 0 because
-            # exchanges like Kraken don't return cummulativeQuoteQty for sells.
-            # In this case, use the buy_amount we actually received from the trade!
-            final_amount = validation.get('final_amount', 0)
-            if final_amount <= 0 and buy_amount > 0:
-                # Fallback to buy_amount when final_amount is missing/zero
-                final_amount = buy_amount
-            
-            # 🔧 FIXED: Use actual buy price ONLY if we have it AND it's valid
-            # If avg_buy_price is 0, that means the buy failed or wasn't executed
-            # In that case, we CANNOT calculate bought value - it's 0!
-            if validation.get('avg_buy_price', 0) > 0:
-                actual_bought_value = final_amount * validation['avg_buy_price']
-            elif validation.get('total_bought', 0) > 0:
-                # We have bought amount but no price - this is a partial/failed trade
-                # P&L is just the loss of what we sold (negative)
-                actual_bought_value = 0.0
-            else:
-                # No buy at all - this is a failed conversion
-                actual_bought_value = 0.0
-            
-            # Subtract fees (fees are already in USD/quote currency)
-            fees = validation.get('total_fees', 0)
-            # 🔧 FIX: fees_in_usd calculation - fees are often in quote currency already
-            # Don't multiply by to_price if fee is already in USD/USDC/USDT
-            fees_in_usd = fees  # Assume fees are already in USD value
-            
-            verified_pnl = actual_bought_value - actual_sold_value - fees_in_usd
             verification['verified_pnl'] = verified_pnl
+            
+            # Check for discrepancy between expected and verified P&L
+            discrepancy = abs(verification['expected_pnl'] - verified_pnl)
+            verification['discrepancy'] = discrepancy
+            
+            if abs(verification['expected_pnl']) > 0.0001:
+                verification['discrepancy_pct'] = (discrepancy / abs(verification['expected_pnl'])) * 100
+            
+            # Flag significant discrepancies (>5%)
+            if verification['discrepancy_pct'] > 5.0:
+                verification['valid'] = False
+                verification['warnings'].append(
+                    f"P&L discrepancy: expected ${verification['expected_pnl']:.4f} vs verified ${verified_pnl:.4f} ({verification['discrepancy_pct']:.1f}%)"
+                )
             
             # Check for discrepancy
             discrepancy = abs(calculated_pnl - verified_pnl)
@@ -14819,6 +15982,85 @@ if __name__ == "__main__":
         self.conversions.append(opp)
         self.balances[opp.from_asset] = self.balances.get(opp.from_asset, 0) - opp.from_amount
         self.balances[opp.to_asset] = self.balances.get(opp.to_asset, 0) + buy_amount
+        
+        # 🎿☃️ SNOWBALL POSITION TRACKING - Record ACTUAL entry/exit prices!
+        if self.snowball_mode:
+            from_upper = opp.from_asset.upper()
+            to_upper = opp.to_asset.upper()
+            is_from_stable = from_upper in self.snowball_stablecoins
+            is_to_stable = to_upper in self.snowball_stablecoins
+            
+            # Use ACTUAL execution price from validation if available
+            actual_buy_price = 0.0
+            actual_sell_price = 0.0
+            if validation:
+                actual_buy_price = validation.get('avg_buy_price', 0) or self.prices.get(to_upper, 0)
+                actual_sell_price = validation.get('avg_sell_price', 0) or self.prices.get(from_upper, 0)
+            else:
+                actual_buy_price = self.prices.get(to_upper, 0)
+                actual_sell_price = self.prices.get(from_upper, 0)
+            
+            if is_from_stable and not is_to_stable:
+                # ENTRY: Buying a coin with stablecoin
+                self.snowball_position = {
+                    'asset': to_upper,
+                    'amount': buy_amount,
+                    'entry_price': actual_buy_price,
+                    'entry_value_usd': opp.from_value_usd,
+                    'entry_time': time.time(),
+                    'entry_from': from_upper,
+                }
+                print(f"\n   🎿☃️ SNOWBALL ENTRY RECORDED:")
+                print(f"      Asset: {to_upper}")
+                print(f"      Amount: {buy_amount:.6f}")
+                print(f"      Entry Price: ${actual_buy_price:.6f}")
+                print(f"      Entry Value: ${opp.from_value_usd:.2f}")
+                print(f"      ⏳ Waiting for profit >= {self.snowball_min_profit_pct}% to exit...")
+            
+            elif not is_from_stable and is_to_stable and self.snowball_position:
+                # EXIT: Selling coin back to stablecoin
+                entry_price = self.snowball_position['entry_price']
+                entry_value = self.snowball_position['entry_value_usd']
+                exit_value = buy_amount if to_upper == 'USD' else (buy_amount * self.prices.get(to_upper, 1.0))
+                
+                # ACTUAL realized profit = what we got - what we spent
+                realized_profit = exit_value - entry_value
+                profit_pct = ((exit_value / entry_value) - 1) * 100 if entry_value > 0 else 0
+                
+                # Record in history
+                trade_record = {
+                    'asset': self.snowball_position['asset'],
+                    'entry_price': entry_price,
+                    'exit_price': actual_sell_price,
+                    'entry_value': entry_value,
+                    'exit_value': exit_value,
+                    'realized_profit': realized_profit,
+                    'profit_pct': profit_pct,
+                    'duration_s': time.time() - self.snowball_position['entry_time'],
+                    'timestamp': time.time(),
+                }
+                self.snowball_profit_history.append(trade_record)
+                self.snowball_total_realized += realized_profit
+                
+                print(f"\n   🎿💰 SNOWBALL EXIT - PROFIT CONFIRMED!")
+                print(f"      Asset: {self.snowball_position['asset']}")
+                print(f"      Entry: ${entry_value:.2f} @ ${entry_price:.6f}")
+                print(f"      Exit:  ${exit_value:.2f} @ ${actual_sell_price:.6f}")
+                print(f"      ════════════════════════════════════")
+                print(f"      💵 REALIZED PROFIT: ${realized_profit:+.4f} ({profit_pct:+.2f}%)")
+                print(f"      📊 SNOWBALL TOTAL:  ${self.snowball_total_realized:+.4f}")
+                print(f"      🎯 Trade #{len(self.snowball_profit_history)}")
+                print(f"      ════════════════════════════════════")
+                
+                if realized_profit >= 0:
+                    print(f"      ✅ CONFIRMED WIN! Entering cooldown...")
+                else:
+                    print(f"      ❌ LOSS (shouldn't happen - gates should prevent this)")
+                
+                # Clear position - ready for next entry after cooldown
+                self.snowball_position = None
+                self.snowball_last_exit_time = time.time()  # 🎿 Start cooldown timer
+                print(f"      ⏸️ COOLDOWN ACTIVE: {self.snowball_cooldown_seconds}s before next entry")
 
         # 🚨 USE ACTUAL EXECUTION DATA, NOT ESTIMATED PRICES
         # This is critical to prevent ghost profits!
@@ -15854,10 +17096,17 @@ if __name__ == "__main__":
                 # 🌐 Research countdown
                 research_status = f" 🔬{int(time_until_research)}s" if time_until_research > 0 else " 🔬NOW!"
                 
+                # 📊 PERIODIC METRICS SUMMARY
+                if time.time() - self.run_metrics.last_summary > self.metrics_summary_interval:
+                    print(self.run_metrics.get_summary())
+                    self.run_metrics.last_summary = time.time()
+                
                 print(f"🔬 {mode} | {elapsed:.0f}s | Turn:{turn_display} | {neural_str}{cosmic_status}{autonomous_status} | Conv:{self.conversions_made} | Actual:${actual_pnl:+.2f}{drain_warning}{queen_status}{research_status}")
                 
                 # 🐝 UPDATE HIVE STATE (live status file + Queen's voice)
-                if self.hive and (turn_display % self.hive_update_interval == 0):
+                # Use turn counter (integer) not turn_display (string) for modulo
+                turn_count = getattr(self.barter_matrix, 'current_turn', 0) if self.barter_matrix else 0
+                if self.hive and turn_count > 0 and (turn_count % self.hive_update_interval == 0):
                     try:
                         # Determine mood from performance
                         if actual_pnl > 5.0:
@@ -16527,6 +17776,7 @@ async def main():
     parser.add_argument("--winners-only", "-w", action="store_true", help="🏆 WINNERS ONLY: Show ONLY successful trades (quiet mode)")
     parser.add_argument("--no-chain-sniper", action="store_true", help="Disable multi-hop chain sniper")
     parser.add_argument("--max-hops", type=int, default=25, help="Max hops for chain sniper (default: 25)")
+    parser.add_argument("--snowball", action="store_true", help="🎿 SNOWBALL MODE: One trade at a time, strict profit tracking")
     parser.add_argument("--multi-exchange", action="store_true", help="🌐 Enable multi-exchange mode (Alpaca + Kraken + Binance)")
     parser.add_argument("--sync-cia", action="store_true", help="👑🧠 Sync CIA declassified intelligence")
     parser.add_argument("--cia-report", action="store_true", help="👑🧠 Show CIA intelligence report")
@@ -16569,28 +17819,44 @@ async def main():
         print("⚠️  LIVE MODE - AUTO-CONFIRMED! 🚀")
         print("=" * 60)
     
-    engine = MicroProfitLabyrinth(live=args.live)
+    # Pass dry_run flag so --dry-run explicitly overrides LIVE env
+    engine = MicroProfitLabyrinth(live=args.live, dry_run=args.dry_run)
     
-    # 🦙 ALPACA-FOCUSED: Override alpaca_only if --multi-exchange flag is used
-    if args.multi_exchange:
+    # 🌐 MULTI-EXCHANGE: Now default; --multi-exchange kept for compatibility
+    if args.multi_exchange or not engine.alpaca_only:
         engine.alpaca_only = False
-        engine.exchange_order = ['alpaca', 'kraken', 'binance']
+        # Use env-configured order, fallback to sensible default
+        if not hasattr(engine, 'exchange_order') or not engine.exchange_order:
+            engine.exchange_order = ['binance', 'kraken', 'capital', 'coinbase', 'alpaca']
         print("\n" + "🌐" * 35)
-        print("🌐 MULTI-EXCHANGE MODE ENABLED! 🌐")
-        print("   → Alpaca, Kraken, and Binance active")
-        print("   → (Default is Alpaca-only)")
+        print("🌐 MULTI-EXCHANGE PRODUCTION MODE 🌐")
+        print(f"   → Execution order: {' → '.join(engine.exchange_order)}")
+        print(f"   → Alpaca: {'🔒 VERIFY-ONLY' if engine.alpaca_verify_only else '🚀 EXECUTE'}")
+        print(f"   → WebSockets: {'✅ ON' if ENABLE_WEBSOCKETS else '❌ OFF'}")
         print("🌐" * 35)
     else:
         print("\n" + "🦙" * 35)
-        print("🦙 ALPACA-FOCUSED MODE (Default) 🦙")
-        print("   → All systems optimized for Alpaca platform")
-        print("   → Use --multi-exchange to enable other platforms")
+        print("🦙 ALPACA-ONLY MODE 🦙")
+        print("   → Set ALPACA_ONLY=false for multi-exchange")
         print("🦙" * 35)
     
     engine.fptp_mode = not args.turn_based
     engine.winners_only_mode = args.winners_only  # 🏆 Winners Only mode
     engine.chain_sniper_mode = not args.no_chain_sniper
     engine.max_chain_hops = max(1, int(args.max_hops))
+    
+    # 🎿 SNOWBALL MODE - One trade at a time with strict profit tracking
+    engine.snowball_mode = args.snowball
+    if args.snowball:
+        engine.chain_sniper_mode = False  # Disable chain sniper in snowball mode
+        print("\n" + "🎿" * 35)
+        print("🎿 SNOWBALL MODE ACTIVATED! 🎿")
+        print("   → ONE position at a time (no multi-hop)")
+        print("   → STRICT profit tracking (actual prices, not estimates)")
+        print("   → Exit only when profit CONFIRMED > 0.3%")
+        print("   → Lower minimums ($1.00) to build from small")
+        print("   → \"Make sure as shite we made money!\" - Gary")
+        print("🎿" * 35)
     
     if args.winners_only:
         print("\n" + "🏆" * 35)

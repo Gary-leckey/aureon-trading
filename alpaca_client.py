@@ -204,6 +204,12 @@ class AlpacaClient:
     ) -> Dict[str, Any]:
         """Place an order."""
         symbol = self._resolve_symbol(symbol)
+        
+        # Handle stock symbols (remove /USD for API)
+        asset_class = "crypto" if symbol.endswith("USD") or ("/" in symbol and not symbol.split('/')[0].isupper()) else "us_equity"
+        if asset_class == "us_equity" and "/" in symbol:
+            symbol = symbol.split('/')[0]
+        
         if self.dry_run:
             logger.info(f"[DRY RUN] Alpaca Order: {side} {qty} {symbol}")
             return {"id": "dry_run_id", "status": "accepted"}
@@ -335,6 +341,14 @@ class AlpacaClient:
         except Exception:
             return {}
 
+    def get_assets(self, status: str = "active", asset_class: str = "crypto") -> List[Dict[str, Any]]:
+        """Get list of assets."""
+        params = {
+            "status": status,
+            "asset_class": asset_class
+        }
+        return self._request("GET", "/v2/assets", params=params)
+
     def get_tradable_crypto_symbols(self, quote_filter: Optional[str] = None) -> List[str]:
         """
         Return all tradable crypto symbols in normalized Alpaca format.
@@ -361,7 +375,22 @@ class AlpacaClient:
 
         return symbols
 
-    def get_assets(self, status: str = "active", asset_class: str = "crypto") -> List[Dict[str, Any]]:
+    def get_tradable_stock_symbols(self) -> List[str]:
+        """
+        Return all tradable stock symbols.
+        """
+        symbols: List[str] = []
+        assets = self.get_assets(status='active', asset_class='us_equity') or []
+
+        for asset in assets:
+            if not asset.get('tradable'):
+                continue
+
+            symbol = asset.get('symbol', '')
+            if symbol:
+                symbols.append(symbol)
+
+        return symbols
         """Get list of assets."""
         params = {
             "status": status,
@@ -1252,6 +1281,55 @@ class AlpacaClient:
             pass
         return balances
 
+    def get_stock_snapshot(self, symbol: str) -> Dict[str, Any]:
+        """Return snapshot for a stock symbol (latest/daily bars)."""
+        try:
+            sym = symbol.upper()
+            return self._request("GET", f"/v2/stocks/{sym}/snapshot") or {}
+        except Exception as e:
+            logger.error(f"Error getting Alpaca stock snapshot for {symbol}: {e}")
+            return {}
+
+    def get_stock_snapshots(self, symbols: List[str]) -> Dict[str, Any]:
+        """
+        Return snapshots for multiple stock symbols (BATCH REQUEST).
+        Optimized for bulk data retrieval to avoid rate limits.
+        """
+        try:
+            # Chunking handled by caller or simple join (URL length limits apply)
+            results = {}
+            # Split into chunks of 50 to be safe with URL length
+            chunk_size = 50
+            for i in range(0, len(symbols), chunk_size):
+                chunk = symbols[i:i + chunk_size]
+                syms_str = ",".join([s.upper() for s in chunk])
+                resp = self._request("GET", "/v2/stocks/snapshots", params={"symbols": syms_str})
+                if resp and isinstance(resp, dict):
+                    results.update(resp)
+            return results
+        except Exception as e:
+            logger.error(f"Error getting Alpaca stock snapshots batch: {e}")
+            return {}
+
+    def get_latest_stock_quote(self, symbol: str) -> Dict[str, Any]:
+        """Return latest quote for a stock symbol."""
+        try:
+            sym = symbol.upper()
+            return self._request("GET", f"/v2/stocks/{sym}/quotes/latest") or {}
+        except Exception as e:
+            logger.debug(f"Stock quote endpoint unavailable for {symbol}: {e}")
+            return {}
+
+    def get_stock_bars(self, symbols: List[str], limit: int = 1) -> Dict[str, Any]:
+        """Return latest bars (OHLCV) for stock symbols."""
+        try:
+            data = {"symbols": ",".join([s.upper() for s in symbols]), "limit": limit}
+            result = self._request("GET", "/v2/stocks/bars/latest", params=data)
+            return result if isinstance(result, dict) else {}
+        except Exception as e:
+            logger.debug(f"Stock bars endpoint error: {e}")
+            return {}
+
     def get_24h_tickers(self) -> List[Dict[str, Any]]:
         """
         Get 24h ticker data for crypto assets (Kraken-compatible interface).
@@ -1293,9 +1371,67 @@ class AlpacaClient:
             return []
 
     def get_ticker(self, symbol: str) -> Dict[str, Any]:
-        """Return latest bid/ask/last for a crypto symbol."""
+        """Return latest bid/ask/last for a symbol (stocks or crypto)."""
         try:
             norm = self._resolve_symbol(symbol)
+
+            # Stock path (no slash = stock)
+            if '/' not in norm:
+                # Try quote first, then snapshot, then bars as fallback
+                quote_resp = self.get_latest_stock_quote(norm)
+                snapshot = self.get_stock_snapshot(norm)
+
+                quote = quote_resp.get('quote', {}) if isinstance(quote_resp, dict) else {}
+                bid = float(quote.get('bp', 0) or 0.0)
+                ask = float(quote.get('ap', 0) or 0.0)
+                price = float(quote.get('bp', 0) or 0.0)
+                if bid > 0 and ask > 0:
+                    price = (bid + ask) / 2
+                elif ask > 0:
+                    price = ask
+                elif bid > 0:
+                    price = bid
+
+                # Daily volume / change from snapshot
+                daily_volume = 0.0
+                todays_change_pct = 0.0
+                if snapshot:
+                    daily_bar = snapshot.get('dailyBar', {}) or snapshot.get('daily_bar', {})
+                    prev_bar = snapshot.get('prevDailyBar', {}) or snapshot.get('prev_daily_bar', {})
+                    daily_volume = float(daily_bar.get('v', 0) or 0.0)
+                    prev_close = float(prev_bar.get('c', 0) or 0.0)
+                    latest_close = float(daily_bar.get('c', price) or price)
+                    if prev_close > 0:
+                        todays_change_pct = ((latest_close - prev_close) / prev_close) * 100.0
+                    if price <= 0:
+                        price = latest_close
+
+                # Fallback to bars if no price yet
+                if price <= 0:
+                    try:
+                        bars_resp = self.get_stock_bars([norm], limit=1)
+                        bars = bars_resp.get('bars', {})
+                        bar = bars.get(norm, [{}])[0] if norm in bars else {}
+                        price = float(bar.get('c', 0) or 0.0)
+                        if daily_volume <= 0:
+                            daily_volume = float(bar.get('v', 0) or 0.0)
+                    except Exception:
+                        pass
+
+                return {
+                    'symbol': norm,
+                    'price': price,
+                    'bid': bid,
+                    'ask': ask,
+                    'last': {'price': price},
+                    'raw': {
+                        'dailyVolume': daily_volume,
+                        'todaysChangePerc': todays_change_pct,
+                        'snapshot': snapshot
+                    }
+                }
+
+            # Crypto path
             quotes = self.get_latest_crypto_quotes([norm]) or {}
             q = quotes.get(norm, {})
             bid = float(q.get('bp', 0) or 0.0)

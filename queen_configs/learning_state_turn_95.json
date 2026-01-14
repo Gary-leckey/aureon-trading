@@ -1,16 +1,16 @@
 {
   "turn": 95,
-  "profit": 0.0,
-  "total_value": 27.90751609644779,
+  "profit": 0.01552097479379988,
+  "total_value": 10.1363084327515,
   "active_systems": 12,
   "insights": [
     "turn_state:turn_95",
-    "profit_state:0.0000",
+    "profit_state:0.0155",
     "active_systems:12",
     "elephant:active_but_no_patterns_yet",
     "path_memory:active_learning",
     "loss_learning:active_monitoring",
     "neural_brain:active_thinking"
   ],
-  "timestamp": 1768372932.8499558
+  "timestamp": 1768412928.5052178
 }

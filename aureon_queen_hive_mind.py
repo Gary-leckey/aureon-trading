@@ -4416,6 +4416,16 @@ class QueenHiveMind:
             'message': ''
         }
         
+        # 🎿 SNOWBALL CHECK FIRST - Don't dream of victory if snowball blocks!
+        if opportunity and opportunity.get('snowball_blocked', False):
+            snowball_reason = opportunity.get('snowball_reason', 'Snowball mode active')
+            dream_vision['timeline'] = "⏳ WAITING FOR EXIT"
+            dream_vision['will_win'] = False
+            dream_vision['final_confidence'] = 0.0
+            dream_vision['message'] = f"🎿 Sero waits patiently - {snowball_reason}"
+            self.state = QueenState.AWARE
+            return dream_vision
+        
         total_signals = 0
         positive_signals = 0
         signal_weights = 0.0
@@ -4899,6 +4909,10 @@ class QueenHiveMind:
         dream_vision['total_signals'] = total_signals
         dream_vision['positive_signals'] = positive_signals
         
+        # � SNOWBALL MODE CHECK - Don't dream of victory if snowball blocks!
+        snowball_blocked = opp_data.get('snowball_blocked', False)
+        snowball_reason = opp_data.get('snowball_reason', '')
+        
         # 🎯 ENHANCED TIMELINE DETERMINATION - More decisive thresholds!
         # Path score has VETO power if it's a known losing path
         path_has_veto = path_score < 0.25  # Blocked or AVOID paths
@@ -4907,7 +4921,12 @@ class QueenHiveMind:
         loss_has_veto = loss_learning_veto  # Set by Signal 13
         
         # Determine timeline with enhanced logic
-        if loss_has_veto:
+        if snowball_blocked:
+            # 🎿 SNOWBALL VETO - Queen knows we're waiting for current position!
+            dream_vision['timeline'] = "⏳ WAITING FOR EXIT"
+            dream_vision['will_win'] = False
+            dream_vision['message'] = f"🎿 Sero waits patiently - {snowball_reason}"
+        elif loss_has_veto:
             # 🐘💔 LOSS LEARNING VETO - Queen NEVER repeats her losses!
             dream_vision['timeline'] = "🐘⛔ LOSS MEMORY VETO"
             dream_vision['will_win'] = False
@@ -8369,6 +8388,59 @@ Feeling: {thought['emotion']}
         logger.info(f"👑 Queen's Decision: {decision} | Confidence: {queen_confidence:.1%}")
         
         return response
+    
+    def route_execution(self, symbol: str, side: str, opportunity: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        👑🌐 QUEEN'S EXECUTION ROUTING - Multi-Exchange Pipeline 🌐👑
+        
+        Routes trade execution to the best available exchange based on:
+        1. EXCH_EXEC_ORDER env var (binance,kraken,capital,coinbase,alpaca)
+        2. Alpaca verify-only gate (ALPACA_VERIFY_ONLY / ALPACA_EXECUTE)
+        3. Exchange availability and liquidity
+        
+        Returns:
+            {
+                'exchange': selected exchange name,
+                'allowed': bool,
+                'reason': str,
+                'order': list of exchange priority
+            }
+        """
+        # Get execution order from env
+        exec_order = os.getenv("EXCH_EXEC_ORDER", "binance,kraken,capital,coinbase,alpaca").split(",")
+        exec_order = [e.strip().lower() for e in exec_order if e.strip()]
+        
+        # Check Alpaca verify-only gate
+        alpaca_verify_only = os.getenv("ALPACA_VERIFY_ONLY", "true").lower() == "true"
+        alpaca_execute = os.getenv("ALPACA_EXECUTE", "false").lower() == "true"
+        alpaca_blocked = alpaca_verify_only and not alpaca_execute
+        
+        # Find first available exchange
+        selected = None
+        reason = "No exchange available"
+        
+        for exch in exec_order:
+            if exch == 'alpaca' and alpaca_blocked:
+                logger.debug(f"👑🔒 Alpaca blocked (verify-only mode)")
+                continue
+            
+            # Check if exchange client is available (caller should pass this info)
+            exch_available = opportunity.get(f'{exch}_available', True)
+            if exch_available:
+                selected = exch
+                reason = f"Routed to {exch} (priority position {exec_order.index(exch) + 1})"
+                break
+        
+        result = {
+            'exchange': selected,
+            'allowed': selected is not None,
+            'reason': reason,
+            'order': exec_order,
+            'alpaca_blocked': alpaca_blocked,
+        }
+        
+        logger.info(f"👑🌐 Execution routing: {result['exchange']} | {result['reason']}")
+        return result
     
     def make_final_trade_decision(self, neural_summary: Dict[str, Any]) -> Dict[str, Any]:
         """

@@ -2257,6 +2257,129 @@
       "tactics_applied": [
         "Strategic retreat"
       ]
+    },
+    {
+      "timestamp": 1768410183.1245606,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "CRV",
+      "from_amount": 2.02903434565,
+      "from_value_usd": 2.0292676845997497,
+      "executed_price": 0.43509699999999996,
+      "expected_price": 0.43509699999999996,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.012175606107598498,
+      "loss_amount": 0.03202632368308804,
+      "loss_pct": 1.5782207505760815,
+      "market_data": {
+        "cash": 1.61,
+        "portfolio_value": 11.29
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.488,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.69
+      },
+      "combined_score": 0.732,
+      "expected_profit": 0.03202632368308804,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0122) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768410183.2992716,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "DOGE",
+      "from_amount": 1.9246388456499999,
+      "from_value_usd": 1.9248601791172497,
+      "executed_price": 0.150028,
+      "expected_price": 0.150028,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.011549161074703499,
+      "loss_amount": 0.02104684100410094,
+      "loss_pct": 1.093421809668956,
+      "market_data": {
+        "cash": 1.61,
+        "portfolio_value": 11.29
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.4534538412203657,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.79
+      },
+      "combined_score": 0.6801807618305485,
+      "expected_profit": 0.02104684100410094,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0115) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768410183.4749465,
+      "exchange": "alpaca",
+      "from_asset": "USDT",
+      "to_asset": "YFI",
+      "from_amount": 1.3362278466,
+      "from_value_usd": 1.336381512802359,
+      "executed_price": 3620.3810000000003,
+      "expected_price": 3620.3810000000003,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.008018289076814155,
+      "loss_amount": 0.01939128643059437,
+      "loss_pct": 1.451029234154199,
+      "market_data": {
+        "cash": 1.61,
+        "portfolio_value": 11.29
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.44073055072222295,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.6300000000000001
+      },
+      "combined_score": 0.5949862434750011,
+      "expected_profit": 0.01939128643059437,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0080) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
     }
   ],
   "patterns": {
@@ -2540,15 +2663,45 @@
       ],
       "first_seen": 1768354417.7189636,
       "last_seen": 1768354417.7189636
+    },
+    "USDT\u2192CRV_alpaca": {
+      "losses": 1,
+      "total_loss": 0.03202632368308804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768410183.1245606,
+      "last_seen": 1768410183.1245606
+    },
+    "USDT\u2192DOGE_alpaca": {
+      "losses": 1,
+      "total_loss": 0.02104684100410094,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768410183.2992716,
+      "last_seen": 1768410183.2992716
+    },
+    "USDT\u2192YFI_alpaca": {
+      "losses": 1,
+      "total_loss": 0.01939128643059437,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768410183.4749465,
+      "last_seen": 1768410183.4749465
     }
   },
   "stats": {
-    "total_losses_analyzed": 55,
+    "total_losses_analyzed": 58,
     "patterns_identified": 19,
     "tactics_learned": 0,
     "wikipedia_researches": 72,
-    "lessons_broadcast": 36,
+    "lessons_broadcast": 39,
     "money_saved_by_learning": 0.0
   },
-  "last_saved": "2026-01-14T07:14:46.330577"
+  "last_saved": "2026-01-14T18:49:14.658976"
 }

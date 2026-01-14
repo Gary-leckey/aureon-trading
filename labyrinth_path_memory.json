@@ -97,7 +97,7 @@
   },
   "USDC->PEPE": {
     "wins": 2.0,
-    "losses": 4.0
+    "losses": 5.0
   },
   "IDEX->BONK": {
     "wins": 1.0,
@@ -377,15 +377,15 @@
   },
   "USDT->SHIB": {
     "wins": 1.0,
-    "losses": 0.0
+    "losses": 1.0
   },
   "USDC->XTZ": {
     "wins": 1.0,
     "losses": 0.0
   },
   "USDT->XTZ": {
-    "wins": 1.0,
-    "losses": 0.0
+    "wins": 2.0,
+    "losses": 2.0
   },
   "A->1000SATS": {
     "wins": 0.0,
@@ -580,7 +580,7 @@
     "losses": 1.0
   },
   "ETH->LTC": {
-    "wins": 7.0,
+    "wins": 8.0,
     "losses": 0.0
   },
   "USD->BTC": {
@@ -608,7 +608,7 @@
     "losses": 0.0
   },
   "LTC->ETH": {
-    "wins": 6.0,
+    "wins": 8.0,
     "losses": 0.0
   },
   "ETH->BCH": {
@@ -668,10 +668,90 @@
     "losses": 1.0
   },
   "USD->LTC": {
-    "wins": 0.0,
+    "wins": 1.0,
     "losses": 1.0
   },
   "LTC->LINK": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "SHIB->BCH": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "BCH->USDC": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "USDC->UNI": {
+    "wins": 1.0,
+    "losses": 3.0
+  },
+  "USDC->LINK": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "USDC->SKY": {
+    "wins": 2.0,
+    "losses": 0.0
+  },
+  "USD->LINK": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "SKY->USD": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "UNI->ETH": {
+    "wins": 2.0,
+    "losses": 0.0
+  },
+  "LINK->USDT": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "USD->XTZ": {
+    "wins": 2.0,
+    "losses": 0.0
+  },
+  "USDT->LTC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "XTZ->USDC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ETH->UNI": {
+    "wins": 2.0,
+    "losses": 0.0
+  },
+  "UNI->USDC": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "USDC->SUSHI": {
+    "wins": 3.0,
+    "losses": 0.0
+  },
+  "USDC->BCH": {
+    "wins": 3.0,
+    "losses": 0.0
+  },
+  "USDC->AAVE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "SUSHI->USDC": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "USD->BCH": {
+    "wins": 1.0,
+    "losses": 0.0
+  },
+  "BCH->AAVE": {
     "wins": 0.0,
     "losses": 1.0
   }

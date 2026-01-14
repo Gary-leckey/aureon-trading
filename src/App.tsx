@@ -13,6 +13,8 @@ import { ActiveTradePositions } from "@/components/ActiveTradePositions";
 import { LivePnLTable } from "@/components/LivePnLTable";
 import { LiveTerminalStats } from "@/components/LiveTerminalStats";
 import { BrainStatePanel } from "@/components/BrainStatePanel";
+import { HiveStatePanel } from "@/components/HiveStatePanel";
+import { HiveStatePanel } from "@/components/HiveStatePanel";
 import { useTerminalSync } from "@/hooks/useTerminalSync";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -147,16 +149,22 @@ function TradeFeed() {
             <MarketMetricsPanel />
           </div>
 
-          {/* Portfolio + Brain State Panel */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <PortfolioSummaryPanel />
+          {/* Portfolio Summary */}
+          <PortfolioSummaryPanel />
+
+          {/* Cognitive State: Brain + Hive */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <BrainStatePanel />
+            <HiveStatePanel />
           </div>
 
           {/* Terminal Stats Mirror - Live system metrics */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <LiveTerminalStats />
-            
+
+            {/* Hive State Panel (Queen's mood, coherence, veto log) */}
+            <HiveStatePanel />
+
             {/* Active Positions (real Binance/Kraken spot balances) */}
             <ActiveTradePositions />
           </div>

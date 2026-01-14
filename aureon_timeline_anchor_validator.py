@@ -343,8 +343,28 @@ class TimelineAnchorValidator:
             try:
                 with open(self.PENDING_FILE, 'r') as f:
                     data = json.load(f)
+                
+                # Normalize data: handle both dict and list formats
+                if isinstance(data, list):
+                    # Convert list to dict (use anchor_id as key)
+                    normalized_data = {}
+                    for item in data:
+                        if isinstance(item, dict):
+                            anchor_id = item.get('anchor_id', f"anchor_{len(normalized_data)}")
+                            normalized_data[anchor_id] = item
+                    data = normalized_data
+                elif not isinstance(data, dict):
+                    logger.warning(f"Unexpected data type in {self.PENDING_FILE}: {type(data)}, resetting")
+                    data = {}
+                
+                # Load anchors from normalized dict
                 for anchor_id, anchor_data in data.items():
-                    self.pending_anchors[anchor_id] = TimelineAnchor.from_dict(anchor_data)
+                    if isinstance(anchor_data, dict):
+                        try:
+                            self.pending_anchors[anchor_id] = TimelineAnchor.from_dict(anchor_data)
+                        except Exception as e:
+                            logger.warning(f"Could not load anchor {anchor_id}: {e}")
+                
                 logger.info(f"  Loaded {len(self.pending_anchors)} pending anchors")
             except Exception as e:
                 logger.error(f"Failed to load pending anchors: {e}")
@@ -354,8 +374,28 @@ class TimelineAnchorValidator:
             try:
                 with open(self.ANCHORED_FILE, 'r') as f:
                     data = json.load(f)
+                
+                # Normalize data: handle both dict and list formats
+                if isinstance(data, list):
+                    # Convert list to dict (use anchor_id as key)
+                    normalized_data = {}
+                    for item in data:
+                        if isinstance(item, dict):
+                            anchor_id = item.get('anchor_id', f"anchor_{len(normalized_data)}")
+                            normalized_data[anchor_id] = item
+                    data = normalized_data
+                elif not isinstance(data, dict):
+                    logger.warning(f"Unexpected data type in {self.ANCHORED_FILE}: {type(data)}, resetting")
+                    data = {}
+                
+                # Load anchors from normalized dict
                 for anchor_id, anchor_data in data.items():
-                    self.anchored_timelines[anchor_id] = TimelineAnchor.from_dict(anchor_data)
+                    if isinstance(anchor_data, dict):
+                        try:
+                            self.anchored_timelines[anchor_id] = TimelineAnchor.from_dict(anchor_data)
+                        except Exception as e:
+                            logger.warning(f"Could not load anchored timeline {anchor_id}: {e}")
+                
                 logger.info(f"  Loaded {len(self.anchored_timelines)} anchored timelines")
             except Exception as e:
                 logger.error(f"Failed to load anchored timelines: {e}")

@@ -7,6 +7,7 @@ import time
 from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Optional
 from datetime import datetime
+from pathlib import Path
 
 @dataclass
 class HiveState:
@@ -88,8 +89,9 @@ class HiveStatePublisher:
     def _publish(self):
         """Write the markdown state file."""
         try:
+            timestamp = datetime.now()
             content = f"""# 🐝 AUREON HIVE STATE
-*Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*
+*Last Updated: {timestamp.strftime('%Y-%m-%d %H:%M:%S')}*
 
 ## 🧠 Queen's Mind
 - **Mood:** `{self.state.mood}`
@@ -107,6 +109,22 @@ class HiveStatePublisher:
 
             with open(self.filename, 'w', encoding='utf-8') as f:
                 f.write(content)
+
+            # Also publish JSON for dashboards / UI
+            public_dir = Path(__file__).resolve().parent / "public"
+            public_dir.mkdir(parents=True, exist_ok=True)
+            json_path = public_dir / "hive_state.json"
+            json_payload = {
+                "updated_at": timestamp.isoformat(),
+                "mood": self.state.mood,
+                "active_scanner": self.state.active_scanner,
+                "coherence_score": self.state.coherence_score,
+                "veto_count": self.state.veto_count,
+                "last_veto_reason": self.state.last_veto_reason,
+                "message_log": list(self.state.message_log),
+            }
+            with open(json_path, 'w', encoding='utf-8') as jf:
+                json.dump(json_payload, jf, indent=2)
                 
         except Exception as e:
             print(f"⚠️ Failed to publish hive state: {e}")
