@@ -2,6 +2,15 @@
 
 > **Multi-exchange algorithmic trading platform with adaptive profit gates, neural decision-making, and self-repairing architecture.**
 
+## Research Sandbox & Autonomy Experiments
+
+This repository serves as a **research sandbox** for exploring:
+- **Emergent Autonomy**: Testing LLM-driven decision loops, goal-setting agents (The Queen), and dynamic hallucinations validation.
+- **Harmonic Markets**: Verifying harmonic pattern detection (Golden Ratio/Fibonacci) across crypto and equity markets.
+- **System Dynamics**: Analyzing how "organic" metaphors (Hive Mind, Animal Swarms) perform in rigid financial environments.
+
+*Disclaimer: This is experimental software combining rigid trading logic with generative AI inputs. Use with extreme caution.*
+
 ## Architecture Overview
 
 ```
@@ -76,6 +85,13 @@ Turn-based execution engine:
 | Binance | `binance_client.py` | UK restriction handling, tiered fees |
 | Alpaca | `alpaca_client.py` | Stocks + crypto, fractional shares |
 
+### 5. Animal Ecosystem Scanners (`aureon_animal_momentum_scanners.py`)
+Specialized Alpaca-focused momentum scanners using biological metaphors:
+- **Wolf**: 24h high-momentum breakout sniper.
+- **Lion**: Composite scorer (Volume * Move * Coherence).
+- **Ants**: High-frequency small-move foragers.
+- **Hummingbird**: rapid short-duration rotation scanner.
+
 ## Execution Flow
 
 ```
@@ -120,9 +136,9 @@ DEFAULT_PRIME_TARGET=0.02
 ### Fee Profiles (auto-updated)
 ```python
 DEFAULT_FEE_PROFILES = {
-    'binance': {'maker': 0.10%, 'taker': 0.10%, 'spread': 0.05%},
-    'kraken':  {'maker': 0.25%, 'taker': 0.40%, 'spread': 0.08%},
-    'alpaca':  {'maker': 0.15%, 'taker': 0.25%, 'spread': 0.08%},
+    'binance': {'maker': 0.0010, 'taker': 0.0010, 'spread': 0.0005},  # 0.10% / 0.05%
+    'kraken':  {'maker': 0.0025, 'taker': 0.0040, 'spread': 0.0008},
+    'alpaca':  {'maker': 0.0015, 'taker': 0.0025, 'spread': 0.0008},
 }
 ```
 
@@ -145,6 +161,8 @@ python micro_profit_labyrinth.py --dry-run
 | File | Purpose |
 |------|---------|
 | `micro_profit_labyrinth.py` | Main execution loop |
+| `aureon_animal_momentum_scanners.py` | Wolf/Lion/Ants/Hummingbird scanners |
+| `aureon_alpaca_scanner_bridge.py` | Alpaca API bridge & gating |
 | `aureon_queen_hive_mind.py` | Neural decision controller |
 | `adaptive_prime_profit_gate.py` | Profit threshold calculator |
 | `kraken_client.py` | Kraken API wrapper |
@@ -157,7 +175,8 @@ python micro_profit_labyrinth.py --dry-run
 - **Self-repair**: Queen auto-fixes type errors and learns from failures  
 - **Min-qty pre-filter**: Rejects trades below exchange minimums before execution
 - **Dynamic blocking**: Repeatedly failing paths get temporarily blocked
+- **Rate & Cadence**: Animal scanners automatically handle HTTP 429 rate limits with backoff; aggressive scanning may trigger API pauses.
 
 ## License
 
-Proprietary - RA-CONSULTING
+[MIT License](LICENSE)
