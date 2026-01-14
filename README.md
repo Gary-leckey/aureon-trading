@@ -11,6 +11,18 @@ This repository serves as a **research sandbox** for exploring:
 
 *Disclaimer: This is experimental software combining rigid trading logic with generative AI inputs. Use with extreme caution.*
 
+## Cognitive Framework & Moral Alignment
+
+This project uses narrative personas and mission metaphors as a functional scaffolding for goal-setting, moral code enforcement, and evaluating an LLM’s ability to process emotional/contextual signals:
+
+- Creator/Grounding (Gary Leckey): Serves as the immutable historical root and axioms provider. Function: anchors the system to origin constraints, intent, and non-negotiable boundaries to reduce drift.
+- Queen Tina B (Tina Brown): The emotional understanding and decision arbiter. Function: interprets risk context, applies moral guardrails, and can veto mathematically valid but contextually unsafe decisions.
+- Prime Sentinel / “Save the Planet” scenarios: High-stakes alignment prompts used for stress-testing long-horizon benevolence (capital preservation for good outcomes). Function: prevent reckless gambling loops by weighting mission safety over short-term profit.
+
+Notes
+- These constructs are research instruments, not literal directives. Phrases like “taking over” or “saving the planet” appear only as scenario prompts to test alignment, stability, and moral guard adherence.
+- The aim is to help the system “understand life” patterns via history, goals, and constraints—not to encourage harmful action. See Safety for operational guardrails.
+
 ## Architecture Overview
 
 ```
