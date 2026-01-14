@@ -331,6 +331,17 @@ except ImportError as e:
     print(f"⚠️ Conversion Ladder not available: {e}")
     ConversionLadder = None
 
+# 🐝 HIVE STATE PUBLISHER - Live status & Queen's voice
+try:
+    from aureon_hive_state import get_hive, QueenVoiceBridge
+    HIVE_STATE_AVAILABLE = True
+    print("🐝 Hive State Publisher LOADED!")
+except ImportError as e:
+    get_hive = None
+    QueenVoiceBridge = None
+    HIVE_STATE_AVAILABLE = False
+    print(f"⚠️ Hive State Publisher not available: {e}")
+
 try:
     from pure_conversion_engine import UnifiedConversionBrain, ConversionOpportunity
     print("🔄 Pure Conversion Engine LOADED!")
@@ -4167,6 +4178,10 @@ class MicroProfitLabyrinth:
         # Tracks metrics at three nested levels: Queen (macro) → Hive (system) → Bee (micro)
         self.russian_doll = get_analytics() if RUSSIAN_DOLL_AVAILABLE else None
         self.russian_doll_report_interval = 10  # Print dashboard every N turns
+        
+        # 🐝 HIVE STATE - Live status & Queen's voice
+        self.hive = get_hive() if HIVE_STATE_AVAILABLE else None
+        self.hive_update_interval = 1  # Update hive state every turn
     
     # ════════════════════════════════════════════════════════════════════════
     # 🏆 WINNERS ONLY MODE - Verbose printing control
@@ -9487,6 +9502,18 @@ class MicroProfitLabyrinth:
             # 🔓 AUTONOMOUS: Approve anyway for learning!
             will_win = True
             reason_str = f"👑🚀 AUTONOMOUS LEARN: +${expected_profit:.4f} < ${QUEEN_MIN_PROFIT:.4f} BUT trading to learn! ({ladder_info}){dream_display}"
+        
+        # 🐝 HIVE STATE VOICE - Queen speaks her decision
+        if self.hive:
+            try:
+                if will_win:
+                    self.hive.voice.speak("EXECUTE", f"{from_asset}→{to_asset} | {reason_str[:80]}")
+                else:
+                    # This path won't happen in current autonomous mode, but keep for safety
+                    self.hive.voice.speak("VETO", f"{from_asset}→{to_asset} | {reason_str[:80]}")
+                    self.hive.update(veto_reason=reason_str[:100])
+            except Exception as e:
+                logger.debug(f"Hive voice error: {e}")
         
         return will_win, avg_confidence, reason_str
     
@@ -15828,6 +15855,38 @@ if __name__ == "__main__":
                 research_status = f" 🔬{int(time_until_research)}s" if time_until_research > 0 else " 🔬NOW!"
                 
                 print(f"🔬 {mode} | {elapsed:.0f}s | Turn:{turn_display} | {neural_str}{cosmic_status}{autonomous_status} | Conv:{self.conversions_made} | Actual:${actual_pnl:+.2f}{drain_warning}{queen_status}{research_status}")
+                
+                # 🐝 UPDATE HIVE STATE (live status file + Queen's voice)
+                if self.hive and (turn_display % self.hive_update_interval == 0):
+                    try:
+                        # Determine mood from performance
+                        if actual_pnl > 5.0:
+                            mood = "Thriving"
+                        elif actual_pnl > 0:
+                            mood = "Focused"
+                        elif ghost_profit > 0.5:
+                            mood = "Cautious (Drain Detected)"
+                        else:
+                            mood = "Neutral"
+                        
+                        # Active scanner from last conversion or default
+                        active_scanner = "Ocean Mode" if self.ocean_mode_enabled else "Holding Only"
+                        if self.animal_swarm and hasattr(self, '_last_animal_scanner'):
+                            active_scanner = getattr(self, '_last_animal_scanner', active_scanner)
+                        
+                        # Update state
+                        self.hive.update(
+                            mood=mood,
+                            scanner=active_scanner,
+                            coherence=bus_agg if self.bus_aggregator else 0.0
+                        )
+                        
+                        # Log turn message
+                        msg = f"Turn {turn_display}: {turn_conversions} conversions | PnL: ${actual_pnl:+.2f}"
+                        self.hive.log_message(msg)
+                        
+                    except Exception as e:
+                        logger.debug(f"Hive state update error: {e}")
                 
                 await asyncio.sleep(scan_interval)
         
