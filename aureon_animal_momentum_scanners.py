@@ -144,9 +144,13 @@ class AlpacaLionHunt(BaseAnimalScanner):
                 var = (max(highs) - min(lows)) or 1.0
                 coherence = 1.0 / (1.0 + var)
 
+            # Only consider profitable opportunities
+            if not is_profitable:
+                return None
+
             score = abs(move_pct) * math.log(1 + vol + 1.0) * (coherence * 2.0)
             side = 'buy' if move_pct < 0 else 'sell'
-            opp = AnimalOpportunity(symbol=sym, side=side, move_pct=move_pct, net_pct=net, volume=vol, reason=f"Lion (tier={tier})")
+            opp = AnimalOpportunity(symbol=sym, side=side, move_pct=move_pct, net_pct=net, volume=vol, reason=f"Lion ({tier})")
             return score, opp
         except Exception:
             return None
@@ -207,37 +211,59 @@ class AlpacaArmyAnts(BaseAnimalScanner):
 
 
 class AlpacaHummingbird(BaseAnimalScanner):
-    """Micro-rotation pollinator: focuses on ETH-quoted pairs, small quick trades.
+    """Micro-rotation pollinator: rapid scalps on high-frequency momentum.
+
+    Focuses on short-term (6h) momentum with tight profit targets.
+    Best for catching quick reversals and micro-swings.
     """
 
-    def pollinate(self, base_quote: str = 'ETH', limit: int = 12) -> List[AnimalOpportunity]:
-        symbols = [s for s in self._get_crypto_universe() if s.startswith(f"{base_quote}/")]
+    def pollinate(self, limit: int = 12) -> List[AnimalOpportunity]:
+        symbols = self._get_crypto_universe()
         results: List[AnimalOpportunity] = []
+
         for s in symbols:
             try:
                 resolved = s
                 if hasattr(self.alpaca, '_resolve_symbol'):
                     resolved = self.alpaca._resolve_symbol(s)
-                bars_resp = self.alpaca.get_crypto_bars([resolved], timeframe='1H', limit=12) or {}
+
+                # Use 6h window for faster momentum detection
+                bars_resp = self.alpaca.get_crypto_bars([resolved], timeframe='1H', limit=6) or {}
                 bars = bars_resp.get('bars', {}).get(resolved, []) if isinstance(bars_resp, dict) else []
                 if not bars or len(bars) < 2:
                     continue
+
                 first_price = float(bars[0].get('o', bars[0].get('open', 0)) or 0)
                 last_price = float(bars[-1].get('c', bars[-1].get('close', 0)) or 0)
+                if first_price <= 0 or last_price <= 0:
+                    continue
+
                 move_pct = ((last_price - first_price) / first_price) * 100.0
+                vol = sum(float(b.get('v', b.get('volume', 0)) or 0) for b in bars)
+
                 is_profitable, tier = self.bridge.is_move_profitable(abs(move_pct))
                 net = self.bridge.calculate_net_profit(abs(move_pct))
-                if is_profitable:
+
+                # Hummingbird prefers quick, moderate moves (not extreme)
+                thresholds = self.bridge.get_cost_thresholds()
+                max_move = thresholds.tier_1_hot_threshold * 2.0  # Cap at 2x HOT
+                if is_profitable and abs(move_pct) <= max_move:
                     side = 'buy' if move_pct < 0 else 'sell'
-                    results.append(AnimalOpportunity(symbol=s, side=side, move_pct=move_pct, net_pct=net, volume=0.0, reason=f"Hummingbird (tier={tier})"))
+                    results.append(AnimalOpportunity(
+                        symbol=s, side=side, move_pct=move_pct,
+                        net_pct=net, volume=vol, reason=f"Hummingbird ({tier})"
+                    ))
             except Exception:
                 continue
 
-        results.sort(key=lambda x: -abs(x.move_pct))
+        # Sort by net profit (best micro-trades first)
+        results.sort(key=lambda x: -x.net_pct)
         return results[:limit]
 
 
 class AlpacaSwarmOrchestrator:
+    """Coordinates animal agents and can execute trades via trailing stops."""
+
     def __init__(self, alpaca: AlpacaClient, bridge: AlpacaScannerBridge):
         self.alpaca = alpaca
         self.bridge = bridge
@@ -245,6 +271,7 @@ class AlpacaSwarmOrchestrator:
         self.lion = AlpacaLionHunt(alpaca, bridge)
         self.ants = AlpacaArmyAnts(alpaca, bridge)
         self.hummingbird = AlpacaHummingbird(alpaca, bridge)
+        self.dry_run = True  # Safety default
 
     def run_once(self) -> Dict[str, List[AnimalOpportunity]]:
         """Run one orchestration cycle (dry-run safe).
@@ -262,6 +289,52 @@ class AlpacaSwarmOrchestrator:
         total = sum(len(v) for v in out.values())
         self.bridge._stats['opportunities_detected'] += total
         return out
+
+    def execute_opportunity(self, opp: AnimalOpportunity, qty: float, use_trailing_stop: bool = True) -> Optional[Dict]:
+        """Execute a trade for an opportunity with optional trailing stop.
+
+        Args:
+            opp: The opportunity to execute
+            qty: Quantity to trade
+            use_trailing_stop: Whether to use trailing stop (default True)
+
+        Returns:
+            Order result dict or None if dry-run / error
+        """
+        if self.dry_run:
+            logger.info(f"[DRY-RUN] Would execute {opp.side} {qty} {opp.symbol} ({opp.reason})")
+            return {'dry_run': True, 'symbol': opp.symbol, 'side': opp.side, 'qty': qty}
+
+        try:
+            if use_trailing_stop:
+                result = self.bridge.execute_with_trailing_stop(
+                    symbol=opp.symbol,
+                    side=opp.side,
+                    qty=qty,
+                    trail_percent=2.0  # Default 2% trail
+                )
+            else:
+                result = self.alpaca.place_market_order(opp.symbol, opp.side, qty)
+
+            logger.info(f"Executed {opp.side} {qty} {opp.symbol}: {result}")
+            return result
+        except Exception as e:
+            logger.error(f"Execution failed for {opp.symbol}: {e}")
+            return None
+
+    def get_best_opportunity(self) -> Optional[AnimalOpportunity]:
+        """Get the single best opportunity across all agents."""
+        results = self.run_once()
+        all_opps = []
+        for agent_opps in results.values():
+            all_opps.extend(agent_opps)
+
+        if not all_opps:
+            return None
+
+        # Sort by net profit
+        all_opps.sort(key=lambda x: -x.net_pct)
+        return all_opps[0]
 
 
 def main(dry_run: bool = True):

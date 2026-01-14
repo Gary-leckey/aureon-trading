@@ -464,6 +464,24 @@ except ImportError as e:
     GLOBAL_WAVE_SCANNER_AVAILABLE = False
     print(f"⚠️ Global Wave Scanner not available: {e}")
 
+# 🐺🦁🐜🐦 ANIMAL MOMENTUM SCANNERS - Wolf, Lion, Ants, Hummingbird
+try:
+    from aureon_animal_momentum_scanners import (
+        AlpacaSwarmOrchestrator, AlpacaLoneWolf, AlpacaLionHunt,
+        AlpacaArmyAnts, AlpacaHummingbird, AnimalOpportunity
+    )
+    ANIMAL_SCANNERS_AVAILABLE = True
+    print("🐺🦁 Animal Momentum Scanners LOADED!")
+except ImportError as e:
+    AlpacaSwarmOrchestrator = None
+    AlpacaLoneWolf = None
+    AlpacaLionHunt = None
+    AlpacaArmyAnts = None
+    AlpacaHummingbird = None
+    AnimalOpportunity = None
+    ANIMAL_SCANNERS_AVAILABLE = False
+    print(f"⚠️ Animal Momentum Scanners not available: {e}")
+
 try:
     from aureon_omega import Omega
     print("🔱 Omega LOADED!")
@@ -4042,6 +4060,7 @@ class MicroProfitLabyrinth:
         self.omega = None
         self.rapid_stream = None
         self.wave_scanner = None  # 🌊🔭 A-Z/Z-A Global Wave Scanner
+        self.animal_swarm = None   # 🐺🦁🐜🐦 Animal Momentum Scanners
         
         # State - NOW TRACKS ALL EXCHANGES
         self.prices: Dict[str, float] = {}
@@ -4537,7 +4556,31 @@ class MicroProfitLabyrinth:
                 print(f"⚠️ Global Wave Scanner error: {e}")
         
         # ════════════════════════════════════════════════════════════════
-        # 🔱 OMEGA - HIGH CONFIDENCE SIGNALS
+        # 🐺🦁🐜🐦 ANIMAL MOMENTUM SCANNERS - ALPACA SWARM
+        # ════════════════════════════════════════════════════════════════
+        self.animal_swarm = None
+        if ANIMAL_SCANNERS_AVAILABLE and AlpacaSwarmOrchestrator and self.alpaca:
+            try:
+                from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
+                # Use existing fee_tracker if available, otherwise create new
+                _fee_tracker = getattr(self, "fee_tracker", None)
+                if not _fee_tracker and FEE_TRACKER_AVAILABLE:
+                    from alpaca_fee_tracker import AlpacaFeeTracker as AFT
+                    _fee_tracker = AFT(self.alpaca)
+                scanner_bridge = AlpacaScannerBridge(
+                    alpaca_client=self.alpaca,
+                    fee_tracker=_fee_tracker,
+                    enable_sse=False,
+                    enable_stocks=False
+                )
+                self.animal_swarm = AlpacaSwarmOrchestrator(self.alpaca, scanner_bridge)
+                self.animal_swarm.dry_run = not self.live  # Safety: dry-run unless live mode
+                print("🐺🦁 Animal Swarm Orchestrator: INITIALIZED (Wolf, Lion, Ants, Hummingbird)")
+            except Exception as e:
+                print(f"⚠️ Animal Swarm Orchestrator error: {e}")
+        
+        # ════════════════════════════════════════════════════════════════
+        # �🔱 OMEGA - HIGH CONFIDENCE SIGNALS
         # ════════════════════════════════════════════════════════════════
         if Omega:
             try:
@@ -7697,6 +7740,25 @@ class MicroProfitLabyrinth:
             pass
         return None
 
+    def _read_kraken_cache_for_alpaca(self) -> Optional[Dict[str, Any]]:
+        """Read Kraken REST cache if fresh (for Alpaca heavy lifting - 10 extra coins!)."""
+        try:
+            kraken_cache_path = os.getenv("KRAKEN_CACHE_PATH", "ws_cache/kraken_prices.json").strip()
+            kraken_cache_max_age_s = float(os.getenv("KRAKEN_CACHE_MAX_AGE_S", "15"))  # Kraken REST is slower
+            if not kraken_cache_path:
+                return None
+            p = Path(kraken_cache_path)
+            if not p.exists():
+                return None
+            raw = p.read_text(encoding="utf-8")
+            payload = json.loads(raw) if raw else {}
+            ts = float(payload.get("generated_at", 0) or 0)
+            if ts > 0 and (time.time() - ts) <= kraken_cache_max_age_s:
+                return payload
+        except Exception:
+            pass
+        return None
+
     async def _ocean_scan_alpaca(self, cash_info: Dict) -> List['MicroOpportunity']:
         """
         🦙🟡 Scan ALL Alpaca symbols using BINANCE for heavy lifting!
@@ -7742,12 +7804,15 @@ class MicroProfitLabyrinth:
                 alpaca_bases.add(base)
         
         # ════════════════════════════════════════════════════════════════════════
-        # 🟡 BINANCE HEAVY LIFTING - Use WS cache for full-market data!
+        # 🟡🐙 BINANCE + KRAKEN HEAVY LIFTING - Use caches for full-market data!
         # ════════════════════════════════════════════════════════════════════════
         binance_cache = self._read_binance_ws_cache_for_alpaca()
+        kraken_cache = self._read_kraken_cache_for_alpaca()  # 🐙 10 extra Alpaca coins!
         
         candidates = []
+        seen_bases = set()  # Dedupe across sources
         
+        # 🟡 BINANCE FIRST (WebSocket = fastest updates)
         if binance_cache:
             # Use Binance data for scanning (FREE and comprehensive!)
             ticker_cache = binance_cache.get('ticker_cache', {})
@@ -7777,6 +7842,43 @@ class MicroProfitLabyrinth:
                     'volume': volume,
                     'source': 'binance_ws',
                 })
+                seen_bases.add(base)
+        
+        # 🐙 KRAKEN SECOND (10 extra coins not on Binance!)
+        if kraken_cache:
+            ticker_cache = kraken_cache.get('ticker_cache', {})
+            kraken_additions = 0
+            
+            for key, ticker in ticker_cache.items():
+                if key.startswith('kraken:'):
+                    continue  # Skip prefixed duplicates
+                if not isinstance(ticker, dict):
+                    continue
+                base = ticker.get('base', '').upper()
+                if not base or base not in alpaca_bases:
+                    continue  # Only consider Alpaca-tradeable
+                if base in seen_bases:
+                    continue  # Binance already has this
+                
+                price = float(ticker.get('price', 0) or 0)
+                change_24h = float(ticker.get('change24h', 0) or 0)
+                volume = float(ticker.get('volume', 0) or 0)
+                
+                if price <= 0:
+                    continue
+                
+                candidates.append({
+                    'base': base,
+                    'price': price,
+                    'change_pct': change_24h,
+                    'volume': volume,
+                    'source': 'kraken_rest',
+                })
+                seen_bases.add(base)
+                kraken_additions += 1
+            
+            if kraken_additions > 0:
+                print(f"   🐙🦙 KRAKEN→ALPACA: Added {kraken_additions} extra coins (BAT, BCH, GRT, LTC...)")
         
         # Fallback: try Binance REST if no cache
         if not candidates and self.binance:
@@ -7906,9 +8008,13 @@ class MicroProfitLabyrinth:
                 opp.momentum_score = momentum
                 opp.ocean_mode = True
                 opp.binance_sourced = (cand.get('source', '') in ('binance_ws', 'binance_rest'))
+                opp.kraken_sourced = (cand.get('source', '') == 'kraken_rest')
                 opportunities.append(opp)
         
-        print(f"   🟡🦙 Binance→Alpaca scan: {len(candidates)} candidates, {validated_count} Alpaca-validated, {len(opportunities)} opportunities")
+        # Summary with source breakdown
+        binance_cands = len([c for c in candidates if 'binance' in c.get('source', '')])
+        kraken_cands = len([c for c in candidates if c.get('source', '') == 'kraken_rest'])
+        print(f"   🟡🐙🦙 Multi-source→Alpaca: {len(candidates)} total ({binance_cands} Binance + {kraken_cands} Kraken), {validated_count} validated, {len(opportunities)} opportunities")
         
         return opportunities
 
