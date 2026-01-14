@@ -230,10 +230,9 @@ LIVE_MODE = os.getenv("LIVE", "0") == "1"
 ALPACA_VERIFY_ONLY = os.getenv("ALPACA_VERIFY_ONLY", "true").lower() == "true"
 # ALPACA_EXECUTE: Explicit flag to enable Alpaca execution (overrides VERIFY_ONLY)
 ALPACA_EXECUTE = os.getenv("ALPACA_EXECUTE", "false").lower() == "true"
-# ALPACA_INCLUDE_STOCKS: DISABLED BY DEFAULT - use Kraken/Binance instead for heavy lifting
-# Stock scanning hammers Alpaca API with 404 errors on non-premium accounts
-# Instead: Kraken & Binance provide all market data, Alpaca executes only
-ALPACA_INCLUDE_STOCKS = os.getenv("ALPACA_INCLUDE_STOCKS", "false").lower() == "true"
+# ALPACA_INCLUDE_STOCKS: ENABLED BY DEFAULT for stock scanning
+# Checks specifically for stock opportunities alongside crypto
+ALPACA_INCLUDE_STOCKS = os.getenv("ALPACA_INCLUDE_STOCKS", "true").lower() == "true"
 # EXCH_EXEC_ORDER: Comma-separated execution priority (default: binance,kraken,capital,coinbase,alpaca)
 EXCH_EXEC_ORDER = os.getenv("EXCH_EXEC_ORDER", "binance,kraken,capital,coinbase,alpaca").split(",")
 # ENABLE_WEBSOCKETS: Use WebSocket streams for live data (faster than REST polling)
@@ -4315,6 +4314,9 @@ class MicroProfitLabyrinth:
         self.min_hold_time_seconds = float(os.getenv("MIN_HOLD_TIME_SECONDS", "5"))  # 5 seconds default
         self.max_hold_time_seconds = float(os.getenv("MAX_HOLD_TIME_SECONDS", "300"))  # 5 minutes max
         self.position_entry_times = {}  # Track when we bought each asset
+        # Registry of positions with verified execution details (keyed by ASSET uppercase)
+        # Each entry: {'amount': float, 'entry_price': float, 'entry_value_usd': float, 'fees_usd': float, 'order_ids': [], 'source': 'alpaca', 'timestamp': float}
+        self.position_registry: Dict[str, Dict[str, Any]] = {}
         
         # 🪆 RUSSIAN DOLL ANALYTICS - Fractal measurement system
         # Tracks metrics at three nested levels: Queen (macro) → Hive (system) → Bee (micro)
@@ -4411,7 +4413,43 @@ class MicroProfitLabyrinth:
             return True, "No Alpaca client - loss prevention bypassed"
         
         try:
-            # Get current positions from Alpaca
+            # First check our internal position registry (most accurate for our fills)
+            asset_up = asset.upper()
+            registry = self.position_registry.get(asset_up)
+            current_price = self.prices.get(asset_up, None)
+
+            if registry and current_price is not None:
+                # Calculate unrealized P/L from our recorded entry
+                entry_amount = float(registry.get('amount', 0.0))
+                entry_price = float(registry.get('entry_price', 0.0))
+                entry_fees = float(registry.get('fees_usd', 0.0))
+
+                if entry_amount <= 0:
+                    return True, f"No recorded position amount - trade allowed"
+
+                # Current value and cost basis
+                current_value = current_price * sell_quantity
+                cost_basis = entry_price * sell_quantity
+                proportional_fees = (entry_fees * (sell_quantity / entry_amount)) if entry_amount > 0 else 0.0
+                unrealized_pl = current_value - cost_basis - proportional_fees
+
+                if unrealized_pl >= 0:
+                    return True, f"Position at profit (est ${unrealized_pl:.2f}) - safe to sell"
+                else:
+                    loss_amount = abs(unrealized_pl)
+                    # If selling full position
+                    if sell_quantity >= entry_amount:
+                        return False, f"Would realize ${loss_amount:.2f} loss on entire recorded position"
+                    else:
+                        # Partial sell - calculate proportional loss
+                        proportional_loss = loss_amount
+                        # Allow if proportional loss is tiny
+                        if proportional_loss < 0.01:
+                            return True, f"Small proportional loss (${proportional_loss:.4f}) - allowed"
+                        else:
+                            return False, f"Would realize ${proportional_loss:.2f} proportional loss"
+
+            # Fallback: use Alpaca's positions if registry not present
             positions = self.alpaca.get_positions()
             
             # Find the position for this asset
@@ -6517,6 +6555,18 @@ class MicroProfitLabyrinth:
                 elif avg_profit < -0.01:  # Losing path
                     score -= 0.10
                     reasons.append("losing_path")
+                
+                # Check recent Queen observations (did she block this recently?)
+                if 'queen_observations' in history:
+                    recent_obs = history['queen_observations'][-5:]
+                    # Count how many recent attempts were blocked/predicted to lose
+                    blocked_count = sum(1 for o in recent_obs if not o.get('predicted_win', True))
+                    if blocked_count >= 3:
+                        score -= 0.35  # Heavy penalty for repeatedly blocked paths
+                        reasons.append(f"queen_blocked_x{blocked_count}")
+                    elif blocked_count >= 1:
+                        score -= 0.10
+                        reasons.append("recently_blocked")
                 
                 # Experience bonus (more trades = more confidence)
                 if path_trades >= 10:
@@ -9825,6 +9875,15 @@ class MicroProfitLabyrinth:
         else:
             signals.append(0.5)  # Neutral for new paths
             reasons.append("NEW PATH (no history)")
+            
+        # 1b. 👑🧠 QUEEN OBSERVATIONS - Did Sero block this recently?
+        if 'queen_observations' in path_history:
+            recent_obs = path_history['queen_observations'][-5:]
+            blocked_count = sum(1 for o in recent_obs if not o.get('predicted_win', True))
+            if blocked_count >= 1:
+                # Strong signal to reject
+                signals.append(0.0) 
+                reasons.append(f"Queen recently blocked x{blocked_count}")
         
         # 2. 👑 QUEEN HIVE MIND - Get collective wisdom
         if self.queen and hasattr(self.queen, 'get_guidance_for'):
@@ -14275,7 +14334,21 @@ if __name__ == "__main__":
             
             total_cost_pct = cost_breakdown.get('total_cost_pct', 0.5) / 100.0  # Convert to decimal
             total_cost_usd = opp.from_value_usd * total_cost_pct
-            
+
+            # If we have a dynamic cost estimator, use Monte Carlo to compute a worst-case (90th percentile) cost
+            if self.cost_estimator:
+                try:
+                    sample_stats = self.cost_estimator.sample_total_cost_distribution(f"{from_upper}/{to_upper}", 'buy', opp.from_value_usd, n_samples=1000)
+                    worst_pct = sample_stats.get('p90', total_cost_pct*100)
+                    worst_cost_usd = opp.from_value_usd * (worst_pct / 100.0)
+                    # Use worst-case for conservative_pnl calculation below
+                    mc_cost_usd = worst_cost_usd
+                except Exception as e:
+                    logger.debug(f"Monte Carlo cost sampling failed: {e}")
+                    mc_cost_usd = total_cost_usd
+            else:
+                mc_cost_usd = total_cost_usd
+
             # ════════════════════════════════════════════════════════════════════════
             # 🔧 FIX: Scanner now reports GROSS profit (before costs)
             # We calculate NET profit here: gross - costs
@@ -14285,8 +14358,8 @@ if __name__ == "__main__":
             # The opportunity's expected_pnl_usd is GROSS (momentum + signals, no costs subtracted)
             scanner_gross_pnl = opp.expected_pnl_usd if hasattr(opp, 'expected_pnl_usd') else 0.0
             
-            # Calculate NET profit = GROSS - costs
-            conservative_pnl = scanner_gross_pnl - total_cost_usd
+            # Calculate NET profit conservatively using Monte Carlo worst-case cost (p90)
+            conservative_pnl = scanner_gross_pnl - mc_cost_usd
             
             # For required profit check, just need a small buffer above break-even
             min_profit_floor = max(MIN_NET_PROFIT_USD, 0.001)  # At least $0.001 net profit
@@ -14356,7 +14429,8 @@ if __name__ == "__main__":
             if conservative_pnl < 0:
                 self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE: COSTS EXCEED EDGE!")
                 self.rejection_print(f"   ├── Gross Edge (momentum+signals): ${scanner_gross_pnl:+.4f}")
-                self.rejection_print(f"   ├── Total Costs (fees+spread): ${total_cost_usd:.4f} ({total_cost_pct*100:.2f}%)")
+                worst_pct_display = (locals().get('worst_pct') if 'worst_pct' in locals() else (total_cost_pct*100))
+                self.rejection_print(f"   ├── Worst-case Costs (p90 estimate): ${mc_cost_usd:.4f} ({worst_pct_display:.2f}%)")
                 self.rejection_print(f"   ├── Net P&L (gross - costs): ${conservative_pnl:+.4f}")
                 self.rejection_print(f"   └── Need more momentum to beat costs!")
                 self.rejection_print(f"   ⛔ WAITING for better opportunity...")
@@ -14417,6 +14491,17 @@ if __name__ == "__main__":
                 
                 return False
             else:
+                # ────────── Round-trip availability check ──────────
+                ok_roundtrip, roundtrip_reason = self.ensure_round_trip_available(opp.from_asset, opp.to_asset, opp.from_value_usd)
+                if not ok_roundtrip:
+                    self.rejection_print(f"\n   🛑 PRE-EXECUTION GATE: ROUND-TRIP UNAVAILABLE - {roundtrip_reason}")
+                    self.barter_matrix.record_preexec_rejection(
+                        opp.from_asset, opp.to_asset,
+                        f'round_trip_unavailable: {roundtrip_reason}',
+                        opp.from_value_usd
+                    )
+                    return False
+
                 # ✅ GATE PASSED! Show the good news!
                 print(f"\n   ✅ PRE-EXECUTION GATE PASSED:")
                 print(f"   ├── Scanner Expected: ${scanner_gross_pnl:+.4f}")
@@ -14497,6 +14582,36 @@ if __name__ == "__main__":
             self.conversions_made += 1
             self.total_profit_usd += opp.expected_pnl_usd
             self.conversions.append(opp)
+
+            # Simulate position registry for dry-run entries (so loss-prevention can use it)
+            from_up = opp.from_asset.upper()
+            to_up = opp.to_asset.upper()
+            is_buy = from_up in self.snowball_stablecoins and to_up not in self.snowball_stablecoins
+            is_sell = to_up in self.snowball_stablecoins and from_up not in self.snowball_stablecoins
+
+            if is_buy:
+                # Simulate a buy entry
+                self.position_registry[to_up] = {
+                    'amount': opp.expected_pnl_usd and (opp.from_value_usd / (self.prices.get(to_up, 1) or 1)) or 0,
+                    'entry_price': self.prices.get(to_up, 0) or 0,
+                    'entry_value_usd': opp.from_value_usd,
+                    'fees_usd': 0.0,
+                    'order_ids': [],
+                    'source': opp.source_exchange or 'dry-run',
+                    'timestamp': time.time(),
+                }
+            elif is_sell:
+                # Selling simulated - reduce or remove registry
+                asset = from_up
+                sold_amount = opp.from_amount
+                if asset in self.position_registry:
+                    prev = self.position_registry[asset]
+                    if sold_amount >= prev['amount']:
+                        del self.position_registry[asset]
+                    else:
+                        prev['amount'] -= sold_amount
+                        prev['entry_value_usd'] = prev['entry_price'] * prev['amount']
+
             return True
         
         # ════════════════════════════════════════════════════════════════
@@ -15620,6 +15735,98 @@ if __name__ == "__main__":
         else:
             return f"{from_asset}/{to_asset}".upper()
 
+    def ensure_round_trip_available(self, from_asset: str, to_asset: str, notional_usd: float, live_depth_check: bool = False) -> Tuple[bool, str]:
+        """Check whether a full round-trip path is available and viable for the given notional.
+
+        Performs checks:
+          - Path exists (via barter_navigator)
+          - Per-leg minimums and notional sizes are sufficient
+          - Price data exists for each leg
+          - (optional) Live orderbook depth per leg when live_depth_check=True
+
+        Returns: (ok: bool, reason: str)
+        """
+        try:
+            if not hasattr(self, 'barter_navigator') or self.barter_navigator is None:
+                return True, "No barter navigator available (assume path exists)"
+
+            path = self.barter_navigator.find_path(from_asset, to_asset)
+            if not path or not getattr(path, 'steps', None):
+                return False, "No conversion path found"
+
+            # Minimum per-leg notional (conservative)
+            MIN_PER_LEG = 1.50
+            legs = getattr(path, 'steps', [])
+            if len(legs) == 0:
+                return False, "Empty path steps"
+
+            # Evaluate each leg's quoted pair for price and volume data
+            for step in legs:
+                pair = step.get('pair', '')
+                if not pair:
+                    return False, f"Missing pair info in path step: {step}"
+
+                # Look up cached ticker info first
+                ticker = self.ticker_cache.get(pair) or self.ticker_cache.get(pair.replace('/', ''))
+                if not ticker:
+                    # If no ticker, optionally attempt to query live orderbook when requested
+                    if not live_depth_check:
+                        return False, f"No price/ticker for pair {pair}"
+                else:
+                    # Check volume heuristic
+                    vol = ticker.get('volume', 0) or ticker.get('quoteVolume', 0)
+                    if vol and vol * (ticker.get('price', 1) or 1) < MIN_PER_LEG:
+                        # If low volume but live check requested, attempt orderbook depth check
+                        if not live_depth_check:
+                            return False, f"Insufficient volume on {pair} for ${MIN_PER_LEG} leg"
+
+                # Live orderbook depth checks per exchange (more expensive, optional)
+                if live_depth_check:
+                    exchange = step.get('exchange') or step.get('source') or None
+                    per_leg = notional_usd / max(1, len(legs))
+
+                    # Enforce ALPACA_ONLY restriction: if configured, disallow paths that use other exchanges
+                    if getattr(self, 'alpaca_only', False) and exchange and exchange.lower() != 'alpaca':
+                        return False, f"ALPACA_ONLY active - path uses {exchange} which is disallowed"
+
+                    # If Alpaca and fee tracker available, use it
+                    try:
+                        if exchange and exchange.lower() == 'alpaca' and hasattr(self, 'alpaca_fee_tracker'):
+                            ob = self.alpaca_fee_tracker.get_orderbook(pair)
+                            if ob and isinstance(ob, dict):
+                                # Expect 'bids' and 'asks' with [[price, size], ...]
+                                bids = ob.get('bids', []) or []
+                                asks = ob.get('asks', []) or []
+                                # Compute cumulative quote value available on each side
+                                cum_bid_value = sum(float(p) * float(s) for p, s in bids if p and s)
+                                cum_ask_value = sum(float(p) * float(s) for p, s in asks if p and s)
+                                if cum_bid_value < per_leg and cum_ask_value < per_leg:
+                                    return False, f"Insufficient orderbook depth on {pair}: bids=${cum_bid_value:.2f} asks=${cum_ask_value:.2f} < per-leg ${per_leg:.2f}"
+                        # For other exchanges we may have clients exposing get_order_book/get_orderbook
+                        elif exchange and hasattr(self, exchange.lower()):
+                            client = getattr(self, exchange.lower())
+                            if hasattr(client, 'get_order_book'):
+                                ob = client.get_order_book(pair, limit=20)
+                                if ob:
+                                    bids = ob.get('bids', []) or []
+                                    asks = ob.get('asks', []) or []
+                                    cum_bid_value = sum(float(p) * float(s) for p, s in bids if p and s)
+                                    cum_ask_value = sum(float(p) * float(s) for p, s in asks if p and s)
+                                    if cum_bid_value < per_leg and cum_ask_value < per_leg:
+                                        return False, f"Insufficient orderbook depth on {pair} ({exchange}): bids=${cum_bid_value:.2f} asks=${cum_ask_value:.2f}" 
+                    except Exception as e:
+                        logger.debug(f"Orderbook depth check skipped for {pair} on {exchange}: {e}")
+
+            # Check aggregate notional is reasonable for multi-leg split
+            per_leg = notional_usd / max(1, len(legs))
+            if per_leg < MIN_PER_LEG:
+                return False, f"Notional ${notional_usd:.2f} too small for {len(legs)}-leg path (per-leg ${per_leg:.2f})"
+
+            return True, "Round-trip available"
+        except Exception as e:
+            logger.debug(f"Round-trip availability check error: {e}")
+            return True, f"Checker error ({e}) - assume available"
+
     # ════════════════════════════════════════════════════════════════════════════
     # 🔍 ORDER VALIDATION & PROFIT VERIFICATION SYSTEM
     # ════════════════════════════════════════════════════════════════════════════
@@ -16137,41 +16344,62 @@ if __name__ == "__main__":
             
             # Log validation to persistent storage for auditing
             self._log_order_validation(opp, validation, verification)
-        else:
-            opp.pnl_verified = False
-            opp.verification_status = 'NO_VALIDATION'
-            opp.order_ids = []
-            opp.execution_fees = 0
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🫒💰 LIVE BARTER MATRIX - Record & Display Step Profit
-        # ═══════════════════════════════════════════════════════════════════
-        
-        # Update barter rates for this pair
-        self.barter_matrix.update_barter_rate(
-            opp.from_asset, opp.to_asset, from_price, to_price
-        )
-        
-        # Record realized profit in the barter ledger
-        profit_result = self.barter_matrix.record_realized_profit(
-            from_asset=opp.from_asset,
-            to_asset=opp.to_asset,
-            from_amount=opp.from_amount,
-            from_usd=sold_value,
-            to_amount=buy_amount,
-            to_usd=bought_value
-        )
-        
-        # 🎯 PRINT STEP-BY-STEP REALIZED PROFIT
-        step_display = self.barter_matrix.print_step_profit(
-            step_num=self.conversions_made,
-            from_asset=opp.from_asset,
-            to_asset=opp.to_asset,
-            from_usd=sold_value,
-            to_usd=bought_value,
-            from_amount=opp.from_amount,
-            to_amount=buy_amount
-        )
+
+            # ────────── Position Registry Update (real fills) ──────────
+            try:
+                from_up = opp.from_asset.upper()
+                to_up = opp.to_asset.upper()
+
+                is_buy = from_up in self.snowball_stablecoins and to_up not in self.snowball_stablecoins
+                is_sell = to_up in self.snowball_stablecoins and from_up not in self.snowball_stablecoins
+
+                # Determine final_amount from validation (what we actually received)
+                final_amount = validation.get('final_amount', buy_amount)
+                entry_price = validation.get('avg_buy_price', self.prices.get(to_up, 0))
+                exit_price = validation.get('avg_sell_price', self.prices.get(from_up, 0))
+                fees_usd = validation.get('total_fees', 0)
+
+                if is_buy:
+                    entry = {
+                        'amount': float(final_amount),
+                        'entry_price': float(entry_price),
+                        'entry_value_usd': float(opp.from_value_usd),
+                        'fees_usd': float(fees_usd),
+                        'order_ids': validation.get('order_ids', []),
+                        'source': opp.source_exchange or 'unknown',
+                        'timestamp': time.time(),
+                    }
+
+                    # Aggregate into registry if existing
+                    if to_up in self.position_registry:
+                        prev = self.position_registry[to_up]
+                        prev_amount = prev.get('amount', 0.0)
+                        prev_cost_usd = prev.get('entry_price', 0.0) * prev_amount + prev.get('fees_usd', 0.0)
+                        new_cost_usd = entry['entry_price'] * entry['amount'] + entry['fees_usd']
+                        total_amount = prev_amount + entry['amount']
+                        avg_price = (prev_cost_usd + new_cost_usd) / total_amount if total_amount > 0 else entry['entry_price']
+                        prev['amount'] = total_amount
+                        prev['entry_price'] = avg_price
+                        prev['entry_value_usd'] = prev_cost_usd + new_cost_usd
+                        prev['fees_usd'] = prev.get('fees_usd', 0.0) + entry['fees_usd']
+                        prev['order_ids'] = prev.get('order_ids', []) + entry['order_ids']
+                        prev['timestamp'] = entry['timestamp']
+                    else:
+                        self.position_registry[to_up] = entry
+
+                elif is_sell:
+                    asset = from_up
+                    sold_amount = float(opp.from_amount)
+                    if asset in self.position_registry:
+                        prev = self.position_registry[asset]
+                        if sold_amount >= prev.get('amount', 0.0):
+                            # Closed out fully
+                            del self.position_registry[asset]
+                        else:
+                            prev['amount'] = prev.get('amount', 0.0) - sold_amount
+                            prev['entry_value_usd'] = prev.get('entry_price', 0.0) * prev.get('amount', 0.0)
+            except Exception as e:
+                logger.debug(f"Position registry update error: {e}")
         print(step_display)
         
         # Show path performance (how this specific conversion path is doing)

@@ -319,13 +319,32 @@ class AlpacaClient:
         Returns a dict shaped like:
           {"last": {"price": <mid>}, "raw": <api_response>}
 
-        For stocks, uses Alpaca data API latest quote.
+        For stocks, uses Alpaca data API latest quote. For crypto pairs (e.g. BTC/USD
+        or BTCUSD) it will prefer the crypto latest quotes endpoint and fall back
+        to the stock quote endpoint when appropriate.
         """
         sym = (symbol or "").upper().strip()
         if not sym:
             return {}
+
+        # Normalize to detect whether this is a crypto pair (contains '/').
+        normalized = AlpacaClient._normalize_pair_symbol(sym)
         try:
-            # Alpaca stocks latest quote endpoint (data API)
+            # If looks like a crypto pair (e.g. BTC/USD or BTCUSD), prefer crypto API
+            if normalized and '/' in normalized:
+                try:
+                    quotes = self.get_latest_crypto_quotes([normalized])
+                    q = quotes.get(normalized)
+                    if q:
+                        bp = float(q.get('bp', 0) or 0.0)
+                        ap = float(q.get('ap', 0) or 0.0)
+                        last = (bp + ap) / 2 if (bp > 0 and ap > 0) else (bp or ap or 0.0)
+                        return {"last": {"price": last}, "raw": q}
+                except Exception:
+                    # If crypto API fails, fall through to stock endpoint as a fallback
+                    pass
+
+            # Fallback: treat as stock symbol
             resp = self._request(
                 "GET",
                 f"/v2/stocks/{sym}/quotes/latest",

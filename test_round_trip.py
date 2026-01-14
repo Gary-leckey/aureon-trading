@@ -1,0 +1,114 @@
+import unittest
+from micro_profit_labyrinth import MicroProfitLabyrinth
+
+class DummyNavigator:
+    def __init__(self, path):
+        self._path = path
+    def find_path(self, from_asset, to_asset):
+        return self._path
+
+class TestRoundTripAvailability(unittest.TestCase):
+    def setUp(self):
+        self.lab = MicroProfitLabyrinth(dry_run=True)
+        # start with an empty ticker cache
+        self.lab.ticker_cache = {}
+
+    def test_no_barter_navigator(self):
+        self.lab.barter_navigator = None
+        ok, reason = self.lab.ensure_round_trip_available('USD', 'AAPL', 100.0)
+        self.assertTrue(ok)
+        self.assertIn('assume path exists', reason)
+
+    def test_alpaca_only_rejects_non_alpaca_paths(self):
+        # ALPACA_ONLY set - only allow paths that are fully on Alpaca
+        self.lab.alpaca_only = True
+        path = type('P', (), {'steps': [{'pair': 'USD/AAPL', 'exchange': 'kraken'}]})()
+        self.lab.barter_navigator = DummyNavigator(path)
+        ok, reason = self.lab.ensure_round_trip_available('USD', 'AAPL', 100.0, live_depth_check=True)
+        self.assertFalse(ok)
+        self.assertIn('ALPACA_ONLY active', reason)
+
+    def test_no_path_found(self):
+        self.lab.barter_navigator = DummyNavigator(None)
+        ok, reason = self.lab.ensure_round_trip_available('USD', 'AAPL', 100.0)
+        self.assertFalse(ok)
+        self.assertIn('No conversion path found', reason)
+
+    def test_empty_steps(self):
+        self.lab.barter_navigator = DummyNavigator(type('P', (), {'steps': []})())
+        ok, reason = self.lab.ensure_round_trip_available('USD', 'AAPL', 100.0)
+        self.assertFalse(ok)
+        # Current implementation returns 'No conversion path found' if steps empty
+        self.assertIn('No conversion path found', reason)
+
+    def test_missing_pair_in_step(self):
+        path = type('P', (), {'steps': [{'foo': 'bar'}]})()
+        self.lab.barter_navigator = DummyNavigator(path)
+        ok, reason = self.lab.ensure_round_trip_available('USD', 'AAPL', 100.0)
+        self.assertFalse(ok)
+        self.assertIn('Missing pair info in path step', reason)
+
+    def test_no_ticker_for_pair(self):
+        path = type('P', (), {'steps': [{'pair': 'USD/AAPL'}]})()
+        self.lab.barter_navigator = DummyNavigator(path)
+        self.lab.ticker_cache = {}  # ensure no ticker
+        ok, reason = self.lab.ensure_round_trip_available('USD', 'AAPL', 100.0)
+        self.assertFalse(ok)
+        self.assertIn('No price/ticker for pair USD/AAPL', reason)
+
+    def test_insufficient_volume(self):
+        path = type('P', (), {'steps': [{'pair': 'USD/AAPL'}]})()
+        self.lab.barter_navigator = DummyNavigator(path)
+        self.lab.ticker_cache = {'USD/AAPL': {'volume': 0.1, 'price': 1.0}}
+        ok, reason = self.lab.ensure_round_trip_available('USD', 'AAPL', 100.0)
+        self.assertFalse(ok)
+        self.assertIn('Insufficient volume on USD/AAPL', reason)
+
+    def test_per_leg_too_small(self):
+        path = type('P', (), {'steps': [{'pair': 'USD/AAPL'}, {'pair': 'AAPL/GOOG'}]})()
+        self.lab.barter_navigator = DummyNavigator(path)
+        # provide tickers with high volume so per-leg check fails on notional
+        self.lab.ticker_cache = {'USD/AAPL': {'volume': 1000, 'price': 1.0}, 'AAPL/GOOG': {'volume': 1000, 'price': 1.0}}
+        ok, reason = self.lab.ensure_round_trip_available('USD', 'AAPL', 1.0)  # very small notional
+        self.assertFalse(ok)
+        self.assertIn('too small for 2-leg path', reason)
+
+    def test_success_path(self):
+        path = type('P', (), {'steps': [{'pair': 'USD/AAPL', 'exchange': 'alpaca'}, {'pair': 'AAPL/USD', 'exchange': 'alpaca'}]})()
+        self.lab.barter_navigator = DummyNavigator(path)
+        # volume * price gives sufficient per-leg USD
+        self.lab.ticker_cache = {'USD/AAPL': {'volume': 1000, 'price': 1.0}, 'AAPL/USD': {'volume': 1000, 'price': 1.0}}
+        ok, reason = self.lab.ensure_round_trip_available('USD', 'AAPL', 100.0)
+        self.assertTrue(ok)
+        self.assertIn('Round-trip available', reason)
+
+    def test_live_depth_check_fails_when_orderbook_insufficient(self):
+        path = type('P', (), {'steps': [{'pair': 'USD/AAPL', 'exchange': 'alpaca'}]})()
+        self.lab.barter_navigator = DummyNavigator(path)
+        # Provide no ticker so it must resort to orderbook
+        self.lab.ticker_cache = {}
+        # Monkeypatch fee tracker
+        class DummyFeeTracker:
+            def get_orderbook(self, symbol):
+                # Return small depth
+                return {'bids': [[1.0, 0.1]], 'asks': [[1.01, 0.1]]}
+        self.lab.alpaca_fee_tracker = DummyFeeTracker()
+        ok, reason = self.lab.ensure_round_trip_available('USD', 'AAPL', 100.0, live_depth_check=True)
+        self.assertFalse(ok)
+        self.assertIn('Insufficient orderbook depth', reason)
+
+    def test_live_depth_check_passes_when_orderbook_sufficient(self):
+        path = type('P', (), {'steps': [{'pair': 'USD/AAPL', 'exchange': 'alpaca'}]})()
+        self.lab.barter_navigator = DummyNavigator(path)
+        self.lab.ticker_cache = {}
+        class DummyFeeTracker2:
+            def get_orderbook(self, symbol):
+                # Return ample depth: price * size sums > 100
+                return {'bids': [[1.0, 200.0]], 'asks': [[1.01, 200.0]]}
+        self.lab.alpaca_fee_tracker = DummyFeeTracker2()
+        ok, reason = self.lab.ensure_round_trip_available('USD', 'AAPL', 100.0, live_depth_check=True)
+        self.assertTrue(ok)
+        self.assertIn('Round-trip available', reason)
+
+if __name__ == '__main__':
+    unittest.main()
