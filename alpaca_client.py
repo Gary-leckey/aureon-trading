@@ -1884,6 +1884,39 @@ class AlpacaClient:
         orderbooks = result.get('orderbooks', result) if isinstance(result, dict) else {}
         return orderbooks.get(symbol, {})
 
+    def get_crypto_orderbook(self, symbol: str, depth: Optional[int] = None) -> Dict[str, Any]:
+        """Compatibility wrapper: return Alpaca crypto orderbook with standardized keys.
+
+        - Fetches the full orderbook payload Alpaca provides (no server-side truncation).
+        - If `depth` is provided, trims bids/asks client-side.
+
+        Returns keys:
+        - symbol, t (timestamp)
+        - bids / asks (also includes original a/b)
+        """
+        resolved = self._normalize_pair_symbol(symbol) or symbol
+        ob = self.get_orderbook(resolved) or {}
+
+        asks = ob.get('a', []) or []
+        bids = ob.get('b', []) or []
+
+        # Trim client-side if requested
+        if depth is not None:
+            try:
+                d = max(0, int(depth))
+            except (TypeError, ValueError):
+                d = 0
+            if d > 0:
+                asks = asks[:d]
+                bids = bids[:d]
+
+        # Standardize keys expected by other modules
+        out: Dict[str, Any] = dict(ob)
+        out['symbol'] = resolved
+        out['asks'] = asks
+        out['bids'] = bids
+        return out
+
     def get_spread(self, symbol: str) -> Dict[str, float]:
         """
         Get current spread for a symbol.
