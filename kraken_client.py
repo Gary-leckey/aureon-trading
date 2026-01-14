@@ -11,6 +11,13 @@ try:
 except ImportError:
     pass
 
+# Local utilities
+try:
+    from rate_limiter import TokenBucket, TTLCache
+except Exception:
+    TokenBucket = None
+    TTLCache = None
+
 KRAKEN_BASE = "https://api.kraken.com"
 
 ASSETPAIR_CACHE_TTL = 300  # seconds
@@ -46,6 +53,19 @@ class KrakenClient:
         self._last_private_call: float = 0.0
         self._private_lock = threading.Lock()
         self._min_call_interval: float = 0.5  # 500ms between private API calls
+
+        # Token bucket rate limiter and TTL cache for public data
+        try:
+            rate = float(os.getenv('KRAKEN_RATE_PER_SECOND', '3'))
+        except Exception:
+            rate = 3.0
+        try:
+            burst = float(os.getenv('KRAKEN_BURST_CAPACITY', str(max(1, int(rate)))))
+        except Exception:
+            burst = max(1, rate)
+        self._rate_limiter = TokenBucket(rate=rate, capacity=burst) if TokenBucket else None
+        self._request_cache = TTLCache(default_ttl=float(os.getenv('KRAKEN_QUOTE_CACHE_TTL', '0.5'))) if TTLCache else None
+        self.max_retries = int(os.getenv('KRAKEN_RETRY_COUNT', '2'))
 
     # ──────────────────────────────────────────────────────────────────────
     # Private signing helpers (only if we later enable non-dry-run)
@@ -87,12 +107,31 @@ class KrakenClient:
             # Update last call time before making request
             self._last_private_call = time.time()
             
-            r = self.session.post(url, data=data, headers=headers, timeout=15)
-            r.raise_for_status()
-            res = r.json()
-            if res.get("error"):
-                raise RuntimeError(f"Kraken error: {res['error']}")
-            return res.get("result", {})
+            # Respect rate limiter for private calls as well
+            if getattr(self, '_rate_limiter', None):
+                try:
+                    self._rate_limiter.wait()
+                except Exception:
+                    pass
+
+            for attempt in range(self.max_retries + 1):
+                r = self.session.post(url, data=data, headers=headers, timeout=15)
+                if r.status_code == 429:
+                    retry_after = r.headers.get('Retry-After')
+                    try:
+                        wait_time = float(retry_after) if retry_after else 2 ** attempt
+                    except Exception:
+                        wait_time = 2 ** attempt
+                    time.sleep(min(max(wait_time, 0.1), 10))
+                    if attempt < self.max_retries:
+                        continue
+                r.raise_for_status()
+                res = r.json()
+                if res.get("error"):
+                    raise RuntimeError(f"Kraken error: {res['error']}")
+                return res.get("result", {})
+            # If we exit loop without return, raise
+            raise RuntimeError("Kraken private request failed after retries")
 
     # ──────────────────────────────────────────────────────────────────────
     # Public helpers and Binance-like interface
@@ -100,14 +139,44 @@ class KrakenClient:
     def _load_asset_pairs(self, force: bool = False) -> Dict[str, Any]:
         if not force and time.time() - self._pairs_cache_time < ASSETPAIR_CACHE_TTL and self._pairs_cache:
             return self._pairs_cache
-        r = self.session.get(f"{self.base}/0/public/AssetPairs", timeout=20)
-        r.raise_for_status()
-        data = r.json()
-        if data.get("error"):
-            raise RuntimeError(f"Kraken AssetPairs error: {data['error']}")
+        # If we have a small request cache, use it to reduce calls to Kraken
+        if self._request_cache:
+            cached = self._request_cache.get('assetpairs')
+            if cached is not None and not force:
+                return cached
+        url = f"{self.base}/0/public/AssetPairs"
+        # Respect rate limiter
+        if getattr(self, '_rate_limiter', None):
+            try:
+                self._rate_limiter.wait()
+            except Exception:
+                pass
+
+        for attempt in range(self.max_retries + 1):
+            r = self.session.get(url, timeout=20)
+            if r.status_code == 429:
+                retry_after = r.headers.get('Retry-After')
+                try:
+                    wait_time = float(retry_after) if retry_after else 2 ** attempt
+                except Exception:
+                    wait_time = 2 ** attempt
+                time.sleep(min(max(wait_time, 0.1), 10))
+                if attempt < self.max_retries:
+                    continue
+            r.raise_for_status()
+            data = r.json()
+            if data.get("error"):
+                raise RuntimeError(f"Kraken AssetPairs error: {data['error']}")
+            break
         pairs = data.get("result", {})
         self._pairs_cache = pairs
         self._pairs_cache_time = time.time()
+        # Also store in request cache for small-ttl reuse
+        if self._request_cache:
+            try:
+                self._request_cache.set('assetpairs', pairs)
+            except Exception:
+                pass
         # Build alt<->internal maps
         self._alt_to_int = {}
         self._int_to_alt = {}

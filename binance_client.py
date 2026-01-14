@@ -7,6 +7,13 @@ except Exception:
     pass
 from typing import Dict, Any, Set, List, Optional, Tuple
 
+# Rate limiting utilities (TokenBucket, TTLCache)
+try:
+    from rate_limiter import TokenBucket, TTLCache
+except Exception:
+    TokenBucket = None
+    TTLCache = None
+
 BINANCE_MAINNET = "https://api.binance.com"
 BINANCE_TESTNET = "https://testnet.binance.vision"
 
@@ -62,6 +69,19 @@ class BinanceClient:
         self._time_offset_ms: int = 0
         self._time_sync_timestamp: float = 0
         self._sync_server_time()  # Auto-sync on init
+
+        # Token bucket rate limiter for Binance and request/quote caching
+        try:
+            rate = float(os.getenv('BINANCE_RATE_PER_SECOND', '10'))
+        except Exception:
+            rate = 10.0
+        try:
+            burst = float(os.getenv('BINANCE_BURST_CAPACITY', str(max(1, int(rate)))))
+        except Exception:
+            burst = max(1, rate)
+        self._rate_limiter = TokenBucket(rate=rate, capacity=burst) if TokenBucket else None
+        self._request_cache = TTLCache(default_ttl=float(os.getenv('BINANCE_EXCHANGE_CACHE_TTL', '1.0'))) if TTLCache else None
+        self.max_retries = int(os.getenv('BINANCE_RETRY_COUNT', '2'))
     
     def _sync_server_time(self) -> None:
         """Sync with Binance server time to handle local clock drift."""
@@ -176,25 +196,38 @@ class BinanceClient:
         
         return True, "OK"
 
+    def _do_request(self, method: str, path: str, params: Dict[str, Any] = None, data: Dict[str, Any] = None, timeout: int = 15):
+        """Internal request helper: respects rate limiter, handles 429 Retry-After and retries."""
+        url = f"{self.base}{path}"
+        # Respect rate limiter
+        if getattr(self, '_rate_limiter', None):
+            try:
+                self._rate_limiter.wait()
+            except Exception:
+                pass
+
+        for attempt in range(self.max_retries + 1):
+            resp = self.session.request(method, url, params=params if method == 'GET' else None, data=data if method != 'GET' else None, timeout=timeout)
+            if resp.status_code == 429:
+                retry_after = resp.headers.get('Retry-After')
+                try:
+                    wait_time = float(retry_after) if retry_after else 2 ** attempt
+                except Exception:
+                    wait_time = 2 ** attempt
+                time.sleep(min(max(wait_time, 0.1), 10))
+                if attempt < self.max_retries:
+                    continue
+            if resp.status_code != 200:
+                raise RuntimeError(f"Binance error {resp.status_code}: {resp.text}")
+            return resp.json()
+        raise RuntimeError("Binance request failed after retries")
+
     def _signed_request(self, method: str, path: str, params: Dict[str, Any]) -> Dict[str, Any]:
         params["timestamp"] = self._get_server_timestamp()  # Use synced timestamp
         params["recvWindow"] = 60000  # Increased to 60 seconds for network latency
         signature = self._sign(params)
         params["signature"] = signature
-        url = f"{self.base}{path}"
-        resp = self.session.request(method, url, params=params if method == "GET" else None, data=params if method != "GET" else None)
-        if resp.status_code != 200:
-            # If timestamp error, try re-syncing once
-            if resp.status_code == 400 and "-1021" in resp.text:
-                self._sync_server_time()
-                params["timestamp"] = self._get_server_timestamp()
-                signature = self._sign(params)
-                params["signature"] = signature
-                resp = self.session.request(method, url, params=params if method == "GET" else None, data=params if method != "GET" else None)
-                if resp.status_code == 200:
-                    return resp.json()
-            raise RuntimeError(f"Binance error {resp.status_code}: {resp.text}")
-        return resp.json()
+        return self._do_request(method, path, params=params)
 
     def ping(self) -> bool:
         try:
@@ -209,10 +242,21 @@ class BinanceClient:
 
     def exchange_info(self, symbol: str = None) -> Dict[str, Any]:
         params = {}
+        key = f"exchange_info::{symbol or 'all'}"
+        if self._request_cache:
+            cached = self._request_cache.get(key)
+            if cached is not None:
+                return cached
         if symbol:
             params["symbol"] = symbol
-        r = self.session.get(f"{self.base}/api/v3/exchangeInfo", params=params)
-        return r.json()
+        # Use _do_request to respect rate limits
+        r = self._do_request("GET", "/api/v3/exchangeInfo", params=params)
+        if self._request_cache:
+            try:
+                self._request_cache.set(key, r)
+            except Exception:
+                pass
+        return r
 
     # Compatibility alias for callers expecting get_exchange_info
     def get_exchange_info(self, symbol: str = None) -> Dict[str, Any]:
