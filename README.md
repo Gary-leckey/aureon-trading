@@ -133,6 +133,13 @@ Specialized Alpaca-focused momentum scanners using biological metaphors:
    └─> Update barter_matrix history
    └─> Feed Queen neural learning
    └─> Adjust dynamic_min_qty if failed
+
+### Queen Veto Flow (4th-Pass Gate)
+- Validators propose a trade; coherence and drift produce a stability score.
+- `ask_queen_will_we_win()` aggregates neuron signals and context.
+- If confidence clears threshold AND profit gate is satisfied, the 4th-pass opens.
+- Queen may veto on contextual/emotional risk (mission, volatility, rate limits).
+- On veto: trade is skipped, path memory updated, learning recorded.
 ```
 
 ## Configuration
@@ -202,6 +209,14 @@ python micro_profit_labyrinth.py --dry-run
 - Capital preservation before growth; daily loss cap and per-trade SL required.
 - No market manipulation, unauthorized access, or unsafe automation behaviors.
 - Immutable audit logs for decisions, fills, rejects, and configuration changes.
+
+### Research Metrics Checklist
+- Edge quality: post-fee pip distribution (0.07–1.4), realized PnL.
+- Coherence stability: validator agreement vs executed trades.
+- Drift and λ: time-to-execution decay and invalidation rates.
+- Queen veto: frequency, reasons, and PnL deltas vs no-veto baseline.
+- Rate limits: 429 backoff effectiveness and impact on opportunity decay.
+- ETA verification: forecasted vs actual execution latency and slippage.
 
 ## License
 
