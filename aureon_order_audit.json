@@ -29972,11 +29972,142 @@
         "warnings": []
       },
       "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-14T00:01:32.834182",
+      "conversion_num": 1,
+      "exchange": "alpaca",
+      "from_asset": "USDC",
+      "to_asset": "SKY",
+      "from_amount": 7.757477313349999,
+      "to_amount": 0.868521609,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "ebf7a0c2-e787-4615-8ba6-8e65a68da1c9",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "sell"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.86913,
+        "total_bought": 0.868521609,
+        "avg_sell_price": 0.9993,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.12361942043462944,
+        "calculated_pnl": -8.881784197001252e-16,
+        "verified_pnl": -0.868521609,
+        "discrepancy": 0.8685216089999991,
+        "discrepancy_pct": 0.0,
+        "math_valid": true,
+        "warnings": []
+      },
+      "final_status": "VERIFIED"
+    },
+    {
+      "timestamp": "2026-01-14T00:57:19.656513",
+      "conversion_num": 2,
+      "exchange": "alpaca",
+      "from_asset": "USDC",
+      "to_asset": "SUSHI",
+      "from_amount": 6.93180381335,
+      "to_amount": 4.832762612,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "6dc517b7-8ad4-4ffc-a3e7-7d01c220964e",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "721e6bd3-dabb-4637-98bf-b0d72509fb66",
+          "exchange": "alpaca",
+          "pair": "SUSHI/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 1.72827,
+        "total_bought": 4.832762612,
+        "avg_sell_price": 0.9993,
+        "avg_buy_price": 0.35779,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.12265632935017691,
+        "calculated_pnl": -5.202846337630476,
+        "verified_pnl": 0.002053923947479941,
+        "discrepancy": 5.204900261577956,
+        "discrepancy_pct": 100.03947692886153,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-5.2028 vs verified $0.0021 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-14T01:33:29.086269",
+      "conversion_num": 3,
+      "exchange": "alpaca",
+      "from_asset": "USDC",
+      "to_asset": "LINK",
+      "from_amount": 5.28994731335,
+      "to_amount": 0.153212147,
+      "order_ids": [
+        {
+          "step": 1,
+          "order_id": "6b01c8f0-1d36-4a28-bc46-3268a3a9b367",
+          "exchange": "alpaca",
+          "pair": "USDC/USD",
+          "side": "sell"
+        },
+        {
+          "step": 2,
+          "order_id": "81ef4780-9438-40a2-9100-c02b5c9923ac",
+          "exchange": "alpaca",
+          "pair": "LINK/USD",
+          "side": "buy"
+        }
+      ],
+      "validation": {
+        "valid": true,
+        "total_sold": 2.16783,
+        "total_bought": 0.153212147,
+        "avg_sell_price": 0.9993,
+        "avg_buy_price": 14.1554,
+        "total_fees": 0.0,
+        "errors": []
+      },
+      "profit_verification": {
+        "expected_pnl": 0.0902158051402595,
+        "calculated_pnl": -3.123583977264662,
+        "verified_pnl": 0.0024667066437999985,
+        "discrepancy": 3.126050683908462,
+        "discrepancy_pct": 100.07897039624207,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: calculated $-3.1236 vs verified $0.0025 (100.1%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
     }
   ],
   "summary": {
-    "total": 713,
-    "verified": 605,
-    "discrepancies": 108
+    "total": 716,
+    "verified": 606,
+    "discrepancies": 110
   }
 }

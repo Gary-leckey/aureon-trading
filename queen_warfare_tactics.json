@@ -9,7 +9,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-13T22:33:35.319156",
+      "learned_at": "2026-01-14T00:01:45.925579",
       "last_applied": ""
     },
     "ad97150b": {
@@ -21,7 +21,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-13T22:33:36.656054",
+      "learned_at": "2026-01-14T00:01:47.195153",
       "last_applied": ""
     },
     "db2d5a2f": {
@@ -33,7 +33,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-13T22:33:37.884460",
+      "learned_at": "2026-01-14T00:01:48.379703",
       "last_applied": ""
     },
     "7b51face": {
@@ -45,7 +45,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-13T22:33:39.201441",
+      "learned_at": "2026-01-14T00:01:49.661235",
       "last_applied": ""
     },
     "c5d8c916": {
@@ -57,7 +57,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-13T22:33:40.424250",
+      "learned_at": "2026-01-14T00:01:50.864896",
       "last_applied": ""
     },
     "26034109": {
@@ -69,7 +69,7 @@
       "times_applied": 0,
       "success_rate": 0.0,
       "total_saved": 0.0,
-      "learned_at": "2026-01-13T22:33:41.667030",
+      "learned_at": "2026-01-14T00:01:52.092506",
       "last_applied": ""
     },
     "9717d57e": {
@@ -145,5 +145,5 @@
       "last_applied": ""
     }
   },
-  "last_saved": "2026-01-13T22:39:20.563779"
+  "last_saved": "2026-01-14T00:57:29.675951"
 }

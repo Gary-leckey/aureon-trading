@@ -4129,8 +4129,10 @@ class MicroProfitLabyrinth:
         self.alpaca_fee_pct = float(os.getenv("ALPACA_FEE_PCT", "0.25"))
         self.alpaca_slippage_pct = float(os.getenv("ALPACA_SLIPPAGE_PCT", "0.02"))
         self.alpaca_fee_buffer_pct = float(os.getenv("ALPACA_FEE_BUFFER_PCT", "0.01"))
-        self.alpaca_min_net_profit_pct = float(os.getenv("ALPACA_MIN_NET_PROFIT_PCT", "0.01"))
-        self.alpaca_min_net_profit_usd = float(os.getenv("ALPACA_MIN_NET_PROFIT_USD", str(EPSILON_PROFIT_USD)))
+        # 🛡️ STRICT PROFIT REQUIREMENTS - Never trade for scraps!
+        # After 100 trades lost $0.81, we now require CLEAR profit after ALL costs
+        self.alpaca_min_net_profit_pct = float(os.getenv("ALPACA_MIN_NET_PROFIT_PCT", "0.5"))  # Was 0.01%, now 0.5% minimum!
+        self.alpaca_min_net_profit_usd = float(os.getenv("ALPACA_MIN_NET_PROFIT_USD", "0.01"))  # Was $0.001, now $0.01 minimum!
         self.alpaca_auto_exits = os.getenv("ALPACA_AUTO_EXITS", "false").lower() == "true"
         self.alpaca_take_profit_pct = float(os.getenv("ALPACA_TAKE_PROFIT_PCT", "1.0"))
         self.alpaca_stop_loss_pct = float(os.getenv("ALPACA_STOP_LOSS_PCT", "0.6"))
@@ -13960,11 +13962,26 @@ if __name__ == "__main__":
                 f"net est ${net_expected_usd:+.4f} ({net_expected_pct:+.2f}%)"
             )
 
+            # 🚫 ULTIMATE LOSS PREVENTION: Check if we're already bleeding!
+            # Don't compound losses - if underwater, STOP trading until positions recover!
+            try:
+                if self.alpaca:
+                    positions = self.alpaca.get_positions()
+                    total_unrealized_pl = sum(float(p.get('unrealized_pl', 0)) for p in positions)
+                    if total_unrealized_pl < -0.05:  # More than $0.05 underwater
+                        print(
+                            f"   🚫 POSITIONS UNDERWATER: ${total_unrealized_pl:.4f} unrealized loss. "
+                            f"NOT trading until positions recover!"
+                        )
+                        return False
+            except Exception:
+                pass  # If check fails, continue to safety gate
+
             if net_expected_usd < self.alpaca_min_net_profit_usd or net_expected_pct < self.alpaca_min_net_profit_pct:
                 # �️ SAFETY GATE ENABLED: Prevent bleeding by 1000 cuts! 
                 # We do NOT trade if we expect a loss.
                 print(
-                    f"   🛡️ SAFETY GATE: Net profit ${net_expected_usd:+.4f} below threshold. Trade BLOCKED."
+                    f"   🛡️ SAFETY GATE: Net profit ${net_expected_usd:+.4f} ({net_expected_pct:+.2f}%) below threshold (min ${self.alpaca_min_net_profit_usd:.2f} or {self.alpaca_min_net_profit_pct:.2f}%). Trade BLOCKED."
                 )
                 # Return False to stop execution
                 return False
@@ -15098,6 +15115,25 @@ if __name__ == "__main__":
             await asyncio.wait_for(self.fetch_balances(), timeout=FETCH_BALANCES_TIMEOUT_S)
         except asyncio.TimeoutError:
             logger.warning(f"⏱️ Timeout fetching balances after {FETCH_BALANCES_TIMEOUT_S:.0f}s; continuing")
+        
+        # ⏱️ INITIALIZE ENTRY TIMES FOR EXISTING POSITIONS
+        # Track all current holdings so they also respect minimum hold time
+        print("\n⏱️ INITIALIZING POSITION ENTRY TIMES...")
+        current_time = time.time()
+        total_positions = 0
+        for exchange, balances in self.exchange_balances.items():
+            for asset, amount in balances.items():
+                if amount > 0 and asset.upper() not in self.barter_matrix.STABLECOINS:
+                    asset_upper = asset.upper()
+                    if asset_upper not in self.position_entry_times:
+                        self.position_entry_times[asset_upper] = current_time
+                        total_positions += 1
+        
+        if total_positions > 0:
+            print(f"   ✅ {total_positions} existing positions will respect min hold time ({self.min_hold_time_seconds:.0f}s)")
+            print(f"   ⏱️ All positions treated as entered at: {time.strftime('%H:%M:%S')}")
+        else:
+            print(f"   ℹ️ No existing positions found (starting fresh)")
         
         # Show exchange status
         print("\n📡 EXCHANGE STATUS:")

@@ -2134,6 +2134,129 @@
       "tactics_applied": [
         "Strategic retreat"
       ]
+    },
+    {
+      "timestamp": 1768348905.1267507,
+      "exchange": "alpaca",
+      "from_asset": "USDC",
+      "to_asset": "SKY",
+      "from_amount": 7.757477313349999,
+      "from_value_usd": 7.755537944021662,
+      "executed_price": 0.059485449999999995,
+      "expected_price": 0.059485449999999995,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.04653322766412998,
+      "loss_amount": 0.12361942043462944,
+      "loss_pct": 1.5939503014090874,
+      "market_data": {
+        "cash": 1.73,
+        "portfolio_value": 12.14
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.498,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.74
+      },
+      "combined_score": 0.747,
+      "expected_profit": 0.12361942043462944,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0465) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768352249.6757371,
+      "exchange": "alpaca",
+      "from_asset": "USDC",
+      "to_asset": "SUSHI",
+      "from_amount": 6.93180381335,
+      "from_value_usd": 6.930070862396663,
+      "executed_price": 0.357399,
+      "expected_price": 0.357399,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.04158042517437998,
+      "loss_amount": 0.12265632935017691,
+      "loss_pct": 1.7699145042761946,
+      "market_data": {
+        "cash": 1.72,
+        "portfolio_value": 12.12
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.518,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.8400000000000001
+      },
+      "combined_score": 0.777,
+      "expected_profit": 0.12265632935017691,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0416) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768354417.7189636,
+      "exchange": "alpaca",
+      "from_asset": "USDC",
+      "to_asset": "LINK",
+      "from_amount": 5.28994731335,
+      "from_value_usd": 5.288624826521662,
+      "executed_price": 14.131,
+      "expected_price": 14.131,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.031731748959129974,
+      "loss_amount": 0.0902158051402595,
+      "loss_pct": 1.7058461906361881,
+      "market_data": {
+        "cash": 2.16,
+        "portfolio_value": 12.1
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.486,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.6800000000000002
+      },
+      "combined_score": 0.5346000000000001,
+      "expected_profit": 0.0902158051402595,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0317) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
     }
   ],
   "patterns": {
@@ -2387,15 +2510,45 @@
       ],
       "first_seen": 1768343977.7868464,
       "last_seen": 1768343977.7868464
+    },
+    "USDC\u2192SKY_alpaca": {
+      "losses": 1,
+      "total_loss": 0.12361942043462944,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768348905.1267507,
+      "last_seen": 1768348905.1267507
+    },
+    "USDC\u2192SUSHI_alpaca": {
+      "losses": 1,
+      "total_loss": 0.12265632935017691,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768352249.6757371,
+      "last_seen": 1768352249.6757371
+    },
+    "USDC\u2192LINK_alpaca": {
+      "losses": 1,
+      "total_loss": 0.0902158051402595,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768354417.7189636,
+      "last_seen": 1768354417.7189636
     }
   },
   "stats": {
-    "total_losses_analyzed": 52,
+    "total_losses_analyzed": 55,
     "patterns_identified": 19,
     "tactics_learned": 0,
-    "wikipedia_researches": 66,
-    "lessons_broadcast": 33,
+    "wikipedia_researches": 72,
+    "lessons_broadcast": 36,
     "money_saved_by_learning": 0.0
   },
-  "last_saved": "2026-01-13T22:39:58.740845"
+  "last_saved": "2026-01-14T04:23:47.776361"
 }
