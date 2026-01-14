@@ -1,0 +1,89 @@
+"""Simple per-exchange rate limiter and TTL cache utilities.
+
+Provides:
+- TokenBucket: simple token-bucket rate limiter with blocking wait().
+- TTLCache: tiny TTL-based cache for short-lived market data.
+
+These are intentionally dependency-free and simple for easy testing.
+"""
+import time
+import threading
+from typing import Any, Dict, Optional
+
+
+class TokenBucket:
+    """A simple token-bucket rate limiter.
+
+    rate: tokens per second
+    capacity: maximum burst size
+    """
+
+    def __init__(self, rate: float = 5.0, capacity: Optional[float] = None):
+        self.rate = float(rate)
+        self.capacity = float(capacity) if capacity is not None else float(max(1.0, rate))
+        self._tokens = self.capacity
+        self._last = time.monotonic()
+        self._lock = threading.Lock()
+
+    def _add_tokens(self) -> None:
+        now = time.monotonic()
+        elapsed = now - self._last
+        if elapsed <= 0:
+            return
+        self._last = now
+        self._tokens = min(self.capacity, self._tokens + elapsed * self.rate)
+
+    def allow(self, tokens: float = 1.0) -> bool:
+        with self._lock:
+            self._add_tokens()
+            if self._tokens >= tokens:
+                self._tokens -= tokens
+                return True
+            return False
+
+    def wait(self, tokens: float = 1.0) -> None:
+        """Block until tokens are available."""
+        while True:
+            with self._lock:
+                self._add_tokens()
+                if self._tokens >= tokens:
+                    self._tokens -= tokens
+                    return
+                # compute small sleep based on deficit
+                deficit = tokens - self._tokens
+                wait_for = deficit / self.rate if self.rate > 0 else 0.1
+            # sleep a small amount (cap to avoid long sleeps)
+            time.sleep(max(0.01, min(wait_for, 0.5)))
+
+
+class TTLCache:
+    """Very small TTL cache for short-lived market data.
+
+    Stores (value, expires_at) and returns cached value if not expired.
+    """
+
+    def __init__(self, default_ttl: float = 0.5):
+        self.default_ttl = float(default_ttl)
+        self._store: Dict[str, Any] = {}
+        self._lock = threading.Lock()
+
+    def get(self, key: str) -> Optional[Any]:
+        with self._lock:
+            item = self._store.get(key)
+            if not item:
+                return None
+            value, expires = item
+            if time.time() > expires:
+                del self._store[key]
+                return None
+            return value
+
+    def set(self, key: str, value: Any, ttl: Optional[float] = None) -> None:
+        ttl = self.default_ttl if ttl is None else float(ttl)
+        expires = time.time() + ttl
+        with self._lock:
+            self._store[key] = (value, expires)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._store.clear()

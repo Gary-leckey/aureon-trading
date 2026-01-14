@@ -70,6 +70,26 @@ class AlpacaClient:
         
         self.session = requests.Session()
         self.last_error: Optional[Dict[str, Any]] = None
+
+        # Rate limiting and in-memory TTL caching for market data
+        from rate_limiter import TokenBucket, TTLCache
+        # Allow configuring via env; defaults conservative to 5 reqs/sec
+        try:
+            alpaca_rate = float(os.getenv('ALPACA_RATE_PER_SECOND', '5'))
+        except Exception:
+            alpaca_rate = 5.0
+        try:
+            alpaca_burst = float(os.getenv('ALPACA_BURST_CAPACITY', str(max(1, int(alpaca_rate)))))
+        except Exception:
+            alpaca_burst = max(1, alpaca_rate)
+
+        self._rate_limiter = TokenBucket(rate=alpaca_rate, capacity=alpaca_burst)
+        try:
+            ttl = float(os.getenv('ALPACA_QUOTE_CACHE_TTL', '0.5'))
+        except Exception:
+            ttl = 0.5
+        self._quote_cache = TTLCache(default_ttl=ttl)
+
         if self.api_key and self.secret_key:
             self.session.headers.update({
                 "APCA-API-KEY-ID": self.api_key,
@@ -82,17 +102,36 @@ class AlpacaClient:
         url = f"{base_url or self.base_url}{endpoint}"
         for attempt in range(self.max_retries + 1):
             try:
+                # Respect local rate limiter
+                try:
+                    self._rate_limiter.wait()
+                except Exception:
+                    # In case rate limiter fails, don't block the call
+                    pass
+
                 resp = self.session.request(method, url, params=params, json=data, timeout=self.timeout_seconds)
-                
-                # 🛡️ RATE LIMIT HANDLING - Wait and retry on 429
+
+                # 🛡️ RATE LIMIT HANDLING - Respect Retry-After header if present
                 if resp.status_code == 429:
-                    wait_time = 2 ** attempt  # Exponential backoff: 1, 2, 4, 8...
-                    logger.warning(f"Rate limited (429) - waiting {wait_time}s before retry {attempt + 1}")
-                    time.sleep(wait_time)
+                    retry_after = resp.headers.get('Retry-After')
+                    if retry_after:
+                        try:
+                            wait_time = float(retry_after)
+                        except Exception:
+                            wait_time = 2 ** attempt
+                    else:
+                        wait_time = 2 ** attempt
+
+                    # add jitter
+                    jitter = min(1.0, wait_time * 0.1)
+                    wait_time = wait_time + (jitter * (0.5 - random.random()))
+
+                    logger.warning(f"Rate limited (429) - waiting {wait_time:.2f}s before retry {attempt + 1}")
+                    time.sleep(max(0.1, wait_time))
                     if attempt < self.max_retries:
                         continue
                     # Fall through to error handling if out of retries
-                
+
                 if not resp.ok:
                     body_text = (resp.text or "").strip()
                     logger.error(f"Alpaca API Error {resp.status_code}: {body_text}")
@@ -329,6 +368,12 @@ class AlpacaClient:
 
         # Normalize to detect whether this is a crypto pair (contains '/').
         normalized = AlpacaClient._normalize_pair_symbol(sym)
+        # Check TTL cache first
+        cache_key = f"last_quote::{sym}"
+        cached = self._quote_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         try:
             # If looks like a crypto pair (e.g. BTC/USD or BTCUSD), prefer crypto API
             if normalized and '/' in normalized:
@@ -339,7 +384,9 @@ class AlpacaClient:
                         bp = float(q.get('bp', 0) or 0.0)
                         ap = float(q.get('ap', 0) or 0.0)
                         last = (bp + ap) / 2 if (bp > 0 and ap > 0) else (bp or ap or 0.0)
-                        return {"last": {"price": last}, "raw": q}
+                        res = {"last": {"price": last}, "raw": q}
+                        self._quote_cache.set(cache_key, res)
+                        return res
                 except Exception:
                     # If crypto API fails, fall through to stock endpoint as a fallback
                     pass
@@ -356,7 +403,9 @@ class AlpacaClient:
             bp = float(q.get("bp", 0) or 0.0)
             ap = float(q.get("ap", 0) or 0.0)
             last = (bp + ap) / 2 if (bp > 0 and ap > 0) else (bp or ap or 0.0)
-            return {"last": {"price": last}, "raw": resp}
+            res = {"last": {"price": last}, "raw": resp}
+            self._quote_cache.set(cache_key, res)
+            return res
         except Exception:
             return {}
 
