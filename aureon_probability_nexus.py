@@ -82,6 +82,14 @@ CLOWNFISH_AVAILABLE = False
 ClownfishNode = None
 ClownfishMarketState = None
 
+# Whale integration hook: query latest whale predictions from the whale subsystem
+try:
+    from aureon_whale_integration import get_latest_prediction
+    WHALE_INTEGRATION_AVAILABLE = True
+except Exception:
+    get_latest_prediction = None
+    WHALE_INTEGRATION_AVAILABLE = False
+
 def _lazy_load_clownfish():
     """Lazy load Clownfish to avoid circular imports"""
     global CLOWNFISH_AVAILABLE, ClownfishNode, ClownfishMarketState
@@ -935,9 +943,30 @@ class AureonProbabilityNexus:
         # 🐠 Apply CLOWNFISH boost (micro-change confidence modifier)
         combined_prob = 0.5 + (combined_prob - 0.5) * clownfish_boost
         
-        # Clamp to valid range
-        combined_prob = max(0.01, min(0.99, combined_prob))
-        
+        # 🐋 Whale prediction adjustment (if available)
+        whale_reasons = []
+        try:
+            symbol = None
+            latest_candle = self.candle_history[-1] if self.candle_history else {}
+            symbol = latest_candle.get('symbol') or getattr(state, 'symbol', None)
+            if WHALE_INTEGRATION_AVAILABLE and symbol:
+                wp = get_latest_prediction(symbol)
+                if wp and isinstance(wp, dict):
+                    conf = float(wp.get('confidence', wp.get('prediction', {}).get('confidence', 0.0) or 0.0))
+                    # Only apply meaningful signals
+                    if conf and conf > 0.6:
+                        act = (wp.get('action') or '') or (wp.get('prediction', {}) or {}).get('action', '')
+                        act = str(act).lower()
+                        if 'buy' in act:
+                            combined_prob = 0.5 + (combined_prob - 0.5) * (1.0 + min(0.5, conf))
+                            whale_reasons.append(f"🐋WhaleSupport({conf:.2f})")
+                        elif 'sell' in act:
+                            combined_prob = 0.5 - (0.5 - combined_prob) * (1.0 + min(0.5, conf))
+                            whale_reasons.append(f"🐋WhaleResist({conf:.2f})")
+        except Exception:
+            # Non-fatal; continue without whale influence
+            pass
+
         # Calculate confidence
         confidence = abs(combined_prob - 0.5) * 2  # 0-1 scale
         
@@ -951,12 +980,39 @@ class AureonProbabilityNexus:
         
         # Build reason string
         reasons = []
+        # merge any whale reasons collected earlier
+        if 'whale_reasons' in locals() and whale_reasons:
+            reasons.extend(whale_reasons)
         if is_golden:
             reasons.append(f"GoldenZone({state.frequency:.0f}Hz)")
         if state.price_position >= 0.75:
             reasons.append("PriceHigh")
         elif state.price_position <= 0.25:
             reasons.append("PriceLow")
+
+        # 🧭 Whale shape adjustment: penalize or boost based on detected shape patterns
+        try:
+            if WHALE_INTEGRATION_AVAILABLE and symbol:
+                latest = get_latest_prediction(symbol) or {}
+                shape = latest.get('shape') if isinstance(latest, dict) else None
+                if shape and isinstance(shape, dict):
+                    st = str(shape.get('subtype') or '').lower()
+                    sc = float(shape.get('score') or 0.0)
+                    # High-confidence manipulation-ish shapes should dampen combined_prob
+                    if sc > 0.6 and st in ('grid', 'spiral', 'oscillator', 'manipulation'):
+                        # apply mild suppression proportional to score
+                        factor = 1.0 - min(0.4, 0.25 * sc)
+                        combined_prob = 0.5 + (combined_prob - 0.5) * factor
+                        reasons.append(f"🐋ShapeSuppress({st}:{sc:.2f})")
+                    # Strong accumulation/distribution can bias direction
+                    if sc > 0.6 and st == 'accumulation':
+                        combined_prob = 0.5 + (combined_prob - 0.5) * (1.0 + min(0.3, sc*0.3))
+                        reasons.append(f"🐋ShapeAcc({sc:.2f})")
+                    if sc > 0.6 and st == 'distribution':
+                        combined_prob = 0.5 - (0.5 - combined_prob) * (1.0 + min(0.3, sc*0.3))
+                        reasons.append(f"🐋ShapeDist({sc:.2f})")
+        except Exception:
+            pass
         if state.momentum_6 >= 5:
             reasons.append("MomentumHigh")
         elif state.momentum_6 <= 1:

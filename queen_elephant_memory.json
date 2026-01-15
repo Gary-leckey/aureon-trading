@@ -935,6 +935,58 @@
       "first_seen": "2026-01-05T11:19:28.823690",
       "last_updated": "2026-01-05T11:19:28.823697",
       "confidence": 69.5
+    },
+    "fe8fb0fb1b31b6dffb9833990239cdd990a3ce2d": {
+      "pattern_id": "fe8fb0fb1b31b6dffb9833990239cdd990a3ce2d",
+      "pattern_type": "whale",
+      "symbol": "TESTCOIN/USD",
+      "timeframe": "orderbook",
+      "conditions": {
+        "subtype": "accumulation",
+        "score": 2.0,
+        "layering": 0.1,
+        "bids_depth": 200000.0,
+        "asks_depth": 50000.0
+      },
+      "total_occurrences": 0,
+      "winning_trades": 0,
+      "losing_trades": 0,
+      "total_profit": 0.0,
+      "total_loss": 0.0,
+      "avg_profit_per_trade": 0.0,
+      "win_rate": 0.0,
+      "profit_factor": 0.0,
+      "best_entry_hour": 0,
+      "best_exit_hours": 4,
+      "best_move_threshold": 0.5,
+      "first_seen": "",
+      "last_updated": "",
+      "confidence": 0.0
+    },
+    "716c52b3c684bab4f39709fb09abc3e1ebad62d0": {
+      "pattern_id": "716c52b3c684bab4f39709fb09abc3e1ebad62d0",
+      "pattern_type": "whale_shape",
+      "symbol": "TESTCOIN/USD",
+      "timeframe": "orderbook_shape",
+      "conditions": {
+        "subtype": "accumulation",
+        "score": 0.9,
+        "spectrogram": {}
+      },
+      "total_occurrences": 1,
+      "winning_trades": 1,
+      "losing_trades": 0,
+      "total_profit": 1500.0,
+      "total_loss": 0.0,
+      "avg_profit_per_trade": 1500.0,
+      "win_rate": 100.0,
+      "profit_factor": 0.0,
+      "best_entry_hour": 0,
+      "best_exit_hours": 4,
+      "best_move_threshold": 0.5,
+      "first_seen": "",
+      "last_updated": "2026-01-15T09:10:16.951027",
+      "confidence": 21
     }
   },
   "wisdom": {},
@@ -4239,5 +4291,5 @@
       "win_rate": 100.0
     }
   },
-  "last_saved": "2026-01-14T20:02:38.112546"
+  "last_saved": "2026-01-15T09:10:16.951437"
 }
