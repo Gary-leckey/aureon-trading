@@ -39,29 +39,31 @@ logger = logging.getLogger(__name__)
 
 
 def test_onchain_providers():
-    """Test 1: On-chain provider connectivity"""
+    """Test 1: Exchange whale tracker connectivity"""
     print("\n" + "="*70)
-    print("TEST 1: On-Chain Provider Connectivity")
+    print("TEST 1: Exchange Whale Tracker (Using Existing Exchange APIs)")
     print("="*70)
     
     try:
-        from onchain_providers import get_provider_manager, KNOWN_EXCHANGE_ADDRESSES
+        from aureon_whale_onchain_tracker import get_exchange_tracker
         
-        manager = get_provider_manager()
-        print(f"✅ Provider manager initialized")
-        print(f"   Available providers: {len(manager.providers)}")
-        print(f"   Known exchange addresses: {len(KNOWN_EXCHANGE_ADDRESSES)}")
-        
-        # Test simulated transfer
-        from aureon_whale_onchain_tracker import get_onchain_tracker
-        tracker = get_onchain_tracker()
+        tracker = get_exchange_tracker()
         if tracker:
+            print(f"✅ Exchange tracker initialized")
+            print(f"   Available exchanges: {list(tracker.exchanges.keys())}")
+            print(f"   Threshold: ${tracker.threshold_usd:,.0f}")
+            
+            # Test simulated transfer
             tracker.simulate_transfer('ETH', '0xtest123', '0xfrom', '0xto', 150000.0)
-            print(f"✅ Simulated on-chain transfer published")
+            print(f"✅ Simulated whale event published")
+        else:
+            print("⚠️  Exchange tracker not initialized (no exchange clients available)")
         
         return True
     except Exception as e:
-        print(f"❌ On-chain test failed: {e}")
+        print(f"❌ Exchange tracker test failed: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 

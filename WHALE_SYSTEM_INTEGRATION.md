@@ -20,43 +20,47 @@ The whale detection system now has **full production capabilities** for tracking
 
 ## 📦 New Components
 
-### 1. On-Chain Provider Integration (`onchain_providers.py`)
+### 1. Exchange Whale Tracker (`aureon_whale_onchain_tracker.py`)
 
-**Purpose**: Real-time monitoring of Ethereum/ERC20 whale transfers using multiple blockchain data providers.
+**Purpose**: Real-time monitoring of whale activity using your existing exchange APIs (no blockchain API keys needed).
 
 **Key Features**:
-- **Multi-provider fallback chain**: Etherscan → Alchemy → Covalent
-- **27 known exchange addresses** (Binance, Kraken, Coinbase, Bitfinex, Huobi, etc.)
-- **Automatic transfer classification**:
-  - `DEPOSIT`: Into exchange wallet
-  - `WITHDRAWAL`: From exchange wallet
-  - `INTERNAL`: Between exchange wallets
-  - `WHALE`: Large non-exchange transfer
-- **Rate limiting** per provider (5-10 req/sec)
-- **USD valuation** with price oracle integration
+- **Uses existing exchange clients**: Binance, Kraken, Alpaca
+- **Balance change detection**: Monitors deposits/withdrawals via balance changes
+- **Large trade detection**: Tracks trades >= $100K threshold
+- **Automatic classification**:
+  - `deposit`: Balance increase detected
+  - `withdrawal`: Balance decrease detected
+  - `trade`: Large order executed on exchange
+- **No additional API keys required** - uses what you already have
 
-**Configuration** (`.env`):
-```bash
-ETHERSCAN_API_KEY=your_key_here
-ALCHEMY_API_KEY=your_key_here
-COVALENT_API_KEY=your_key_here
-ALCHEMY_NETWORK=eth-mainnet  # or eth-sepolia for testnet
-```
+**How It Works**:
+1. Polls exchange APIs every 60 seconds for:
+   - Current balances (tracks changes from previous poll)
+   - Recent large trades (via trade history APIs)
+2. Detects significant changes (>$100K)
+3. Estimates USD value using ticker prices
+4. Publishes `whale.onchain.detected` events
+
+**Configuration**: No additional setup needed! Uses your existing:
+- `KRAKEN_API_KEY` / `KRAKEN_SECRET`
+- `BINANCE_API_KEY` / `BINANCE_SECRET`
+- `ALPACA_API_KEY` / `ALPACA_SECRET_KEY`
 
 **Usage**:
 ```python
-from onchain_providers import get_provider_manager
+from aureon_whale_onchain_tracker import get_exchange_tracker
 
-manager = get_provider_manager()
-transfers = manager.get_recent_transfers("0xYourAddress", limit=50)
-
-for event in transfers:
-    print(f"{event.direction}: {event.amount} {event.token_symbol} = ${event.amount_usd:,.0f}")
-    if event.exchange_name:
-        print(f"  Exchange: {event.exchange_name}")
+tracker = get_exchange_tracker()
+print(f"Monitoring: {list(tracker.exchanges.keys())}")
+# Output: ['kraken', 'binance', 'alpaca']
 ```
 
-**Integration**: `aureon_whale_onchain_tracker.py` now auto-starts background polling when on-chain providers are configured, emitting `whale.onchain.detected` events for transfers ≥ $100K.
+**What Gets Detected**:
+- **Balance changes**: `"🐋 Whale balance_change: binance BTC $250,000 deposit"`
+- **Large trades**: `"🐋 Whale large_trade: kraken XXBTZUSD $150,000 trade"`
+
+**Integration**: Auto-starts on import, emitting `whale.onchain.detected` events for activity ≥ $100K.
 
 ---
 
@@ -314,27 +318,23 @@ if whale_pred and whale_pred['confidence'] > 0.6:
 
 ## 🚀 Deployment Checklist
 
-### 1. Configure On-Chain Providers
+### 1. No Additional Setup Required! ✅
+Your whale tracker uses existing exchange API credentials already configured:
 ```bash
-# Add to .env
-ETHERSCAN_API_KEY=your_etherscan_key
-ALCHEMY_API_KEY=your_alchemy_key
-COVALENT_API_KEY=your_covalent_key
-ALCHEMY_NETWORK=eth-mainnet
+# Already in your .env:
+KRAKEN_API_KEY=your_kraken_key
+KRAKEN_SECRET=your_kraken_secret
+BINANCE_API_KEY=your_binance_key
+BINANCE_SECRET=your_binance_secret
+ALPACA_API_KEY=your_alpaca_key
+ALPACA_SECRET_KEY=your_alpaca_secret
 ```
-
-**Get API Keys**:
-- Etherscan: https://etherscan.io/myapikey
-- Alchemy: https://dashboard.alchemy.com
-- Covalent: https://www.covalenthq.com/platform
 
 ### 2. Start Whale Detection
 ```bash
-# Start orderbook analyzer
+# Whale tracker auto-starts when importing whale components
+# Or explicitly run the orderbook analyzer:
 python aureon_whale_agent.py --symbols BTC/USD,ETH/USD --interval 1.0
-
-# On-chain tracker auto-starts if providers configured
-# Stargate integration auto-starts on import
 ```
 
 ### 3. Monitor Metrics
