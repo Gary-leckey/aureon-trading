@@ -88,6 +88,15 @@ def run_live_wave_monitor():
     from binance_ws_client import BinanceWebSocketClient
     from hnc_probability_matrix import HNCProbabilityIntegration
     
+    # Try to initialize ThoughtBus for system integration
+    try:
+        from aureon_thought_bus import ThoughtBus, Thought
+        bus = ThoughtBus()
+        print("  🧠 ThoughtBus Connected - Coherence signals will be broadcast")
+    except ImportError:
+        bus = None
+        print("  ⚠️ ThoughtBus NOT found - Running in standalone visualization mode")
+    
     print("""
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║  🌊⚡ REAL-TIME HARMONIC WAVE MONITOR ⚡🌊                               ║
@@ -100,8 +109,11 @@ def run_live_wave_monitor():
     ws_client = BinanceWebSocketClient()
     integration = HNCProbabilityIntegration()
     
-    # Track symbols
-    symbols = ['BTCUSDC', 'ETHUSDC', 'SOLUSDC', 'XRPUSDC', 'AVAXUSDC']
+    # Track symbols - Expanded Universe
+    symbols = [
+        'BTCUSDC', 'ETHUSDC', 'SOLUSDC', 'XRPUSDC', 'AVAXUSDC',
+        'BNBUSDC', 'ADAUSDC', 'DOGEUSDC', 'DOTUSDC', 'LINKUSDC'
+    ]
     
     # Subscribe to ticker streams
     streams = [f"{s.lower()}@ticker" for s in symbols]
@@ -122,6 +134,10 @@ def run_live_wave_monitor():
             iteration += 1
             timestamp = datetime.now().strftime('%H:%M:%S')
             
+            # Reduce print frequency to keep terminal clean (every 5th update ~ every 25s if sleep is 5s)
+            # Actually, standard update is fine, but maybe clear screen?
+            # print("\033[H\033[J") # Clear screen 
+            
             print(f"\n{'═'*70}")
             print(f"  ⏱️  {timestamp} | Iteration #{iteration}")
             print(f"{'═'*70}")
@@ -132,7 +148,19 @@ def run_live_wave_monitor():
             for symbol in symbols:
                 try:
                     # poll WS client for latest data
-                    ticker = ws_client.latest_tickers.get(symbol)
+                    ticker = ws_client.latest_tickers.get(symbol.replace('USDC', 'USDT')) # Try USDT fallback if USDC missing?
+                    # The stream subscription uses lowercase symbol from list.
+                    # ws_client keys are usually uppercase symbol from payload "s".
+                    # Let's check keys directly.
+                    
+                    # Direct check 
+                    if not ticker:
+                         ticker = ws_client.latest_tickers.get(symbol)
+                    
+                    # If still not found, try USDT variant if using USDC
+                    if not ticker and 'USDC' in symbol:
+                         ticker = ws_client.latest_tickers.get(symbol.replace('USDC', 'USDT'))
+
                     if not ticker:
                         continue
                         
@@ -248,6 +276,25 @@ def run_live_wave_monitor():
             print(f"\n  🎯 MARKET SENTIMENT: {sentiment}")
             print(f"     Bullish: {bullish} | Bearish: {bearish} | Neutral: {len(wave_components) - bullish - bearish}")
             
+            # 🧠 BROADCAST TO SYSTEM 🧠
+            if bus:
+                try:
+                    bus.think(
+                        f"Global Coherence Update: {coherence:.2%} | Freq: {dom_freq:.1f}Hz",
+                        topic="market.coherence",
+                        priority="high" if coherence > 0.8 else "normal",
+                        metadata={
+                            "coherence": coherence,
+                            "frequency": dom_freq,
+                            "solfeggio_tone": solf_tone,
+                            "active_symbols": len(wave_components),
+                            "market_sentiment": sentiment,
+                            "top_wave": wave_components[0]['symbol'] if wave_components else None
+                        }
+                    )
+                except Exception as e:
+                    pass # Don't crash visualization on bus error
+
             # Harmonic resonance check
             love_proximity = abs(dom_freq * 100 - 528)
             if love_proximity < 30:
