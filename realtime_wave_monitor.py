@@ -84,21 +84,32 @@ def map_frequency_to_solfeggio(freq: float) -> str:
 
 def run_live_wave_monitor():
     """Run real-time wave monitoring"""
-    from binance_client import BinanceClient
+    # Use WebSocket client for streaming data
+    from binance_ws_client import BinanceWebSocketClient
     from hnc_probability_matrix import HNCProbabilityIntegration
     
     print("""
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║  🌊⚡ REAL-TIME HARMONIC WAVE MONITOR ⚡🌊                               ║
 ║  Live Market → Harmonic Waveform Transformation                          ║
+║  (Powered by Binance WebSocket Stream)                                   ║
 ╚══════════════════════════════════════════════════════════════════════════╝
     """)
     
-    client = BinanceClient()
+    # Initialize Stream
+    ws_client = BinanceWebSocketClient()
     integration = HNCProbabilityIntegration()
     
     # Track symbols
     symbols = ['BTCUSDC', 'ETHUSDC', 'SOLUSDC', 'XRPUSDC', 'AVAXUSDC']
+    
+    # Subscribe to ticker streams
+    streams = [f"{s.lower()}@ticker" for s in symbols]
+    print(f"Connecting to streams: {streams}")
+    ws_client.start(streams)
+    
+    # Wait for connection
+    time.sleep(2)
     
     # Wave buffer
     wave_buffer = np.zeros(1000)
@@ -120,9 +131,13 @@ def run_live_wave_monitor():
             
             for symbol in symbols:
                 try:
-                    ticker = client.get_24h_ticker(symbol)
-                    price = float(ticker.get('lastPrice', 0))
-                    change = float(ticker.get('priceChangePercent', 0))
+                    # poll WS client for latest data
+                    ticker = ws_client.latest_tickers.get(symbol)
+                    if not ticker:
+                        continue
+                        
+                    price = float(ticker.last_price)
+                    change = float(ticker.price_change_percent)
                     
                     # Track history
                     price_history[symbol].append(price)
@@ -243,6 +258,7 @@ def run_live_wave_monitor():
             
     except KeyboardInterrupt:
         print(f"\n\n  👋 Wave monitor stopped.")
+        ws_client.stop()
         
         # Save final state
         final_data = {
