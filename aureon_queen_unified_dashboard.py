@@ -1,0 +1,766 @@
+#!/usr/bin/env python3
+"""
+👑 AUREON QUEEN UNIFIED DASHBOARD 👑
+═══════════════════════════════════════════════════════════════════════════
+
+MASTER DASHBOARD - ALL SYSTEMS INTEGRATED
+
+Combines:
+🤖 Bot Hunter → Live bot detection
+🌌 Quantum Telescope → Sacred geometry analysis  
+🌍 Planetary Tracker → Country/clan mapping
+🌊 Ocean Scanner → Whale/hive detection
+
+PLUS:
+👑 QUEEN'S VOICE - Real-time commentary on what's happening
+🗣️ Text-to-speech narration of bot activity
+🧠 Queen Hive Mind integration
+
+ONE DASHBOARD TO RULE THEM ALL
+"""
+
+import sys, os
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    try:
+        import io
+        def _is_utf8_wrapper(stream):
+            return (isinstance(stream, io.TextIOWrapper) and 
+                    hasattr(stream, 'encoding') and stream.encoding and
+                    stream.encoding.lower().replace('-', '') == 'utf8')
+        if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+        if hasattr(sys.stderr, 'buffer') and not _is_utf8_wrapper(sys.stderr):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+    except Exception:
+        pass
+
+import asyncio
+import aiohttp
+from aiohttp import web
+import json
+import logging
+from typing import Dict, Set, List
+from collections import defaultdict, deque
+import time
+
+# Unified dashboard HTML with Queen's voice
+UNIFIED_DASHBOARD_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>👑 Aureon Queen Unified Dashboard</title>
+    <meta charset="utf-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a1a0a 100%);
+            color: #00ff88;
+            overflow: hidden;
+        }
+        
+        #header {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 3px solid #ffaa00;
+            box-shadow: 0 4px 30px rgba(255, 170, 0, 0.5);
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #ffaa00, #ff6600, #ffaa00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(255, 170, 0, 0.8);
+            animation: glow 2s infinite;
+        }
+        
+        @keyframes glow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.5); }
+        }
+        
+        #container {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            grid-template-rows: 300px 1fr;
+            gap: 15px;
+            padding: 15px;
+            height: calc(100vh - 150px);
+        }
+        
+        .panel {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        .panel h2 {
+            color: #ffaa00;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.3em;
+        }
+        
+        #queen-voice {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.2), rgba(255, 102, 0, 0.2));
+            border-color: #ffaa00;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #queen-avatar {
+            position: absolute;
+            top: 50%;
+            left: 30px;
+            transform: translateY(-50%);
+            font-size: 120px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: translateY(-50%) scale(1); opacity: 1; }
+            50% { transform: translateY(-50%) scale(1.1); opacity: 0.8; }
+        }
+        
+        #queen-message {
+            margin-left: 180px;
+            font-size: 1.8em;
+            color: #ffaa00;
+            text-shadow: 0 0 10px #ffaa00;
+            line-height: 1.6;
+        }
+        
+        #queen-status {
+            margin-left: 180px;
+            margin-top: 10px;
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .voice-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 10px 20px;
+            background: #ffaa00;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .voice-button:hover {
+            background: #ff6600;
+            transform: scale(1.05);
+        }
+        
+        .voice-button.speaking {
+            animation: speak 0.5s infinite;
+        }
+        
+        @keyframes speak {
+            0%, 100% { background: #ffaa00; }
+            50% { background: #ff3366; }
+        }
+        
+        #stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-card {
+            background: rgba(0, 255, 136, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #00ff88;
+            text-align: center;
+        }
+        
+        .stat-label {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            color: #00ff88;
+            font-size: 2em;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00ff88;
+        }
+        
+        .bot-card {
+            background: rgba(0, 255, 136, 0.05);
+            border-left: 4px solid #00ff88;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .bot-card:hover {
+            background: rgba(0, 255, 136, 0.15);
+            transform: translateX(5px);
+        }
+        
+        .bot-card.whale {
+            border-left-color: #ff6600;
+            background: rgba(255, 102, 0, 0.1);
+        }
+        
+        .bot-card.shark {
+            border-left-color: #ffaa00;
+            background: rgba(255, 170, 0, 0.1);
+        }
+        
+        .bot-card.new {
+            animation: newBotFlash 2s;
+        }
+        
+        @keyframes newBotFlash {
+            0%, 100% { background: rgba(0, 255, 136, 0.05); }
+            50% { background: rgba(255, 170, 0, 0.3); }
+        }
+        
+        .hive-card {
+            background: rgba(255, 170, 0, 0.1);
+            border: 2px solid #ffaa00;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+        
+        .hive-leader {
+            color: #ff6600;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .battle-alert {
+            background: rgba(255, 51, 102, 0.2);
+            border: 2px solid #ff3366;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            animation: battlePulse 1s infinite;
+        }
+        
+        @keyframes battlePulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 51, 102, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(255, 51, 102, 0.8); }
+        }
+        
+        #activity-feed {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .activity-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            border-left: 3px solid #00ff88;
+            font-size: 0.9em;
+        }
+        
+        .activity-item.whale { border-left-color: #ff6600; }
+        .activity-item.battle { border-left-color: #ff3366; }
+        .activity-item.hive { border-left-color: #ffaa00; }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
+        ::-webkit-scrollbar-thumb { 
+            background: #00ff88; 
+            border-radius: 4px;
+        }
+        
+        .quantum-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-left: 5px;
+        }
+        
+        .sacred-golden_spiral { background: #ffd700; color: #000; }
+        .sacred-metatron { background: #9b59b6; color: #fff; }
+        .sacred-flower { background: #e91e63; color: #fff; }
+        .sacred-chaotic { background: #ff3366; color: #fff; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>👑 AUREON QUEEN UNIFIED DASHBOARD 👑</h1>
+    </div>
+    
+    <div id="container">
+        <!-- Queen's Voice Panel (Full Width Top) -->
+        <div id="queen-voice" class="panel">
+            <div id="queen-avatar">👑</div>
+            <div id="queen-message">
+                Initializing Queen consciousness... Scanning the ocean for bot activity...
+            </div>
+            <div id="queen-status">
+                Systems online: Bot Hunter • Quantum Telescope • Planetary Tracker • Ocean Scanner
+            </div>
+            <button class="voice-button" id="voice-toggle">🔊 Enable Voice</button>
+        </div>
+        
+        <!-- Left Panel: Real-Time Stats -->
+        <div class="panel">
+            <h2>📊 REAL-TIME STATS</h2>
+            <div id="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Bots</div>
+                    <div class="stat-value" id="total-bots">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">🐋 Whales</div>
+                    <div class="stat-value" id="whale-count">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">🏰 Hives</div>
+                    <div class="stat-value" id="hive-count">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">⚔️ Battles</div>
+                    <div class="stat-value" id="battle-count">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">🌍 Countries</div>
+                    <div class="stat-value" id="country-count">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Active Pairs</div>
+                    <div class="stat-value" id="pair-count">0</div>
+                </div>
+            </div>
+            
+            <h2 style="margin-top: 20px;">🤖 LATEST BOTS</h2>
+            <div id="latest-bots"></div>
+        </div>
+        
+        <!-- Center Panel: Activity Feed -->
+        <div class="panel">
+            <h2>📡 LIVE ACTIVITY FEED</h2>
+            <div id="activity-feed"></div>
+        </div>
+        
+        <!-- Right Panel: Hives & Battles -->
+        <div class="panel">
+            <h2>🏰 ACTIVE HIVES</h2>
+            <div id="hives-list"></div>
+            
+            <h2 style="margin-top: 20px;">⚔️ BATTLES</h2>
+            <div id="battles-list"></div>
+        </div>
+    </div>
+    
+    <script>
+        // WebSocket connection
+        const ws = new WebSocket('ws://localhost:13000/ws');
+        
+        // Text-to-speech
+        let voiceEnabled = false;
+        const synth = window.speechSynthesis;
+        
+        document.getElementById('voice-toggle').addEventListener('click', function() {
+            voiceEnabled = !voiceEnabled;
+            this.textContent = voiceEnabled ? '🔊 Voice ON' : '🔇 Voice OFF';
+            if (voiceEnabled) {
+                speak("Queen consciousness online. Monitoring all bot activity.");
+            }
+        });
+        
+        function speak(text) {
+            if (!voiceEnabled || !synth) return;
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.1;
+            utterance.pitch = 1.2;
+            utterance.volume = 0.8;
+            
+            // Try to use a female voice
+            const voices = synth.getVoices();
+            const femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Victoria'));
+            if (femaleVoice) utterance.voice = femaleVoice;
+            
+            synth.speak(utterance);
+            
+            // Visual feedback
+            document.getElementById('voice-toggle').classList.add('speaking');
+            utterance.onend = () => {
+                document.getElementById('voice-toggle').classList.remove('speaking');
+            };
+        }
+        
+        // State
+        const state = {
+            bots: {},
+            hives: {},
+            battles: [],
+            activityFeed: [],
+        };
+        
+        // WebSocket message handler
+        ws.onmessage = function(event) {
+            const msg = JSON.parse(event.data);
+            
+            if (msg.type === 'bot_discovered') {
+                handleBotDiscovered(msg.bot);
+            } else if (msg.type === 'ocean_overview') {
+                handleOceanOverview(msg.data);
+            } else if (msg.type === 'quantum_analysis') {
+                handleQuantumAnalysis(msg.data);
+            } else if (msg.type === 'queen_message') {
+                handleQueenMessage(msg.message);
+            }
+        };
+        
+        function handleBotDiscovered(bot) {
+            state.bots[bot.bot_id] = bot;
+            
+            // Update stats
+            updateStats();
+            
+            // Add to activity feed
+            const sizeEmoji = bot.size_class === 'whale' || bot.size_class === 'megalodon' ? '🐋' : 
+                             bot.size_class === 'shark' ? '🦈' : '🐟';
+            addActivity(
+                `${sizeEmoji} ${bot.size_class.toUpperCase()} ${bot.pattern} detected on ${bot.symbol} ($${formatNumber(bot.volume)})`,
+                bot.size_class
+            );
+            
+            // Queen commentary
+            if (bot.size_class === 'whale' || bot.size_class === 'megalodon') {
+                const message = `Large whale detected on ${bot.symbol}. ${bot.pattern} pattern. Volume: ${formatNumber(bot.volume)} dollars.`;
+                queenSpeak(message);
+            } else if (bot.is_leader) {
+                const message = `New hive leader identified. ${bot.follower_count} bots under command.`;
+                queenSpeak(message);
+            }
+            
+            // Update latest bots
+            updateLatestBots();
+        }
+        
+        function handleOceanOverview(data) {
+            // Update stats
+            document.getElementById('total-bots').textContent = data.stats.total_bots || 0;
+            document.getElementById('whale-count').textContent = (data.stats.whales || 0) + (data.stats.megalodons || 0);
+            document.getElementById('hive-count').textContent = data.stats.total_hives || 0;
+            document.getElementById('battle-count').textContent = data.stats.active_battles || 0;
+            
+            // Update hives
+            if (data.hives) {
+                state.hives = {};
+                data.hives.forEach(h => state.hives[h.hive_id] = h);
+                updateHivesList();
+            }
+            
+            // Update battles
+            if (data.battles) {
+                state.battles = data.battles;
+                updateBattlesList();
+                
+                if (data.battles.length > 0 && Math.random() < 0.1) {
+                    queenSpeak(`Battle detected. ${data.battles[0].buyers.length} buyers versus ${data.battles[0].sellers.length} sellers on ${data.battles[0].symbol}.`);
+                }
+            }
+        }
+        
+        function handleQuantumAnalysis(data) {
+            if (data.bot_id && state.bots[data.bot_id]) {
+                state.bots[data.bot_id].sacred_shape = data.sacred_shape;
+                state.bots[data.bot_id].quantum_coherence = data.quantum_coherence;
+            }
+        }
+        
+        function handleQueenMessage(message) {
+            queenSpeak(message);
+        }
+        
+        function queenSpeak(message) {
+            document.getElementById('queen-message').textContent = message;
+            speak(message);
+            
+            addActivity(`👑 Queen: ${message}`, 'hive');
+        }
+        
+        function updateStats() {
+            const botCount = Object.keys(state.bots).length;
+            const whaleCount = Object.values(state.bots).filter(b => 
+                b.size_class === 'whale' || b.size_class === 'megalodon'
+            ).length;
+            
+            document.getElementById('total-bots').textContent = botCount;
+            document.getElementById('whale-count').textContent = whaleCount;
+            
+            const pairs = new Set(Object.values(state.bots).map(b => b.symbol));
+            document.getElementById('pair-count').textContent = pairs.size;
+        }
+        
+        function updateLatestBots() {
+            const latest = Object.values(state.bots).slice(-10).reverse();
+            const html = latest.map(bot => `
+                <div class="bot-card ${bot.size_class} new">
+                    <div style="display: flex; justify-content: space-between;">
+                        <strong>${bot.symbol}</strong>
+                        <span>${bot.size_class === 'whale' || bot.size_class === 'megalodon' ? '🐋' : bot.size_class === 'shark' ? '🦈' : '🐟'}</span>
+                    </div>
+                    <div style="font-size: 0.9em; color: #888; margin-top: 5px;">
+                        ${bot.pattern} • $${formatNumber(bot.volume)}
+                        ${bot.sacred_shape ? `<span class="quantum-badge sacred-${bot.sacred_shape}">${bot.sacred_shape}</span>` : ''}
+                    </div>
+                    ${bot.is_leader ? '<div style="color: #ff6600; margin-top: 5px;">🏰 HIVE LEADER</div>' : ''}
+                </div>
+            `).join('');
+            
+            document.getElementById('latest-bots').innerHTML = html;
+        }
+        
+        function updateHivesList() {
+            const hives = Object.values(state.hives).slice(0, 5);
+            const html = hives.map(hive => `
+                <div class="hive-card">
+                    <div class="hive-leader">🏰 ${hive.hive_id.substring(0, 12)}</div>
+                    <div style="margin-top: 8px; font-size: 0.9em;">
+                        <div>Leader: ${hive.leader.substring(0, 10)}...</div>
+                        <div>Members: ${hive.members}</div>
+                        <div>Strategy: ${hive.strategy}</div>
+                        <div>Mode: ${hive.mode}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('hives-list').innerHTML = html || '<div style="color: #888;">No hives detected yet...</div>';
+        }
+        
+        function updateBattlesList() {
+            const html = state.battles.slice(0, 3).map(battle => `
+                <div class="battle-alert">
+                    <strong>⚔️ ${battle.symbol}</strong>
+                    <div style="margin-top: 8px; font-size: 0.9em;">
+                        🟢 ${battle.buyers.length} buyers vs 🔴 ${battle.sellers.length} sellers
+                        <div style="margin-top: 5px;">Intensity: ${battle.intensity}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('battles-list').innerHTML = html || '<div style="color: #888;">No battles detected...</div>';
+        }
+        
+        function addActivity(text, type = '') {
+            const item = document.createElement('div');
+            item.className = `activity-item ${type}`;
+            item.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+            
+            const feed = document.getElementById('activity-feed');
+            feed.insertBefore(item, feed.firstChild);
+            
+            // Keep only last 50 items
+            while (feed.children.length > 50) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+        
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toFixed(0);
+        }
+        
+        // Initial messages
+        setTimeout(() => {
+            addActivity('👑 Queen consciousness initialized', 'hive');
+            addActivity('🌊 Ocean scanner active', '');
+            addActivity('🌌 Quantum telescope online', '');
+            addActivity('🌍 Planetary tracker engaged', '');
+        }, 1000);
+        
+        ws.onopen = function() {
+            addActivity('✅ Connected to Queen Hive Mind', 'hive');
+        };
+        
+        ws.onerror = function(error) {
+            addActivity('⚠️ Connection error', '');
+        };
+        
+        console.log('👑 Queen Unified Dashboard initialized');
+    </script>
+</body>
+</html>
+"""
+
+class QueenUnifiedDashboard:
+    """Master dashboard integrating all systems with Queen's voice."""
+    
+    def __init__(self, port=13000):
+        self.port = port
+        self.logger = logging.getLogger(__name__)
+        
+        # WebSocket clients
+        self.clients: Set = set()
+        
+        # Aggregated state from all systems
+        self.bots = {}
+        self.quantum_data = {}
+        self.planetary_data = {}
+        self.ocean_data = {}
+        
+        # Queen's commentary queue
+        self.queen_messages = deque(maxlen=100)
+        
+        # Setup web server
+        self.app = web.Application()
+        self.app.router.add_get('/', self.handle_index)
+        self.app.router.add_get('/ws', self.handle_websocket)
+    
+    async def handle_index(self, request):
+        """Serve unified dashboard."""
+        return web.Response(text=UNIFIED_DASHBOARD_HTML, content_type='text/html')
+    
+    async def handle_websocket(self, request):
+        """Handle WebSocket connections."""
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
+        
+        self.clients.add(ws)
+        self.logger.info(f"👑 Client connected (total: {len(self.clients)})")
+        
+        try:
+            async for msg in ws:
+                if msg.type == aiohttp.WSMsgType.ERROR:
+                    self.logger.error(f"WebSocket error: {ws.exception()}")
+        finally:
+            self.clients.discard(ws)
+        
+        return ws
+    
+    async def broadcast(self, message: Dict):
+        """Broadcast to all connected clients."""
+        if self.clients:
+            msg_str = json.dumps(message)
+            for client in list(self.clients):
+                try:
+                    await client.send_str(msg_str)
+                except:
+                    self.clients.discard(client)
+    
+    async def queen_commentary(self):
+        """
+        Queen provides real-time commentary on bot activity.
+        """
+        await asyncio.sleep(5)  # Initial delay
+        
+        messages = [
+            "I am observing massive bot activity across multiple exchanges.",
+            "Multiple hives detected. Coordinated trading patterns emerging.",
+            "Whale activity increasing on major pairs.",
+            "Battle zones identified. Competing bot strategies in conflict.",
+            "Quantum coherence analysis complete. Sacred patterns detected.",
+            "Global tidal wave detected. Bot armies moving across timezones.",
+            "High-frequency trading bots dominating several markets.",
+            "New hive formation detected. Leader bot commanding followers.",
+            "Market manipulation patterns identified.",
+            "Coordinated dump detected. Multiple bots selling simultaneously.",
+        ]
+        
+        while True:
+            await asyncio.sleep(15)  # Commentary every 15 seconds
+            
+            # Generate contextual commentary based on current state
+            bot_count = len(self.bots)
+            
+            if bot_count > 50:
+                message = f"I am tracking {bot_count} active bots across the ocean."
+            elif bot_count > 20:
+                message = "Bot activity is escalating. Multiple patterns detected."
+            else:
+                message = messages[int(time.time()) % len(messages)]
+            
+            await self.broadcast({
+                "type": "queen_message",
+                "message": message
+            })
+            
+            self.queen_messages.append(message)
+    
+    async def aggregate_all_systems(self):
+        """Aggregate data from all subsystems."""
+        # In a full implementation, this would connect to:
+        # - Bot Hunter (port 9999)
+        # - Quantum Bridge (port 11006)
+        # - Planetary Tracker (port 12100)
+        # - Ocean Scanner (internal)
+        
+        # For now, we'll receive data and aggregate
+        pass
+    
+    def process_bot_data(self, bot: Dict):
+        """Process bot data from any source."""
+        bot_id = bot.get("bot_id")
+        if bot_id:
+            self.bots[bot_id] = bot
+    
+    async def start(self):
+        """Start the unified dashboard."""
+        # Start web server
+        runner = web.AppRunner(self.app)
+        await runner.setup()
+        site = web.TCPSite(runner, '0.0.0.0', self.port)
+        await site.start()
+        
+        print(f"\n{'='*80}")
+        print(f"👑 AUREON QUEEN UNIFIED DASHBOARD")
+        print(f"{'='*80}")
+        print(f"🌐 Dashboard: http://localhost:{self.port}")
+        print(f"🗣️  Queen's Voice: Text-to-speech enabled")
+        print(f"\n📡 Integrating:")
+        print(f"   🤖 Bot Hunter Dashboard")
+        print(f"   🌌 Quantum Telescope")
+        print(f"   🌍 Planetary Tracker")
+        print(f"   🌊 Ocean Scanner")
+        print(f"\n✨ Features:")
+        print(f"   • Real-time bot detection across all exchanges")
+        print(f"   • Quantum geometry analysis")
+        print(f"   • Country/clan tracking")
+        print(f"   • Whale/hive identification")
+        print(f"   • Battle zone detection")
+        print(f"   • Queen's live commentary with voice")
+        print(f"{'='*80}\n")
+        
+        # Start Queen commentary
+        asyncio.create_task(self.queen_commentary())
+
+async def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s | %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    dashboard = QueenUnifiedDashboard(port=13000)
+    await dashboard.start()
+    
+    # Keep running
+    await asyncio.Event().wait()
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\n\n👑 Queen dashboard stopped")

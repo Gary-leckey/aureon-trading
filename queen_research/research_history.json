@@ -4,45 +4,45 @@
       "topic": "trending_coins",
       "source": "coingecko",
       "title": "Trending Coins Pattern",
-      "content": "Currently trending: XMR, DASH, ZEC, BTC, RIVER",
+      "content": "Currently trending: KAITO, XMR, LIT, FOGO, BTC",
       "relevance_score": 0.7,
-      "discovered_at": "2026-01-14T20:11:08.348822",
+      "discovered_at": "2026-01-15T23:30:44.058086",
       "applied": false
     },
     {
       "topic": "market_sentiment",
       "source": "coingecko",
       "title": "Global Market Sentiment",
-      "content": "BTC Dominance: 57.5%, 24h Change: 3.06%",
+      "content": "BTC Dominance: 57.5%, 24h Change: -1.48%",
       "relevance_score": 0.8,
-      "discovered_at": "2026-01-14T20:11:08.473044",
+      "discovered_at": "2026-01-15T23:30:44.176126",
       "applied": true
     },
     {
       "topic": "momentum_leaders",
       "source": "binance",
       "title": "Top Momentum Leaders",
-      "content": "Top gainers: {'CREAM': 65.354, 'DASH': 48.397, 'GUN': 47.051, 'PNT': 45.228, 'BERA': 39.024}",
+      "content": "Top gainers: {'CREAM': 65.354, 'PNT': 45.228, 'FOGO': 34.257, 'KDA': 17.647, 'DCR': 15.689}",
       "relevance_score": 0.85,
-      "discovered_at": "2026-01-14T20:11:09.212247",
+      "discovered_at": "2026-01-15T23:30:44.495222",
       "applied": true
     },
     {
       "topic": "volume_spike",
       "source": "binance",
       "title": "Volume Spike Detection",
-      "content": "High volume + price increase detected in 3 pairs",
+      "content": "High volume + price increase detected in 1 pairs",
       "relevance_score": 0.9,
-      "discovered_at": "2026-01-14T20:11:09.212269",
+      "discovered_at": "2026-01-15T23:30:44.495244",
       "applied": true
     },
     {
       "topic": "volatility_analysis",
       "source": "kraken",
       "title": "Volatility Patterns",
-      "content": "24h volatility: XETHZUSD: 6.69%, SOLUSD: 3.95%, XXBTZUSD: 3.97%",
+      "content": "24h volatility: XETHZUSD: 3.35%, SOLUSD: 4.19%, XXBTZUSD: 2.16%",
       "relevance_score": 0.75,
-      "discovered_at": "2026-01-14T20:11:09.293575",
+      "discovered_at": "2026-01-15T23:30:44.571748",
       "applied": true
     },
     {
@@ -51,7 +51,7 @@
       "title": "Queen's Synthesized Strategy",
       "content": "Combined momentum + volume detection for optimal entry",
       "relevance_score": 0.95,
-      "discovered_at": "2026-01-14T20:11:09.294930",
+      "discovered_at": "2026-01-15T23:30:44.573148",
       "applied": true
     }
   ],
@@ -66,11 +66,11 @@
         "Global Market Sentiment",
         "Volatility Patterns"
       ],
-      "generated_at": "2026-01-14T20:11:09.296174",
+      "generated_at": "2026-01-15T23:30:44.574571",
       "applied": true,
       "measured_revenue": 0.0
     }
   ],
   "total_revenue": 0.0,
-  "last_updated": "2026-01-14T20:11:09.298621"
+  "last_updated": "2026-01-15T23:30:44.577883"
 }

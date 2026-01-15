@@ -22925,93 +22925,536 @@
           }
         ]
       }
+    },
+    {
+      "timestamp": 1768517957.356076,
+      "timestamp_human": "2026-01-15T22:59:17.356078+00:00",
+      "queen": {
+        "market_regime": "VOLATILE",
+        "global_momentum": 12800.2511,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 9.54,
+        "cash_available": 0.72,
+        "positions_held": 1,
+        "directives": {
+          "min_momentum_threshold": 0.2,
+          "min_coherence_threshold": 0.7,
+          "max_position_size": 0.072,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "VOLATILE"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 1000,
+        "with_momentum": 140,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 140,
+          "down": 0,
+          "flat": 860
+        },
+        "avg_momentum": 12800.2511,
+        "max_momentum": 114325.232,
+        "max_momentum_symbol": "LINK/ETH",
+        "avg_pip_score": 0.3814,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": [
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.547,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.547,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.543,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.543,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.543,
+            "momentum": 0.0,
+            "coherence": -3.5
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": 1768518073.3561692,
+      "timestamp_human": "2026-01-15T23:01:13.356171+00:00",
+      "queen": {
+        "market_regime": "VOLATILE",
+        "global_momentum": 38312.4013,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 9.54,
+        "cash_available": 0.72,
+        "positions_held": 1,
+        "directives": {
+          "min_momentum_threshold": 0.2,
+          "min_coherence_threshold": 0.7,
+          "max_position_size": 0.072,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "VOLATILE"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 1000,
+        "with_momentum": 372,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 372,
+          "down": 0,
+          "flat": 628
+        },
+        "avg_momentum": 38312.4013,
+        "max_momentum": 119877.9318,
+        "max_momentum_symbol": "LTC/ETH",
+        "avg_pip_score": 0.3833,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": [
+          {
+            "symbol": "AAVE/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.5670000000000001,
+            "momentum": 0.04806372936236205,
+            "coherence": -5.5
+          },
+          {
+            "symbol": "AAVE/USDC",
+            "exchange": "alpaca",
+            "pip_score": 0.5670000000000001,
+            "momentum": 0.04806372936236205,
+            "coherence": -5.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.547,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.547,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.547,
+            "momentum": 0.0,
+            "coherence": -3.5
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": 1768518186.6642127,
+      "timestamp_human": "2026-01-15T23:03:06.664213+00:00",
+      "queen": {
+        "market_regime": "VOLATILE",
+        "global_momentum": 18596.8391,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 9.54,
+        "cash_available": 0.72,
+        "positions_held": 1,
+        "directives": {
+          "min_momentum_threshold": 0.2,
+          "min_coherence_threshold": 0.7,
+          "max_position_size": 0.072,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "VOLATILE"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 1000,
+        "with_momentum": 168,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 168,
+          "down": 0,
+          "flat": 832
+        },
+        "avg_momentum": 18596.8391,
+        "max_momentum": 121372.1919,
+        "max_momentum_symbol": "LTC/ETH",
+        "avg_pip_score": 0.3817,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": [
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.547,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.547,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.547,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.547,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.547,
+            "momentum": 0.0,
+            "coherence": -3.5
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": 1768518281.6632102,
+      "timestamp_human": "2026-01-15T23:04:41.663211+00:00",
+      "queen": {
+        "market_regime": "QUIET",
+        "global_momentum": 2788.7812,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 9.54,
+        "cash_available": 0.72,
+        "positions_held": 1,
+        "directives": {
+          "min_momentum_threshold": 0.1,
+          "min_coherence_threshold": 0.55,
+          "max_position_size": 0.072,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "QUIET"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 1000,
+        "with_momentum": 28,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 28,
+          "down": 0,
+          "flat": 972
+        },
+        "avg_momentum": 2788.7812,
+        "max_momentum": 99599.3285,
+        "max_momentum_symbol": "UNI/ETH",
+        "avg_pip_score": 0.3759,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": [
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.553,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.553,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.553,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.553,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.553,
+            "momentum": 0.0,
+            "coherence": -3.5
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": 1768518373.8047404,
+      "timestamp_human": "2026-01-15T23:06:13.804742+00:00",
+      "queen": {
+        "market_regime": "VOLATILE",
+        "global_momentum": 23016.7801,
+        "global_coherence": 0.5,
+        "queen_confidence": 0.5,
+        "queen_strategy": "SNIPER",
+        "portfolio_value": 9.54,
+        "cash_available": 0.72,
+        "positions_held": 1,
+        "directives": {
+          "min_momentum_threshold": 0.2,
+          "min_coherence_threshold": 0.7,
+          "max_position_size": 0.072,
+          "target_exchanges": [],
+          "queen_strategy": "SNIPER",
+          "queen_confidence": 0.5,
+          "market_regime": "VOLATILE"
+        }
+      },
+      "hive_cluster": {
+        "exchanges_active": 0,
+        "total_symbols": 0,
+        "validators_active": 0,
+        "validator_agreement": 0.0,
+        "market_sentiment": "NEUTRAL",
+        "opportunity_density": 0.0,
+        "recommended_action": "WAIT",
+        "system_fill_rate": 0.0,
+        "total_fees_paid": 0.0
+      },
+      "bee_swarm": {
+        "total_scanned": 1000,
+        "with_momentum": 224,
+        "rejected": 0,
+        "executed": 0,
+        "momentum_distribution": {
+          "up": 224,
+          "down": 0,
+          "flat": 776
+        },
+        "avg_momentum": 23016.7801,
+        "max_momentum": 103821.6539,
+        "max_momentum_symbol": "UNI/ETH",
+        "avg_pip_score": 0.3823,
+        "avg_coherence": 0.0,
+        "above_phi_threshold": 0,
+        "rejection_breakdown": {},
+        "top_opportunities": [
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.553,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.553,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.553,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.553,
+            "momentum": 0.0,
+            "coherence": -3.5
+          },
+          {
+            "symbol": "ETH/USDT",
+            "exchange": "alpaca",
+            "pip_score": 0.553,
+            "momentum": 0.0,
+            "coherence": -3.5
+          }
+        ]
+      }
     }
   ],
   "last_snapshot": {
-    "timestamp": 1768419673.3322456,
-    "timestamp_human": "2026-01-14T19:41:13.332247+00:00",
+    "timestamp": 1768518373.8047404,
+    "timestamp_human": "2026-01-15T23:06:13.804742+00:00",
     "queen": {
       "market_regime": "VOLATILE",
-      "global_momentum": -0.0001,
+      "global_momentum": 23016.7801,
       "global_coherence": 0.5,
       "queen_confidence": 0.5,
       "queen_strategy": "SNIPER",
-      "portfolio_value": 9.84,
-      "cash_available": 7.69,
+      "portfolio_value": 9.54,
+      "cash_available": 0.72,
       "positions_held": 1,
       "directives": {
         "min_momentum_threshold": 0.2,
         "min_coherence_threshold": 0.7,
-        "max_position_size": 0.76855865102714,
-        "target_exchanges": [
-          "alpaca"
-        ],
+        "max_position_size": 0.072,
+        "target_exchanges": [],
         "queen_strategy": "SNIPER",
         "queen_confidence": 0.5,
         "market_regime": "VOLATILE"
       }
     },
     "hive_cluster": {
-      "exchanges_active": 1,
-      "total_symbols": 4,
+      "exchanges_active": 0,
+      "total_symbols": 0,
       "validators_active": 0,
       "validator_agreement": 0.0,
       "market_sentiment": "NEUTRAL",
       "opportunity_density": 0.0,
       "recommended_action": "WAIT",
-      "system_fill_rate": 100.0,
-      "total_fees_paid": -0.0259
+      "system_fill_rate": 0.0,
+      "total_fees_paid": 0.0
     },
     "bee_swarm": {
       "total_scanned": 1000,
-      "with_momentum": 0,
+      "with_momentum": 224,
       "rejected": 0,
       "executed": 0,
       "momentum_distribution": {
-        "up": 0,
+        "up": 224,
         "down": 0,
-        "flat": 1000
+        "flat": 776
       },
-      "avg_momentum": -0.0001,
-      "max_momentum": -0.0017,
-      "max_momentum_symbol": "DOT/SKY",
-      "avg_pip_score": 0.3931,
+      "avg_momentum": 23016.7801,
+      "max_momentum": 103821.6539,
+      "max_momentum_symbol": "UNI/ETH",
+      "avg_pip_score": 0.3823,
       "avg_coherence": 0.0,
       "above_phi_threshold": 0,
       "rejection_breakdown": {},
       "top_opportunities": [
         {
-          "symbol": "USD/UNI",
+          "symbol": "ETH/USDT",
           "exchange": "alpaca",
-          "pip_score": 0.5720000000000001,
+          "pip_score": 0.553,
           "momentum": 0.0,
           "coherence": -3.5
         },
         {
-          "symbol": "USDT/UNI",
+          "symbol": "ETH/USDT",
           "exchange": "alpaca",
-          "pip_score": 0.563,
-          "momentum": 4.098691149269996e-05,
-          "coherence": -4.5
-        },
-        {
-          "symbol": "USD/BCH",
-          "exchange": "alpaca",
-          "pip_score": 0.54,
+          "pip_score": 0.553,
           "momentum": 0.0,
           "coherence": -3.5
         },
         {
-          "symbol": "USD/LINK",
+          "symbol": "ETH/USDT",
           "exchange": "alpaca",
-          "pip_score": 0.54,
+          "pip_score": 0.553,
           "momentum": 0.0,
           "coherence": -3.5
         },
         {
-          "symbol": "USD/ETH",
+          "symbol": "ETH/USDT",
           "exchange": "alpaca",
-          "pip_score": 0.54,
+          "pip_score": 0.553,
+          "momentum": 0.0,
+          "coherence": -3.5
+        },
+        {
+          "symbol": "ETH/USDT",
+          "exchange": "alpaca",
+          "pip_score": 0.553,
           "momentum": 0.0,
           "coherence": -3.5
         }

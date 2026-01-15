@@ -5461,6 +5461,21 @@ class MicroProfitLabyrinth:
         else:
             print(f"🔐🌐 Enigma Integration: ❌ NOT AVAILABLE (import={ENIGMA_INTEGRATION_AVAILABLE})")
         
+        # 🦈🔪 ORCA KILLER WHALE INTELLIGENCE - Ride the whale wakes!
+        self.orca = None
+        try:
+            from aureon_orca_intelligence import get_orca
+            self.orca = get_orca()
+            if self.orca:
+                print("🦈🔪 Orca Intelligence: WIRED (Killer Whale Profit Hunter)")
+                print(f"   🎯 Mode: {self.orca.mode}")
+                print(f"   🔪 Strategy: Detect whales → Ride wake → Exit before crash")
+                print(f"   💰 Philosophy: We don't swim with whales - we EAT them!")
+        except ImportError:
+            print("🦈🔪 Orca Intelligence: ❌ NOT AVAILABLE (aureon_orca_intelligence.py missing)")
+        except Exception as e:
+            print(f"⚠️ Orca Intelligence error: {e}")
+        
         # 📡 Thought Bus Aggregator Status
         if self.bus_aggregator:
             print("📡 Thought Bus Aggregator: WIRED (Neural Signal Collector)")
@@ -5629,6 +5644,7 @@ class MicroProfitLabyrinth:
         neurons_status = {
             '👑 Queen Hive Mind': (self.queen is not None) or (getattr(self, 'queen_autonomous_control', None) is not None),
             '🔐 Enigma Integration': self.enigma_integration is not None,  # 🔐 NEW!
+            '🦈 Orca Intelligence': self.orca is not None,  # 🦈🔪 WHALE HUNTER!
             '🍄 Mycelium Network': self.mycelium_network is not None,
             '🌊 Harmonic Fusion': self.harmonic is not None,
             '🍀 Luck Field Mapper': self.luck_mapper is not None,
@@ -11233,6 +11249,23 @@ if __name__ == "__main__":
         # Get actual P/L if available
         actual_pnl = getattr(opportunity, 'actual_pnl_usd', opportunity.expected_pnl_usd)
         
+        # 🦈🔪 ORCA LEARNS FROM TRADE OUTCOME - Feed the killer whale!
+        if hasattr(self, 'orca') and self.orca:
+            try:
+                self.orca.learn_from_trade({
+                    'symbol': opportunity.to_asset,
+                    'direction': 'buy',  # We bought to_asset
+                    'entry_price': opportunity.from_value_usd / opportunity.from_amount if opportunity.from_amount > 0 else 0,
+                    'exit_price': None,  # Not tracked yet
+                    'pnl_pips': actual_pnl * 100,  # Convert USD to rough pip equivalent
+                    'pnl_usd': actual_pnl,
+                    'success': success,
+                    'exchange': getattr(opportunity, 'source_exchange', 'unknown'),
+                    'whale_influenced': getattr(opportunity, 'whale_influenced', False),
+                })
+            except Exception as e:
+                logger.debug(f"Orca learn error: {e}")
+        
         # 💰 RECORD IN FEE TRACKER - Track actual costs for learning
         exchange = getattr(opportunity, 'source_exchange', 'alpaca') or 'alpaca'
         if exchange.lower() == 'alpaca' and hasattr(self, 'fee_tracker') and self.fee_tracker:
@@ -12905,6 +12938,21 @@ if __name__ == "__main__":
                 if quack_contribution > 0.1:
                     print(f"      🦆 QUACK BOOST +{quack_contribution:.0%} for {to_asset} ({quack_reason})")
             
+            # 🦈🔪 ORCA KILLER WHALE BOOST - Ride the whale wakes!
+            orca_boost = 0.0
+            orca_reason = ""
+            if hasattr(self, 'orca') and self.orca:
+                try:
+                    orca_result = self.orca.get_orca_boost(to_asset, 0.0)
+                    # Returns (boost_multiplier, reasons_list)
+                    orca_mult, orca_reasons = orca_result
+                    orca_boost = max(0, orca_mult - 1.0)  # Convert multiplier to additive boost
+                    orca_reason = ', '.join(orca_reasons) if orca_reasons else ''
+                    if orca_boost > 0.1:
+                        print(f"      🦈 ORCA BOOST +{orca_boost:.0%} for {to_asset} ({orca_reason})")
+                except Exception as e:
+                    pass  # Orca not critical - fail silently
+            
             combined = (
                 v14_normalized * 0.15 +
                 hub_score * 0.10 +
@@ -12916,7 +12964,8 @@ if __name__ == "__main__":
                 enigma_score * 0.15 +    # 🔐🌐 ENIGMA contributes 15%!
                 lion_boost * 0.25 +      # 🦁 LION HUNT contributes up to 12.5% extra!
                 wolf_boost * 0.20 +      # 🐺 WOLF contributes up to 6% extra!
-                quack_contribution       # 🦆 QUACKERS contribute up to 50%!
+                quack_contribution +     # 🦆 QUACKERS contribute up to 50%!
+                orca_boost * 0.30        # 🦈🔪 ORCA WHALE HUNTER up to 30%!
             )
             
             # 🔐 Log Enigma contribution occasionally
@@ -15815,18 +15864,18 @@ if __name__ == "__main__":
                 return True, "No barter navigator available (assume path exists)"
 
             path = self.barter_navigator.find_path(from_asset, to_asset)
-            if not path or not getattr(path, 'steps', None):
+            if not path or not path.hops:
                 return False, "No conversion path found"
 
             # Minimum per-leg notional (conservative)
             MIN_PER_LEG = 1.50
-            legs = getattr(path, 'steps', [])
+            legs = path.hops
             if len(legs) == 0:
-                return False, "Empty path steps"
+                return False, "Empty path hops"
 
             # Evaluate each leg's quoted pair for price and volume data
             for step in legs:
-                pair = step.get('pair', '')
+                pair = step.pair
                 if not pair:
                     return False, f"Missing pair info in path step: {step}"
 
@@ -15846,7 +15895,7 @@ if __name__ == "__main__":
 
                 # Live orderbook depth checks per exchange (more expensive, optional)
                 if live_depth_check:
-                    exchange = step.get('exchange') or step.get('source') or None
+                    exchange = step.exchange
                     per_leg = notional_usd / max(1, len(legs))
 
                     # Enforce ALPACA_ONLY restriction: if configured, disallow paths that use other exchanges
@@ -16464,7 +16513,7 @@ if __name__ == "__main__":
                             prev['entry_value_usd'] = prev.get('entry_price', 0.0) * prev.get('amount', 0.0)
             except Exception as e:
                 logger.debug(f"Position registry update error: {e}")
-        print(step_display)
+        # print(step_display)  # FIXME: step_display not defined
         
         # Show path performance (how this specific conversion path is doing)
         print(f"   📊 PATH {opp.from_asset}→{opp.to_asset}: {profit_result['path_trades']} trades, ${profit_result['path_total_profit']:+.4f} total")

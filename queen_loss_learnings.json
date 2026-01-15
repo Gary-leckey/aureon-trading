@@ -2380,6 +2380,995 @@
       "tactics_applied": [
         "Strategic retreat"
       ]
+    },
+    {
+      "timestamp": 1768519605.2982996,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "USDT",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 0.99975,
+      "expected_price": 0.99975,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.10296680538837825,
+      "loss_pct": 1.2244736842105264,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.517,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.71
+      },
+      "combined_score": 0.7755000000000001,
+      "expected_profit": 0.10296680538837825,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519613.3519702,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "USDC",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 0.9997499999999999,
+      "expected_price": 0.9997499999999999,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.10296680538837825,
+      "loss_pct": 1.2244736842105264,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.517,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.71
+      },
+      "combined_score": 0.7755000000000001,
+      "expected_profit": 0.10296680538837825,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519613.529898,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "USD",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 1.0,
+      "expected_price": 1.0,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.10296680538837825,
+      "loss_pct": 1.2244736842105264,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.517,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.71
+      },
+      "combined_score": 0.7755000000000001,
+      "expected_profit": 0.10296680538837825,
+      "cause_identified": "Unknown - needs further analysis",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519613.7025278,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "BTC",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 95649.92300000001,
+      "expected_price": 95649.92300000001,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.06166058597338861,
+      "loss_pct": 0.7332631578947371,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.387,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.81
+      },
+      "combined_score": 0.5805,
+      "expected_profit": 0.06166058597338861,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519613.8729644,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "SKY",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 0.059926,
+      "expected_price": 0.059926,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519614.2723684,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LTC",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 0.0007555350000000001,
+      "expected_price": 0.0007555350000000001,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519614.6711376,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "DOT",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 2.11295,
+      "expected_price": 2.11295,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519615.072399,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "SHIB",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 8.409999999999999e-06,
+      "expected_price": 8.409999999999999e-06,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519615.4713619,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "SOL",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 142.495,
+      "expected_price": 142.495,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519615.872815,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "SUSHI",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 0.326979,
+      "expected_price": 0.326979,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519616.2718508,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "BAT",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 0.19202,
+      "expected_price": 0.19202,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519616.6718807,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "PEPE",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 5.915e-06,
+      "expected_price": 5.915e-06,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519617.072361,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "DOGE",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 0.1401735,
+      "expected_price": 0.1401735,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519617.4719434,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "CRV",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 0.43254349999999997,
+      "expected_price": 0.43254349999999997,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519617.8720574,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "GRT",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 0.040868100000000004,
+      "expected_price": 0.040868100000000004,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519618.2704668,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "TRUMP",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 5.367,
+      "expected_price": 5.367,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519618.6734142,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "USDG",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 1.0,
+      "expected_price": 1.0,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519619.071272,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "XTZ",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 0.5823185,
+      "expected_price": 0.5823185,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519619.4718714,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "XRP",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 2.07775,
+      "expected_price": 2.07775,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.055924717510747804,
+      "loss_pct": 0.6650526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.5265,
+      "expected_profit": 0.055924717510747804,
+      "cause_identified": "Fees ate most of expected profit",
+      "lessons_learned": [
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519619.872971,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "AAVE",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 171.55,
+      "expected_price": 171.55,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.050332245759673024,
+      "loss_pct": 0.5985473684210527,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.47385,
+      "expected_profit": 0.050332245759673024,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.47 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519620.2715786,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "BCH",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 590.2995000000001,
+      "expected_price": 590.2995000000001,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.050332245759673024,
+      "loss_pct": 0.5985473684210527,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.47385,
+      "expected_profit": 0.050332245759673024,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.47 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519620.6708229,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LINK",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 13.778500000000001,
+      "expected_price": 13.778500000000001,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.04101145950788172,
+      "loss_pct": 0.48770526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.3861,
+      "expected_profit": 0.04101145950788172,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.39 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519621.0714147,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "AVAX",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 13.812899999999999,
+      "expected_price": 13.812899999999999,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.04101145950788172,
+      "loss_pct": 0.48770526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.3861,
+      "expected_profit": 0.04101145950788172,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.39 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
+    },
+    {
+      "timestamp": 1768519621.4721835,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "YFI",
+      "from_amount": 0.2682317837,
+      "from_value_usd": 8.409066418995,
+      "executed_price": 3469.05,
+      "expected_price": 3469.05,
+      "slippage_pct": 0.0,
+      "fees_paid": 0.050454398513969996,
+      "loss_amount": 0.04101145950788172,
+      "loss_pct": 0.48770526315789475,
+      "market_data": {
+        "cash": 0.72,
+        "portfolio_value": 9.56
+      },
+      "orderbook_snapshot": {},
+      "recent_trades": [],
+      "signals_used": {
+        "v14_score": 5.0,
+        "hub_score": 0.5,
+        "commando_score": 0.0,
+        "lambda_score": 0.351,
+        "gravity_score": 0.0,
+        "luck_score": 0.5,
+        "enigma_score": 0.0,
+        "timeline_score": 0.0,
+        "trained_matrix_score": 0.5,
+        "barter_matrix_score": 0.63
+      },
+      "combined_score": 0.3861,
+      "expected_profit": 0.04101145950788172,
+      "cause_identified": "Fees ate most of expected profit; Low confidence trade - should have waited",
+      "lessons_learned": [
+        "Score 0.39 was too low - require >= 0.6 for this pair",
+        "Fees ($0.0505) were >30% of expected profit - increase minimum"
+      ],
+      "tactics_applied": [
+        "Strategic retreat"
+      ]
     }
   ],
   "patterns": {
@@ -2455,14 +3444,15 @@
       "last_seen": 1768253412.9536273
     },
     "ETH\u2192BTC_alpaca": {
-      "losses": 1,
-      "total_loss": 0.0001,
+      "losses": 2,
+      "total_loss": 0.06176058597338861,
       "avg_slippage": 0.0,
       "causes": [
-        "Fees ate most of expected profit; Low confidence trade - should have waited; Expected profit too small to cover costs"
+        "Fees ate most of expected profit; Low confidence trade - should have waited; Expected profit too small to cover costs",
+        "Fees ate most of expected profit"
       ],
       "first_seen": 1768253426.7626274,
-      "last_seen": 1768253426.7626274
+      "last_seen": 1768519613.7025278
     },
     "BTC\u2192LTC_alpaca": {
       "losses": 1,
@@ -2535,14 +3525,15 @@
       "last_seen": 1768309184.5583558
     },
     "ETH\u2192LINK_alpaca": {
-      "losses": 1,
-      "total_loss": 1.4020126247837703,
+      "losses": 2,
+      "total_loss": 1.443024084291652,
       "avg_slippage": 0.0,
       "causes": [
-        "Low confidence trade - should have waited"
+        "Low confidence trade - should have waited",
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
       ],
       "first_seen": 1768309315.179374,
-      "last_seen": 1768309315.179374
+      "last_seen": 1768519620.6708229
     },
     "USD\u2192LINK_alpaca": {
       "losses": 3,
@@ -2693,15 +3684,235 @@
       ],
       "first_seen": 1768410183.4749465,
       "last_seen": 1768410183.4749465
+    },
+    "ETH\u2192USDT_alpaca": {
+      "losses": 1,
+      "total_loss": 0.10296680538837825,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768519605.2982996,
+      "last_seen": 1768519605.2982996
+    },
+    "ETH\u2192USDC_alpaca": {
+      "losses": 1,
+      "total_loss": 0.10296680538837825,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768519613.3519702,
+      "last_seen": 1768519613.3519702
+    },
+    "ETH\u2192USD_alpaca": {
+      "losses": 1,
+      "total_loss": 0.10296680538837825,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Unknown - needs further analysis"
+      ],
+      "first_seen": 1768519613.529898,
+      "last_seen": 1768519613.529898
+    },
+    "ETH\u2192SKY_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519613.8729644,
+      "last_seen": 1768519613.8729644
+    },
+    "ETH\u2192LTC_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519614.2723684,
+      "last_seen": 1768519614.2723684
+    },
+    "ETH\u2192DOT_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519614.6711376,
+      "last_seen": 1768519614.6711376
+    },
+    "ETH\u2192SHIB_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519615.072399,
+      "last_seen": 1768519615.072399
+    },
+    "ETH\u2192SOL_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519615.4713619,
+      "last_seen": 1768519615.4713619
+    },
+    "ETH\u2192SUSHI_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519615.872815,
+      "last_seen": 1768519615.872815
+    },
+    "ETH\u2192BAT_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519616.2718508,
+      "last_seen": 1768519616.2718508
+    },
+    "ETH\u2192PEPE_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519616.6718807,
+      "last_seen": 1768519616.6718807
+    },
+    "ETH\u2192DOGE_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519617.072361,
+      "last_seen": 1768519617.072361
+    },
+    "ETH\u2192CRV_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519617.4719434,
+      "last_seen": 1768519617.4719434
+    },
+    "ETH\u2192GRT_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519617.8720574,
+      "last_seen": 1768519617.8720574
+    },
+    "ETH\u2192TRUMP_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519618.2704668,
+      "last_seen": 1768519618.2704668
+    },
+    "ETH\u2192USDG_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519618.6734142,
+      "last_seen": 1768519618.6734142
+    },
+    "ETH\u2192XTZ_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519619.071272,
+      "last_seen": 1768519619.071272
+    },
+    "ETH\u2192XRP_alpaca": {
+      "losses": 1,
+      "total_loss": 0.055924717510747804,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit"
+      ],
+      "first_seen": 1768519619.4718714,
+      "last_seen": 1768519619.4718714
+    },
+    "ETH\u2192AAVE_alpaca": {
+      "losses": 1,
+      "total_loss": 0.050332245759673024,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768519619.872971,
+      "last_seen": 1768519619.872971
+    },
+    "ETH\u2192BCH_alpaca": {
+      "losses": 1,
+      "total_loss": 0.050332245759673024,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768519620.2715786,
+      "last_seen": 1768519620.2715786
+    },
+    "ETH\u2192AVAX_alpaca": {
+      "losses": 1,
+      "total_loss": 0.04101145950788172,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768519621.0714147,
+      "last_seen": 1768519621.0714147
+    },
+    "ETH\u2192YFI_alpaca": {
+      "losses": 1,
+      "total_loss": 0.04101145950788172,
+      "avg_slippage": 0.0,
+      "causes": [
+        "Fees ate most of expected profit; Low confidence trade - should have waited"
+      ],
+      "first_seen": 1768519621.4721835,
+      "last_seen": 1768519621.4721835
     }
   },
   "stats": {
-    "total_losses_analyzed": 58,
+    "total_losses_analyzed": 82,
     "patterns_identified": 19,
     "tactics_learned": 0,
-    "wikipedia_researches": 72,
-    "lessons_broadcast": 39,
+    "wikipedia_researches": 78,
+    "lessons_broadcast": 63,
     "money_saved_by_learning": 0.0
   },
-  "last_saved": "2026-01-14T20:11:18.020089"
+  "last_saved": "2026-01-15T23:31:42.405247"
 }

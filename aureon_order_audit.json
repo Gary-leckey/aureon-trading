@@ -33358,11 +33358,815 @@
         ]
       },
       "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:25:35.107821",
+      "conversion_num": 1,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "USDT",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.10296680538837825,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.1030 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:25:37.901293",
+      "conversion_num": 2,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "USDC",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.10296680538837825,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.1030 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:25:40.103419",
+      "conversion_num": 3,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "USD",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.10296680538837825,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.1030 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:25:46.305733",
+      "conversion_num": 4,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "SKY",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:25:49.300949",
+      "conversion_num": 5,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LTC",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:25:52.299283",
+      "conversion_num": 6,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "DOT",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:25:55.300244",
+      "conversion_num": 7,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "SHIB",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:25:58.300209",
+      "conversion_num": 8,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "SOL",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:01.299614",
+      "conversion_num": 9,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "SUSHI",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:04.300700",
+      "conversion_num": 10,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "BAT",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:07.301190",
+      "conversion_num": 11,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "PEPE",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:10.300224",
+      "conversion_num": 12,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "DOGE",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:13.301318",
+      "conversion_num": 13,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "CRV",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:16.298655",
+      "conversion_num": 14,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "GRT",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:19.301677",
+      "conversion_num": 15,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "TRUMP",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:22.323174",
+      "conversion_num": 16,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "USDG",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:25.300416",
+      "conversion_num": 17,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "XTZ",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:28.304179",
+      "conversion_num": 18,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "XRP",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.055924717510747804,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0559 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:31.300662",
+      "conversion_num": 19,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "AAVE",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.050332245759673024,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0503 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:34.307332",
+      "conversion_num": 20,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "BCH",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.050332245759673024,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0503 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:38.502606",
+      "conversion_num": 21,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "LINK",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.04101145950788172,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0410 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:41.502560",
+      "conversion_num": 22,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "AVAX",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.04101145950788172,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0410 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
+    },
+    {
+      "timestamp": "2026-01-15T23:26:44.501033",
+      "conversion_num": 23,
+      "exchange": "alpaca",
+      "from_asset": "ETH",
+      "to_asset": "YFI",
+      "from_amount": 0.2682317837,
+      "to_amount": 0,
+      "order_ids": [],
+      "validation": {
+        "valid": true,
+        "total_sold": 0.0,
+        "total_bought": 0,
+        "avg_sell_price": 0.0,
+        "avg_buy_price": 0.0,
+        "total_fees": 0.0,
+        "errors": [
+          "Step 1: Zero executed quantity",
+          "Step 2: Zero executed quantity"
+        ]
+      },
+      "profit_verification": {
+        "expected_pnl": 0.04101145950788172,
+        "calculated_pnl": 0.0,
+        "verified_pnl": 0.0,
+        "discrepancy": 0.0,
+        "discrepancy_pct": 100.0,
+        "math_valid": false,
+        "warnings": [
+          "P&L discrepancy: expected $0.0410 vs verified $0.0000 (100.0%)",
+          "P&L discrepancy: calculated $0.0000 vs verified $0.0000 (100.0%)"
+        ]
+      },
+      "final_status": "NEEDS_REVIEW"
     }
   ],
   "summary": {
-    "total": 793,
+    "total": 816,
     "verified": 630,
-    "discrepancies": 163
+    "discrepancies": 186
   }
 }

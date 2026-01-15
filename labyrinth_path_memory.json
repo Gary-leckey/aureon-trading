@@ -169,11 +169,11 @@
   },
   "ETH->USDC": {
     "wins": 0.0,
-    "losses": 2.0
+    "losses": 3.0
   },
   "ETH->USDT": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "USDT->ETH": {
     "wins": 1.0,
@@ -577,11 +577,11 @@
   },
   "ETH->BTC": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "ETH->LTC": {
     "wins": 8.0,
-    "losses": 0.0
+    "losses": 1.0
   },
   "USD->BTC": {
     "wins": 1.0,
@@ -625,7 +625,7 @@
   },
   "ETH->SOL": {
     "wins": 2.0,
-    "losses": 0.0
+    "losses": 1.0
   },
   "USD->SOL": {
     "wins": 2.0,
@@ -758,5 +758,49 @@
   "USDT->UNI": {
     "wins": 4.0,
     "losses": 0.0
+  },
+  "ETH->USD": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ETH->SKY": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ETH->DOT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ETH->SHIB": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ETH->SUSHI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ETH->BAT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ETH->PEPE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ETH->DOGE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ETH->CRV": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ETH->GRT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "ETH->TRUMP": {
+    "wins": 0.0,
+    "losses": 1.0
   }
 }
