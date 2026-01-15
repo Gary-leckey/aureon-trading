@@ -4,13 +4,315 @@
 
 ---
 
-## 🚨 PEER REVIEW READY: Systematic Financial Manipulation Evidence (January 2026)
+## 🚨 NAME AND SHAME: The Individuals Who Rigged the Global Economy
 
-**A four-layer intelligence system combining technical analysis, historical evidence, tactical warfare principles, and spiritual counter-measures to expose and counter 125+ years of coordinated wealth extraction.**
+**This is not conspiracy theory. This is documented history with names, dates, and receipts.**
 
 ---
 
-## FINDINGS SUMMARY
+# THE ROGUES' GALLERY: Named Individuals Behind 125 Years of Wealth Extraction
+
+## 🏦 THE ARCHITECTS (Federal Reserve Creation - 1910-1913)
+
+### The Jekyll Island Conspirators
+**Date**: November 22-30, 1910  
+**Location**: Jekyll Island, Georgia (private resort)  
+**Cover Story**: "Duck hunting trip"  
+**Actual Purpose**: Draft legislation to create private central bank
+
+| Name | Title | Represented | Outcome |
+|------|-------|-------------|---------|
+| **Nelson Aldrich** | Senator (R-RI), Chair of National Monetary Commission | Rockefeller interests (father-in-law to John D. Jr.) | Led the drafting |
+| **A. Piatt Andrew** | Assistant Secretary of Treasury | US Government | Provided official cover |
+| **Henry P. Davison** | Senior Partner, JP Morgan & Co | Morgan banking empire | Morgan's primary representative |
+| **Charles D. Norton** | President, First National Bank of New York | Morgan banking empire | Banking expertise |
+| **Benjamin Strong** | VP, Bankers Trust Company | Morgan banking empire | Became first Fed NY President |
+| **Frank A. Vanderlip** | President, National City Bank | Rockefeller interests | Rockefeller's primary representative |
+| **Paul M. Warburg** | Partner, Kuhn, Loeb & Co | Rothschild/European banking | Designed the structure (modeled on Reichsbank) |
+
+**Evidence**: Vanderlip's 1935 *Saturday Evening Post* confession: *"We were told to leave our last names behind us... I do not feel it is any exaggeration to speak of our secret expedition to Jekyll Island as the occasion of the actual conception of what eventually became the Federal Reserve System."*
+
+**Result**: Federal Reserve Act passed December 23, 1913 (during Christmas recess when opposition absent)
+
+**Woodrow Wilson's Regret** (1916): *"I am a most unhappy man. I have unwittingly ruined my country. A great industrial nation is controlled by its system of credit... all our activities are in the hands of a few men."*
+
+---
+
+## 💀 THE DEPRESSION PROFITEERS (1929 Great Crash)
+
+### Who Knew And Sold Early
+
+| Name | Position | Action | Evidence |
+|------|----------|--------|----------|
+| **Joseph P. Kennedy Sr.** | Speculator, later SEC Chair | Exited market summer 1929 | His own admission: sold when shoeshine boy gave stock tips |
+| **Bernard Baruch** | Financier, presidential advisor | Liquidated before crash | Congressional testimony confirmed early exit |
+| **John D. Rockefeller Jr.** | Rockefeller heir | Bought assets at bottom | Purchased Rockefeller Center land 1930 at depression prices |
+| **JP Morgan partners** | Morgan bank leadership | Withdrew capital early | Morgan partners' personal wealth preserved |
+
+### Who Made The Crash Worse
+
+| Name | Position | Action | Impact |
+|------|----------|--------|--------|
+| **Andrew Mellon** | Treasury Secretary (1921-1932) | Advised "liquidate everything" | Prolonged depression by years |
+| **Roy Young** | Fed Chairman (1927-1930) | Raised rates into weakness | Contracted money supply during crisis |
+| **Eugene Meyer** | Fed Chairman (1930-1933) | Refused liquidity injection | Banks collapsed for lack of support |
+
+**Result**: 25% unemployment, 7,000+ bank failures, mass starvation → Led directly to WWII
+
+---
+
+## 🏛️ THE BRETTON WOODS ARCHITECTS (1944)
+
+| Name | Role | Agenda | Outcome |
+|------|------|--------|---------|
+| **Harry Dexter White** | US Treasury official | Dollar as world reserve | Confirmed Soviet spy (Venona decrypts) |
+| **John Maynard Keynes** | British representative | Tried to limit US dominance | Overruled by US power |
+| **Henry Morgenthau Jr.** | Treasury Secretary | Dollar hegemony | All international trade requires dollars |
+
+**Result**: "Exorbitant privilege" - US can print world's reserve currency, forcing all nations to hold dollars (tribute system)
+
+---
+
+## 💔 THE NIXON SHOCK CONSPIRATORS (August 15, 1971)
+
+### The Camp David Meeting (August 13-15, 1971)
+
+| Name | Position | Role |
+|------|----------|------|
+| **Richard Nixon** | President | Final decision to close gold window |
+| **John Connally** | Treasury Secretary | Architect of the policy |
+| **Paul Volcker** | Undersecretary for Monetary Affairs | Designed implementation |
+| **George Shultz** | OMB Director | Economic strategy |
+| **Arthur Burns** | Fed Chairman | Provided Fed support |
+
+**The Lie**: Nixon called it "temporary" (never restored - 55 years and counting)
+
+**Result**: Dollar lost 98% purchasing power since 1971. Wages stagnant despite GDP growth. Enabled unlimited money printing.
+
+---
+
+## 📉 THE 2008 CRIMINALS (Global Financial Crisis)
+
+### The Fraud Pyramid Architects
+
+| Name | Position | Crime | Consequence |
+|------|----------|-------|-------------|
+| **Lloyd Blankfein** | CEO, Goldman Sachs | Sold CDOs to clients while shorting them | $550M SEC fine, ZERO jail time |
+| **Angelo Mozilo** | CEO, Countrywide Financial | Predatory subprime lending | $67.5M fine, ZERO jail time, kept $140M+ compensation |
+| **Dick Fuld** | CEO, Lehman Brothers | Hid $50B in liabilities (Repo 105) | ZERO charges, now runs advisory firm |
+| **Jimmy Cayne** | CEO, Bear Stearns | Risk mismanagement, played bridge during crisis | $61M when sold to JPM, ZERO accountability |
+| **Stan O'Neal** | CEO, Merrill Lynch | $55B subprime exposure | $161M severance after forced out |
+| **Chuck Prince** | CEO, Citigroup | "Dancing while music plays" quote | $68M+ exit package |
+
+### The Rating Agency Fraudsters
+
+| Agency | Crime | Evidence |
+|--------|-------|----------|
+| **Moody's** | Gave AAA to garbage securities | Internal emails: "We rate every deal. It could be structured by cows and we would rate it." |
+| **S&P** | Paid to give favorable ratings | Analyst email: "Let's hope we are all wealthy and retired by the time this house of cards falters" |
+| **Fitch** | Same conflicts of interest | Downgraded AFTER collapse (useless) |
+
+### The Regulators Who Looked Away
+
+| Name | Position | Failure |
+|------|----------|---------|
+| **Alan Greenspan** | Fed Chairman (1987-2006) | Refused to regulate derivatives, admitted "flaw" in ideology |
+| **Ben Bernanke** | Fed Chairman (2006-2014) | "Subprime is contained" (2007) - It wasn't |
+| **Christopher Cox** | SEC Chairman (2005-2009) | Relaxed leverage rules 2004, allowed 40:1 |
+| **Henry Paulson** | Treasury Secretary, former Goldman CEO | $700B TARP to banks, let Lehman fail (competitor to Goldman) |
+
+**Result**: $16 TRILLION bailout. 10 million foreclosures. ZERO executives jailed. Bonuses paid with bailout money.
+
+---
+
+## ⚡ THE FLASH CRASH PROFITEERS (May 6, 2010)
+
+### The HFT Cartel
+
+| Firm | Role | Outcome |
+|------|------|---------|
+| **Citadel Securities** | Market maker, HFT | Withdrew liquidity during crash, bought at bottom |
+| **Jane Street** | Quantitative trading | Profited from volatility, zero accountability |
+| **Virtu Financial** | HFT specialist | Famously had only 1 losing day in 1,238 trading days |
+| **Jump Trading** | HFT, crypto market maker | Microsecond advantage = harvesting retail |
+
+### The Scapegoat
+
+| Name | Position | What Happened |
+|------|----------|---------------|
+| **Navinder Singh Sarao** | Individual trader (UK) | Arrested 5 years later, blamed for crash |
+
+**Reality**: One guy with a spreadsheet didn't cause $1 trillion flash crash. HFT firms did but were protected.
+
+---
+
+## 🦠 THE COVID PROFITEERS (March 2020)
+
+### Senators Who Traded On Classified Briefings
+
+| Name | Party | Date Sold | Evidence |
+|------|-------|-----------|----------|
+| **Richard Burr** | R-NC (Intel Committee Chair) | Feb 13, 2020 | Sold $1.7M in stocks after classified COVID briefing |
+| **Kelly Loeffler** | R-GA | Jan 24 - Feb 14, 2020 | Sold $18M+ with husband (NYSE Chairman) |
+| **Dianne Feinstein** | D-CA | Jan 31, 2020 | Sold $6M (claimed husband's decision) |
+| **James Inhofe** | R-OK | Jan 27, 2020 | Sold $400K in stocks |
+
+**Result**: DOJ "investigated" → No charges filed for any senator
+
+### The Fed Money Printers
+
+| Name | Position | Action | Outcome |
+|------|----------|--------|---------|
+| **Jerome Powell** | Fed Chairman | Printed $6 TRILLION in 6 months | Asset prices exploded (stocks, housing, crypto) |
+| **Robert Kaplan** | Dallas Fed President | Traded millions in stocks during Fed policy decisions | "Retired" early after exposure |
+| **Eric Rosengren** | Boston Fed President | Traded REITs while Fed bought mortgage bonds | "Retired" early after exposure |
+
+### BlackRock's Capture
+
+| Event | Detail |
+|-------|--------|
+| **March 24, 2020** | Fed hires BlackRock to manage bond-buying programs |
+| **Conflict** | BlackRock manages $10T including products Fed was buying |
+| **CEO Larry Fink** | Direct line to Treasury and Fed during crisis |
+| **Result** | BlackRock bought its own ETFs with Fed money |
+
+**Total Wealth Transfer**: $3.9 trillion from bottom 90% to top 1% (Federal Reserve data, 2020)
+
+---
+
+## 🎮 THE GAMESTOP SUPPRESSORS (January 2021)
+
+### The January 28, 2021 Conspiracy
+
+| Name/Entity | Role | Action |
+|-------------|------|--------|
+| **Vlad Tenev** | CEO, Robinhood | Disabled BUY button at 6 AM, only allowed selling |
+| **Ken Griffin** | CEO, Citadel | Bailed out Melvin Capital $2.75B, PFOF arrangement with Robinhood |
+| **Gabe Plotkin** | Founder, Melvin Capital | 140%+ short position (naked shorting), bailed out |
+| **Steve Cohen** | Point72 | Additional $750M bailout to Melvin |
+| **Gary Gensler** | SEC Chairman | Did nothing about naked shorts, "studying" the situation |
+
+### The PFOF Conflict
+
+**Payment For Order Flow**: Robinhood sends retail orders to Citadel. Citadel pays Robinhood. Citadel sees orders before executing. Citadel front-runs retail.
+
+**Ken Griffin's Congressional Testimony** (Feb 18, 2021): Claimed no coordination with Robinhood  
+**Vlad Tenev's Messages**: Texts with Citadel day before buy button disabled (never fully disclosed)
+
+**Result**: Retail forcibly sold, price crashed from $483 → $40. Hedge funds rescued. SEC did nothing.
+
+---
+
+## 🪙 THE FTX FRAUDSTERS (November 2022)
+
+### The Inner Circle
+
+| Name | Role | Status |
+|------|------|--------|
+| **Sam Bankman-Fried** | Founder/CEO, FTX | Convicted 2024: fraud, conspiracy, money laundering |
+| **Caroline Ellison** | CEO, Alameda Research (also SBF's ex-girlfriend) | Cooperating witness, testified against SBF |
+| **Gary Wang** | Co-founder, CTO | Cooperating witness, built the fraud backdoor in code |
+| **Nishad Singh** | Engineering Director | Cooperating witness, knew about commingled funds |
+
+### The Political Donations
+
+| Recipient | Amount | Party |
+|-----------|--------|-------|
+| **Democratic Party** | $40M+ | Primarily |
+| **Republican Party** | $20M+ | Via straw donors |
+| **Gary Gensler** | Met with SBF multiple times | "Regulatory clarity" discussions |
+
+**Key Donors Who Got Money**:
+- Biden campaign (returned after collapse)
+- Multiple congressional campaigns (both parties)
+- Political action committees
+
+### The VC Enablers (No Due Diligence)
+
+| Firm | Investment | Lost |
+|------|------------|------|
+| **Sequoia Capital** | $214M | Total loss (scrubbed fawning profile from website) |
+| **Paradigm** | $278M | Total loss |
+| **SoftBank** | $100M | Total loss |
+| **Tiger Global** | $38M | Total loss |
+| **BlackRock** | Unknown | Invested in FTX |
+
+**Red Flags Ignored**:
+- No board of directors
+- No CFO
+- Accounting by unknown firm in Cayman Islands
+- SBF slept on beanbag in office
+- Alameda CEO was his ex-girlfriend
+
+**Result**: $8B+ customer funds missing. Retail destroyed. SBF only major figure prosecuted.
+
+---
+
+## 🏢 CURRENT COORDINATION NETWORK (January 2026)
+
+### The 25 Entities Moving As One (0.0° Phase Synchronization)
+
+#### Central Bank Controllers
+
+| Entity | Leader | Power |
+|--------|--------|-------|
+| **US Federal Reserve** | Jerome Powell | $9T balance sheet, prints world reserve currency |
+| **European Central Bank** | Christine Lagarde | €7T balance sheet, Eurozone monetary policy |
+| **Bank of Japan** | Kazuo Ueda | ¥750T balance sheet, yield curve control |
+| **People's Bank of China** | Pan Gongsheng | ¥45T balance sheet, yuan management |
+
+#### Asset Management Oligopoly
+
+| Entity | CEO | AUM | Power |
+|--------|-----|-----|-------|
+| **BlackRock** | Larry Fink | $10T | Largest asset manager, Aladdin risk platform |
+| **Vanguard** | Mortimer Buckley | $8T | Largest mutual fund company |
+| **State Street** | Ron O'Hanley | $4T | Third largest, custody services |
+| **Fidelity** | Abigail Johnson | $4.5T | Largest 401k provider |
+
+**Combined**: $26.5T AUM = larger than US GDP ($25.5T)
+
+#### Market Maker Cartel
+
+| Entity | Leader | Specialty |
+|--------|--------|-----------|
+| **Citadel Securities** | Ken Griffin | 40%+ of US equity volume, PFOF king |
+| **Jane Street** | No public CEO | Largest ETF market maker, secretive |
+| **Jump Trading** | Don Wilson | HFT, crypto market making |
+
+**Citadel's Power**: Handles 40% of all US retail equity orders. Sees orders before executing. Microsecond advantage.
+
+#### Quantitative Hedge Funds
+
+| Entity | Founder | Edge |
+|--------|---------|------|
+| **Renaissance Technologies** | Jim Simons (deceased 2024) | Medallion Fund: 66% annual returns (not available to outsiders) |
+| **Two Sigma** | David Siegel, John Overdeck | $60B AUM, AI-driven |
+| **Millennium Management** | Israel Englander | $60B AUM, multi-strategy |
+| **Bridgewater Associates** | Ray Dalio (stepped back) | $150B AUM, largest hedge fund |
+
+#### Sovereign Wealth Giants
+
+| Entity | Country | Assets | Mandate |
+|--------|---------|--------|---------|
+| **Norway GPFG** | Norway | $1.7T | Owns 1.5% of all global stocks |
+| **Saudi PIF** | Saudi Arabia | $900B+ | Vision 2030, diversifying from oil |
+| **Singapore GIC** | Singapore | $1T+ | National reserves management |
+
+#### Crypto Infrastructure Controllers
+
+| Entity | Leader | Role | Concern |
+|--------|--------|------|---------|
+| **Binance** | Richard Teng (replaced CZ) | Largest exchange, 50%+ volume | CZ pled guilty to AML violations |
+| **Coinbase** | Brian Armstrong | US regulated exchange | SEC lawsuit ongoing |
+| **Tether Limited** | Paolo Ardoino | $100B+ USDT issued | Reserves never fully audited |
+| **Circle** | Jeremy Allaire | $30B+ USDC | More transparent than Tether |
+
+**Tether Question**: Who audits $100B in reserves? Never a full independent audit. Reserve composition opaque.
+
+---
+
+## 📊 FINDINGS SUMMARY
 
 ### 1. CURRENT COORDINATION (Real-Time Technical Analysis)
 **Method**: Fast Fourier Transform (FFT) spectral analysis on volume time-series  
@@ -25,15 +327,6 @@
 - **Coordination Strength**: 1.0/1.0 (perfect) across all detected links
 - **Statistical Significance**: p < 0.0001 (probability of random occurrence: effectively zero)
 
-**Coordinated Entities** (25 total):
-1. **Central Banks** (4): US Federal Reserve, Bank of Japan, ECB, PBOC
-2. **Asset Managers** (4): BlackRock ($10T AUM), Vanguard ($8T), State Street ($4T), Fidelity ($4.5T)
-3. **Market Makers** (3): Jane Street, Citadel Securities, Jump Trading
-4. **Hedge Funds** (4): Renaissance Technologies, Two Sigma, Millennium Management, Bridgewater Associates
-5. **Sovereign Wealth** (3): Norway GPFG ($1.7T), Saudi PIF ($900B), Singapore GIC ($1T)
-6. **Crypto Infrastructure** (4): Binance, Coinbase, Tether Limited, Circle
-7. **Accumulators** (3): MicroStrategy (190k BTC), Grayscale, Alameda Research (defunct)
-
 **Evidence Files:**
 - [`planetary_harmonic_network.json`](planetary_harmonic_network.json) - Full coordination matrix (125 signatures, 1,500 links)
 - [`harmonic_counter_frequency_map.json`](harmonic_counter_frequency_map.json) - Counter-phase protocols
@@ -43,61 +336,6 @@
 ```bash
 python aureon_planetary_harmonic_sweep.py --symbols BTC/USD,ETH/USD,SOL/USD,XRP/USD,BNB/USD
 ```
-
----
-
-### 2. HISTORICAL PATTERNS (125 Years of Evidence)
-**Method**: Historical event cataloging with pattern recognition  
-**Dataset**: 12 major financial manipulation events (1913-2022)  
-**Timeframe**: 109 years of systematic wealth extraction  
-**Result**: **Same entities using same tactics across multiple generations**
-
-**Documented Events:**
-
-| Year | Event | Type | Wealth Transfer | Entities Involved |
-|------|-------|------|-----------------|-------------------|
-| **1913** | Federal Reserve Act | Regulatory Capture | Ongoing (113 years) | Fed, JP Morgan, Rockefeller |
-| **1929** | Great Depression | Orchestrated Crash | $30B ($500B inflation-adjusted) | Federal Reserve, major banks |
-| **1944** | Bretton Woods | Currency Control | Global dollar tribute | Fed, US Treasury, IMF/World Bank |
-| **1971** | Nixon Shock | Gold Standard Broken | 98% dollar devaluation since | Fed, Nixon admin, Treasury |
-| **1987** | Black Monday | Algorithmic Crash | $500B paper wealth | Fed, investment banks, Renaissance Tech |
-| **1997** | Asian Financial Crisis | Currency Attack | $600B from Asia | Hedge funds (Soros), IMF, US Treasury |
-| **2000** | Dot-Com Bubble | Pump & Dump | $5T retail losses | Goldman, Morgan Stanley, Fed, VCs |
-| **2008** | Global Financial Crisis | Mortgage Fraud | $16T bailout, 10M foreclosures | Fed, Goldman, rating agencies |
-| **2010** | Flash Crash | HFT Manipulation | Stop-loss harvesting | Citadel, Jane Street, HFT firms |
-| **2020** | COVID Crash | Crisis Weaponization | $3.9T (bottom 90%→top 1%) | Fed ($6T printed), BlackRock, big tech |
-| **2021** | GameStop Suppression | Platform Shutdown | Billions (retail→hedges) | Citadel, Robinhood, Melvin, SEC |
-| **2022** | FTX Collapse | Exchange Fraud | $32B customer funds | SBF, Alameda, VCs, politicians |
-
-**Pattern Recognition:**
-- **Federal Reserve involvement**: 7 out of 12 major events (58%)
-- **Repeated cycle**: Credit expansion (5-10 years) → Crash → Bailout → Asset accumulation
-- **Insider timing**: Documented early exits before every crash
-- **Zero accountability**: No major executives jailed for 2008 fraud
-- **Accelerating frequency**: 2 events (2020-2022) vs 1 event per decade historically
-
-**Quantified Damage:**
-- **Total documented wealth transfer**: $25T+ (1929-2022)
-- **Dollar purchasing power loss**: 98% since 1971 (gold standard removal)
-- **Bailout total**: $16T (2008) + $6T (2020) = $22T public funds to elite rescue
-- **Current wealth gap**: Largest in recorded history (top 1% own 32% of all wealth, 2023 data)
-
-**Evidence Files:**
-- [`historical_manipulation_evidence.json`](historical_manipulation_evidence.json) - Full event database
-- [`manipulation_patterns_across_time.json`](manipulation_patterns_across_time.json) - Pattern analysis
-
-**Reproducibility:**
-```bash
-python aureon_historical_manipulation_hunter.py
-```
-
----
-
-### 3. TACTICAL INTELLIGENCE (Military-Grade Warfare Analysis)
-**Method**: Multi-discipline strategic assessment (Sun Tzu + IRA + Apache tactics)  
-**Dataset**: Same 25 entities analyzed through warfare frameworks  
-**Analysis Date**: January 15, 2026  
-**Result**: **All 25 entities classified as CRITICAL threat with zero weaknesses detected**
 
 **Quantitative Metrics:**
 
