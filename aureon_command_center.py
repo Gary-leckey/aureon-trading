@@ -313,9 +313,10 @@ try:
 except ImportError:
     SYSTEMS_STATUS['Lighthouse'] = False
 
-# Restore sys.exit after imports
-if os.getenv("AUREON_DEBUG_STARTUP") == "1":
-    sys.exit = _ORIGINAL_SYS_EXIT
+
+# NOTE: Do not restore sys.exit here when debugging startup.
+# Some imports later in this file may call sys.exit() and previously bypassed the guard.
+# We restore sys.exit only once we reach __main__.
 
 try:
     from aureon_harmonic_signal_chain import HarmonicSignalChain
@@ -6003,6 +6004,12 @@ if __name__ == '__main__':
     # Stop import-debug tracing now that module import completed
     if os.getenv("AUREON_DEBUG_STARTUP") == "1":
         try:
+            # Restore sys.exit now that imports are complete
+            try:
+                sys.exit = _ORIGINAL_SYS_EXIT
+            except Exception:
+                pass
+
             _AUREON_DEBUG_IMPORT_ACTIVE = False
             import builtins
             if _AUREON_ORIGINAL_IMPORT is not None:
