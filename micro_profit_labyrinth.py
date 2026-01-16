@@ -4426,10 +4426,17 @@ class MicroProfitLabyrinth:
             return f"{symbol[:-3]}/USD"
         if symbol.endswith("USDC"):
             return f"{symbol[:-4]}/USDC"
+        # If it's a plain crypto symbol (no slash, doesn't end with quote), assume USD quote
+        # This handles cases like "ETH" -> "ETH/USD"
+        if symbol and not symbol.endswith("USD") and not symbol.endswith("USDC"):
+            return f"{symbol}/USD"
         return symbol
 
     def _alpaca_get_spread_pct(self, symbol: str) -> float:
         if not self.alpaca:
+            return 0.0
+        # Skip spread for quote currencies (no trading pair exists)
+        if symbol and symbol.upper() in ['USD', 'USDT', 'USDC', 'EUR', 'GBP', 'ZUSD', 'TUSD', 'DAI']:
             return 0.0
         try:
             alpaca_symbol = self._alpaca_format_symbol(symbol)
@@ -4625,8 +4632,9 @@ class MicroProfitLabyrinth:
         return True, f"Binance loss prevention not implemented - trade allowed"
 
     def _alpaca_estimate_conversion_costs(self, from_asset: str, to_asset: str) -> Dict[str, float]:
-        from_symbol = self._alpaca_format_symbol(f"{from_asset}USD")
-        to_symbol = self._alpaca_format_symbol(f"{to_asset}USD")
+        # Format symbols properly - these will be converted to "ASSET/USD" format
+        from_symbol = self._alpaca_format_symbol(from_asset)
+        to_symbol = self._alpaca_format_symbol(to_asset)
         spread_from = self._alpaca_get_spread_pct(from_symbol)
         spread_to = self._alpaca_get_spread_pct(to_symbol)
         fee_pct = self.alpaca_fee_pct
@@ -12672,6 +12680,10 @@ if __name__ == "__main__":
                 min_qty = ALPACA_MIN_QTY.get(from_asset.upper(), 0)
                 if min_qty > 0 and amount < min_qty:
                     continue  # Skip - below Alpaca minimum quantity
+                
+                # Skip quote currencies - can't convert USD to other assets on Alpaca
+                if from_asset.upper() in ['USD', 'USDT', 'USDC', 'EUR', 'GBP']:
+                    continue  # Skip quote currencies - not convertible on Alpaca
             
             # Skip blocked assets
             if exchange == 'binance' and from_asset.upper() in self.blocked_binance_assets:

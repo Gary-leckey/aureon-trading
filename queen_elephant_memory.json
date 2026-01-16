@@ -2203,12 +2203,12 @@
       "win_rate": 1.2711864406779663
     },
     "USD\u2192ETH": {
-      "trades": 635,
-      "wins": 20,
+      "trades": 642,
+      "wins": 27,
       "losses": 615,
-      "total_profit": 38.785380288499994,
+      "total_profit": 52.95228028849999,
       "total_loss": 0.0034353778299998083,
-      "win_rate": 3.149606299212598
+      "win_rate": 4.205607476635514
     },
     "LTC\u2192SOL": {
       "trades": 381,
@@ -2235,28 +2235,28 @@
       "win_rate": 0.6896551724137931
     },
     "USD\u2192SUSHI": {
-      "trades": 576,
-      "wins": 2,
+      "trades": 578,
+      "wins": 4,
       "losses": 574,
-      "total_profit": 0.23130662216660458,
+      "total_profit": 0.4672652290227388,
       "total_loss": 0.0,
-      "win_rate": 0.3472222222222222
+      "win_rate": 0.6920415224913495
     },
     "USD\u2192LINK": {
-      "trades": 626,
-      "wins": 12,
+      "trades": 631,
+      "wins": 17,
       "losses": 614,
-      "total_profit": 19.321497948006,
+      "total_profit": 28.980747948006005,
       "total_loss": 0.03475476107100128,
-      "win_rate": 1.9169329073482428
+      "win_rate": 2.694136291600634
     },
     "USD\u2192XTZ": {
-      "trades": 575,
-      "wins": 3,
+      "trades": 576,
+      "wins": 4,
       "losses": 572,
-      "total_profit": 0.1795294784184024,
+      "total_profit": 0.2702843726316677,
       "total_loss": 0.0,
-      "win_rate": 0.5217391304347827
+      "win_rate": 0.6944444444444444
     },
     "USD\u2192GRT": {
       "trades": 575,
@@ -2267,20 +2267,20 @@
       "win_rate": 0.34782608695652173
     },
     "USD\u2192BCH": {
-      "trades": 629,
-      "wins": 15,
+      "trades": 638,
+      "wins": 24,
       "losses": 614,
-      "total_profit": 25.135758622680004,
+      "total_profit": 41.53928897413841,
       "total_loss": 0.0,
-      "win_rate": 2.384737678855326
+      "win_rate": 3.761755485893417
     },
     "USD\u2192UNI": {
-      "trades": 652,
-      "wins": 37,
+      "trades": 670,
+      "wins": 55,
       "losses": 615,
-      "total_profit": 77.28253747244126,
+      "total_profit": 115.91953747244132,
       "total_loss": 0.02572729165559906,
-      "win_rate": 5.674846625766871
+      "win_rate": 8.208955223880597
     },
     "USD\u2192DOT": {
       "trades": 575,
@@ -2291,28 +2291,28 @@
       "win_rate": 0.17391304347826086
     },
     "USD\u2192LTC": {
-      "trades": 634,
-      "wins": 18,
+      "trades": 646,
+      "wins": 30,
       "losses": 616,
-      "total_profit": 36.52172434968,
+      "total_profit": 56.102849791497384,
       "total_loss": 0.06978624155200208,
-      "win_rate": 2.8391167192429023
+      "win_rate": 4.643962848297214
     },
     "USD\u2192AAVE": {
-      "trades": 623,
-      "wins": 8,
+      "trades": 625,
+      "wins": 10,
       "losses": 615,
-      "total_profit": 1.5653958194392539,
+      "total_profit": 2.260896656341056,
       "total_loss": 0.023173253048003772,
-      "win_rate": 1.2841091492776886
+      "win_rate": 1.6
     },
     "USD\u2192SKY": {
-      "trades": 572,
-      "wins": 0,
+      "trades": 574,
+      "wins": 2,
       "losses": 572,
-      "total_profit": 0,
+      "total_profit": 0.22602660788342963,
       "total_loss": 0.0,
-      "win_rate": 0.0
+      "win_rate": 0.34843205574912894
     },
     "USD\u2192BAT": {
       "trades": 572,
@@ -4291,5 +4291,5 @@
       "win_rate": 100.0
     }
   },
-  "last_saved": "2026-01-16T15:29:19.084683"
+  "last_saved": "2026-01-16T16:02:55.652329"
 }

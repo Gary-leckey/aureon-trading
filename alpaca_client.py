@@ -248,7 +248,7 @@ class AlpacaClient:
 
                 if not resp.ok:
                     body_text = (resp.text or "").strip()
-                    logger.error(f"Alpaca API Error {resp.status_code}: {body_text}")
+                    logger.error(f"Alpaca API Error {resp.status_code}: {body_text} [URL: {url}]")
                     self.last_error = {
                         "status_code": resp.status_code,
                         "body": body_text[:2000],
@@ -301,10 +301,17 @@ class AlpacaClient:
             if len(parts) == 2 and parts[0] and parts[1]:
                 return f"{parts[0]}/{parts[1]}"
 
-        for quote in ("USD", "USDT", "USDC"):
+        # Check quote currencies - LONGEST FIRST to avoid "USDC".endswith("USD") matching!
+        for quote in ("USDT", "USDC", "USD"):  # Longest first!
             if cleaned.endswith(quote) and len(cleaned) > len(quote):
                 base = cleaned[:-len(quote)]
                 return f"{base}/{quote}"
+
+        # If it's a plain crypto symbol (no slash, doesn't end with quote), assume USD quote
+        # This handles cases like "BTC", "ETH", "LTC" -> "BTC/USD", "ETH/USD", "LTC/USD"
+        # Check in order: longest first to avoid substring matches
+        if cleaned and not cleaned.endswith("USDT") and not cleaned.endswith("USDC") and not cleaned.endswith("USD"):
+            return f"{cleaned}/USD"
 
         return None
 
@@ -498,16 +505,18 @@ class AlpacaClient:
 
         # First, try to serve from the quote cache
         for sym in symbols:
-            cache_key = f"last_quote::{sym}"
+            # Normalize symbol to ensure proper format (BASE/QUOTE)
+            normalized = AlpacaClient._normalize_pair_symbol(sym) or sym
+            cache_key = f"last_quote::{normalized}"
             try:
                 cached = self._quote_cache.get(cache_key)
             except Exception:
                 cached = None
             if cached is not None and isinstance(cached, dict) and cached.get('raw') is not None:
                 # Store raw API payload for compatibility
-                all_quotes[sym] = cached.get('raw')
+                all_quotes[normalized] = cached.get('raw')
             else:
-                remaining.append(sym)
+                remaining.append(normalized)
 
         # For remaining symbols, batch requests into chunks and call API
         for chunk in self._chunk_symbols(remaining):
@@ -584,10 +593,16 @@ class AlpacaClient:
                     # If crypto API fails, fall through to stock endpoint as a fallback
                     pass
 
-            # Fallback: treat as stock symbol
+            # Fallback: treat as stock symbol (use ORIGINAL symbol, NOT normalized crypto pair)
+            # Stock API doesn't accept '/' in symbols - use the original symbol
+            stock_sym = sym.replace("/", "").replace("USD", "") if '/' in (normalized or '') else sym
+            # Skip stock fallback if this is clearly a crypto pair
+            if stock_sym in ('BTC', 'ETH', 'LTC', 'XRP', 'SOL', 'DOGE', 'AVAX', 'DOT', 'LINK', 'UNI', 'AAVE', 'BCH', 'XLM', 'ATOM', 'ALGO', 'MATIC', 'SHIB', 'PEPE', 'TRUMP'):
+                logger.debug(f"Skipping stock fallback for crypto symbol {sym}")
+                return {}
             resp = self._request(
                 "GET",
-                f"/v2/stocks/{sym}/quotes/latest",
+                f"/v2/stocks/{stock_sym}/quotes/latest",
                 base_url=self.data_url,
                 request_type='data'
             )

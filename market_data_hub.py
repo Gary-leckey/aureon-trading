@@ -170,21 +170,26 @@ class MarketDataHub:
                     quote = None
 
             if quote is None:
-                # Fallback to stock latest quote endpoint
-                try:
-                    resp = self.alpaca_client._request(
-                        "GET",
-                        f"/v2/stocks/{symbol}/quotes/latest",
-                        base_url=self.alpaca_client.data_url,
-                        request_type='data'
-                    )
-                    q = resp.get('quote') or resp.get('quotes', {}).get(symbol) or resp
-                    bp = float(q.get('bp', 0) or 0.0)
-                    ap = float(q.get('ap', 0) or 0.0)
-                    last_price = (bp + ap) / 2 if (bp > 0 and ap > 0) else (bp or ap or 0.0)
-                    quote = {"last": {"price": last_price}, "raw": q}
-                except Exception:
+                # Fallback to stock latest quote endpoint - only for actual stocks
+                # Skip crypto symbols (they will have '/' in normalized form)
+                if normalized and '/' in normalized:
+                    # This is a crypto pair - skip stock fallback
                     quote = None
+                else:
+                    try:
+                        resp = self.alpaca_client._request(
+                            "GET",
+                            f"/v2/stocks/{symbol}/quotes/latest",
+                            base_url=self.alpaca_client.data_url,
+                            request_type='data'
+                        )
+                        q = resp.get('quote') or resp.get('quotes', {}).get(symbol) or resp
+                        bp = float(q.get('bp', 0) or 0.0)
+                        ap = float(q.get('ap', 0) or 0.0)
+                        last_price = (bp + ap) / 2 if (bp > 0 and ap > 0) else (bp or ap or 0.0)
+                        quote = {"last": {"price": last_price}, "raw": q}
+                    except Exception:
+                        quote = None
 
             if quote:
                 # Store in prefetch cache
