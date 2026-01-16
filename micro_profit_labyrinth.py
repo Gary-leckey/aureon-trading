@@ -1110,6 +1110,33 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ════════════════════════════════════════════════════════════════════════════
+# ⚡🧬 HIGH FREQUENCY TRADING - HARMONIC MYCELIUM ENGINE
+# ════════════════════════════════════════════════════════════════════════════
+# HFT Engine: Sub-10ms latency trading with Mycelium neural intelligence
+# Harmonic Alphabet: 7-mode frequency encoding (528Hz=BUY, 396Hz=HOLD)
+# WebSocket Order Router: Multi-exchange execution with circuit breakers
+
+try:
+    from aureon_hft_harmonic_mycelium import get_hft_engine, HFTHarmonicEngine
+    HFT_ENGINE_AVAILABLE = True
+    print("⚡🧬 HFT Harmonic Mycelium Engine LOADED!")
+except ImportError as e:
+    print(f"⚠️ HFT Harmonic Mycelium Engine not available: {e}")
+    HFT_ENGINE_AVAILABLE = False
+    get_hft_engine = None
+    HFTHarmonicEngine = None
+
+try:
+    from aureon_hft_websocket_order_router import get_order_router, HFTOrderRouter
+    HFT_ORDER_ROUTER_AVAILABLE = True
+    print("🌐⚡ HFT WebSocket Order Router LOADED!")
+except ImportError as e:
+    print(f"⚠️ HFT WebSocket Order Router not available: {e}")
+    HFT_ORDER_ROUTER_AVAILABLE = False
+    get_order_router = None
+    HFTOrderRouter = None
+
+# ════════════════════════════════════════════════════════════════════════════
 # 👑🏗️ QUEEN'S LEARNING ENHANCEMENT LOADER - LOAD HER CODE!
 # ════════════════════════════════════════════════════════════════════════════
 # The Queen writes code to queen_strategies/ - WE MUST USE IT!
@@ -4406,8 +4433,9 @@ class MicroProfitLabyrinth:
             return 0.0
         try:
             alpaca_symbol = self._alpaca_format_symbol(symbol)
-            quotes = self.alpaca.get_latest_crypto_quotes([alpaca_symbol])
-            quote = quotes.get(alpaca_symbol, {}) or quotes.get(symbol, {}) or {}
+            # Use cached last quote to avoid extra API calls
+            qdata = self.alpaca.get_last_quote(alpaca_symbol) or {}
+            quote = qdata.get('raw') or {}
             bid = float(quote.get("bp", 0) or 0)
             ask = float(quote.get("ap", 0) or 0)
             mid = (bid + ask) / 2 if bid and ask else 0
@@ -4653,8 +4681,8 @@ class MicroProfitLabyrinth:
         price = self.prices.get(asset.upper(), 0.0) or 0.0
 
         try:
-            quotes = self.alpaca.get_latest_crypto_quotes([symbol]) or {}
-            quote = quotes.get(symbol, {}) or {}
+            qdata = self.alpaca.get_last_quote(symbol) or {}
+            quote = qdata.get('raw') or {}
             bid = float(quote.get("bp", 0) or 0)
             ask = float(quote.get("ap", 0) or 0)
             if bid > 0 and ask > 0:
@@ -4787,6 +4815,13 @@ class MicroProfitLabyrinth:
                 else:
                     last_error = getattr(self.alpaca, "last_error", None)
                     print(f"   🦙 Alpaca API: ⚠️ Connection check failed ({last_error})")
+
+                # Start MarketDataHub for Alpaca (Phase 2 optimization)
+                try:
+                    self.alpaca.start_market_data_hub()
+                    print("   🦙 MarketDataHub: STARTED")
+                except Exception as e:
+                    print(f"   ⚠️ MarketDataHub failed to start: {e}")
             except Exception as e:
                 print(f"⚠️ Alpaca Client error: {e}")
         else:
@@ -6286,6 +6321,85 @@ class MicroProfitLabyrinth:
         
         print(f"   📊 Total: {len(prices)} unique assets, {len(ticker_cache)} tickers, {momentum_count} momentum tracked")
         print(f"   🐍 Medusa stablecoins: USD, USDT, USDC, ZUSD, TUSD, DAI injected")
+        
+        # ════════════════════════════════════════════════════════════════
+        # ⚡🧬 HIGH FREQUENCY TRADING - HARMONIC MYCELIUM ENGINE
+        # ════════════════════════════════════════════════════════════════
+        # Wire HFT Engine to Queen, Orca, Mycelium, and Harmonic systems
+        if HFT_ENGINE_AVAILABLE and get_hft_engine:
+            try:
+                self.hft_engine = get_hft_engine()
+                
+                # Wire to Queen Hive Mind (maintains veto power)
+                if self.queen:
+                    self.queen.wire_hft_engine(self.hft_engine)
+                    print("   👑→⚡ HFT Engine: WIRED to Queen (veto power maintained)")
+                
+                # Wire to Orca Intelligence (killer whale strategies)
+                if self.orca:
+                    self.orca.wire_hft_engine(self.hft_engine)
+                    print("   🦈→⚡ HFT Engine: WIRED to Orca (whale wake riding)")
+                
+                # Wire to Mycelium Network (neural intelligence)
+                if hasattr(self, 'mycelium_network') and self.mycelium_network:
+                    self.mycelium_network.wire_hft_engine(self.hft_engine)
+                    print("   🍄→⚡ HFT Engine: WIRED to Mycelium (neural fast path)")
+                
+                # Wire to Harmonic Fusion (frequency patterns)
+                if hasattr(self, 'harmonic') and self.harmonic:
+                    self.harmonic.wire_hft_engine(self.hft_engine)
+                    print("   🌊→⚡ HFT Engine: WIRED to Harmonic (528Hz=BUY, 396Hz=HOLD)")
+                
+                # Wire to Thought Bus (inter-system communication)
+                if self.thought_bus:
+                    self.hft_engine.wire_thought_bus(self.thought_bus)
+                    print("   📡→⚡ HFT Engine: WIRED to Thought Bus (async signals)")
+                
+                print("⚡🧬 HFT Engine: INITIALIZED (Sub-10ms latency, Mycelium + Harmonic)")
+                print(f"   🎯 Hot Path Cache: {self.hft_engine.hot_path_cache_size} entries")
+                print(f"   📊 Tick Buffer: {self.hft_engine.tick_buffer_capacity} capacity")
+                print(f"   🌐 Exchanges: Ready for WebSocket execution")
+                
+            except Exception as e:
+                print(f"⚠️ HFT Engine initialization error: {e}")
+                self.hft_engine = None
+        else:
+            print("⚡🧬 HFT Engine: ❌ NOT AVAILABLE (aureon_hft_harmonic_mycelium.py missing)")
+        
+        # ════════════════════════════════════════════════════════════════
+        # 🌐⚡ HFT WEB SOCKET ORDER ROUTER - MULTI-EXCHANGE EXECUTION
+        # ════════════════════════════════════════════════════════════════
+        if HFT_ORDER_ROUTER_AVAILABLE and get_order_router:
+            try:
+                self.hft_order_router = get_order_router()
+                
+                # Wire exchange clients for execution
+                exchange_clients = {
+                    'kraken': self.kraken,
+                    'binance': self.binance,
+                    'alpaca': self.alpaca,
+                }
+                self.hft_order_router.wire_exchange_clients(exchange_clients)
+                
+                # Wire to Queen for sovereign control
+                if self.queen:
+                    self.queen.wire_hft_order_router(self.hft_order_router)
+                    print("   👑→🌐 HFT Order Router: WIRED to Queen (sovereign control)")
+                
+                # Wire to HFT Engine for unified execution
+                if hasattr(self, 'hft_engine') and self.hft_engine:
+                    self.hft_engine.wire_order_router(self.hft_order_router)
+                    print("   ⚡→🌐 HFT Engine ↔ Order Router: WIRED (unified execution)")
+                
+                print("🌐⚡ HFT Order Router: INITIALIZED (WebSocket multi-exchange)")
+                print(f"   🔄 Exchanges: {len([e for e in exchange_clients.values() if e])} connected")
+                print(f"   🛡️ Circuit Breakers: ACTIVE (rate limit protection)")
+                
+            except Exception as e:
+                print(f"⚠️ HFT Order Router initialization error: {e}")
+                self.hft_order_router = None
+        else:
+            print("🌐⚡ HFT Order Router: ❌ NOT AVAILABLE (aureon_hft_websocket_order_router.py missing)")
         
         return prices
     
@@ -17112,6 +17226,61 @@ if __name__ == "__main__":
                     return cached_pair
         
         return None
+    
+        # ════════════════════════════════════════════════════════════════
+        # 🦈🔪 HFT HARMONIC MYCELIUM ENGINE - Sub-10ms Trading
+        # ════════════════════════════════════════════════════════════════
+        # Wire HFT engine to the main trading loop for ultra-fast execution
+        self.hft_engine = None
+        if HFT_ENGINE_AVAILABLE and get_hft_engine:
+            try:
+                self.hft_engine = get_hft_engine()
+                
+                # Wire HFT to Queen (already done in Queen init)
+                if self.queen and hasattr(self.queen, 'hft_engine') and self.queen.hft_engine:
+                    logger.info("🦈👑 HFT Engine already wired to Queen")
+                elif self.queen:
+                    # Fallback wiring if not done in Queen init
+                    if hasattr(self.hft_engine, 'wire_queen'):
+                        self.hft_engine.wire_queen(self.queen)
+                        logger.info("🦈👑 HFT Engine wired to Queen")
+                
+                # Wire HFT to WebSocket feed for tick injection
+                if hasattr(self, 'unified_ws_feed') and self.unified_ws_feed:
+                    # WebSocket feed will inject ticks automatically via _emit method
+                    logger.info("🦈🌐 HFT Engine wired to WebSocket feed (tick injection active)")
+                
+                # Wire HFT to Orca Intelligence for whale signal routing
+                if self.orca and hasattr(self.hft_engine, 'wire_orca'):
+                    self.hft_engine.wire_orca(self.orca)
+                    logger.info("🦈🦈 HFT Engine wired to Orca Intelligence")
+                
+                # Wire HFT to Mycelium for neural optimization
+                if hasattr(self, 'mycelium_network') and self.mycelium_network and hasattr(self.hft_engine, 'wire_mycelium'):
+                    self.hft_engine.wire_mycelium(self.mycelium_network)
+                    logger.info("🦈🍄 HFT Engine wired to Mycelium Network")
+                
+                # Wire HFT to Harmonic Alphabet for frequency encoding
+                if hasattr(self, 'harmonic') and self.harmonic and hasattr(self.hft_engine, 'wire_harmonic_alphabet'):
+                    self.hft_engine.wire_harmonic_alphabet(self.harmonic)
+                    logger.info("🦈🎵 HFT Engine wired to Harmonic Alphabet")
+                
+                # Start HFT in dormant mode (ready to activate)
+                if hasattr(self.hft_engine, 'start_hft'):
+                    # Don't start scanning yet - wait for explicit activation
+                    logger.info("🦈🔪 HFT Engine initialized (dormant mode - ready for activation)")
+                
+                print("🦈🔪 HFT HARMONIC MYCELIUM: WIRED (Sub-10ms trading ready)")
+                print(f"   🎯 Target Latency: <10ms signal-to-order")
+                print(f"   🎵 Harmonic Patterns: 528Hz (WIN) → BUY, 396Hz (LOSS) → HOLD")
+                print(f"   🧠 Mycelium: Hot path cache (100ms TTL)")
+                print(f"   🌐 WebSocket: Real-time tick injection active")
+                
+            except Exception as e:
+                print(f"⚠️ HFT Engine initialization error: {e}")
+                logger.debug(f"HFT Engine init error: {e}")
+        else:
+            print("🦈❌ HFT HARMONIC MYCELIUM: NOT AVAILABLE (aureon_hft_harmonic_mycelium.py missing)")
     
     async def run(self, duration_s: int = 60):
         """Run the micro profit labyrinth."""

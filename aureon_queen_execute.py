@@ -148,6 +148,28 @@ except ImportError:
     BHOYS_WISDOM_OK = False
     BHOYS_WISDOM = None
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# ⚡🧬 HIGH FREQUENCY TRADING - HARMONIC MYCELIUM ENGINE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+try:
+    from aureon_hft_harmonic_mycelium import get_hft_engine, HFTHarmonicEngine
+    HFT_ENGINE_AVAILABLE = True
+except ImportError as e:
+    HFT_ENGINE_AVAILABLE = False
+    get_hft_engine = None
+    HFTHarmonicEngine = None
+    print(f"⚠️ HFT Engine not available: {e}")
+
+try:
+    from aureon_hft_websocket_order_router import get_order_router, HFTOrderRouter
+    HFT_ORDER_ROUTER_AVAILABLE = True
+except ImportError as e:
+    HFT_ORDER_ROUTER_AVAILABLE = False
+    get_order_router = None
+    HFTOrderRouter = None
+    print(f"⚠️ HFT Order Router not available: {e}")
+
 try:
     from queen_repository_scanner import QueenRepositoryScanner
     REPO_SCANNER_OK = True
@@ -467,6 +489,35 @@ class QueenExecutionEngine:
         self._init_knowledge_systems()
         self._init_deep_learning_systems()
         self._init_thought_bus()
+        
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # ⚡🧬 HIGH FREQUENCY TRADING - HARMONIC MYCELIUM ENGINE
+        # ═══════════════════════════════════════════════════════════════════════════════
+        self.hft_engine = None
+        self.hft_order_router = None
+        
+        if HFT_ENGINE_AVAILABLE and get_hft_engine:
+            try:
+                self.hft_engine = get_hft_engine()
+                print("   ⚡🧬 HFT Engine loaded (Sub-10ms latency)")
+            except Exception as e:
+                print(f"   ⚠️ HFT Engine failed: {e}")
+        
+        if HFT_ORDER_ROUTER_AVAILABLE and get_order_router:
+            try:
+                self.hft_order_router = get_order_router()
+                
+                # Wire exchange clients for execution
+                exchange_clients = {
+                    'kraken': self.kraken.kraken_client if self.kraken else None,
+                    'alpaca': self.alpaca.alpaca_client if self.alpaca else None,
+                }
+                self.hft_order_router.wire_exchange_clients(exchange_clients)
+                
+                print("   🌐⚡ HFT Order Router loaded (WebSocket execution)")
+                print(f"      Exchanges: {len([e for e in exchange_clients.values() if e])} connected")
+            except Exception as e:
+                print(f"   ⚠️ HFT Order Router failed: {e}")
         
         # Stats
         self.trades_executed = 0
@@ -1174,28 +1225,76 @@ class QueenExecutionEngine:
             order_id = f"DRY_RUN_{int(time.time())}"
             status = "dry_run"
         else:
-            print(f"\n   🔥 LIVE - Placing {side} order on {self.exchange.upper()}...")
+            print(f"\n   🔥 LIVE - Executing {side} order on {self.exchange.upper()}...")
             
-            if self.exchange == "kraken" and self.kraken:
-                result = self.kraken.place_order(
-                    symbol=signal.symbol,
-                    side=side,
-                    quote_qty=position_size
-                )
-                order_id = result.get('txid', result.get('id', 'unknown'))
-                status = result.get('status', 'filled' if 'txid' in result else 'unknown')
-            else:
-                result = self.alpaca.place_order(
-                    symbol=signal.symbol,
-                    side=side,
-                    notional=position_size
-                )
-                order_id = result.get('id', 'unknown')
-                status = result.get('status', 'unknown')
+            # ═══════════════════════════════════════════════════════════════════════════════
+            # ⚡🧬 HIGH FREQUENCY TRADING EXECUTION - SUB-10MS LATENCY
+            # ═══════════════════════════════════════════════════════════════════════════════
+            if HFT_ORDER_ROUTER_AVAILABLE and hasattr(self, 'hft_order_router') and self.hft_order_router:
+                try:
+                    print(f"   ⚡ Using HFT Order Router (WebSocket execution)...")
+                    
+                    # Create HFT order request
+                    from aureon_hft_websocket_order_router import OrderRequest
+                    
+                    order_request = OrderRequest(
+                        symbol=signal.symbol,
+                        side=side,
+                        quantity=position_size / signal.current_price,  # Convert USD to crypto quantity
+                        price=None,  # Market order
+                        exchange=self.exchange,
+                        order_type="market",
+                        timestamp=time.time()
+                    )
+                    
+                    # Execute via HFT router
+                    result = self.hft_order_router.execute_order(order_request)
+                    
+                    if result and result.success:
+                        order_id = result.order_id or f"HFT_{int(time.time())}"
+                        status = "filled" if result.filled_quantity > 0 else "pending"
+                        print(f"   ✅ HFT Order executed: {order_id}")
+                        print(f"   📊 Filled: {result.filled_quantity:.6f} @ ${result.average_price:.2f}")
+                        print(f"   ⚡ Latency: {result.execution_time_ms:.1f}ms")
+                    else:
+                        error_msg = result.error_message if result else "Unknown HFT error"
+                        print(f"   ❌ HFT Order failed: {error_msg}")
+                        return None
+                        
+                except Exception as e:
+                    print(f"   ⚠️ HFT execution failed, falling back to REST: {e}")
+                    # Fall through to REST execution
+                    HFT_ORDER_ROUTER_AVAILABLE = False
             
-            if 'error' in str(result).lower():
-                print(f"   ❌ Order failed: {result}")
-                return None
+            # ═══════════════════════════════════════════════════════════════════════════════
+            # 🌐 REST API EXECUTION - FALLBACK MODE
+            # ═══════════════════════════════════════════════════════════════════════════════
+            if not HFT_ORDER_ROUTER_AVAILABLE or not hasattr(self, 'hft_order_router') or not self.hft_order_router:
+                print(f"   🌐 Using REST API execution...")
+                
+                if self.exchange == "kraken" and self.kraken:
+                    result = self.kraken.place_order(
+                        symbol=signal.symbol,
+                        side=side,
+                        quote_qty=position_size
+                    )
+                    order_id = result.get('txid', result.get('id', 'unknown'))
+                    status = result.get('status', 'filled' if 'txid' in result else 'unknown')
+                else:
+                    result = self.alpaca.place_order(
+                        symbol=signal.symbol,
+                        side=side,
+                        notional=position_size
+                    )
+                    order_id = result.get('id', 'unknown')
+                    status = result.get('status', 'unknown')
+                
+                if 'error' in str(result).lower():
+                    print(f"   ❌ REST Order failed: {result}")
+                    return None
+                
+                print(f"   ✅ REST Order placed: {order_id}")
+                print(f"   Status: {status}")
             
             print(f"   ✅ Order placed: {order_id}")
             print(f"   Status: {status}")

@@ -110,6 +110,8 @@ class ValidationRecord:
         return asdict(self)
 
 
+from metrics import skipped_anchor_counter
+
 @dataclass
 class TimelineAnchor:
     """
@@ -249,16 +251,22 @@ class TimelineAnchor:
         
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'TimelineAnchor':
-        """Reconstruct from dict"""
+        """Reconstruct from dict (tolerant to missing or legacy fields)."""
+        # Provide robust defaults for older or partially corrupted state files
+        anchor_id = data.get("anchor_id", f"anchor_{int(time.time() * 1000)}")
+        branch_id = data.get("branch_id", f"{anchor_id}_branch")
+        symbol = data.get("symbol", "UNKNOWN")
+        exchange = data.get("exchange", "unknown")
+
         anchor = cls(
-            anchor_id=data["anchor_id"],
-            branch_id=data["branch_id"],
-            symbol=data["symbol"],
-            exchange=data["exchange"],
+            anchor_id=anchor_id,
+            branch_id=branch_id,
+            symbol=symbol,
+            exchange=exchange,
             created_at=data.get("created_at", 0.0),
             initial_price=data.get("initial_price", 0.0),
             initial_frequency=data.get("initial_frequency", SCHUMANN_BASE),
-            status=AnchorStatus(data.get("status", "pending")),
+            status=AnchorStatus(data.get("status", AnchorStatus.PENDING.value)),
             validation_count=data.get("validation_count", 0),
             successful_validations=data.get("successful_validations", 0),
             failed_validations=data.get("failed_validations", 0),
@@ -273,22 +281,25 @@ class TimelineAnchor:
             execution_price=data.get("execution_price", 0.0),
             execution_result=data.get("execution_result", ""),
         )
-        
-        # Restore validation history
+
+        # Restore validation history defensively
         for v_data in data.get("validation_history", []):
-            anchor.validation_history.append(ValidationRecord(
-                timestamp=v_data["timestamp"],
-                validation_type=v_data["validation_type"],
-                p1_score=v_data["p1_score"],
-                p2_score=v_data["p2_score"],
-                p3_score=v_data["p3_score"],
-                coherence=v_data["coherence"],
-                lambda_stability=v_data["lambda_stability"],
-                drift=v_data["drift"],
-                passed=v_data["passed"],
-                notes=v_data.get("notes", ""),
-            ))
-            
+            try:
+                anchor.validation_history.append(ValidationRecord(
+                    timestamp=v_data.get("timestamp", 0.0),
+                    validation_type=v_data.get("validation_type", "unknown"),
+                    p1_score=v_data.get("p1_score", 0.0),
+                    p2_score=v_data.get("p2_score", 0.0),
+                    p3_score=v_data.get("p3_score", 0.0),
+                    coherence=v_data.get("coherence", 0.0),
+                    lambda_stability=v_data.get("lambda_stability", 0.0),
+                    drift=v_data.get("drift", 0.0),
+                    passed=v_data.get("passed", False),
+                    notes=v_data.get("notes", ""),
+                ))
+            except Exception as e:
+                logger.debug(f"Skipping malformed validation entry for anchor {anchor_id}: {e}")
+
         return anchor
 
 
@@ -364,6 +375,7 @@ class TimelineAnchorValidator:
                             self.pending_anchors[anchor_id] = TimelineAnchor.from_dict(anchor_data)
                         except Exception as e:
                             logger.warning(f"Could not load anchor {anchor_id}: {e}")
+                            skipped_anchor_counter.inc(reason="pending_load_error")
                 
                 logger.info(f"  Loaded {len(self.pending_anchors)} pending anchors")
             except Exception as e:
@@ -395,6 +407,7 @@ class TimelineAnchorValidator:
                             self.anchored_timelines[anchor_id] = TimelineAnchor.from_dict(anchor_data)
                         except Exception as e:
                             logger.warning(f"Could not load anchored timeline {anchor_id}: {e}")
+                            skipped_anchor_counter.inc(reason="anchored_load_error")
                 
                 logger.info(f"  Loaded {len(self.anchored_timelines)} anchored timelines")
             except Exception as e:

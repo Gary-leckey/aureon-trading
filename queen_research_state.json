@@ -1,0 +1,11 @@
+{
+  "metrics": {
+    "total_researches": 13,
+    "news_queries": 3,
+    "wiki_queries": 10,
+    "rss_scans": 0,
+    "insights_generated": 0,
+    "errors": 0
+  },
+  "last_save": "2026-01-16T10:28:31.926182"
+}

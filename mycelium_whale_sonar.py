@@ -93,7 +93,7 @@ class WhaleSonar:
         # Subscribe to ThoughtBus topics we care about (outcome + mycelium + general)
         if self.thought_bus:
             # pick a light-touch set of topics to avoid overwhelming the bus
-            subscribe_topics = ("system.*", "execution.*", "market.*", "mycelium.*", "outcome.*", "unified.*", "*")
+            subscribe_topics = ("system.*", "execution.*", "market.*", "mycelium.*", "outcome.*", "unified.*", "hft.*", "*")
             for topic in subscribe_topics:
                 try:
                     self.thought_bus.subscribe(topic, self._handle_thought)

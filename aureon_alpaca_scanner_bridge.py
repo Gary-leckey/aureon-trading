@@ -59,6 +59,19 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════
+# ⚡🧬 HIGH FREQUENCY TRADING - HARMONIC MYCELIUM ENGINE
+# ═══════════════════════════════════════════════════════════════════════════
+
+try:
+    from aureon_hft_harmonic_mycelium import get_hft_engine, HFTTick
+    HFT_ENGINE_AVAILABLE = True
+except ImportError as e:
+    HFT_ENGINE_AVAILABLE = False
+    get_hft_engine = None
+    HFTTick = None
+    print(f"⚠️ HFT Engine not available: {e}")
+
+# ═══════════════════════════════════════════════════════════════════════════
 # 🌍 SACRED CONSTANTS & THRESHOLDS
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -283,6 +296,9 @@ class AlpacaScannerBridge:
         # Volume tracking (from fee tracker)
         self._current_volume_30d: float = 0.0
         
+        # HFT Engine (lazy init)
+        self.hft_engine = None
+        
         logger.info("🦙🌊 Alpaca Scanner Bridge initialized")
         logger.info(f"   📡 SSE Streaming: {'ENABLED' if enable_sse else 'DISABLED'}")
         logger.info(f"   📈 Stock Scanning: {'ENABLED' if enable_stocks else 'DISABLED'}")
@@ -374,6 +390,36 @@ class AlpacaScannerBridge:
                 self._price_snapshots[symbol].append((time.time(), price))
             
             self._stats['tickers_received'] += 1
+            
+            # ═══════════════════════════════════════════════════════════════════════════════
+            # ⚡🧬 CONVERT SSE TRADE TO HFT TICK - SUB-10MS LATENCY
+            # ═══════════════════════════════════════════════════════════════════════════════
+            if HFT_ENGINE_AVAILABLE and HFTTick:
+                try:
+                    # Lazy initialize HFT engine
+                    if self.hft_engine is None:
+                        self.hft_engine = get_hft_engine()
+                        if self.hft_engine:
+                            logger.info("   ⚡🧬 HFT Engine wired to Alpaca SSE Bridge")
+                    
+                    # Create HFT tick from SSE trade
+                    if self.hft_engine:
+                        hft_tick = HFTTick(
+                            symbol=symbol,
+                            price=price,
+                            volume=trade.size,
+                            timestamp=trade.timestamp,
+                            exchange="alpaca",
+                            tick_type="trade",
+                            bid_price=ticker.bid if ticker.bid > 0 else price * 0.9995,  # Estimate bid
+                            ask_price=ticker.ask if ticker.ask > 0 else price * 1.0005,  # Estimate ask
+                        )
+                        
+                        # Inject tick into HFT engine
+                        self.hft_engine.inject_tick(hft_tick)
+                        
+                except Exception as e:
+                    logger.debug(f"HFT tick injection error: {e}")
             
             # Fire callback
             if self._on_ticker_update:

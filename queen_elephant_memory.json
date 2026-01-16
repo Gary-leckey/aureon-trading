@@ -2083,12 +2083,12 @@
       "win_rate": 0.0
     },
     "ETH\u2192LTC": {
-      "trades": 255,
-      "wins": 20,
+      "trades": 355,
+      "wins": 120,
       "losses": 235,
-      "total_profit": 7.381025999229854,
+      "total_profit": 184.9466353293617,
       "total_loss": 0.0,
-      "win_rate": 7.8431372549019605
+      "win_rate": 33.80281690140845
     },
     "USD\u2192BTC": {
       "trades": 616,
@@ -2147,12 +2147,12 @@
       "win_rate": 2.3255813953488373
     },
     "ETH\u2192BCH": {
-      "trades": 266,
-      "wins": 32,
+      "trades": 350,
+      "wins": 116,
       "losses": 234,
-      "total_profit": 19.194101743080004,
+      "total_profit": 148.57727077848725,
       "total_loss": 0.0,
-      "win_rate": 12.030075187969924
+      "win_rate": 33.14285714285714
     },
     "USD\u2192AVAX": {
       "trades": 617,
@@ -2203,12 +2203,12 @@
       "win_rate": 1.2711864406779663
     },
     "USD\u2192ETH": {
-      "trades": 616,
-      "wins": 1,
+      "trades": 635,
+      "wins": 20,
       "losses": 615,
-      "total_profit": 0.005280288499999841,
+      "total_profit": 38.785380288499994,
       "total_loss": 0.0034353778299998083,
-      "win_rate": 0.16233766233766234
+      "win_rate": 3.149606299212598
     },
     "LTC\u2192SOL": {
       "trades": 381,
@@ -2235,28 +2235,28 @@
       "win_rate": 0.6896551724137931
     },
     "USD\u2192SUSHI": {
-      "trades": 574,
-      "wins": 0,
+      "trades": 576,
+      "wins": 2,
       "losses": 574,
-      "total_profit": 0,
+      "total_profit": 0.23130662216660458,
       "total_loss": 0.0,
-      "win_rate": 0.0
+      "win_rate": 0.3472222222222222
     },
     "USD\u2192LINK": {
-      "trades": 616,
-      "wins": 2,
+      "trades": 626,
+      "wins": 12,
       "losses": 614,
-      "total_profit": 0.002997948006000062,
+      "total_profit": 19.321497948006,
       "total_loss": 0.03475476107100128,
-      "win_rate": 0.3246753246753247
+      "win_rate": 1.9169329073482428
     },
     "USD\u2192XTZ": {
-      "trades": 574,
-      "wins": 2,
+      "trades": 575,
+      "wins": 3,
       "losses": 572,
-      "total_profit": 0.014044376865600006,
+      "total_profit": 0.1795294784184024,
       "total_loss": 0.0,
-      "win_rate": 0.34843205574912894
+      "win_rate": 0.5217391304347827
     },
     "USD\u2192GRT": {
       "trades": 575,
@@ -2267,20 +2267,20 @@
       "win_rate": 0.34782608695652173
     },
     "USD\u2192BCH": {
-      "trades": 616,
-      "wins": 2,
+      "trades": 629,
+      "wins": 15,
       "losses": 614,
-      "total_profit": 0.021708622680000955,
+      "total_profit": 25.135758622680004,
       "total_loss": 0.0,
-      "win_rate": 0.3246753246753247
+      "win_rate": 2.384737678855326
     },
     "USD\u2192UNI": {
-      "trades": 616,
-      "wins": 1,
+      "trades": 652,
+      "wins": 37,
       "losses": 615,
-      "total_profit": 0.008537472441201288,
+      "total_profit": 77.28253747244126,
       "total_loss": 0.02572729165559906,
-      "win_rate": 0.16233766233766234
+      "win_rate": 5.674846625766871
     },
     "USD\u2192DOT": {
       "trades": 575,
@@ -2291,20 +2291,20 @@
       "win_rate": 0.17391304347826086
     },
     "USD\u2192LTC": {
-      "trades": 617,
-      "wins": 1,
+      "trades": 634,
+      "wins": 18,
       "losses": 616,
-      "total_profit": 0.031224349679998653,
+      "total_profit": 36.52172434968,
       "total_loss": 0.06978624155200208,
-      "win_rate": 0.1620745542949757
+      "win_rate": 2.8391167192429023
     },
     "USD\u2192AAVE": {
-      "trades": 617,
-      "wins": 2,
+      "trades": 623,
+      "wins": 8,
       "losses": 615,
-      "total_profit": 0.1378198372379763,
+      "total_profit": 1.5653958194392539,
       "total_loss": 0.023173253048003772,
-      "win_rate": 0.3241491085899514
+      "win_rate": 1.2841091492776886
     },
     "USD\u2192SKY": {
       "trades": 572,
@@ -2339,12 +2339,12 @@
       "win_rate": 0.0
     },
     "USD\u2192YFI": {
-      "trades": 568,
-      "wins": 0,
+      "trades": 569,
+      "wins": 1,
       "losses": 568,
-      "total_profit": 0,
+      "total_profit": 0.10480645348521753,
       "total_loss": 0.0,
-      "win_rate": 0.0
+      "win_rate": 0.17574692442882248
     },
     "USDT\u2192LTC": {
       "trades": 436,
@@ -3587,12 +3587,12 @@
       "win_rate": 0.0
     },
     "ETH\u2192AAVE": {
-      "trades": 233,
-      "wins": 1,
+      "trades": 257,
+      "wins": 25,
       "losses": 232,
-      "total_profit": 0.6552107933547321,
+      "total_profit": 4.264114912074113,
       "total_loss": 0.0,
-      "win_rate": 0.4291845493562232
+      "win_rate": 9.72762645914397
     },
     "ETH\u2192AVAX": {
       "trades": 232,
@@ -3603,36 +3603,36 @@
       "win_rate": 0.0
     },
     "ETH\u2192LINK": {
-      "trades": 246,
-      "wins": 12,
+      "trades": 319,
+      "wins": 85,
       "losses": 234,
-      "total_profit": 5.36022396703125,
+      "total_profit": 121.4360826644795,
       "total_loss": 0.007733435359998708,
-      "win_rate": 4.878048780487805
+      "win_rate": 26.64576802507837
     },
     "ETH\u2192USDC": {
-      "trades": 252,
-      "wins": 17,
+      "trades": 384,
+      "wins": 149,
       "losses": 235,
-      "total_profit": 0.5232177035585407,
+      "total_profit": 13.745106993009342,
       "total_loss": 0.0,
-      "win_rate": 6.746031746031746
+      "win_rate": 38.80208333333333
     },
     "ETH\u2192USD": {
-      "trades": 236,
-      "wins": 1,
+      "trades": 238,
+      "wins": 3,
       "losses": 235,
-      "total_profit": 0.0,
+      "total_profit": 0.18997586667864,
       "total_loss": 0.0,
-      "win_rate": 0.423728813559322
+      "win_rate": 1.2605042016806722
     },
     "ETH\u2192USDT": {
-      "trades": 286,
-      "wins": 50,
+      "trades": 392,
+      "wins": 156,
       "losses": 236,
-      "total_profit": 2.583767898606539,
+      "total_profit": 13.171611831928669,
       "total_loss": 0.0,
-      "win_rate": 17.482517482517483
+      "win_rate": 39.795918367346935
     },
     "ETH\u2192ZUSD": {
       "trades": 231,
@@ -3667,12 +3667,12 @@
       "win_rate": 0.0
     },
     "ETH\u2192UNI": {
-      "trades": 277,
-      "wins": 43,
+      "trades": 406,
+      "wins": 172,
       "losses": 234,
-      "total_profit": 33.775381180072294,
+      "total_profit": 259.9413518766659,
       "total_loss": 0.0,
-      "win_rate": 15.523465703971121
+      "win_rate": 42.364532019704434
     },
     "ETH\u2192XRP": {
       "trades": 231,
@@ -4291,5 +4291,5 @@
       "win_rate": 100.0
     }
   },
-  "last_saved": "2026-01-16T00:50:24.457392"
+  "last_saved": "2026-01-16T15:29:19.084683"
 }

@@ -49,6 +49,16 @@ class AlpacaClient:
         # Default to LIVE trading
         self.use_paper = os.getenv('ALPACA_PAPER', 'false').lower() == 'true'
         self.dry_run = os.getenv('ALPACA_DRY_RUN', 'false').lower() == 'true'
+        
+        # Telemetry: Start Prometheus server if configured
+        prom_port = os.getenv('PROMETHEUS_METRICS_PORT')
+        if prom_port:
+            try:
+                from telemetry_server import start_telemetry_server
+                start_telemetry_server(int(prom_port))
+            except Exception as e:
+                logger.warning(f"Failed to start telemetry server: {e}")
+
         self.timeout_seconds = 10.0
         try:
             self.timeout_seconds = float(os.getenv("ALPACA_TIMEOUT", "10") or 10)
@@ -72,23 +82,72 @@ class AlpacaClient:
         self.last_error: Optional[Dict[str, Any]] = None
 
         # Rate limiting and in-memory TTL caching for market data
-        from rate_limiter import TokenBucket, TTLCache
-        # Allow configuring via env; defaults conservative to 5 reqs/sec
+        from rate_limiter_v2 import AdaptiveRateLimiter
+        from rate_limiter import TTLCache
+        
+        # Production-safe rates: trading below Alpaca's 200/min limit (3.33/sec)
         try:
-            alpaca_rate = float(os.getenv('ALPACA_RATE_PER_SECOND', '5'))
+            trading_rate = float(os.getenv('ALPACA_TRADING_RATE_PER_SECOND', '2.5'))  # Conservative trading rate
+            data_rate = float(os.getenv('ALPACA_DATA_RATE_PER_SECOND', '5.0'))       # Data rate for quotes/bars
         except Exception:
-            alpaca_rate = 5.0
+            trading_rate = 2.5
+            data_rate = 5.0
+            
         try:
-            alpaca_burst = float(os.getenv('ALPACA_BURST_CAPACITY', str(max(1, int(alpaca_rate)))))
+            trading_burst = float(os.getenv('ALPACA_TRADING_BURST_CAPACITY', str(max(1, int(trading_rate)))))
+            data_burst = float(os.getenv('ALPACA_DATA_BURST_CAPACITY', str(max(1, int(data_rate)))))
         except Exception:
-            alpaca_burst = max(1, alpaca_rate)
+            trading_burst = max(1, trading_rate)
+            data_burst = max(1, data_rate)
 
-        self._rate_limiter = TokenBucket(rate=alpaca_rate, capacity=alpaca_burst)
+        self._rate_limiter = AdaptiveRateLimiter(
+            trading_rate=trading_rate,
+            data_rate=data_rate,
+            trading_capacity=trading_burst,
+            data_capacity=data_burst,
+            name='alpaca'
+        )
         try:
-            ttl = float(os.getenv('ALPACA_QUOTE_CACHE_TTL', '0.5'))
+            ttl = float(os.getenv('ALPACA_QUOTE_CACHE_TTL', '2.0'))
         except Exception:
-            ttl = 0.5
-        self._quote_cache = TTLCache(default_ttl=ttl)
+            ttl = 2.0
+        self._quote_cache = TTLCache(default_ttl=ttl, name='alpaca_quotes')
+
+        # Position and account caches
+        try:
+            pos_ttl = float(os.getenv('ALPACA_POSITION_CACHE_TTL', '5.0'))
+        except Exception:
+            pos_ttl = 5.0
+        self._position_cache = TTLCache(default_ttl=pos_ttl, name='alpaca_positions')
+
+        try:
+            acc_ttl = float(os.getenv('ALPACA_ACCOUNT_CACHE_TTL', '10.0'))
+        except Exception:
+            acc_ttl = 10.0
+        self._account_cache = TTLCache(default_ttl=acc_ttl, name='alpaca_account')
+
+        # Short-lived response deduplication cache (used to avoid duplicate GETs)
+        try:
+            dedup_ttl = float(os.getenv('ALPACA_DEDUP_TTL', '0.2'))
+        except Exception:
+            dedup_ttl = 0.2
+        self._response_cache = TTLCache(default_ttl=dedup_ttl, name='alpaca_response_cache')
+
+        # Market Data Hub integration (Phase 2 optimization)
+        self._market_data_hub = None
+        try:
+            from market_data_hub import get_market_data_hub
+            self._market_data_hub = get_market_data_hub(self)
+        except ImportError:
+            logger.warning("MarketDataHub not available - running without prefetching")
+
+        # Global Rate Budget integration (Phase 2 optimization)
+        self._global_rate_budget = None
+        try:
+            from global_rate_budget import get_global_rate_budget, classify_request_type
+            self._global_rate_budget = get_global_rate_budget()
+        except ImportError:
+            logger.warning("GlobalRateBudget not available - running without priority budgeting")
 
         if self.api_key and self.secret_key:
             self.session.headers.update({
@@ -98,13 +157,49 @@ class AlpacaClient:
         else:
             logger.warning("Alpaca API keys not found in environment variables.")
 
-    def _request(self, method: str, endpoint: str, params: Dict = None, data: Dict = None, base_url: str = None) -> Any:
+    def _request(self, method: str, endpoint: str, params: Dict = None, data: Dict = None, base_url: str = None, request_type: str = 'data') -> Any:
+        """Make a request with adaptive rate limiting.
+        
+        Args:
+            request_type: 'trading' or 'data' - determines which rate limit bucket to use
+        """
         url = f"{base_url or self.base_url}{endpoint}"
         for attempt in range(self.max_retries + 1):
             try:
-                # Respect local rate limiter
+                # Short GET dedup: avoid duplicate identical GET requests within short TTL
+                cache_key = None
+                if method.upper() == 'GET' and not data:
+                    try:
+                        params_key = ''
+                        if params:
+                            params_items = sorted((k, str(v)) for k, v in params.items())
+                            params_key = '&'.join([f"{k}={v}" for k, v in params_items])
+                        cache_key = f"GET::{url}::{params_key}"
+                        cached = self._response_cache.get(cache_key)
+                        if cached is not None:
+                            return cached
+                    except Exception:
+                        cache_key = None
+
+                # Phase 2: Global Rate Budget with priority allocation
+                if self._global_rate_budget:
+                    try:
+                        priority = classify_request_type(endpoint, method)
+                        is_trading = request_type == 'trading'
+                        if not self._global_rate_budget.wait_for_slot(priority, is_trading):
+                            # Request rejected due to high-priority backoff
+                            logger.warning(f"Request rejected by GlobalRateBudget: {priority.name} for {endpoint}")
+                            time.sleep(0.1)  # Brief delay before retry
+                            continue
+                    except Exception as e:
+                        logger.debug(f"GlobalRateBudget check failed: {e}")
+
+                # Respect adaptive rate limiter
                 try:
-                    self._rate_limiter.wait()
+                    if request_type == 'trading':
+                        self._rate_limiter.wait_trading()
+                    else:
+                        self._rate_limiter.wait_data()
                 except Exception:
                     # In case rate limiter fails, don't block the call
                     pass
@@ -113,6 +208,17 @@ class AlpacaClient:
 
                 # 🛡️ RATE LIMIT HANDLING - Respect Retry-After header if present
                 if resp.status_code == 429:
+                    # Trigger adaptive backoff
+                    self._rate_limiter.on_429_error()
+
+                    # Phase 2: Notify GlobalRateBudget of 429
+                    if self._global_rate_budget:
+                        try:
+                            priority = classify_request_type(endpoint, method)
+                            self._global_rate_budget.on_429_error(priority)
+                        except Exception as e:
+                            logger.debug(f"GlobalRateBudget 429 notification failed: {e}")
+                    
                     # Metric: API 429
                     try:
                         from metrics import api_429_counter
@@ -151,8 +257,16 @@ class AlpacaClient:
                     }
                     return {}
 
+                # Cache GET responses for dedup window
+                try:
+                    result_json = resp.json()
+                    if cache_key and result_json is not None:
+                        self._response_cache.set(cache_key, result_json)
+                except Exception:
+                    result_json = {}
+
                 self.last_error = None
-                return resp.json()
+                return result_json
             except requests.exceptions.Timeout as e:
                 if attempt < self.max_retries:
                     time.sleep(0.5 * (attempt + 1))
@@ -218,27 +332,55 @@ class AlpacaClient:
     # ═════════════════════════════════════════════════════════════════════=
 
     def get_account(self) -> Dict[str, Any]:
-        """Get account details."""
-        return self._request("GET", "/v2/account")
+        """Get account details with short-lived caching."""
+        cached = None
+        try:
+            cached = self._account_cache.get('account')
+        except Exception:
+            pass
+        if cached is not None:
+            return cached
+
+        resp = self._request("GET", "/v2/account", request_type='trading')
+        try:
+            if isinstance(resp, dict):
+                self._account_cache.set('account', resp)
+        except Exception:
+            pass
+        return resp
 
     def get_positions(self) -> List[Dict[str, Any]]:
-        """Get open positions."""
-        return self._request("GET", "/v2/positions")
+        """Get open positions with short-lived caching."""
+        cached = None
+        try:
+            cached = self._position_cache.get('positions')
+        except Exception:
+            pass
+        if cached is not None:
+            return cached
+
+        resp = self._request("GET", "/v2/positions", request_type='trading')
+        try:
+            if isinstance(resp, list) or isinstance(resp, dict):
+                self._position_cache.set('positions', resp)
+        except Exception:
+            pass
+        return resp
 
     def get_position(self, symbol: str) -> Dict[str, Any]:
         """Get position for a specific symbol."""
         symbol = self._resolve_symbol(symbol)
-        return self._request("GET", f"/v2/positions/{symbol}")
+        return self._request("GET", f"/v2/positions/{symbol}", request_type='trading')
 
     def list_assets(self, status: str = "active", asset_class: str = "crypto") -> List[Dict[str, Any]]:
         """List assets (compatibility helper for wave scanner)."""
         params = {"status": status, "asset_class": asset_class}
-        resp = self._request("GET", "/v2/assets", params=params)
+        resp = self._request("GET", "/v2/assets", params=params, request_type='data')
         return resp if isinstance(resp, list) else resp.get("assets", []) if isinstance(resp, dict) else []
 
     def get_clock(self) -> Dict[str, Any]:
         """Get market clock."""
-        return self._request("GET", "/v2/clock")
+        return self._request("GET", "/v2/clock", request_type='data')
 
     def place_order(
         self,
@@ -270,7 +412,7 @@ class AlpacaClient:
         }
         if position_intent:
             data["position_intent"] = position_intent
-        result = self._request("POST", "/v2/orders", data=data)
+        result = self._request("POST", "/v2/orders", data=data, request_type='trading')
         
         # 🔧 FIX: For market orders, wait and query for actual fill data
         # Alpaca's initial response may not have filled_avg_price yet
@@ -279,10 +421,11 @@ class AlpacaClient:
             import time as time_module
             
             # Poll for fill status (market orders should fill quickly)
-            for attempt in range(5):  # Try up to 5 times
-                time_module.sleep(0.3)  # Wait 300ms between checks
+            for attempt in range(3):  # Try up to 3 times
+                # Exponential backoff: 0.5s, 1.0s, 1.5s
+                time_module.sleep(0.5 * (attempt + 1))
                 try:
-                    order_status = self._request("GET", f"/v2/orders/{order_id}")
+                    order_status = self._request("GET", f"/v2/orders/{order_id}", request_type='trading')
                     status = order_status.get("status", "")
                     
                     if status == "filled":
@@ -334,7 +477,7 @@ class AlpacaClient:
                 "timeframe": timeframe,
                 "limit": limit
             }
-            resp = self._request("GET", "/v1beta3/crypto/us/bars", params=params, base_url=self.data_url)
+            resp = self._request("GET", "/v1beta3/crypto/us/bars", params=params, base_url=self.data_url, request_type='data')
             payload = resp.get('bars', resp) if isinstance(resp, dict) else {}
 
             if isinstance(payload, dict):
@@ -344,18 +487,49 @@ class AlpacaClient:
         return {"bars": all_bars} if all_bars else {}
 
     def get_latest_crypto_quotes(self, symbols: List[str]) -> Dict[str, Any]:
-        """Get latest crypto quotes (bid/ask)."""
-        all_quotes: Dict[str, Any] = {}
+        """Get latest crypto quotes (bid/ask).
 
-        for chunk in self._chunk_symbols(symbols):
+        This function will use an internal per-symbol cache to avoid making
+        API calls for symbols we've recently fetched, and will batch the
+        remaining symbols into as few requests as possible.
+        """
+        all_quotes: Dict[str, Any] = {}
+        remaining: List[str] = []
+
+        # First, try to serve from the quote cache
+        for sym in symbols:
+            cache_key = f"last_quote::{sym}"
+            try:
+                cached = self._quote_cache.get(cache_key)
+            except Exception:
+                cached = None
+            if cached is not None and isinstance(cached, dict) and cached.get('raw') is not None:
+                # Store raw API payload for compatibility
+                all_quotes[sym] = cached.get('raw')
+            else:
+                remaining.append(sym)
+
+        # For remaining symbols, batch requests into chunks and call API
+        for chunk in self._chunk_symbols(remaining):
             params = {
                 "symbols": ",".join(chunk)
             }
-            resp = self._request("GET", "/v1beta3/crypto/us/latest/quotes", params=params, base_url=self.data_url)
+            resp = self._request("GET", "/v1beta3/crypto/us/latest/quotes", params=params, base_url=self.data_url, request_type='data')
             payload = resp.get('quotes', resp) if isinstance(resp, dict) else {}
 
             if isinstance(payload, dict):
-                all_quotes.update(payload)
+                # Store results and prime the quote cache for each symbol
+                for sym, q in payload.items():
+                    all_quotes[sym] = q
+                    try:
+                        bp = float(q.get('bp', 0) or 0.0)
+                        ap = float(q.get('ap', 0) or 0.0)
+                        last = (bp + ap) / 2 if (bp > 0 and ap > 0) else (bp or ap or 0.0)
+                        cache_val = {"last": {"price": last}, "raw": q}
+                        self._quote_cache.set(f"last_quote::{sym}", cache_val)
+                    except Exception:
+                        # If cache priming fails, ignore
+                        pass
 
         return all_quotes
 
@@ -369,10 +543,21 @@ class AlpacaClient:
         For stocks, uses Alpaca data API latest quote. For crypto pairs (e.g. BTC/USD
         or BTCUSD) it will prefer the crypto latest quotes endpoint and fall back
         to the stock quote endpoint when appropriate.
+
+        Phase 2: Uses MarketDataHub prefetch cache if available.
         """
         sym = (symbol or "").upper().strip()
         if not sym:
             return {}
+
+        # Phase 2: Check MarketDataHub first for prefetched quotes
+        if self._market_data_hub:
+            try:
+                hub_quote = self._market_data_hub.get_quote(sym)
+                if hub_quote:
+                    return hub_quote
+            except Exception as e:
+                logger.debug(f"MarketDataHub lookup failed for {sym}: {e}")
 
         # Normalize to detect whether this is a crypto pair (contains '/').
         normalized = AlpacaClient._normalize_pair_symbol(sym)
@@ -404,6 +589,7 @@ class AlpacaClient:
                 "GET",
                 f"/v2/stocks/{sym}/quotes/latest",
                 base_url=self.data_url,
+                request_type='data'
             )
             q = {}
             if isinstance(resp, dict):
@@ -423,7 +609,7 @@ class AlpacaClient:
             "status": status,
             "asset_class": asset_class
         }
-        return self._request("GET", "/v2/assets", params=params)
+        return self._request("GET", "/v2/assets", params=params, request_type='data')
 
     def get_tradable_crypto_symbols(self, quote_filter: Optional[str] = None) -> List[str]:
         """
@@ -476,7 +662,7 @@ class AlpacaClient:
 
     def get_order(self, order_id: str) -> Dict[str, Any]:
         """Get order details by ID."""
-        return self._request("GET", f"/v2/orders/{order_id}")
+        return self._request("GET", f"/v2/orders/{order_id}", request_type='trading')
 
     def get_order_fills(self, order_id: str) -> Dict[str, Any]:
         """Get fill details for an order."""
@@ -561,7 +747,7 @@ class AlpacaClient:
         }
         if symbols:
             params["symbols"] = symbols
-        result = self._request("GET", "/v2/orders", params=params)
+        result = self._request("GET", "/v2/orders", params=params, request_type='trading')
         return result if isinstance(result, list) else []
 
     def calculate_cost_basis(self, symbol: str) -> Dict[str, Any]:
@@ -669,7 +855,7 @@ class AlpacaClient:
         if extended_hours:
             data["extended_hours"] = True
             
-        return self._request("POST", "/v2/orders", data=data)
+        return self._request("POST", "/v2/orders", data=data, request_type='trading')
 
     def place_stop_order(
         self,
@@ -707,7 +893,7 @@ class AlpacaClient:
             "stop_price": str(stop_price),
             "time_in_force": time_in_force
         }
-        return self._request("POST", "/v2/orders", data=data)
+        return self._request("POST", "/v2/orders", data=data, request_type='trading')
 
     def place_stop_limit_order(
         self,
@@ -748,7 +934,7 @@ class AlpacaClient:
             "limit_price": str(limit_price),
             "time_in_force": time_in_force
         }
-        return self._request("POST", "/v2/orders", data=data)
+        return self._request("POST", "/v2/orders", data=data, request_type='trading')
 
     def place_trailing_stop_order(
         self,
@@ -799,7 +985,7 @@ class AlpacaClient:
         else:
             raise ValueError("Must provide either trail_percent or trail_price")
             
-        return self._request("POST", "/v2/orders", data=data)
+        return self._request("POST", "/v2/orders", data=data, request_type='trading')
 
     def place_bracket_order(
         self,
@@ -871,7 +1057,7 @@ class AlpacaClient:
         if stop_loss_limit:
             data["stop_loss"]["limit_price"] = str(stop_loss_limit)
             
-        return self._request("POST", "/v2/orders", data=data)
+        return self._request("POST", "/v2/orders", data=data, request_type='trading')
 
     def place_oco_order(
         self,
@@ -924,7 +1110,7 @@ class AlpacaClient:
         if stop_loss_limit:
             data["stop_loss"]["limit_price"] = str(stop_loss_limit)
             
-        return self._request("POST", "/v2/orders", data=data)
+        return self._request("POST", "/v2/orders", data=data, request_type='trading')
 
     def place_oto_order(
         self,
@@ -989,7 +1175,7 @@ class AlpacaClient:
             if stop_loss_limit:
                 data["stop_loss"]["limit_price"] = str(stop_loss_limit)
                 
-        return self._request("POST", "/v2/orders", data=data)
+        return self._request("POST", "/v2/orders", data=data, request_type='trading')
 
     # ══════════════════════════════════════════════════════════════════════
     # ORDER MANAGEMENT - Query, Cancel, Replace
@@ -1008,7 +1194,7 @@ class AlpacaClient:
         params = {"status": "open"}
         if symbol:
             params["symbols"] = symbol
-        result = self._request("GET", "/v2/orders", params=params)
+        result = self._request("GET", "/v2/orders", params=params, request_type='trading')
         return result if isinstance(result, list) else []
 
     def cancel_order(self, order_id: str) -> Dict[str, Any]:
@@ -1025,7 +1211,7 @@ class AlpacaClient:
             logger.info(f"[DRY RUN] Cancel order: {order_id}")
             return {"status": "canceled"}
             
-        return self._request("DELETE", f"/v2/orders/{order_id}")
+        return self._request("DELETE", f"/v2/orders/{order_id}", request_type='trading')
 
     def cancel_all_orders(self) -> Dict[str, Any]:
         """
@@ -1038,7 +1224,7 @@ class AlpacaClient:
             logger.info("[DRY RUN] Cancel all orders")
             return {"status": "canceled", "count": 0}
             
-        return self._request("DELETE", "/v2/orders")
+        return self._request("DELETE", "/v2/orders", request_type='trading')
 
     def replace_order(
         self,
@@ -1079,7 +1265,7 @@ class AlpacaClient:
         if time_in_force is not None:
             data["time_in_force"] = time_in_force
             
-        return self._request("PATCH", f"/v2/orders/{order_id}", data=data)
+        return self._request("PATCH", f"/v2/orders/{order_id}", data=data, request_type='trading')
 
     # ══════════════════════════════════════════════════════════════════════
     # CONVENIENCE METHODS - Kraken-compatible interface
@@ -1391,7 +1577,7 @@ class AlpacaClient:
         """Return latest quote for a stock symbol."""
         try:
             sym = symbol.upper()
-            return self._request("GET", f"/v2/stocks/{sym}/quotes/latest") or {}
+            return self._request("GET", f"/v2/stocks/{sym}/quotes/latest", request_type='data') or {}
         except Exception as e:
             logger.debug(f"Stock quote endpoint unavailable for {symbol}: {e}")
             return {}
@@ -1400,7 +1586,7 @@ class AlpacaClient:
         """Return latest bars (OHLCV) for stock symbols."""
         try:
             data = {"symbols": ",".join([s.upper() for s in symbols]), "limit": limit}
-            result = self._request("GET", "/v2/stocks/bars/latest", params=data)
+            result = self._request("GET", "/v2/stocks/bars/latest", params=data, request_type='data')
             return result if isinstance(result, dict) else {}
         except Exception as e:
             logger.debug(f"Stock bars endpoint error: {e}")
@@ -2297,3 +2483,38 @@ class AlpacaClient:
             },
             'fee_tier': volume.get('fee_tier', 1)
         }
+
+    # ═════════════════════════════════════════════════════════════════════=
+    # MARKET DATA HUB INTEGRATION (Phase 2)
+    # ═════════════════════════════════════════════════════════════════════=
+
+    def start_market_data_hub(self):
+        """Start the MarketDataHub prefetching service."""
+        if self._market_data_hub:
+            try:
+                from market_data_hub import start_market_data_hub
+                start_market_data_hub(self)
+                logger.info("MarketDataHub started for Alpaca client")
+            except Exception as e:
+                logger.error(f"Failed to start MarketDataHub: {e}")
+
+    def stop_market_data_hub(self):
+        """Stop the MarketDataHub prefetching service."""
+        try:
+            from market_data_hub import stop_market_data_hub
+            stop_market_data_hub()
+            logger.info("MarketDataHub stopped")
+        except Exception as e:
+            logger.error(f"Failed to stop MarketDataHub: {e}")
+
+    def get_market_data_hub_stats(self) -> Dict[str, Any]:
+        """Get MarketDataHub statistics."""
+        if self._market_data_hub:
+            return self._market_data_hub.get_stats()
+        return {"error": "MarketDataHub not available"}
+
+    def get_global_rate_budget_stats(self) -> Dict[str, Any]:
+        """Get GlobalRateBudget statistics."""
+        if self._global_rate_budget:
+            return self._global_rate_budget.get_stats()
+        return {"error": "GlobalRateBudget not available"}

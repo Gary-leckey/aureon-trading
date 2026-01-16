@@ -105,3 +105,51 @@ def get_metric_value(counter: MetricCounter, **labels) -> float:
 
 def get_gauge_value(gauge: MetricGauge, **labels) -> float:
     return gauge.get(**labels)
+
+# Timeline anchor metrics
+skipped_anchor_counter = MetricCounter(
+    'timeline_anchor_skipped_total', 
+    'Count of skipped or malformed timeline anchors',
+    labelnames=('reason',)
+)
+
+# Adaptive rate limiter metrics
+rate_limiter_backoff_seconds = MetricGauge(
+    'rate_limiter_backoff_seconds',
+    'Current backoff duration in seconds',
+    labelnames=('limiter',)
+)
+rate_limiter_429_count = MetricCounter(
+    'rate_limiter_429_total',
+    'Number of 429 errors triggering backoff',
+    labelnames=('limiter',)
+)
+rate_limiter_recovery_count = MetricCounter(
+    'rate_limiter_recovery_total',
+    'Number of times rate limiter recovered from backoff',
+    labelnames=('limiter',)
+)
+
+# MarketDataHub metrics (Phase 2)
+market_data_prefetch_cycles = MetricCounter(
+    'market_data_prefetch_cycles_total',
+    'Number of prefetch cycles performed by MarketDataHub'
+)
+market_data_cache_hits = MetricCounter(
+    'market_data_cache_hits_total',
+    'Number of cache hits served by MarketDataHub',
+    labelnames=('hub',)
+)
+market_data_api_calls_saved = MetricCounter(
+    'market_data_api_calls_saved_total',
+    'Number of API calls saved by serving cached prefetch data',
+    labelnames=('hub',)
+)
+
+# Global Rate Budget metrics (Phase 2)
+global_budget_requests_total = MetricCounter(
+    'global_rate_budget_requests_total',
+    'Global Rate Budget requests processed, delayed, or rejected',
+    labelnames=('priority', 'status')
+)
+

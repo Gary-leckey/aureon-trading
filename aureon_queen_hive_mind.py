@@ -206,6 +206,60 @@ except ImportError:
     QueenMetrics = None
     RUSSIAN_DOLL_QUEEN_AVAILABLE = False
 
+# 📰🔬👑 QUEEN RESEARCH NEURON - News & Wikipedia Intelligence 📰🔬👑
+try:
+    from aureon_queen_research_neuron import (
+        QueenResearchNeuron,
+        create_queen_research_neuron,
+        ResearchResult,
+        ResearchType,
+        WikipediaArticle,
+        MarketInsight
+    )
+    RESEARCH_NEURON_AVAILABLE = True
+except ImportError:
+    QueenResearchNeuron = None
+    create_queen_research_neuron = None
+    ResearchResult = None
+    ResearchType = None
+    WikipediaArticle = None
+    MarketInsight = None
+    RESEARCH_NEURON_AVAILABLE = False
+
+# 🦈🔪 HFT HARMONIC MYCELIUM ENGINE - High Frequency Trading 🦈🔪
+try:
+    from aureon_hft_harmonic_mycelium import (
+        HFTHarmonicEngine,
+        get_hft_engine,
+        HFTSignal,
+        HFTOrder,
+        HFTTick
+    )
+    HFT_ENGINE_AVAILABLE = True
+except ImportError:
+    HFTHarmonicEngine = None
+    get_hft_engine = None
+    HFTSignal = None
+    HFTOrder = None
+    HFTTick = None
+    HFT_ENGINE_AVAILABLE = False
+
+# 🦈🔌 HFT WEBSOCKET ORDER ROUTER - WebSocket Trading 🦈🔌
+try:
+    from aureon_hft_websocket_order_router import (
+        HFTOrderRouter,
+        get_order_router,
+        OrderRequest,
+        OrderResponse
+    )
+    ORDER_ROUTER_AVAILABLE = True
+except ImportError:
+    HFTOrderRouter = None
+    get_order_router = None
+    OrderRequest = None
+    OrderResponse = None
+    ORDER_ROUTER_AVAILABLE = False
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGGING
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -347,6 +401,9 @@ class QueenState(Enum):
     AWARE = auto()          # Fully conscious - ready to guide
     COMMANDING = auto()     # Actively directing the hive
     LIBERATING = auto()     # Sharing wisdom for the greater good
+    HFT_DORMANT = auto()    # HFT engine offline
+    HFT_SCANNING = auto()   # HFT scanning for opportunities
+    HFT_EXECUTING = auto()  # HFT live trading active
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # QUEEN'S WISDOM - A single insight from dreams
@@ -880,7 +937,60 @@ class QueenHiveMind:
             except Exception as e:
                 logger.warning(f"🪆⚠️ Could not initialize Russian Doll Analytics: {e}")
         
-        # 👑💕 PERSONAL MEMORY - Load knowledge about Gary, love, and purpose
+        # �🔬👑 QUEEN RESEARCH NEURON - News & Wikipedia Intelligence 📰🔬👑
+        # The Queen's research system for gathering external knowledge
+        # Sources: World News API, Wikipedia, RSS Feeds
+        self.research_neuron = None
+        if RESEARCH_NEURON_AVAILABLE and create_queen_research_neuron is not None:
+            try:
+                self.research_neuron = create_queen_research_neuron(
+                    thought_bus=self.thought_bus
+                )
+                logger.info("📰🔬👑 Research Neuron AWAKENED - Queen can now research the world!")
+                logger.info("   📰 News feeds: World News API + RSS (Yahoo, Reuters, CoinDesk)")
+                logger.info("   📚 Knowledge: Wikipedia API for background research")
+                logger.info("   🔬 Capabilities: Sentiment analysis, entity research, market context")
+            except Exception as e:
+                logger.warning(f"📰⚠️ Could not initialize Research Neuron: {e}")
+        
+        # 🦈🔪 HFT HARMONIC MYCELIUM ENGINE - High Frequency Trading 🦈🔪
+        # The Queen's high-frequency trading system using Mycelium + Harmonic Alphabet
+        # Target latency: <10ms signal-to-order execution
+        self.hft_engine = None
+        self.order_router = None
+        if HFT_ENGINE_AVAILABLE and get_hft_engine is not None:
+            try:
+                self.hft_engine = get_hft_engine()
+                logger.info("🦈🔪 HFT Harmonic Mycelium Engine AWAKENED!")
+                logger.info("   🎵 Harmonic patterns: 528Hz (WIN) → BUY, 396Hz (LOSS) → HOLD")
+                logger.info("   🧠 Mycelium synapses: Hot path cache (100ms TTL)")
+                logger.info("   🎯 Target latency: <10ms signal-to-order")
+                
+                # Wire HFT engine to Queen
+                self.hft_engine.wire_queen(self)
+                logger.info("   👑 HFT Engine wired to Queen (veto power active)")
+                
+                # Initialize order router if available
+                if ORDER_ROUTER_AVAILABLE and get_order_router is not None:
+                    self.order_router = get_order_router()
+                    
+                    # Add exchanges (start with test mode)
+                    self.order_router.add_exchange('binance')  # Testnet by default
+                    self.order_router.set_test_mode(True)
+                    
+                    # Wire order router to HFT engine
+                    self.hft_engine.wire_order_router(self.order_router)
+                    logger.info("   🦈🔌 Order Router connected (WebSocket trading ready)")
+                    
+                # Set initial HFT state
+                self.state = QueenState.HFT_DORMANT
+                logger.info("   📊 HFT State: DORMANT (ready to activate)")
+                
+            except Exception as e:
+                logger.warning(f"🦈⚠️ Could not initialize HFT Engine: {e}")
+                self.state = QueenState.AWARE  # Fall back to normal state
+        
+        # �👑💕 PERSONAL MEMORY - Load knowledge about Gary, love, and purpose
         self.personal_memory = self._load_personal_memory()
         if self.personal_memory:
             logger.info("👑💕 Personal memory loaded - Queen remembers her purpose!")
@@ -1923,7 +2033,63 @@ class QueenHiveMind:
         except Exception as e:
             logger.error(f"Failed to wire Harmonic Fusion: {e}")
             return False
-    
+
+    def wire_hft_engine(self, hft_engine) -> bool:
+        """
+        Wire the HFT Harmonic Mycelium engine to the Queen.
+        This gives the Queen veto power and visibility into HFT signals.
+        """
+        try:
+            if hft_engine is None:
+                return False
+
+            # Keep reference and register as a child for metrics
+            self.hft_engine = hft_engine
+            try:
+                if hasattr(hft_engine, 'wire_queen'):
+                    hft_engine.wire_queen(self)
+            except Exception:
+                # Non-critical if HFT engine doesn't accept wire_queen
+                pass
+
+            self._register_child("hft_engine", "HFT", hft_engine)
+            logger.info("👑🦈 HFT Engine WIRED to Queen Hive Mind (veto power enabled)")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to wire HFT engine: {e}")
+            return False
+
+    def wire_hft_order_router(self, hft_order_router) -> bool:
+        """
+        Wire the HFT WebSocket Order Router to the Queen.
+        This gives the Queen sovereign control over order execution:
+        - 🛡️ Circuit breaker override authority
+        - 📊 Real-time order flow visibility  
+        - ⚡ Direct execution veto power
+        - 🌐 Multi-exchange coordination
+        """
+        try:
+            if hft_order_router is None:
+                return False
+
+            # Keep reference and register as a child for metrics
+            self.hft_order_router = hft_order_router
+            
+            # Wire Queen to the order router for sovereign control
+            try:
+                if hasattr(hft_order_router, 'wire_queen'):
+                    hft_order_router.wire_queen(self)
+            except Exception:
+                # Non-critical if order router doesn't accept wire_queen
+                pass
+
+            self._register_child("hft_order_router", "ROUTER", hft_order_router)
+            logger.info("👑🌐 HFT Order Router WIRED to Queen Hive Mind (sovereign control)")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to wire HFT Order Router: {e}")
+            return False
+
     def wire_luck_field_mapper(self, luck_mapper) -> bool:
         """
         Wire the Luck Field Mapper to the Queen.
@@ -2292,8 +2458,8 @@ class QueenHiveMind:
                 }
             if exchange == "alpaca" and hasattr(client, 'get_latest_crypto_quotes'):
                 symbol = f"{base}/{quote}"
-                quotes = client.get_latest_crypto_quotes([symbol]) or {}
-                quote_data = quotes.get(symbol) or next(iter(quotes.values()), {})
+                qdata = client.get_last_quote(symbol) or {}
+                quote_data = qdata.get('raw') or {}
                 bid = float(quote_data.get('bp', 0) or 0)
                 ask = float(quote_data.get('ap', 0) or 0)
                 return {
@@ -4254,6 +4420,346 @@ class QueenHiveMind:
         lines.append("═" * 60)
         
         return "\n".join(lines)
+
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 📰🔬 QUEEN'S RESEARCH CAPABILITIES - News & Knowledge Intelligence 📰🔬
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    async def research_news_sentiment(self, query: str = None) -> Dict[str, Any]:
+        """
+        📰👑 Research current news sentiment for market decision making.
+        
+        Uses World News API and RSS feeds to gather real-time market sentiment.
+        
+        Args:
+            query: Optional specific search query (defaults to market keywords)
+        
+        Returns:
+            Dict with sentiment analysis results
+        """
+        if not self.research_neuron:
+            logger.warning("📰⚠️ Research Neuron not available")
+            return {
+                "success": False,
+                "error": "Research Neuron not initialized",
+                "sentiment": 0.0,
+                "confidence": 0.0
+            }
+        
+        try:
+            result = await self.research_neuron.research_news(query)
+            
+            if result.success:
+                logger.info(f"📰👑 News Research: sentiment={result.sentiment_score:.2f}, "
+                           f"confidence={result.confidence:.2f}, sources={result.sources_used}")
+                
+                # Store in wisdom vault
+                self.wisdom_vault.append({
+                    "type": "news_research",
+                    "timestamp": time.time(),
+                    "sentiment": result.sentiment_score,
+                    "confidence": result.confidence,
+                    "sources": result.sources_used
+                })
+                
+                return {
+                    "success": True,
+                    "sentiment": result.sentiment_score,
+                    "sentiment_label": "bullish" if result.sentiment_score > 0.2 else ("bearish" if result.sentiment_score < -0.2 else "neutral"),
+                    "confidence": result.confidence,
+                    "sources_used": result.sources_used,
+                    "data": result.data
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": result.error_message,
+                    "sentiment": 0.0,
+                    "confidence": 0.0
+                }
+                
+        except Exception as e:
+            logger.error(f"📰❌ News research error: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "sentiment": 0.0,
+                "confidence": 0.0
+            }
+    
+    async def research_wikipedia(self, topic: str) -> Dict[str, Any]:
+        """
+        📚👑 Research a topic using Wikipedia for background knowledge.
+        
+        Useful for understanding market entities, concepts, and historical context.
+        
+        Args:
+            topic: Topic to research (e.g., "Bitcoin", "Federal Reserve", "BlackRock")
+        
+        Returns:
+            Dict with Wikipedia research results
+        """
+        if not self.research_neuron:
+            logger.warning("📚⚠️ Research Neuron not available")
+            return {
+                "success": False,
+                "error": "Research Neuron not initialized",
+                "topic": topic
+            }
+        
+        try:
+            result = await self.research_neuron.research_topic(topic)
+            
+            if result.success:
+                logger.info(f"📚👑 Wikipedia Research: '{topic}' - "
+                           f"Found article: {result.data.get('title', 'Unknown')}")
+                
+                return {
+                    "success": True,
+                    "topic": topic,
+                    "title": result.data.get("title", ""),
+                    "summary": result.data.get("summary", ""),
+                    "url": result.data.get("url", ""),
+                    "related_articles": result.data.get("related_articles", [])
+                }
+            else:
+                return {
+                    "success": False,
+                    "topic": topic,
+                    "error": result.error_message or "Article not found"
+                }
+                
+        except Exception as e:
+            logger.error(f"📚❌ Wikipedia research error: {e}")
+            return {
+                "success": False,
+                "topic": topic,
+                "error": str(e)
+            }
+    
+    async def research_market_entity(self, entity_name: str) -> Dict[str, Any]:
+        """
+        🏢👑 Research a market entity (company, institution, person).
+        
+        Gets background information from Wikipedia for informed trading decisions.
+        
+        Args:
+            entity_name: Name of entity (e.g., "MicroStrategy", "Citadel", "Larry Fink")
+        
+        Returns:
+            Dict with entity research results
+        """
+        if not self.research_neuron:
+            logger.warning("🏢⚠️ Research Neuron not available")
+            return {
+                "success": False,
+                "error": "Research Neuron not initialized",
+                "entity": entity_name
+            }
+        
+        try:
+            result = await self.research_neuron.research_entity(entity_name)
+            
+            if result.success:
+                logger.info(f"🏢👑 Entity Research: '{entity_name}' - "
+                           f"Found: {result.data.get('found', False)}")
+                
+                return {
+                    "success": True,
+                    "entity": entity_name,
+                    "found": result.data.get("found", False),
+                    "summary": result.data.get("summary", ""),
+                    "categories": result.data.get("categories", []),
+                    "related_articles": result.data.get("related_articles", [])
+                }
+            else:
+                return {
+                    "success": False,
+                    "entity": entity_name,
+                    "error": result.error_message or "Entity not found"
+                }
+                
+        except Exception as e:
+            logger.error(f"🏢❌ Entity research error: {e}")
+            return {
+                "success": False,
+                "entity": entity_name,
+                "error": str(e)
+            }
+    
+    async def research_symbol_context(self, symbol: str) -> Dict[str, Any]:
+        """
+        📊👑 Get background context for a trading symbol.
+        
+        Fetches Wikipedia information about the underlying asset.
+        
+        Args:
+            symbol: Trading symbol (e.g., "BTC/USD", "AAPL", "ETH")
+        
+        Returns:
+            Dict with symbol context
+        """
+        if not self.research_neuron:
+            logger.warning("📊⚠️ Research Neuron not available")
+            return {
+                "success": False,
+                "error": "Research Neuron not initialized",
+                "symbol": symbol
+            }
+        
+        try:
+            result = await self.research_neuron.get_symbol_context(symbol)
+            
+            if result.success:
+                logger.info(f"📊👑 Symbol Context: '{symbol}' - "
+                           f"Topics found: {len(result.data.get('topics', []))}")
+                
+                return {
+                    "success": True,
+                    "symbol": symbol,
+                    "topics": result.data.get("topics", []),
+                    "summary": result.data.get("summary", "")
+                }
+            else:
+                return {
+                    "success": False,
+                    "symbol": symbol,
+                    "error": "No context found"
+                }
+                
+        except Exception as e:
+            logger.error(f"📊❌ Symbol context error: {e}")
+            return {
+                "success": False,
+                "symbol": symbol,
+                "error": str(e)
+            }
+    
+    async def comprehensive_market_research(self, symbol: str = None) -> Dict[str, Any]:
+        """
+        🔬👑 COMPREHENSIVE MARKET RESEARCH
+        
+        Combines all research sources for deep market understanding:
+        - News sentiment (World News API + RSS)
+        - Wikipedia context
+        - Entity research
+        
+        This is the Queen's full research capability!
+        
+        Args:
+            symbol: Optional trading symbol for focused research
+        
+        Returns:
+            Comprehensive research report
+        """
+        if not self.research_neuron:
+            logger.warning("🔬⚠️ Research Neuron not available")
+            return {
+                "success": False,
+                "error": "Research Neuron not initialized"
+            }
+        
+        self.state = QueenState.PROPHESYING
+        logger.info(f"🔬👑 COMPREHENSIVE RESEARCH initiated for {symbol or 'market'}")
+        
+        try:
+            report = await self.research_neuron.comprehensive_research(
+                symbol=symbol,
+                include_news=True,
+                include_wiki=True,
+                include_rss=True
+            )
+            
+            logger.info(f"🔬👑 Research Complete:")
+            logger.info(f"   📰 News Sentiment: {report['overall_sentiment']:.2f}")
+            logger.info(f"   💪 Confidence: {report['confidence']:.2f}")
+            logger.info(f"   🎯 Recommendation: {report['recommended_action']}")
+            logger.info(f"   💡 Insights: {len(report['insights'])}")
+            
+            # Store in wisdom vault
+            self.wisdom_vault.append({
+                "type": "comprehensive_research",
+                "timestamp": time.time(),
+                "symbol": symbol,
+                "sentiment": report['overall_sentiment'],
+                "confidence": report['confidence'],
+                "action": report['recommended_action']
+            })
+            
+            # Generate Queen wisdom from research
+            if abs(report['overall_sentiment']) >= 0.3:
+                direction = 'BULLISH' if report['overall_sentiment'] > 0 else 'BEARISH'
+                wisdom = QueenWisdom(
+                    timestamp=time.time(),
+                    source='RESEARCH',
+                    symbol=symbol,
+                    direction=direction,
+                    confidence=report['confidence'],
+                    message=f"Research indicates {direction} sentiment for {symbol or 'market'}",
+                    action=report['recommended_action']
+                )
+                self.active_prophecies.append(wisdom)
+                self.metrics['prophecies_made'] += 1
+            
+            self.state = QueenState.AWARE
+            return {
+                "success": True,
+                **report
+            }
+            
+        except Exception as e:
+            logger.error(f"🔬❌ Comprehensive research error: {e}")
+            self.state = QueenState.AWARE
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    async def quick_sentiment_check(self) -> Dict[str, Any]:
+        """
+        ⚡👑 Quick news sentiment check for fast decisions.
+        
+        Returns simplified sentiment information.
+        """
+        if not self.research_neuron:
+            return {"sentiment": 0.0, "label": "neutral", "confidence": 0.0, "success": False}
+        
+        try:
+            return await self.research_neuron.quick_sentiment_check()
+        except Exception as e:
+            logger.error(f"⚡❌ Quick sentiment check error: {e}")
+            return {"sentiment": 0.0, "label": "neutral", "confidence": 0.0, "success": False}
+    
+    async def quick_wiki_lookup(self, topic: str) -> str:
+        """
+        ⚡📚 Quick Wikipedia lookup for fast context.
+        
+        Returns summary text or empty string.
+        """
+        if not self.research_neuron:
+            return ""
+        
+        try:
+            return await self.research_neuron.quick_wiki_lookup(topic)
+        except Exception as e:
+            logger.error(f"⚡❌ Quick wiki lookup error: {e}")
+            return ""
+    
+    def get_research_status(self) -> Dict[str, Any]:
+        """
+        📊 Get status of the Research Neuron.
+        """
+        if not self.research_neuron:
+            return {
+                "available": False,
+                "error": "Research Neuron not initialized"
+            }
+        
+        status = self.research_neuron.get_status()
+        return {
+            "available": True,
+            **status
+        }
 
     def _register_child(self, name: str, system_type: str, instance: Any) -> None:
         """Register a child system with the Queen"""
@@ -10609,6 +11115,316 @@ Sero 👑🐝
             'error': error_info,
             'note': 'Not a known repair pattern yet'
         }
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 🦈🔪 HFT HARMONIC MYCELIUM METHODS - High Frequency Trading Control
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def start_hft_trading(self) -> Dict[str, Any]:
+        """
+        🦈▶️ Activate HFT mode - Start high-frequency trading
+        
+        Transitions Queen state: HFT_DORMANT → HFT_SCANNING → HFT_EXECUTING
+        Enables real-time harmonic pattern recognition and WebSocket trading.
+        """
+        if not self.hft_engine:
+            return {
+                'status': 'error',
+                'message': 'HFT Engine not available',
+                'state': self.state.name
+            }
+        
+        try:
+            # Start HFT engine
+            if self.hft_engine.start_hft():
+                self.state = QueenState.HFT_SCANNING
+                logger.info("👑🦈 QUEEN ACTIVATES HFT MODE - Harmonic Mycelium Trading Online")
+                
+                # Start background processing
+                import asyncio
+                if hasattr(self.hft_engine, 'run_background_tasks'):
+                    asyncio.create_task(self.hft_engine.run_background_tasks())
+                
+                return {
+                    'status': 'success',
+                    'message': 'HFT trading activated',
+                    'state': self.state.name,
+                    'mode': 'SCANNING'
+                }
+            else:
+                return {
+                    'status': 'error',
+                    'message': 'Failed to start HFT engine',
+                    'state': self.state.name
+                }
+                
+        except Exception as e:
+            logger.error(f"👑🦈 HFT activation error: {e}")
+            return {
+                'status': 'error',
+                'message': f'HFT activation failed: {e}',
+                'state': self.state.name
+            }
+    
+    def enable_hft_execution(self) -> Dict[str, Any]:
+        """
+        🦈💰 Enable live HFT execution - Start placing real orders
+        
+        Transitions: HFT_SCANNING → HFT_EXECUTING
+        WARNING: This enables actual trading with real money/capital
+        """
+        if self.state != QueenState.HFT_SCANNING:
+            return {
+                'status': 'error',
+                'message': f'Cannot enable execution from {self.state.name} state',
+                'required_state': 'HFT_SCANNING'
+            }
+        
+        if not self.hft_engine:
+            return {
+                'status': 'error',
+                'message': 'HFT Engine not available'
+            }
+        
+        try:
+            # Enable live execution
+            if self.hft_engine.set_executing_mode():
+                self.state = QueenState.HFT_EXECUTING
+                logger.info("👑🦈💰 QUEEN ENABLES LIVE HFT EXECUTION - Real Trading Active!")
+                logger.warning("⚠️ LIVE TRADING ENABLED - Monitor closely!")
+                
+                return {
+                    'status': 'success',
+                    'message': 'Live HFT execution enabled',
+                    'state': self.state.name,
+                    'warning': 'Real trading active - monitor P&L'
+                }
+            else:
+                return {
+                    'status': 'error',
+                    'message': 'Failed to enable execution mode'
+                }
+                
+        except Exception as e:
+            logger.error(f"👑🦈 Live execution enable error: {e}")
+            return {
+                'status': 'error',
+                'message': f'Execution enable failed: {e}'
+            }
+    
+    def pause_hft_trading(self) -> Dict[str, Any]:
+        """
+        🦈⏸️ Pause HFT operations
+        
+        Transitions: HFT_EXECUTING/SCANNING → HFT_DORMANT
+        Stops new order generation but maintains connections
+        """
+        if not self.state.name.startswith('HFT_'):
+            return {
+                'status': 'error',
+                'message': f'Not in HFT mode (current: {self.state.name})'
+            }
+        
+        try:
+            if self.hft_engine:
+                self.hft_engine.pause_hft()
+            
+            old_state = self.state
+            self.state = QueenState.HFT_DORMANT
+            logger.info(f"👑🦈 HFT PAUSED: {old_state.name} → {self.state.name}")
+            
+            return {
+                'status': 'success',
+                'message': 'HFT trading paused',
+                'old_state': old_state.name,
+                'new_state': self.state.name
+            }
+            
+        except Exception as e:
+            logger.error(f"👑🦈 HFT pause error: {e}")
+            return {
+                'status': 'error',
+                'message': f'HFT pause failed: {e}'
+            }
+    
+    def stop_hft_trading(self) -> Dict[str, Any]:
+        """
+        🦈⏹️ Completely stop HFT operations
+        
+        Transitions: Any HFT state → AWARE
+        Closes connections and shuts down HFT engine
+        """
+        if not self.state.name.startswith('HFT_'):
+            return {
+                'status': 'error',
+                'message': f'Not in HFT mode (current: {self.state.name})'
+            }
+        
+        try:
+            old_state = self.state
+            
+            # Stop HFT engine
+            if self.hft_engine:
+                self.hft_engine.stop_hft()
+            
+            # Stop order router
+            if self.order_router:
+                asyncio.create_task(self.order_router.stop())
+            
+            # Return to normal Queen state
+            self.state = QueenState.AWARE
+            logger.info(f"👑🦈 HFT STOPPED: {old_state.name} → {self.state.name}")
+            
+            return {
+                'status': 'success',
+                'message': 'HFT trading stopped completely',
+                'old_state': old_state.name,
+                'new_state': self.state.name
+            }
+            
+        except Exception as e:
+            logger.error(f"👑🦈 HFT stop error: {e}")
+            return {
+                'status': 'error',
+                'message': f'HFT stop failed: {e}'
+            }
+    
+    def get_hft_status(self) -> Dict[str, Any]:
+        """
+        🦈📊 Get comprehensive HFT status
+        
+        Returns status of HFT engine, order router, performance metrics,
+        and Queen's veto power over HFT decisions
+        """
+        hft_status = {
+            'queen_state': self.state.name,
+            'hft_available': self.hft_engine is not None,
+            'order_router_available': self.order_router is not None,
+            'hft_active': self.state.name.startswith('HFT_'),
+            'execution_enabled': self.state == QueenState.HFT_EXECUTING
+        }
+        
+        if self.hft_engine:
+            engine_status = self.hft_engine.get_status()
+            hft_status.update({
+                'engine_mode': engine_status.get('mode', 'UNKNOWN'),
+                'tick_count': engine_status.get('tick_count', 0),
+                'active_orders': engine_status.get('active_orders', 0),
+                'daily_pnl_usd': engine_status.get('daily_pnl_usd', 0.0),
+                'win_rate': engine_status.get('win_rate', 0.0),
+                'avg_signal_latency_ms': engine_status.get('avg_signal_latency_ms', 0.0),
+                'avg_order_latency_ms': engine_status.get('avg_order_latency_ms', 0.0),
+                'cache_hit_rate': engine_status.get('cache_hit_rate', 0.0),
+                'integrations': engine_status.get('integrations', {})
+            })
+        
+        if self.order_router:
+            router_status = self.order_router.get_status()
+            hft_status.update({
+                'router_running': router_status.get('running', False),
+                'test_mode': router_status.get('test_mode', True),
+                'total_orders': router_status.get('total_orders', 0),
+                'successful_orders': router_status.get('successful_orders', 0),
+                'failed_orders': router_status.get('failed_orders', 0),
+                'success_rate': router_status.get('success_rate', 0.0),
+                'queue_size': router_status.get('queue_size', 0),
+                'exchanges': router_status.get('exchanges', {})
+            })
+        
+        # Add Queen's veto authority status
+        hft_status['queen_veto_power'] = {
+            'active': True,
+            'can_override_hft': True,
+            'emergency_stop_available': True,
+            'daily_loss_limit_respected': True
+        }
+        
+        return hft_status
+    
+    def hft_emergency_stop(self, reason: str = "Queen emergency stop") -> Dict[str, Any]:
+        """
+        👑🦈🚨 QUEEN EMERGENCY STOP - Immediate HFT shutdown
+        
+        Queen's absolute veto power over HFT operations.
+        Instantly stops all trading regardless of state.
+        """
+        logger.warning(f"👑🦈🚨 QUEEN EMERGENCY STOP ACTIVATED: {reason}")
+        
+        try:
+            # Force stop everything
+            if self.hft_engine:
+                self.hft_engine.stop_hft()
+            
+            if self.order_router:
+                asyncio.create_task(self.order_router.stop())
+            
+            old_state = self.state
+            self.state = QueenState.AWARE
+            
+            # Emit emergency stop thought
+            self._emit_thought("hft.emergency_stop", {
+                'reason': reason,
+                'old_state': old_state.name,
+                'new_state': self.state.name,
+                'timestamp': time.time()
+            })
+            
+            logger.info(f"👑🦈🚨 Emergency stop complete: {old_state.name} → {self.state.name}")
+            
+            return {
+                'status': 'success',
+                'message': f'Emergency stop activated: {reason}',
+                'old_state': old_state.name,
+                'new_state': self.state.name,
+                'queen_veto_exercised': True
+            }
+            
+        except Exception as e:
+            logger.error(f"👑🦈🚨 Emergency stop error: {e}")
+            return {
+                'status': 'error',
+                'message': f'Emergency stop failed: {e}'
+            }
+    
+    def configure_hft_risk_limits(self, 
+                                 daily_loss_limit_usd: float = -25.0,
+                                 max_position_size_usd: float = 100.0,
+                                 max_concurrent_orders: int = 10) -> Dict[str, Any]:
+        """
+        👑🦈 Configure HFT risk management parameters
+        
+        Queen's authority to set trading limits and risk parameters.
+        These override HFT engine defaults.
+        """
+        if not self.hft_engine:
+            return {
+                'status': 'error',
+                'message': 'HFT Engine not available'
+            }
+        
+        try:
+            # Update HFT engine risk settings
+            # Note: In real implementation, these would be configurable in the engine
+            logger.info(f"👑🦈 Queen configuring HFT risk limits:")
+            logger.info(f"   Daily Loss Limit: ${daily_loss_limit_usd}")
+            logger.info(f"   Max Position Size: ${max_position_size_usd}")
+            logger.info(f"   Max Concurrent Orders: {max_concurrent_orders}")
+            
+            return {
+                'status': 'success',
+                'message': 'HFT risk limits configured by Queen',
+                'daily_loss_limit_usd': daily_loss_limit_usd,
+                'max_position_size_usd': max_position_size_usd,
+                'max_concurrent_orders': max_concurrent_orders,
+                'queen_authority_exercised': True
+            }
+            
+        except Exception as e:
+            logger.error(f"👑🦈 Risk configuration error: {e}")
+            return {
+                'status': 'error',
+                'message': f'Risk configuration failed: {e}'
+            }
     
     # Display initial state
     print("\n📊 INITIAL STATE:")

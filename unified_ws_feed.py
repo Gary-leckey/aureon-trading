@@ -49,6 +49,18 @@ if sys.platform == 'win32':
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════
+# HFT HARMONIC MYCELIUM INTEGRATION
+# ═══════════════════════════════════════════════════════════════
+
+# Lazy load HFT engine for graceful degradation
+try:
+    from aureon_hft_harmonic_mycelium import get_hft_engine
+    HFT_ENGINE_AVAILABLE = True
+except ImportError:
+    get_hft_engine = None
+    HFT_ENGINE_AVAILABLE = False
+
+# ═══════════════════════════════════════════════════════════════
 # WEBSOCKET ENDPOINTS
 # ═══════════════════════════════════════════════════════════════
 
@@ -216,6 +228,15 @@ class UnifiedWSFeed:
         except ImportError:
             pass
         
+        # 🦈🔪 HFT Harmonic Mycelium Integration
+        self.hft_engine = None
+        if HFT_ENGINE_AVAILABLE and get_hft_engine is not None:
+            try:
+                self.hft_engine = get_hft_engine()
+                logger.info("🦈🔪 HFT Harmonic Mycelium Engine WIRED to WebSocket Feed")
+            except Exception as e:
+                logger.warning(f"🦈🔪 HFT Engine initialization failed: {e}")
+        
         logger.info("🌐⚡ UnifiedWSFeed initialized")
         for ex, enabled in self.enable.items():
             logger.info(f"   {ex}: {'✅' if enabled else '❌'}")
@@ -225,8 +246,15 @@ class UnifiedWSFeed:
         self.callbacks.append(callback)
     
     def _emit(self, tick: NormalizedTick):
-        """Emit tick to all callbacks and ThoughtBus."""
+        """Emit tick to all callbacks, ThoughtBus, and HFT engine."""
         self.ticks[tick.symbol] = tick
+        
+        # 🦈🔪 Inject tick into HFT engine for sub-10ms processing
+        if self.hft_engine and hasattr(self.hft_engine, 'inject_tick'):
+            try:
+                self.hft_engine.inject_tick(tick)
+            except Exception as e:
+                logger.debug(f"🦈🔪 HFT tick injection error: {e}")
         
         for cb in self.callbacks:
             try:

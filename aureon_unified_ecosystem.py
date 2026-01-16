@@ -12584,6 +12584,32 @@ class MyceliumNetwork:
    └─ {queen_emoji} Queen Signal: {state['queen_signal']:+.3f} [{signal_bar}] → {direction}
 """)
 
+    def wire_hft_engine(self, hft_engine) -> bool:
+        """Wire HFT engine to Mycelium network for fast neural path.
+        
+        This allows the Mycelium network to provide fast pattern recognition
+        signals directly to the HFT engine for sub-10ms decision making.
+        
+        Returns:
+            True if wiring succeeded, False otherwise.
+        """
+        if hft_engine is None:
+            logger.warning("🍄 Cannot wire HFT engine: None provided")
+            return False
+        
+        try:
+            self._hft_engine = hft_engine
+            
+            # Wire this network to the HFT engine's fast path
+            if hasattr(hft_engine, 'wire_mycelium'):
+                hft_engine.wire_mycelium(self)
+            
+            logger.info("🍄⚡ Mycelium WIRED to HFT Engine (fast neural path)")
+            return True
+        except Exception as e:
+            logger.warning(f"🍄 Failed to wire HFT engine: {e}")
+            return False
+
 
 # ═══════════════════════════════════════════════════════════════
 # 💰 POSITION & PERFORMANCE TRACKING

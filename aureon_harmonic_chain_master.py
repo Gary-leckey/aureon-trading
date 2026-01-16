@@ -11,6 +11,8 @@
 ║     │                                   HARMONIC CHAIN ARCHITECTURE                                       │  ║
 ║     └─────────────────────────────────────────────────────────────────────────────────────────────────────┘  ║
 ║                                                                                                              ║
+║     LAYER 8 (Speed):     ⚡ HFT Harmonic Mycelium (Sub-10ms Execution) - High Frequency Trading              ║
+║                              ↕ Mycelium Neural + Harmonic Encoding + WebSocket Execution                      ║
 ║     LAYER 7 (Crown):     👑 Queen Harmonic Voice (963 Hz) - Autonomous Control                              ║
 ║                              ↕ Commands DOWN / Responses UP                                                  ║
 ║     LAYER 6 (Vision):    🎵 Harmonic Alphabet (7-Mode Auris Encoding)                                       ║
@@ -82,6 +84,17 @@ SOLFEGGIO = [174, 285, 396, 417, 528, 639, 741, 852, 963]
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
 # 🔌 DYNAMIC IMPORTS - Graceful Degradation for All Harmonic Systems
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
+
+# LAYER 8: HFT Harmonic Mycelium (Sub-10ms Execution)
+try:
+    from aureon_hft_harmonic_mycelium import get_hft_engine, HFTHarmonicEngine
+    HFT_ENGINE_AVAILABLE = True
+    print("⚡🧬 Layer 8: HFT Harmonic Mycelium LOADED!")
+except ImportError as e:
+    HFT_ENGINE_AVAILABLE = False
+    get_hft_engine = None
+    HFTHarmonicEngine = None
+    print(f"⚠️ Layer 8 HFT Engine not available: {e}")
 
 # LAYER 7: Queen Harmonic Voice
 try:
@@ -223,6 +236,7 @@ class HarmonicLayer(Enum):
     SIGNAL_CHAIN = 5       # 5-node pipeline
     ALPHABET = 6           # 7-mode Auris encoding
     QUEEN_VOICE = 7        # Autonomous control
+    HFT_LAYER = 8          # High-frequency trading execution
 
 
 @dataclass
@@ -339,6 +353,7 @@ class HarmonicChainMaster:
         self.state.initialized_at = time.time()
         
         # Layer instances (populated during initialization)
+        self.hft_engine: Optional[Any] = None  # Layer 8: HFT Harmonic Mycelium
         self.queen_voice: Optional[Any] = None
         self.alphabet = None
         self.signal_chain: Optional[Any] = None
@@ -373,6 +388,7 @@ class HarmonicChainMaster:
             (HarmonicLayer.SIGNAL_CHAIN, "Harmonic Signal Chain", SIGNAL_CHAIN_AVAILABLE, 639.0),
             (HarmonicLayer.ALPHABET, "Harmonic Alphabet (7-Mode)", HARMONIC_ALPHABET_AVAILABLE, 741.0),
             (HarmonicLayer.QUEEN_VOICE, "Queen Harmonic Voice", QUEEN_VOICE_AVAILABLE, 963.0),
+            (HarmonicLayer.HFT_LAYER, "HFT Harmonic Mycelium", HFT_ENGINE_AVAILABLE, 1080.0),  # Sub-10ms speed
         ]
         
         for layer, name, available, freq in layer_configs:
@@ -517,6 +533,19 @@ class HarmonicChainMaster:
                 print(f"   🌊 Layer 0: Wave Simulation - ❌ Error: {e}")
         else:
             print("   🌊 Layer 0: Wave Simulation - ⚠️ Not Available")
+        
+        # Layer 8: HFT Harmonic Mycelium (Speed Layer)
+        if HFT_ENGINE_AVAILABLE:
+            try:
+                self.hft_engine = get_hft_engine()
+                self.state.layers[HarmonicLayer.HFT_LAYER].active = True
+                self.state.layers[HarmonicLayer.HFT_LAYER].instance = self.hft_engine
+                active_count += 1
+                print("   ⚡ Layer 8: HFT Harmonic Mycelium - ✅ ACTIVE (Sub-10ms)")
+            except Exception as e:
+                print(f"   ⚡ Layer 8: HFT Harmonic Mycelium - ❌ Error: {e}")
+        else:
+            print("   ⚡ Layer 8: HFT Harmonic Mycelium - ⚠️ Not Available")
         
         # ThoughtBus
         if THOUGHT_BUS_AVAILABLE:

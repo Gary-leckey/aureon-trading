@@ -300,6 +300,10 @@ class OrcaKillerWhaleIntelligence:
         self.execution_orders_sent = 0
         self.execution_orders_completed = 0
         
+        # ⚡ HFT ENGINE REFERENCE - High-frequency execution
+        self.hft_engine = None  # Will be wired externally
+        self.hft_connected = False
+        
         # Intelligence feeds (connected externally)
         self.whale_signals: deque = deque(maxlen=100)
         self.firm_activity: Dict[str, Dict] = {}
@@ -394,6 +398,21 @@ class OrcaKillerWhaleIntelligence:
         self.micro_profit = micro_profit
         self.micro_profit_connected = True
         logger.info(f"🦈💰 ORCA wired to MICRO PROFIT - Execution channel ESTABLISHED")
+        return True
+    
+    def wire_hft_engine(self, hft_engine) -> bool:
+        """
+        Wire the HFT Engine for high-frequency execution.
+        Orca uses HFT for rapid whale wake riding.
+        """
+        if hft_engine is None:
+            logger.warning("🦈 Cannot wire NULL HFT Engine!")
+            return False
+        
+        self.hft_engine = hft_engine
+        self.hft_connected = True
+        logger.info(f"🦈⚡ ORCA wired to HFT ENGINE - High-frequency execution ENABLED")
+        logger.info(f"   📊 Sub-10ms latency for whale wake riding")
         return True
     
     def consult_queen(self, opportunity: OrcaOpportunity) -> Tuple[bool, str, float]:
