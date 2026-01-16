@@ -18572,4 +18572,22 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        # Catch any final exceptions silently to prevent stderr issues
+        if "closed file" not in str(e).lower():
+            try:
+                print(f"\n❌ Error: {e}", file=sys.stderr)
+            except Exception:
+                pass
+    finally:
+        # Force cleanup on Windows to prevent "lost sys.stderr"
+        if sys.platform == 'win32':
+            try:
+                if hasattr(sys.stdout, 'flush'):
+                    sys.stdout.flush()
+                if hasattr(sys.stderr, 'flush'):
+                    sys.stderr.flush()
+            except Exception:
+                pass
