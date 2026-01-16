@@ -5560,6 +5560,22 @@ async def start_background_tasks(app):
         app['simulate_task'] = asyncio.create_task(simulate_data_task())
     app['balances_task'] = asyncio.create_task(update_balances_task())
     app['thought_bus_task'] = asyncio.create_task(thought_bus_listener_task())
+    
+    # 🚀 AUTO-START TRADING IMMEDIATELY ON BOOT!
+    global TRADING_PROCESS, TRADING_LIVE_ENABLED
+    safe_print("🚀💰 AUTO-STARTING TRADING ENGINE...")
+    try:
+        cmd = [sys.executable, "micro_profit_labyrinth.py", "--live", "--yes"]
+        TRADING_PROCESS = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=str(Path(__file__).resolve().parent),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+        TRADING_LIVE_ENABLED = True
+        safe_print("✅💰 TRADING ENGINE STARTED - MAKING MONEY NOW!")
+    except Exception as e:
+        safe_print(f"⚠️ Failed to auto-start trading: {e}")
 
 async def cleanup_background_tasks(app):
     """Cleanup background tasks"""
