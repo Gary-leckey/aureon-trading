@@ -16528,6 +16528,17 @@ if __name__ == "__main__":
                 logger.debug(f"Position registry update error: {e}")
         # print(step_display)  # FIXME: step_display not defined
         
+        # 🔧 FIX: Build profit_result from barter_matrix path history
+        path_key = (opp.from_asset.upper(), opp.to_asset.upper())
+        path_history = self.barter_matrix.barter_history.get(path_key, {})
+        profit_result = {
+            'path_trades': path_history.get('trades', 0),
+            'path_total_profit': path_history.get('profit', 0.0),
+            'actual_slippage_pct': path_history.get('slippage', 0.0) * 100,
+            'is_win': actual_pnl >= 0,
+            'path_win_rate': path_history.get('win_rate', 0.0) if path_history.get('trades', 0) > 0 else 0.0,
+        }
+        
         # Show path performance (how this specific conversion path is doing)
         print(f"   📊 PATH {opp.from_asset}→{opp.to_asset}: {profit_result['path_trades']} trades, ${profit_result['path_total_profit']:+.4f} total")
         print(f"   🔄 Slippage: {profit_result['actual_slippage_pct']:.2f}%")
