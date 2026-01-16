@@ -66,6 +66,62 @@ if os.getenv("AUREON_DEBUG_STARTUP") == "1":
         raise RuntimeError("sys.exit blocked during aureon_command_center import")
     sys.exit = _guarded_sys_exit
 
+# Extra startup debugging: detect import-time hangs/crashes
+_AUREON_DEBUG_IMPORT_ACTIVE = False
+_AUREON_LAST_IMPORT = None
+_AUREON_ORIGINAL_IMPORT = None
+_AUREON_IMPORT_HEARTBEAT_THREAD = None
+
+if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+    try:
+        import builtins
+        import threading
+        import time as _time
+        import faulthandler
+
+        _AUREON_DEBUG_IMPORT_ACTIVE = True
+        _AUREON_ORIGINAL_IMPORT = builtins.__import__
+
+        def _aureon_debug_import(name, globals=None, locals=None, fromlist=(), level=0):
+            global _AUREON_LAST_IMPORT
+            _AUREON_LAST_IMPORT = name
+            start = _time.perf_counter()
+            try:
+                return _AUREON_ORIGINAL_IMPORT(name, globals, locals, fromlist, level)
+            finally:
+                elapsed = _time.perf_counter() - start
+                if elapsed >= 2.0:
+                    try:
+                        safe_print(f"[DEBUG] Slow import: {name} ({elapsed:.2f}s)")
+                    except Exception:
+                        pass
+
+        builtins.__import__ = _aureon_debug_import
+
+        def _aureon_import_heartbeat():
+            while _AUREON_DEBUG_IMPORT_ACTIVE:
+                try:
+                    safe_print(f"[DEBUG] Import heartbeat; last import: {_AUREON_LAST_IMPORT}")
+                except Exception:
+                    pass
+                _time.sleep(5.0)
+
+        _AUREON_IMPORT_HEARTBEAT_THREAD = threading.Thread(
+            target=_aureon_import_heartbeat,
+            name="AureonImportHeartbeat",
+            daemon=True,
+        )
+        _AUREON_IMPORT_HEARTBEAT_THREAD.start()
+
+        # Dump stack traces periodically if we hang during import/startup
+        try:
+            faulthandler.enable(file=sys.stdout, all_threads=True)
+            faulthandler.dump_traceback_later(30, repeat=True, file=sys.stdout)
+        except Exception:
+            pass
+    except Exception:
+        pass
+
 # Windows UTF-8 fix - AGGRESSIVE VERSION
 # Skip stderr wrapping to avoid "I/O operation on closed file" on exit
 if sys.platform == 'win32':
@@ -5944,6 +6000,21 @@ def main():
         traceback.print_exc()
 
 if __name__ == '__main__':
+    # Stop import-debug tracing now that module import completed
+    if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+        try:
+            _AUREON_DEBUG_IMPORT_ACTIVE = False
+            import builtins
+            if _AUREON_ORIGINAL_IMPORT is not None:
+                builtins.__import__ = _AUREON_ORIGINAL_IMPORT
+            try:
+                import faulthandler
+                faulthandler.cancel_dump_traceback_later()
+            except Exception:
+                pass
+        except Exception:
+            pass
+
     if os.getenv("AUREON_DEBUG_STARTUP") == "1":
         safe_print("[DEBUG] __main__ entry: calling main()")
     try:
