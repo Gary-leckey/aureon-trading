@@ -39,15 +39,20 @@ except ImportError:
     GTTS_AVAILABLE = False
 
 # Debug: Track where we are
-safe_print("🔊 [DEBUG] Starting pygame import...")
+safe_print("🔊 [DEBUG] Setting SDL_AUDIODRIVER before pygame import...")
+
+# MUST set this BEFORE importing pygame to prevent hanging on Windows
+import os
+import sys
+if sys.platform == 'win32':
+    os.environ['SDL_AUDIODRIVER'] = 'directsound'  # Or try 'winmm' or 'dummy'
+    os.environ['SDL_VIDEODRIVER'] = 'dummy'
+
+safe_print("🔊 [DEBUG] Now importing pygame...")
 
 try:
     import pygame
     safe_print("🔊 [DEBUG] pygame imported, now calling mixer.init()...")
-    
-    # Try with specific driver settings for Windows
-    import os
-    os.environ['SDL_AUDIODRIVER'] = 'dummy'  # Use dummy driver to avoid hanging
     
     pygame.mixer.init()
     safe_print("🔊 [DEBUG] mixer.init() completed!")
