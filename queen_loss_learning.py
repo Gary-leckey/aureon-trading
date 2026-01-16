@@ -1056,8 +1056,9 @@ class QueenLossLearningSystem:
         pattern_key = f"{from_asset}→{to_asset}_{exchange}"
         
         # Dynamic, cost-aware minimum expected profit guard
-        # Require expected_profit >= max(static_floor, fee_estimate*1.5, avg_slippage_usd)
-        STATIC_FLOOR = 0.04  # $0.04 base floor
+        # Require expected_profit >= max(static_floor, fee_estimate*MULTIPLIER, avg_slippage_usd)
+        STATIC_FLOOR = 0.09  # $0.09 base floor (raised per staging request)
+        FEE_MULTIPLIER = 3.0  # Be conservative: require 3x estimated fees
         fee_estimate = 0.0
         avg_slippage_usd = 0.0
 
@@ -1097,11 +1098,11 @@ class QueenLossLearningSystem:
             if pattern.get('avg_slippage'):
                 avg_slippage_usd = (pattern['avg_slippage'] / 100.0) * (from_value_usd or 0.0)
 
-        required_min_profit = max(STATIC_FLOOR, fee_estimate * 1.5, avg_slippage_usd)
-        logger.debug(f"👑 Dynamic guard: exp=${expected_profit:.4f}, req_min=${required_min_profit:.4f} (fee=${fee_estimate:.4f}, slip_usd=${avg_slippage_usd:.4f})")
+        required_min_profit = max(STATIC_FLOOR, fee_estimate * FEE_MULTIPLIER, avg_slippage_usd)
+        logger.debug(f"👑 Dynamic guard: exp=${expected_profit:.4f}, req_min=${required_min_profit:.4f} (fee=${fee_estimate:.4f}*{FEE_MULTIPLIER}, slip_usd=${avg_slippage_usd:.4f})")
 
         if expected_profit < required_min_profit:
-            return True, f"Expected profit ${expected_profit:.4f} < required ${required_min_profit:.4f} (fee=${fee_estimate:.4f}, slip=${avg_slippage_usd:.4f})"
+            return True, f"Expected profit ${expected_profit:.4f} < required ${required_min_profit:.4f} (fee=${fee_estimate:.4f}*{FEE_MULTIPLIER}, slip=${avg_slippage_usd:.4f})"
 
         # Check loss patterns - but SURVIVAL MODE is more forgiving!
         if pattern_key in self.loss_patterns:
