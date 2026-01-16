@@ -57,34 +57,47 @@ if sys.platform == 'win32':
 
 safe_print("🔊 [DEBUG] Now importing pygame...")
 
+# Import pygame but DON'T initialize it yet (lazy init)
+PYGAME_AVAILABLE = False
+_pygame_initialized = False
+
 if not PYGAME_FORCE_DISABLED:
     try:
         import pygame
-        safe_print("🔊 [DEBUG] pygame imported, now calling mixer.init()...")
-        
-        # Initialize mixer with timeout protection for Windows
+        safe_print("🔊 [DEBUG] pygame imported (mixer init will be deferred)")
+        # Mark as available but not initialized
+        PYGAME_AVAILABLE = True
+    except Exception as e:
+        PYGAME_AVAILABLE = False
+        safe_print(f"⚠️ pygame import failed: {e}")
+else:
+    try:
+        import pygame  # Import but don't initialize
+        safe_print("🔊 [DEBUG] pygame imported (audio disabled)")
+    except Exception:
+        pass
+
+def _init_pygame_mixer():
+    """Lazy initialization of pygame mixer - only called when actually needed."""
+    global _pygame_initialized, PYGAME_AVAILABLE
+    
+    if _pygame_initialized or not PYGAME_AVAILABLE:
+        return _pygame_initialized
+    
+    try:
+        safe_print("🔊 [DEBUG] Initializing pygame mixer (lazy init)...")
         if sys.platform == 'win32':
-            # On Windows, use a minimal mixer config to avoid hangs
-            try:
-                pygame.mixer.init(frequency=22050, size=-16, channels=1, buffer=512)
-                safe_print("🔊 [DEBUG] mixer.init() completed (Windows mode)!")
-                PYGAME_AVAILABLE = True
-            except Exception as init_err:
-                safe_print(f"⚠️ pygame.mixer.init failed on Windows: {init_err}")
-                PYGAME_AVAILABLE = False
+            pygame.mixer.init(frequency=22050, size=-16, channels=1, buffer=512)
+            safe_print("🔊 [DEBUG] mixer.init() completed (Windows mode)!")
         else:
             pygame.mixer.init()
             safe_print("🔊 [DEBUG] mixer.init() completed!")
-            PYGAME_AVAILABLE = True
+        _pygame_initialized = True
+        return True
     except Exception as e:
+        safe_print(f"⚠️ pygame.mixer.init failed: {e}")
         PYGAME_AVAILABLE = False
-        safe_print(f"⚠️ Audio output not available: {e} - Queen's voice will be text-only")
-else:
-    PYGAME_AVAILABLE = False
-    try:
-        import pygame  # Import but don't initialize
-    except Exception:
-        pass
+        return False
 
 TTS_AVAILABLE = GTTS_AVAILABLE and PYGAME_AVAILABLE
 
@@ -248,6 +261,10 @@ class QueenVoiceEngine:
     def _synthesize_and_play(self, text: str):
         """Convert text to speech and play it"""
         if not TTS_AVAILABLE:
+            return
+        
+        # Lazy init pygame mixer on first use
+        if not _init_pygame_mixer():
             return
         
         self.is_speaking = True
