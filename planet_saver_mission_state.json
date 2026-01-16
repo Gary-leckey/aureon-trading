@@ -1,80 +1,24 @@
 {
   "liberation": {
-    "total_profit_usd": 207.13596598137252,
-    "total_profit_gbp": 163.09918581210434,
-    "freedom_progress": 0.16309918581210434,
+    "total_profit_usd": 207.86041408704162,
+    "total_profit_gbp": 163.66961739137136,
+    "freedom_progress": 0.16366961739137137,
     "souls_theoretically_freed": 0,
-    "compound_multiplier": 1.272019649514069,
-    "current_streak": 5,
+    "compound_multiplier": 1.7814972992618903,
+    "current_streak": 12,
     "best_streak": 82,
-    "total_wins": 153,
-    "total_trades": 77036,
-    "win_rate": 0.19860844280596085,
+    "total_wins": 160,
+    "total_trades": 77043,
+    "win_rate": 0.20767623275313785,
     "days_active": 0,
     "started_at": "2026-01-09T10:54:59.789105",
     "last_milestone": "\ud83c\udf33 Hundred - Taking root"
   },
-  "current_capital_usd": 186.42236938323535,
+  "current_capital_usd": 187.07437267833754,
   "reserved_capital_usd": 0.0,
-  "compounded_gains_usd": 20.71359659813728,
+  "compounded_gains_usd": 20.78604140870419,
   "active_positions": {},
   "trade_history": [
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/BAT",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-14T15:00:25.164202",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/DOT",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-14T15:00:25.704390",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/YFI",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-14T15:00:26.288037",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/TRUMP",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-14T15:00:26.889478",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/XRP",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-14T15:00:27.428454",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/GRT",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-14T15:00:27.972705",
-      "metadata": {}
-    },
-    {
-      "type": "LOSS",
-      "loss_usd": 0.0,
-      "symbol": "USDT/LINK",
-      "exchange": "alpaca",
-      "timestamp": "2026-01-14T15:00:28.507880",
-      "metadata": {}
-    },
     {
       "type": "LOSS",
       "loss_usd": 0.0,
@@ -8206,6 +8150,76 @@
       "streak": 5,
       "total_progress": 0.16309918581210434,
       "metadata": {}
+    },
+    {
+      "type": "WIN",
+      "profit_usd": 0.10280258400817349,
+      "symbol": "ETH/USDC",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-15T23:45:31.570106",
+      "streak": 6,
+      "total_progress": 0.1631801327286462,
+      "metadata": {}
+    },
+    {
+      "type": "WIN",
+      "profit_usd": 0.10797253987705649,
+      "symbol": "ETH/USDC",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-15T23:45:49.645545",
+      "streak": 7,
+      "total_progress": 0.1632651504765809,
+      "metadata": {}
+    },
+    {
+      "type": "WIN",
+      "profit_usd": 0.10263836262796874,
+      "symbol": "ETH/USDT",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-15T23:58:36.030612",
+      "streak": 8,
+      "total_progress": 0.1633459680849494,
+      "metadata": {}
+    },
+    {
+      "type": "WIN",
+      "profit_usd": 0.10263836262796874,
+      "symbol": "ETH/USDT",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-16T00:00:40.796978",
+      "streak": 9,
+      "total_progress": 0.16342678569331787,
+      "metadata": {}
+    },
+    {
+      "type": "WIN",
+      "profit_usd": 0.10263836262796874,
+      "symbol": "ETH/USDT",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-16T00:08:12.504846",
+      "streak": 10,
+      "total_progress": 0.16350760330168634,
+      "metadata": {}
+    },
+    {
+      "type": "WIN",
+      "profit_usd": 0.10263836262796874,
+      "symbol": "ETH/USDC",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-16T00:12:17.782793",
+      "streak": 11,
+      "total_progress": 0.16358842091005485,
+      "metadata": {}
+    },
+    {
+      "type": "WIN",
+      "profit_usd": 0.10311953127196867,
+      "symbol": "ETH/USDC",
+      "exchange": "alpaca",
+      "timestamp": "2026-01-16T00:14:33.783801",
+      "streak": 12,
+      "total_progress": 0.16366961739137137,
+      "metadata": {}
     }
   ],
   "milestone_history": [
@@ -8232,6 +8246,6 @@
     }
   ],
   "created_at": "2026-01-09T10:54:59.789096",
-  "last_update": "2026-01-15T23:31:43.032004",
-  "last_win_at": "2026-01-15T23:31:43.031775"
+  "last_update": "2026-01-16T00:14:33.784077",
+  "last_win_at": "2026-01-16T00:14:33.783790"
 }
