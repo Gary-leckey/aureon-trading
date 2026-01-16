@@ -40,8 +40,26 @@ except ImportError:
 
 try:
     import pygame
-    pygame.mixer.init()
-    PYGAME_AVAILABLE = True
+    import threading
+    
+    # Use timeout to prevent hanging on Windows
+    def _init_pygame_mixer():
+        try:
+            pygame.mixer.init()
+            return True
+        except Exception:
+            return False
+    
+    _mixer_thread = threading.Thread(target=_init_pygame_mixer, daemon=True)
+    _mixer_thread.start()
+    _mixer_thread.join(timeout=2.0)  # 2 second timeout
+    
+    if _mixer_thread.is_alive():
+        # Timed out - pygame mixer is hanging
+        PYGAME_AVAILABLE = False
+        safe_print("⚠️ Audio initialization timed out - Queen's voice will be text-only")
+    else:
+        PYGAME_AVAILABLE = True
 except Exception:
     PYGAME_AVAILABLE = False
     safe_print("⚠️ Audio output not available (no audio device) - Queen's voice will be text-only")
