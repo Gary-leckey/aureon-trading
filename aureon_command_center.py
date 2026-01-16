@@ -1716,7 +1716,7 @@ COMMAND_CENTER_HTML = """
         <div id="status-bar">
             <div class="status-item" id="mode-status">
                 <span class="status-dot"></span>
-                <span id="trading-mode">DRY-RUN</span>
+                <span id="trading-mode">LIVE</span>
             </div>
             <div class="status-item" id="systems-status">
                 <span class="status-dot"></span>
@@ -1985,6 +1985,9 @@ COMMAND_CENTER_HTML = """
             switch(data.type) {
                 case 'state':
                     updateFullState(data);
+                    break;
+                case 'live_feed':
+                    setLiveIndicator(!!data.enabled);
                     break;
                 case 'trade':
                     addTrade(data.trade);
@@ -2389,15 +2392,23 @@ COMMAND_CENTER_HTML = """
             try {
                 const response = await fetch('/api/live-toggle', { method: 'POST' });
                 const data = await response.json();
-                if (data.enabled) {
-                    btn.textContent = '🟢 LIVE FEED';
-                    btn.classList.add('blue');
-                } else {
-                    btn.textContent = '🔴 LIVE OFF';
-                    btn.classList.remove('blue');
-                }
+                setLiveIndicator(!!data.enabled);
             } catch (e) {
                 console.error('Live toggle failed', e);
+            }
+        }
+
+        function setLiveIndicator(enabled) {
+            const btn = document.getElementById('live-toggle-btn');
+            const mode = document.getElementById('trading-mode');
+            if (enabled) {
+                btn.textContent = '🟢 LIVE FEED';
+                btn.classList.add('blue');
+                mode.textContent = 'LIVE';
+            } else {
+                btn.textContent = '🔴 LIVE OFF';
+                btn.classList.remove('blue');
+                mode.textContent = 'OFF';
             }
         }
 
@@ -2705,6 +2716,9 @@ COMMAND_CENTER_HTML = """
                 const response = await fetch('/api/state');
                 const data = await response.json();
                 updateFullState(data);
+                if (typeof data.live_feed !== 'undefined') {
+                    setLiveIndicator(!!data.live_feed);
+                }
             } catch (error) {
                 console.error('Failed to fetch initial state:', error);
             }
@@ -3003,6 +3017,7 @@ async def handle_live_toggle(request):
     """Toggle live feed on/off"""
     global LIVE_FEED_ENABLED
     LIVE_FEED_ENABLED = not LIVE_FEED_ENABLED
+    await broadcast_to_clients({'type': 'live_feed', 'enabled': LIVE_FEED_ENABLED})
     return web.json_response({'enabled': LIVE_FEED_ENABLED})
 
 async def websocket_handler(request):
@@ -3030,6 +3045,7 @@ async def websocket_handler(request):
             'whales': list(state.whale_alerts),
             'bots': list(state.bot_detections),
             'queen_message': state.queen_messages[-1] if state.queen_messages else "Welcome to the Command Center.",
+            'live_feed': LIVE_FEED_ENABLED,
         })
         
         async for msg in ws:
