@@ -168,13 +168,13 @@ except ImportError:
     SYSTEMS_STATUS['Global Wave Scanner'] = False
 
 try:
-    from aureon_whale_integration import WhaleIntegration
+    import aureon_whale_integration
     SYSTEMS_STATUS['Whale Integration'] = True
 except ImportError:
     SYSTEMS_STATUS['Whale Integration'] = False
 
 try:
-    from aureon_orca_intelligence import OrcaIntelligence
+    from aureon_orca_intelligence import OrcaKillerWhaleIntelligence
     SYSTEMS_STATUS['Orca Intelligence'] = True
 except ImportError:
     SYSTEMS_STATUS['Orca Intelligence'] = False
@@ -205,13 +205,13 @@ except ImportError:
     SYSTEMS_STATUS['Stargate Protocol'] = False
 
 try:
-    from aureon_memory_core import MemorySpiral
+    from aureon_memory_core import AureonMemoryCore
     SYSTEMS_STATUS['Memory Core'] = True
 except ImportError:
     SYSTEMS_STATUS['Memory Core'] = False
 
 try:
-    from aureon_immune_system import ImmuneSystem
+    from aureon_immune_system import AureonImmuneSystem
     SYSTEMS_STATUS['Immune System'] = True
 except ImportError:
     SYSTEMS_STATUS['Immune System'] = False
@@ -230,7 +230,7 @@ except ImportError:
     queen_voice = None
 
 try:
-    from aureon_lighthouse import Lighthouse
+    from aureon_lighthouse import LighthousePatternDetector
     SYSTEMS_STATUS['Lighthouse'] = True
 except ImportError:
     SYSTEMS_STATUS['Lighthouse'] = False
