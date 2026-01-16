@@ -1030,6 +1030,534 @@ COMMAND_CENTER_HTML = """
             100% { background-position: 50px 50px; }
         }
         
+        /* ═══════════════════════════════════════════════════════════════════════
+           🌀 STARGATE PORTAL SYSTEM - CHEVRON RING & EVENT HORIZON
+           ═══════════════════════════════════════════════════════════════════════ */
+        
+        /* STARGATE CONTAINER */
+        #stargate-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 400px;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        #stargate-container.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        /* OUTER RING - NAQUADAH FRAME */
+        .stargate-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 0deg,
+                #1a1a2a 0deg,
+                #3a3a5a 10deg,
+                #1a1a2a 20deg,
+                #3a3a5a 30deg,
+                #1a1a2a 40deg,
+                #3a3a5a 50deg,
+                #1a1a2a 60deg,
+                #3a3a5a 70deg,
+                #1a1a2a 80deg,
+                #3a3a5a 90deg,
+                #1a1a2a 100deg,
+                #3a3a5a 110deg,
+                #1a1a2a 120deg,
+                #3a3a5a 130deg,
+                #1a1a2a 140deg,
+                #3a3a5a 150deg,
+                #1a1a2a 160deg,
+                #3a3a5a 170deg,
+                #1a1a2a 180deg,
+                #3a3a5a 190deg,
+                #1a1a2a 200deg,
+                #3a3a5a 210deg,
+                #1a1a2a 220deg,
+                #3a3a5a 230deg,
+                #1a1a2a 240deg,
+                #3a3a5a 250deg,
+                #1a1a2a 260deg,
+                #3a3a5a 270deg,
+                #1a1a2a 280deg,
+                #3a3a5a 290deg,
+                #1a1a2a 300deg,
+                #3a3a5a 310deg,
+                #1a1a2a 320deg,
+                #3a3a5a 330deg,
+                #1a1a2a 340deg,
+                #3a3a5a 350deg,
+                #1a1a2a 360deg
+            );
+            box-shadow:
+                0 0 50px rgba(0, 191, 255, 0.3),
+                inset 0 0 50px rgba(0, 0, 0, 0.8),
+                inset 0 0 100px rgba(0, 191, 255, 0.1);
+            animation: stargateRingSpin 60s linear infinite;
+        }
+        
+        @keyframes stargateRingSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* INNER RING - GLYPH TRACK */
+        .glyph-ring {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            border-radius: 50%;
+            background: #0a0a15;
+            border: 3px solid #2a2a4a;
+            animation: glyphRingSpin 45s linear infinite reverse;
+        }
+        
+        @keyframes glyphRingSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* CHEVRON CONTAINERS */
+        .chevron {
+            position: absolute;
+            width: 30px;
+            height: 50px;
+            left: 50%;
+            top: -5px;
+            transform-origin: 50% 205px;
+            z-index: 10;
+        }
+        
+        .chevron-inner {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #4a4a6a 0%, #2a2a4a 50%, #1a1a3a 100%);
+            clip-path: polygon(50% 0%, 100% 40%, 80% 100%, 20% 100%, 0% 40%);
+            border: 2px solid #5a5a7a;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .chevron.locked .chevron-inner {
+            background: linear-gradient(180deg, #ff6600 0%, #ff3300 50%, #cc2200 100%);
+            box-shadow:
+                0 0 20px rgba(255, 102, 0, 0.8),
+                0 0 40px rgba(255, 102, 0, 0.4),
+                inset 0 0 10px rgba(255, 255, 255, 0.3);
+            animation: chevronGlow 1s ease infinite;
+        }
+        
+        @keyframes chevronGlow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+        }
+        
+        /* 9 CHEVRONS positioned around the ring */
+        .chevron:nth-child(1) { transform: rotate(0deg); }
+        .chevron:nth-child(2) { transform: rotate(40deg); }
+        .chevron:nth-child(3) { transform: rotate(80deg); }
+        .chevron:nth-child(4) { transform: rotate(120deg); }
+        .chevron:nth-child(5) { transform: rotate(160deg); }
+        .chevron:nth-child(6) { transform: rotate(200deg); }
+        .chevron:nth-child(7) { transform: rotate(240deg); }
+        .chevron:nth-child(8) { transform: rotate(280deg); }
+        .chevron:nth-child(9) { transform: rotate(320deg); }
+        
+        /* EVENT HORIZON - WORMHOLE CENTER */
+        .event-horizon {
+            position: absolute;
+            top: 50px;
+            left: 50px;
+            right: 50px;
+            bottom: 50px;
+            border-radius: 50%;
+            background: radial-gradient(
+                circle at center,
+                #000510 0%,
+                #001030 20%,
+                #002060 40%,
+                #0040a0 60%,
+                #0060d0 80%,
+                #00aaff 100%
+            );
+            overflow: hidden;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .event-horizon.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        /* WORMHOLE RIPPLES */
+        .event-horizon::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-radial-gradient(
+                circle at center,
+                transparent 0px,
+                transparent 10px,
+                rgba(0, 170, 255, 0.1) 10px,
+                rgba(0, 170, 255, 0.1) 20px
+            );
+            animation: wormholeRipple 2s linear infinite;
+        }
+        
+        @keyframes wormholeRipple {
+            from { transform: scale(0.5); opacity: 1; }
+            to { transform: scale(1.5); opacity: 0; }
+        }
+        
+        /* WORMHOLE SWIRL */
+        .event-horizon::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg,
+                rgba(0, 170, 255, 0.3) 60deg,
+                transparent 120deg,
+                rgba(0, 170, 255, 0.3) 180deg,
+                transparent 240deg,
+                rgba(0, 170, 255, 0.3) 300deg,
+                transparent 360deg
+            );
+            animation: wormholeSwirl 3s linear infinite;
+        }
+        
+        @keyframes wormholeSwirl {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* KAWOOSH EFFECT */
+        .kawoosh {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: radial-gradient(
+                circle,
+                rgba(255, 255, 255, 0.9) 0%,
+                rgba(0, 170, 255, 0.8) 30%,
+                rgba(0, 100, 200, 0.4) 60%,
+                transparent 100%
+            );
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            z-index: 20;
+        }
+        
+        .kawoosh.active {
+            animation: kawooshBlast 1.5s ease-out forwards;
+        }
+        
+        @keyframes kawooshBlast {
+            0% { width: 0; height: 0; opacity: 0; }
+            20% { width: 600px; height: 600px; opacity: 1; }
+            40% { width: 400px; height: 400px; opacity: 0.8; }
+            100% { width: 280px; height: 280px; opacity: 0; }
+        }
+        
+        /* DHD - DIAL HOME DEVICE */
+        #dhd-panel {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 320px;
+            height: 280px;
+            z-index: 60;
+            background: linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%);
+            border: 2px solid var(--cyan);
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow:
+                0 0 30px rgba(0, 191, 255, 0.3),
+                inset 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+        
+        #dhd-panel .panel-header {
+            background: linear-gradient(90deg, rgba(0, 191, 255, 0.3), transparent);
+            padding: 5px 10px;
+            margin: -10px -10px 10px -10px;
+            border-bottom: 1px solid var(--cyan);
+            color: var(--cyan);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* GLYPH GRID */
+        .glyph-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .glyph-btn {
+            aspect-ratio: 1;
+            background: linear-gradient(180deg, #3a3a4a 0%, #1a1a2a 100%);
+            border: 1px solid #4a4a5a;
+            border-radius: 5px;
+            color: var(--cyan);
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .glyph-btn:hover {
+            background: linear-gradient(180deg, #4a4a6a 0%, #2a2a4a 100%);
+            border-color: var(--cyan);
+            box-shadow: 0 0 15px rgba(0, 191, 255, 0.5);
+            transform: scale(1.1);
+        }
+        
+        .glyph-btn.selected {
+            background: linear-gradient(180deg, #004466 0%, #002244 100%);
+            border-color: var(--cyan);
+            box-shadow: 0 0 20px rgba(0, 191, 255, 0.8);
+            color: #fff;
+        }
+        
+        /* DHD CENTER BUTTON */
+        .dhd-activate {
+            width: 80px;
+            height: 80px;
+            margin: 10px auto;
+            background: radial-gradient(circle, #ff3300 0%, #cc2200 50%, #881100 100%);
+            border: 3px solid #ff6600;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            color: #fff;
+            box-shadow:
+                0 0 30px rgba(255, 102, 0, 0.5),
+                inset 0 0 20px rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .dhd-activate:hover {
+            transform: scale(1.1);
+            box-shadow:
+                0 0 50px rgba(255, 102, 0, 0.8),
+                inset 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+        
+        .dhd-activate:active {
+            transform: scale(0.95);
+        }
+        
+        .dhd-activate.engaged {
+            background: radial-gradient(circle, #00ff88 0%, #00cc66 50%, #008844 100%);
+            border-color: var(--green);
+            box-shadow:
+                0 0 50px rgba(0, 255, 136, 0.8),
+                inset 0 0 30px rgba(255, 255, 255, 0.3);
+            animation: dhdPulse 1s ease infinite;
+        }
+        
+        @keyframes dhdPulse {
+            0%, 100% { box-shadow: 0 0 50px rgba(0, 255, 136, 0.8), inset 0 0 30px rgba(255, 255, 255, 0.3); }
+            50% { box-shadow: 0 0 80px rgba(0, 255, 136, 1), inset 0 0 40px rgba(255, 255, 255, 0.5); }
+        }
+        
+        /* QUANTUM MIRROR PANEL */
+        #quantum-mirror-panel {
+            position: fixed;
+            top: 100px;
+            left: 20px;
+            width: 280px;
+            z-index: 55;
+            background: rgba(10, 10, 20, 0.95);
+            border: 2px solid var(--purple);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(153, 102, 255, 0.3);
+        }
+        
+        #quantum-mirror-panel .panel-header {
+            background: linear-gradient(90deg, rgba(153, 102, 255, 0.3), transparent);
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--purple);
+            color: var(--purple);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8em;
+        }
+        
+        .timeline-card {
+            padding: 10px;
+            margin: 8px;
+            background: linear-gradient(135deg, rgba(153, 102, 255, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border: 1px solid rgba(153, 102, 255, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+        
+        .timeline-card:hover {
+            transform: rotateY(5deg) scale(1.02);
+            border-color: var(--purple);
+            box-shadow: 0 0 20px rgba(153, 102, 255, 0.5);
+        }
+        
+        .timeline-card.anchored {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border-color: var(--green);
+            animation: timelineAnchored 2s ease infinite;
+        }
+        
+        @keyframes timelineAnchored {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(0, 255, 136, 0.6); }
+        }
+        
+        .timeline-name {
+            color: var(--gold);
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .timeline-coherence {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8em;
+        }
+        
+        .coherence-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .coherence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--purple), var(--cyan));
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        .coherence-value {
+            color: var(--cyan);
+            font-family: 'Share Tech Mono', monospace;
+            min-width: 40px;
+            text-align: right;
+        }
+        
+        /* STARGATE STATUS DISPLAY */
+        #stargate-status {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--cyan);
+            border-radius: 10px;
+            padding: 10px 30px;
+            z-index: 90;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--cyan);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        #stargate-status.active {
+            opacity: 1;
+        }
+        
+        .chevron-display {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-top: 5px;
+        }
+        
+        .chevron-indicator {
+            width: 20px;
+            height: 20px;
+            background: #333;
+            border: 1px solid #555;
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            transition: all 0.3s ease;
+        }
+        
+        .chevron-indicator.locked {
+            background: linear-gradient(180deg, #ff6600, #cc3300);
+            border-color: #ff8800;
+            box-shadow: 0 0 10px rgba(255, 102, 0, 0.8);
+        }
+        
+        /* PLANETARY NODE INDICATORS */
+        .planetary-nodes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 10px;
+        }
+        
+        .node-indicator {
+            padding: 3px 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(153, 102, 255, 0.3);
+            border-radius: 12px;
+            font-size: 0.7em;
+            color: #888;
+            transition: all 0.3s ease;
+        }
+        
+        .node-indicator.resonating {
+            border-color: var(--gold);
+            color: var(--gold);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            animation: nodeResonance 1.5s ease infinite;
+        }
+        
+        @keyframes nodeResonance {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
         /* PARTICLE BACKGROUND */
         #particles-js {
             position: fixed;
@@ -2383,6 +2911,139 @@ COMMAND_CENTER_HTML = """
     <!-- PARTICLE BACKGROUND -->
     <div id="particles-js"></div>
     
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         🌀 STARGATE PORTAL SYSTEM
+         ═══════════════════════════════════════════════════════════════════════ -->
+    
+    <!-- STARGATE PORTAL -->
+    <div id="stargate-container">
+        <div class="stargate-ring"></div>
+        <div class="glyph-ring"></div>
+        
+        <!-- 9 CHEVRONS -->
+        <div class="chevron" data-chevron="1"><div class="chevron-inner"></div></div>
+        <div class="chevron" data-chevron="2"><div class="chevron-inner"></div></div>
+        <div class="chevron" data-chevron="3"><div class="chevron-inner"></div></div>
+        <div class="chevron" data-chevron="4"><div class="chevron-inner"></div></div>
+        <div class="chevron" data-chevron="5"><div class="chevron-inner"></div></div>
+        <div class="chevron" data-chevron="6"><div class="chevron-inner"></div></div>
+        <div class="chevron" data-chevron="7"><div class="chevron-inner"></div></div>
+        <div class="chevron" data-chevron="8"><div class="chevron-inner"></div></div>
+        <div class="chevron" data-chevron="9"><div class="chevron-inner"></div></div>
+        
+        <!-- EVENT HORIZON (WORMHOLE) -->
+        <div class="event-horizon"></div>
+        
+        <!-- KAWOOSH EFFECT -->
+        <div class="kawoosh"></div>
+    </div>
+    
+    <!-- STARGATE STATUS DISPLAY -->
+    <div id="stargate-status">
+        <div>⭐ STARGATE STATUS ⭐</div>
+        <div id="gate-address">IDLE - NO CONNECTION</div>
+        <div class="chevron-display">
+            <div class="chevron-indicator" data-idx="1"></div>
+            <div class="chevron-indicator" data-idx="2"></div>
+            <div class="chevron-indicator" data-idx="3"></div>
+            <div class="chevron-indicator" data-idx="4"></div>
+            <div class="chevron-indicator" data-idx="5"></div>
+            <div class="chevron-indicator" data-idx="6"></div>
+            <div class="chevron-indicator" data-idx="7"></div>
+            <div class="chevron-indicator" data-idx="8"></div>
+            <div class="chevron-indicator" data-idx="9"></div>
+        </div>
+    </div>
+    
+    <!-- DHD - DIAL HOME DEVICE -->
+    <div id="dhd-panel">
+        <div class="panel-header">
+            <span>🔮 DHD - DIAL HOME DEVICE</span>
+            <span id="dhd-status">STANDBY</span>
+        </div>
+        <div class="glyph-grid">
+            <!-- 36 Stargate glyphs (symbols) -->
+            <button class="glyph-btn" data-glyph="giza">🔺</button>
+            <button class="glyph-btn" data-glyph="stonehenge">🗿</button>
+            <button class="glyph-btn" data-glyph="machu">🏔️</button>
+            <button class="glyph-btn" data-glyph="angkor">🛕</button>
+            <button class="glyph-btn" data-glyph="uluru">🪨</button>
+            <button class="glyph-btn" data-glyph="sedona">🌵</button>
+            <button class="glyph-btn" data-glyph="teotihuacan">🌙</button>
+            <button class="glyph-btn" data-glyph="gobekli">⭕</button>
+            <button class="glyph-btn" data-glyph="easter">🗿</button>
+            <button class="glyph-btn" data-glyph="newgrange">☘️</button>
+            <button class="glyph-btn" data-glyph="mt_shasta">⛰️</button>
+            <button class="glyph-btn" data-glyph="mt_kailash">🏔️</button>
+            <button class="glyph-btn" data-glyph="bermuda">🔻</button>
+            <button class="glyph-btn" data-glyph="rennes">⚜️</button>
+            <button class="glyph-btn" data-glyph="avebury">⭕</button>
+            <button class="glyph-btn" data-glyph="carnac">📍</button>
+            <button class="glyph-btn" data-glyph="delphi">🏛️</button>
+            <button class="glyph-btn" data-glyph="petra">🏜️</button>
+            <button class="glyph-btn" data-glyph="chaco">🌀</button>
+            <button class="glyph-btn" data-glyph="tiwanaku">🧱</button>
+            <button class="glyph-btn" data-glyph="nazca">✈️</button>
+            <button class="glyph-btn" data-glyph="baalbek">🏗️</button>
+            <button class="glyph-btn" data-glyph="glastonbury">🔮</button>
+            <button class="glyph-btn" data-glyph="lemuria">🌊</button>
+            <button class="glyph-btn" data-glyph="atlantis">🔱</button>
+            <button class="glyph-btn" data-glyph="agartha">🕳️</button>
+            <button class="glyph-btn" data-glyph="sirius">⭐</button>
+            <button class="glyph-btn" data-glyph="pleiades">✨</button>
+            <button class="glyph-btn" data-glyph="orion">🎯</button>
+            <button class="glyph-btn" data-glyph="arcturus">💫</button>
+            <button class="glyph-btn" data-glyph="earth">🌍</button>
+            <button class="glyph-btn" data-glyph="point_origin">🏠</button>
+        </div>
+        <button class="dhd-activate" id="dhd-big-red" onclick="activateStargate()">
+            ⚡
+        </button>
+    </div>
+    
+    <!-- QUANTUM MIRROR PANEL -->
+    <div id="quantum-mirror-panel">
+        <div class="panel-header">🪞 QUANTUM MIRROR SCANNER</div>
+        <div id="timeline-list">
+            <div class="timeline-card" data-timeline="golden_age">
+                <div class="timeline-name">✨ Golden Age Timeline</div>
+                <div class="timeline-coherence">
+                    <div class="coherence-bar"><div class="coherence-fill" style="width: 95%"></div></div>
+                    <span class="coherence-value">0.95</span>
+                </div>
+            </div>
+            <div class="timeline-card" data-timeline="unity">
+                <div class="timeline-name">🤝 Unity Timeline</div>
+                <div class="timeline-coherence">
+                    <div class="coherence-bar"><div class="coherence-fill" style="width: 92%"></div></div>
+                    <span class="coherence-value">0.92</span>
+                </div>
+            </div>
+            <div class="timeline-card" data-timeline="abundance">
+                <div class="timeline-name">💰 Abundance Timeline</div>
+                <div class="timeline-coherence">
+                    <div class="coherence-bar"><div class="coherence-fill" style="width: 88%"></div></div>
+                    <span class="coherence-value">0.88</span>
+                </div>
+            </div>
+            <div class="timeline-card anchored" data-timeline="ascension">
+                <div class="timeline-name">🌟 Ascension Timeline</div>
+                <div class="timeline-coherence">
+                    <div class="coherence-bar"><div class="coherence-fill" style="width: 97%"></div></div>
+                    <span class="coherence-value">0.97</span>
+                </div>
+            </div>
+        </div>
+        <div class="planetary-nodes">
+            <span class="node-indicator resonating">🔺 Giza</span>
+            <span class="node-indicator">🗿 Stonehenge</span>
+            <span class="node-indicator resonating">🏔️ Machu Picchu</span>
+            <span class="node-indicator">🛕 Angkor</span>
+            <span class="node-indicator resonating">🪨 Uluru</span>
+            <span class="node-indicator">🌵 Sedona</span>
+        </div>
+    </div>
+    
     <!-- 3D GLOBE CONTAINER -->
     <div id="globe-container"></div>
     
@@ -3611,6 +4272,336 @@ COMMAND_CENTER_HTML = """
         }
         
         // ═══════════════════════════════════════════════════════════════════════
+        // 🌀 STARGATE PORTAL SYSTEM - FULL IMPLEMENTATION
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        // Stargate state
+        const stargateState = {
+            active: false,
+            dialing: false,
+            chevronSequence: [],
+            lockedChevrons: 0,
+            connectedTo: null,
+            audioContext: null,
+            sounds: {}
+        };
+        
+        // Planetary stargate addresses (from aureon_stargate_protocol.py)
+        const STARGATE_ADDRESSES = {
+            'giza': { name: 'Giza', freq: 432.0, symbol: '🔺', coord: [29.9792, 31.1342] },
+            'stonehenge': { name: 'Stonehenge', freq: 396.0, symbol: '🗿', coord: [51.1789, -1.8262] },
+            'machu': { name: 'Machu Picchu', freq: 528.0, symbol: '🏔️', coord: [-13.1631, -72.5450] },
+            'angkor': { name: 'Angkor Wat', freq: 417.0, symbol: '🛕', coord: [13.4125, 103.8670] },
+            'uluru': { name: 'Uluru', freq: 639.0, symbol: '🪨', coord: [-25.3444, 131.0369] },
+            'sedona': { name: 'Sedona', freq: 741.0, symbol: '🌵', coord: [34.8697, -111.7610] },
+            'teotihuacan': { name: 'Teotihuacan', freq: 852.0, symbol: '🌙', coord: [19.6925, -98.8438] },
+            'earth': { name: 'Earth Origin', freq: 7.83, symbol: '🌍', coord: [0, 0] },
+            'sirius': { name: 'Sirius Gate', freq: 963.0, symbol: '⭐', coord: [0, 0] },
+            'pleiades': { name: 'Pleiades Cluster', freq: 1111.0, symbol: '✨', coord: [0, 0] },
+            'orion': { name: 'Orion Gateway', freq: 888.0, symbol: '🎯', coord: [0, 0] },
+            'atlantis': { name: 'Atlantis', freq: 528.0, symbol: '🔱', coord: [0, 0] }
+        };
+        
+        // Initialize Stargate audio (Web Audio API)
+        function initStargateAudio() {
+            try {
+                stargateState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Create sound generators
+                stargateState.sounds = {
+                    chevronLock: () => playTone(800, 0.3, 'square'),
+                    chevronEngage: () => playTone(1200, 0.2, 'sawtooth'),
+                    wormholeOpen: () => playWormholeSound(),
+                    kawoosh: () => playKawooshSound(),
+                    gateShutdown: () => playTone(200, 1, 'sine'),
+                    glyphSelect: () => playTone(600, 0.1, 'triangle')
+                };
+            } catch (e) {
+                console.log('Web Audio not available');
+            }
+        }
+        
+        function playTone(frequency, duration, type = 'sine') {
+            if (!stargateState.audioContext) return;
+            
+            const ctx = stargateState.audioContext;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.type = type;
+            osc.frequency.value = frequency;
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + duration);
+        }
+        
+        function playWormholeSound() {
+            if (!stargateState.audioContext) return;
+            
+            const ctx = stargateState.audioContext;
+            const duration = 2;
+            
+            // Layered frequencies for wormhole effect
+            [100, 150, 200, 300, 400].forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(freq * 2, ctx.currentTime + duration);
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.2 / (i + 1), ctx.currentTime + 0.3);
+                gain.gain.linearRampToValueAtTime(0.1 / (i + 1), ctx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            });
+        }
+        
+        function playKawooshSound() {
+            if (!stargateState.audioContext) return;
+            
+            const ctx = stargateState.audioContext;
+            
+            // White noise burst for kawoosh
+            const bufferSize = ctx.sampleRate * 1.5;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.3));
+            }
+            
+            const source = ctx.createBufferSource();
+            const filter = ctx.createBiquadFilter();
+            const gain = ctx.createGain();
+            
+            source.buffer = buffer;
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(2000, ctx.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 1.5);
+            
+            gain.gain.setValueAtTime(0.5, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.5);
+            
+            source.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            source.start();
+        }
+        
+        // Glyph selection
+        function selectGlyph(glyphName) {
+            if (stargateState.dialing || stargateState.active) return;
+            if (stargateState.chevronSequence.length >= 7) return;
+            
+            const btn = document.querySelector(`[data-glyph="${glyphName}"]`);
+            if (!btn || btn.classList.contains('selected')) return;
+            
+            btn.classList.add('selected');
+            stargateState.chevronSequence.push(glyphName);
+            stargateState.sounds.glyphSelect?.();
+            
+            updateDHDStatus();
+        }
+        
+        // Update DHD status display
+        function updateDHDStatus() {
+            const statusEl = document.getElementById('dhd-status');
+            const count = stargateState.chevronSequence.length;
+            
+            if (count === 0) {
+                statusEl.textContent = 'STANDBY';
+            } else if (count < 7) {
+                statusEl.textContent = `${count}/7 GLYPHS`;
+            } else {
+                statusEl.textContent = 'READY TO DIAL';
+            }
+        }
+        
+        // Main stargate activation
+        async function activateStargate() {
+            // Resume audio context on user interaction
+            if (stargateState.audioContext?.state === 'suspended') {
+                stargateState.audioContext.resume();
+            }
+            
+            if (stargateState.active) {
+                // Shutdown gate
+                shutdownStargate();
+                return;
+            }
+            
+            if (stargateState.chevronSequence.length < 7) {
+                // Auto-dial demo sequence
+                stargateState.chevronSequence = ['giza', 'stonehenge', 'machu', 'sirius', 'orion', 'pleiades', 'earth'];
+                document.querySelectorAll('.glyph-btn').forEach(btn => {
+                    if (stargateState.chevronSequence.includes(btn.dataset.glyph)) {
+                        btn.classList.add('selected');
+                    }
+                });
+            }
+            
+            stargateState.dialing = true;
+            document.getElementById('dhd-big-red').classList.add('engaged');
+            document.getElementById('dhd-status').textContent = 'DIALING...';
+            document.getElementById('stargate-status').classList.add('active');
+            document.getElementById('stargate-container').classList.add('active');
+            
+            // Lock chevrons one by one
+            for (let i = 0; i < 7; i++) {
+                await lockChevron(i + 1);
+                await sleep(800);
+            }
+            
+            // Establish wormhole
+            await establishWormhole();
+        }
+        
+        async function lockChevron(num) {
+            const chevron = document.querySelector(`.chevron[data-chevron="${num}"]`);
+            const indicator = document.querySelector(`.chevron-indicator[data-idx="${num}"]`);
+            
+            if (chevron) {
+                chevron.classList.add('locked');
+                stargateState.sounds.chevronLock?.();
+            }
+            
+            if (indicator) {
+                indicator.classList.add('locked');
+            }
+            
+            stargateState.lockedChevrons = num;
+            document.getElementById('gate-address').textContent = `CHEVRON ${num} LOCKED`;
+            
+            // GSAP animation
+            if (typeof gsap !== 'undefined' && chevron) {
+                gsap.timeline()
+                    .to(chevron, { scale: 1.2, duration: 0.1 })
+                    .to(chevron, { scale: 1, duration: 0.2 });
+            }
+        }
+        
+        async function establishWormhole() {
+            document.getElementById('gate-address').textContent = 'ESTABLISHING WORMHOLE...';
+            stargateState.sounds.wormholeOpen?.();
+            
+            await sleep(500);
+            
+            // Kawoosh!
+            const kawoosh = document.querySelector('.kawoosh');
+            kawoosh.classList.add('active');
+            stargateState.sounds.kawoosh?.();
+            
+            await sleep(1500);
+            kawoosh.classList.remove('active');
+            
+            // Event horizon active
+            const eventHorizon = document.querySelector('.event-horizon');
+            eventHorizon.classList.add('active');
+            
+            const destination = STARGATE_ADDRESSES[stargateState.chevronSequence[0]] || { name: 'Unknown' };
+            document.getElementById('gate-address').textContent = `CONNECTED: ${destination.name.toUpperCase()}`;
+            document.getElementById('dhd-status').textContent = 'CONNECTED';
+            
+            stargateState.dialing = false;
+            stargateState.active = true;
+            stargateState.connectedTo = destination;
+            
+            // Queen announcement
+            updateQueenMessage(`🌀 Stargate connection established to ${destination.name}! Wormhole stable. Timeline coherence at maximum.`);
+        }
+        
+        function shutdownStargate() {
+            stargateState.sounds.gateShutdown?.();
+            
+            // Reset all states
+            document.querySelector('.event-horizon').classList.remove('active');
+            document.querySelectorAll('.chevron').forEach(c => c.classList.remove('locked'));
+            document.querySelectorAll('.chevron-indicator').forEach(c => c.classList.remove('locked'));
+            document.querySelectorAll('.glyph-btn').forEach(b => b.classList.remove('selected'));
+            
+            document.getElementById('stargate-container').classList.remove('active');
+            document.getElementById('stargate-status').classList.remove('active');
+            document.getElementById('dhd-big-red').classList.remove('engaged');
+            document.getElementById('dhd-status').textContent = 'STANDBY';
+            document.getElementById('gate-address').textContent = 'IDLE - NO CONNECTION';
+            
+            stargateState.active = false;
+            stargateState.dialing = false;
+            stargateState.chevronSequence = [];
+            stargateState.lockedChevrons = 0;
+            stargateState.connectedTo = null;
+            
+            updateQueenMessage('🌀 Stargate shutdown complete. Wormhole disengaged.');
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Timeline card click handlers
+        function initQuantumMirror() {
+            document.querySelectorAll('.timeline-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const timeline = card.dataset.timeline;
+                    
+                    // Visual feedback
+                    if (typeof gsap !== 'undefined') {
+                        gsap.timeline()
+                            .to(card, { rotateY: 180, duration: 0.3 })
+                            .to(card, { rotateY: 360, duration: 0.3 })
+                            .set(card, { rotateY: 0 });
+                    }
+                    
+                    // Toggle anchored state
+                    if (card.classList.contains('anchored')) {
+                        card.classList.remove('anchored');
+                        updateQueenMessage(`🪞 Timeline "${timeline}" unanchored. Reality branch floating.`);
+                    } else {
+                        card.classList.add('anchored');
+                        updateQueenMessage(`🪞 Timeline "${timeline}" ANCHORED! Coherence lock confirmed.`);
+                        
+                        // Pulse effect
+                        if (typeof anime !== 'undefined') {
+                            anime({
+                                targets: card,
+                                boxShadow: [
+                                    '0 0 20px rgba(0, 255, 136, 0.3)',
+                                    '0 0 60px rgba(0, 255, 136, 0.8)',
+                                    '0 0 20px rgba(0, 255, 136, 0.3)'
+                                ],
+                                duration: 1000,
+                                easing: 'easeInOutQuad'
+                            });
+                        }
+                    }
+                });
+            });
+            
+            // Glyph button handlers
+            document.querySelectorAll('.glyph-btn').forEach(btn => {
+                btn.addEventListener('click', () => selectGlyph(btn.dataset.glyph));
+            });
+            
+            // Planetary node resonance animation
+            setInterval(() => {
+                document.querySelectorAll('.node-indicator').forEach(node => {
+                    if (Math.random() > 0.7) {
+                        node.classList.toggle('resonating');
+                    }
+                });
+            }, 3000);
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════
         // 🎨 ENHANCED GSAP ANIMATIONS ON LOAD
         // ═══════════════════════════════════════════════════════════════════════
         
@@ -3621,6 +4612,10 @@ COMMAND_CENTER_HTML = """
             if (typeof TextPlugin !== 'undefined') {
                 gsap.registerPlugin(TextPlugin);
             }
+            
+            // Initialize Stargate systems
+            initStargateAudio();
+            initQuantumMirror();
             
             // Create master timeline for orchestrated entrance
             const masterTL = gsap.timeline();
