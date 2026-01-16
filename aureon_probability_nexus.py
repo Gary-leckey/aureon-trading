@@ -90,6 +90,17 @@ except Exception:
     get_latest_prediction = None
     WHALE_INTEGRATION_AVAILABLE = False
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🐦 CHIRP BUS INTEGRATION - kHz-Speed Inter-System Communication
+# ═══════════════════════════════════════════════════════════════════════════════
+CHIRP_BUS_AVAILABLE = False
+get_chirp_bus = None
+try:
+    from aureon_chirp_bus import get_chirp_bus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+
 def _lazy_load_clownfish():
     """Lazy load Clownfish to avoid circular imports"""
     global CLOWNFISH_AVAILABLE, ClownfishNode, ClownfishMarketState
@@ -1092,6 +1103,68 @@ class AureonProbabilityNexus:
         )
         
         self.predictions_made += 1
+        
+        # 🐦 CHIRP EMISSION - kHz-Speed Validation Signals
+        # Emit validation pass results for Batten Matrix (3 validations → 4th execution)
+        if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+            try:
+                chirp_bus = get_chirp_bus()
+                
+                # Extract symbol from latest candle or use default
+                symbol = 'UNKNOWN'
+                if self.candle_history:
+                    latest_candle = self.candle_history[-1]
+                    symbol = latest_candle.get('symbol', 'UNKNOWN')
+                
+                # Validation Pass 1: Harmonic Analysis
+                harmonic_score = factors.get('harmonic', 0.5)
+                chirp_bus.emit_signal(
+                    signal_type='VALIDATION_PASS_1',
+                    symbol=symbol,
+                    coherence=harmonic_score,
+                    confidence=harmonic_score,
+                    frequency=state.frequency if hasattr(state, 'frequency') else 440.0,
+                    amplitude=harmonic_score
+                )
+                
+                # Validation Pass 2: Coherence Filter
+                coherence_score = factors.get('coherence', 0.5)
+                chirp_bus.emit_signal(
+                    signal_type='VALIDATION_PASS_2',
+                    symbol=symbol,
+                    coherence=coherence_score,
+                    confidence=coherence_score,
+                    frequency=528.0,  # Love frequency
+                    amplitude=coherence_score
+                )
+                
+                # Validation Pass 3: Drift/Volatility Analysis (Lambda stability)
+                volatility_factor = factors.get('volatility', 0.5)
+                drift_score = 1.0 - min(1.0, state.volatility / 100) if hasattr(state, 'volatility') else 0.5
+                lambda_stability = drift_score * volatility_factor
+                chirp_bus.emit_signal(
+                    signal_type='VALIDATION_PASS_3',
+                    symbol=symbol,
+                    coherence=lambda_stability,
+                    confidence=lambda_stability,
+                    frequency=432.0,  # Cosmic frequency
+                    amplitude=lambda_stability
+                )
+                
+                # Final Validation Score (S_b = p̄ · P_b · C_b · Λ_b)
+                final_score = combined_prob * confidence
+                chirp_bus.emit_signal(
+                    signal_type='VALIDATION_COMPLETE',
+                    symbol=symbol,
+                    coherence=final_score,
+                    confidence=confidence,
+                    frequency=PHI * 440.0,  # Golden ratio frequency
+                    amplitude=final_score
+                )
+                
+            except Exception as e:
+                # Chirp emission failure - non-critical, continue
+                pass
         
         return prediction
     

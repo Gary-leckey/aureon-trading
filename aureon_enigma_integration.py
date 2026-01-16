@@ -61,6 +61,17 @@ try:
     HARMONIC_FUSION_AVAILABLE = True
 except ImportError:
     HARMONIC_FUSION_AVAILABLE = False
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🐦 CHIRP BUS INTEGRATION - kHz-Speed Intelligence Signals
+# ═══════════════════════════════════════════════════════════════════════════════
+CHIRP_BUS_AVAILABLE = False
+get_chirp_bus = None
+try:
+    from aureon_chirp_bus import get_chirp_bus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
     logger.warning("⚠️ aureon_harmonic_fusion not available")
 
 try:
@@ -800,6 +811,46 @@ class EnigmaIntegration:
                 })
             except Exception as e:
                 logger.warning(f"⚠️ Failed to broadcast thought: {e}")
+        
+        # 🐦 CHIRP EMISSION - kHz-Speed Intelligence Signals
+        # Emit decoded intelligence chirps for real-time system coordination
+        if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+            try:
+                chirp_bus = get_chirp_bus()
+                symbol = thought.symbol or 'UNKNOWN'
+                
+                # Intelligence grade mapping to chirp codes
+                grade_map = {
+                    IntelligenceGrade.NOISE: 'N0',
+                    IntelligenceGrade.WEAK: 'W1', 
+                    IntelligenceGrade.MEDIUM: 'M2',
+                    IntelligenceGrade.STRONG: 'S3',
+                    IntelligenceGrade.CRITICAL: 'C4'
+                }
+                
+                chirp_bus.emit_signal(
+                    signal_type='ENIGMA_INTELLIGENCE',
+                    symbol=symbol,
+                    coherence=thought.confidence,
+                    confidence=thought.confidence,
+                    frequency=639.0,  # Enigma frequency
+                    amplitude=thought.confidence
+                )
+                
+                # Emit action chirp if action is recommended
+                if thought.action:
+                    chirp_bus.emit_signal(
+                        signal_type='ENIGMA_ACTION',
+                        symbol=symbol,
+                        coherence=thought.confidence,
+                        confidence=thought.confidence,
+                        frequency=528.0,  # Love frequency for actions
+                        amplitude=thought.confidence
+                    )
+                
+            except Exception as e:
+                # Chirp emission failure - non-critical, continue
+                pass
                 
         return thought
         

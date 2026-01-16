@@ -102,6 +102,16 @@ try:
 except ImportError:
     ADVANCED_INTEL_AVAILABLE = False
 
+# Chirp Bus (kHz signaling)
+try:
+    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
+    CHIRP_AVAILABLE = True
+except ImportError:
+    get_chirp_bus = None
+    ChirpDirection = None
+    ChirpType = None
+    CHIRP_AVAILABLE = False
+
 # ═══════════════════════════════════════════════════════════════════════════
 # WINDOWS UTF-8 FIX - Must be at top before any logging/printing
 # ═══════════════════════════════════════════════════════════════════════════
@@ -777,6 +787,26 @@ class QueenHiveMind:
         self.wisdom_vault: deque = deque(maxlen=10000)  # All wisdom ever generated
         self.active_prophecies: List[QueenWisdom] = []
         self.fulfilled_prophecies: List[QueenWisdom] = []
+
+    def _emit_chirp(self, *, message: str, confidence: float = 0.5, coherence: float = 0.5, symbol: Optional[str] = None, message_type: Optional[ChirpType] = None) -> None:
+        if not CHIRP_AVAILABLE:
+            return
+        try:
+            chirp_bus = get_chirp_bus()
+            if not chirp_bus:
+                return
+            chirp_bus.emit_message(
+                message,
+                direction=ChirpDirection.DOWN,
+                coherence=max(0.0, min(1.0, coherence if coherence is not None else 0.5)),
+                confidence=max(0.0, min(1.0, confidence if confidence is not None else 0.5)),
+                symbol=symbol,
+                frequency=963,
+                amplitude=160,
+                message_type=message_type or ChirpType.STATUS,
+            )
+        except Exception:
+            logger.debug("Queen chirp emit failed", exc_info=True)
         
         # Communication channels
         self.broadcast_queue: deque = deque(maxlen=1000)  # Messages to broadcast
@@ -3978,6 +4008,20 @@ class QueenHiveMind:
         result.reasoning = decision.get('reasoning', '')
         result.queen_message = decision.get('message', '')
         result.warnings = decision.get('warnings', [])
+
+        # Emit kHz chirp for decision broadcast (best-effort)
+        try:
+            symbol = result.target_symbols[0] if result.target_symbols else None
+            coherence = result.multiverse_consensus if result.multiverse_consensus is not None else 0.5
+            self._emit_chirp(
+                message=f"QUEEN_{result.action}",
+                confidence=result.confidence,
+                coherence=coherence,
+                symbol=symbol,
+                message_type=ChirpType.EXECUTE if result.action in ('BUY', 'SELL', 'HARVEST') else ChirpType.STATUS,
+            )
+        except Exception:
+            logger.debug("Decision chirp emit failed", exc_info=True)
         
         # Log the result
         logger.info(f"👑🧠 DEEP THINK COMPLETE:")

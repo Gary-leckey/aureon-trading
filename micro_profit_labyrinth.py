@@ -1136,6 +1136,16 @@ except ImportError as e:
     get_order_router = None
     HFTOrderRouter = None
 
+# Chirp Bus (kHz signaling)
+try:
+    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
+    CHIRP_AVAILABLE = True
+except ImportError:
+    get_chirp_bus = None
+    ChirpDirection = None
+    ChirpType = None
+    CHIRP_AVAILABLE = False
+
 # ════════════════════════════════════════════════════════════════════════════
 # 👑🏗️ QUEEN'S LEARNING ENHANCEMENT LOADER - LOAD HER CODE!
 # ════════════════════════════════════════════════════════════════════════════
@@ -14541,6 +14551,26 @@ if __name__ == "__main__":
     async def execute_conversion(self, opp: MicroOpportunity) -> bool:
         """Execute a conversion (dry run or live)."""
         symbol = f"{opp.from_asset}/{opp.to_asset}"
+
+        # Emit kHz chirp for execution intent (best-effort)
+        if CHIRP_AVAILABLE:
+            try:
+                chirp_bus = get_chirp_bus()
+                if chirp_bus:
+                    confidence = max(0.0, min(1.0, float(getattr(opp, 'queen_confidence', 0.0) or getattr(opp, 'combined_score', 0.5))))
+                    coherence = max(0.0, min(1.0, float(getattr(opp, 'lambda_score', 0.5) or getattr(opp, 'barter_matrix_score', 0.5))))
+                    chirp_bus.emit_message(
+                        f"EXECUTE {symbol}",
+                        direction=ChirpDirection.DOWN,
+                        coherence=coherence,
+                        confidence=confidence,
+                        symbol=symbol,
+                        frequency=528,
+                        amplitude=140,
+                        message_type=ChirpType.EXECUTE,
+                    )
+            except Exception:
+                logger.debug("Chirp emit failed", exc_info=True)
         
         # ════════════════════════════════════════════════════════════════════════
         # � EVOLUTIONARY SAFETY GATES - "Don't Fear the Stone, Learn From It"

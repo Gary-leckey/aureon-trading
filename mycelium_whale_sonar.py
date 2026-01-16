@@ -42,6 +42,15 @@ except Exception:
     THOUGHT_BUS_AVAILABLE = False
 
 try:
+    from aureon_harmonic_binary_protocol import encode_text_packet, BinaryDirection, BinaryMessageType
+    HARMONIC_BINARY_AVAILABLE = True
+except Exception:
+    encode_text_packet = None
+    BinaryDirection = None
+    BinaryMessageType = None
+    HARMONIC_BINARY_AVAILABLE = False
+
+try:
     from aureon_enigma_integration import get_enigma_integration
     ENIGMA_AVAILABLE = True
 except Exception:
@@ -279,33 +288,42 @@ class WhaleSonar:
                 else:
                     thought_payload['outcome_code'] = None
 
-            # Emit ThoughtBus message with minimal text (morse) for Queen
-            if self.thought_bus:
+            binary_payload = None
+            if HARMONIC_BINARY_AVAILABLE and encode_text_packet:
                 try:
-                    t = Thought(
-                        source='whale_sonar',
-                        topic=f'whale.sonar.{key}',
-                        payload={'code': morse},
+                    packet = encode_text_packet(
+                        text=f"{key}:{morse}",
+                        message_type=BinaryMessageType.TELEMETRY,
+                        direction=BinaryDirection.UP,
+                        grade=int(min(15, max(0, thought_payload['score'] * 15))),
+                        coherence=thought_payload.get('pattern_strength', 0.0),
+                        confidence=thought_payload.get('score', 0.0),
+                        symbol=key if '/' in key else None,
                     )
-                    # Also attach a compact data pack
-                    t.payload.update({'pack': thought_payload})
-                    # Attach outcome code separately at top-level for quick filtering
-                    if 'outcome_code' in thought_payload:
-                        t.payload['outcome_code'] = thought_payload['outcome_code']
-                    self.thought_bus.publish(t)
+                    binary_payload = packet.to_bytes()
                 except Exception:
-                    logger.exception("WhaleSonar: failed to publish sonar thought")
+                    binary_payload = None
+
             # Emit ThoughtBus message with minimal text (morse) for Queen
             if self.thought_bus:
                 try:
-                    t = Thought(
-                        source='whale_sonar',
-                        topic=f'whale.sonar.{key}',
-                        payload={'code': morse},
-                    )
-                    # Also attach a compact data pack
-                    t.payload.update({'pack': thought_payload})
-                    self.thought_bus.publish(t)
+                    payload = {'code': morse, 'pack': thought_payload}
+                    if 'outcome_code' in thought_payload:
+                        payload['outcome_code'] = thought_payload['outcome_code']
+                    if binary_payload:
+                        self.thought_bus.publish_binary(
+                            source='whale_sonar',
+                            topic=f'whale.sonar.{key}',
+                            binary_payload=binary_payload,
+                            payload=payload,
+                        )
+                    else:
+                        t = Thought(
+                            source='whale_sonar',
+                            topic=f'whale.sonar.{key}',
+                            payload=payload,
+                        )
+                        self.thought_bus.publish(t)
                 except Exception:
                     logger.exception("WhaleSonar: failed to publish sonar thought")
 

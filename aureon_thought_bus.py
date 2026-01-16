@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import os
 import threading
@@ -33,6 +34,8 @@ class Thought:
 
     payload: Json = field(default_factory=dict)
     meta: Json = field(default_factory=dict)
+    payload_encoding: str = "json"
+    binary_payload_b64: Optional[str] = None
 
     def to_json(self) -> Json:
         return asdict(self)
@@ -109,6 +112,26 @@ class ThoughtBus:
                     self._persist(err)
 
         return thought
+
+    def publish_binary(
+        self,
+        *,
+        source: str,
+        topic: str,
+        binary_payload: bytes,
+        payload: Optional[Json] = None,
+        meta: Optional[Json] = None,
+    ) -> Thought:
+        encoded = base64.b64encode(binary_payload).decode("ascii")
+        thought = Thought(
+            source=source,
+            topic=topic,
+            payload=payload or {},
+            meta=meta or {},
+            payload_encoding="binary",
+            binary_payload_b64=encoded,
+        )
+        return self.publish(thought)
 
     def recall(self, topic_prefix: Optional[str] = None, limit: int = 100) -> List[Json]:
         with self._lock:

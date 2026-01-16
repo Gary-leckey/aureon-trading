@@ -50,6 +50,17 @@ from dataclasses import dataclass, field, asdict
 from collections import defaultdict
 import hashlib
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🐦 CHIRP BUS INTEGRATION - kHz-Speed Memory Signals
+# ═══════════════════════════════════════════════════════════════════════════════
+CHIRP_BUS_AVAILABLE = False
+get_chirp_bus = None
+try:
+    from aureon_chirp_bus import get_chirp_bus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -262,11 +273,49 @@ class ElephantMemory:
         """Remember a new pattern FOREVER"""
         self.patterns[pattern.pattern_id] = pattern
         self._save_memory()
+        
+        # 🐦 CHIRP EMISSION - kHz-Speed Memory Signals
+        # Emit pattern learning chirps for system-wide awareness
+        if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+            try:
+                chirp_bus = get_chirp_bus()
+                
+                chirp_bus.emit_signal(
+                    signal_type='ELEPHANT_PATTERN_LEARNED',
+                    symbol=pattern.symbol,
+                    coherence=pattern.confidence,
+                    confidence=pattern.win_rate,
+                    frequency=396.0,  # Liberation frequency
+                    amplitude=pattern.confidence
+                )
+                
+            except Exception as e:
+                # Chirp emission failure - non-critical, continue
+                pass
     
     def remember_wisdom(self, wisdom: TradingWisdom):
         """Remember wisdom FOREVER"""
         self.wisdom[wisdom.wisdom_id] = wisdom
         self._save_memory()
+        
+        # 🐦 CHIRP EMISSION - kHz-Speed Memory Signals
+        # Emit wisdom learning chirps for system-wide awareness
+        if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+            try:
+                chirp_bus = get_chirp_bus()
+                
+                chirp_bus.emit_signal(
+                    signal_type='ELEPHANT_WISDOM_LEARNED',
+                    symbol='SYSTEM',  # Wisdom applies system-wide
+                    coherence=wisdom.confidence,
+                    confidence=wisdom.confidence,
+                    frequency=528.0,  # Love frequency for wisdom
+                    amplitude=wisdom.confidence
+                )
+                
+            except Exception as e:
+                # Chirp emission failure - non-critical, continue
+                pass
     
     def block_path_forever(self, from_asset: str, to_asset: str, reason: str, 
                            loss_count: int, total_loss: float):

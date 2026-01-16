@@ -89,6 +89,33 @@ except ImportError:
     to_harmonics = None
     from_harmonics = None
 
+# Harmonic Binary Protocol
+try:
+    from aureon_harmonic_binary_protocol import (
+        encode_text_packet,
+        decode_packet_from_base64,
+        HarmonicBinaryPacket,
+        BinaryDirection,
+        BinaryMessageType,
+    )
+    HARMONIC_BINARY_AVAILABLE = True
+except ImportError:
+    HARMONIC_BINARY_AVAILABLE = False
+    encode_text_packet = None
+    decode_packet_from_base64 = None
+    HarmonicBinaryPacket = None
+    BinaryDirection = None
+    BinaryMessageType = None
+
+# Chirp Bus (kHz signaling)
+try:
+    from aureon_chirp_bus import get_chirp_bus, ChirpDirection
+    CHIRP_AVAILABLE = True
+except ImportError:
+    get_chirp_bus = None
+    ChirpDirection = None
+    CHIRP_AVAILABLE = False
+
 # Enigma
 try:
     from aureon_enigma import AureonEnigma, InterceptedSignal, SignalType, DecodedIntelligence
@@ -148,7 +175,9 @@ class ChainSignal:
     # Content
     original_message: str = ""
     current_content: str = ""
+    symbol: Optional[str] = None
     harmonics: List[Dict[str, Any]] = field(default_factory=list)
+    binary_packet_b64: Optional[str] = None
     
     # Chain state
     direction: SignalDirection = SignalDirection.DOWN
@@ -198,6 +227,38 @@ class ChainSignal:
             return self.current_content
         signals = [(h["freq"], h["amp"]) for h in self.harmonics]
         return from_harmonics(signals)
+
+    def ensure_binary_packet(
+        self,
+        *,
+        message_type: BinaryMessageType = BinaryMessageType.UNDEFINED,
+        symbol: Optional[str] = None,
+    ) -> Optional[str]:
+        if not HARMONIC_BINARY_AVAILABLE:
+            return None
+        if not self.current_content:
+            return self.binary_packet_b64
+        if self.binary_packet_b64:
+            return self.binary_packet_b64
+        packet = encode_text_packet(
+            self.current_content,
+            message_type=message_type,
+            direction=BinaryDirection.DOWN if self.direction == SignalDirection.DOWN else BinaryDirection.UP,
+            grade=int(min(15, max(0, round(self.coherence_scores.get(self.origin_system, 1.0) * 15)))) if self.coherence_scores else 0,
+            coherence=self.coherence_scores.get(self.origin_system, 1.0) if self.coherence_scores else 1.0,
+            confidence=self.coherence_scores.get(self.origin_system, 1.0) if self.coherence_scores else 1.0,
+            symbol=symbol,
+        )
+        self.binary_packet_b64 = packet.to_base64()
+        return self.binary_packet_b64
+
+    def decode_binary_packet(self) -> Optional[str]:
+        if not HARMONIC_BINARY_AVAILABLE or not self.binary_packet_b64:
+            return None
+        header, decoded = decode_packet_from_base64(self.binary_packet_b64)
+        self.current_content = decoded
+        self.node_contributions.setdefault("binary_header", header.__dict__)
+        return decoded
 
 
 # Backward compatibility alias - HarmonicSignal is now ChainSignal
@@ -289,6 +350,8 @@ class ChainNode:
             payload = thought.payload
             if 'chain_signal' in payload:
                 signal = ChainSignal.from_dict(payload['chain_signal'])
+                if not signal.current_content and signal.binary_packet_b64:
+                    signal.decode_binary_packet()
                 
                 # DEDUPLICATION: Skip already-processed signals to prevent infinite loops
                 signal_key = f"{signal.id}_{signal.hop_count}"
@@ -322,6 +385,9 @@ class ChainNode:
         signal.chain_path.append(self.node_id)
         signal.hop_count += 1
         signal.last_hop_at = time.time()
+
+        if not signal.current_content and signal.binary_packet_b64:
+            signal.decode_binary_packet()
         
         # Callback
         if self.on_signal_received:
@@ -371,20 +437,57 @@ class ChainNode:
         
         # Encode to harmonics for transmission
         signal.encode_to_harmonics()
+
+        # Emit ultra-compact chirp for kHz-rate signaling (best-effort)
+        if CHIRP_AVAILABLE:
+            try:
+                chirp_bus = get_chirp_bus()
+                if chirp_bus:
+                    coherence = signal.coherence_scores.get(self.node_id, 1.0) if signal.coherence_scores else 1.0
+                    confidence = signal.coherence_scores.get(self.node_id, 1.0) if signal.coherence_scores else 1.0
+                    chirp_bus.emit_signal(
+                        message=signal.current_content,
+                        direction=ChirpDirection.DOWN if signal.direction == SignalDirection.DOWN else ChirpDirection.UP,
+                        coherence=coherence,
+                        confidence=confidence,
+                        symbol=signal.symbol,
+                        frequency=int(self.frequency),
+                        amplitude=128,
+                    )
+            except Exception:
+                logger.debug("Chirp emit failed", exc_info=True)
+
+        binary_bytes = None
+        if HARMONIC_BINARY_AVAILABLE:
+            b64_packet = signal.ensure_binary_packet()
+            if b64_packet:
+                try:
+                    binary_bytes = HarmonicBinaryPacket.from_base64(b64_packet).to_bytes()
+                except Exception:
+                    binary_bytes = None
         
         # Publish to ThoughtBus
         if self.thought_bus and THOUGHT_BUS_AVAILABLE:
-            self.thought_bus.publish(Thought(
-                source=f"chain.{self.node_id}",
-                topic=f"chain.{next_node.node_id}.signal",
-                payload={
-                    "chain_signal": signal.to_dict(),
-                    "from_node": self.node_id,
-                    "to_node": next_node.node_id,
-                    "direction": signal.direction.value,
-                    "harmonics_count": len(signal.harmonics),
-                }
-            ))
+            payload_summary = {
+                "chain_signal": signal.to_dict(),
+                "from_node": self.node_id,
+                "to_node": next_node.node_id,
+                "direction": signal.direction.value,
+                "harmonics_count": len(signal.harmonics),
+            }
+            if binary_bytes:
+                self.thought_bus.publish_binary(
+                    source=f"chain.{self.node_id}",
+                    topic=f"chain.{next_node.node_id}.signal",
+                    binary_payload=binary_bytes,
+                    payload=payload_summary,
+                )
+            else:
+                self.thought_bus.publish(Thought(
+                    source=f"chain.{self.node_id}",
+                    topic=f"chain.{next_node.node_id}.signal",
+                    payload=payload_summary,
+                ))
         
         # Direct forwarding (for synchronous operation)
         return next_node.receive_signal(signal)

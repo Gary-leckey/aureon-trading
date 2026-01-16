@@ -1,7 +1,7 @@
 {
   "turn": 90,
   "profit": 0.0,
-  "total_value": 9.5331928947948,
+  "total_value": 9.54,
   "active_systems": 12,
   "insights": [
     "turn_state:turn_90",
@@ -12,5 +12,5 @@
     "loss_learning:active_monitoring",
     "neural_brain:active_thinking"
   ],
-  "timestamp": 1768571369.2884367
+  "timestamp": 1768582533.595378
 }

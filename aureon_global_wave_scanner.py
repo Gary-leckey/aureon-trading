@@ -44,6 +44,16 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🐦 CHIRP BUS INTEGRATION - kHz-Speed Scanner Signals
+# ═══════════════════════════════════════════════════════════════════════════════
+CHIRP_BUS_AVAILABLE = False
+get_chirp_bus = None
+try:
+    from aureon_chirp_bus import get_chirp_bus
+    CHIRP_BUS_AVAILABLE = True
+except ImportError:
+    CHIRP_BUS_AVAILABLE = False
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 💸 THE GOAL - MICRO-MOMENTUM COST THRESHOLDS (WE CANNOT BLEED!)
