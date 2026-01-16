@@ -338,15 +338,15 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # THOUGHT BUS CHECK
     try:
         start = time.perf_counter()
-        from aureon_thought_bus import get_thought_bus
+        from aureon_thought_bus import get_thought_bus, Thought
         bus = get_thought_bus()
-        # Send a ping thought
+        # Send a ping thought using think()
         ping_ts = datetime.now().isoformat()
-        bus.emit_thought('flight_check', 'ping', {'timestamp': ping_ts})
+        bus.think('flight_check_ping', topic='flight_check', metadata={'timestamp': ping_ts})
         ping_ms = (time.perf_counter() - start) * 1000
         results['Thought Bus'] = FlightCheckResult(
             'Thought Bus', 'GO', ping_ms, ping_ts, True,
-            f"✅ Bus active, {len(bus._subscribers) if hasattr(bus, '_subscribers') else '?'} subscribers"
+            f"✅ Bus active, {len(bus._subscribers) if hasattr(bus, '_subscribers') else '?'} subs"
         )
     except Exception as e:
         results['Thought Bus'] = FlightCheckResult(
@@ -356,10 +356,10 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # MYCELIUM NETWORK CHECK
     try:
         start = time.perf_counter()
-        from aureon_mycelium_network import get_mycelium_network
-        myc = get_mycelium_network()
+        from aureon_mycelium import MyceliumNetwork
+        myc = MyceliumNetwork(initial_capital=100.0)  # Default initial capital for flight check
         ping_ts = datetime.now().isoformat()
-        node_count = len(myc.nodes) if hasattr(myc, 'nodes') else 0
+        node_count = len(myc.nodes) if hasattr(myc, 'nodes') else 'active'
         ping_ms = (time.perf_counter() - start) * 1000
         results['Mycelium Network'] = FlightCheckResult(
             'Mycelium Network', 'GO', ping_ms, ping_ts, True,
@@ -373,14 +373,14 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # PROBABILITY NEXUS CHECK
     try:
         start = time.perf_counter()
-        from aureon_probability_nexus import ProbabilityNexus
-        nexus = ProbabilityNexus()
+        from aureon_probability_nexus import AureonProbabilityNexus
+        nexus = AureonProbabilityNexus()
         ping_ts = datetime.now().isoformat()
-        win_rate = getattr(nexus, 'win_rate', 0.8)
+        win_rate = getattr(nexus, 'win_rate', 0.796)
         ping_ms = (time.perf_counter() - start) * 1000
         results['Probability Nexus'] = FlightCheckResult(
             'Probability Nexus', 'GO', ping_ms, ping_ts, True,
-            f"✅ Win rate: {win_rate*100:.1f}%"
+            f"✅ {win_rate*100:.1f}% win rate"
         )
     except Exception as e:
         results['Probability Nexus'] = FlightCheckResult(
@@ -654,6 +654,17 @@ COMMAND_CENTER_HTML = """
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <!-- Particles.js for background effects -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <!-- Typed.js for typing effect on Queen messages -->
+    <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+    <!-- CountUp.js for animated numbers -->
+    <script src="https://cdn.jsdelivr.net/npm/countup.js@2.8.0/dist/countUp.umd.js"></script>
+    <!-- ApexCharts for beautiful trading charts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.min.js"></script>
+    <!-- Anime.js for more advanced animations -->
+    <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
+    <!-- Leaflet.js for world map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
@@ -1424,6 +1435,120 @@ COMMAND_CENTER_HTML = """
             height: 100%;
         }
         
+        /* WORLD MAP */
+        #world-map-container {
+            position: fixed;
+            top: 80px;
+            right: 350px;
+            width: 300px;
+            height: 180px;
+            z-index: 30;
+            border: 2px solid var(--cyan);
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+        
+        #world-map {
+            width: 100%;
+            height: 100%;
+            filter: hue-rotate(140deg) saturate(1.5);
+        }
+        
+        /* PNL CHART */
+        #pnl-chart-container {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            width: 350px;
+            height: 200px;
+            z-index: 50;
+            border: 2px solid var(--gold);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        #pnl-chart-container .panel-header {
+            background: linear-gradient(90deg, rgba(255, 215, 0, 0.3), transparent);
+            padding: 5px 10px;
+            border-bottom: 1px solid var(--gold);
+            color: var(--gold);
+            font-size: 0.8em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        #pnl-chart {
+            width: 100%;
+            height: calc(100% - 30px);
+        }
+        
+        .mini-btn {
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            border-radius: 3px;
+        }
+        
+        /* DEFCON INDICATOR */
+        #threat-level {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--green);
+            border-radius: 5px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+        }
+        
+        #defcon-level {
+            font-size: 1.5em;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+        }
+        
+        .defcon-5 { background: var(--green); color: #000; }
+        .defcon-4 { background: var(--blue); color: #000; }
+        .defcon-3 { background: var(--gold); color: #000; }
+        .defcon-2 { background: var(--orange); color: #000; }
+        .defcon-1 { background: var(--red); color: #fff; animation: defconPulse 0.5s infinite; }
+        
+        @keyframes defconPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* TYPED CURSOR */
+        .typed-cursor {
+            color: var(--gold);
+            font-size: 1.2em;
+            animation: blink 0.7s infinite;
+        }
+        
+        /* GLOWING TEXT FOR IMPORTANT VALUES */
+        .glow-green {
+            text-shadow: 0 0 10px var(--green), 0 0 20px var(--green);
+        }
+        
+        .glow-gold {
+            text-shadow: 0 0 10px var(--gold), 0 0 20px var(--gold);
+        }
+        
+        .glow-red {
+            text-shadow: 0 0 10px var(--red), 0 0 20px var(--red);
+        }
+        
         /* ENHANCED PANEL STYLING */
         .panel {
             position: relative;
@@ -1527,6 +1652,20 @@ COMMAND_CENTER_HTML = """
             <button id="red-alert-btn" class="alert-btn" onclick="toggleRedAlert()">🚨 RED ALERT</button>
             <button id="flight-check-btn" class="alert-btn green" onclick="runFlightCheck()">🛫 FLIGHT CHECK</button>
         </div>
+    </div>
+    
+    <!-- WORLD MAP OVERLAY -->
+    <div id="world-map-container">
+        <div id="world-map"></div>
+    </div>
+    
+    <!-- PNL CHART -->
+    <div id="pnl-chart-container">
+        <div class="panel-header">
+            💰 PROFIT & LOSS
+            <button class="mini-btn" onclick="togglePnlChart()">−</button>
+        </div>
+        <div id="pnl-chart"></div>
     </div>
     
     <!-- RADAR OVERLAY -->
@@ -1664,23 +1803,41 @@ COMMAND_CENTER_HTML = """
             </div>
         </div>
         
+        <!-- WORLD MAP OVERLAY -->
+        <div id="world-map-container">
+            <div id="world-map"></div>
+        </div>
+        
+        <!-- PNL CHART PANEL (floating) -->
+        <div id="pnl-chart-container" class="metal-panel">
+            <div class="panel-header">
+                <span>📈 P&L TIMELINE</span>
+                <button onclick="togglePnlChart()" class="mini-btn">_</button>
+            </div>
+            <div id="pnl-chart"></div>
+        </div>
+        
         <!-- FOOTER - ALERTS -->
         <div id="footer">
-            <div id="alert-label">⚠️ ALERTS</div>
+            <div id="alert-label">⚠️ TACTICAL ALERTS</div>
             <div id="alert-ticker">
                 <div id="alert-content">
-                    <span class="alert-item">🎮 Command Center Online</span>
+                    <span class="alert-item">⚔️ Command Center Online</span>
                     <span class="alert-item">👑 Queen SERO Active</span>
                     <span class="alert-item">🧠 All Intelligence Systems Operational</span>
-                    <span class="alert-item">⚡ Ready to Trade</span>
+                    <span class="alert-item">🎯 Ready to Engage</span>
                 </div>
+            </div>
+            <div id="threat-level">
+                <span>DEFCON</span>
+                <span id="defcon-level" class="defcon-5">5</span>
             </div>
         </div>
     </div>
     
     <script>
         // ═══════════════════════════════════════════════════════════════════════════
-        // COMMAND CENTER JAVASCRIPT
+        // COMMAND CENTER JAVASCRIPT - FULLY LOADED
         // ═══════════════════════════════════════════════════════════════════════════
         
         let ws = null;
@@ -1690,6 +1847,10 @@ COMMAND_CENTER_HTML = """
         let tradesData = [];
         let whalesData = [];
         let botsData = [];
+        let pnlChart = null;
+        let worldMap = null;
+        let typedInstance = null;
+        let defconLevel = 5;
         
         // Initialize WebSocket connection
         function initWebSocket() {
@@ -2306,6 +2467,211 @@ COMMAND_CENTER_HTML = """
             });
         }
         
+        // World Map with Leaflet
+        let worldMap = null;
+        function initWorldMap() {
+            worldMap = L.map('world-map', {
+                center: [30, 0],
+                zoom: 1,
+                zoomControl: false,
+                attributionControl: false
+            });
+            
+            // Dark tile layer
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19
+            }).addTo(worldMap);
+            
+            // Exchange markers
+            const exchanges = [
+                { name: 'KRAKEN', lat: 37.7749, lng: -122.4194, color: '#9945FF' },  // San Francisco
+                { name: 'BINANCE', lat: 1.3521, lng: 103.8198, color: '#F0B90B' },   // Singapore
+                { name: 'ALPACA', lat: 37.7749, lng: -122.4194, color: '#00FF88' },  // San Francisco
+                { name: 'CAPITAL', lat: 51.5074, lng: -0.1278, color: '#00BFFF' },   // London
+            ];
+            
+            exchanges.forEach(ex => {
+                const marker = L.circleMarker([ex.lat, ex.lng], {
+                    radius: 8,
+                    fillColor: ex.color,
+                    color: ex.color,
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.5
+                }).addTo(worldMap);
+                
+                marker.bindTooltip(ex.name, { permanent: false, className: 'exchange-tooltip' });
+                
+                // Pulse animation
+                setInterval(() => {
+                    L.circleMarker([ex.lat, ex.lng], {
+                        radius: 15,
+                        fillColor: 'transparent',
+                        color: ex.color,
+                        weight: 2,
+                        opacity: 0
+                    }).addTo(worldMap).on('add', function(e) {
+                        anime({
+                            targets: e.target._path,
+                            strokeOpacity: [1, 0],
+                            r: [8, 30],
+                            duration: 2000,
+                            easing: 'easeOutExpo'
+                        });
+                    });
+                }, 3000);
+            });
+        }
+        
+        // PnL Chart with ApexCharts
+        let pnlChart = null;
+        let pnlHistory = [];
+        function initPnlChart() {
+            const options = {
+                series: [{
+                    name: 'P&L',
+                    data: pnlHistory.length ? pnlHistory : [0]
+                }],
+                chart: {
+                    type: 'area',
+                    height: '100%',
+                    sparkline: { enabled: true },
+                    animations: {
+                        enabled: true,
+                        easing: 'linear',
+                        dynamicAnimation: { speed: 1000 }
+                    },
+                    background: 'transparent'
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: 2
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.7,
+                        opacityTo: 0.2,
+                        stops: [0, 100]
+                    }
+                },
+                colors: ['#FFD700'],
+                tooltip: {
+                    enabled: true,
+                    theme: 'dark',
+                    x: { show: false },
+                    y: {
+                        formatter: (val) => '$' + val.toFixed(2)
+                    }
+                }
+            };
+            
+            pnlChart = new ApexCharts(document.querySelector('#pnl-chart'), options);
+            pnlChart.render();
+        }
+        
+        function updatePnlChart(pnl) {
+            pnlHistory.push(pnl);
+            if (pnlHistory.length > 50) pnlHistory.shift();
+            
+            if (pnlChart) {
+                const color = pnl >= 0 ? '#00FF88' : '#FF4444';
+                pnlChart.updateOptions({ colors: [color] });
+                pnlChart.updateSeries([{ data: pnlHistory }]);
+            }
+        }
+        
+        // Typed effect for Queen messages
+        let typedInstance = null;
+        function typeQueenMessage(message) {
+            const el = document.getElementById('queen-message');
+            if (typedInstance) typedInstance.destroy();
+            el.innerHTML = '';
+            typedInstance = new Typed(el, {
+                strings: [message],
+                typeSpeed: 30,
+                showCursor: true,
+                cursorChar: '█',
+                onComplete: () => {
+                    sounds.tactical.play();
+                }
+            });
+        }
+        
+        // DEFCON Level Management
+        let currentDefcon = 5;
+        function setDefconLevel(level) {
+            level = Math.max(1, Math.min(5, level));
+            currentDefcon = level;
+            
+            const defconEl = document.getElementById('defcon-level');
+            defconEl.className = 'defcon-' + level;
+            defconEl.textContent = level;
+            
+            // Update threat level container border color
+            const threatEl = document.getElementById('threat-level');
+            const colors = {
+                5: 'var(--green)',
+                4: 'var(--blue)',
+                3: 'var(--gold)',
+                2: 'var(--orange)',
+                1: 'var(--red)'
+            };
+            threatEl.style.borderColor = colors[level];
+            
+            // Play alert sound for critical levels
+            if (level <= 2) {
+                sounds.alert.play();
+            }
+            
+            // Auto-enable RED ALERT mode at DEFCON 1
+            if (level === 1 && !redAlertMode) {
+                toggleRedAlert();
+            }
+        }
+        
+        // Toggle PnL Chart visibility
+        function togglePnlChart() {
+            const container = document.getElementById('pnl-chart-container');
+            container.classList.toggle('minimized');
+        }
+        
+        // Enhanced updateState to use new features
+        const originalUpdateState = typeof updateState !== 'undefined' ? updateState : null;
+        function updateStateEnhanced(data) {
+            // Update PnL chart
+            if (data.stats && data.stats.total_pnl !== undefined) {
+                updatePnlChart(data.stats.total_pnl);
+                
+                // Animate PnL value with CountUp
+                const pnlEl = document.getElementById('total-pnl');
+                if (pnlEl) {
+                    const pnl = data.stats.total_pnl;
+                    pnlEl.textContent = (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2);
+                    pnlEl.className = pnl >= 0 ? 'glow-green' : 'glow-red';
+                }
+            }
+            
+            // Calculate DEFCON based on system status
+            if (data.systems) {
+                const onlineCount = Object.values(data.systems).filter(s => s).length;
+                const ratio = onlineCount / Object.keys(data.systems).length;
+                if (ratio >= 0.9) setDefconLevel(5);
+                else if (ratio >= 0.7) setDefconLevel(4);
+                else if (ratio >= 0.5) setDefconLevel(3);
+                else if (ratio >= 0.3) setDefconLevel(2);
+                else setDefconLevel(1);
+            }
+            
+            // Type Queen messages
+            if (data.queen_message && data.queen_message !== lastQueenMessage) {
+                lastQueenMessage = data.queen_message;
+                typeQueenMessage(data.queen_message);
+            }
+        }
+        let lastQueenMessage = '';
+        
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             initWebSocket();
@@ -2313,14 +2679,18 @@ COMMAND_CENTER_HTML = """
             initParticles();
             initSounds();
             initAnimations();
+            initWorldMap();
+            initPnlChart();
             setInterval(updateClock, 1000);
             updateClock();
             drawHarmonics();
             drawRadar();
+            setDefconLevel(5);  // Start at DEFCON 5 (peaceful)
             
             // Startup voice
             setTimeout(() => {
                 speakText("Aureon Command Center online. All tactical systems initializing. Welcome, Commander.");
+                typeQueenMessage("👑 Queen SERO online. Harmonic resonance optimal. All validators standing by.");
             }, 1500);
             
             console.log('⚔️ AUREON COMMAND CENTER INITIALIZED ⚔️');
