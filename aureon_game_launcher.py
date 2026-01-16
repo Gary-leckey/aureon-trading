@@ -8,6 +8,16 @@ Starts the Command Center + Trading Engine together!
 """
 
 import sys, os, atexit
+
+# SAFE PRINT WRAPPER FOR WINDOWS
+def safe_print(*args, **kwargs):
+    """Safe print that ignores I/O errors on Windows exit."""
+    try:
+        import builtins
+        builtins.safe_print(*args, **kwargs)
+    except (ValueError, OSError):
+        pass
+
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
     os.environ['PYTHONUNBUFFERED'] = '1'
@@ -68,13 +78,13 @@ def _build_python_command(script_name: str, args: Optional[List[str]] = None) ->
 
 
 def _start_process(name: str, cmd: List[str]) -> ServiceProcess:
-    print(f"🚀 Starting {name} ...")
+    safe_print(f"🚀 Starting {name} ...")
     process = subprocess.Popen(cmd)
     return ServiceProcess(name=name, command=cmd, process=process)
 
 
 def _print_banner():
-    print("""
+    safe_print("""
     
     ╔═══════════════════════════════════════════════════════════════════════════╗
     ║                                                                           ║
@@ -95,27 +105,27 @@ def _print_banner():
 
 
 def _print_urls(config: GameModeConfig):
-    print("\n" + "=" * 80)
-    print("🌐 AUREON GAME MODE - DASHBOARD URLs")
-    print("=" * 80)
+    safe_print("\n" + "=" * 80)
+    safe_print("🌐 AUREON GAME MODE - DASHBOARD URLs")
+    safe_print("=" * 80)
     if config.command_center:
-        print("🎮 COMMAND CENTER (MAIN)   → http://localhost:8888")
+        safe_print("🎮 COMMAND CENTER (MAIN)   → http://localhost:8888")
     if config.queen_web_dashboard:
-        print("👑 Queen Web Dashboard     → http://localhost:5000")
+        safe_print("👑 Queen Web Dashboard     → http://localhost:5000")
     if config.queen_unified_dashboard:
-        print("👑 Queen Unified Dashboard → http://localhost:13000")
+        safe_print("👑 Queen Unified Dashboard → http://localhost:13000")
     if config.bot_hunter_dashboard:
-        print("🤖 Bot Hunter Dashboard    → http://localhost:9999")
+        safe_print("🤖 Bot Hunter Dashboard    → http://localhost:9999")
     if config.global_bot_map:
-        print("🗺️  Global Bot Map          → http://localhost:12000")
-    print("=" * 80 + "\n")
+        safe_print("🗺️  Global Bot Map          → http://localhost:12000")
+    safe_print("=" * 80 + "\n")
 
 
 def _shutdown_processes(processes: List[ServiceProcess]):
-    print("\n🧯 Shutting down Aureon Game Mode...")
+    safe_print("\n🧯 Shutting down Aureon Game Mode...")
     for svc in processes:
         try:
-            print(f"⏹️  Stopping {svc.name} ...")
+            safe_print(f"⏹️  Stopping {svc.name} ...")
             svc.process.terminate()
         except Exception:
             pass
@@ -127,7 +137,7 @@ def _shutdown_processes(processes: List[ServiceProcess]):
                 svc.process.kill()
         except Exception:
             pass
-    print("✅ All systems stopped.")
+    safe_print("✅ All systems stopped.")
 
 
 def run_game_mode(config: GameModeConfig) -> int:
@@ -186,15 +196,15 @@ def run_game_mode(config: GameModeConfig) -> int:
         # Open browser automatically
         if config.open_browser and config.command_center:
             time.sleep(2)
-            print("🌐 Opening Command Center in browser...")
+            safe_print("🌐 Opening Command Center in browser...")
             try:
                 webbrowser.open("http://localhost:8888")
             except Exception:
                 pass
 
-        print("🎮 Aureon Game Mode is LIVE!")
-        print("   Press Ctrl+C to stop all systems.")
-        print("")
+        safe_print("🎮 Aureon Game Mode is LIVE!")
+        safe_print("   Press Ctrl+C to stop all systems.")
+        safe_print("")
 
         while True:
             # Keep main process alive while children run
@@ -202,18 +212,18 @@ def run_game_mode(config: GameModeConfig) -> int:
             # If any child exits, keep running but warn
             for svc in list(processes):
                 if svc.process.poll() is not None:
-                    print(f"⚠️  {svc.name} exited (code {svc.process.returncode}).")
+                    safe_print(f"⚠️  {svc.name} exited (code {svc.process.returncode}).")
                     processes.remove(svc)
             if not processes:
-                print("✅ All services stopped.")
+                safe_print("✅ All services stopped.")
                 return 0
 
     except KeyboardInterrupt:
-        print("\n🧠 Command received: STOP")
+        safe_print("\n🧠 Command received: STOP")
         _shutdown_processes(processes)
         return 0
     except Exception as e:
-        print(f"\n❌ Game Mode error: {e}")
+        safe_print(f"\n❌ Game Mode error: {e}")
         _shutdown_processes(processes)
         return 1
 
@@ -274,14 +284,14 @@ def main():
     _print_banner()
     config = parse_args()
 
-    print("=" * 80)
+    safe_print("=" * 80)
     if config.dry_run and config.start_trading:
-        print("🧪 Trading Mode: DRY-RUN (safe simulation)")
+        safe_print("🧪 Trading Mode: DRY-RUN (safe simulation)")
     elif config.start_trading:
-        print("⚠️  Trading Mode: LIVE (real money!)")
+        safe_print("⚠️  Trading Mode: LIVE (real money!)")
     else:
-        print("🛑 Trading Engine: DISABLED (dashboard only)")
-    print("=" * 80 + "\n")
+        safe_print("🛑 Trading Engine: DISABLED (dashboard only)")
+    safe_print("=" * 80 + "\n")
 
     return_code = run_game_mode(config)
     sys.exit(return_code)

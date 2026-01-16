@@ -38,6 +38,15 @@ import sys
 import os
 import atexit
 
+# SAFE PRINT WRAPPER FOR WINDOWS
+def safe_print(*args, **kwargs):
+    """Safe print that ignores I/O errors on Windows exit."""
+    try:
+        import builtins
+        builtins.safe_print(*args, **kwargs)
+    except (ValueError, OSError):
+        pass
+
 # Windows UTF-8 fix - AGGRESSIVE VERSION
 # Skip stderr wrapping to avoid "I/O operation on closed file" on exit
 if sys.platform == 'win32':
@@ -81,7 +90,7 @@ try:
     AIOHTTP_AVAILABLE = True
 except ImportError:
     AIOHTTP_AVAILABLE = False
-    print("❌ aiohttp not available - pip install aiohttp")
+    safe_print("❌ aiohttp not available - pip install aiohttp")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SYSTEM IMPORTS - Load all available intelligence systems
@@ -1503,7 +1512,7 @@ async def websocket_handler(request):
     await ws.prepare(request)
     
     state.ws_clients.add(ws)
-    print(f"🔌 New WebSocket client connected. Total: {len(state.ws_clients)}")
+    safe_print(f"🔌 New WebSocket client connected. Total: {len(state.ws_clients)}")
     
     try:
         # Send initial state
@@ -1529,10 +1538,10 @@ async def websocket_handler(request):
                 # Handle client messages if needed
                 pass
             elif msg.type == aiohttp.WSMsgType.ERROR:
-                print(f'WebSocket error: {ws.exception()}')
+                safe_print(f'WebSocket error: {ws.exception()}')
     finally:
         state.ws_clients.discard(ws)
-        print(f"🔌 WebSocket client disconnected. Total: {len(state.ws_clients)}")
+        safe_print(f"🔌 WebSocket client disconnected. Total: {len(state.ws_clients)}")
     
     return ws
 
@@ -1696,7 +1705,7 @@ async def thought_bus_listener_task():
             # This would integrate with the actual thought bus
             pass
         except Exception as e:
-            print(f"ThoughtBus listener error: {e}")
+            safe_print(f"ThoughtBus listener error: {e}")
         await asyncio.sleep(1)
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1735,16 +1744,16 @@ async def cleanup_background_tasks(app):
 def main():
     """Main entry point"""
     if not AIOHTTP_AVAILABLE:
-        print("❌ Cannot start Command Center - aiohttp not installed")
-        print("   Run: pip install aiohttp")
+        safe_print("❌ Cannot start Command Center - aiohttp not installed")
+        safe_print("   Run: pip install aiohttp")
         return
     
     # Count online systems
     state.systems_online = sum(1 for v in SYSTEMS_STATUS.values() if v)
     state.systems_total = len(SYSTEMS_STATUS)
     
-    print("\n" + "=" * 80)
-    print("""
+    safe_print("\n" + "=" * 80)
+    safe_print("""
     ██████╗ ██████╗ ███╗   ███╗███╗   ███╗ █████╗ ███╗   ██╗██████╗ 
    ██╔════╝██╔═══██╗████╗ ████║████╗ ████║██╔══██╗████╗  ██║██╔══██╗
    ██║     ██║   ██║██╔████╔██║██╔████╔██║███████║██╔██╗ ██║██║  ██║
@@ -1759,26 +1768,26 @@ def main():
                 ╚██████╗███████╗██║ ╚████║   ██║   ███████╗██║  ██║
                  ╚═════╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝
     """)
-    print("=" * 80)
-    print(f"🎮 AUREON COMMAND CENTER - LAUNCHING...")
-    print(f"=" * 80)
-    print(f"")
-    print(f"   🌐 URL: http://localhost:8888")
-    print(f"")
-    print(f"   📊 Intelligence Systems: {state.systems_online}/{state.systems_total} ONLINE")
-    print(f"   👑 Queen Voice: {'✅ ENABLED' if SYSTEMS_STATUS.get('Queen Voice') else '⚠️ DISABLED'}")
-    print(f"   🧠 Thought Bus: {'✅ CONNECTED' if SYSTEMS_STATUS.get('Thought Bus') else '⚠️ OFFLINE'}")
-    print(f"   🍄 Mycelium: {'✅ ACTIVE' if SYSTEMS_STATUS.get('Mycelium Network') else '⚠️ OFFLINE'}")
-    print(f"   🐦 Chirp Bus: {'✅ ACTIVE' if SYSTEMS_STATUS.get('Chirp Bus') else '⚠️ OFFLINE'}")
-    print(f"")
-    print(f"   🐙 Kraken: {'✅' if SYSTEMS_STATUS.get('Kraken Exchange') else '❌'}")
-    print(f"   🟡 Binance: {'✅' if SYSTEMS_STATUS.get('Binance Exchange') else '❌'}")
-    print(f"   🦙 Alpaca: {'✅' if SYSTEMS_STATUS.get('Alpaca Exchange') else '❌'}")
-    print(f"   💼 Capital: {'✅' if SYSTEMS_STATUS.get('Capital Exchange') else '❌'}")
-    print(f"")
-    print(f"=" * 80)
-    print(f"   Press Ctrl+C to stop the Command Center")
-    print(f"=" * 80 + "\n")
+    safe_print("=" * 80)
+    safe_print(f"🎮 AUREON COMMAND CENTER - LAUNCHING...")
+    safe_print(f"=" * 80)
+    safe_print(f"")
+    safe_print(f"   🌐 URL: http://localhost:8888")
+    safe_print(f"")
+    safe_print(f"   📊 Intelligence Systems: {state.systems_online}/{state.systems_total} ONLINE")
+    safe_print(f"   👑 Queen Voice: {'✅ ENABLED' if SYSTEMS_STATUS.get('Queen Voice') else '⚠️ DISABLED'}")
+    safe_print(f"   🧠 Thought Bus: {'✅ CONNECTED' if SYSTEMS_STATUS.get('Thought Bus') else '⚠️ OFFLINE'}")
+    safe_print(f"   🍄 Mycelium: {'✅ ACTIVE' if SYSTEMS_STATUS.get('Mycelium Network') else '⚠️ OFFLINE'}")
+    safe_print(f"   🐦 Chirp Bus: {'✅ ACTIVE' if SYSTEMS_STATUS.get('Chirp Bus') else '⚠️ OFFLINE'}")
+    safe_print(f"")
+    safe_print(f"   🐙 Kraken: {'✅' if SYSTEMS_STATUS.get('Kraken Exchange') else '❌'}")
+    safe_print(f"   🟡 Binance: {'✅' if SYSTEMS_STATUS.get('Binance Exchange') else '❌'}")
+    safe_print(f"   🦙 Alpaca: {'✅' if SYSTEMS_STATUS.get('Alpaca Exchange') else '❌'}")
+    safe_print(f"   💼 Capital: {'✅' if SYSTEMS_STATUS.get('Capital Exchange') else '❌'}")
+    safe_print(f"")
+    safe_print(f"=" * 80)
+    safe_print(f"   Press Ctrl+C to stop the Command Center")
+    safe_print(f"=" * 80 + "\n")
     
     # Create and run app
     app = create_app()
