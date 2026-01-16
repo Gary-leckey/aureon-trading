@@ -642,8 +642,21 @@ COMMAND_CENTER_HTML = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎮👑 AUREON COMMAND CENTER 👑🎮</title>
+    
+    <!-- OPEN SOURCE CDN LIBRARIES -->
+    <!-- Three.js for 3D Globe -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- GSAP for smooth animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Howler.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <!-- Chart.js for real-time charts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <!-- Particles.js for background effects -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
         
         * {
             margin: 0;
@@ -657,41 +670,152 @@ COMMAND_CENTER_HTML = """
             --green: #00FF88;
             --green-dark: #00AA55;
             --red: #FF3366;
+            --red-dark: #CC0033;
             --blue: #00BFFF;
             --purple: #9966FF;
             --cyan: #00FFFF;
             --orange: #FF6600;
-            --bg-dark: #0a0a1a;
-            --bg-panel: rgba(10, 10, 30, 0.95);
-            --border-glow: rgba(255, 215, 0, 0.5);
+            --bg-dark: #0a0a0f;
+            --bg-panel: rgba(15, 15, 25, 0.95);
+            --border-glow: rgba(255, 215, 0, 0.6);
+            --metal-light: #4a4a5a;
+            --metal-dark: #1a1a2a;
+            --alert-red: #ff0000;
+        }
+        
+        /* CRT SCANLINE EFFECT OVERLAY */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+        }
+        
+        /* CRT FLICKER EFFECT */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9998;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+            animation: crtFlicker 0.15s infinite;
+        }
+        
+        @keyframes crtFlicker {
+            0% { opacity: 0.97; }
+            50% { opacity: 1; }
+            100% { opacity: 0.98; }
         }
         
         body {
-            font-family: 'Share Tech Mono', monospace;
-            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 25%, #0a1a2e 50%, #1a1a0a 75%, #0a0a1a 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 30s ease infinite;
+            font-family: 'Rajdhani', 'Share Tech Mono', monospace;
+            background: #0a0a0f;
             color: var(--green);
             overflow: hidden;
             height: 100vh;
         }
         
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+        /* PARTICLE BACKGROUND */
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a0a1e 30%, #0a1a1e 60%, #0f0f1a 100%);
+        }
+        
+        /* RED ALERT MODE */
+        body.red-alert {
+            animation: redAlertPulse 1s infinite;
+        }
+        
+        body.red-alert::after {
+            background: radial-gradient(ellipse at center, rgba(255, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%);
+        }
+        
+        @keyframes redAlertPulse {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.1) hue-rotate(-10deg); }
+        }
+        
+        /* METALLIC PANEL STYLING - C&C STYLE */
+        .metal-panel {
+            background: linear-gradient(180deg, 
+                var(--metal-light) 0%, 
+                var(--metal-dark) 5%, 
+                var(--bg-dark) 10%, 
+                var(--bg-dark) 90%, 
+                var(--metal-dark) 95%, 
+                var(--metal-light) 100%
+            );
+            border: 2px solid var(--metal-light);
+            border-radius: 3px;
+            box-shadow: 
+                inset 0 2px 4px rgba(255, 255, 255, 0.1),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.5),
+                0 0 20px rgba(0, 255, 136, 0.2);
+        }
+        
+        .metal-panel::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 215, 0, 0.5), 
+                transparent
+            );
         }
         
         /* HEADER - COMMAND BAR */
         #header {
-            background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(20,20,40,0.9) 100%);
+            background: linear-gradient(180deg, 
+                #2a2a3a 0%, 
+                #1a1a2a 5%, 
+                #0f0f1a 50%, 
+                #1a1a2a 95%, 
+                #2a2a3a 100%
+            );
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 3px solid var(--gold);
-            box-shadow: 0 4px 30px rgba(255, 215, 0, 0.4);
+            box-shadow: 
+                0 4px 30px rgba(255, 215, 0, 0.4),
+                inset 0 -2px 10px rgba(0, 0, 0, 0.5);
             position: relative;
             z-index: 100;
+        }
+        
+        /* RIVETS ON PANELS */
+        .rivet {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle at 30% 30%, #666, #222);
+            border-radius: 50%;
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3);
         }
         
         #logo {
@@ -704,6 +828,7 @@ COMMAND_CENTER_HTML = """
             -webkit-text-fill-color: transparent;
             animation: shimmer 3s linear infinite;
             text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+            letter-spacing: 2px;
         }
         
         @keyframes shimmer {
@@ -1207,6 +1332,118 @@ COMMAND_CENTER_HTML = """
             border-radius: 5px;
         }
         
+        /* ALERT BUTTONS */
+        .alert-btn {
+            padding: 8px 15px;
+            background: linear-gradient(180deg, #4a2020, #2a1010);
+            color: var(--red);
+            border: 2px solid var(--red);
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+        }
+        
+        .alert-btn:hover {
+            background: linear-gradient(180deg, #6a3030, #4a2020);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+        }
+        
+        .alert-btn.active {
+            animation: alertPulse 0.5s infinite;
+            background: var(--red);
+            color: #fff;
+        }
+        
+        .alert-btn.green {
+            background: linear-gradient(180deg, #204a20, #102a10);
+            color: var(--green);
+            border-color: var(--green);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+        
+        .alert-btn.green:hover {
+            background: linear-gradient(180deg, #306a30, #204a20);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+        
+        @keyframes alertPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        /* RADAR CONTAINER */
+        #radar-container {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 180px;
+            height: 180px;
+            z-index: 50;
+            background: rgba(0, 20, 10, 0.9);
+            border: 2px solid var(--green);
+            border-radius: 50%;
+            box-shadow: 
+                0 0 30px rgba(0, 255, 136, 0.3),
+                inset 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+        
+        #radar-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* GLOBE CONTAINER */
+        #globe-container {
+            position: fixed;
+            top: 80px;
+            right: 350px;
+            width: 200px;
+            height: 200px;
+            z-index: 40;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        /* QUEEN WAVEFORM */
+        #queen-waveform {
+            position: absolute;
+            bottom: 10px;
+            left: 120px;
+            right: 100px;
+            height: 30px;
+        }
+        
+        #voice-waveform {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* ENHANCED PANEL STYLING */
+        .panel {
+            position: relative;
+            background: linear-gradient(180deg, 
+                rgba(40, 40, 60, 0.95) 0%, 
+                rgba(15, 15, 25, 0.98) 5%, 
+                rgba(10, 10, 20, 0.98) 95%, 
+                rgba(40, 40, 60, 0.95) 100%
+            );
+            border: 2px solid var(--green);
+            border-radius: 5px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 
+                0 0 20px rgba(0, 255, 136, 0.2),
+                inset 0 0 30px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
         /* SCROLLBAR */
         ::-webkit-scrollbar {
             width: 8px;
@@ -1234,6 +1471,10 @@ COMMAND_CENTER_HTML = """
             #stats-row {
                 grid-template-columns: repeat(3, 1fr);
             }
+            #radar-container {
+                width: 120px;
+                height: 120px;
+            }
         }
         
         @media (max-width: 1200px) {
@@ -1243,13 +1484,29 @@ COMMAND_CENTER_HTML = """
             #systems-panel, #right-sidebar {
                 display: none;
             }
+            #radar-container {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- PARTICLE BACKGROUND -->
+    <div id="particles-js"></div>
+    
+    <!-- 3D GLOBE CONTAINER -->
+    <div id="globe-container"></div>
+    
+    <!-- RED ALERT SIREN (hidden audio) -->
+    <div id="audio-container" style="display:none;"></div>
+    
     <!-- HEADER -->
-    <div id="header">
-        <div id="logo">🎮👑 AUREON COMMAND CENTER 👑🎮</div>
+    <div id="header" class="metal-panel">
+        <div class="rivet" style="top: 5px; left: 5px;"></div>
+        <div class="rivet" style="top: 5px; right: 5px;"></div>
+        <div class="rivet" style="bottom: 5px; left: 5px;"></div>
+        <div class="rivet" style="bottom: 5px; right: 5px;"></div>
+        <div id="logo">⚔️ AUREON COMMAND CENTER ⚔️</div>
         <div id="status-bar">
             <div class="status-item" id="mode-status">
                 <span class="status-dot"></span>
@@ -1267,23 +1524,33 @@ COMMAND_CENTER_HTML = """
                 <span>🕐</span>
                 <span id="current-time">--:--:--</span>
             </div>
+            <button id="red-alert-btn" class="alert-btn" onclick="toggleRedAlert()">🚨 RED ALERT</button>
+            <button id="flight-check-btn" class="alert-btn green" onclick="runFlightCheck()">🛫 FLIGHT CHECK</button>
         </div>
+    </div>
+    
+    <!-- RADAR OVERLAY -->
+    <div id="radar-container">
+        <canvas id="radar-canvas"></canvas>
     </div>
     
     <!-- MAIN CONTAINER -->
     <div id="main-container">
         <!-- QUEEN VOICE PANEL -->
-        <div id="queen-panel" class="panel gold-border">
+        <div id="queen-panel" class="panel gold-border metal-panel">
+            <div class="rivet" style="top: 5px; left: 5px;"></div>
+            <div class="rivet" style="top: 5px; right: 5px;"></div>
             <div id="queen-avatar">👑</div>
-            <div id="queen-message">Welcome to the Command Center. All systems initializing...</div>
-            <div id="queen-status">Queen SERO | Omniscient Mode | All-Seeing Eye Active</div>
-            <button id="voice-toggle" onclick="toggleVoice()">🔊 VOICE</button>
+            <div id="queen-message">Welcome, Commander. All systems initializing... Establishing tactical uplink.</div>
+            <div id="queen-status">Queen SERO | TACTICAL MODE | Neural Link Active</div>
+            <button id="voice-toggle" onclick="toggleVoice()">🔊 EVA VOICE</button>
+            <div id="queen-waveform"><canvas id="voice-waveform"></canvas></div>
         </div>
         
         <!-- LEFT SIDEBAR - SYSTEMS -->
-        <div id="systems-panel" class="panel">
+        <div id="systems-panel" class="panel metal-panel">
             <div class="panel-header">
-                <span>🧠 INTELLIGENCE SYSTEMS</span>
+                <span>🧠 TACTICAL SYSTEMS</span>
                 <span id="systems-count">0/0</span>
             </div>
             <div class="panel-content" id="systems-list">
@@ -1703,18 +1970,242 @@ COMMAND_CENTER_HTML = """
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.rate = 0.9;
                 utterance.pitch = 1.1;
+                // Use a robotic voice if available
+                const voices = speechSynthesis.getVoices();
+                const robotVoice = voices.find(v => v.name.includes('Microsoft') || v.name.includes('Google'));
+                if (robotVoice) utterance.voice = robotVoice;
                 speechSynthesis.speak(utterance);
             }
         }
         
-        // Play sound effects
+        // ═══════════════════════════════════════════════════════════════════════
+        // SOUND SYSTEM (Howler.js)
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        let sounds = {};
+        function initSounds() {
+            if (typeof Howl === 'undefined') return;
+            
+            // Create sound effects using web audio API generated tones
+            sounds.alert = new Howl({
+                src: ['data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2HkZWRjImFg4WHjZGVlI+JhYOFiY+TlpKNiYWDhYqOkpWTj4qGhIaKjpKUko+Jh4WGi4+TlJKOioaFh4uOkpOSjo2KiYiKjI+RkZCOjIuKiouNj5CQj42Mi4uLjI6PkJCPjY2Li4yNjo+Pj46NjIyMjY6Ojo6OjY2NjY2Ojo6Ojo2NjY2NjY6Ojo6OjY2NjY2Njo6Ojo6NjY2NjY6Ojo6OjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjQ=='],
+                volume: 0.3
+            });
+            
+            sounds.win = new Howl({
+                src: ['data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgA'],
+                volume: 0.4
+            });
+        }
+        
         function playSound(type) {
-            // Sound effects (can be expanded)
-            const sounds = {
-                win: 'data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgA',
-                whale: 'data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgA'
-            };
-            // Placeholder - actual sounds would need proper audio files
+            if (sounds[type]) {
+                sounds[type].play();
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════
+        // RED ALERT MODE
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        let redAlertActive = false;
+        let redAlertSound = null;
+        
+        function toggleRedAlert() {
+            redAlertActive = !redAlertActive;
+            document.body.classList.toggle('red-alert', redAlertActive);
+            document.getElementById('red-alert-btn').classList.toggle('active', redAlertActive);
+            
+            if (redAlertActive) {
+                speakText("RED ALERT! All commanders to battle stations!");
+                // Pulse the header
+                gsap.to('#header', {
+                    borderColor: '#ff0000',
+                    duration: 0.5,
+                    repeat: -1,
+                    yoyo: true
+                });
+            } else {
+                gsap.killTweensOf('#header');
+                gsap.to('#header', { borderColor: '#FFD700', duration: 0.3 });
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════
+        // FLIGHT CHECK
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        async function runFlightCheck() {
+            try {
+                const btn = document.getElementById('flight-check-btn');
+                btn.textContent = '🛫 CHECKING...';
+                btn.disabled = true;
+                
+                const response = await fetch('/api/flight-check');
+                const data = await response.json();
+                
+                // Display results in console
+                console.log(data.poem);
+                
+                // Show in queen message
+                const goCount = data.summary.online;
+                const total = data.summary.total;
+                const allGo = data.summary.all_go;
+                
+                if (allGo) {
+                    updateQueenMessage(`🛫 FLIGHT CHECK COMPLETE: ALL ${total} SYSTEMS GO! Clear for launch, Commander!`);
+                    speakText(`Flight check complete. All ${total} systems are go. Clear for launch!`);
+                } else {
+                    updateQueenMessage(`🛫 FLIGHT CHECK: ${goCount}/${total} systems online. ${total - goCount} systems require attention.`);
+                    speakText(`Warning. Flight check detected ${total - goCount} offline systems.`);
+                }
+                
+                // Update systems panel with fresh data
+                Object.entries(data.systems).forEach(([name, info]) => {
+                    const systemItem = document.querySelector(`[data-system="${name}"]`);
+                    if (systemItem) {
+                        systemItem.classList.toggle('offline', info.status !== 'GO');
+                        const pingSpan = systemItem.querySelector('.ping-ms');
+                        if (pingSpan) pingSpan.textContent = `${info.ping_ms.toFixed(1)}ms`;
+                    }
+                });
+                
+                btn.textContent = allGo ? '✅ ALL GO' : '⚠️ CHECK';
+                setTimeout(() => {
+                    btn.textContent = '🛫 FLIGHT CHECK';
+                    btn.disabled = false;
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Flight check failed:', error);
+                document.getElementById('flight-check-btn').textContent = '❌ ERROR';
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════
+        // PARTICLES.JS BACKGROUND
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        function initParticles() {
+            if (typeof particlesJS === 'undefined') return;
+            
+            particlesJS('particles-js', {
+                particles: {
+                    number: { value: 80, density: { enable: true, value_area: 800 } },
+                    color: { value: ['#00FF88', '#FFD700', '#00BFFF'] },
+                    shape: { type: 'circle' },
+                    opacity: { value: 0.5, random: true },
+                    size: { value: 3, random: true },
+                    line_linked: {
+                        enable: true,
+                        distance: 150,
+                        color: '#00FF88',
+                        opacity: 0.2,
+                        width: 1
+                    },
+                    move: {
+                        enable: true,
+                        speed: 1,
+                        direction: 'none',
+                        random: true,
+                        out_mode: 'out'
+                    }
+                },
+                interactivity: {
+                    events: {
+                        onhover: { enable: true, mode: 'grab' },
+                        onclick: { enable: true, mode: 'push' }
+                    }
+                }
+            });
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════
+        // RADAR SWEEP ANIMATION
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        let radarAngle = 0;
+        function drawRadar() {
+            const canvas = document.getElementById('radar-canvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const size = Math.min(canvas.offsetWidth, canvas.offsetHeight);
+            canvas.width = size;
+            canvas.height = size;
+            
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = size / 2 - 10;
+            
+            // Clear
+            ctx.clearRect(0, 0, size, size);
+            
+            // Draw circles
+            ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
+            ctx.lineWidth = 1;
+            for (let r = radius / 4; r <= radius; r += radius / 4) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Draw cross lines
+            ctx.beginPath();
+            ctx.moveTo(centerX - radius, centerY);
+            ctx.lineTo(centerX + radius, centerY);
+            ctx.moveTo(centerX, centerY - radius);
+            ctx.lineTo(centerX, centerY + radius);
+            ctx.stroke();
+            
+            // Draw sweep
+            const gradient = ctx.createConicGradient(radarAngle, centerX, centerY);
+            gradient.addColorStop(0, 'rgba(0, 255, 136, 0.5)');
+            gradient.addColorStop(0.1, 'rgba(0, 255, 136, 0.2)');
+            gradient.addColorStop(0.2, 'rgba(0, 255, 136, 0)');
+            gradient.addColorStop(1, 'rgba(0, 255, 136, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Sweep line
+            ctx.strokeStyle = '#00FF88';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(
+                centerX + Math.cos(radarAngle) * radius,
+                centerY + Math.sin(radarAngle) * radius
+            );
+            ctx.stroke();
+            
+            // Draw blips (exchange locations)
+            const blips = [
+                { angle: 0.5, dist: 0.6, label: '🐙' },   // Kraken
+                { angle: 1.8, dist: 0.7, label: '🟡' },   // Binance
+                { angle: 3.2, dist: 0.5, label: '🦙' },   // Alpaca
+                { angle: 4.5, dist: 0.8, label: '💼' }    // Capital
+            ];
+            
+            blips.forEach(blip => {
+                const x = centerX + Math.cos(blip.angle) * radius * blip.dist;
+                const y = centerY + Math.sin(blip.angle) * radius * blip.dist;
+                
+                // Blip glow
+                ctx.fillStyle = 'rgba(0, 255, 136, 0.5)';
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.font = '12px sans-serif';
+                ctx.fillText(blip.label, x - 6, y + 4);
+            });
+            
+            radarAngle += 0.02;
+            requestAnimationFrame(drawRadar);
         }
         
         // Format large numbers
@@ -1741,6 +2232,8 @@ COMMAND_CENTER_HTML = """
         // Draw harmonic visualization
         function drawHarmonics() {
             const canvas = document.getElementById('harmonic-canvas');
+            if (!canvas) return;
+            
             const ctx = canvas.getContext('2d');
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
@@ -1787,15 +2280,50 @@ COMMAND_CENTER_HTML = """
             }
         }
         
+        // ═══════════════════════════════════════════════════════════════════════
+        // GSAP ANIMATIONS ON LOAD
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        function initAnimations() {
+            if (typeof gsap === 'undefined') return;
+            
+            // Animate panels sliding in
+            gsap.from('#header', { y: -100, opacity: 0, duration: 0.8, ease: 'power3.out' });
+            gsap.from('#queen-panel', { scale: 0.9, opacity: 0, duration: 0.6, delay: 0.2 });
+            gsap.from('#systems-panel', { x: -100, opacity: 0, duration: 0.6, delay: 0.3 });
+            gsap.from('#main-display', { y: 50, opacity: 0, duration: 0.6, delay: 0.4 });
+            gsap.from('#right-sidebar', { x: 100, opacity: 0, duration: 0.6, delay: 0.5 });
+            gsap.from('#footer', { y: 50, opacity: 0, duration: 0.6, delay: 0.6 });
+            
+            // Animate stat cards
+            gsap.from('.stat-card', { 
+                scale: 0, 
+                opacity: 0, 
+                duration: 0.4, 
+                stagger: 0.1, 
+                delay: 0.7,
+                ease: 'back.out(1.7)'
+            });
+        }
+        
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             initWebSocket();
             fetchInitialState();
+            initParticles();
+            initSounds();
+            initAnimations();
             setInterval(updateClock, 1000);
             updateClock();
             drawHarmonics();
+            drawRadar();
             
-            console.log('🎮👑 AUREON COMMAND CENTER INITIALIZED 👑🎮');
+            // Startup voice
+            setTimeout(() => {
+                speakText("Aureon Command Center online. All tactical systems initializing. Welcome, Commander.");
+            }, 1500);
+            
+            console.log('⚔️ AUREON COMMAND CENTER INITIALIZED ⚔️');
         });
     </script>
 </body>
