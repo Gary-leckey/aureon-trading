@@ -637,6 +637,10 @@ LAST_FLIGHT_CHECK_TIME: float = 0
 # Live feed toggle (real data on/off)
 LIVE_FEED_ENABLED = True
 
+# Trading engine toggle (real trading on/off)
+TRADING_LIVE_ENABLED = False
+TRADING_PROCESS: Optional[asyncio.subprocess.Process] = None
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # COMMAND CENTER HTML - THE EPIC INTERFACE
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1730,6 +1734,7 @@ COMMAND_CENTER_HTML = """
                 <span>🕐</span>
                 <span id="current-time">--:--:--</span>
             </div>
+            <button id="trading-toggle-btn" class="alert-btn" onclick="toggleTradingEngine()">⚡ TRADING OFF</button>
             <button id="live-toggle-btn" class="alert-btn blue" onclick="toggleLiveFeed()">🟢 LIVE FEED</button>
             <button id="red-alert-btn" class="alert-btn" onclick="toggleRedAlert()">🚨 RED ALERT</button>
             <button id="flight-check-btn" class="alert-btn green" onclick="runFlightCheck()">🛫 FLIGHT CHECK</button>
@@ -1988,6 +1993,9 @@ COMMAND_CENTER_HTML = """
                     break;
                 case 'live_feed':
                     setLiveIndicator(!!data.enabled);
+                    break;
+                case 'trading':
+                    setTradingIndicator(!!data.enabled);
                     break;
                 case 'trade':
                     addTrade(data.trade);
@@ -2398,6 +2406,20 @@ COMMAND_CENTER_HTML = """
             }
         }
 
+        async function toggleTradingEngine() {
+            const btn = document.getElementById('trading-toggle-btn');
+            btn.disabled = true;
+            try {
+                const response = await fetch('/api/trading-toggle', { method: 'POST' });
+                const data = await response.json();
+                setTradingIndicator(!!data.enabled);
+            } catch (e) {
+                console.error('Trading toggle failed', e);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
         function setLiveIndicator(enabled) {
             const btn = document.getElementById('live-toggle-btn');
             const mode = document.getElementById('trading-mode');
@@ -2409,6 +2431,17 @@ COMMAND_CENTER_HTML = """
                 btn.textContent = '🔴 LIVE OFF';
                 btn.classList.remove('blue');
                 mode.textContent = 'OFF';
+            }
+        }
+
+        function setTradingIndicator(enabled) {
+            const btn = document.getElementById('trading-toggle-btn');
+            if (enabled) {
+                btn.textContent = '⚡ TRADING ON';
+                btn.classList.add('green');
+            } else {
+                btn.textContent = '⚡ TRADING OFF';
+                btn.classList.remove('green');
             }
         }
 
@@ -2719,6 +2752,9 @@ COMMAND_CENTER_HTML = """
                 if (typeof data.live_feed !== 'undefined') {
                     setLiveIndicator(!!data.live_feed);
                 }
+                if (typeof data.trading_on !== 'undefined') {
+                    setTradingIndicator(!!data.trading_on);
+                }
             } catch (error) {
                 console.error('Failed to fetch initial state:', error);
             }
@@ -3011,6 +3047,7 @@ async def handle_api_state(request):
         'bots': list(state.bot_detections),
         'queen_message': state.queen_messages[-1] if state.queen_messages else "Queen SERO online. All systems operational.",
         'live_feed': LIVE_FEED_ENABLED,
+        'trading_on': TRADING_LIVE_ENABLED,
     })
 
 async def handle_live_toggle(request):
@@ -3019,6 +3056,34 @@ async def handle_live_toggle(request):
     LIVE_FEED_ENABLED = not LIVE_FEED_ENABLED
     await broadcast_to_clients({'type': 'live_feed', 'enabled': LIVE_FEED_ENABLED})
     return web.json_response({'enabled': LIVE_FEED_ENABLED})
+
+async def handle_trading_toggle(request):
+    """Toggle real trading engine on/off"""
+    global TRADING_LIVE_ENABLED, TRADING_PROCESS
+
+    if TRADING_LIVE_ENABLED:
+        # Stop trading engine
+        if TRADING_PROCESS and TRADING_PROCESS.returncode is None:
+            TRADING_PROCESS.terminate()
+            try:
+                await asyncio.wait_for(TRADING_PROCESS.wait(), timeout=10)
+            except asyncio.TimeoutError:
+                TRADING_PROCESS.kill()
+        TRADING_PROCESS = None
+        TRADING_LIVE_ENABLED = False
+    else:
+        # Start trading engine in LIVE mode (no dry-run)
+        cmd = [sys.executable, "micro_profit_labyrinth.py", "--live", "--yes"]
+        TRADING_PROCESS = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=str(Path(__file__).resolve().parent),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+        TRADING_LIVE_ENABLED = True
+
+    await broadcast_to_clients({'type': 'trading', 'enabled': TRADING_LIVE_ENABLED})
+    return web.json_response({'enabled': TRADING_LIVE_ENABLED})
 
 async def websocket_handler(request):
     """WebSocket handler for real-time updates"""
@@ -3046,6 +3111,7 @@ async def websocket_handler(request):
             'bots': list(state.bot_detections),
             'queen_message': state.queen_messages[-1] if state.queen_messages else "Welcome to the Command Center.",
             'live_feed': LIVE_FEED_ENABLED,
+            'trading_on': TRADING_LIVE_ENABLED,
         })
         
         async for msg in ws:
@@ -3418,6 +3484,7 @@ def create_app():
     app.router.add_get('/api/state', handle_api_state)
     app.router.add_get('/api/flight-check', handle_flight_check)
     app.router.add_post('/api/live-toggle', handle_live_toggle)
+    app.router.add_post('/api/trading-toggle', handle_trading_toggle)
     app.router.add_get('/ws', websocket_handler)
     
     return app
