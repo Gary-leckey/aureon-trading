@@ -54,6 +54,15 @@ if sys.platform == 'win32':
     except Exception:
         pass
 
+# SAFE PRINT WRAPPER FOR WINDOWS
+def safe_print(*args, **kwargs):
+    """Safe print that ignores I/O errors on Windows exit."""
+    try:
+        import builtins
+        builtins.print(*args, **kwargs)
+    except (ValueError, OSError):
+        pass
+
 import json
 import time
 import math
@@ -150,7 +159,7 @@ try:
 except ImportError as e:
     INTERNAL_MULTIVERSE_AVAILABLE = False
     _internal_multiverse = None
-    print(f"⚠️ Internal Multiverse not available: {e}")
+    safe_print(f"⚠️ Internal Multiverse not available: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🐦 CHIRP BUS INTEGRATION - kHz-Speed Feed Signals
@@ -172,10 +181,20 @@ class SafeStreamHandler(logging.StreamHandler):
         try:
             msg = self.format(record)
             stream = self.stream
+            if stream is None:
+                return
+            if hasattr(stream, "closed") and stream.closed:
+                try:
+                    self.stream = open(os.devnull, 'w')
+                except Exception:
+                    return
+                stream = self.stream
             # Write with UTF-8 encoding, replace errors
             try:
                 stream.write(msg + self.terminator)
                 self.flush()
+            except (ValueError, OSError):
+                return
             except UnicodeEncodeError:
                 # If encoding fails, replace unencodable characters
                 msg_safe = msg.encode('utf-8', errors='replace').decode('utf-8')

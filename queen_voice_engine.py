@@ -22,6 +22,15 @@ from typing import Dict, List, Optional, Any
 from collections import deque
 from dataclasses import dataclass
 
+# SAFE PRINT WRAPPER FOR WINDOWS
+def safe_print(*args, **kwargs):
+    """Safe print that ignores I/O errors on Windows exit."""
+    try:
+        import builtins
+        builtins.print(*args, **kwargs)
+    except (ValueError, OSError):
+        pass
+
 # TTS imports
 try:
     from gtts import gTTS
@@ -35,7 +44,7 @@ try:
     PYGAME_AVAILABLE = True
 except Exception:
     PYGAME_AVAILABLE = False
-    print("⚠️ Audio output not available (no audio device) - Queen's voice will be text-only")
+    safe_print("⚠️ Audio output not available (no audio device) - Queen's voice will be text-only")
 
 TTS_AVAILABLE = GTTS_AVAILABLE and PYGAME_AVAILABLE
 
