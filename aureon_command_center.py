@@ -38,6 +38,30 @@ import sys
 import os
 import atexit
 
+# Debug log file (helps when console output stops)
+_AUREON_DEBUG_LOG_FILE = None
+def _aureon_debug_log(message: str) -> None:
+    if os.getenv("AUREON_DEBUG_STARTUP") != "1":
+        return
+    try:
+        global _AUREON_DEBUG_LOG_FILE
+        if _AUREON_DEBUG_LOG_FILE is None:
+            try:
+                import tempfile
+                from pathlib import Path
+                log_path = Path(tempfile.gettempdir()) / "aureon_command_center_startup.log"
+                _AUREON_DEBUG_LOG_FILE = open(log_path, "a", encoding="utf-8", errors="replace")
+                _AUREON_DEBUG_LOG_FILE.write("\n=== AUREON COMMAND CENTER STARTUP DEBUG ===\n")
+                _AUREON_DEBUG_LOG_FILE.flush()
+                safe_print(f"[DEBUG] Startup log: {log_path}")
+            except Exception:
+                _AUREON_DEBUG_LOG_FILE = None
+        if _AUREON_DEBUG_LOG_FILE is not None:
+            _AUREON_DEBUG_LOG_FILE.write(message + "\n")
+            _AUREON_DEBUG_LOG_FILE.flush()
+    except Exception:
+        pass
+
 # SAFE PRINT WRAPPER FOR WINDOWS
 def safe_print(*args, **kwargs):
     """Safe print that ignores I/O errors on Windows exit."""
@@ -52,6 +76,8 @@ if os.getenv("AUREON_DEBUG_STARTUP") == "1":
     try:
         safe_print(f"[DEBUG] aureon_command_center loaded: {__file__}")
         safe_print(f"[DEBUG] CWD: {os.getcwd()}")
+        _aureon_debug_log(f"loaded: {__file__}")
+        _aureon_debug_log(f"cwd: {os.getcwd()}")
     except Exception:
         pass
 
@@ -61,10 +87,42 @@ if os.getenv("AUREON_DEBUG_STARTUP") == "1":
     def _guarded_sys_exit(code=0):
         try:
             safe_print(f"[DEBUG] Blocked sys.exit({code}) during import")
+            _aureon_debug_log(f"blocked sys.exit({code})")
         except Exception:
             pass
         raise RuntimeError("sys.exit blocked during aureon_command_center import")
     sys.exit = _guarded_sys_exit
+
+    # Also guard hard exits that bypass sys.exit
+    _ORIGINAL_OS__EXIT = getattr(os, "_exit", None)
+    _ORIGINAL_OS_ABORT = getattr(os, "abort", None)
+
+    def _guarded_os_exit(code=0):
+        try:
+            safe_print(f"[DEBUG] Blocked os._exit({code}) during import")
+            _aureon_debug_log(f"blocked os._exit({code})")
+        except Exception:
+            pass
+        raise RuntimeError("os._exit blocked during aureon_command_center import")
+
+    def _guarded_os_abort():
+        try:
+            safe_print("[DEBUG] Blocked os.abort() during import")
+            _aureon_debug_log("blocked os.abort()")
+        except Exception:
+            pass
+        raise RuntimeError("os.abort blocked during aureon_command_center import")
+
+    try:
+        if _ORIGINAL_OS__EXIT is not None:
+            os._exit = _guarded_os_exit
+    except Exception:
+        pass
+    try:
+        if _ORIGINAL_OS_ABORT is not None:
+            os.abort = _guarded_os_abort
+    except Exception:
+        pass
 
 # Extra startup debugging: detect import-time hangs/crashes
 _AUREON_DEBUG_IMPORT_ACTIVE = False
@@ -78,6 +136,8 @@ if os.getenv("AUREON_DEBUG_STARTUP") == "1":
         import threading
         import time as _time
         import faulthandler
+
+        _aureon_debug_log("installing import tracer + faulthandler")
 
         _AUREON_DEBUG_IMPORT_ACTIVE = True
         _AUREON_ORIGINAL_IMPORT = builtins.__import__
@@ -93,6 +153,7 @@ if os.getenv("AUREON_DEBUG_STARTUP") == "1":
                 if elapsed >= 2.0:
                     try:
                         safe_print(f"[DEBUG] Slow import: {name} ({elapsed:.2f}s)")
+                        _aureon_debug_log(f"slow import: {name} ({elapsed:.2f}s)")
                     except Exception:
                         pass
 
@@ -102,6 +163,7 @@ if os.getenv("AUREON_DEBUG_STARTUP") == "1":
             while _AUREON_DEBUG_IMPORT_ACTIVE:
                 try:
                     safe_print(f"[DEBUG] Import heartbeat; last import: {_AUREON_LAST_IMPORT}")
+                    _aureon_debug_log(f"heartbeat last import: {_AUREON_LAST_IMPORT}")
                 except Exception:
                     pass
                 _time.sleep(2.0)
@@ -115,8 +177,14 @@ if os.getenv("AUREON_DEBUG_STARTUP") == "1":
 
         # Dump stack traces periodically if we hang during import/startup
         try:
-            faulthandler.enable(file=sys.stdout, all_threads=True)
-            faulthandler.dump_traceback_later(10, repeat=True, file=sys.stdout)
+            # Prefer a file, stdout can get wrapped/closed on Windows
+            import tempfile
+            from pathlib import Path
+            dump_path = Path(tempfile.gettempdir()) / "aureon_command_center_faulthandler.log"
+            _aureon_debug_log(f"faulthandler file: {dump_path}")
+            with open(dump_path, "a", encoding="utf-8", errors="replace") as _fh:
+                faulthandler.enable(file=_fh, all_threads=True)
+                faulthandler.dump_traceback_later(10, repeat=True, file=_fh)
         except Exception:
             pass
     except Exception:
@@ -6000,6 +6068,15 @@ def main():
         import traceback
         traceback.print_exc()
 
+
+# Module import completed marker
+if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+    try:
+        safe_print("[DEBUG] Module import completed; entering __main__ soon")
+        _aureon_debug_log("module import completed")
+    except Exception:
+        pass
+
 if __name__ == '__main__':
     # Stop import-debug tracing now that module import completed
     if os.getenv("AUREON_DEBUG_STARTUP") == "1":
@@ -6007,6 +6084,18 @@ if __name__ == '__main__':
             # Restore sys.exit now that imports are complete
             try:
                 sys.exit = _ORIGINAL_SYS_EXIT
+            except Exception:
+                pass
+
+            # Restore hard-exit functions
+            try:
+                if '_ORIGINAL_OS__EXIT' in globals() and _ORIGINAL_OS__EXIT is not None:
+                    os._exit = _ORIGINAL_OS__EXIT
+            except Exception:
+                pass
+            try:
+                if '_ORIGINAL_OS_ABORT' in globals() and _ORIGINAL_OS_ABORT is not None:
+                    os.abort = _ORIGINAL_OS_ABORT
             except Exception:
                 pass
 
