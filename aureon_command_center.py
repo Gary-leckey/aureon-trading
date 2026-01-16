@@ -55,6 +55,17 @@ if os.getenv("AUREON_DEBUG_STARTUP") == "1":
     except Exception:
         pass
 
+# Guard against sys.exit during imports when debugging startup
+_ORIGINAL_SYS_EXIT = sys.exit
+if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+    def _guarded_sys_exit(code=0):
+        try:
+            safe_print(f"[DEBUG] Blocked sys.exit({code}) during import")
+        except Exception:
+            pass
+        raise RuntimeError("sys.exit blocked during aureon_command_center import")
+    sys.exit = _guarded_sys_exit
+
 # Windows UTF-8 fix - AGGRESSIVE VERSION
 # Skip stderr wrapping to avoid "I/O operation on closed file" on exit
 if sys.platform == 'win32':
@@ -245,6 +256,10 @@ try:
     SYSTEMS_STATUS['Lighthouse'] = True
 except ImportError:
     SYSTEMS_STATUS['Lighthouse'] = False
+
+# Restore sys.exit after imports
+if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+    sys.exit = _ORIGINAL_SYS_EXIT
 
 try:
     from aureon_harmonic_signal_chain import HarmonicSignalChain
@@ -5929,4 +5944,11 @@ def main():
         traceback.print_exc()
 
 if __name__ == '__main__':
-    main()
+    if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+        safe_print("[DEBUG] __main__ entry: calling main()")
+    try:
+        main()
+    except Exception as e:
+        safe_print(f"❌ [DEBUG] Command Center crashed: {e}")
+        import traceback
+        traceback.print_exc()
