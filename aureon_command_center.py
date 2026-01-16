@@ -83,6 +83,9 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
+# Live vs demo mode
+DEMO_MODE = os.getenv("AUREON_COMMAND_CENTER_DEMO", "0").lower() in ("1", "true", "yes", "y")
+
 # Web framework
 try:
     from aiohttp import web
@@ -100,9 +103,9 @@ SYSTEMS_STATUS = {}
 
 # Core Intelligence
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon_thought_bus import Thought, get_thought_bus
     SYSTEMS_STATUS['Thought Bus'] = True
-    thought_bus = ThoughtBus()
+    thought_bus = get_thought_bus()
 except ImportError:
     SYSTEMS_STATUS['Thought Bus'] = False
     thought_bus = None
@@ -631,6 +634,9 @@ def print_flight_check_poem(results: Dict[str, FlightCheckResult]) -> str:
 LAST_FLIGHT_CHECK: Dict[str, FlightCheckResult] = {}
 LAST_FLIGHT_CHECK_TIME: float = 0
 
+# Live feed toggle (real data on/off)
+LIVE_FEED_ENABLED = True
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # COMMAND CENTER HTML - THE EPIC INTERFACE
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -665,6 +671,16 @@ COMMAND_CENTER_HTML = """
     <!-- Leaflet.js for world map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Globe.gl for 3D globe -->
+    <script src="https://unpkg.com/globe.gl"></script>
+    <!-- ECharts for radar charts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <!-- xterm.js for terminal emulator -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.5.0/xterm.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.5.0/xterm.min.js"></script>
+    <!-- SweetAlert2 for tactical alerts -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.7/dist/sweetalert2.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.7/dist/sweetalert2.all.min.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
@@ -1382,6 +1398,18 @@ COMMAND_CENTER_HTML = """
             background: linear-gradient(180deg, #306a30, #204a20);
             box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
         }
+
+        .alert-btn.blue {
+            background: linear-gradient(180deg, #20304a, #101a2a);
+            color: var(--blue);
+            border-color: var(--blue);
+            box-shadow: 0 0 10px rgba(0, 191, 255, 0.3);
+        }
+
+        .alert-btn.blue:hover {
+            background: linear-gradient(180deg, #30446a, #20304a);
+            box-shadow: 0 0 20px rgba(0, 191, 255, 0.5);
+        }
         
         @keyframes alertPulse {
             0%, 100% { opacity: 1; }
@@ -1454,6 +1482,34 @@ COMMAND_CENTER_HTML = """
             height: 100%;
             filter: hue-rotate(140deg) saturate(1.5);
         }
+
+        /* 3D GLOBE */
+        #globe-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 280px;
+            height: 280px;
+            z-index: 35;
+            border: 2px solid var(--blue);
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 0 25px rgba(0, 191, 255, 0.3);
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        #globe-container .panel-header {
+            background: linear-gradient(90deg, rgba(0, 191, 255, 0.3), transparent);
+            padding: 5px 10px;
+            border-bottom: 1px solid var(--blue);
+            color: var(--blue);
+            font-size: 0.75em;
+        }
+
+        #globe {
+            width: 100%;
+            height: calc(100% - 28px);
+        }
         
         /* PNL CHART */
         #pnl-chart-container {
@@ -1493,6 +1549,31 @@ COMMAND_CENTER_HTML = """
             cursor: pointer;
             font-size: 12px;
             border-radius: 3px;
+        }
+
+        /* SYSTEM RADAR (ECharts) */
+        #system-radar-panel .panel-content {
+            padding: 0;
+        }
+
+        #system-radar {
+            width: 100%;
+            height: 220px;
+        }
+
+        /* TERMINAL (xterm.js) */
+        #terminal-panel .panel-content {
+            padding: 0;
+        }
+
+        #terminal {
+            width: 100%;
+            height: 200px;
+            background: #05070a;
+        }
+
+        .xterm .xterm-viewport {
+            background: #05070a;
         }
         
         /* DEFCON INDICATOR */
@@ -1649,25 +1730,11 @@ COMMAND_CENTER_HTML = """
                 <span>🕐</span>
                 <span id="current-time">--:--:--</span>
             </div>
+            <button id="live-toggle-btn" class="alert-btn blue" onclick="toggleLiveFeed()">🟢 LIVE FEED</button>
             <button id="red-alert-btn" class="alert-btn" onclick="toggleRedAlert()">🚨 RED ALERT</button>
             <button id="flight-check-btn" class="alert-btn green" onclick="runFlightCheck()">🛫 FLIGHT CHECK</button>
         </div>
     </div>
-    
-    <!-- WORLD MAP OVERLAY -->
-    <div id="world-map-container">
-        <div id="world-map"></div>
-    </div>
-    
-    <!-- PNL CHART -->
-    <div id="pnl-chart-container">
-        <div class="panel-header">
-            💰 PROFIT & LOSS
-            <button class="mini-btn" onclick="togglePnlChart()">−</button>
-        </div>
-        <div id="pnl-chart"></div>
-    </div>
-    
     <!-- RADAR OVERLAY -->
     <div id="radar-container">
         <canvas id="radar-canvas"></canvas>
@@ -1801,11 +1868,41 @@ COMMAND_CENTER_HTML = """
                     <canvas id="harmonic-canvas"></canvas>
                 </div>
             </div>
+
+            <!-- SYSTEM RADAR -->
+            <div id="system-radar-panel" class="panel">
+                <div class="panel-header">
+                    <span>📡 SYSTEM RADAR</span>
+                    <span>ECHARTS</span>
+                </div>
+                <div class="panel-content">
+                    <div id="system-radar"></div>
+                </div>
+            </div>
+
+            <!-- COMMAND TERMINAL -->
+            <div id="terminal-panel" class="panel">
+                <div class="panel-header">
+                    <span>💻 COMMAND TERMINAL</span>
+                    <span>XTERM</span>
+                </div>
+                <div class="panel-content">
+                    <div id="terminal"></div>
+                </div>
+            </div>
         </div>
         
         <!-- WORLD MAP OVERLAY -->
         <div id="world-map-container">
             <div id="world-map"></div>
+        </div>
+
+        <!-- 3D GLOBE (floating) -->
+        <div id="globe-container" class="metal-panel">
+            <div class="panel-header">
+                <span>🌍 3D GLOBE</span>
+            </div>
+            <div id="globe"></div>
         </div>
         
         <!-- PNL CHART PANEL (floating) -->
@@ -1847,6 +1944,11 @@ COMMAND_CENTER_HTML = """
         let tradesData = [];
         let whalesData = [];
         let botsData = [];
+        let latestStats = {};
+        let latestSystems = {};
+        let terminal = null;
+        let systemRadar = null;
+        let globe = null;
         let pnlChart = null;
         let worldMap = null;
         let typedInstance = null;
@@ -1935,6 +2037,7 @@ COMMAND_CENTER_HTML = """
         
         // Update stats
         function updateStats(stats) {
+            latestStats = stats || {};
             document.getElementById('total-pnl').textContent = '$' + (stats.total_pnl || 0).toFixed(2);
             document.getElementById('total-pnl').className = 'stat-value ' + (stats.total_pnl >= 0 ? 'gold' : 'red');
             document.getElementById('total-trades').textContent = stats.total_trades || 0;
@@ -1946,11 +2049,13 @@ COMMAND_CENTER_HTML = """
                 : 0;
             document.getElementById('win-rate').textContent = winRate + '%';
             document.getElementById('coherence').textContent = (stats.coherence || 0.5).toFixed(2);
+            updateSystemRadar();
         }
         
         // Update systems list
         function updateSystems(systems) {
             systemsData = systems;
+            latestSystems = systems || {};
             const container = document.getElementById('systems-list');
             container.innerHTML = '';
             
@@ -1973,6 +2078,7 @@ COMMAND_CENTER_HTML = """
             document.getElementById('systems-online').textContent = online;
             document.getElementById('systems-total').textContent = total;
             document.getElementById('systems-count').textContent = `${online}/${total}`;
+            updateSystemRadar();
         }
         
         // Update balances
@@ -2007,6 +2113,8 @@ COMMAND_CENTER_HTML = """
             tradesData.unshift(trade);
             if (tradesData.length > 50) tradesData.pop();
             renderTrades();
+
+            terminalLog(`TRADE ${trade.side || ''} ${trade.symbol || ''} PnL ${trade.pnl?.toFixed?.(2) ?? trade.pnl}`);
             
             // Play sound for trades
             if (trade.pnl > 0) {
@@ -2093,6 +2201,7 @@ COMMAND_CENTER_HTML = """
         // Update Queen message
         function updateQueenMessage(message) {
             document.getElementById('queen-message').textContent = message;
+            terminalLog(`QUEEN: ${message}`);
             
             if (voiceEnabled) {
                 speak(message);
@@ -2106,6 +2215,7 @@ COMMAND_CENTER_HTML = """
             item.className = 'alert-item';
             item.textContent = alertText;
             content.appendChild(item);
+            terminalLog(`ALERT: ${alertText}`);
             
             // Limit alerts
             while (content.children.length > 20) {
@@ -2216,9 +2326,27 @@ COMMAND_CENTER_HTML = """
                 if (allGo) {
                     updateQueenMessage(`🛫 FLIGHT CHECK COMPLETE: ALL ${total} SYSTEMS GO! Clear for launch, Commander!`);
                     speakText(`Flight check complete. All ${total} systems are go. Clear for launch!`);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'ALL SYSTEMS GO',
+                            text: `Flight check complete: ${total}/${total} systems online.`,
+                            background: '#0a0a0f',
+                            color: '#00FF88'
+                        });
+                    }
                 } else {
                     updateQueenMessage(`🛫 FLIGHT CHECK: ${goCount}/${total} systems online. ${total - goCount} systems require attention.`);
                     speakText(`Warning. Flight check detected ${total - goCount} offline systems.`);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'SYSTEMS REQUIRE ATTENTION',
+                            text: `${total - goCount} systems offline.`,
+                            background: '#0a0a0f',
+                            color: '#FFD700'
+                        });
+                    }
                 }
                 
                 // Update systems panel with fresh data
@@ -2240,7 +2368,148 @@ COMMAND_CENTER_HTML = """
             } catch (error) {
                 console.error('Flight check failed:', error);
                 document.getElementById('flight-check-btn').textContent = '❌ ERROR';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'FLIGHT CHECK FAILED',
+                        text: 'Unable to reach system endpoint.',
+                        background: '#0a0a0f',
+                        color: '#FF3366'
+                    });
+                }
             }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // LIVE FEED TOGGLE
+        // ═══════════════════════════════════════════════════════════════════════
+
+        async function toggleLiveFeed() {
+            const btn = document.getElementById('live-toggle-btn');
+            try {
+                const response = await fetch('/api/live-toggle', { method: 'POST' });
+                const data = await response.json();
+                if (data.enabled) {
+                    btn.textContent = '🟢 LIVE FEED';
+                    btn.classList.add('blue');
+                } else {
+                    btn.textContent = '🔴 LIVE OFF';
+                    btn.classList.remove('blue');
+                }
+            } catch (e) {
+                console.error('Live toggle failed', e);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // TERMINAL (xterm.js)
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function initTerminal() {
+            if (typeof Terminal === 'undefined') return;
+            terminal = new Terminal({
+                cols: 60,
+                rows: 8,
+                cursorBlink: true,
+                theme: {
+                    background: '#05070a',
+                    foreground: '#00FF88',
+                    cursor: '#FFD700'
+                }
+            });
+            terminal.open(document.getElementById('terminal'));
+            terminal.writeln('AUREON COMMAND TERMINAL ONLINE');
+            terminal.writeln('> Awaiting tactical input...');
+        }
+
+        function terminalLog(message) {
+            if (!terminal) return;
+            const ts = new Date().toLocaleTimeString();
+            terminal.writeln(`[${ts}] ${message}`);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SYSTEM RADAR (ECharts)
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function initSystemRadar() {
+            if (typeof echarts === 'undefined') return;
+            const el = document.getElementById('system-radar');
+            systemRadar = echarts.init(el);
+            updateSystemRadar();
+        }
+
+        function updateSystemRadar() {
+            if (!systemRadar) return;
+            const stats = latestStats || {};
+            const systems = latestSystems || {};
+            const total = Object.keys(systems).length || 1;
+            const online = Object.values(systems).filter(Boolean).length;
+            const onlineRatio = (online / total) * 100;
+            const winRate = stats.total_trades > 0 ? (stats.winning_trades / stats.total_trades) * 100 : 0;
+            const coherence = (stats.coherence || 0.5) * 100;
+            const activity = Math.min((stats.total_trades || 0) * 2, 100);
+
+            const option = {
+                backgroundColor: 'transparent',
+                radar: {
+                    indicator: [
+                        { name: 'SYSTEMS', max: 100 },
+                        { name: 'WIN RATE', max: 100 },
+                        { name: 'COHERENCE', max: 100 },
+                        { name: 'ACTIVITY', max: 100 }
+                    ],
+                    splitLine: { lineStyle: { color: 'rgba(0,255,136,0.2)' } },
+                    splitArea: { areaStyle: { color: ['rgba(0,0,0,0.2)', 'rgba(0,255,136,0.05)'] } },
+                    axisLine: { lineStyle: { color: 'rgba(0,255,255,0.3)' } }
+                },
+                series: [
+                    {
+                        type: 'radar',
+                        data: [
+                            {
+                                value: [onlineRatio, winRate, coherence, activity],
+                                name: 'SYSTEM STATUS'
+                            }
+                        ],
+                        areaStyle: { color: 'rgba(0,255,136,0.3)' },
+                        lineStyle: { color: '#00FF88' },
+                        itemStyle: { color: '#FFD700' }
+                    }
+                ]
+            };
+
+            systemRadar.setOption(option);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // 3D GLOBE (Globe.gl)
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function initGlobe() {
+            if (typeof Globe === 'undefined') return;
+            const globeEl = document.getElementById('globe');
+            if (!globeEl) return;
+
+            const points = [
+                { lat: 37.7749, lng: -122.4194, size: 0.12, color: '#9945FF', label: 'KRAKEN' },
+                { lat: 1.3521, lng: 103.8198, size: 0.12, color: '#F0B90B', label: 'BINANCE' },
+                { lat: 37.7749, lng: -122.4194, size: 0.12, color: '#00FF88', label: 'ALPACA' },
+                { lat: 51.5074, lng: -0.1278, size: 0.12, color: '#00BFFF', label: 'CAPITAL' }
+            ];
+
+            globe = Globe()(globeEl)
+                .backgroundColor('rgba(0,0,0,0)')
+                .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+                .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+                .pointsData(points)
+                .pointAltitude('size')
+                .pointColor('color')
+                .pointLabel('label');
+
+            globe.controls().autoRotate = true;
+            globe.controls().autoRotateSpeed = 0.3;
+            globe.pointOfView({ lat: 20, lng: 0, altitude: 2.2 });
         }
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -2626,7 +2895,7 @@ COMMAND_CENTER_HTML = """
             }
             
             // Auto-enable RED ALERT mode at DEFCON 1
-            if (level === 1 && !redAlertMode) {
+            if (level === 1 && !redAlertActive) {
                 toggleRedAlert();
             }
         }
@@ -2681,6 +2950,9 @@ COMMAND_CENTER_HTML = """
             initAnimations();
             initWorldMap();
             initPnlChart();
+            initGlobe();
+            initSystemRadar();
+            initTerminal();
             setInterval(updateClock, 1000);
             updateClock();
             drawHarmonics();
@@ -2724,7 +2996,14 @@ async def handle_api_state(request):
         'whales': list(state.whale_alerts),
         'bots': list(state.bot_detections),
         'queen_message': state.queen_messages[-1] if state.queen_messages else "Queen SERO online. All systems operational.",
+        'live_feed': LIVE_FEED_ENABLED,
     })
+
+async def handle_live_toggle(request):
+    """Toggle live feed on/off"""
+    global LIVE_FEED_ENABLED
+    LIVE_FEED_ENABLED = not LIVE_FEED_ENABLED
+    return web.json_response({'enabled': LIVE_FEED_ENABLED})
 
 async def websocket_handler(request):
     """WebSocket handler for real-time updates"""
@@ -2872,14 +3151,32 @@ async def simulate_data_task():
 
 async def update_balances_task():
     """Periodically update exchange balances"""
+    kraken_client = None
+    binance_client = None
+    alpaca_client = None
+    capital_client = None
+
+    def _sum_fiat(balances: Dict[str, float]) -> float:
+        total = 0.0
+        for asset, amount in balances.items():
+            if asset.upper() in {"USD", "USDT", "USDC", "GBP", "EUR"}:
+                try:
+                    total += float(amount)
+                except Exception:
+                    pass
+        return total
+
     while True:
         # Try to get real balances
         balances = {}
         
         if SYSTEMS_STATUS.get('Kraken Exchange'):
             try:
-                # Would call real client here
-                balances['kraken'] = random.uniform(500, 5000)
+                if kraken_client is None:
+                    from kraken_client import KrakenClient
+                    kraken_client = KrakenClient()
+                kraken_bal = kraken_client.get_account_balance()
+                balances['kraken'] = _sum_fiat(kraken_bal) if kraken_bal else 'offline'
             except Exception:
                 balances['kraken'] = 'offline'
         else:
@@ -2887,7 +3184,21 @@ async def update_balances_task():
         
         if SYSTEMS_STATUS.get('Binance Exchange'):
             try:
-                balances['binance'] = random.uniform(500, 5000)
+                if binance_client is None:
+                    from binance_client import BinanceClient
+                    binance_client = BinanceClient()
+                acct = binance_client.account()
+                fiat = {}
+                for bal in acct.get('balances', []):
+                    asset = bal.get('asset')
+                    if asset:
+                        try:
+                            free = float(bal.get('free', 0))
+                            locked = float(bal.get('locked', 0))
+                            fiat[asset] = free + locked
+                        except Exception:
+                            pass
+                balances['binance'] = _sum_fiat(fiat) if fiat else 'offline'
             except Exception:
                 balances['binance'] = 'offline'
         else:
@@ -2895,7 +3206,11 @@ async def update_balances_task():
         
         if SYSTEMS_STATUS.get('Alpaca Exchange'):
             try:
-                balances['alpaca'] = random.uniform(500, 5000)
+                if alpaca_client is None:
+                    from alpaca_client import AlpacaClient
+                    alpaca_client = AlpacaClient()
+                alpaca_bal = alpaca_client.get_account_balance()
+                balances['alpaca'] = _sum_fiat(alpaca_bal) if alpaca_bal else 'offline'
             except Exception:
                 balances['alpaca'] = 'offline'
         else:
@@ -2903,7 +3218,11 @@ async def update_balances_task():
         
         if SYSTEMS_STATUS.get('Capital Exchange'):
             try:
-                balances['capital'] = random.uniform(500, 5000)
+                if capital_client is None:
+                    from capital_client import CapitalClient
+                    capital_client = CapitalClient()
+                capital_bal = capital_client.get_account_balance()
+                balances['capital'] = _sum_fiat(capital_bal) if capital_bal else 'offline'
             except Exception:
                 balances['capital'] = 'offline'
         else:
@@ -2918,15 +3237,157 @@ async def thought_bus_listener_task():
     """Listen to ThoughtBus for real updates"""
     if not thought_bus:
         return
-    
+
+    loop = asyncio.get_running_loop()
+    queue: asyncio.Queue = asyncio.Queue()
+    thoughts_path = Path(os.getenv("AUREON_THOUGHTS_FILE", "thoughts.jsonl"))
+    file_pos = thoughts_path.stat().st_size if thoughts_path.exists() else 0
+
+    def _enqueue(thought: Thought) -> None:
+        try:
+            loop.call_soon_threadsafe(queue.put_nowait, thought)
+        except Exception:
+            pass
+
+    try:
+        thought_bus.subscribe("*", _enqueue)
+    except Exception as e:
+        safe_print(f"ThoughtBus subscription error: {e}")
+        return
+
+    def _as_float(value: Any) -> Optional[float]:
+        try:
+            return float(value)
+        except Exception:
+            return None
+
+    async def _process_thought(topic: str, payload: Dict[str, Any], source: str) -> None:
+        # Queen messages
+        if topic.startswith("queen.") or payload.get("message"):
+            message = payload.get("message") or payload.get("text") or str(payload)[:160]
+            if message:
+                state.queen_messages.append(message)
+                await broadcast_to_clients({'type': 'queen', 'message': message})
+
+        # Coherence updates
+        if "coherence" in payload:
+            coherence = _as_float(payload.get("coherence"))
+            if coherence is not None:
+                state.coherence_score = coherence
+                await broadcast_to_clients({
+                    'type': 'stats',
+                    'stats': {
+                        'total_trades': state.total_trades,
+                        'winning_trades': state.winning_trades,
+                        'losing_trades': state.losing_trades,
+                        'total_pnl': state.total_pnl,
+                        'coherence': state.coherence_score,
+                    }
+                })
+
+        # Trades / executions
+        if topic.startswith("execution.") or topic.startswith("trade.") or "order_result" in payload or "trade" in payload:
+            data = payload.get("trade") or payload.get("order_result") or payload
+            symbol = data.get("symbol") or payload.get("symbol") or data.get("pair")
+            side = (data.get("side") or payload.get("side") or data.get("direction") or "").lower()
+            price = _as_float(data.get("price") or data.get("avgPrice") or data.get("executed_price"))
+            qty = _as_float(data.get("quantity") or data.get("qty") or data.get("filled_qty"))
+            amount = _as_float(data.get("amount"))
+            if amount is None and price is not None and qty is not None:
+                amount = price * qty
+            pnl = _as_float(data.get("pnl") or payload.get("pnl") or data.get("profit"))
+
+            if symbol or amount is not None:
+                trade = {
+                    'time': datetime.now().strftime('%H:%M:%S'),
+                    'side': side or 'buy',
+                    'symbol': symbol or 'N/A',
+                    'amount': amount or 0.0,
+                    'pnl': pnl or 0.0,
+                    'volume': amount or 0.0,
+                }
+                state.recent_trades.appendleft(trade)
+                state.total_trades += 1
+                if pnl is not None:
+                    state.total_pnl += pnl
+                    if pnl > 0:
+                        state.winning_trades += 1
+                    elif pnl < 0:
+                        state.losing_trades += 1
+
+                await broadcast_to_clients({'type': 'trade', 'trade': trade})
+                await broadcast_to_clients({
+                    'type': 'stats',
+                    'stats': {
+                        'total_trades': state.total_trades,
+                        'winning_trades': state.winning_trades,
+                        'losing_trades': state.losing_trades,
+                        'total_pnl': state.total_pnl,
+                        'coherence': state.coherence_score,
+                    }
+                })
+
+        # Whale alerts
+        if topic.startswith("whale.") or "whale" in topic:
+            symbol = payload.get("symbol") or payload.get("asset") or payload.get("pair")
+            volume = _as_float(payload.get("amount_usd") or payload.get("value_usd") or payload.get("volume") or payload.get("amount"))
+            direction = payload.get("direction") or payload.get("side")
+            if symbol or volume:
+                whale = {
+                    'symbol': symbol or 'N/A',
+                    'volume': volume or 0.0,
+                    'direction': direction or 'buy'
+                }
+                state.whale_alerts.appendleft(whale)
+                await broadcast_to_clients({'type': 'whale', 'whale': whale})
+
+        # Bot detections
+        if topic.startswith("bot.") or "bot" in topic:
+            firm = payload.get("firm") or payload.get("name") or source
+            country = payload.get("country") or payload.get("region") or "Unknown"
+            bot = {'firm': firm, 'country': country}
+            state.bot_detections.appendleft(bot)
+            await broadcast_to_clients({'type': 'bot', 'bot': bot})
+
     while True:
         try:
-            # Subscribe to relevant topics
-            # This would integrate with the actual thought bus
-            pass
+            if not LIVE_FEED_ENABLED:
+                await asyncio.sleep(1)
+                continue
+            thought = await queue.get()
+            topic = getattr(thought, "topic", "") or ""
+            payload = getattr(thought, "payload", None) or {}
+            source = getattr(thought, "source", "unknown")
+
+            await _process_thought(topic, payload, source)
+
+            # Cross-process fallback: tail thoughts.jsonl if it exists
+            if thoughts_path.exists():
+                if not LIVE_FEED_ENABLED:
+                    await asyncio.sleep(1)
+                    continue
+                try:
+                    with thoughts_path.open("r", encoding="utf-8") as f:
+                        f.seek(file_pos)
+                        for line in f:
+                            file_pos = f.tell()
+                            line = line.strip()
+                            if not line:
+                                continue
+                            try:
+                                data = json.loads(line)
+                            except Exception:
+                                continue
+                            t_topic = data.get("topic", "")
+                            t_payload = data.get("payload", {}) if isinstance(data, dict) else {}
+                            t_source = data.get("source", "unknown") if isinstance(data, dict) else "unknown"
+                            await _process_thought(t_topic, t_payload, t_source)
+                except Exception:
+                    pass
+
         except Exception as e:
             safe_print(f"ThoughtBus listener error: {e}")
-        await asyncio.sleep(1)
+            await asyncio.sleep(1)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # MAIN APPLICATION
@@ -2940,6 +3401,7 @@ def create_app():
     app.router.add_get('/', handle_index)
     app.router.add_get('/api/state', handle_api_state)
     app.router.add_get('/api/flight-check', handle_flight_check)
+    app.router.add_post('/api/live-toggle', handle_live_toggle)
     app.router.add_get('/ws', websocket_handler)
     
     return app
@@ -2980,8 +3442,9 @@ async def handle_flight_check(request):
 
 async def start_background_tasks(app):
     """Start background tasks"""
-    app['queen_task'] = asyncio.create_task(queen_commentary_task())
-    app['simulate_task'] = asyncio.create_task(simulate_data_task())
+    if DEMO_MODE:
+        app['queen_task'] = asyncio.create_task(queen_commentary_task())
+        app['simulate_task'] = asyncio.create_task(simulate_data_task())
     app['balances_task'] = asyncio.create_task(update_balances_task())
     app['thought_bus_task'] = asyncio.create_task(thought_bus_listener_task())
 
@@ -3031,6 +3494,7 @@ def main():
     safe_print(f"")
     safe_print(f"   📊 Intelligence Systems: {state.systems_online}/{state.systems_total} ONLINE")
     safe_print(f"   👑 Queen Voice: {'✅ ENABLED' if SYSTEMS_STATUS.get('Queen Voice') else '⚠️ DISABLED'}")
+    safe_print(f"   🛰️  Data Mode: {'DEMO (SIMULATED)' if DEMO_MODE else 'LIVE (THOUGHT BUS)'}")
     safe_print(f"   🧠 Thought Bus: {'✅ CONNECTED' if SYSTEMS_STATUS.get('Thought Bus') else '⚠️ OFFLINE'}")
     safe_print(f"   🍄 Mycelium: {'✅ ACTIVE' if SYSTEMS_STATUS.get('Mycelium Network') else '⚠️ OFFLINE'}")
     safe_print(f"   🐦 Chirp Bus: {'✅ ACTIVE' if SYSTEMS_STATUS.get('Chirp Bus') else '⚠️ OFFLINE'}")
