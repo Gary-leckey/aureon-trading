@@ -78,6 +78,13 @@ if sys.platform == 'win32':
     except Exception:
         pass
 
+# Optional startup debug
+if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+    try:
+        safe_print("[DEBUG] micro_profit_labyrinth module loaded")
+    except Exception:
+        print("[DEBUG] micro_profit_labyrinth module loaded")
+
 import asyncio
 import argparse
 import importlib
@@ -18508,6 +18515,11 @@ async def main():
     parser.add_argument("--cia-report", action="store_true", help="👑🧠 Show CIA intelligence report")
     parser.add_argument("--cia-wisdom", action="store_true", help="👑🧠 Show Queen's trading wisdom from CIA intel")
     args = parser.parse_args()
+    if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+        try:
+            safe_print(f"[DEBUG] Parsed args: {args}")
+        except Exception:
+            print(f"[DEBUG] Parsed args: {args}")
     
     # Handle CIA sync commands (standalone, no trading)
     if args.sync_cia or args.cia_report or args.cia_wisdom:
@@ -18627,6 +18639,11 @@ if __name__ == "__main__":
             asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
         except Exception:
             pass
+    if os.getenv("AUREON_DEBUG_STARTUP") == "1":
+        try:
+            safe_print("[DEBUG] __main__ entry: calling asyncio.run(main())")
+        except Exception:
+            print("[DEBUG] __main__ entry: calling asyncio.run(main())")
     
     try:
         asyncio.run(main())

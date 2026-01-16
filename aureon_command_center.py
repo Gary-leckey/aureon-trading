@@ -5637,6 +5637,8 @@ async def monitor_trading_output():
     """Monitor output from the trading subprocess and broadcast logs/visuals"""
     global TRADING_PROCESS
     safe_print("👀 Starting Trading Process Monitor...")
+    # Keep a tail buffer so we can show last lines if the process exits
+    tail_buffer = deque(maxlen=40)
     
     # Track accumulated pnl from logs since we can't see internal state directly
     extracted_pnl = 0.0
@@ -5648,6 +5650,7 @@ async def monitor_trading_output():
                 if line:
                     decoded_line = line.decode('utf-8', errors='replace').strip()
                     if decoded_line:
+                        tail_buffer.append(decoded_line)
                         # Print to local console (pass-through)
                         safe_print(f"[MPL] {decoded_line}")
                         
@@ -5776,6 +5779,10 @@ async def monitor_trading_output():
                     # EOF or process dead
                     if TRADING_PROCESS.returncode is not None:
                         safe_print(f"⚠️ Trading Process exited code {TRADING_PROCESS.returncode}")
+                        if tail_buffer:
+                            safe_print("📋 Trading Process last output (tail):")
+                            for line in tail_buffer:
+                                safe_print(f"   {line}")
                         TRADING_PROCESS = None
                         # Auto-restart?
                     await asyncio.sleep(0.5)
