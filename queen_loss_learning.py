@@ -1056,11 +1056,11 @@ class QueenLossLearningSystem:
         
         # Reintroduce minimum expected profit guard to avoid tiny/ghost-profit trades
         # We require a floor for expected profit to ensure net positive after fees/slippage.
-        MIN_EXPECTED_PROFIT = 0.02  # $0.02 minimum expected net profit
+        MIN_EXPECTED_PROFIT = 0.04  # $0.04 minimum expected net profit (raised from $0.02)
         if expected_profit < MIN_EXPECTED_PROFIT:
             return True, f"Expected profit ${expected_profit:.4f} < minimum ${MIN_EXPECTED_PROFIT:.4f}"  # Block tiny trades
         
-        # Note: This is conservative — we can lower to $0.01 later if too restrictive.
+        # Note: This is conservative — we can lower to $0.02 later if too restrictive.
         
         # Check loss patterns - but SURVIVAL MODE is more forgiving!
         if pattern_key in self.loss_patterns:
