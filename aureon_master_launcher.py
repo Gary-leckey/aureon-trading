@@ -325,6 +325,15 @@ def run_autonomous_trading():
             if cycle_count % 5 == 0 and validated_signals:
                 print(f"\n\n🎯 [{timestamp}] HIGH-CONFIDENCE SIGNAL DETECTED!")
                 
+                # 🧠 QUEEN GATHERS ALL INTELLIGENCE BEFORE DECIDING
+                try:
+                    if hasattr(queen, 'gather_all_intelligence'):
+                        # Queen gathers ALL data: bots, whales, momentum, dashboards
+                        queen_intel = queen.gather_all_intelligence()
+                        print(f"   📡 Queen gathered intelligence from {queen_intel.get('total_sources', 0)} sources")
+                except Exception as e:
+                    print(f"   ⚠️ Queen intelligence gathering: {e}")
+                
                 # Ask Queen for guidance
                 for signal in validated_signals[:3]:  # Max 3 per cycle
                     symbol = signal.get('symbol', 'UNKNOWN')
@@ -333,9 +342,41 @@ def run_autonomous_trading():
                     
                     print(f"   🔮 Signal: {symbol} | {action} | Confidence: {confidence:.1%}")
                     
-                    # Get Queen's decision
+                    # Get Queen's INTELLIGENT decision (with ALL data)
                     try:
-                        if hasattr(queen, 'ask_queen_will_we_win'):
+                        if hasattr(queen, 'get_queen_decision_with_intelligence'):
+                            # USE NEW INTELLIGENCE-DRIVEN DECISION
+                            guidance = queen.get_queen_decision_with_intelligence({
+                                'symbol': symbol,
+                                'action': action,
+                                'confidence': confidence,
+                                'validated': True,
+                                'prime_sentinel': True
+                            })
+                            
+                            if guidance and guidance.get('confidence', 0) > 0.618:
+                                print(f"   👑 Queen: {guidance.get('decision', 'HOLD')} "
+                                      f"(Confidence: {guidance.get('confidence', 0):.1%})")
+                                print(f"   📊 Intelligence used: Bots={guidance.get('intel_summary', {}).get('bots_analyzed', 0)}, "
+                                      f"Whales={guidance.get('intel_summary', {}).get('whale_predictions', 0)}")
+                                
+                                # Execute through Micro Profit Labyrinth
+                                if hasattr(labyrinth, 'execute_validated_opportunity'):
+                                    result = labyrinth.execute_validated_opportunity(
+                                        symbol=symbol,
+                                        action=action,
+                                        intelligence=queen.latest_intelligence,
+                                        queen_guidance=guidance
+                                    )
+                                    
+                                    if result:
+                                        print(f"   ⚡ Executed: {result.get('status', 'UNKNOWN')}")
+                                else:
+                                    print(f"   ⚠️ Labyrinth execution not available")
+                            else:
+                                print(f"   👑 Queen: HOLD (Confidence: {guidance.get('confidence', 0):.1%})")
+                        elif hasattr(queen, 'ask_queen_will_we_win'):
+                            # Fallback to old method
                             guidance = queen.ask_queen_will_we_win(
                                 asset=symbol,
                                 exchange='kraken',
@@ -350,22 +391,6 @@ def run_autonomous_trading():
                             if guidance and guidance.get('confidence', 0) > 0.618:
                                 print(f"   👑 Queen: {guidance.get('decision', 'HOLD')} "
                                       f"(Confidence: {guidance.get('confidence', 0):.1%})")
-                                
-                                # Execute through Micro Profit Labyrinth
-                                if hasattr(labyrinth, 'execute_validated_opportunity'):
-                                    result = labyrinth.execute_validated_opportunity(
-                                        symbol=symbol,
-                                        action=action,
-                                        intelligence=intel,
-                                        queen_guidance=guidance
-                                    )
-                                    
-                                    if result:
-                                        print(f"   ⚡ Executed: {result.get('status', 'UNKNOWN')}")
-                                else:
-                                    print(f"   ⚠️ Labyrinth execution not available")
-                            else:
-                                print(f"   👑 Queen: HOLD (Low confidence)")
                     except Exception as e:
                         print(f"   ⚠️ Trading error: {e}")
                 

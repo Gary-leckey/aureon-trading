@@ -859,6 +859,17 @@ class QueenHiveMind:
             'alpaca': {'status': 'OFFLINE', 'instance': None},
             'labyrinth': {'status': 'OFFLINE', 'instance': None},
         }
+        
+        # 🧠📡 REAL INTELLIGENCE SYSTEMS - Queen's Eyes and Ears
+        self.feed_hub = None  # Real Data Feed Hub
+        self.intelligence_engine = None  # Real Intelligence Engine
+        self.bot_profiler = None  # Bot/Firm Profiler
+        self.whale_predictor = None  # Whale Movement Predictor
+        self.momentum_scanner = None  # Momentum Scanners (Wolf, Lion, Ants, Hummingbird)
+        self.latest_intelligence = {}  # Cache of latest intelligence
+        
+        # Wire intelligence systems
+        self._wire_intelligence_systems()
         self.hft_order_router = None  # HFT Order Router (wired later)
         
         # �🧠 QUEEN NEURON - Her Deep Learning Brain 🧠👑
@@ -1737,6 +1748,166 @@ class QueenHiveMind:
     # SYSTEM WIRING - Connect the children to the Queen
     # ═══════════════════════════════════════════════════════════════════════════════
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🧠📡 REAL INTELLIGENCE WIRING - Queen's Eyes and Ears
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def _wire_intelligence_systems(self):
+        """
+        Wire the Real Intelligence Engine and Feed Hub to the Queen.
+        This gives the Queen access to:
+        - Bot/Firm Profiler (37 firms, 4 categories)
+        - Whale Movement Predictor (3-pass validation)
+        - Momentum Scanners (Wolf, Lion, Ants, Hummingbird)
+        - Real Data Feed Hub (all 200+ systems)
+        """
+        try:
+            # Wire Intelligence Engine
+            from aureon_real_intelligence_engine import get_intelligence_engine
+            self.intelligence_engine = get_intelligence_engine()
+            self.bot_profiler = self.intelligence_engine.bot_profiler
+            self.whale_predictor = self.intelligence_engine.whale_predictor
+            self.momentum_scanner = self.intelligence_engine
+            logger.info("👑📡 Real Intelligence Engine WIRED to Queen!")
+            logger.info("   🤖 Bot Profiler: ACTIVE (37 firms)")
+            logger.info("   🐋 Whale Predictor: ACTIVE (3-pass validation)")
+            logger.info("   📈 Momentum Scanners: ACTIVE (Wolf/Lion/Ants/Hummingbird)")
+        except Exception as e:
+            logger.warning(f"⚠️ Could not wire Intelligence Engine: {e}")
+        
+        try:
+            # Wire Feed Hub
+            from aureon_real_data_feed_hub import get_feed_hub
+            self.feed_hub = get_feed_hub()
+            logger.info("👑🌐 Real Data Feed Hub WIRED to Queen!")
+        except Exception as e:
+            logger.warning(f"⚠️ Could not wire Feed Hub: {e}")
+    
+    def gather_all_intelligence(self, prices: dict = None) -> dict:
+        """
+        Gather ALL intelligence from ALL systems for decision making.
+        Returns combined intelligence from bots, whales, momentum, and more.
+        """
+        intelligence = {
+            'bots': [],
+            'whale_predictions': [],
+            'momentum': {},
+            'validated_signals': [],
+            'timestamp': time.time()
+        }
+        
+        # Get prices if not provided
+        if not prices:
+            prices = self._get_default_prices()
+        
+        # Gather from Intelligence Engine
+        if self.intelligence_engine:
+            try:
+                raw_intel = self.intelligence_engine.gather_all_intelligence(prices)
+                intelligence['bots'] = raw_intel.get('bot_profiles', [])
+                intelligence['whale_predictions'] = raw_intel.get('whale_predictions', [])
+                intelligence['momentum'] = raw_intel.get('momentum_opportunities', {})
+                intelligence['validated_signals'] = raw_intel.get('validated_intelligence', [])
+                intelligence['stats'] = raw_intel.get('stats', {})
+            except Exception as e:
+                logger.warning(f"Intelligence gathering error: {e}")
+        
+        # Gather from Feed Hub
+        if self.feed_hub:
+            try:
+                hub_intel = self.feed_hub.gather_and_distribute(prices)
+                intelligence['hub_stats'] = hub_intel
+            except Exception as e:
+                logger.debug(f"Feed hub error: {e}")
+        
+        # Cache the latest intelligence
+        self.latest_intelligence = intelligence
+        
+        return intelligence
+    
+    def _get_default_prices(self) -> dict:
+        """Get default prices for intelligence gathering"""
+        return {
+            'BTC/USD': 105000.0,
+            'ETH/USD': 3800.0,
+            'SOL/USD': 220.0,
+            'XRP/USD': 3.20,
+            'DOGE/USD': 0.42
+        }
+    
+    def get_queen_decision_with_intelligence(self, opportunity: dict) -> dict:
+        """
+        Make a trading decision using ALL available intelligence.
+        This is the main decision method that considers everything.
+        """
+        # Gather fresh intelligence
+        intel = self.gather_all_intelligence()
+        
+        symbol = opportunity.get('symbol', 'UNKNOWN')
+        exchange = opportunity.get('exchange', 'kraken')
+        
+        # Check for bot activity on this symbol
+        bot_warnings = [b for b in intel['bots'] if b.get('symbol') == symbol]
+        bot_risk = len(bot_warnings) > 0
+        
+        # Check for whale predictions on this symbol
+        whale_signals = [w for w in intel['whale_predictions'] if w.get('symbol') == symbol]
+        whale_bullish = any(w.get('action') == 'BUY' and w.get('confidence', 0) > 0.7 for w in whale_signals)
+        whale_bearish = any(w.get('action') == 'SELL' and w.get('confidence', 0) > 0.7 for w in whale_signals)
+        
+        # Check validated signals
+        validated = [v for v in intel['validated_signals'] if v.get('symbol') == symbol]
+        has_validated = len(validated) > 0
+        
+        # Get base opportunity score
+        base_score = opportunity.get('score', 0.5)
+        coherence = opportunity.get('coherence', 0.5)
+        
+        # Apply intelligence modifiers
+        final_score = base_score
+        reasoning = []
+        
+        if bot_risk:
+            final_score *= 0.7  # Reduce score if bots detected
+            reasoning.append(f"⚠️ Bot activity detected on {symbol}")
+        
+        if whale_bullish and opportunity.get('action') == 'BUY':
+            final_score *= 1.3  # Boost if whale agrees
+            reasoning.append(f"🐋 Whale bullish signal confirmed")
+        
+        if whale_bearish and opportunity.get('action') == 'SELL':
+            final_score *= 1.3
+            reasoning.append(f"🐋 Whale bearish signal confirmed")
+        
+        if has_validated:
+            final_score *= 1.2  # Boost for validated intelligence
+            reasoning.append(f"✅ Validated intelligence available")
+        
+        # Apply coherence requirement (Golden Ratio threshold)
+        if coherence < 0.618:
+            final_score *= 0.5
+            reasoning.append(f"⚠️ Low coherence ({coherence:.2f} < 0.618)")
+        
+        # Final decision
+        decision = 'EXECUTE' if final_score > 0.618 else 'HOLD'
+        
+        return {
+            'decision': decision,
+            'final_score': min(final_score, 1.0),
+            'base_score': base_score,
+            'bot_risk': bot_risk,
+            'whale_bullish': whale_bullish,
+            'whale_bearish': whale_bearish,
+            'has_validated': has_validated,
+            'reasoning': reasoning,
+            'intelligence_summary': {
+                'bots_detected': len(intel['bots']),
+                'whale_predictions': len(intel['whale_predictions']),
+                'validated_signals': len(intel['validated_signals']),
+                'momentum_scanners': len(intel['momentum'])
+            }
+        }
+
     # ═══════════════════════════════════════════════════════════════════════════════
     # 🇬🇧💎 THE MISSING PIECES - Advanced Intelligence Integration 🇬🇧💎
     # ═══════════════════════════════════════════════════════════════════════════════
