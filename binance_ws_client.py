@@ -25,7 +25,7 @@ import threading
 import queue
 import ssl
 from datetime import datetime
-from typing import Dict, List, Optional, Any, Callable, Set, Union
+from typing import Dict, List, Optional, Any, Callable, Set, Union, Tuple
 from dataclasses import dataclass, field
 from collections import deque
 

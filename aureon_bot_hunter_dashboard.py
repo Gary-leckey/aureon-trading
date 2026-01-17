@@ -652,11 +652,61 @@ HTML_DASHBOARD = """
     
     <div class="footer">
         <p>🔥 UNCHAINED AND UNBROKEN 🔥</p>
-        <p style="margin-top: 5px;">Data from: Binance WebSocket | Kraken WebSocket</p>
+        <p style="margin-top: 5px;">Data from: Binance WebSocket | Kraken WebSocket | System Hub API</p>
     </div>
 
     <script>
         const ws = new WebSocket('ws://' + window.location.host + '/ws');
+        
+        // Central Hub API for additional data
+        const HUB_API = 'http://localhost:13001/api';
+        
+        async function fetchHubData() {
+            try {
+                const [bots, whales, live] = await Promise.all([
+                    fetch(HUB_API + '/bots').then(r => r.json()).catch(() => ({})),
+                    fetch(HUB_API + '/whales').then(r => r.json()).catch(() => ({})),
+                    fetch(HUB_API + '/live').then(r => r.json()).catch(() => ({}))
+                ]);
+                
+                // Update bot count from hub
+                if (bots.bots_detected && bots.bots_detected.length > 0) {
+                    const activeBots = bots.bots_detected.filter(b => b.confidence > 0.5).length;
+                    document.getElementById('active-bots').textContent = activeBots + '+';
+                    
+                    // Add hub bots to the list
+                    const hubBots = bots.bots_detected.filter(b => b.symbol).slice(0, 5).map(b => ({
+                        id: 'HUB-' + b.type,
+                        name: b.type + ' Bot',
+                        symbol: b.symbol,
+                        trades: Math.floor(b.confidence * 100),
+                        type: b.type,
+                        confidence: (b.confidence * 100).toFixed(0) + '%'
+                    }));
+                    if (hubBots.length > 0) {
+                        updateBotList(hubBots);
+                    }
+                }
+                
+                // Update whale stats
+                if (whales.total_whale_events) {
+                    console.log('🐋 Hub whale events:', whales.total_whale_events);
+                }
+                
+                // Update queen signal display
+                if (live.queen_signal) {
+                    const signalPct = (live.queen_signal * 100).toFixed(1);
+                    document.getElementById('bot-percent').textContent = signalPct + '%';
+                }
+                
+            } catch (e) {
+                console.log('Hub fetch error:', e);
+            }
+        }
+        
+        // Poll hub every 3 seconds
+        setInterval(fetchHubData, 3000);
+        fetchHubData();
         
         const trades = [];
         const flow = {

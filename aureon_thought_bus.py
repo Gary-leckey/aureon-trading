@@ -113,6 +113,12 @@ class ThoughtBus:
 
         return thought
 
+    def get_recent(self, limit: int = 100) -> List[Json]:
+        """Return recent thoughts for monitoring/telemetry use."""
+        with self._lock:
+            recent = list(self._memory)[-max(1, int(limit)) :]
+        return [t.to_json() for t in recent]
+
     def publish_binary(
         self,
         *,

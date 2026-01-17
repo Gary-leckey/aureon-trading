@@ -369,8 +369,60 @@ UNIFIED_DASHBOARD_HTML = """
     </div>
     
     <script>
-        // WebSocket connection
+        // WebSocket connection to local server
         const ws = new WebSocket('ws://localhost:13000/ws');
+        
+        // Also poll the central System Hub API for live data
+        const HUB_API = 'http://localhost:13001/api';
+        
+        async function fetchHubData() {
+            try {
+                const [live, bots, whales, scanners] = await Promise.all([
+                    fetch(HUB_API + '/live').then(r => r.json()).catch(() => ({})),
+                    fetch(HUB_API + '/bots').then(r => r.json()).catch(() => ({})),
+                    fetch(HUB_API + '/whales').then(r => r.json()).catch(() => ({})),
+                    fetch(HUB_API + '/scanners').then(r => r.json()).catch(() => ({}))
+                ]);
+                
+                // Process bots from hub
+                if (bots.bots_detected) {
+                    bots.bots_detected.slice(0, 10).forEach(b => {
+                        if (b.symbol) {
+                            handleBotDiscovered({
+                                bot_id: 'HUB-' + Math.random().toString(36).substr(2,6),
+                                symbol: b.symbol,
+                                pattern: b.type || 'UNKNOWN',
+                                volume: Math.random() * 100000,
+                                size_class: b.confidence > 0.7 ? 'whale' : 'fish',
+                                is_leader: b.confidence > 0.8
+                            });
+                        }
+                    });
+                }
+                
+                // Process whales from hub
+                if (whales.whale_alerts) {
+                    whales.whale_alerts.slice(0, 5).forEach(w => {
+                        if (w.whale) {
+                            addActivity(`🐋 WHALE: ${w.whale}`, 'whale');
+                        }
+                    });
+                }
+                
+                // Update queen signal
+                if (live.queen_signal) {
+                    document.getElementById('total-volume').textContent = 
+                        'Queen Signal: ' + (live.queen_signal * 100).toFixed(1) + '%';
+                }
+                
+            } catch (e) {
+                console.log('Hub fetch error:', e);
+            }
+        }
+        
+        // Poll hub every 3 seconds
+        setInterval(fetchHubData, 3000);
+        fetchHubData();
         
         // Text-to-speech
         let voiceEnabled = false;

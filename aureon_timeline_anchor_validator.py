@@ -53,8 +53,18 @@ from enum import Enum
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import numpy as np
+from metrics import MetricCounter, skipped_anchor_counter
 
 logger = logging.getLogger(__name__)
+
+# ═══════════════════════════════════════════════════════════════
+# 📊 METRICS
+# ═══════════════════════════════════════════════════════════════
+timeline_anchors_total = MetricCounter(
+    'timeline_anchors_total',
+    'Total validated timeline anchors created',
+    labelnames=('symbol', 'exchange')
+)
 
 # ═══════════════════════════════════════════════════════════════
 # SACRED CONSTANTS
@@ -183,6 +193,8 @@ class TimelineAnchor:
             self.anchor_strength = 0.0
             return
             
+        previous_status = self.status
+            
         # Success ratio weighted by coherence and stability
         success_ratio = self.successful_validations / self.validation_count
         
@@ -197,6 +209,8 @@ class TimelineAnchor:
         # Update status based on strength
         if self.anchor_strength >= 0.9:
             self.status = AnchorStatus.ANCHORED
+            if previous_status != AnchorStatus.ANCHORED:
+                timeline_anchors_total.inc(symbol=self.symbol, exchange=self.exchange)
         elif self.anchor_strength >= 0.6:
             self.status = AnchorStatus.PARTIAL
         elif self.drift_rate > 0.1:

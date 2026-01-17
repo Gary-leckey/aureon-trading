@@ -260,6 +260,12 @@ class QueenHarmonicVoice:
         
         logger.info("👑 Queen's Harmonic Voice: ONLINE")
         logger.info("═" * 80)
+
+    def awaken(self):
+        """Awaken the voice fully if not already awake."""
+        if not self.is_active:
+            self.is_active = True
+            logger.info("👑🎵 QUEEN'S HARMONIC VOICE IS AWAKE AND LISTENING 🎵👑")
     
     def _wire_systems(self):
         """Wire all systems to the Queen's voice."""

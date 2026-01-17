@@ -1,0 +1,77 @@
+{
+  "timestamp": 1768641203.540971,
+  "shapes": [
+    {
+      "symbol": "BTCUSDT",
+      "timestamp": 1768641203.5118778,
+      "dominant_freqs": [
+        3.8033333333333337,
+        0.07666666666666667,
+        0.26666666666666666
+      ],
+      "amplitudes": [
+        3.182378683914146,
+        3.1408393528217946,
+        3.0862319257750452
+      ],
+      "volume_profile": [],
+      "layering_score": 0.0,
+      "bot_class": "HFT_ALGO",
+      "confidence": 0.85
+    },
+    {
+      "symbol": "ETHUSDT",
+      "timestamp": 1768641203.524081,
+      "dominant_freqs": [
+        0.33666666666666667,
+        0.505,
+        0.16833333333333333
+      ],
+      "amplitudes": [
+        170.44730897444686,
+        160.07016100078144,
+        159.49114764842255
+      ],
+      "volume_profile": [],
+      "layering_score": 0.0,
+      "bot_class": "MM_SPOOF",
+      "confidence": 0.85
+    },
+    {
+      "symbol": "SOLUSDT",
+      "timestamp": 1768641203.5315914,
+      "dominant_freqs": [
+        1.07,
+        2.3433333333333333,
+        0.08333333333333334
+      ],
+      "amplitudes": [
+        1597.3455567773142,
+        1513.2926903909197,
+        1512.078287882778
+      ],
+      "volume_profile": [],
+      "layering_score": 0.0,
+      "bot_class": "HFT_ALGO",
+      "confidence": 0.85
+    },
+    {
+      "symbol": "ADAUSDT",
+      "timestamp": 1768641203.537142,
+      "dominant_freqs": [
+        3.841666666666667,
+        0.8416666666666667,
+        2.796666666666667
+      ],
+      "amplitudes": [
+        115995.32401044387,
+        114577.03198894492,
+        111400.90578591384
+      ],
+      "volume_profile": [],
+      "layering_score": 0.0,
+      "bot_class": "HFT_ALGO",
+      "confidence": 0.85
+    }
+  ]
+}

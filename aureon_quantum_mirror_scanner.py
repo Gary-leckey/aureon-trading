@@ -53,8 +53,18 @@ from typing import Dict, List, Optional, Any, Tuple, Callable
 from collections import deque
 from enum import Enum
 import numpy as np
+from metrics import MetricGauge
 
 logger = logging.getLogger(__name__)
+
+# ═══════════════════════════════════════════════════════════════
+# 📊 METRICS
+# ═══════════════════════════════════════════════════════════════
+quantum_mirror_branch_score = MetricGauge(
+    'quantum_mirror_branch_score',
+    'Current branch score S_b(t) from Quantum Mirror Scanner',
+    labelnames=('symbol', 'exchange')
+)
 
 # ═══════════════════════════════════════════════════════════════
 # 🌍 SACRED CONSTANTS
@@ -139,12 +149,17 @@ class RealityBranch:
         """
         p_avg = (self.p1_harmonic + self.p2_coherence + self.p3_stability) / 3.0
         
-        return (
+        score = (
             p_avg *
             self.beneficial_probability *
             self.coherence_score *
             self.lambda_stability
         )
+        
+        # Telemetry
+        quantum_mirror_branch_score.set(score, symbol=self.symbol, exchange=self.exchange)
+        
+        return score
         
     def compute_coherence(self) -> float:
         """

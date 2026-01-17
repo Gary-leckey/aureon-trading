@@ -89,6 +89,7 @@ from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from cost_basis_tracker import CostBasisTracker
+from metrics import MetricGauge
 
 # 🇬🇧💎 MISSING PIECES INTEGRATION 💎🇬🇧
 try:
@@ -193,7 +194,9 @@ try:
         AutonomousAction,
         AutonomousDecision
     )
-    AUTONOMOUS_CONTROL_AVAILABLE = True
+    # 🚨 TEMPORARILY DISABLED TO PREVENT INFINITE LOOP
+    AUTONOMOUS_CONTROL_AVAILABLE = False
+    # AUTONOMOUS_CONTROL_AVAILABLE = True
 except ImportError:
     QueenAutonomousControl = None
     create_queen_autonomous_control = None
@@ -274,6 +277,15 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 📊 METRICS
+# ═══════════════════════════════════════════════════════════════════════════════
+queen_signal_value = MetricGauge(
+    'queen_signal_value',
+    'Queen Hive Mind confidence signal',
+    labelnames=('symbol',)
+)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONSTANTS - THE QUEEN'S SACRED NUMBERS
@@ -999,7 +1011,25 @@ class QueenHiveMind:
             except Exception as e:
                 logger.warning(f"📰⚠️ Could not initialize Research Neuron: {e}")
         
-        # 🦈🔪 HFT HARMONIC MYCELIUM ENGINE - High Frequency Trading 🦈🔪
+        # �🔪 COUNTER-INTELLIGENCE SYSTEM - Beat Trading Firms at Their Own Game 🔪🧠
+        # The Queen's counter-intelligence weapon against major trading firms
+        # Uses firm intelligence data to counter-trade Citadel, Jane Street, etc.
+        self.counter_intelligence = None
+        self.counter_intel_active = False
+        try:
+            from aureon_queen_counter_intelligence import queen_counter_intelligence
+            from aureon_global_firm_intelligence import get_attribution_engine
+            self.counter_intelligence = queen_counter_intelligence
+            self.firm_attribution_engine = get_attribution_engine()
+            self.counter_intel_active = True
+            logger.info("🧠🔪 Queen Counter-Intelligence ARMED!")
+            logger.info("   🎯 Target: Major trading firms (Citadel, Jane Street, Two Sigma)")
+            logger.info("   ⚡ Timing advantage: 30-200ms faster execution")
+            logger.info("   📊 Strategy: Pattern exploitation + momentum counter")
+        except Exception as e:
+            logger.warning(f"🧠⚠️ Could not initialize Counter-Intelligence: {e}")
+        
+        # �🦈🔪 HFT HARMONIC MYCELIUM ENGINE - High Frequency Trading 🦈🔪
         # The Queen's high-frequency trading system using Mycelium + Harmonic Alphabet
         # Target latency: <10ms signal-to-order execution
         self.hft_engine = None
@@ -1047,6 +1077,10 @@ class QueenHiveMind:
     
 
     def _emit_chirp(self, *, message: str, confidence: float = 0.5, coherence: float = 0.5, symbol: Optional[str] = None, message_type: Optional[ChirpType] = None) -> None:
+        # Telemetry
+        if symbol:
+            queen_signal_value.set(confidence, symbol=symbol)
+            
         if not CHIRP_AVAILABLE:
             return
         try:
@@ -5877,6 +5911,205 @@ class QueenHiveMind:
         
         # If still nothing, have a quick lucid dream
         return self.dream_now(symbol, "LUCID")
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🧠🔪 COUNTER-INTELLIGENCE METHODS - Beat Firms at Their Game
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def receive_counter_intelligence_signal(self, counter_signal: Dict) -> Dict:
+        """
+        👑🔪 Queen receives and evaluates counter-intelligence signals.
+        
+        Auto-approves counter-hunts with high confidence against major firms.
+        
+        Args:
+            counter_signal: {
+                'firm_id': str,
+                'strategy': str,
+                'confidence': float,
+                'timing_advantage': float,
+                'expected_profit_pips': float,
+                'risk_score': float,
+                'execution_window_seconds': float,
+                'reasoning': str,
+                'symbol': str (optional),
+                'source': str (optional)
+            }
+            
+        Returns:
+            {
+                'approved': bool,
+                'queen_confidence': float,
+                'reasoning': str,
+                'action': str ('execute', 'monitor', 'reject')
+            }
+        """
+        if not self.counter_intel_active:
+            return {
+                'approved': False,
+                'queen_confidence': 0.0,
+                'reasoning': 'Counter-intelligence not active',
+                'action': 'reject'
+            }
+        
+        firm_id = counter_signal.get('firm_id', 'unknown')
+        strategy = counter_signal.get('strategy', 'unknown')
+        confidence = counter_signal.get('confidence', 0.0)
+        timing_adv = counter_signal.get('timing_advantage', 0.0)
+        expected_profit = counter_signal.get('expected_profit_pips', 0.0)
+        risk_score = counter_signal.get('risk_score', 0.5)
+        symbol = counter_signal.get('symbol', 'UNKNOWN')
+        
+        logger.info(f"👑🔪 Queen evaluating counter-signal: {firm_id} on {symbol}")
+        logger.info(f"   Strategy: {strategy} | Confidence: {confidence:.0%}")
+        logger.info(f"   Timing advantage: {timing_adv:.1f}ms | Expected: {expected_profit:.2f} pips")
+        
+        # Queen's evaluation criteria
+        queen_confidence = 0.5
+        approved = False
+        action = 'monitor'
+        reasoning_parts = []
+        
+        # 1. Confidence threshold
+        if confidence >= 0.8:
+            queen_confidence += 0.2
+            reasoning_parts.append(f"High counter-intel confidence ({confidence:.0%})")
+            approved = True
+        elif confidence >= 0.7:
+            queen_confidence += 0.1
+            reasoning_parts.append(f"Good confidence ({confidence:.0%})")
+            approved = True
+        else:
+            reasoning_parts.append(f"Confidence below threshold ({confidence:.0%})")
+        
+        # 2. Timing advantage check
+        if timing_adv >= 50.0:  # 50ms+ advantage
+            queen_confidence += 0.15
+            reasoning_parts.append(f"Strong timing advantage ({timing_adv:.0f}ms)")
+        elif timing_adv >= 30.0:
+            queen_confidence += 0.1
+            reasoning_parts.append(f"Good timing edge ({timing_adv:.0f}ms)")
+        
+        # 3. Profit potential
+        if expected_profit >= 1.0:  # 1+ pip profit
+            queen_confidence += 0.1
+            reasoning_parts.append(f"Good profit potential ({expected_profit:.2f} pips)")
+        elif expected_profit < 0.1:
+            queen_confidence -= 0.1
+            reasoning_parts.append(f"Low profit potential ({expected_profit:.2f} pips)")
+        
+        # 4. Risk assessment
+        if risk_score > 0.8:  # High risk
+            queen_confidence -= 0.2
+            reasoning_parts.append(f"High risk ({risk_score:.0%})")
+            approved = False
+            action = 'reject'
+        elif risk_score < 0.5:  # Low risk
+            queen_confidence += 0.1
+            reasoning_parts.append(f"Acceptable risk ({risk_score:.0%})")
+        
+        # 5. High-value target firms get priority
+        priority_firms = ['citadel', 'jane_street', 'two_sigma', 'jump_trading', 'virtu_financial']
+        if firm_id.lower() in priority_firms:
+            queen_confidence += 0.15
+            reasoning_parts.append(f"Priority target: {firm_id}")
+        
+        # 6. Check harmonic timing if available
+        if hasattr(self, 'harmonic_data') and self.harmonic_data:
+            coherence = getattr(self.harmonic_data, 'coherence', 0.5)
+            if coherence >= 0.7:
+                queen_confidence += 0.1
+                reasoning_parts.append(f"Harmonic alignment ({coherence:.0%})")
+            elif coherence < 0.4:
+                queen_confidence -= 0.15
+                reasoning_parts.append(f"Poor harmonic alignment ({coherence:.0%})")
+        
+        # Final decision
+        queen_confidence = max(0.0, min(1.0, queen_confidence))
+        
+        if queen_confidence >= 0.7 and approved:
+            action = 'execute'
+            reasoning_parts.insert(0, "👑 QUEEN APPROVES COUNTER-HUNT")
+        elif queen_confidence >= 0.5:
+            action = 'monitor'
+            reasoning_parts.insert(0, "👑 Queen permits monitoring")
+        else:
+            action = 'reject'
+            approved = False
+            reasoning_parts.insert(0, "👑 Queen REJECTS counter-hunt")
+        
+        reasoning = " | ".join(reasoning_parts)
+        
+        # Emit thought if available
+        if self.thought_bus:
+            try:
+                self.thought_bus.think(
+                    topic='queen.counter_intel.decision',
+                    message=f"{action.upper()}: {firm_id} ({symbol})",
+                    metadata={
+                        'firm_id': firm_id,
+                        'symbol': symbol,
+                        'approved': approved,
+                        'queen_confidence': queen_confidence,
+                        'action': action,
+                        'strategy': strategy
+                    }
+                )
+            except Exception:
+                pass
+        
+        # Emit chirp if available
+        try:
+            self._emit_chirp(
+                message=f"Counter-intel: {action.upper()} {firm_id}",
+                confidence=queen_confidence,
+                coherence=confidence,
+                symbol=symbol
+            )
+        except Exception:
+            pass
+        
+        logger.info(f"👑 Queen decision: {action.upper()} (confidence: {queen_confidence:.0%})")
+        logger.info(f"   Reasoning: {reasoning}")
+        
+        return {
+            'approved': approved,
+            'queen_confidence': queen_confidence,
+            'reasoning': reasoning,
+            'action': action,
+            'firm_id': firm_id,
+            'symbol': symbol
+        }
+    
+    def get_counter_intelligence_status(self) -> Dict:
+        """Get current counter-intelligence system status."""
+        if not self.counter_intel_active:
+            return {'active': False, 'reason': 'Counter-intelligence not initialized'}
+        
+        try:
+            active_signals = self.counter_intelligence.get_active_counter_signals()
+            
+            return {
+                'active': True,
+                'active_signals': len(active_signals),
+                'strategies': list(set(s.strategy.value for s in active_signals)),
+                'target_firms': list(set(s.firm_id for s in active_signals)),
+                'avg_confidence': sum(s.confidence for s in active_signals) / len(active_signals) if active_signals else 0.0,
+                'timing_advantages': [s.timing_advantage for s in active_signals],
+                'signals': [
+                    {
+                        'firm': s.firm_id,
+                        'strategy': s.strategy.value,
+                        'confidence': s.confidence,
+                        'timing_ms': s.timing_advantage,
+                        'profit_pips': s.expected_profit_pips
+                    }
+                    for s in active_signals[:5]  # Top 5
+                ]
+            }
+        except Exception as e:
+            logger.debug(f"Counter-intel status error: {e}")
+            return {'active': True, 'error': str(e)}
     
     # ═══════════════════════════════════════════════════════════════════════════════
     # COLLECTIVE INTELLIGENCE - Aggregate signals from all children

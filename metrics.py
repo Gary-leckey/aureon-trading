@@ -3,7 +3,7 @@
 - Uses prometheus_client when available to register real Prometheus metrics.
 - Always maintains an internal in-process count store for easy access in unit tests.
 """
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional, List, Any
 import threading
 
 try:
@@ -105,6 +105,20 @@ def get_metric_value(counter: MetricCounter, **labels) -> float:
 
 def get_gauge_value(gauge: MetricGauge, **labels) -> float:
     return gauge.get(**labels)
+
+
+def dump_metrics() -> List[Dict[str, Any]]:
+    """Return a snapshot of all metric values for monitoring dashboards."""
+    with _lock:
+        items = [
+            {
+                "name": name,
+                "labels": dict(labels),
+                "value": value,
+            }
+            for (name, labels), value in _internal_counters.items()
+        ]
+    return items
 
 # Timeline anchor metrics
 skipped_anchor_counter = MetricCounter(

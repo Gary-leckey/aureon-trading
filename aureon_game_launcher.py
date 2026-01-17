@@ -59,6 +59,7 @@ class GameModeConfig:
     queen_unified_dashboard: bool = False
     bot_hunter_dashboard: bool = False
     global_bot_map: bool = False
+    system_hub: bool = False  # 🌌 NEW: System Hub Mind Map
     telemetry: bool = False
     open_browser: bool = True
 
@@ -118,6 +119,8 @@ def _print_urls(config: GameModeConfig):
         safe_print("🤖 Bot Hunter Dashboard    → http://localhost:9999")
     if config.global_bot_map:
         safe_print("🗺️  Global Bot Map          → http://localhost:12000")
+    if config.system_hub:
+        safe_print("🌌 System Hub Mind Map     → http://localhost:13001")
     safe_print("=" * 80 + "\n")
 
 
@@ -175,6 +178,13 @@ def run_game_mode(config: GameModeConfig) -> int:
             processes.append(_start_process(
                 "Global Bot Map",
                 _build_python_command("aureon_global_bot_map.py")
+            ))
+
+        # OPTIONAL: System Hub Mind Map (NEW)
+        if config.system_hub:
+            processes.append(_start_process(
+                "🌌 SYSTEM HUB",
+                _build_python_command("aureon_system_hub_dashboard.py")
             ))
 
         if config.telemetry:
@@ -249,6 +259,7 @@ Examples:
     parser.add_argument("--queen-unified", action="store_true", help="Also start Queen Unified Dashboard")
     parser.add_argument("--bot-hunter", action="store_true", help="Also start Bot Hunter Dashboard")
     parser.add_argument("--bot-map", action="store_true", help="Also start Global Bot Map")
+    parser.add_argument("--system-hub", action="store_true", help="Also start System Hub Mind Map 🌌")
     parser.add_argument("--telemetry", action="store_true", help="Start telemetry server")
 
     args = parser.parse_args()
@@ -263,6 +274,7 @@ Examples:
             queen_unified_dashboard=True,
             bot_hunter_dashboard=True,
             global_bot_map=True,
+            system_hub=True,
             telemetry=True,
             open_browser=not args.no_browser,
         )
@@ -275,6 +287,7 @@ Examples:
         queen_unified_dashboard=args.queen_unified,
         bot_hunter_dashboard=args.bot_hunter,
         global_bot_map=args.bot_map,
+        system_hub=args.system_hub,
         telemetry=args.telemetry,
         open_browser=not args.no_browser,
     )

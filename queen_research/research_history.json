@@ -4,36 +4,72 @@
       "topic": "trending_coins",
       "source": "coingecko",
       "title": "Trending Coins Pattern",
-      "content": "Currently trending: DUSK, MET, OWL, XMR, DASH",
+      "content": "Currently trending: AXS, BERA, FHE, RON, DUSK",
       "relevance_score": 0.7,
-      "discovered_at": "2026-01-17T01:10:43.781253",
+      "discovered_at": "2026-01-17T14:52:59.521402",
       "applied": true
     },
     {
       "topic": "market_sentiment",
       "source": "coingecko",
       "title": "Global Market Sentiment",
-      "content": "BTC Dominance: 57.5%, 24h Change: -0.15%",
+      "content": "BTC Dominance: 57.3%, 24h Change: 0.42%",
       "relevance_score": 0.8,
-      "discovered_at": "2026-01-17T01:10:43.903249",
+      "discovered_at": "2026-01-17T14:52:59.644736",
       "applied": true
     },
     {
       "topic": "momentum_leaders",
       "source": "binance",
       "title": "Top Momentum Leaders",
-      "content": "Top gainers: {'DUSK': 66.93, 'CREAM': 65.354, 'PNT': 45.228, 'XAI': 42.494, 'AXS': 31.633}",
+      "content": "Top gainers: {'AXS': 67.737, 'CREAM': 65.354, 'DUSK': 48.063, 'PNT': 45.228, 'BERA': 32.035}",
       "relevance_score": 0.85,
-      "discovered_at": "2026-01-17T01:10:44.313987",
+      "discovered_at": "2026-01-17T14:53:00.207857",
       "applied": true
     },
     {
       "topic": "volatility_analysis",
       "source": "kraken",
       "title": "Volatility Patterns",
-      "content": "24h volatility: XETHZUSD: 2.10%, SOLUSD: 3.72%, XXBTZUSD: 1.63%",
+      "content": "24h volatility: XETHZUSD: 1.82%, SOLUSD: 3.72%, XXBTZUSD: 1.43%",
       "relevance_score": 0.75,
-      "discovered_at": "2026-01-17T01:10:44.450001",
+      "discovered_at": "2026-01-17T14:53:00.664428",
+      "applied": true
+    },
+    {
+      "topic": "trending_coins",
+      "source": "coingecko",
+      "title": "Trending Coins Pattern",
+      "content": "Currently trending: AXS, BERA, RON, FHE, XMR",
+      "relevance_score": 0.7,
+      "discovered_at": "2026-01-17T14:58:10.616653",
+      "applied": true
+    },
+    {
+      "topic": "market_sentiment",
+      "source": "coingecko",
+      "title": "Global Market Sentiment",
+      "content": "BTC Dominance: 57.3%, 24h Change: 0.41%",
+      "relevance_score": 0.8,
+      "discovered_at": "2026-01-17T14:58:10.741728",
+      "applied": true
+    },
+    {
+      "topic": "momentum_leaders",
+      "source": "binance",
+      "title": "Top Momentum Leaders",
+      "content": "Top gainers: {'AXS': 68.328, 'CREAM': 65.354, 'DUSK': 46.707, 'PNT': 45.228, 'BERA': 31.503}",
+      "relevance_score": 0.85,
+      "discovered_at": "2026-01-17T14:58:11.458674",
+      "applied": true
+    },
+    {
+      "topic": "volatility_analysis",
+      "source": "kraken",
+      "title": "Volatility Patterns",
+      "content": "24h volatility: XETHZUSD: 1.82%, SOLUSD: 3.72%, XXBTZUSD: 1.43%",
+      "relevance_score": 0.75,
+      "discovered_at": "2026-01-17T14:58:11.909533",
       "applied": true
     }
   ],
@@ -47,11 +83,24 @@
         "Volatility Patterns",
         "Trending Coins Pattern"
       ],
-      "generated_at": "2026-01-17T01:10:44.459561",
+      "generated_at": "2026-01-17T14:53:00.698934",
+      "applied": true,
+      "measured_revenue": 0.0
+    },
+    {
+      "name": "queen_research_enhancement",
+      "description": "Auto-generated from 4 research findings",
+      "source_research": [
+        "Top Momentum Leaders",
+        "Global Market Sentiment",
+        "Volatility Patterns",
+        "Trending Coins Pattern"
+      ],
+      "generated_at": "2026-01-17T14:58:11.923255",
       "applied": true,
       "measured_revenue": 0.0
     }
   ],
   "total_revenue": 0.0,
-  "last_updated": "2026-01-17T01:10:44.487173"
+  "last_updated": "2026-01-17T14:58:11.926672"
 }

@@ -318,6 +318,46 @@ DASHBOARD_HTML = """
     <script>
         const ws = new WebSocket('ws://localhost:12000');
         
+        // Central Hub API for live data
+        const HUB_API = 'http://localhost:13001/api';
+        
+        async function fetchHubData() {
+            try {
+                const [bots, whales, scanners] = await Promise.all([
+                    fetch(HUB_API + '/bots').then(r => r.json()).catch(() => ({})),
+                    fetch(HUB_API + '/whales').then(r => r.json()).catch(() => ({})),
+                    fetch(HUB_API + '/scanners').then(r => r.json()).catch(() => ({}))
+                ]);
+                
+                // Update total bots from hub
+                if (bots.bots_detected) {
+                    const uniqueBots = bots.bots_detected.filter(b => b.symbol).length;
+                    document.getElementById('total-bots').textContent = uniqueBots + '+';
+                }
+                
+                // Update whales count
+                if (whales.total_whale_events) {
+                    document.getElementById('total-clans').textContent = whales.total_whale_events;
+                }
+                
+                // Add activity from scanners
+                if (scanners.bots) {
+                    scanners.bots.slice(0, 3).forEach(s => {
+                        if (s.payload && s.payload.firm) {
+                            console.log('🌍 Firm activity:', s.payload.firm, s.payload.symbol);
+                        }
+                    });
+                }
+                
+            } catch (e) {
+                console.log('Hub fetch error:', e);
+            }
+        }
+        
+        // Poll hub every 3 seconds
+        setInterval(fetchHubData, 3000);
+        fetchHubData();
+        
         // Country to lat/lon mapping (simplified)
         const countryCoords = {
             'USA': { lat: 37.0902, lon: -95.7129 },

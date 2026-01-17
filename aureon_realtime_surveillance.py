@@ -280,10 +280,31 @@ class FlowTracker:
         """Try to attribute this trade to a known bot"""
         hour = datetime.fromtimestamp(event.timestamp, tz=timezone.utc).hour
         
-        for bot_name, pattern in self.bot_patterns.items():
-            peak_hours = pattern.get('peak_hours', [])
-            if hour in peak_hours:
-                return bot_name
+        for symbol, bots in self.bot_patterns.items():
+            # bot_patterns is {symbol: [list of bot dicts]}
+            if not isinstance(bots, list):
+                continue
+            for bot in bots:
+                if not isinstance(bot, dict):
+                    continue
+                # Check peak hours from evidence or direct field
+                peak_hours = []
+                if 'peak_hours' in bot:
+                    peak_hours = bot['peak_hours']
+                elif 'evidence' in bot:
+                    for ev in bot.get('evidence', []):
+                        if 'Peak trading hours' in str(ev):
+                            # Parse "[13, 14, 15, 16]" from evidence string
+                            import re
+                            match = re.search(r'\[([0-9,\s]+)\]', str(ev))
+                            if match:
+                                try:
+                                    peak_hours = [int(x.strip()) for x in match.group(1).split(',')]
+                                except:
+                                    pass
+                            break
+                if hour in peak_hours:
+                    return bot.get('bot_name', bot.get('owner_entity', 'UNKNOWN_BOT'))
         return None
         
     def get_flow_summary(self) -> Dict:

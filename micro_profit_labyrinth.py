@@ -498,7 +498,10 @@ except ImportError:
 
 try:
     from aureon_internal_multiverse import InternalMultiverse
-    safe_print("🌌 Internal Multiverse LOADED!")
+    # INTERNAL_MULTIVERSE_AVAILABLE = True
+    # safe_print("🌌 Internal Multiverse LOADED!")
+    safe_print("🌌 Internal Multiverse DISBALED FOR SPEED!")
+    InternalMultiverse = None
 except ImportError:
     InternalMultiverse = None
 
@@ -736,8 +739,9 @@ try:
         QueenAutonomousControl, create_queen_autonomous_control,
         AutonomousAction, AutonomousDecision, SovereigntyLevel
     )
-    QUEEN_AUTONOMOUS_CONTROL_AVAILABLE = True
-    safe_print("👑🎮 Queen Autonomous Control LOADED! (SOVEREIGN AUTHORITY)")
+    # 🚨 TEMPORARILY DISABLED - Causing infinite initialization loop
+    QUEEN_AUTONOMOUS_CONTROL_AVAILABLE = False
+    # safe_print("👑🎮 Queen Autonomous Control LOADED! (SOVEREIGN AUTHORITY)")
 except ImportError as e:
     QUEEN_AUTONOMOUS_CONTROL_AVAILABLE = False
     QueenAutonomousControl = None
@@ -4165,6 +4169,7 @@ class MicroProfitLabyrinth:
 
     def __init__(self, live: bool = False, dry_run: bool = False):
         # --dry-run explicitly overrides LIVE env; otherwise allow env to enable live
+        self.dry_run = dry_run
         if dry_run:
             self.live = False
         else:
@@ -7891,6 +7896,66 @@ class MicroProfitLabyrinth:
             if result:
                 all_opportunities.extend(result)
         
+        # 🦈🔪 ORCA KILLER WHALE HUNT (FPTP Injection)
+        if hasattr(self, 'orca') and self.orca:
+            try:
+                # Feed current market data to Orca
+                # In FPTP we scan all, but Orca needs context. We'll give it the first connected exchange.
+                default_exch = connected_exchanges[0] if connected_exchanges else 'alpaca'
+                market_data = {
+                    'prices': self.prices,
+                    'ticker_cache': self.ticker_cache,
+                    'balances': self.exchange_balances.get(default_exch, {}),
+                    'momentum': getattr(self, 'asset_momentum', {}),
+                    'exchange': default_exch
+                }
+                
+                # Update Orca's market view
+                if hasattr(self.orca, 'update_market_data'):
+                    self.orca.update_market_data(market_data)
+                
+                safe_print(f"DEBUG: Calling Orca scan_for_opportunities (FPTP Mode, via injection)!")
+                # Scan for whale hunting opportunities
+                orca_opportunities = self.orca.scan_for_opportunities()
+                safe_print(f"DEBUG: Orca scan returned {len(orca_opportunities) if orca_opportunities else 0} opportunities")
+                
+                if orca_opportunities:
+                    safe_print(f"   🦈🔪 ORCA HUNT: {len(orca_opportunities)} whale(s) detected!")
+                    
+                    # Process top opportunity (Orca handles Queen consultation)
+                    for opp in orca_opportunities[:1]:  # Process best one
+                        safe_print(f"      🎯 Target: {opp.symbol} | Confidence: {opp.confidence:.0%}")
+                        safe_print(f"      💰 Target P&L: ${opp.target_pnl_usd:.2f}")
+                        
+                        # Start hunt (this will consult Queen and queue for execution)
+                        self.orca.start_hunt(opp)
+                        
+                        # --- ORCA FPTP INJECTION ---
+                        safe_print(f"DEBUG: Promoting Orca hunt {opp.id} to FPTP execution!")
+                        try:
+                             # Convert OrcaOpportunity to dict for the factory
+                            opp_dict = {
+                                'symbol': opp.symbol,
+                                'action': opp.action,
+                                'confidence': opp.confidence,
+                                'target_pnl': opp.target_pnl_usd,
+                                'reasoning': opp.reasoning,
+                                'hunt_id': opp.id
+                            }
+                            # Use helper to create MicroOpportunity and queue it
+                            self.execute_orca_order(opp_dict)
+                            
+                            # Move from queue to active list for FPTP execution
+                            if hasattr(self, 'orca_pending_orders') and self.orca_pending_orders:
+                                safe_print(f"DEBUG: Adding {len(self.orca_pending_orders)} Orca orders to FPTP race")
+                                all_opportunities.extend(self.orca_pending_orders)
+                                self.orca_pending_orders.clear()
+                        except Exception as e_inj:
+                            safe_print(f"DEBUG: Injection failed: {e_inj}")
+                        # --- END INJECTION ---
+            except Exception as e:
+                safe_print(f"   ⚠️ Orca scan error: {e}")
+
         # Sort by expected profit (highest first)
         all_opportunities.sort(key=lambda x: x.expected_pnl_usd, reverse=True)
         
@@ -9999,8 +10064,10 @@ class MicroProfitLabyrinth:
                 if hasattr(self.orca, 'update_market_data'):
                     self.orca.update_market_data(market_data)
                 
+                safe_print("DEBUG: Calling Orca scan_for_opportunities now!")
                 # Scan for whale hunting opportunities
                 orca_opportunities = self.orca.scan_for_opportunities()
+                safe_print(f"DEBUG: Orca scan returned {len(orca_opportunities) if orca_opportunities else 0} opportunities")
                 
                 if orca_opportunities:
                     safe_print(f"   🦈🔪 ORCA HUNT: {len(orca_opportunities)} whale(s) detected!")
@@ -10972,10 +11039,10 @@ class MicroProfitLabyrinth:
                 return will_win, avg_confidence, reason_str
             
             # GATE 3: MINIMUM VALUE WITH BUFFER - Account for 95% safety adjustment
-            # $0.50 minimum ensures we have buffer for safety adjustment (reduced from $1.50 to allow more trades)
-            if from_value < 0.50:
+            # 🚨 LOWERED: $0.10 minimum (was $0.50) to enable micro-profit trading with small balances!
+            if from_value < 0.10:
                 will_win = False
-                reason_str = f"🛡️ BLOCKED: ${from_value:.2f} < $0.50 minimum (need buffer for 95% safety adjustment)"
+                reason_str = f"🛡️ BLOCKED: ${from_value:.2f} < $0.10 minimum (need buffer for 95% safety adjustment)"
                 return will_win, avg_confidence, reason_str
         
         # Check if dream says will_win (we've set FOGGY to will_win=True)
@@ -12866,10 +12933,11 @@ if __name__ == "__main__":
         
         # 💰 EXCHANGE-SPECIFIC MINIMUM VALUES (USD value)
         # ⚠️ CRITICAL: These must match exchange ordermin requirements!
+        # 🚨 LOWERED: Allow micro-profit trades with small balances!
         EXCHANGE_MIN_VALUE = {
-            'kraken': 0.50,     # Kraken needs ~$0.50 EUR/USD minimum (reduced from $1.50 for more trades)
-            'binance': 5.00,    # Binance MIN_NOTIONAL is typically $5-10
-            'alpaca': 1.00,     # Alpaca has ~$1 minimum
+            'kraken': 0.10,     # Kraken (was $0.50, lowered for micro-profits)
+            'binance': 5.00,    # Binance MIN_NOTIONAL is typically $5-10 (can't lower this)
+            'alpaca': 0.10,     # Alpaca (was $1.00, lowered for micro-profits)
         }
         min_value = EXCHANGE_MIN_VALUE.get(exchange, 1.0)
         
@@ -14821,16 +14889,29 @@ if __name__ == "__main__":
             
             # Build opportunity for the existing execution pipeline
             opp = MicroOpportunity(
+                timestamp=time.time(),
                 from_asset=from_asset,
                 to_asset=to_asset,
                 from_amount=estimated_amount,  # Will be recalculated
+                from_value_usd=estimated_amount,
+                
+                # Scoring - use confidence as proxy for Orca source
+                v14_score=confidence,
+                hub_score=confidence,
+                commando_score=confidence,
+                combined_score=confidence,
+                
+                # Profit estimates
                 expected_pnl_usd=target_pnl,
-                confidence=confidence,
+                expected_pnl_pct=target_pnl / 100.0, # Placeholder
+                
                 source_exchange='alpaca',  # Default to Alpaca for Orca orders
-                source='orca_intelligence',
-                from_value_usd=estimated_amount
             )
             
+            # Set source manually (not in init)
+            # opp.source = 'orca_intelligence' 
+            opp.queen_confidence = confidence
+
             # Add Orca reasoning to opportunity
             opp.reasoning = order.get('reasoning', [f'Orca hunt: {hunt_id}'])
             

@@ -618,6 +618,63 @@ DASHBOARD_HTML = """
     </div>
     
     <script>
+        // Central Hub API for live data
+        const HUB_API = 'http://localhost:13001/api';
+        
+        async function fetchHubData() {
+            try {
+                const [bots, whales, live, scanners] = await Promise.all([
+                    fetch(HUB_API + '/bots').then(r => r.json()).catch(() => ({})),
+                    fetch(HUB_API + '/whales').then(r => r.json()).catch(() => ({})),
+                    fetch(HUB_API + '/live').then(r => r.json()).catch(() => ({})),
+                    fetch(HUB_API + '/scanners').then(r => r.json()).catch(() => ({}))
+                ]);
+                
+                // Update stats from hub
+                if (bots.bots_detected) {
+                    const botCount = bots.bots_detected.filter(b => b.confidence > 0.5).length;
+                    const botEl = document.getElementById('botCount');
+                    if (botEl) botEl.textContent = botCount + '+';
+                }
+                
+                if (whales.total_whale_events) {
+                    const whaleEl = document.getElementById('whaleCount');
+                    if (whaleEl) whaleEl.textContent = whales.total_whale_events;
+                }
+                
+                // Add alerts from scanners
+                if (scanners.bots && scanners.bots.length > 0) {
+                    const alertEl = document.getElementById('alertCount');
+                    if (alertEl) alertEl.textContent = scanners.bots.length + '+';
+                    
+                    // Update alert list
+                    const alertList = document.getElementById('alertList');
+                    if (alertList) {
+                        const newAlerts = scanners.bots.slice(0, 5).map(s => {
+                            const payload = s.payload || {};
+                            return `<div class="alert-item" style="padding: 8px; border-bottom: 1px solid #333; color: #ffd700;">
+                                🚨 ${payload.firm || payload.type || 'UNKNOWN'} - ${payload.symbol || s.topic} 
+                                <span style="color: #888; font-size: 0.9em;">${new Date(s.ts * 1000).toLocaleTimeString()}</span>
+                            </div>`;
+                        }).join('');
+                        alertList.innerHTML = newAlerts + alertList.innerHTML;
+                    }
+                }
+                
+                // Update connection status
+                document.getElementById('connectionDot').classList.remove('disconnected');
+                document.getElementById('connectionDot').classList.add('connected');
+                document.getElementById('connectionStatus').textContent = 'CONNECTED (HUB)';
+                
+            } catch (e) {
+                console.log('Hub fetch error:', e);
+            }
+        }
+        
+        // Poll hub every 2 seconds
+        setInterval(fetchHubData, 2000);
+        fetchHubData();
+        
         // WebSocket connection
         let ws;
         let reconnectAttempts = 0;

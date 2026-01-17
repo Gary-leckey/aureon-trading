@@ -64,6 +64,23 @@ try:
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
 
+# Counter-intelligence integration
+try:
+    from aureon_queen_counter_intelligence import (
+        queen_counter_intelligence,
+        CounterIntelligenceSignal,
+        CounterStrategy
+    )
+    from aureon_global_firm_intelligence import get_attribution_engine
+    from firm_name_matcher import match_firm_name_simple, match_firm_name
+    COUNTER_INTEL_AVAILABLE = True
+except ImportError:
+    COUNTER_INTEL_AVAILABLE = False
+    queen_counter_intelligence = None
+    get_attribution_engine = None
+    match_firm_name_simple = None
+    match_firm_name = None
+
 # Sacred constants for harmonic timing
 PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio 1.618
 PHI_INVERSE = 0.618  # φ⁻¹ - The trigger threshold
@@ -342,6 +359,14 @@ class OrcaKillerWhaleIntelligence:
         # Persistence
         self.state_file = Path("orca_intelligence_state.json")
         self._load_state()
+        
+        # Counter-Intelligence wiring
+        self.attribution_engine = get_attribution_engine() if COUNTER_INTEL_AVAILABLE else None
+        self.counter_intel = queen_counter_intelligence if COUNTER_INTEL_AVAILABLE else None
+        if COUNTER_INTEL_AVAILABLE:
+            logger.info("🧠 Counter-Intelligence ENABLED for Orca")
+        else:
+            logger.info("🧠 Counter-Intelligence UNAVAILABLE")
         
         logger.info("🦈🔪 ORCA KILLER WHALE INTELLIGENCE ACTIVATED 🔪🦈")
         logger.info(f"   Mode: {self.mode} | Max Hunts: {self.max_concurrent_hunts}")
@@ -832,6 +857,77 @@ class OrcaKillerWhaleIntelligence:
                 # Chirp emission failure - non-critical, continue
                 pass
         
+        # Counter-Intelligence analysis: create derived signals when queen finds opportunities
+        try:
+            if COUNTER_INTEL_AVAILABLE and self.counter_intel:
+                firm_id = None
+                
+                # Improved firm name → firm_id mapping
+                if signal.firm:
+                    # Try quick match first
+                    firm_id = match_firm_name_simple(signal.firm) if match_firm_name_simple else None
+                    
+                    # Fall back to fuzzy match with database
+                    if not firm_id and match_firm_name and self.attribution_engine:
+                        match_result = match_firm_name(
+                            signal.firm,
+                            self.attribution_engine.firm_db,
+                            threshold=0.7
+                        )
+                        if match_result:
+                            firm_id, confidence = match_result
+                            logger.info(f"🔍 Fuzzy matched '{signal.firm}' → {firm_id} (confidence: {confidence:.0%})")
+
+                # If we found a firm id, ask queen counter-intel for a counter-signal
+                if firm_id:
+                    market_data = {
+                        'symbol': signal.symbol,
+                        'volatility': self.harmonic_data.coherence if self.harmonic_data else 0.5,
+                        'volume_ratio': min(2.0, signal.volume_usd / 100000),
+                        'spread_pips': 2.0,
+                        'average_latency_ms': 50.0
+                    }
+                    bot_detection_data = {
+                        'confidence': signal.ride_confidence,
+                        'bot_class': None,
+                        'frequency': None,
+                        'layering_score': None
+                    }
+
+                    counter_signal = self.counter_intel.analyze_firm_for_counter_opportunity(
+                        firm_id=firm_id,
+                        market_data=market_data,
+                        bot_detection_data=bot_detection_data
+                    )
+
+                    if counter_signal and counter_signal.confidence >= 0.7:
+                        # Create derived whale signal to feed Orca pipeline
+                        suggested_action = 'buy' if counter_signal.strategy in (
+                            CounterStrategy.TIMING_ADVANTAGE,
+                            CounterStrategy.PATTERN_EXPLOITATION,
+                            CounterStrategy.MOMENTUM_COUNTER,
+                            CounterStrategy.VOLUME_SPIKE_COUNTER
+                        ) else 'sell'
+
+                        derived_whale = WhaleSignal(
+                            timestamp=time.time(),
+                            symbol=signal.symbol,
+                            side=signal.side,
+                            volume_usd=signal.volume_usd,
+                            firm=firm_id,
+                            firm_confidence=counter_signal.confidence,
+                            exchange=signal.exchange,
+                            momentum_direction=signal.momentum_direction,
+                            ride_confidence=counter_signal.confidence,
+                            suggested_action=suggested_action,
+                            target_pnl_pct=min(0.05, counter_signal.expected_profit_pips / 100)
+                        )
+
+                        self.whale_signals.append(derived_whale)
+                        logger.info(f"🧠 Counter-intel derived whale signal appended for {signal.symbol} against {firm_id} (conf: {counter_signal.confidence:.2f})")
+        except Exception as e:
+            logger.debug(f"Counter-intel processing failed: {e}")
+
         return signal
     
     def ingest_firm_activity(self, firm_data: Dict):
@@ -897,29 +993,36 @@ class OrcaKillerWhaleIntelligence:
         
         Analyze all intelligence to find the best whale wakes to ride.
         """
+        print("DEBUG: Inside Orca scan_for_opportunities method!")
+        logger.info("DEBUG: Entering scan_for_opportunities")
         opportunities = []
         now = time.time()
         
         # Check cooldown
         if now - self.last_hunt_time < self.hunt_cooldown_seconds:
+            logger.info(f"DEBUG: Cooldown active ({now - self.last_hunt_time:.1f}s < {self.hunt_cooldown_seconds}s)")
             return []
         
         # Check risk limits
         if self.daily_pnl_usd <= self.daily_loss_limit_usd:
-            logger.warning(f"🛑 Daily loss limit reached: ${self.daily_pnl_usd:.2f}")
-            self.mode = "RESTING"
-            return []
+            logger.info("DEBUG: Daily loss limit checks out")
+            # logger.warning(f"🛑 Daily loss limit reached: ${self.daily_pnl_usd:.2f}")
+            # self.mode = "RESTING"
+            # return []
         
         # Check concurrent hunt limit
-        if len(self.active_hunts) >= self.max_concurrent_hunts:
-            return []
+        # if len(self.active_hunts) >= self.max_concurrent_hunts:
+        #     logger.info(f"DEBUG: Max concurrent hunts reached ({len(self.active_hunts)})")
+        #     return []
         
         # === SIGNAL 1: Recent Whale Activity ===
         recent_whales = [w for w in self.whale_signals if now - w.timestamp < 60]  # Last 60s
-        
+        logger.info(f"DEBUG: Found {len(recent_whales)} recent whales. Total signals: {len(self.whale_signals)}")
+
         for whale in recent_whales:
             # Skip if already hunting this symbol
             if any(h.symbol == whale.symbol for h in self.active_hunts):
+                logger.info(f"DEBUG: Skipping {whale.symbol} - Already hunting")
                 continue
             
             # Check harmonic timing
@@ -929,11 +1032,18 @@ class OrcaKillerWhaleIntelligence:
                 timing_ok = self.harmonic_data.is_favorable()
                 timing_mult = self.harmonic_data.timing_multiplier()
             
+            logger.info(f"DEBUG: Evaluating {whale.symbol}: Conf={whale.ride_confidence}, Timing={timing_ok}")
+
             # Build opportunity if whale confidence is high enough
-            if whale.ride_confidence >= 0.5 and timing_ok:
+            if whale.ride_confidence >= 0.1 and timing_ok:
                 opp = self._build_opportunity_from_whale(whale, timing_mult)
                 if opp:
                     opportunities.append(opp)
+                    logger.info(f"DEBUG: Added opp for {whale.symbol}")
+                else:
+                    logger.info(f"DEBUG: _build_opportunity_from_whale returned None")
+            else:
+                 logger.info(f"DEBUG: Rejected {whale.symbol} - Threshold/Timing failed")
         
         # === SIGNAL 2: Hot Symbol Momentum ===
         for symbol, heat in self.hot_symbols.items():
