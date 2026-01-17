@@ -848,6 +848,17 @@ class QueenHiveMind:
         self.enigma = None  # EnigmaIntegration
         self.elephant_brain = None  # ElephantMemory (wired later)
         self.hft_engine = None  # HFT Engine (wired later)
+        
+        # 🔱 CONTROLLED SYSTEMS - Under Prime Sentinel Authority
+        self.controlled_systems = {
+            'miner_brain': {'status': 'OFFLINE', 'instance': None},
+            'mycelium': {'status': 'OFFLINE', 'instance': None},
+            'enigma': {'status': 'OFFLINE', 'instance': None},
+            'kraken': {'status': 'OFFLINE', 'instance': None},
+            'binance': {'status': 'OFFLINE', 'instance': None},
+            'alpaca': {'status': 'OFFLINE', 'instance': None},
+            'labyrinth': {'status': 'OFFLINE', 'instance': None},
+        }
         self.hft_order_router = None  # HFT Order Router (wired later)
         
         # �🧠 QUEEN NEURON - Her Deep Learning Brain 🧠👑
