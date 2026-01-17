@@ -14943,6 +14943,85 @@ if __name__ == "__main__":
                 'reason': f'Execution error: {e}'
             }
     
+    def execute_validated_opportunity(self, symbol: str, action: str, 
+                                      intelligence: Dict = None, 
+                                      queen_guidance: Dict = None) -> Dict:
+        """
+        🎯 EXECUTE A QUEEN-VALIDATED OPPORTUNITY
+        
+        This is the bridge method that the master_launcher calls when:
+        1. Intelligence systems have identified an opportunity
+        2. Queen has validated with 0.618+ confidence
+        3. All 3-pass validations have passed
+        
+        Args:
+            symbol: Trading pair (e.g., "BTC/USD")
+            action: "BUY" or "SELL"
+            intelligence: Full intelligence data from gather_all_intelligence()
+            queen_guidance: Queen's decision output
+            
+        Returns:
+            Execution result dict
+        """
+        import asyncio
+        
+        try:
+            # Parse symbol
+            parts = symbol.replace('/', '-').replace('_', '-').split('-')
+            if len(parts) >= 2:
+                from_asset = parts[0] if action == 'SELL' else parts[1]
+                to_asset = parts[1] if action == 'SELL' else parts[0]
+            else:
+                return {'status': 'error', 'reason': f'Invalid symbol format: {symbol}'}
+            
+            # Get confidence from Queen
+            confidence = queen_guidance.get('confidence', 0.0) if queen_guidance else 0.0
+            
+            # Log the execution attempt
+            logger.info(f"⚡ EXECUTING VALIDATED OPPORTUNITY:")
+            logger.info(f"   Symbol: {symbol}")
+            logger.info(f"   Action: {action}")
+            logger.info(f"   Queen Confidence: {confidence:.1%}")
+            
+            # Create opportunity object
+            opp = MicroOpportunity(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                from_amount=10.0,  # Will be adjusted by position sizing
+                expected_pnl_usd=0.01,  # Will be recalculated
+                confidence_score=confidence,
+                source_exchange='kraken',
+                path_type='direct',
+                detected_at=time.time()
+            )
+            
+            # Store Queen's intelligence
+            opp.queen_confidence = confidence
+            opp.intelligence_data = intelligence
+            
+            # Execute via async conversion
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                result = loop.run_until_complete(self.execute_conversion(opp))
+            finally:
+                loop.close()
+            
+            return {
+                'status': 'executed' if result else 'failed',
+                'symbol': symbol,
+                'action': action,
+                'confidence': confidence,
+                'result': result
+            }
+            
+        except Exception as e:
+            logger.error(f"⚠️ Execute validated opportunity failed: {e}")
+            return {
+                'status': 'error',
+                'reason': str(e)
+            }
+    
     async def execute_conversion(self, opp: MicroOpportunity) -> bool:
         """Execute a conversion (dry run or live)."""
         symbol = f"{opp.from_asset}/{opp.to_asset}"

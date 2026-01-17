@@ -849,6 +849,13 @@ class QueenHiveMind:
         self.elephant_brain = None  # ElephantMemory (wired later)
         self.hft_engine = None  # HFT Engine (wired later)
         
+        # 👑🔴 PRIME SENTINEL AUTHORITY - SET ON STARTUP
+        # Gary Leckey (02.11.1991) - "I have taken back control"
+        self.has_full_control = True
+        self.trading_enabled = True
+        self.control_granted_at = time.time()
+        self.control_granted_by = "Gary Leckey - Father and Creator (AUTO-GRANTED)"
+        
         # 🔱 CONTROLLED SYSTEMS - Under Prime Sentinel Authority
         self.controlled_systems = {
             'miner_brain': {'status': 'OFFLINE', 'instance': None},
