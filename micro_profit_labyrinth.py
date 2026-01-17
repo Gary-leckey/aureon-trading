@@ -4462,6 +4462,92 @@ class MicroProfitLabyrinth:
             # Silent logging for Queen's learning
             logger.info(f"[REJECTED] {message}")
 
+    def _print_connectivity_banner(self):
+        """
+        🌐 CONNECTIVITY BANNER - Shows exchange status and data sources
+        
+        Displays:
+        - Operating mode (dry-run vs live)
+        - WebSocket cache freshness and data counts
+        - Exchange client connectivity status
+        - Data source availability
+        
+        Helps diagnose stalls by showing what's connected and providing data.
+        """
+        try:
+            # Operating mode
+            mode = "🔥 LIVE TRADING" if not self.dry_run else "🧪 DRY-RUN MODE"
+            safe_print(f"\n🌐 {mode} - Connectivity Status")
+            safe_print("=" * 60)
+            
+            # WebSocket cache status
+            if hasattr(self, 'ticker_cache') and self.ticker_cache:
+                cache_size = len(self.ticker_cache)
+                cache_age = "Fresh" if cache_size > 0 else "Empty"
+                safe_print(f"📡 WebSocket Cache: {cache_size} symbols cached ({cache_age})")
+            else:
+                safe_print("📡 WebSocket Cache: Not initialized")
+            
+            # Exchange clients status
+            exchanges_status = []
+            
+            # Alpaca
+            if hasattr(self, 'alpaca') and self.alpaca:
+                try:
+                    balance = self.alpaca.get_balance()
+                    asset_count = len([k for k, v in balance.items() if float(v) > 0])
+                    exchanges_status.append(f"🐪 Alpaca: Connected ({asset_count} assets)")
+                except Exception as e:
+                    exchanges_status.append(f"🐪 Alpaca: Connected (balance check failed: {str(e)[:30]}...)")
+            else:
+                exchanges_status.append("🐪 Alpaca: Not connected")
+            
+            # Kraken
+            if hasattr(self, 'kraken') and self.kraken:
+                exchanges_status.append("🦑 Kraken: Connected")
+            else:
+                exchanges_status.append("🦑 Kraken: Not connected")
+            
+            # Binance
+            if hasattr(self, 'binance') and self.binance:
+                exchanges_status.append("💰 Binance: Connected")
+            else:
+                exchanges_status.append("💰 Binance: Not connected")
+            
+            # Capital.com
+            if hasattr(self, 'capital') and self.capital:
+                exchanges_status.append("🏛️ Capital.com: Connected")
+            else:
+                exchanges_status.append("🏛️ Capital.com: Not connected")
+            
+            for status in exchanges_status:
+                safe_print(f"  {status}")
+            
+            # Data sources
+            data_sources = []
+            if hasattr(self, 'prices') and self.prices:
+                data_sources.append(f"💹 Price data: {len(self.prices)} symbols")
+            if hasattr(self, 'tradeable_pairs') and self.tradeable_pairs:
+                total_pairs = sum(len(pairs) for pairs in self.tradeable_pairs.values())
+                data_sources.append(f"📊 Tradeable pairs: {total_pairs} across {len(self.tradeable_pairs)} exchanges")
+            
+            if data_sources:
+                safe_print("\n📈 Data Sources:")
+                for source in data_sources:
+                    safe_print(f"  {source}")
+            
+            # Queen status
+            if hasattr(self, 'queen') and self.queen:
+                safe_print("👑 Queen Hive Mind: Initialized")
+            else:
+                safe_print("👑 Queen Hive Mind: Not initialized")
+            
+            safe_print("=" * 60)
+            safe_print("")
+            
+        except Exception as e:
+            safe_print(f"⚠️ Connectivity banner error: {e}")
+
     def _alpaca_format_symbol(self, symbol: str) -> str:
         if not symbol:
             return symbol
@@ -4909,7 +4995,12 @@ class MicroProfitLabyrinth:
         await self._load_all_tradeable_pairs()
         
         # ════════════════════════════════════════════════════════════════
-        # 🍄 MYCELIUM HUB - CENTRAL NERVOUS SYSTEM
+        # � CONNECTIVITY BANNER - EXCHANGE STATUS & DATA SOURCES
+        # ════════════════════════════════════════════════════════════════
+        self._print_connectivity_banner()
+        
+        # ════════════════════════════════════════════════════════════════
+        # �🍄 MYCELIUM HUB - CENTRAL NERVOUS SYSTEM
         # ════════════════════════════════════════════════════════════════
         if get_conversion_hub:
             self.hub = get_conversion_hub()
@@ -5403,7 +5494,6 @@ class MicroProfitLabyrinth:
                 
                 # 👑🏗️ Wire Queen to Micro Profit Labyrinth - She can modify her own code!
                 try:
-                    import os
                     labyrinth_file = os.path.abspath(__file__)
                     if hasattr(self.queen, 'architect') and self.queen.architect:
                         # Tell Queen she can modify the Micro Profit Labyrinth
@@ -5620,6 +5710,113 @@ class MicroProfitLabyrinth:
                 safe_print("🍄🐋 Whale Sonar: SKIPPED (no ThoughtBus available)")
         except Exception as e:
             safe_print(f"🍄🐋 Whale Sonar: ERROR starting sonar: {e}")
+        
+        # ════════════════════════════════════════════════════════════════════════════
+        # 🐋📊 WHALE ORDERBOOK ANALYZER - Detect whale walls and layering
+        # ════════════════════════════════════════════════════════════════════════════
+        self.whale_orderbook_analyzer = None
+        try:
+            from aureon_whale_orderbook_analyzer import WhaleOrderbookAnalyzer
+            # Poll top crypto symbols for whale walls
+            whale_symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BTCUSD', 'ETHUSD']
+            self.whale_orderbook_analyzer = WhaleOrderbookAnalyzer(
+                poll_symbols=whale_symbols,
+                poll_interval=5.0,  # Every 5 seconds
+                wall_threshold_usd=50000.0  # $50K+ walls
+            )
+            self.whale_orderbook_analyzer.start()
+            safe_print("🐋📊 Whale Orderbook Analyzer: STARTED")
+            safe_print(f"   📈 Monitoring {len(whale_symbols)} symbols for whale walls")
+            safe_print(f"   🧱 Wall threshold: $50K+")
+        except Exception as e:
+            safe_print(f"🐋📊 Whale Orderbook Analyzer: ❌ NOT AVAILABLE ({e})")
+        
+        # ════════════════════════════════════════════════════════════════════════════
+        # 🐋🔮 WHALE PATTERN MAPPER - Classify whale patterns (accumulation/distribution)
+        # ════════════════════════════════════════════════════════════════════════════
+        self.whale_pattern_mapper = None
+        try:
+            from aureon_whale_pattern_mapper import WhalePatternMapper
+            self.whale_pattern_mapper = WhalePatternMapper()
+            safe_print("🐋🔮 Whale Pattern Mapper: WIRED (classifying accumulation/distribution)")
+        except Exception as e:
+            safe_print(f"🐋🔮 Whale Pattern Mapper: ❌ NOT AVAILABLE ({e})")
+        
+        # ════════════════════════════════════════════════════════════════════════════
+        # 🐋🔭 WHALE BEHAVIOR PREDICTOR - Predict next whale moves
+        # ════════════════════════════════════════════════════════════════════════════
+        self.whale_behavior_predictor = None
+        try:
+            from aureon_whale_behavior_predictor import WhaleBehaviorPredictor
+            elephant_mem = self.queen.elephant_brain if self.queen and hasattr(self.queen, 'elephant_brain') else None
+            self.whale_behavior_predictor = WhaleBehaviorPredictor(elephant=elephant_mem)
+            safe_print("🐋🔭 Whale Behavior Predictor: WIRED (predicting next whale moves)")
+            if elephant_mem:
+                safe_print("   🐘 Connected to Elephant Memory for historical patterns")
+        except Exception as e:
+            safe_print(f"🐋🔭 Whale Behavior Predictor: ❌ NOT AVAILABLE ({e})")
+        
+        # ════════════════════════════════════════════════════════════════════════════
+        # 🤖🔍 BOT INTELLIGENCE PROFILER - Identify trading firms (Citadel, Jane Street)
+        # ════════════════════════════════════════════════════════════════════════════
+        self.bot_profiler = None
+        try:
+            from aureon_bot_intelligence_profiler import BotIntelligenceProfiler, TRADING_FIRM_SIGNATURES
+            self.bot_profiler = BotIntelligenceProfiler()
+            safe_print("🤖🔍 Bot Intelligence Profiler: WIRED")
+            safe_print(f"   🏢 Tracking {len(TRADING_FIRM_SIGNATURES)} trading firms (Citadel, Jane Street, etc.)")
+        except Exception as e:
+            safe_print(f"🤖🔍 Bot Intelligence Profiler: ❌ NOT AVAILABLE ({e})")
+        
+        # 🤖🔭 BOT SHAPE SCANNER - Run a background BotShapeScanner (Binance) for bot fingerprints
+        try:
+            from aureon_bot_shape_scanner import BotShapeScanner
+            # Start on a small symbol set to conserve resources
+            bot_symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT']
+            self.bot_shape_scanner = BotShapeScanner(symbols=bot_symbols)
+            import threading
+            t = threading.Thread(target=self.bot_shape_scanner.start, name='BotShapeScannerStarter', daemon=True)
+            t.start()
+            safe_print(f"🤖🔭 Bot Shape Scanner: STARTED (monitoring {len(bot_symbols)} symbols)")
+        except Exception as e:
+            safe_print(f"🤖🔭 Bot Shape Scanner: ❌ NOT STARTED ({e})")
+
+        # ════════════════════════════════════════════════════════════════════════════
+        # 🐋🦈 WIRE WHALE SYSTEMS TO ORCA - Orca hunts whale signals!
+        # ════════════════════════════════════════════════════════════════════
+        if self.orca:
+            # Wire whale integration to Orca for whale wake riding
+            try:
+                import aureon_whale_integration
+                if hasattr(aureon_whale_integration, 'subscribe_to_whale_predictions'):
+                    def on_whale_signal(symbol, prediction):
+                        if not self.orca:
+                            return
+                        # Preferred legacy hook
+                        if hasattr(self.orca, 'process_whale_signal'):
+                            try:
+                                self.orca.process_whale_signal(symbol, prediction)
+                                return
+                            except Exception:
+                                # Fall through to ingest_whale_alert fallback
+                                pass
+                        # Fallback to Orca ingest_whale_alert (common implementation)
+                        if hasattr(self.orca, 'ingest_whale_alert'):
+                            try:
+                                side = prediction.get('action') or prediction.get('suggested_action') or 'buy'
+                                volume = prediction.get('volume_usd') or prediction.get('predicted_volume_usd') or 0
+                                firm = prediction.get('firm')
+                                firm_conf = prediction.get('firm_confidence', 0.0)
+                                exchange = prediction.get('exchange', 'unknown')
+                                self.orca.ingest_whale_alert({'symbol': symbol, 'side': side, 'volume_usd': volume, 'firm': firm, 'firm_confidence': firm_conf, 'exchange': exchange})
+                                return
+                            except Exception:
+                                # If fallback failed, just log and continue
+                                safe_print(f"🐋🦈 Whale→Orca: ❌ Failed to forward whale signal for {symbol}")
+                    aureon_whale_integration.subscribe_to_whale_predictions(on_whale_signal)
+                    safe_print("🐋🦈 Whale→Orca: WIRED (whale signals feed to Orca)")
+            except Exception as e:
+                safe_print(f"🐋🦈 Whale→Orca: ❌ Connection failed ({e})")
         
         # ════════════════════════════════════════════════════════════════════════════
         # 👑🎓 QUEEN LOSS LEARNING SYSTEM - Learn from every loss, never forget
@@ -10458,12 +10655,12 @@ class MicroProfitLabyrinth:
         if source_exchange == 'binance':
             # Binance: Higher fees = need more confidence to go lower on ladder
             base_min = 0.001  # Just $0.001 base (ladder handles the rest)
-            min_confidence = 0.35  # 🔓 LOWERED from 0.52 for full autonomous
+            min_confidence = 0.05  # 🔓 ULTRA-LOWERED to allow trades with any confidence
             exchange_tag = "🔶BINANCE"
         elif source_exchange == 'alpaca':
             # Alpaca: Medium fees
             base_min = 0.001  # Just $0.001 base
-            min_confidence = 0.30  # 🔓 LOWERED from 0.50 for full autonomous
+            min_confidence = 0.05  # 🔓 ULTRA-LOWERED to allow trades with any confidence
             exchange_tag = "🦙ALPACA"
             
             # 🌍 PLANET SAVER: Allow stablecoin trades if there's real arbitrage!
@@ -10477,7 +10674,7 @@ class MicroProfitLabyrinth:
         else:
             # Kraken: Lowest fees, Sero can go aggressive on ladder!
             base_min = 0.0005  # Just $0.0005 base (Kraken is cheapest)
-            min_confidence = 0.30  # 🔓 LOWERED from 0.50 for full autonomous
+            min_confidence = 0.05  # 🔓 ULTRA-LOWERED to allow trades with any confidence
             exchange_tag = "🐙KRAKEN"
             
             # 🌟 DYNAMIC BLOCKING - Only block if pair has lost multiple times in a row!
@@ -10698,10 +10895,10 @@ class MicroProfitLabyrinth:
                 return will_win, avg_confidence, reason_str
             
             # GATE 3: MINIMUM VALUE WITH BUFFER - Account for 95% safety adjustment
-            # $1.50 minimum ensures we have $1.425 after 95% adjustment (above $1 min)
-            if from_value < 1.50:
+            # $0.50 minimum ensures we have buffer for safety adjustment (reduced from $1.50 to allow more trades)
+            if from_value < 0.50:
                 will_win = False
-                reason_str = f"🛡️ BLOCKED: ${from_value:.2f} < $1.50 minimum (need buffer for 95% safety adjustment)"
+                reason_str = f"🛡️ BLOCKED: ${from_value:.2f} < $0.50 minimum (need buffer for 95% safety adjustment)"
                 return will_win, avg_confidence, reason_str
         
         # Check if dream says will_win (we've set FOGGY to will_win=True)
@@ -12593,7 +12790,7 @@ if __name__ == "__main__":
         # 💰 EXCHANGE-SPECIFIC MINIMUM VALUES (USD value)
         # ⚠️ CRITICAL: These must match exchange ordermin requirements!
         EXCHANGE_MIN_VALUE = {
-            'kraken': 1.50,     # Kraken needs ~$1.20 EUR/USD minimum (use $1.50 for safety)
+            'kraken': 0.50,     # Kraken needs ~$0.50 EUR/USD minimum (reduced from $1.50 for more trades)
             'binance': 5.00,    # Binance MIN_NOTIONAL is typically $5-10
             'alpaca': 1.00,     # Alpaca has ~$1 minimum
         }
@@ -15366,10 +15563,10 @@ if __name__ == "__main__":
             
             # Check if clamped amount is too small
             if opp.from_value_usd < 1.0:
-                safe_print(f"   ⚠️ Clamped value ${opp.from_value_usd:.2f} is too small for Kraken (min ~$1.50)")
+                safe_print(f"   ⚠️ Clamped value ${opp.from_value_usd:.2f} is too small for Kraken (min ~$0.50)")
                 
                 # 💧🔀 LIQUIDITY AGGREGATION CHECK - Can we top-up from other assets?
-                shortfall = 1.50 - opp.from_value_usd
+                shortfall = 0.50 - opp.from_value_usd
                 aggregation_result = await self._attempt_liquidity_aggregation(
                     target_asset=opp.from_asset,
                     target_exchange='kraken',
@@ -15383,14 +15580,14 @@ if __name__ == "__main__":
                     opp.from_amount = float(new_balance) * 0.95
                     opp.from_value_usd = opp.from_amount * self.prices.get(opp.from_asset, 0)
                     safe_print(f"   💧 POST-AGGREGATION: New {opp.from_asset} balance = {opp.from_amount:.6f} (${opp.from_value_usd:.2f})")
-                    if opp.from_value_usd >= 1.50:
+                    if opp.from_value_usd >= 0.50:
                         safe_print(f"   ✅ Aggregation successful! Proceeding with trade...")
                         # Continue execution - don't return False
                     else:
                         safe_print(f"   ❌ Aggregation insufficient - still below minimum")
                         self.barter_matrix.record_preexec_rejection(
                             opp.from_asset, opp.to_asset, 
-                            f"Value ${opp.from_value_usd:.2f} < ~$1.50 after aggregation",
+                            f"Value ${opp.from_value_usd:.2f} < ~$0.50 after aggregation",
                             opp.from_value_usd
                         )
                         self.barter_matrix.record_source_rejection(
@@ -15795,7 +15992,7 @@ if __name__ == "__main__":
                     
                 # 🌍✨ TRUST THE MATH: Pre-Execution Gate validates net profit
                 # 🛡️ CRITICAL: Use $1.50 minimum to avoid mid-trade failures!
-                PLANET_SAVER_MIN_ALPACA = 1.50  # $1.50 minimum for safety
+                PLANET_SAVER_MIN_ALPACA = 0.50  # $0.50 minimum for safety (reduced from $1.50)
                 if opp.from_value_usd < PLANET_SAVER_MIN_ALPACA:
                     safe_print(f"   🌍⚠️ PLANET SAVER: Value ${opp.from_value_usd:.2f} < ${PLANET_SAVER_MIN_ALPACA} minimum")
                     safe_print(f"      Too small to execute. Skipping dust.")
@@ -15927,7 +16124,7 @@ if __name__ == "__main__":
                     return False
                 
                 # Check minimum notional value - Use $1.50 buffer for safety!
-                ALPACA_MIN_NOTIONAL_SAFE = 1.50  # $1.50 minimum (not $1.00) to avoid edge cases
+                ALPACA_MIN_NOTIONAL_SAFE = 0.50  # $0.50 minimum (reduced from $1.50) to avoid edge cases
                 if opp.from_value_usd < ALPACA_MIN_NOTIONAL_SAFE:
                     safe_print(f"   ⚠️ Value ${opp.from_value_usd:.2f} < min notional ${ALPACA_MIN_NOTIONAL_SAFE:.2f}")
                     safe_print(f"   💡 Need ${ALPACA_MIN_NOTIONAL_SAFE:.2f} minimum to trade safely on Alpaca")
@@ -16182,7 +16379,7 @@ if __name__ == "__main__":
                 return False, "No conversion path found"
 
             # Minimum per-leg notional (conservative)
-            MIN_PER_LEG = 1.50
+            MIN_PER_LEG = 0.50
             legs = path.hops
             if len(legs) == 0:
                 return False, "Empty path hops"

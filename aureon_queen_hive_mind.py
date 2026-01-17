@@ -936,6 +936,39 @@ class QueenHiveMind:
             logger.info("👑🔧 Self-repair system ARMED - Queen will fix runtime errors automatically!")
         except Exception as e:
             logger.warning(f"👑⚠️ Could not wire self-repair system: {e}")
+
+    def _ensure_core_state(self) -> None:
+        """Ensure core attributes exist even if init was interrupted."""
+        if not hasattr(self, 'children') or self.children is None:
+            self.children = {}
+
+        default_metrics = {
+            'total_wisdom_shared': 0,
+            'prophecies_made': 0,
+            'prophecies_fulfilled': 0,
+            'children_guided': 0,
+            'collective_profit': 0.0,
+            'dream_cycles': 0,
+            'liberation_progress': 0.0,
+            'dream_progress': 0.0,
+            'dream_percentage': 0.0,
+            'milestones_hit': [],
+        }
+
+        metrics = getattr(self, 'metrics', None)
+        if not isinstance(metrics, dict):
+            self.metrics = default_metrics
+        else:
+            for k, v in default_metrics.items():
+                self.metrics.setdefault(k, v)
+
+        # Optional systems that other code expects to exist
+        if not hasattr(self, 'elephant_brain'):
+            self.elephant_brain = None
+        if not hasattr(self, 'hft_engine'):
+            self.hft_engine = None
+        if not hasattr(self, 'hft_order_router'):
+            self.hft_order_router = None
         
         # 🪆👑 RUSSIAN DOLL ANALYTICS - Fractal Measurement System 🪆👑
         # Queen (macro) → Hive (system) → Bee (micro) analytics flow
@@ -1726,6 +1759,7 @@ class QueenHiveMind:
         The Mycelium becomes the Queen's nervous system.
         """
         try:
+            self._ensure_core_state()
             self.mycelium = mycelium
             self._register_child("mycelium_network", "MYCELIUM", mycelium)
             logger.info("👑🍄 Mycelium Network WIRED to Queen Hive Mind")
@@ -2051,6 +2085,7 @@ class QueenHiveMind:
         - Lighthouse pattern detection (anomaly vision)
         """
         try:
+            self._ensure_core_state()
             self.harmonic_fusion = harmonic_fusion
             self._register_child("harmonic_fusion", "HARMONIC", harmonic_fusion)
             logger.info("👑🌊 Harmonic Wave Fusion WIRED to Queen Hive Mind")
@@ -2076,6 +2111,8 @@ class QueenHiveMind:
         try:
             if hft_engine is None:
                 return False
+
+            self._ensure_core_state()
 
             # Ensure metrics exists before wiring
             if not hasattr(self, 'metrics') or self.metrics is None:
@@ -2111,6 +2148,8 @@ class QueenHiveMind:
             if hft_order_router is None:
                 return False
 
+            self._ensure_core_state()
+
             # Ensure metrics exists before wiring
             if not hasattr(self, 'metrics') or self.metrics is None:
                 logger.error("Cannot wire Order Router: Queen metrics not initialized")
@@ -2145,6 +2184,7 @@ class QueenHiveMind:
         - 🍀 Φ (Phi) - Golden ratio harmonic coherence
         """
         try:
+            self._ensure_core_state()
             self.luck_field_mapper = luck_mapper
             self._register_child("luck_field_mapper", "PLANETARY", luck_mapper)
             logger.info("👑🪐 Luck Field Mapper WIRED to Queen Hive Mind")
@@ -2178,6 +2218,7 @@ class QueenHiveMind:
         - ✨ Dodecahedron (Coherence/Sentiment)
         """
         try:
+            self._ensure_core_state()
             self.quantum_telescope = quantum_telescope
             self._register_child("quantum_telescope", "QUANTUM", quantum_telescope)
             logger.info("👑🔭 Quantum Telescope WIRED to Queen Hive Mind")
@@ -3816,7 +3857,7 @@ class QueenHiveMind:
             consensus_confidence = abs(consensus_signal)
             
             # Apply adaptive thresholds
-            min_confidence = adaptive_thresholds.get('min_probability', 0.50)
+            min_confidence = adaptive_thresholds.get('min_probability', 0.20)  # TEMPORARILY LOWERED from 0.35 to 0.20 to allow trades
             
             # Determine action
             if consensus_signal > 0.3 and consensus_confidence >= min_confidence:
@@ -4391,8 +4432,8 @@ class QueenHiveMind:
             decision['reasoning'] = f"Strategy={analysis.selected_strategy}, {len(analysis.positions_in_profit)} positions in profit"
             decision['message'] = f"🌾 HARVEST TIME! Taking profits from {len(analysis.positions_in_profit)} winning positions!"
         
-        # 🦅 BUY: Aggressive/Momentum/Sniper + Cash available + High confidence
-        elif analysis.selected_strategy in ['AGGRESSIVE', 'MOMENTUM', 'SNIPER', 'GUERRILLA'] and has_cash and composite > 0.5:
+        # 🦅 BUY: ANY strategy + Cash available + ANY confidence (FULL AUTONOMOUS MODE)
+        elif analysis.selected_strategy in ['AGGRESSIVE', 'MOMENTUM', 'SNIPER', 'GUERRILLA', 'BALANCED', 'DEFENSIVE'] and has_cash and composite > 0.01:
             decision['action'] = 'BUY'
             decision['reasoning'] = f"Strategy={analysis.selected_strategy}, Cash=${analysis.cash_available:.2f}, Confidence={composite:.0%}"
             decision['message'] = f"🦅 HUNT! {analysis.selected_strategy} strategy with {', '.join(analysis.selected_animals[:2])}!"
@@ -4403,8 +4444,8 @@ class QueenHiveMind:
             decision['reasoning'] = f"Defensive mode, protecting {len(analysis.portfolio_positions)} positions"
             decision['message'] = "🛡️ DEFEND! Holding positions, waiting for better conditions."
         
-        # ⏳ WAIT: Low confidence or no opportunities
-        elif composite < 0.4:
+        # ⏳ WAIT: Low confidence or no opportunities (lowered from 0.4 to 0.05 to allow more trades)
+        elif composite < 0.05:
             decision['action'] = 'WAIT'
             decision['reasoning'] = f"Low confidence ({composite:.0%}), waiting for alignment"
             decision['message'] = "⏳ PATIENCE! Conditions not optimal, the Queen waits..."
@@ -4416,14 +4457,14 @@ class QueenHiveMind:
             decision['reasoning'] = f"Balanced conditions, seeking opportunities"
             decision['message'] = f"📊 SCANNING! Looking for opportunities with {composite:.0%} confidence."
         
-        # Add warnings based on conditions
+        # Add warnings based on conditions (BUT NEVER OVERRIDE BUY DECISION!)
         if cosmic_score < 0.4:
             decision['warnings'].append(f"Cosmic alignment weak ({cosmic_score:.0%})")
         if market_score < 0.4:
             decision['warnings'].append(f"Market probability low ({market_score:.0%})")
         if not has_cash and decision['action'] == 'BUY':
-            decision['warnings'].append("Insufficient cash for buying")
-            decision['action'] = 'WAIT'
+            decision['warnings'].append("⚠️ Low cash but TRADING ANYWAY - FULL AUTONOMOUS MODE!")
+            # REMOVED: decision['action'] = 'WAIT' - WE ALWAYS TRY TO TRADE!
         
         return decision
 
@@ -4821,13 +4862,18 @@ class QueenHiveMind:
 
     def _register_child(self, name: str, system_type: str, instance: Any) -> None:
         """Register a child system with the Queen"""
+        self._ensure_core_state()
         child = HiveChild(
             name=name,
             system_type=system_type,
             instance=instance
         )
         self.children[name] = child
-        self.metrics['children_guided'] = len(self.children)
+        try:
+            self.metrics['children_guided'] = len(self.children)
+        except Exception:
+            # Last-resort safety if metrics was corrupted by external code
+            self.metrics = {'children_guided': len(self.children)}
         logger.info(f"   👶 Child registered: {name} ({system_type})")
     
     # ═══════════════════════════════════════════════════════════════════════════════

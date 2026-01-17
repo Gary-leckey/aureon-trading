@@ -2566,6 +2566,248 @@ COMMAND_CENTER_HTML = """
         }
         .bot-country { color: #888; }
         
+        /* BOT SHAPE SCANNER */
+        #bot-scanner-panel {
+            flex: 1;
+            border-color: var(--green);
+        }
+        
+        #bot-scanner-panel .panel-header {
+            background: linear-gradient(90deg, rgba(0, 255, 136, 0.3), transparent);
+            border-bottom-color: var(--green);
+            color: var(--green);
+        }
+        
+        .scanner-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin-bottom: 5px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 6px;
+            font-size: 0.85em;
+            animation: scannerPulse 0.5s ease-out;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        @keyframes scannerPulse {
+            from { 
+                transform: scale(0.8); 
+                opacity: 0; 
+                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7);
+            }
+            to { 
+                transform: scale(1); 
+                opacity: 1; 
+                box-shadow: 0 0 0 10px rgba(0, 255, 136, 0);
+            }
+        }
+        
+        .scanner-item:hover {
+            background: rgba(0, 255, 136, 0.2);
+            transform: translateX(5px);
+        }
+        
+        .scanner-icon { 
+            font-size: 1.4em; 
+            animation: scannerGlow 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes scannerGlow {
+            from { filter: drop-shadow(0 0 5px var(--green)); }
+            to { filter: drop-shadow(0 0 15px var(--green)); }
+        }
+        
+        .scanner-type { 
+            color: var(--green); 
+            font-weight: bold; 
+        }
+        .scanner-confidence { color: var(--gold); }
+        .scanner-status { color: #888; }
+        
+        /* WHALE SONAR */
+        #whale-sonar-panel {
+            flex: 1;
+            border-color: var(--cyan);
+        }
+        
+        #whale-sonar-panel .panel-header {
+            background: linear-gradient(90deg, rgba(0, 255, 255, 0.3), transparent);
+            border-bottom-color: var(--cyan);
+            color: var(--cyan);
+        }
+        
+        .sonar-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin-bottom: 5px;
+            background: rgba(0, 255, 255, 0.1);
+            border-radius: 6px;
+            font-size: 0.85em;
+            animation: sonarPing 0.6s ease-out;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        @keyframes sonarPing {
+            from { 
+                transform: scale(0.5); 
+                opacity: 0; 
+            }
+            to { 
+                transform: scale(1); 
+                opacity: 1; 
+            }
+            50% { transform: scale(1.1); }
+        }
+        
+        .sonar-item:hover {
+            background: rgba(0, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+        
+        .sonar-icon { 
+            font-size: 1.4em; 
+            animation: sonarPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes sonarPulse {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        .sonar-source { 
+            color: var(--cyan); 
+            font-weight: bold; 
+        }
+        .sonar-strength { color: var(--gold); }
+        .sonar-code { color: #888; font-family: monospace; }
+        
+        /* ORCA INTELLIGENCE */
+        #orca-panel {
+            flex: 1;
+            border-color: var(--orange);
+        }
+        
+        #orca-panel .panel-header {
+            background: linear-gradient(90deg, rgba(255, 102, 0, 0.3), transparent);
+            border-bottom-color: var(--orange);
+            color: var(--orange);
+        }
+        
+        .orca-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin-bottom: 5px;
+            background: rgba(255, 102, 0, 0.1);
+            border-radius: 6px;
+            font-size: 0.85em;
+            animation: orcaHunt 0.5s ease-out;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        @keyframes orcaHunt {
+            from { 
+                transform: translateX(-50px); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateX(0); 
+                opacity: 1; 
+            }
+        }
+        
+        .orca-item:hover {
+            background: rgba(255, 102, 0, 0.2);
+            transform: translateX(5px);
+        }
+        
+        .orca-icon { 
+            font-size: 1.4em; 
+            animation: orcaJaw 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes orcaJaw {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+        
+        .orca-target { 
+            color: var(--orange); 
+            font-weight: bold; 
+        }
+        .orca-mode { color: var(--gold); }
+        .orca-status { color: #888; }
+        
+        /* UNIFIED SNIPER BRAIN */
+        #sniper-panel {
+            flex: 1;
+            border-color: var(--red);
+        }
+        
+        #sniper-panel .panel-header {
+            background: linear-gradient(90deg, rgba(255, 51, 102, 0.3), transparent);
+            border-bottom-color: var(--red);
+            color: var(--red);
+        }
+        
+        .sniper-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin-bottom: 5px;
+            background: rgba(255, 51, 102, 0.1);
+            border-radius: 6px;
+            font-size: 0.85em;
+            animation: sniperShot 0.4s ease-out;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        @keyframes sniperShot {
+            from { 
+                transform: translateX(100px) scale(0.5); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateX(0) scale(1); 
+                opacity: 1; 
+            }
+        }
+        
+        .sniper-item:hover {
+            background: rgba(255, 51, 102, 0.2);
+            transform: translateX(5px);
+        }
+        
+        .sniper-icon { 
+            font-size: 1.4em; 
+            animation: sniperScope 1s linear infinite;
+        }
+        
+        @keyframes sniperScope {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .sniper-target { 
+            color: var(--red); 
+            font-weight: bold; 
+        }
+        .sniper-pnl { color: var(--gold); }
+        .sniper-result { font-size: 1.2em; }
+        .sniper-result.win { color: var(--green); }
+        .sniper-result.loss { color: var(--red); }
+        
         /* HARMONIC VISUALIZATION */
         #harmonic-panel {
             height: 180px;
@@ -3351,6 +3593,50 @@ COMMAND_CENTER_HTML = """
                 </div>
             </div>
             
+            <!-- BOT SHAPE SCANNER -->
+            <div id="bot-scanner-panel" class="panel">
+                <div class="panel-header">
+                    <span>🔍 BOT SHAPE SCANNER</span>
+                    <span id="bot-scanner-status">SCANNING</span>
+                </div>
+                <div class="panel-content" id="bot-scanner-list">
+                    <!-- Bot shapes populated by JS -->
+                </div>
+            </div>
+            
+            <!-- WHALE SONAR (MYCELIUM) -->
+            <div id="whale-sonar-panel" class="panel">
+                <div class="panel-header">
+                    <span>🐋🔊 WHALE SONAR</span>
+                    <span id="sonar-signal">0.0</span>
+                </div>
+                <div class="panel-content" id="whale-sonar-list">
+                    <!-- Whale sonar signals populated by JS -->
+                </div>
+            </div>
+            
+            <!-- ORCA INTELLIGENCE -->
+            <div id="orca-panel" class="panel">
+                <div class="panel-header">
+                    <span>🦈 ORCA INTELLIGENCE</span>
+                    <span id="orca-hunts">0</span>
+                </div>
+                <div class="panel-content" id="orca-list">
+                    <!-- Orca intelligence populated by JS -->
+                </div>
+            </div>
+            
+            <!-- UNIFIED SNIPER BRAIN -->
+            <div id="sniper-panel" class="panel">
+                <div class="panel-header">
+                    <span>🎯 UNIFIED SNIPER BRAIN</span>
+                    <span id="sniper-winrate">0.0%</span>
+                </div>
+                <div class="panel-content" id="sniper-list">
+                    <!-- Sniper brain data populated by JS -->
+                </div>
+            </div>
+            
             <!-- HARMONIC VISUALIZATION -->
             <div id="harmonic-panel" class="panel">
                 <div class="panel-header">
@@ -3494,6 +3780,18 @@ COMMAND_CENTER_HTML = """
                 case 'bot':
                     addBot(data.bot);
                     break;
+                case 'bot_scanner':
+                    addBotShape(data.shape);
+                    break;
+                case 'whale_sonar':
+                    addWhaleSonar(data.signal);
+                    break;
+                case 'orca':
+                    addOrcaHunt(data.hunt);
+                    break;
+                case 'sniper':
+                    addSniperShot(data.shot);
+                    break;
                 case 'queen':
                     updateQueenMessage(data.message);
                     break;
@@ -3540,6 +3838,22 @@ COMMAND_CENTER_HTML = """
             if (data.bots) {
                 botsData = data.bots;
                 renderBots();
+            }
+            if (data.bot_scanner) {
+                botScannerData = data.bot_scanner;
+                renderBotScanner();
+            }
+            if (data.whale_sonar) {
+                whaleSonarData = data.whale_sonar;
+                renderWhaleSonar();
+            }
+            if (data.orca) {
+                orcaData = data.orca;
+                renderOrca();
+            }
+            if (data.sniper) {
+                sniperData = data.sniper;
+                renderSniper();
             }
             if (data.queen_message) {
                 updateQueenMessage(data.queen_message);
@@ -3862,6 +4176,78 @@ COMMAND_CENTER_HTML = """
             }
         }
         
+        // Add bot shape detection
+        function addBotShape(shape) {
+            botScannerData.unshift(shape);
+            if (botScannerData.length > 30) botScannerData.pop();
+            renderBotScanner();
+            
+            // Flash the bot scanner panel
+            const panel = document.getElementById('bot-scanner-panel');
+            if (panel && typeof gsap !== 'undefined') {
+                gsap.to(panel, {
+                    boxShadow: '0 0 40px rgba(0, 255, 136, 0.8)',
+                    duration: 0.2,
+                    yoyo: true,
+                    repeat: 1
+                });
+            }
+        }
+        
+        // Add whale sonar signal
+        function addWhaleSonar(signal) {
+            whaleSonarData.unshift(signal);
+            if (whaleSonarData.length > 20) whaleSonarData.pop();
+            renderWhaleSonar();
+            
+            // Flash the whale sonar panel
+            const panel = document.getElementById('whale-sonar-panel');
+            if (panel && typeof gsap !== 'undefined') {
+                gsap.to(panel, {
+                    boxShadow: '0 0 40px rgba(0, 255, 255, 0.8)',
+                    duration: 0.2,
+                    yoyo: true,
+                    repeat: 1
+                });
+            }
+        }
+        
+        // Add orca hunt
+        function addOrcaHunt(hunt) {
+            orcaData.unshift(hunt);
+            if (orcaData.length > 15) orcaData.pop();
+            renderOrca();
+            
+            // Flash the orca panel
+            const panel = document.getElementById('orca-panel');
+            if (panel && typeof gsap !== 'undefined') {
+                gsap.to(panel, {
+                    boxShadow: '0 0 40px rgba(255, 102, 0, 0.8)',
+                    duration: 0.2,
+                    yoyo: true,
+                    repeat: 1
+                });
+            }
+        }
+        
+        // Add sniper shot
+        function addSniperShot(shot) {
+            sniperData.unshift(shot);
+            if (sniperData.length > 25) sniperData.pop();
+            renderSniper();
+            
+            // Flash the sniper panel
+            const panel = document.getElementById('sniper-panel');
+            if (panel && typeof gsap !== 'undefined') {
+                gsap.to(panel, {
+                    boxShadow: '0 0 40px rgba(255, 51, 102, 0.8)',
+                    duration: 0.2,
+                    yoyo: true,
+                    repeat: 1
+                });
+            }
+        }
+        
         // Render bots
         function renderBots() {
             const container = document.getElementById('bot-list');
@@ -3878,6 +4264,106 @@ COMMAND_CENTER_HTML = """
                 `;
                 container.appendChild(item);
             }
+        }
+        
+        // Bot Shape Scanner data and rendering
+        let botScannerData = [];
+        
+        function renderBotScanner() {
+            const container = document.getElementById('bot-scanner-list');
+            container.innerHTML = '';
+            document.getElementById('bot-scanner-status').textContent = botScannerData.length > 0 ? 'ACTIVE' : 'SCANNING';
+            
+            botScannerData.slice(0, 10).forEach((shape, index) => {
+                const item = document.createElement('div');
+                item.className = 'scanner-item';
+                item.style.animationDelay = `${index * 0.1}s`;
+                item.innerHTML = `
+                    <span class="scanner-icon">🔍</span>
+                    <div class="scanner-info">
+                        <div class="scanner-type">${shape.type || 'Unknown'}</div>
+                        <div class="scanner-confidence">${(shape.confidence * 100).toFixed(1)}%</div>
+                    </div>
+                    <span class="scanner-status">${shape.status || 'Detected'}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        // Whale Sonar data and rendering
+        let whaleSonarData = [];
+        
+        function renderWhaleSonar() {
+            const container = document.getElementById('whale-sonar-list');
+            container.innerHTML = '';
+            const avgSignal = whaleSonarData.length > 0 ? 
+                (whaleSonarData.reduce((sum, s) => sum + (s.signal || 0), 0) / whaleSonarData.length).toFixed(2) : '0.0';
+            document.getElementById('sonar-signal').textContent = avgSignal;
+            
+            whaleSonarData.slice(0, 8).forEach((signal, index) => {
+                const item = document.createElement('div');
+                item.className = 'sonar-item';
+                item.style.animationDelay = `${index * 0.1}s`;
+                item.innerHTML = `
+                    <span class="sonar-icon">🔊</span>
+                    <div class="sonar-info">
+                        <div class="sonar-source">${signal.source || 'Unknown'}</div>
+                        <div class="sonar-strength">${(signal.signal * 100).toFixed(0)}%</div>
+                    </div>
+                    <span class="sonar-code">${signal.code || 'N/A'}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        // Orca Intelligence data and rendering
+        let orcaData = [];
+        
+        function renderOrca() {
+            const container = document.getElementById('orca-list');
+            container.innerHTML = '';
+            document.getElementById('orca-hunts').textContent = orcaData.length;
+            
+            orcaData.slice(0, 6).forEach((hunt, index) => {
+                const item = document.createElement('div');
+                item.className = 'orca-item';
+                item.style.animationDelay = `${index * 0.1}s`;
+                item.innerHTML = `
+                    <span class="orca-icon">🦈</span>
+                    <div class="orca-info">
+                        <div class="orca-target">${hunt.target || 'Unknown'}</div>
+                        <div class="orca-mode">${hunt.mode || 'Stalking'}</div>
+                    </div>
+                    <span class="orca-status">${hunt.status || 'Active'}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        // Unified Sniper Brain data and rendering
+        let sniperData = [];
+        
+        function renderSniper() {
+            const container = document.getElementById('sniper-list');
+            container.innerHTML = '';
+            const winRate = sniperData.length > 0 ? 
+                (sniperData.filter(s => s.result === 'win').length / sniperData.length * 100).toFixed(1) : '0.0';
+            document.getElementById('sniper-winrate').textContent = `${winRate}%`;
+            
+            sniperData.slice(0, 5).forEach((shot, index) => {
+                const item = document.createElement('div');
+                item.className = 'sniper-item';
+                item.style.animationDelay = `${index * 0.1}s`;
+                item.innerHTML = `
+                    <span class="sniper-icon">🎯</span>
+                    <div class="sniper-info">
+                        <div class="sniper-target">${shot.target || 'N/A'}</div>
+                        <div class="sniper-pnl">$${shot.pnl ? shot.pnl.toFixed(2) : '0.00'}</div>
+                    </div>
+                    <span class="sniper-result ${shot.result}">${shot.result === 'win' ? '✅' : '❌'}</span>
+                `;
+                container.appendChild(item);
+            });
         }
         
         // Update Queen message
@@ -5367,6 +5853,10 @@ async def websocket_handler(request):
             'trades': list(state.recent_trades),
             'whales': list(state.whale_alerts),
             'bots': list(state.bot_detections),
+            'bot_scanner': [],  # Bot shape scanner data
+            'whale_sonar': [],  # Whale sonar signals
+            'orca': [],  # Orca intelligence hunts
+            'sniper': [],  # Sniper brain shots
             'queen_message': state.queen_messages[-1] if state.queen_messages else "Welcome to the Command Center.",
             'live_feed': LIVE_FEED_ENABLED,
             'trading_on': TRADING_LIVE_ENABLED,
@@ -5488,6 +5978,43 @@ async def simulate_data_task():
             }
             state.bot_detections.appendleft(bot)
             await broadcast_to_clients({'type': 'bot', 'bot': bot})
+        
+        # Simulate bot shape scanner detection
+        if random.random() < 0.12:
+            bot_shape = {
+                'type': random.choice(['HFT_Bot', 'Arbitrage_Bot', 'Momentum_Bot', 'Mean_Revert_Bot', 'Scalp_Bot']),
+                'confidence': random.uniform(0.7, 0.95),
+                'status': 'Detected'
+            }
+            # For demo, we'll broadcast this as a separate update
+            await broadcast_to_clients({'type': 'bot_scanner', 'shape': bot_shape})
+        
+        # Simulate whale sonar signal
+        if random.random() < 0.08:
+            sonar_signal = {
+                'source': random.choice(['BTC/USD', 'ETH/USD', 'SOL/USD']),
+                'signal': random.uniform(0.3, 0.9),
+                'code': random.choice(['S0', 'S1', 'S2', 'S3'])
+            }
+            await broadcast_to_clients({'type': 'whale_sonar', 'signal': sonar_signal})
+        
+        # Simulate orca intelligence hunt
+        if random.random() < 0.06:
+            orca_hunt = {
+                'target': random.choice(symbols),
+                'mode': random.choice(['Stalking', 'Hunting', 'Tracking']),
+                'status': 'Active'
+            }
+            await broadcast_to_clients({'type': 'orca', 'hunt': orca_hunt})
+        
+        # Simulate sniper brain shot
+        if random.random() < 0.1:
+            sniper_shot = {
+                'target': random.choice(symbols),
+                'pnl': random.uniform(-20, 50),
+                'result': 'win' if random.random() > 0.4 else 'loss'
+            }
+            await broadcast_to_clients({'type': 'sniper', 'shot': sniper_shot})
 
 async def update_balances_task():
     """Periodically update exchange balances"""

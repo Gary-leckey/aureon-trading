@@ -381,6 +381,12 @@ class AlpacaClient:
             return cached
 
         resp = self._request("GET", "/v2/positions", request_type='trading')
+
+        # Handle API errors - if we get an empty dict due to error, return empty list
+        if resp == {}:
+            logger.warning("Alpaca positions API returned empty response (likely rate limited), returning empty positions list")
+            resp = []
+
         try:
             if isinstance(resp, list) or isinstance(resp, dict):
                 self._position_cache.set('positions', resp)

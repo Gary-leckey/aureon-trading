@@ -139,11 +139,22 @@ class HarmonicWaveFusion:
             "events_detected": 0,
             "start_time": 0.0
         }
+
+        # Optional high-frequency execution engine (wired later)
+        self.hft_engine = None
         
         # Event subscribers (external listeners)
         self._event_subscribers: List[Callable[[LighthouseEvent], None]] = []
         
         logger.info("🌊 HarmonicWaveFusion initialized")
+
+    def wire_hft_engine(self, hft_engine) -> bool:
+        """Wire an HFT engine to the harmonic fusion layer (optional)."""
+        try:
+            self.hft_engine = hft_engine
+            return hft_engine is not None
+        except Exception:
+            return False
     
     def initialize(self) -> bool:
         """

@@ -123,21 +123,27 @@ class WhaleOrderbookAnalyzer:
         # Publish Thought
         th = Thought(source='whale_orderbook_analyzer', topic='whale.orderbook.analyzed', payload=analysis)
         try:
-            self.thought_bus.publish(th)            
+            self.thought_bus.publish(th)
             # Emit metrics
             if METRICS_AVAILABLE:
-                # Wall detections
-                for wall in walls:
-                    whale_wall_detected_total.inc(side=wall['side'], symbol=symbol, exchange=self.exchange or 'unknown')
-                
-                # Layering and depth metrics
-                whale_layering_score_gauge.set(layering_score, symbol=symbol, exchange=self.exchange or 'unknown')
-                
-                # Depth imbalance (-1 to 1, positive = bid heavy)
-                total_depth = bids_depth + asks_depth
-                if total_depth > 0:
-                    imbalance = (bids_depth - asks_depth) / total_depth
-                    whale_depth_imbalance.set(imbalance, symbol=symbol, exchange=self.exchange or 'unknown')        except Exception:
+                try:
+                    # Wall detections
+                    for wall in walls:
+                        whale_wall_detected_total.inc(side=wall['side'], symbol=symbol, exchange=getattr(self, 'exchange', 'unknown'))
+                    
+                    # Layering and depth metrics
+                    whale_layering_score_gauge.set(layering_score, symbol=symbol, exchange=getattr(self, 'exchange', 'unknown'))
+                    
+                    # Depth imbalance (-1 to 1, positive = bid heavy)
+                    bids_depth = analysis.get('bids_depth', 0)
+                    asks_depth = analysis.get('asks_depth', 0)
+                    total_depth = bids_depth + asks_depth
+                    if total_depth > 0:
+                        imbalance = (bids_depth - asks_depth) / total_depth
+                        whale_depth_imbalance.set(imbalance, symbol=symbol, exchange=getattr(self, 'exchange', 'unknown'))
+                except Exception:
+                    logger.debug('Failed to emit whale metrics')
+        except Exception:
             logger.debug('Failed to publish whale.orderbook.analyzed')
 
         # If strong walls found, publish a stronger alert
