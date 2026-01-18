@@ -48,6 +48,41 @@ except ImportError:
     CHIRP_BUS_AVAILABLE = False
 
 # ════════════════════════════════════════════════════════════════════════════════
+# 🌐 GLOBAL MARKET INTEGRATION - Full Exchange Coverage (same as Orca)
+# ════════════════════════════════════════════════════════════════════════════════
+# Kraken (crypto)
+try:
+    from kraken_client import KrakenClient
+    KRAKEN_AVAILABLE = True
+except ImportError:
+    KRAKEN_AVAILABLE = False
+    KrakenClient = None
+
+# Binance streaming (crypto real-time)
+try:
+    from binance_ws_client import BinanceWebSocketClient
+    BINANCE_WS_AVAILABLE = True
+except ImportError:
+    BINANCE_WS_AVAILABLE = False
+    BinanceWebSocketClient = None
+
+# Capital.com (CFDs + stocks)
+try:
+    from capital_client import CapitalClient
+    CAPITAL_AVAILABLE = True
+except ImportError:
+    CAPITAL_AVAILABLE = False
+    CapitalClient = None
+
+# Market scanners (global intelligence)
+try:
+    from aureon_global_wave_scanner import GlobalWaveScanner
+    WAVE_SCANNER_AVAILABLE = True
+except ImportError:
+    WAVE_SCANNER_AVAILABLE = False
+    GlobalWaveScanner = None
+
+# ════════════════════════════════════════════════════════════════════════════════
 # 🎯 GLOBAL BATCH CACHE - One API call serves ALL animal scanners!
 # ════════════════════════════════════════════════════════════════════════════════
 _BATCH_BARS_CACHE: Dict[str, Any] = {}
@@ -97,9 +132,18 @@ class BaseAnimalScanner:
         self._bars_cache: Dict[str, List[Dict]] = {}
         self._cache_time: float = 0
         
+        # 🌐 GLOBAL MARKET CLIENTS - Direct access to all exchanges
+        self.kraken_client: Optional[Any] = None
+        self.binance_ws: Optional[Any] = None
+        self.capital_client: Optional[Any] = None
+        self.wave_scanner: Optional[Any] = None
+        
         # 🐦 ORCA WHALE TARGETS - Listen to whale hunting signals via chirp bus
         self._orca_whale_targets: List[str] = []  # Symbols Orca detected whales on
         self._orca_target_time: float = 0
+        
+        # Initialize global market connections
+        self._init_market_connections()
         
         # Subscribe to Orca whale signals if chirp bus available
         if CHIRP_BUS_AVAILABLE and get_chirp_bus:
@@ -127,6 +171,133 @@ class BaseAnimalScanner:
                     self._orca_whale_targets = self._orca_whale_targets[-20:]
         except Exception as e:
             logger.debug(f"Error processing whale signal: {e}")
+    
+    def _init_market_connections(self):
+        """Initialize connections to all global market feeds - same as Orca."""
+        market_count = 0
+        
+        # Kraken (crypto spot)
+        if KRAKEN_AVAILABLE:
+            try:
+                self.kraken_client = KrakenClient()
+                market_count += 1
+                logger.info("🐙 Momentum scanner → Kraken CONNECTED")
+            except Exception as e:
+                logger.debug(f"Kraken connection failed: {e}")
+        
+        # Binance WebSocket (real-time crypto streaming)
+        if BINANCE_WS_AVAILABLE:
+            try:
+                self.binance_ws = BinanceWebSocketClient()
+                if os.getenv('BINANCE_API_KEY'):
+                    market_count += 1
+                    logger.info("🟡 Momentum scanner → Binance WS READY")
+                else:
+                    logger.debug("Binance API key not set")
+            except Exception as e:
+                logger.debug(f"Binance WS connection failed: {e}")
+        
+        # Capital.com (CFDs + global stocks)
+        if CAPITAL_AVAILABLE:
+            try:
+                self.capital_client = CapitalClient()
+                if self.capital_client.is_authenticated():
+                    market_count += 1
+                    logger.info("💼 Momentum scanner → Capital.com CONNECTED")
+                else:
+                    self.capital_client = None
+            except Exception as e:
+                logger.debug(f"Capital.com connection failed: {e}")
+        
+        # Global Wave Scanner
+        if WAVE_SCANNER_AVAILABLE:
+            try:
+                self.wave_scanner = GlobalWaveScanner()
+                market_count += 1
+                logger.info("🌊 Momentum scanner → Wave Scanner CONNECTED")
+            except Exception as e:
+                logger.debug(f"Wave scanner init failed: {e}")
+        
+        if market_count > 0:
+            logger.info(f"🌐 Momentum scanner has {market_count} additional market feeds")
+    
+    def scan_global_markets(self, symbols: Optional[List[str]] = None) -> List[AnimalOpportunity]:
+        """Scan all connected markets for momentum opportunities - same proactive hunting as Orca."""
+        opportunities = []
+        
+        if symbols is None:
+            symbols = self._get_crypto_universe()[:20]  # Top 20 for efficiency
+        
+        scan_start = time.time()
+        
+        # Scan Kraken for momentum
+        if self.kraken_client:
+            try:
+                for symbol in symbols:
+                    ticker = self.kraken_client.get_ticker(symbol)
+                    if ticker and 'c' in ticker:  # 'c' = last trade
+                        price = float(ticker['c'][0])
+                        open_price = float(ticker.get('o', [price])[0])
+                        if open_price > 0:
+                            move_pct = ((price - open_price) / open_price) * 100
+                            if abs(move_pct) > 0.5:  # 0.5%+ move
+                                volume = float(ticker.get('v', [0])[1]) * price
+                                opp = AnimalOpportunity(
+                                    symbol=symbol,
+                                    side='buy' if move_pct > 0 else 'sell',
+                                    move_pct=abs(move_pct),
+                                    net_pct=abs(move_pct) - 0.2,  # After fees
+                                    volume=volume,
+                                    reason=f"Kraken momentum: {move_pct:+.2f}%"
+                                )
+                                opportunities.append(opp)
+            except Exception as e:
+                logger.debug(f"Kraken scan error: {e}")
+        
+        # Scan Binance WebSocket for momentum
+        if self.binance_ws and hasattr(self.binance_ws, 'get_latest_ticker'):
+            try:
+                for symbol in symbols:
+                    ticker = self.binance_ws.get_latest_ticker(symbol)
+                    if ticker and 'priceChangePercent' in ticker:
+                        move_pct = float(ticker['priceChangePercent'])
+                        if abs(move_pct) > 0.5:
+                            volume = float(ticker.get('quoteVolume', 0))
+                            opp = AnimalOpportunity(
+                                symbol=symbol,
+                                side='buy' if move_pct > 0 else 'sell',
+                                move_pct=abs(move_pct),
+                                net_pct=abs(move_pct) - 0.2,
+                                volume=volume,
+                                reason=f"Binance momentum: {move_pct:+.2f}%"
+                            )
+                            opportunities.append(opp)
+            except Exception as e:
+                logger.debug(f"Binance scan error: {e}")
+        
+        # Use Wave Scanner for aggregated opportunities
+        if self.wave_scanner and hasattr(self.wave_scanner, 'get_hot_opportunities'):
+            try:
+                wave_opps = self.wave_scanner.get_hot_opportunities(min_score=0.6)
+                for wo in wave_opps:
+                    opp = AnimalOpportunity(
+                        symbol=wo.get('symbol', ''),
+                        side='buy' if wo.get('direction') == 'up' else 'sell',
+                        move_pct=wo.get('move_pct', 0),
+                        net_pct=wo.get('net_pct', 0),
+                        volume=wo.get('volume_usd', 0),
+                        reason=f"Wave scanner: {wo.get('reason', 'multi-market signal')}"
+                    )
+                    opportunities.append(opp)
+            except Exception as e:
+                logger.debug(f"Wave scanner error: {e}")
+        
+        scan_duration = time.time() - scan_start
+        
+        if opportunities:
+            logger.info(f"🌊 Global scan: {len(opportunities)} opportunities from all markets ({scan_duration:.2f}s)")
+        
+        return opportunities
     
     def _get_crypto_universe(self) -> List[str]:
         # 🦈 PRIORITY: Put Orca whale targets at front of scan list!

@@ -161,6 +161,60 @@
       "relevance_score": 0.95,
       "discovered_at": "2026-01-18T13:21:14.244574",
       "applied": true
+    },
+    {
+      "topic": "trending_coins",
+      "source": "coingecko",
+      "title": "Trending Coins Pattern",
+      "content": "Currently trending: SAND, AXS, RIVER, PENGU, LIT",
+      "relevance_score": 0.7,
+      "discovered_at": "2026-01-18T13:26:29.616683",
+      "applied": false
+    },
+    {
+      "topic": "market_sentiment",
+      "source": "coingecko",
+      "title": "Global Market Sentiment",
+      "content": "BTC Dominance: 57.3%, 24h Change: -0.42%",
+      "relevance_score": 0.8,
+      "discovered_at": "2026-01-18T13:26:29.736392",
+      "applied": true
+    },
+    {
+      "topic": "momentum_leaders",
+      "source": "binance",
+      "title": "Top Momentum Leaders",
+      "content": "Top gainers: {'CREAM': 65.354, 'PNT': 45.228, 'ME': 33.852, 'FRAX': 31.571, 'DUSK': 27.228}",
+      "relevance_score": 0.85,
+      "discovered_at": "2026-01-18T13:26:30.094545",
+      "applied": true
+    },
+    {
+      "topic": "volume_spike",
+      "source": "binance",
+      "title": "Volume Spike Detection",
+      "content": "High volume + price increase detected in 1 pairs",
+      "relevance_score": 0.9,
+      "discovered_at": "2026-01-18T13:26:30.094565",
+      "applied": true
+    },
+    {
+      "topic": "volatility_analysis",
+      "source": "kraken",
+      "title": "Volatility Patterns",
+      "content": "24h volatility: XETHZUSD: 1.00%, SOLUSD: 1.85%, XXBTZUSD: 0.82%",
+      "relevance_score": 0.75,
+      "discovered_at": "2026-01-18T13:26:30.231454",
+      "applied": true
+    },
+    {
+      "topic": "combined_strategy",
+      "source": "queen_synthesis",
+      "title": "Queen's Synthesized Strategy",
+      "content": "Combined momentum + volume detection for optimal entry",
+      "relevance_score": 0.95,
+      "discovered_at": "2026-01-18T13:26:30.232390",
+      "applied": true
     }
   ],
   "enhancements": [
@@ -205,8 +259,22 @@
       "generated_at": "2026-01-18T13:21:14.245643",
       "applied": true,
       "measured_revenue": 0.0
+    },
+    {
+      "name": "queen_research_enhancement",
+      "description": "Auto-generated from 5 research findings",
+      "source_research": [
+        "Queen's Synthesized Strategy",
+        "Volume Spike Detection",
+        "Top Momentum Leaders",
+        "Global Market Sentiment",
+        "Volatility Patterns"
+      ],
+      "generated_at": "2026-01-18T13:26:30.233514",
+      "applied": true,
+      "measured_revenue": 0.0
     }
   ],
   "total_revenue": 0.0,
-  "last_updated": "2026-01-18T13:21:14.248135"
+  "last_updated": "2026-01-18T13:26:30.236092"
 }
