@@ -35,6 +35,19 @@ logger = logging.getLogger(__name__)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 
 # ════════════════════════════════════════════════════════════════════════════════
+# 🐦 CHIRP BUS INTEGRATION - Listen to Orca whale hunting signals!
+# ════════════════════════════════════════════════════════════════════════════════
+CHIRP_BUS_AVAILABLE = False
+get_chirp_bus = None
+try:
+    from aureon_chirp_bus import get_chirp_bus
+    CHIRP_BUS_AVAILABLE = True
+    logger.info("🐦 Chirp Bus CONNECTED - Momentum scanners can hear Orca whale signals!")
+except ImportError:
+    logger.debug("🐦 Chirp Bus not available - momentum scanners won't receive Orca signals")
+    CHIRP_BUS_AVAILABLE = False
+
+# ════════════════════════════════════════════════════════════════════════════════
 # 🎯 GLOBAL BATCH CACHE - One API call serves ALL animal scanners!
 # ════════════════════════════════════════════════════════════════════════════════
 _BATCH_BARS_CACHE: Dict[str, Any] = {}
@@ -83,21 +96,69 @@ class BaseAnimalScanner:
         self.bridge = bridge
         self._bars_cache: Dict[str, List[Dict]] = {}
         self._cache_time: float = 0
+        
+        # 🐦 ORCA WHALE TARGETS - Listen to whale hunting signals via chirp bus
+        self._orca_whale_targets: List[str] = []  # Symbols Orca detected whales on
+        self._orca_target_time: float = 0
+        
+        # Subscribe to Orca whale signals if chirp bus available
+        if CHIRP_BUS_AVAILABLE and get_chirp_bus:
+            try:
+                chirp_bus = get_chirp_bus()
+                # Subscribe to WHALE_DETECTED signals from Orca
+                chirp_bus.subscribe('WHALE_DETECTED', self._on_whale_detected)
+                logger.info("🦈 Momentum scanner SUBSCRIBED to Orca whale signals!")
+            except Exception as e:
+                logger.debug(f"Could not subscribe to chirp bus: {e}")
+    
+    def _on_whale_detected(self, signal_data: Dict):
+        """Called when Orca detects a whale movement - prioritize this symbol!"""
+        try:
+            symbol = signal_data.get('symbol')
+            coherence = signal_data.get('coherence', 0)
+            if symbol and coherence > 0.5:  # Only high-confidence whale signals
+                # Add to priority target list (dedupe)
+                if symbol not in self._orca_whale_targets:
+                    self._orca_whale_targets.append(symbol)
+                    self._orca_target_time = time.time()
+                    logger.info(f"🦈→🎯 Orca detected whale on {symbol} - PRIORITY TARGET!")
+                # Keep list manageable (max 20 recent whale signals)
+                if len(self._orca_whale_targets) > 20:
+                    self._orca_whale_targets = self._orca_whale_targets[-20:]
+        except Exception as e:
+            logger.debug(f"Error processing whale signal: {e}")
     
     def _get_crypto_universe(self) -> List[str]:
+        # 🦈 PRIORITY: Put Orca whale targets at front of scan list!
+        base_universe = []
+        
         # Prefer bridge cached list if available; else query Alpaca
         if self.bridge and self.bridge._crypto_universe:
-            return sorted(list(self.bridge._crypto_universe))
-
-        assets = self.alpaca.list_assets(status='active', asset_class='crypto') or []
-        syms = []
-        for a in assets:
-            sym = a.get('symbol') if isinstance(a, dict) else getattr(a, 'symbol', None)
-            if sym:
-                if '/' not in sym:
-                    sym = f"{sym}/USD"
-                syms.append(sym)
-        return sorted(syms)
+            base_universe = sorted(list(self.bridge._crypto_universe))
+        else:
+            assets = self.alpaca.list_assets(status='active', asset_class='crypto') or []
+            syms = []
+            for a in assets:
+                sym = a.get('symbol') if isinstance(a, dict) else getattr(a, 'symbol', None)
+                if sym:
+                    if '/' not in sym:
+                        sym = f"{sym}/USD"
+                    syms.append(sym)
+            base_universe = sorted(syms)
+        
+        # 🦈 WHALE WAKE RIDING: Prioritize Orca-detected whale symbols first!
+        # Clear stale targets after 5 minutes
+        if time.time() - self._orca_target_time > 300:
+            self._orca_whale_targets = []
+        
+        # Put whale targets at front of list
+        whale_targets = [s for s in self._orca_whale_targets if s in base_universe]
+        other_symbols = [s for s in base_universe if s not in whale_targets]
+        
+        if whale_targets:
+            logger.info(f"🦈 WHALE WAKE RIDING: Scanning {len(whale_targets)} Orca targets first!")
+        
+        return whale_targets + other_symbols
     
     def _get_all_bars_batched(self, symbols: List[str], limit: int = 24) -> Dict[str, List[Dict]]:
         """
