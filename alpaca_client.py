@@ -1378,9 +1378,11 @@ class AlpacaClient:
         is_crypto = "/" in symbol or (symbol.endswith("USD") and len(symbol) > 5)
         is_usdt = "USDT" in symbol.upper()
         
-        # Use 'ioc' for instant crypto fills, but 'gtc' for USDT pairs
+        # 🆕 FIX: Alpaca fractional crypto orders MUST use 'day' TIF
+        # The error "fractional orders must be DAY orders" means we need 'day' not 'gtc'
+        # For instant fills on USD pairs, 'ioc' works
         if is_crypto:
-            tif = "gtc" if is_usdt else "ioc"
+            tif = "day" if is_usdt else "ioc"
         else:
             tif = "gtc"
         

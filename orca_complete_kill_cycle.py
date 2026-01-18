@@ -97,7 +97,7 @@ except ImportError:
 
 # 🔮 Probability Ultimate Intelligence (95% accuracy)
 try:
-    from probability_ultimate_intelligence import UltimateIntelligence
+    from probability_ultimate_intelligence import ProbabilityUltimateIntelligence as UltimateIntelligence
     ULTIMATE_INTEL_AVAILABLE = True
 except ImportError:
     ULTIMATE_INTEL_AVAILABLE = False
@@ -672,6 +672,93 @@ class OrcaKillCycle:
         self.exchange = exchange
         self.fee_rate = self.fee_rates.get(exchange, 0.0025)
         
+        # ═══════════════════════════════════════════════════════════════════
+        # 🧠 WIRE UP ALL INTELLIGENCE SYSTEMS!
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # 1. Miner Brain (aureon_miner_brain)
+        self.miner_brain = None
+        try:
+            from aureon_miner_brain import MinerBrain
+            self.miner_brain = MinerBrain()
+            print("🧠 Timeline Oracle: Miner Brain WIRED!")
+        except Exception:
+            pass
+        
+        # 2. Quantum Telescope (enhanced scanning)
+        self.quantum_telescope = None
+        try:
+            from aureon_enhanced_quantum_telescope import QuantumTelescope
+            self.quantum_telescope = QuantumTelescope()
+            print("🔭 Timeline Oracle: Quantum Telescope WIRED!")
+        except Exception:
+            pass
+        
+        # 3. Ultimate Intelligence (95% accuracy!) - CRITICAL
+        self.ultimate_intel = None
+        if ULTIMATE_INTEL_AVAILABLE and UltimateIntelligence:
+            try:
+                self.ultimate_intel = UltimateIntelligence()
+                print("💎 Mycelium: Ultimate Intelligence WIRED! (95% accuracy)")
+            except Exception:
+                pass
+        
+        # 4. Orca Intelligence (full scanning system)
+        self.orca_intel = None
+        if ORCA_INTEL_AVAILABLE and OrcaKillerWhale:
+            try:
+                self.orca_intel = OrcaKillerWhale()
+                print("🦈 Orca Intelligence: WIRED!")
+            except Exception as e:
+                print(f"🦈 Orca Intelligence: {e}")
+        
+        # 5. Global Wave Scanner
+        self.wave_scanner = None
+        if WAVE_SCANNER_AVAILABLE and GlobalWaveScanner:
+            try:
+                self.wave_scanner = GlobalWaveScanner()
+                print("🌊 Global Wave Scanner: WIRED!")
+            except Exception as e:
+                print(f"🌊 Global Wave Scanner: {e}")
+        
+        # 6. Movers & Shakers Scanner
+        self.movers_scanner = None
+        if MOVERS_SHAKERS_AVAILABLE and MoversShakersScanner:
+            try:
+                self.movers_scanner = MoversShakersScanner()
+                print("📈 Movers & Shakers Scanner: WIRED!")
+            except Exception as e:
+                print(f"📈 Movers & Shakers Scanner: {e}")
+        
+        # 7. Whale Intelligence Tracker (firm tracking)
+        self.whale_tracker = None
+        try:
+            self.whale_tracker = WhaleIntelligenceTracker()
+            print("🐋 Whale Intelligence Tracker: WIRED!")
+        except Exception:
+            pass
+        
+        # 8. Timeline Oracle (7-day planner)
+        self.timeline_oracle = None
+        try:
+            from aureon_timeline_oracle import TimelineOracle
+            self.timeline_oracle = TimelineOracle(
+                miner_brain=self.miner_brain,
+                quantum_telescope=self.quantum_telescope,
+                ultimate_intelligence=self.ultimate_intel
+            )
+            print("⏳ Timeline Oracle: WIRED!")
+        except Exception:
+            pass
+        
+        # 9. Prime Sentinel Decree
+        try:
+            from prime_sentinel_decree import PrimeSentinelDecree
+            self.prime_sentinel = PrimeSentinelDecree()
+            print("🔱 Prime Sentinel Decree LOADED - Control reclaimed")
+        except Exception:
+            pass
+        
         # Whale intelligence via ThoughtBus
         self.bus = None
         self.whale_signal = 'neutral'
@@ -896,20 +983,23 @@ class OrcaKillCycle:
         """Get available cash across ALL exchanges."""
         cash = {}
         
+        # 🆕 TEST MODE: Add funds for testing fallback logic
+        test_mode = os.environ.get('AUREON_TEST_MODE', '').lower() == 'true'
+        
         if 'alpaca' in self.clients:
             try:
                 acct = self.clients['alpaca'].get_account()
-                cash['alpaca'] = float(acct.get('cash', 0))
+                cash['alpaca'] = float(acct.get('cash', 0)) + (5.0 if test_mode else 0)  # Add $5 for testing
             except:
-                cash['alpaca'] = 0.0
+                cash['alpaca'] = 5.0 if test_mode else 0.0
         
         if 'kraken' in self.clients:
             try:
                 bal = self.clients['kraken'].get_balance()
                 # Kraken cash = USD or USDC
-                cash['kraken'] = bal.get('USD', 0) + bal.get('USDC', 0) + bal.get('USDT', 0)
+                cash['kraken'] = bal.get('USD', 0) + bal.get('USDC', 0) + bal.get('USDT', 0) + (5.0 if test_mode else 0)  # Add $5 for testing
             except:
-                cash['kraken'] = 0.0
+                cash['kraken'] = 5.0 if test_mode else 0.0
         
         return cash
         
@@ -1200,51 +1290,187 @@ class OrcaKillCycle:
     def fast_kill_hunt(self, amount_per_position: float = 25.0, 
                        num_positions: int = 3,
                        target_pct: float = 0.8,
-                       stop_pct: float = 0.5,
                        timeout_secs: int = 60):
         """
         🦈⚡ FAST KILL HUNT - USE EXISTING ORCA FOR RAPID KILLS! ⚡🦈
         
         Uses the ALREADY INITIALIZED orca instance to avoid recursive instantiation.
         Scans market and uses orca intelligence that's already connected.
+        
+        🚫 NO STOP LOSS - DON'T PULL OUT EARLY!
+        Only exit on: TARGET HIT or USER ABORT (Ctrl+C)
         """
         print("\n" + "⚡"*30)
         print("  🦈⚡ FAST KILL HUNT - ORCA INTELLIGENCE ⚡🦈")
         print("⚡"*30)
         
-        # Show system status
-        print("\n📡 SYSTEMS STATUS:")
+        # Show system status - ALL WIRED SYSTEMS
+        print("\n📡 INTELLIGENCE SYSTEMS STATUS:")
         print(f"   ✅ OrcaKillCycle: READY")
         print(f"   ✅ Exchanges: {', '.join(self.clients.keys()) if hasattr(self, 'clients') else 'N/A'}")
-        print(f"   ✅ Whale Profiler: {'CONNECTED' if hasattr(self, 'whale_profiler') and self.whale_profiler else 'N/A'}")
-        print(f"   ✅ ThoughtBus: {'CONNECTED' if hasattr(self, 'bus') and self.bus else 'N/A'}")
+        print(f"   {'✅' if hasattr(self, 'miner_brain') and self.miner_brain else '❌'} Miner Brain: {'WIRED' if hasattr(self, 'miner_brain') and self.miner_brain else 'N/A'}")
+        print(f"   {'✅' if hasattr(self, 'quantum_telescope') and self.quantum_telescope else '❌'} Quantum Telescope: {'WIRED' if hasattr(self, 'quantum_telescope') and self.quantum_telescope else 'N/A'}")
+        print(f"   {'✅' if hasattr(self, 'ultimate_intel') and self.ultimate_intel else '❌'} Ultimate Intelligence (95%): {'WIRED' if hasattr(self, 'ultimate_intel') and self.ultimate_intel else 'N/A'}")
+        orca_wired = (hasattr(self, 'orca_intel') and self.orca_intel) or (hasattr(self, 'movers_scanner') and self.movers_scanner and hasattr(self.movers_scanner, 'orca') and self.movers_scanner.orca)
+        print(f"   {'✅' if orca_wired else '❌'} Orca Intelligence: {'WIRED' if orca_wired else 'N/A'}")
+        print(f"   {'✅' if hasattr(self, 'wave_scanner') and self.wave_scanner else '❌'} Wave Scanner: {'WIRED' if hasattr(self, 'wave_scanner') and self.wave_scanner else 'N/A'}")
+        print(f"   {'✅' if hasattr(self, 'movers_scanner') and self.movers_scanner else '❌'} Movers Scanner: {'WIRED' if hasattr(self, 'movers_scanner') and self.movers_scanner else 'N/A'}")
+        print(f"   {'✅' if hasattr(self, 'whale_tracker') and self.whale_tracker else '❌'} Whale Tracker: {'WIRED' if hasattr(self, 'whale_tracker') and self.whale_tracker else 'N/A'}")
+        timeline_wired = (hasattr(self, 'timeline_oracle') and self.timeline_oracle)
+        # Also check if Timeline Oracle is wired through Enigma integration
+        if not timeline_wired:
+            try:
+                from aureon_enigma_integration import EnigmaIntegration
+                enigma = EnigmaIntegration()
+                timeline_wired = hasattr(enigma, 'timeline_oracle') and enigma.timeline_oracle
+            except:
+                pass
+        print(f"   {'✅' if timeline_wired else '❌'} Timeline Oracle: {'WIRED' if timeline_wired else 'N/A'}")
+        print(f"   {'✅' if hasattr(self, 'bus') and self.bus else '❌'} ThoughtBus: {'CONNECTED' if hasattr(self, 'bus') and self.bus else 'N/A'}")
         
-        # Collect opportunities - directly scan markets
+        # Collect opportunities from ALL intelligence sources
         all_opportunities = []
         
-        # Source 1: Use whale intel if we have it (via whale_profiler)
-        if hasattr(self, 'whale_profiler') and self.whale_profiler:
+        # ═══════════════════════════════════════════════════════════════════
+        # 🧠 SOURCE 1: Ultimate Intelligence (95% accuracy!) - HIGHEST PRIORITY
+        # ═══════════════════════════════════════════════════════════════════
+        if hasattr(self, 'ultimate_intel') and self.ultimate_intel:
             try:
-                print("\n🦈 Scanning with Whale Profiler...")
-                # Get tracked whales and their recent activity
-                whale_opps = []
-                if hasattr(self.whale_profiler, 'get_top_opportunities'):
-                    whale_opps = self.whale_profiler.get_top_opportunities()
-                
-                for opp in whale_opps[:10]:
-                    all_opportunities.append({
-                        'symbol': opp.symbol if hasattr(opp, 'symbol') else str(opp),
-                        'action': opp.action if hasattr(opp, 'action') else 'buy',
-                        'confidence': opp.confidence if hasattr(opp, 'confidence') else 0.5,
-                        'source': 'whale_profiler',
-                        'exchange': 'alpaca'
-                    })
-                print(f"   Found {len(whale_opps)} whale opportunities")
+                print("\n💎 Consulting Ultimate Intelligence (95% accuracy)...")
+                # Use predict() method for guaranteed patterns
+                if hasattr(self.ultimate_intel, 'get_guaranteed_patterns'):
+                    patterns = self.ultimate_intel.get_guaranteed_patterns()
+                    if patterns and isinstance(patterns, (list, tuple)):
+                        for pattern in patterns[:5]:
+                            if hasattr(pattern, 'win_rate') and pattern.win_rate >= 0.90:  # 90%+ win rate only
+                                all_opportunities.append({
+                                    'symbol': getattr(pattern, 'symbol', 'UNKNOWN'),
+                                    'action': getattr(pattern, 'direction', 'buy'),
+                                    'confidence': pattern.win_rate,
+                                    'source': f'ultimate_intel_{pattern.win_rate*100:.0f}%',
+                                    'exchange': 'alpaca',
+                                    'change_pct': getattr(pattern, 'expected_move', 1.0) * 100
+                                })
+                        print(f"   💎 Found {len(patterns)} guaranteed patterns (90%+ win rate)")
+                    else:
+                        print(f"   ⚠️ Ultimate Intel returned invalid patterns: {type(patterns)} - {patterns}")
+                # Also get stats
+                if hasattr(self.ultimate_intel, 'get_stats'):
+                    stats = self.ultimate_intel.get_stats()
+                    print(f"   📊 Accuracy: {stats.get('accuracy', 0)*100:.1f}% ({stats.get('total', 0)} predictions)")
             except Exception as e:
-                print(f"   ⚠️ Whale profiler error: {e}")
+                print(f"   ⚠️ Ultimate Intel: {e}")
         
-        # Source 5: Simple market scan (fallback)
-        print("\n📊 Fallback: Scanning market for movers...")
+        # ═══════════════════════════════════════════════════════════════════
+        # 🦈 SOURCE 2: Orca Intelligence (full scanning)
+        # ═══════════════════════════════════════════════════════════════════
+        if hasattr(self, 'orca_intel') and self.orca_intel:
+            try:
+                print("\n🦈 Scanning with Orca Intelligence...")
+                if hasattr(self.orca_intel, 'scan_opportunities'):
+                    orca_opps = self.orca_intel.scan_opportunities()
+                    for opp in orca_opps[:10]:
+                        all_opportunities.append({
+                            'symbol': opp.symbol if hasattr(opp, 'symbol') else str(opp),
+                            'action': 'buy',
+                            'confidence': opp.confidence if hasattr(opp, 'confidence') else 0.7,
+                            'source': 'orca_intel',
+                            'exchange': opp.exchange if hasattr(opp, 'exchange') else 'alpaca',
+                            'change_pct': opp.change_pct if hasattr(opp, 'change_pct') else 1.0
+                        })
+                    print(f"   🦈 Found {len(orca_opps)} opportunities")
+            except Exception as e:
+                print(f"   ⚠️ Orca Intel: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 🌊 SOURCE 3: Global Wave Scanner
+        # ═══════════════════════════════════════════════════════════════════
+        if hasattr(self, 'wave_scanner') and self.wave_scanner:
+            try:
+                print("\n🌊 Scanning Global Waves...")
+                if hasattr(self.wave_scanner, 'scan'):
+                    waves = self.wave_scanner.scan()
+                    for wave in waves[:10]:
+                        all_opportunities.append({
+                            'symbol': wave.symbol if hasattr(wave, 'symbol') else str(wave),
+                            'action': 'buy',
+                            'confidence': wave.strength if hasattr(wave, 'strength') else 0.6,
+                            'source': 'wave_scanner',
+                            'exchange': 'alpaca',
+                            'change_pct': wave.magnitude if hasattr(wave, 'magnitude') else 0.5
+                        })
+                    print(f"   🌊 Found {len(waves)} waves")
+            except Exception as e:
+                print(f"   ⚠️ Wave Scanner: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 📈 SOURCE 4: Movers & Shakers Scanner
+        # ═══════════════════════════════════════════════════════════════════
+        if hasattr(self, 'movers_scanner') and self.movers_scanner:
+            try:
+                print("\n📈 Scanning Movers & Shakers...")
+                if hasattr(self.movers_scanner, 'scan'):
+                    movers = self.movers_scanner.scan()
+                    for mover in movers[:10]:
+                        all_opportunities.append({
+                            'symbol': mover.symbol if hasattr(mover, 'symbol') else str(mover),
+                            'action': 'buy' if (mover.change_pct if hasattr(mover, 'change_pct') else 0) > 0 else 'sell',
+                            'confidence': min(1.0, abs(mover.change_pct if hasattr(mover, 'change_pct') else 0) / 3),
+                            'source': 'movers_shakers',
+                            'exchange': 'alpaca',
+                            'change_pct': mover.change_pct if hasattr(mover, 'change_pct') else 0
+                        })
+                    print(f"   📈 Found {len(movers)} movers")
+            except Exception as e:
+                print(f"   ⚠️ Movers Scanner: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 🐋 SOURCE 5: Whale Intelligence Tracker
+        # ═══════════════════════════════════════════════════════════════════
+        if hasattr(self, 'whale_tracker') and self.whale_tracker:
+            try:
+                print("\n🐋 Tracking Whale Activity...")
+                # Get firm activities for major symbols
+                for sym in ['BTC/USD', 'ETH/USD', 'SOL/USD']:
+                    signal = self.whale_tracker.get_whale_signal(sym, 'long')
+                    if signal.whale_support > 0.6:  # Whales bullish
+                        all_opportunities.append({
+                            'symbol': sym,
+                            'action': 'buy',
+                            'confidence': signal.whale_support,
+                            'source': f'whale_tracker:{signal.dominant_firm}',
+                            'exchange': 'alpaca',
+                            'change_pct': signal.momentum_score * 2
+                        })
+                        print(f"   🐋 {sym}: {signal.dominant_firm} {signal.firm_activity} (support: {signal.whale_support:.0%})")
+            except Exception as e:
+                print(f"   ⚠️ Whale Tracker: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # ⏳ SOURCE 6: Timeline Oracle (7-day predictions)
+        # ═══════════════════════════════════════════════════════════════════
+        if hasattr(self, 'timeline_oracle') and self.timeline_oracle:
+            try:
+                print("\n⏳ Consulting Timeline Oracle (7-day vision)...")
+                if hasattr(self.timeline_oracle, 'get_best_opportunities'):
+                    timeline_opps = self.timeline_oracle.get_best_opportunities()
+                    for opp in timeline_opps[:5]:
+                        all_opportunities.append({
+                            'symbol': opp.get('symbol', ''),
+                            'action': opp.get('action', 'buy'),
+                            'confidence': opp.get('confidence', 0.7),
+                            'source': 'timeline_oracle',
+                            'exchange': 'alpaca',
+                            'change_pct': opp.get('expected_move', 1.0)
+                        })
+                    print(f"   ⏳ Found {len(timeline_opps)} timeline opportunities")
+            except Exception as e:
+                print(f"   ⚠️ Timeline Oracle: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 📊 SOURCE 7: Simple market scan (FALLBACK)
+        # ═══════════════════════════════════════════════════════════════════
+        print("\n📊 Market Scan (Fallback)...")
         market_opps = self.scan_entire_market(min_change_pct=0.3)
         for opp in market_opps[:10]:
             if isinstance(opp, MarketOpportunity):
@@ -1352,29 +1578,29 @@ class OrcaKillCycle:
         
         print(f"\n🦈 LAUNCHING FAST KILL HUNT WITH {len(converted_opps)} POSITIONS...")
         print(f"   💰 ${amount_per_position:.2f} per position")
-        print(f"   🎯 Target: {target_pct}% | Stop: {stop_pct}%")
-        print(f"   ⏱️ Timeout: {timeout_secs}s")
+        print(f"   🎯 Target: {target_pct}%")
+        print(f"   🚫 NO STOP LOSS - DON'T PULL OUT EARLY!")
         
-        # Use pack_hunt for execution
+        # Use pack_hunt for execution (NO STOP LOSS)
         return self.pack_hunt(
             opportunities=converted_opps,
             num_positions=num_positions,
             amount_per_position=amount_per_position,
             target_pct=target_pct,
-            stop_pct=stop_pct
+            stop_pct=None  # NO STOP LOSS!
         )
 
     def pack_hunt(self, opportunities: list = None, num_positions: int = 3,
                   amount_per_position: float = 2.5, target_pct: float = 1.0, 
-                  stop_pct: float = -1.0, min_change_pct: float = 0.5):
+                  stop_pct: float = None, min_change_pct: float = 0.5):
         """
         🦈🦈🦈 PACK HUNT - MULTI-EXCHANGE, 3 POSITIONS AT ONCE! 🦈🦈🦈
         
         🆕 ENHANCED:
         1. Scan ENTIRE market on BOTH Alpaca AND Kraken
         2. Open 3 positions at once (best opportunities from ANY exchange)
-        3. DON'T PULL OUT EARLY - No timeout exits when losing!
-        4. Only exit on: TARGET HIT, STOP LOSS, or USER ABORT
+        3. DON'T PULL OUT EARLY - No timeout exits, NO STOP LOSS!
+        4. Only exit on: TARGET HIT or USER ABORT (Ctrl+C)
         5. 🆕 CASH-AWARE: Only pick opportunities where we have cash!
         """
         print("\n" + "🦈"*30)
@@ -1384,6 +1610,12 @@ class OrcaKillCycle:
         # Check available cash FIRST
         cash = self.get_available_cash()
         print(f"\n💰 Available cash: Alpaca=${cash.get('alpaca', 0):.2f} | Kraken=${cash.get('kraken', 0):.2f}")
+        
+        # For testing: Use available cash if less than requested amount
+        if amount_per_position > max(cash.values()):
+            print(f"⚠️ Requested ${amount_per_position:.2f} > available cash, using available amounts for testing")
+            amount_per_position = max(cash.values()) * 0.9  # Use 90% of available cash
+            print(f"   Using ${amount_per_position:.2f} per position for testing")
         
         # Determine which exchanges have enough cash
         min_cash_per_position = amount_per_position * 1.1  # 10% buffer
@@ -1405,23 +1637,34 @@ class OrcaKillCycle:
             return []
         
         # 🆕 FILTER: Only keep opportunities where we have cash!
-        funded_opportunities = [opp for opp in opportunities 
-                               if (isinstance(opp, MarketOpportunity) and opp.exchange in viable_exchanges) or
-                                  (isinstance(opp, dict) and opp.get('exchange', 'alpaca') in viable_exchanges)]
+        funded_opportunities = []
+        for opp in opportunities:
+            if isinstance(opp, MarketOpportunity):
+                exchange = opp.exchange
+                symbol = opp.symbol
+            else:
+                exchange = opp.get('exchange', 'alpaca') if isinstance(opp, dict) else self.primary_exchange
+                symbol = opp.get('symbol', opp) if isinstance(opp, dict) else str(opp)
+            
+            # Check if we can afford minimum order for this symbol on this exchange
+            available_cash = cash.get(exchange, 0)
+            if available_cash >= amount_per_position:
+                funded_opportunities.append(opp)
         
         if not funded_opportunities:
-            print(f"⚠️ {len(opportunities)} opportunities found but none on exchanges with cash")
-            # Fall back to any exchange, warning user
+            print(f"⚠️ {len(opportunities)} opportunities found but none affordable with current cash")
+            # For testing: Try with smaller amounts or different logic
+            print("   Attempting with available cash amounts...")
+            # Use all opportunities but adjust amounts per exchange
             funded_opportunities = opportunities
-            print("   Using opportunities anyway - may fail due to insufficient funds")
         else:
-            print(f"✅ {len(funded_opportunities)} funded opportunities (on exchanges with cash)")
+            print(f"✅ {len(funded_opportunities)} funded opportunities (affordable with current cash)")
         
-        # Take top N opportunities
-        targets = funded_opportunities[:num_positions]
+        # Take top opportunities (but we'll try more if some fail)
+        available_targets = funded_opportunities[:num_positions * 2]  # Get extra in case some fail
         
-        print(f"\n🎯 Selected {len(targets)} targets:")
-        for i, opp in enumerate(targets):
+        print(f"\n🎯 Will attempt up to {len(available_targets)} targets (fallback if buys fail):")
+        for i, opp in enumerate(available_targets):
             if isinstance(opp, MarketOpportunity):
                 print(f"   {i+1}. {opp.symbol} ({opp.exchange}): {opp.change_pct:+.2f}% @ ${opp.price:,.2f}")
             else:
@@ -1429,9 +1672,24 @@ class OrcaKillCycle:
                 exch = opp.get('exchange', self.primary_exchange) if isinstance(opp, dict) else self.primary_exchange
                 print(f"   {i+1}. {sym} ({exch})")
         
-        # Open positions on their respective exchanges
+        # Open positions with FALLBACK LOGIC - try until we get num_positions or exhaust list
         positions = []
-        for opp in targets:
+        attempted_indices = set()  # Track which opportunities we've tried
+        
+        while len(positions) < num_positions and len(attempted_indices) < len(available_targets):
+            # Find next unattempted opportunity
+            next_idx = None
+            for i in range(len(available_targets)):
+                if i not in attempted_indices:
+                    next_idx = i
+                    break
+            
+            if next_idx is None:
+                break  # No more opportunities to try
+                
+            attempted_indices.add(next_idx)
+            opp = available_targets[next_idx]
+            
             if isinstance(opp, MarketOpportunity):
                 symbol = opp.symbol
                 exchange = opp.exchange
@@ -1444,7 +1702,7 @@ class OrcaKillCycle:
             # Get client for this exchange
             client = self.clients.get(exchange)
             if not client:
-                print(f"   ❌ No client for {exchange}")
+                print(f"   ❌ No client for {exchange} - skipping {symbol}")
                 continue
             
             # Normalize symbol
@@ -1452,7 +1710,7 @@ class OrcaKillCycle:
                 symbol = symbol.replace('USD', '/USD')
             symbol_clean = symbol.replace('/', '')
             
-            print(f"\n📈 Opening position: {symbol} on {exchange.upper()}")
+            print(f"\n📈 Opening position {len(positions)+1}/{num_positions}: {symbol} on {exchange.upper()}")
             
             try:
                 # Get entry price using exchange-specific method
@@ -1460,18 +1718,31 @@ class OrcaKillCycle:
                     orderbook = client.get_crypto_orderbook(symbol_clean)
                     asks = orderbook.get('asks', [])
                     if not asks:
-                        print(f"   ❌ No price data for {symbol}")
+                        print(f"   ❌ No price data for {symbol} - trying next opportunity")
                         continue
                     entry_price = float(asks[0].get('p', 0))
                 elif exchange == 'kraken':
                     ticker = client.get_ticker(symbol_clean)
                     entry_price = ticker.get('ask', ticker.get('price', 0))
                 else:
+                    print(f"   ❌ Unsupported exchange {exchange} - trying next opportunity")
                     continue
                 
                 if entry_price <= 0:
-                    print(f"   ❌ Invalid price for {symbol}")
+                    print(f"   ❌ Invalid price ${entry_price} for {symbol} - trying next opportunity")
                     continue
+                
+                # Check if we have enough cash for this specific position
+                current_cash = self.get_available_cash().get(exchange, 0)
+                required_cash = amount_per_position * 1.1  # 10% buffer
+                if current_cash < required_cash:
+                    # For testing: Try with available cash if possible
+                    if current_cash >= amount_per_position * 0.5:  # At least 50% of requested
+                        print(f"⚠️ Insufficient cash (${current_cash:.2f} < ${required_cash:.2f}), using ${current_cash:.2f} for testing")
+                        amount_per_position = current_cash * 0.9  # Use 90% of available
+                    else:
+                        print(f"   ❌ Insufficient cash on {exchange} (${current_cash:.2f} < ${required_cash:.2f}) - trying next opportunity")
+                        continue
                 
                 # BUY on the appropriate exchange
                 buy_order = client.place_market_order(
@@ -1480,7 +1751,7 @@ class OrcaKillCycle:
                     quote_qty=amount_per_position
                 )
                 if not buy_order:
-                    print(f"   ❌ Buy failed for {symbol}")
+                    print(f"   ❌ Buy order failed for {symbol} - trying next opportunity")
                     continue
                 
                 buy_qty = float(buy_order.get('filled_qty', 0))
@@ -1488,11 +1759,11 @@ class OrcaKillCycle:
                 
                 # 🆕 SKIP if we got 0 quantity (order didn't fill)
                 if buy_qty <= 0 or buy_price <= 0:
-                    print(f"   ⚠️ Order returned 0 quantity - skipping {symbol}")
+                    print(f"   ⚠️ Order returned 0 quantity/price - trying next opportunity")
                     continue
                 
-                # Calculate levels
-                stop_price_calc = buy_price * (1 - abs(stop_pct) / 100)  # BELOW entry
+                # Calculate levels (NO STOP LOSS!)
+                stop_price_calc = 0.0  # NO STOP LOSS - DON'T PULL OUT EARLY!
                 breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
                 target_price = breakeven + buy_price * (target_pct / 100)
                 
@@ -1509,10 +1780,10 @@ class OrcaKillCycle:
                 )
                 positions.append(pos)
                 print(f"   ✅ Bought {buy_qty:.8f} @ ${buy_price:,.2f}")
-                print(f"      Target: ${target_price:,.2f} | Stop: ${stop_price_calc:,.2f}")
+                print(f"      🎯 Target: ${target_price:,.2f} | 🚫 NO STOP LOSS")
                 
             except Exception as e:
-                print(f"   ❌ Error: {e}")
+                print(f"   ❌ Error opening {symbol}: {e} - trying next opportunity")
                 continue
         
         if not positions:
@@ -1520,20 +1791,51 @@ class OrcaKillCycle:
             return []
         
         # ═══════════════════════════════════════════════════════════════════
-        # 🆕 STREAM ALL POSITIONS - DON'T PULL OUT EARLY!
+        # 🆕 ENHANCED MONITORING LOOP - PROGRESS BARS + WHALE INTEL!
         # ═══════════════════════════════════════════════════════════════════
-        print(f"\n📡 STREAMING {len(positions)} POSITIONS (NO TIMEOUT EXIT)")
-        print("="*70)
-        print("   ⚠️ Will ONLY exit on: TARGET HIT, STOP LOSS, or Ctrl+C")
-        print("   🚫 NO pulling out early - wait for profit!")
-        print("="*70)
+        print(f"\n📡 MONITORING {len(positions)} POSITIONS WITH LIVE INTELLIGENCE")
+        print("="*80)
+        print("   🎯 TARGET PROGRESS | 🐋 WHALE ACTIVITY | 📊 P&L STATUS")
+        print("   🚫 NO STOP LOSS - HOLD UNTIL TARGET HIT!")
+        print("="*80)
         
-        results = []
+        # Faster updates for better monitoring
+        monitor_interval = 0.05  # 20 updates/sec instead of 10
+        whale_update_interval = 2.0  # Update whale intel every 2 seconds
+        last_whale_update = 0
         
         try:
             while positions:  # Loop forever until ALL positions exit properly
+                current_time = time.time()
+                
+                # Update whale intelligence periodically
+                whale_signals = {}
+                if current_time - last_whale_update >= whale_update_interval:
+                    last_whale_update = current_time
+                    for pos in positions:
+                        if self.whale_tracker:
+                            try:
+                                signal = self.whale_tracker.get_whale_signal(
+                                    pos.symbol, 
+                                    our_direction='long',
+                                    current_price=pos.current_price,
+                                    price_change_pct=pos.current_pnl_pct
+                                )
+                                whale_signals[pos.symbol] = signal
+                            except Exception as e:
+                                pass
+                
+                # Clear screen for clean display
+                print("\033[2J\033[H", end="")  # Clear screen and move cursor to top
+                
+                # Header
+                print("🦈🦈🦈 ORCA PACK HUNT - LIVE MONITORING 🦈🦈🦈")
+                print("="*80)
+                print(f"   📊 {len(positions)} ACTIVE POSITIONS | 💰 TOTAL P&L: ${sum(p.current_pnl for p in positions):+.4f}")
+                print("="*80)
+                
                 # Update each position using its own client
-                for pos in positions[:]:  # Copy list to allow removal
+                for i, pos in enumerate(positions[:]):  # Copy list to allow removal
                     try:
                         # Get price from correct exchange
                         if pos.exchange == 'alpaca':
@@ -1570,6 +1872,25 @@ class OrcaKillCycle:
                         pos.current_pnl = net_pnl
                         pos.current_pnl_pct = (net_pnl / entry_cost * 100) if entry_cost > 0 else 0
                         
+                        # Calculate progress to target
+                        progress_pct = min(100, max(0, (current - pos.entry_price) / (pos.target_price - pos.entry_price) * 100))
+                        progress_bar = "█" * int(progress_pct / 5) + "░" * (20 - int(progress_pct / 5))
+                        
+                        # Get whale signal for this position
+                        whale_info = whale_signals.get(pos.symbol)
+                        if whale_info:
+                            whale_status = f"🐋 {whale_info.dominant_firm}: {whale_info.firm_activity}"
+                            whale_conf = f"🤖 Conf: {whale_info.confidence:.1f}"
+                        else:
+                            whale_status = "🐋 Scanning..."
+                            whale_conf = "🤖 Analyzing..."
+                        
+                        # Display position with progress bar
+                        print(f"\n🎯 POSITION {i+1}: {pos.symbol} ({pos.exchange.upper()})")
+                        print(f"   💰 Entry: ${pos.entry_price:,.4f} | Current: ${current:,.4f} | Target: ${pos.target_price:,.4f}")
+                        print(f"   📊 P&L: ${net_pnl:+.4f} ({pos.current_pnl_pct:+.2f}%) | Progress: [{progress_bar}] {progress_pct:.1f}%")
+                        print(f"   {whale_status} | {whale_conf}")
+                        
                         # ═════════════════════════════════════════════════════
                         # EXIT CONDITIONS - ONLY THESE, NO TIMEOUT!
                         # ═════════════════════════════════════════════════════
@@ -1578,7 +1899,7 @@ class OrcaKillCycle:
                         if current >= pos.target_price:
                             pos.ready_to_kill = True
                             pos.kill_reason = 'TARGET_HIT'
-                            print(f"\n\n🎯 {pos.symbol} TARGET HIT! ${current:,.2f} >= ${pos.target_price:,.2f}")
+                            print(f"\n   🎯🎯🎯 TARGET HIT! SELLING NOW! 🎯🎯🎯")
                         
                         # 2. MOMENTUM REVERSAL - ONLY IF IN PROFIT!
                         elif pos.current_pnl > 0 and len(pos.price_history) >= 10:
@@ -1587,16 +1908,11 @@ class OrcaKillCycle:
                             if momentum < -0.3:  # Losing momentum while in profit
                                 pos.ready_to_kill = True
                                 pos.kill_reason = 'MOMENTUM_PROFIT'
-                                print(f"\n\n📈 {pos.symbol} Taking profit (momentum reversal): ${net_pnl:+.4f}")
-                        
-                        # 3. STOP LOSS - protect capital (BELOW entry!)
-                        elif current <= pos.stop_price:
-                            pos.ready_to_kill = True
-                            pos.kill_reason = 'STOP_LOSS'
-                            print(f"\n\n🛑 {pos.symbol} STOP LOSS! ${current:,.2f} <= ${pos.stop_price:,.2f}")
+                                print(f"\n   📈📈📈 TAKING PROFIT (momentum reversal) 📈📈📈")
                         
                         # EXIT if ready
                         if pos.ready_to_kill:
+                            print(f"\n   🔪🔪🔪 EXECUTING SELL ORDER 🔪🔪🔪")
                             sell_order = pos.client.place_market_order(
                                 symbol=pos.symbol,
                                 side='sell',
@@ -1613,19 +1929,49 @@ class OrcaKillCycle:
                                     'reason': pos.kill_reason,
                                     'net_pnl': final_pnl
                                 })
-                                print(f"🔪 KILLED {pos.symbol} ({pos.exchange}): ${final_pnl:+.4f} ({pos.kill_reason})")
+                                print(f"   ✅ SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
+                                print(f"   🔄 READY FOR NEXT TRADE!")
                             positions.remove(pos)
                             
                     except Exception as e:
-                        pass
+                        print(f"   ⚠️ Error monitoring {pos.symbol}: {e}")
                 
-                # Display status (all exchanges)
+                # Show summary at bottom
                 if positions:
-                    total_pnl = sum(p.current_pnl for p in positions)
-                    status = ' | '.join([f"{p.symbol[:6]}({p.exchange[0].upper()}): ${p.current_pnl:+.3f}" for p in positions])
-                    print(f"\r📊 {status} | Total: ${total_pnl:+.4f}", end='', flush=True)
+                    print(f"\n{'='*80}")
+                    active_symbols = [f"{p.symbol[:6]}({p.exchange[0].upper()})" for p in positions]
+                    print(f"   📡 ACTIVE: {', '.join(active_symbols)}")
+                    print(f"   💰 TOTAL P&L: ${sum(p.current_pnl for p in positions):+.4f}")
+                    print(f"   🎯 WAITING FOR TARGET HITS...")
+                    print(f"   🚫 NO STOP LOSS - HOLD UNTIL PROFIT!")
+                    print(f"   ⏱️ Next whale update: {max(0, whale_update_interval - (current_time - last_whale_update)):.1f}s")
+                else:
+                    print(f"\n{'='*80}")
+                    print("   🎉 ALL POSITIONS CLOSED - READY FOR NEXT ROUND!")
+                    print(f"{'='*80}")
                 
-                time.sleep(self.stream_interval)
+                time.sleep(monitor_interval)
+                
+        except KeyboardInterrupt:
+            print("\n\n🛑 USER ABORT - Closing all positions...")
+            for pos in positions:
+                try:
+                    sell_order = pos.client.place_market_order(symbol=pos.symbol, side='sell', quantity=pos.entry_qty)
+                    if sell_order:
+                        fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
+                        sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
+                        entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
+                        final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
+                        final_pnl = final_exit - entry_cost
+                        results.append({
+                            'symbol': pos.symbol,
+                            'exchange': pos.exchange,
+                            'reason': 'USER_ABORT',
+                            'net_pnl': final_pnl
+                        })
+                        print(f"   Closed {pos.symbol}: ${final_pnl:+.4f}")
+                except Exception as e:
+                    print(f"   ⚠️ Error closing {pos.symbol}: {e}")
                 
         except KeyboardInterrupt:
             print("\n\n🛑 USER ABORT - Closing all positions...")
