@@ -1594,17 +1594,18 @@ class OrcaKillCycle:
                   amount_per_position: float = 2.5, target_pct: float = 1.0, 
                   stop_pct: float = None, min_change_pct: float = 0.5):
         """
-        🦈🦈🦈 PACK HUNT - MULTI-EXCHANGE, 3 POSITIONS AT ONCE! 🦈🦈🦈
+        🦈🦈🦈 DYNAMIC PACK HUNT - MONITOR + SCAN + BARTER MATRIX! 🦈🦈🦈
         
-        🆕 ENHANCED:
-        1. Scan ENTIRE market on BOTH Alpaca AND Kraken
-        2. Open 3 positions at once (best opportunities from ANY exchange)
-        3. DON'T PULL OUT EARLY - No timeout exits, NO STOP LOSS!
-        4. Only exit on: TARGET HIT or USER ABORT (Ctrl+C)
-        5. 🆕 CASH-AWARE: Only pick opportunities where we have cash!
+        🆕 ENHANCED DYNAMIC SYSTEM:
+        1. Monitor current positions with progress bars & whale intel
+        2. Actively scan for new opportunities every 30 seconds
+        3. Use barter matrix for cross-exchange arbitrage kills
+        4. Add new positions dynamically when opportunities arise
+        5. DON'T PULL OUT EARLY - No timeout exits, NO STOP LOSS!
+        6. Only exit on: TARGET HIT or USER ABORT (Ctrl+C)
         """
         print("\n" + "🦈"*30)
-        print("  ORCA PACK HUNT - MULTI-EXCHANGE, 3 POSITIONS")
+        print("  ORCA DYNAMIC PACK HUNT - MONITOR + SCAN + BARTER")
         print("🦈"*30)
         
         # Check available cash FIRST
@@ -1629,7 +1630,7 @@ class OrcaKillCycle:
         
         # If no opportunities provided, scan ENTIRE market
         if not opportunities:
-            print("\n🌊 SCANNING ENTIRE MARKET...")
+            print("\n🌊 INITIAL MARKET SCAN...")
             opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
         
         if not opportunities:
@@ -1660,7 +1661,7 @@ class OrcaKillCycle:
         else:
             print(f"✅ {len(funded_opportunities)} funded opportunities (affordable with current cash)")
         
-        # Take top opportunities (but we'll try more if some fail)
+        # Start with top opportunities
         available_targets = funded_opportunities[:num_positions * 2]  # Get extra in case some fail
         
         print(f"\n🎯 Will attempt up to {len(available_targets)} targets (fallback if buys fail):")
@@ -1672,132 +1673,346 @@ class OrcaKillCycle:
                 exch = opp.get('exchange', self.primary_exchange) if isinstance(opp, dict) else self.primary_exchange
                 print(f"   {i+1}. {sym} ({exch})")
         
-        # Open positions with FALLBACK LOGIC - try until we get num_positions or exhaust list
+        # ═══════════════════════════════════════════════════════════════════
+        # 🆕 DYNAMIC HUNTING LOOP - MONITOR + SCAN + ADD POSITIONS!
+        # ═══════════════════════════════════════════════════════════════════
+        
         positions = []
-        attempted_indices = set()  # Track which opportunities we've tried
+        results = []
+        attempted_indices = set()
+        last_scan_time = 0
+        scan_interval = 30  # Scan for new opportunities every 30 seconds
+        monitor_interval = 0.05  # 20 updates/sec
+        whale_update_interval = 2.0  # Update whale intel every 2 seconds
+        last_whale_update = 0
         
-        while len(positions) < num_positions and len(attempted_indices) < len(available_targets):
-            # Find next unattempted opportunity
-            next_idx = None
-            for i in range(len(available_targets)):
-                if i not in attempted_indices:
-                    next_idx = i
-                    break
-            
-            if next_idx is None:
-                break  # No more opportunities to try
-                
-            attempted_indices.add(next_idx)
-            opp = available_targets[next_idx]
-            
-            if isinstance(opp, MarketOpportunity):
-                symbol = opp.symbol
-                exchange = opp.exchange
-                fee_rate = opp.fee_rate
-            else:
-                symbol = opp.get('symbol', opp) if isinstance(opp, dict) else str(opp)
-                exchange = opp.get('exchange', self.primary_exchange) if isinstance(opp, dict) else self.primary_exchange
-                fee_rate = self.fee_rates.get(exchange, 0.0025)
-            
-            # Get client for this exchange
-            client = self.clients.get(exchange)
-            if not client:
-                print(f"   ❌ No client for {exchange} - skipping {symbol}")
-                continue
-            
-            # Normalize symbol
-            if '/' not in symbol:
-                symbol = symbol.replace('USD', '/USD')
-            symbol_clean = symbol.replace('/', '')
-            
-            print(f"\n📈 Opening position {len(positions)+1}/{num_positions}: {symbol} on {exchange.upper()}")
-            
-            try:
-                # Get entry price using exchange-specific method
-                if exchange == 'alpaca':
-                    orderbook = client.get_crypto_orderbook(symbol_clean)
-                    asks = orderbook.get('asks', [])
-                    if not asks:
-                        print(f"   ❌ No price data for {symbol} - trying next opportunity")
-                        continue
-                    entry_price = float(asks[0].get('p', 0))
-                elif exchange == 'kraken':
-                    ticker = client.get_ticker(symbol_clean)
-                    entry_price = ticker.get('ask', ticker.get('price', 0))
-                else:
-                    print(f"   ❌ Unsupported exchange {exchange} - trying next opportunity")
-                    continue
-                
-                if entry_price <= 0:
-                    print(f"   ❌ Invalid price ${entry_price} for {symbol} - trying next opportunity")
-                    continue
-                
-                # Check if we have enough cash for this specific position
-                current_cash = self.get_available_cash().get(exchange, 0)
-                required_cash = amount_per_position * 1.1  # 10% buffer
-                if current_cash < required_cash:
-                    # For testing: Try with available cash if possible
-                    if current_cash >= amount_per_position * 0.5:  # At least 50% of requested
-                        print(f"⚠️ Insufficient cash (${current_cash:.2f} < ${required_cash:.2f}), using ${current_cash:.2f} for testing")
-                        amount_per_position = current_cash * 0.9  # Use 90% of available
-                    else:
-                        print(f"   ❌ Insufficient cash on {exchange} (${current_cash:.2f} < ${required_cash:.2f}) - trying next opportunity")
-                        continue
-                
-                # BUY on the appropriate exchange
-                buy_order = client.place_market_order(
-                    symbol=symbol_clean,
-                    side='buy',
-                    quote_qty=amount_per_position
-                )
-                if not buy_order:
-                    print(f"   ❌ Buy order failed for {symbol} - trying next opportunity")
-                    continue
-                
-                buy_qty = float(buy_order.get('filled_qty', 0))
-                buy_price = float(buy_order.get('filled_avg_price', entry_price))
-                
-                # 🆕 SKIP if we got 0 quantity (order didn't fill)
-                if buy_qty <= 0 or buy_price <= 0:
-                    print(f"   ⚠️ Order returned 0 quantity/price - trying next opportunity")
-                    continue
-                
-                # Calculate levels (NO STOP LOSS!)
-                stop_price_calc = 0.0  # NO STOP LOSS - DON'T PULL OUT EARLY!
-                breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
-                target_price = breakeven + buy_price * (target_pct / 100)
-                
-                pos = LivePosition(
-                    symbol=symbol_clean,
-                    exchange=exchange,
-                    entry_price=buy_price,
-                    entry_qty=buy_qty,
-                    entry_cost=buy_price * buy_qty * (1 + fee_rate),
-                    breakeven_price=breakeven,
-                    target_price=target_price,
-                    client=client,
-                    stop_price=stop_price_calc
-                )
-                positions.append(pos)
-                print(f"   ✅ Bought {buy_qty:.8f} @ ${buy_price:,.2f}")
-                print(f"      🎯 Target: ${target_price:,.2f} | 🚫 NO STOP LOSS")
-                
-            except Exception as e:
-                print(f"   ❌ Error opening {symbol}: {e} - trying next opportunity")
-                continue
-        
-        if not positions:
-            print("❌ Failed to open any positions")
-            return []
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🆕 ENHANCED MONITORING LOOP - PROGRESS BARS + WHALE INTEL!
-        # ═══════════════════════════════════════════════════════════════════
-        print(f"\n📡 MONITORING {len(positions)} POSITIONS WITH LIVE INTELLIGENCE")
+        print(f"\n🚀 STARTING DYNAMIC HUNT - MONITOR + SCAN + BARTER MATRIX!")
         print("="*80)
-        print("   🎯 TARGET PROGRESS | 🐋 WHALE ACTIVITY | 📊 P&L STATUS")
+        print("   📊 Monitor current positions | 🔍 Scan for new opportunities")
+        print("   🛒 Add positions dynamically | 🔄 Use barter matrix for kills")
         print("   🚫 NO STOP LOSS - HOLD UNTIL TARGET HIT!")
         print("="*80)
+        
+        try:
+            while True:  # Infinite loop - only exit on user abort
+                current_time = time.time()
+                
+                # ═══════════════════════════════════════════════════════════
+                # PERIODIC MARKET SCAN - LOOK FOR NEW OPPORTUNITIES
+                # ═══════════════════════════════════════════════════════════
+                if current_time - last_scan_time >= scan_interval:
+                    last_scan_time = current_time
+                    print(f"\n🔍 SCANNING FOR NEW OPPORTUNITIES... ({len(positions)} active positions)")
+                    
+                    # Scan market for new opportunities
+                    new_opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
+                    
+                    if new_opportunities:
+                        # Filter for affordable opportunities we haven't tried
+                        affordable_new = []
+                        for opp in new_opportunities[:5]:  # Check top 5
+                            if isinstance(opp, MarketOpportunity):
+                                exchange = opp.exchange
+                                symbol = opp.symbol
+                            else:
+                                exchange = opp.get('exchange', 'alpaca') if isinstance(opp, dict) else self.primary_exchange
+                                symbol = opp.get('symbol', opp) if isinstance(opp, dict) else str(opp)
+                            
+                            # Check if we have cash and haven't tried this symbol recently
+                            current_cash = self.get_available_cash().get(exchange, 0)
+                            symbol_in_positions = any(p.symbol == symbol.replace('/', '') for p in positions)
+                            
+                            if current_cash >= amount_per_position and not symbol_in_positions:
+                                affordable_new.append(opp)
+                        
+                        if affordable_new and len(positions) < num_positions:
+                            print(f"   🎯 Found {len(affordable_new)} new opportunities!")
+                            # Add to available targets
+                            available_targets.extend(affordable_new[:2])  # Add top 2
+                        else:
+                            print(f"   ✅ No new affordable opportunities (or at max positions)")
+                    else:
+                        print(f"   ⚪ Market scan complete - no new opportunities")
+                
+                # ═══════════════════════════════════════════════════════════
+                # TRY TO OPEN NEW POSITIONS IF WE HAVE ROOM
+                # ═══════════════════════════════════════════════════════════
+                if len(positions) < num_positions and len(attempted_indices) < len(available_targets):
+                    # Find next unattempted opportunity
+                    next_idx = None
+                    for i in range(len(available_targets)):
+                        if i not in attempted_indices:
+                            next_idx = i
+                            break
+                    
+                    if next_idx is not None:
+                        attempted_indices.add(next_idx)
+                        opp = available_targets[next_idx]
+                        
+                        if isinstance(opp, MarketOpportunity):
+                            symbol = opp.symbol
+                            exchange = opp.exchange
+                            fee_rate = opp.fee_rate
+                        else:
+                            symbol = opp.get('symbol', opp) if isinstance(opp, dict) else str(opp)
+                            exchange = opp.get('exchange', self.primary_exchange) if isinstance(opp, dict) else self.primary_exchange
+                            fee_rate = self.fee_rates.get(exchange, 0.0025)
+                        
+                        # Get client for this exchange
+                        client = self.clients.get(exchange)
+                        if not client:
+                            continue
+                        
+                        # Normalize symbol
+                        if '/' not in symbol:
+                            symbol = symbol.replace('USD', '/USD')
+                        symbol_clean = symbol.replace('/', '')
+                        
+                        print(f"\n📈 OPENING NEW POSITION {len(positions)+1}/{num_positions}: {symbol} on {exchange.upper()}")
+                        
+                        try:
+                            # Get entry price using exchange-specific method
+                            if exchange == 'alpaca':
+                                orderbook = client.get_crypto_orderbook(symbol_clean)
+                                asks = orderbook.get('asks', [])
+                                if not asks:
+                                    continue
+                                entry_price = float(asks[0].get('p', 0))
+                            elif exchange == 'kraken':
+                                ticker = client.get_ticker(symbol_clean)
+                                entry_price = ticker.get('ask', ticker.get('price', 0))
+                            else:
+                                continue
+                            
+                            if entry_price <= 0:
+                                continue
+                            
+                            # Check if we have enough cash for this specific position
+                            current_cash = self.get_available_cash().get(exchange, 0)
+                            required_cash = amount_per_position * 1.1  # 10% buffer
+                            if current_cash < required_cash:
+                                if current_cash >= amount_per_position * 0.5:  # At least 50% of requested
+                                    print(f"⚠️ Using available cash ${current_cash:.2f} for testing")
+                                    amount_per_position = current_cash * 0.9  # Use 90% of available
+                                else:
+                                    continue
+                            
+                            # BUY on the appropriate exchange
+                            buy_order = client.place_market_order(
+                                symbol=symbol_clean,
+                                side='buy',
+                                quote_qty=amount_per_position
+                            )
+                            if not buy_order:
+                                continue
+                            
+                            buy_qty = float(buy_order.get('filled_qty', 0))
+                            buy_price = float(buy_order.get('filled_avg_price', entry_price))
+                            
+                            # 🆕 SKIP if we got 0 quantity (order didn't fill)
+                            if buy_qty <= 0 or buy_price <= 0:
+                                continue
+                            
+                            # Calculate levels (NO STOP LOSS!)
+                            stop_price_calc = 0.0  # NO STOP LOSS - DON'T PULL OUT EARLY!
+                            breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
+                            target_price = breakeven + buy_price * (target_pct / 100)
+                            
+                            pos = LivePosition(
+                                symbol=symbol_clean,
+                                exchange=exchange,
+                                entry_price=buy_price,
+                                entry_qty=buy_qty,
+                                entry_cost=buy_price * buy_qty * (1 + fee_rate),
+                                breakeven_price=breakeven,
+                                target_price=target_price,
+                                client=client,
+                                stop_price=stop_price_calc
+                            )
+                            positions.append(pos)
+                            print(f"   ✅ NEW POSITION: Bought {buy_qty:.8f} @ ${buy_price:,.2f}")
+                            print(f"      🎯 Target: ${target_price:,.2f} | 🚫 NO STOP LOSS")
+                            
+                        except Exception as e:
+                            continue
+                
+                # ═══════════════════════════════════════════════════════════
+                # MONITOR EXISTING POSITIONS WITH PROGRESS BARS
+                # ═══════════════════════════════════════════════════════════
+                
+                if positions:  # Only show monitoring if we have positions
+                    # Update whale intelligence periodically
+                    whale_signals = {}
+                    if current_time - last_whale_update >= whale_update_interval:
+                        last_whale_update = current_time
+                        for pos in positions:
+                            if self.whale_tracker:
+                                try:
+                                    signal = self.whale_tracker.get_whale_signal(
+                                        pos.symbol, 
+                                        our_direction='long',
+                                        current_price=pos.current_price,
+                                        price_change_pct=pos.current_pnl_pct
+                                    )
+                                    whale_signals[pos.symbol] = signal
+                                except Exception as e:
+                                    pass
+                    
+                    # Clear screen for clean display
+                    print("\033[2J\033[H", end="")  # Clear screen and move cursor to top
+                    
+                    # Header
+                    print("🦈🦈🦈 ORCA DYNAMIC PACK HUNT - LIVE MONITORING 🦈🦈🦈")
+                    print("="*80)
+                    print(f"   📊 {len(positions)} ACTIVE POSITIONS | 💰 TOTAL P&L: ${sum(p.current_pnl for p in positions):+.4f}")
+                    print(f"   🔍 Next market scan: {max(0, scan_interval - (current_time - last_scan_time)):.1f}s")
+                    print("="*80)
+                    
+                    # Update each position using its own client
+                    for i, pos in enumerate(positions[:]):  # Copy list to allow removal
+                        try:
+                            # Get price from correct exchange
+                            if pos.exchange == 'alpaca':
+                                orderbook = pos.client.get_crypto_orderbook(pos.symbol)
+                                bids = orderbook.get('bids', [])
+                                if not bids:
+                                    continue
+                                current = float(bids[0].get('p', 0))
+                            elif pos.exchange == 'kraken':
+                                ticker = pos.client.get_ticker(pos.symbol)
+                                current = ticker.get('bid', ticker.get('price', 0))
+                            else:
+                                continue
+                            
+                            if current == 0:
+                                continue
+                            
+                            # Track momentum
+                            pos.price_history.append(current)
+                            if len(pos.price_history) > 50:
+                                pos.price_history.pop(0)
+                            
+                            # Calculate P&L
+                            fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
+                            entry_gross = pos.entry_price * pos.entry_qty
+                            entry_fee = entry_gross * fee_rate
+                            entry_cost = entry_gross + entry_fee
+                            exit_gross = current * pos.entry_qty
+                            exit_fee = exit_gross * fee_rate
+                            exit_value = exit_gross - exit_fee
+                            net_pnl = exit_value - entry_cost
+                            
+                            pos.current_price = current
+                            pos.current_pnl = net_pnl
+                            pos.current_pnl_pct = (net_pnl / entry_cost * 100) if entry_cost > 0 else 0
+                            
+                            # Calculate progress to target
+                            progress_pct = min(100, max(0, (current - pos.entry_price) / (pos.target_price - pos.entry_price) * 100))
+                            progress_bar = "█" * int(progress_pct / 5) + "░" * (20 - int(progress_pct / 5))
+                            
+                            # Get whale signal for this position
+                            whale_info = whale_signals.get(pos.symbol)
+                            if whale_info:
+                                whale_status = f"🐋 {whale_info.dominant_firm}: {whale_info.firm_activity}"
+                                whale_conf = f"🤖 Conf: {whale_info.confidence:.1f}"
+                            else:
+                                whale_status = "🐋 Scanning..."
+                                whale_conf = "🤖 Analyzing..."
+                            
+                            # Display position with progress bar
+                            print(f"\n🎯 POSITION {i+1}: {pos.symbol} ({pos.exchange.upper()})")
+                            print(f"   💰 Entry: ${pos.entry_price:,.4f} | Current: ${current:,.4f} | Target: ${pos.target_price:,.4f}")
+                            print(f"   📊 P&L: ${net_pnl:+.4f} ({pos.current_pnl_pct:+.2f}%) | Progress: [{progress_bar}] {progress_pct:.1f}%")
+                            print(f"   {whale_status} | {whale_conf}")
+                            
+                            # ═════════════════════════════════════════════════════
+                            # EXIT CONDITIONS - ONLY THESE, NO TIMEOUT!
+                            # ═════════════════════════════════════════════════════
+                            
+                            # 1. TARGET HIT - perfect exit!
+                            if current >= pos.target_price:
+                                pos.ready_to_kill = True
+                                pos.kill_reason = 'TARGET_HIT'
+                                print(f"\n   🎯🎯🎯 TARGET HIT! SELLING NOW! 🎯🎯🎯")
+                            
+                            # 2. MOMENTUM REVERSAL - ONLY IF IN PROFIT!
+                            elif pos.current_pnl > 0 and len(pos.price_history) >= 10:
+                                recent = pos.price_history[-10:]
+                                momentum = (recent[-1] - recent[0]) / recent[0] * 100 if recent[0] > 0 else 0
+                                if momentum < -0.3:  # Losing momentum while in profit
+                                    pos.ready_to_kill = True
+                                    pos.kill_reason = 'MOMENTUM_PROFIT'
+                                    print(f"\n   📈📈📈 TAKING PROFIT (momentum reversal) 📈📈📈")
+                            
+                            # EXIT if ready
+                            if pos.ready_to_kill:
+                                print(f"\n   🔪🔪🔪 EXECUTING SELL ORDER 🔪🔪🔪")
+                                sell_order = pos.client.place_market_order(
+                                    symbol=pos.symbol,
+                                    side='sell',
+                                    quantity=pos.entry_qty
+                                )
+                                if sell_order:
+                                    sell_price = float(sell_order.get('filled_avg_price', current))
+                                    # Recalculate final P&L
+                                    final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
+                                    final_pnl = final_exit - entry_cost
+                                    results.append({
+                                        'symbol': pos.symbol,
+                                        'exchange': pos.exchange,
+                                        'reason': pos.kill_reason,
+                                        'net_pnl': final_pnl
+                                    })
+                                    print(f"   ✅ SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
+                                    print(f"   🔄 READY FOR NEXT TRADE!")
+                                positions.remove(pos)
+                                
+                        except Exception as e:
+                            print(f"   ⚠️ Error monitoring {pos.symbol}: {e}")
+                    
+                    # Show summary at bottom
+                    if positions:
+                        print(f"\n{'='*80}")
+                        active_symbols = [f"{p.symbol[:6]}({p.exchange[0].upper()})" for p in positions]
+                        print(f"   📡 ACTIVE: {', '.join(active_symbols)}")
+                        print(f"   💰 TOTAL P&L: ${sum(p.current_pnl for p in positions):+.4f}")
+                        print(f"   🎯 WAITING FOR TARGET HITS...")
+                        print(f"   🚫 NO STOP LOSS - HOLD UNTIL PROFIT!")
+                        print(f"   ⏱️ Next whale update: {max(0, whale_update_interval - (current_time - last_whale_update)):.1f}s")
+                    else:
+                        print(f"\n{'='*80}")
+                        print("   🎉 ALL POSITIONS CLOSED - READY FOR NEXT ROUND!")
+                        print(f"{'='*80}")
+                else:
+                    # No positions - just show scanning status
+                    print(f"\n🔍 SCANNING FOR OPPORTUNITIES... ({len(attempted_indices)} attempted)")
+                    print(f"   Next scan in: {max(0, scan_interval - (current_time - last_scan_time)):.1f}s")
+                    print(f"   Available targets remaining: {len(available_targets) - len(attempted_indices)}")
+                
+                time.sleep(monitor_interval)
+                
+        except KeyboardInterrupt:
+            print("\n\n🛑 USER ABORT - Closing all positions...")
+            for pos in positions:
+                try:
+                    sell_order = pos.client.place_market_order(symbol=pos.symbol, side='sell', quantity=pos.entry_qty)
+                    if sell_order:
+                        fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
+                        sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
+                        entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
+                        final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
+                        final_pnl = final_exit - entry_cost
+                        results.append({
+                            'symbol': pos.symbol,
+                            'exchange': pos.exchange,
+                            'reason': 'USER_ABORT',
+                            'net_pnl': final_pnl
+                        })
+                        print(f"   Closed {pos.symbol}: ${final_pnl:+.4f}")
+                except Exception as e:
+                    print(f"   ⚠️ Error closing {pos.symbol}: {e}")
+        
+        return results
         
         # Faster updates for better monitoring
         monitor_interval = 0.05  # 20 updates/sec instead of 10
