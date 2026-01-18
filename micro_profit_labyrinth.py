@@ -836,25 +836,70 @@ ConsciousNode = None
 #     logging.getLogger(__name__).debug(f"Stargate Protocol not available: {e}")
 
 # 🔮 QUANTUM MIRROR SCANNER - Reality Branch Validation
-QUANTUM_MIRROR_SCANNER_AVAILABLE = False # DISABLED PER USER REQUEST
-QuantumMirrorScanner = None
-create_quantum_mirror_scanner = None
-RealityBranch = None
-TimelineConvergence = None
-# try:
-#     from aureon_quantum_mirror_scanner import (
-#         QuantumMirrorScanner, create_quantum_mirror_scanner,
-#         RealityBranch, TimelineConvergence
-#     )
-#     QUANTUM_MIRROR_SCANNER_AVAILABLE = True
-#     safe_print("🔮 Quantum Mirror Scanner LOADED! (3-Pass Batten Matrix + Convergence)")
-# except ImportError as e:
-#     QUANTUM_MIRROR_SCANNER_AVAILABLE = False
-#     QuantumMirrorScanner = None
-#     create_quantum_mirror_scanner = None
-#     RealityBranch = None
-#     TimelineConvergence = None
-#     logging.getLogger(__name__).debug(f"Quantum Mirror Scanner not available: {e}")
+try:
+    from aureon_quantum_mirror_scanner import (
+        QuantumMirrorScanner, create_quantum_mirror_scanner,
+        RealityBranch, TimelineConvergence
+    )
+    QUANTUM_MIRROR_SCANNER_AVAILABLE = True
+    safe_print("🔮 Quantum Mirror Scanner LOADED! (3-Pass Batten Matrix + Convergence)")
+except ImportError as e:
+    QUANTUM_MIRROR_SCANNER_AVAILABLE = False
+    QuantumMirrorScanner = None
+    create_quantum_mirror_scanner = None
+    RealityBranch = None
+    TimelineConvergence = None
+    logging.getLogger(__name__).debug(f"Quantum Mirror Scanner not available: {e}")
+
+# 🌊 OCEAN SCANNER - Multi-Exchange Wave Detection
+try:
+    from aureon_ocean_scanner import OceanScanner
+    OCEAN_SCANNER_AVAILABLE = True
+    safe_print("🌊 Ocean Scanner LOADED! (Multi-exchange wave patterns)")
+except ImportError as e:
+    OCEAN_SCANNER_AVAILABLE = False
+    OceanScanner = None
+    logging.getLogger(__name__).debug(f"Ocean Scanner not available: {e}")
+
+# 🎖️⚡ STRATEGIC WARFARE SCANNER - Sun Tzu Intelligence
+try:
+    from aureon_strategic_warfare_scanner import StrategicWarfareScanner
+    STRATEGIC_WARFARE_SCANNER_AVAILABLE = True
+    safe_print("🎖️ Strategic Warfare Scanner LOADED! (Sun Tzu + IRA tactics)")
+except ImportError as e:
+    STRATEGIC_WARFARE_SCANNER_AVAILABLE = False
+    StrategicWarfareScanner = None
+    logging.getLogger(__name__).debug(f"Strategic Warfare Scanner not available: {e}")
+
+# 📊 QUEEN VOLUME HUNTER - Breakout Detection
+try:
+    from queen_volume_hunter import QueenVolumeHunter
+    QUEEN_VOLUME_HUNTER_AVAILABLE = True
+    safe_print("📊 Queen Volume Hunter LOADED! (Breakout detection)")
+except ImportError as e:
+    QUEEN_VOLUME_HUNTER_AVAILABLE = False
+    QueenVolumeHunter = None
+    logging.getLogger(__name__).debug(f"Queen Volume Hunter not available: {e}")
+
+# 🔗 GLASSNODE API - Real On-Chain Whale Intelligence
+try:
+    from glassnode_client import GlassnodeClient
+    GLASSNODE_AVAILABLE = True
+    safe_print("🐋 Glassnode Client LOADED!")
+except ImportError as e:
+    GlassnodeClient = None
+    GLASSNODE_AVAILABLE = False
+    safe_print(f"⚠️ Glassnode Client not available: {e}")
+
+# 🐳 Unusual Whales Client (Options Flow)
+try:
+    from unusual_whales_client import UnusualWhalesClient
+    UNUSUAL_WHALES_AVAILABLE = True
+    safe_print("🐳 Unusual Whales Client LOADED!")
+except ImportError as e:
+    UnusualWhalesClient = None
+    UNUSUAL_WHALES_AVAILABLE = False
+    safe_print(f"⚠️ Unusual Whales Client not available: {e}")
 
 # ⚓ TIMELINE ANCHOR VALIDATOR - 7-Day Extended Validation
 TIMELINE_ANCHOR_VALIDATOR_AVAILABLE = False # DISABLED PER USER REQUEST
@@ -5746,7 +5791,7 @@ class MicroProfitLabyrinth:
         try:
             from mycelium_whale_sonar import create_and_start_sonar
             if self.thought_bus:
-                self.whale_sonar = create_and_start_sonar(thought_bus=self.thought_bus)
+                self.whale_sonar = create_and_start_sonar()
                 safe_print("🍄🐋 Whale Sonar: STARTED (listening for subsystem signals)")
             else:
                 safe_print("🍄🐋 Whale Sonar: SKIPPED (no ThoughtBus available)")
@@ -6079,6 +6124,52 @@ class MicroProfitLabyrinth:
             except Exception as e:
                 safe_print(f"⚠️ Quantum Mirror Scanner error: {e}")
                 logger.debug(f"Quantum Mirror Scanner init error: {e}")
+        
+        # 🌊 OCEAN SCANNER - Multi-Exchange Wave Detection
+        self.ocean_scanner = None
+        if OCEAN_SCANNER_AVAILABLE and OceanScanner:
+            try:
+                self.ocean_scanner = OceanScanner(exchanges=['kraken', 'binance', 'alpaca'])
+                safe_print("🌊 Ocean Scanner: WIRED (Multi-exchange wave patterns)")
+                safe_print(f"   🌊 Exchanges: Kraken, Binance, Alpaca")
+            except Exception as e:
+                safe_print(f"⚠️ Ocean Scanner error: {e}")
+                logger.debug(f"Ocean Scanner init error: {e}")
+        
+        # 🎖️⚡ STRATEGIC WARFARE SCANNER - Sun Tzu Intelligence
+        self.strategic_warfare_scanner = None
+        if STRATEGIC_WARFARE_SCANNER_AVAILABLE and StrategicWarfareScanner:
+            try:
+                self.strategic_warfare_scanner = StrategicWarfareScanner()
+                safe_print("🎖️ Strategic Warfare Scanner: WIRED (Sun Tzu + IRA tactics)")
+                safe_print(f"   📚 Intelligence: {len(self.strategic_warfare_scanner.entities)} entities tracked")
+            except Exception as e:
+                safe_print(f"⚠️ Strategic Warfare Scanner error: {e}")
+                logger.debug(f"Strategic Warfare Scanner init error: {e}")
+        
+        # 📊 QUEEN VOLUME HUNTER - Breakout Detection
+        self.queen_volume_hunter = None
+        if QUEEN_VOLUME_HUNTER_AVAILABLE and QueenVolumeHunter:
+            try:
+                self.queen_volume_hunter = QueenVolumeHunter(live_mode=False)  # Safe mode for integration
+                safe_print("📊 Queen Volume Hunter: WIRED (Breakout detection)")
+                safe_print(f"   📈 Trained on 3,178 trades, 64% win rate")
+            except Exception as e:
+                safe_print(f"⚠️ Queen Volume Hunter error: {e}")
+                logger.debug(f"Queen Volume Hunter init error: {e}")
+        
+        # 🔗 GLASSNODE API - Real On-Chain Intelligence
+        self.glassnode_client = None
+        if GLASSNODE_AVAILABLE and GlassnodeClient:
+            try:
+                self.glassnode_client = GlassnodeClient()
+                if self.queen and hasattr(self.queen, 'wire_glassnode_client'):
+                    self.queen.wire_glassnode_client(self.glassnode_client)
+                safe_print("🔗 Glassnode API: WIRED (Real on-chain whale data)")
+                safe_print(f"   🐋 Tracking: Large transactions, exchange flows, whale movements")
+            except Exception as e:
+                safe_print(f"⚠️ Glassnode API error: {e}")
+                logger.debug(f"Glassnode API init error: {e}")
         
         if TIMELINE_ANCHOR_VALIDATOR_AVAILABLE and create_timeline_anchor_validator:
             try:

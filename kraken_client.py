@@ -516,7 +516,7 @@ class KrakenClient:
             except Exception:
                 free = 0.0
             # Kraken uses asset codes like XBT -> map common ones
-            norm = {"XBT": "BTC", "XETH": "ETH"}.get(asset, asset)
+            norm = {"XBT": "BTC", "XETH": "ETH", "ZUSD": "USD", "ZUSDC": "USDC", "ZUSDT": "USDT", "ZEUR": "EUR"}.get(asset, asset)
             balances.append({"asset": norm, "free": str(free), "locked": "0"})
         return {"balances": balances}
 
@@ -544,14 +544,33 @@ class KrakenClient:
                     out[asset] = total
         return out
 
-    def get_free_balance(self, asset: str) -> float:
-        acct = self.account()
-        for bal in acct.get("balances", []):
-            if bal.get("asset") == asset:
-                try:
-                    return float(bal.get("free", 0))
-                except Exception:
-                    return 0.0
+    def get_balance(self) -> Dict[str, float]:
+        """Return balances in Alpaca-compatible format (asset -> amount)."""
+        return self.get_account_balance()
+
+    def get_crypto_orderbook(self, symbol: str, depth: int = 5) -> Dict[str, Any]:
+        """Get orderbook data in Alpaca-compatible format using ticker data."""
+        try:
+            ticker = self.get_ticker(symbol)
+            if not ticker or ticker.get('price', 0) == 0:
+                return {'asks': [], 'bids': []}
+            
+            price = ticker.get('price', 0)
+            spread = price * 0.001  # 0.1% spread
+            
+            # Create synthetic orderbook in Alpaca format: list of dicts with 'p' and 's' keys
+            asks = [{'p': str(price + spread), 's': "1.0"}]  # [{'p': price, 's': size}]
+            bids = [{'p': str(price - spread), 's': "1.0"}]
+            
+            return {
+                'symbol': symbol,
+                'asks': asks,
+                'bids': bids,
+                't': time.time() * 1000
+            }
+        except Exception as e:
+            print(f"Error getting Kraken orderbook for {symbol}: {e}")
+            return {'asks': [], 'bids': []}
         return 0.0
 
     def _format_order_value(self, value: float | str | Decimal | None) -> str | None:

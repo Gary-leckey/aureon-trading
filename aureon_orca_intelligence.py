@@ -81,6 +81,22 @@ except ImportError:
     match_firm_name_simple = None
     match_firm_name = None
 
+# 💰👁️ REAL PORTFOLIO TRACKER - NO PHANTOM NUMBERS! 👁️💰
+try:
+    from aureon_real_portfolio_tracker import (
+        RealPortfolioTracker,
+        get_real_portfolio_tracker,
+        get_real_balance,
+        RealPortfolioSnapshot
+    )
+    REAL_PORTFOLIO_AVAILABLE = True
+except ImportError:
+    RealPortfolioTracker = None
+    get_real_portfolio_tracker = None
+    get_real_balance = None
+    RealPortfolioSnapshot = None
+    REAL_PORTFOLIO_AVAILABLE = False
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🌐 GLOBAL MARKET INTEGRATION - Full Exchange Coverage
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -123,6 +139,27 @@ try:
 except ImportError:
     WAVE_SCANNER_AVAILABLE = False
     GlobalWaveScanner = None
+
+# Movers & Shakers Scanner (unified whale detection)
+try:
+    from aureon_movers_shakers_scanner import (
+        MoversShakersScanner, MoverShaker, WaveReport, WaveType
+    )
+    MOVERS_SHAKERS_AVAILABLE = True
+except ImportError:
+    MOVERS_SHAKERS_AVAILABLE = False
+    MoversShakersScanner = None
+    MoverShaker = None
+    WaveReport = None
+    WaveType = None
+
+# Moby Dick Whale Hunter (legendary strategies)
+try:
+    from aureon_moby_dick_whale_hunter import MobyDickWhaleHunter
+    MOBY_DICK_AVAILABLE = True
+except ImportError:
+    MOBY_DICK_AVAILABLE = False
+    MobyDickWhaleHunter = None
 
 # Sacred constants for harmonic timing
 PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio 1.618
@@ -419,6 +456,15 @@ class OrcaKillerWhaleIntelligence:
         else:
             logger.info("🧠 Counter-Intelligence UNAVAILABLE")
         
+        # 💰👁️ REAL PORTFOLIO TRACKER - NO PHANTOM NUMBERS! 👁️💰
+        self.real_portfolio_tracker = None
+        if REAL_PORTFOLIO_AVAILABLE and get_real_portfolio_tracker:
+            try:
+                self.real_portfolio_tracker = get_real_portfolio_tracker()
+                logger.info("💰👁️ Real Portfolio Tracker CONNECTED - Orca sees THE TRUTH!")
+            except Exception as e:
+                logger.warning(f"💰⚠️ Could not connect Real Portfolio Tracker: {e}")
+        
         logger.info("🦈🔪 ORCA KILLER WHALE INTELLIGENCE ACTIVATED 🔪🦈")
         logger.info(f"   Mode: {self.mode} | Max Hunts: {self.max_concurrent_hunts}")
     
@@ -479,6 +525,26 @@ class OrcaKillerWhaleIntelligence:
                 logger.info("🌊 Global Wave Scanner CONNECTED - Multi-market intelligence")
             except Exception as e:
                 logger.debug(f"Wave scanner init failed: {e}")
+        
+        # 🌊🦈🐋 Movers & Shakers Scanner (unified whale detection)
+        self.movers_shakers = None
+        if MOVERS_SHAKERS_AVAILABLE:
+            try:
+                self.movers_shakers = MoversShakersScanner(lookback_minutes=15)
+                market_count += 1
+                logger.info("🌊🦈🐋 Movers & Shakers Scanner CONNECTED - Unified whale detection")
+            except Exception as e:
+                logger.debug(f"Movers & Shakers init failed: {e}")
+        
+        # 🐋⚔️ Moby Dick Whale Hunter (legendary strategies)
+        self.moby_dick = None
+        if MOBY_DICK_AVAILABLE:
+            try:
+                self.moby_dick = MobyDickWhaleHunter()
+                market_count += 1
+                logger.info("🐋⚔️ Moby Dick Whale Hunter CONNECTED - Legendary strategies")
+            except Exception as e:
+                logger.debug(f"Moby Dick init failed: {e}")
         
         if market_count == 0:
             logger.warning("⚠️ NO MARKET CONNECTIONS! Orca is BLIND!")
@@ -677,6 +743,81 @@ class OrcaKillerWhaleIntelligence:
             tmp.rename(self.state_file)
         except Exception as e:
             logger.debug(f"Could not save orca state: {e}")
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 💰👁️ REAL PORTFOLIO TRACKING - NO PHANTOM NUMBERS! 👁️💰
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def get_real_capital(self) -> float:
+        """
+        Get REAL available capital for hunting.
+        No phantom numbers - just the truth!
+        """
+        if self.real_portfolio_tracker:
+            try:
+                snapshot = self.real_portfolio_tracker.get_real_portfolio()
+                return snapshot.total_usd
+            except Exception as e:
+                logger.warning(f"💰⚠️ Could not get real capital: {e}")
+        return 0.0
+    
+    def get_real_pnl(self) -> float:
+        """Get REAL realized P&L."""
+        if self.real_portfolio_tracker:
+            try:
+                snapshot = self.real_portfolio_tracker.get_real_portfolio()
+                return snapshot.realized_pnl
+            except Exception as e:
+                logger.warning(f"💰⚠️ Could not get real P&L: {e}")
+        return 0.0
+    
+    def can_afford_hunt(self, min_capital: float = 5.0) -> bool:
+        """
+        Check if we can afford to hunt.
+        Returns False if capital is too low.
+        """
+        real_capital = self.get_real_capital()
+        if real_capital < min_capital:
+            logger.warning(f"🦈💸 Cannot hunt - Only ${real_capital:.2f} available (need ${min_capital:.2f})")
+            return False
+        return True
+    
+    def log_real_status(self) -> None:
+        """Log the REAL portfolio status for transparency."""
+        if self.real_portfolio_tracker:
+            try:
+                print(self.real_portfolio_tracker.format_for_orca())
+            except Exception as e:
+                logger.warning(f"💰⚠️ Could not log real status: {e}")
+        else:
+            logger.info("💰⚠️ Real Portfolio Tracker not connected")
+    
+    def get_hunt_budget(self) -> float:
+        """
+        Calculate safe budget for next hunt based on REAL capital.
+        Never risk more than 10% of actual capital.
+        """
+        real_capital = self.get_real_capital()
+        
+        # Tiered risk based on capital level
+        if real_capital < 10:
+            # Very low capital - be extremely conservative
+            max_risk_pct = 0.02  # 2%
+        elif real_capital < 50:
+            max_risk_pct = 0.05  # 5%
+        elif real_capital < 100:
+            max_risk_pct = 0.08  # 8%
+        else:
+            max_risk_pct = 0.10  # 10%
+        
+        budget = real_capital * max_risk_pct
+        
+        # Minimum $1 for any trade
+        if budget < 1.0 and real_capital >= 1.0:
+            budget = 1.0
+        
+        logger.info(f"🦈💰 Hunt budget: ${budget:.2f} ({max_risk_pct:.0%} of ${real_capital:.2f})")
+        return budget
     
     # ═══════════════════════════════════════════════════════════════════════════
     # 👑 QUEEN HIERARCHY METHODS - CHAIN OF COMMAND
@@ -1238,6 +1379,236 @@ class OrcaKillerWhaleIntelligence:
         """Update Fear & Greed index."""
         self.fear_greed_index = index
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🌊🦈🐋 MOVERS & SHAKERS INTEGRATION - WHO'S MAKING THE WAVES?
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    async def scan_movers_shakers(self) -> List[WhaleSignal]:
+        """
+        🌊 SCAN FOR MOVERS & SHAKERS 🌊
+        
+        Uses the unified Movers & Shakers Scanner to identify:
+        - 🐋 WHALES - Large institutional players
+        - 🦈 SHARKS - HFT algorithms
+        - 🐙 OCTOPI - Market manipulators (AVOID)
+        - 🐬 DOLPHINS - Smart money
+        - 🦑 SQUIDS - Dark pool operators
+        
+        Returns: List of whale signals derived from detected movers
+        """
+        if not self.movers_shakers:
+            logger.debug("🌊 Movers & Shakers scanner not available")
+            return []
+        
+        try:
+            # Run the unified scan
+            report = await self.movers_shakers.run_scan()
+            
+            whale_signals = []
+            
+            # Process each category of movers
+            for mover in report.all_movers:
+                # Skip manipulators - don't trade against them
+                if MOVERS_SHAKERS_AVAILABLE and mover.wave_type == WaveType.OCTOPUS:
+                    logger.warning(f"🐙 OCTOPUS DETECTED on {mover.symbol} - AVOIDING")
+                    continue
+                
+                # Convert mover to whale signal
+                signal = self._mover_to_whale_signal(mover)
+                if signal:
+                    whale_signals.append(signal)
+                    self.whale_signals.append(signal)
+            
+            # Log summary
+            if whale_signals:
+                logger.info(f"🌊 Movers & Shakers scan: {len(whale_signals)} actionable signals")
+                logger.info(f"   Net Flow: {report.net_flow_direction}")
+                logger.info(f"   Whale Consensus: {report.whale_consensus}")
+                if report.manipulation_alert:
+                    logger.warning(f"   ⚠️ MANIPULATION ALERT - Trade carefully!")
+            
+            return whale_signals
+            
+        except Exception as e:
+            logger.error(f"🌊 Movers & Shakers scan error: {e}")
+            return []
+    
+    def _mover_to_whale_signal(self, mover) -> Optional[WhaleSignal]:
+        """
+        Convert a MoverShaker detection to a WhaleSignal for Orca processing.
+        """
+        try:
+            # Map wave type to momentum direction
+            if mover.side == 'buy':
+                momentum_direction = 'bullish'
+                suggested_action = 'buy'
+            elif mover.side == 'sell':
+                momentum_direction = 'bearish'
+                suggested_action = 'sell'
+            else:
+                momentum_direction = 'neutral'
+                suggested_action = 'hold'
+            
+            # Map wave type to ride confidence
+            ride_confidence = 0.5  # Base
+            if MOVERS_SHAKERS_AVAILABLE:
+                if mover.wave_type == WaveType.WHALE:
+                    ride_confidence = 0.85  # High confidence for whales
+                elif mover.wave_type == WaveType.SHARK:
+                    ride_confidence = 0.7   # Good for HFT
+                elif mover.wave_type == WaveType.DOLPHIN:
+                    ride_confidence = 0.6   # Smart money
+                elif mover.wave_type == WaveType.SQUID:
+                    ride_confidence = 0.5   # Hidden liquidity
+            
+            # Boost confidence if firm attributed
+            if mover.attributed_firm and mover.firm_confidence > 0.5:
+                ride_confidence = min(1.0, ride_confidence + 0.1)
+            
+            # Target PnL based on volume
+            if mover.volume_usd > 100_000:
+                target_pnl_pct = 0.003  # 0.3% for mega movers
+            elif mover.volume_usd > 25_000:
+                target_pnl_pct = 0.002  # 0.2% for sharks
+            else:
+                target_pnl_pct = 0.001  # 0.1% for dolphins
+            
+            signal = WhaleSignal(
+                timestamp=mover.timestamp,
+                symbol=mover.symbol,
+                side=mover.side,
+                volume_usd=mover.volume_usd,
+                firm=mover.attributed_firm,
+                firm_confidence=mover.firm_confidence,
+                exchange=mover.exchange,
+                momentum_direction=momentum_direction,
+                ride_confidence=ride_confidence,
+                suggested_action=suggested_action,
+                target_pnl_pct=target_pnl_pct
+            )
+            
+            return signal
+            
+        except Exception as e:
+            logger.debug(f"Failed to convert mover to signal: {e}")
+            return None
+    
+    def scan_moby_dick_predictions(self) -> List[WhaleSignal]:
+        """
+        🐋⚔️ MOBY DICK WHALE PREDICTIONS ⚔️🐋
+        
+        Uses Captain Ahab's legendary strategies to predict whale movements:
+        - GAM System: Information from other exchanges
+        - Fedallah's Prophecies: Pattern-based predictions
+        - The Three Harpoons: Triple validation before execution
+        
+        Returns: List of predicted whale signals
+        """
+        if not self.moby_dick:
+            return []
+        
+        try:
+            predictions = []
+            
+            # Get whale predictions if available
+            if hasattr(self.moby_dick, 'predict_whale_surfacing'):
+                symbols = self._get_hot_symbols()
+                for symbol in symbols[:5]:  # Top 5 hot symbols
+                    prediction = self.moby_dick.predict_whale_surfacing(symbol)
+                    if prediction and prediction.confidence >= 0.6:
+                        signal = WhaleSignal(
+                            timestamp=time.time(),
+                            symbol=prediction.symbol,
+                            side=prediction.predicted_side,
+                            volume_usd=prediction.estimated_volume_usd if hasattr(prediction, 'estimated_volume_usd') else 50000,
+                            momentum_direction='bullish' if prediction.predicted_side == 'buy' else 'bearish',
+                            ride_confidence=prediction.confidence,
+                            suggested_action=prediction.predicted_side,
+                            target_pnl_pct=0.002
+                        )
+                        predictions.append(signal)
+                        logger.info(f"🐋⚔️ Moby Dick predicts: {symbol} {prediction.predicted_side.upper()} (conf: {prediction.confidence:.0%})")
+            
+            # Get GAM encounters (cross-exchange intelligence)
+            if hasattr(self.moby_dick, 'get_gam_encounters'):
+                encounters = self.moby_dick.get_gam_encounters()
+                for enc in encounters[-5:]:  # Last 5 encounters
+                    if enc.confidence >= 0.6:
+                        signal = WhaleSignal(
+                            timestamp=enc.timestamp,
+                            symbol=enc.symbol,
+                            side='buy' if enc.whale_class == 'ACCUMULATION_BOT' else 'sell',
+                            volume_usd=enc.activities * 10000,  # Estimate
+                            firm=None,
+                            exchange=enc.exchange,
+                            momentum_direction='bullish' if enc.whale_class == 'ACCUMULATION_BOT' else 'bearish',
+                            ride_confidence=enc.confidence,
+                            suggested_action='buy' if enc.whale_class == 'ACCUMULATION_BOT' else 'sell',
+                            target_pnl_pct=0.002
+                        )
+                        predictions.append(signal)
+            
+            return predictions
+            
+        except Exception as e:
+            logger.debug(f"Moby Dick prediction error: {e}")
+            return []
+    
+    def get_wave_consensus(self) -> Dict[str, Any]:
+        """
+        🌊 GET OVERALL WAVE CONSENSUS 🌊
+        
+        Aggregates all wave detection systems to determine market direction.
+        
+        Returns: Dict with consensus information
+        """
+        consensus = {
+            'timestamp': time.time(),
+            'net_direction': 'neutral',
+            'confidence': 0.5,
+            'whale_count': 0,
+            'shark_count': 0,
+            'manipulation_detected': False,
+            'recommended_action': 'hold',
+            'sources': []
+        }
+        
+        # Count recent signals by direction
+        now = time.time()
+        recent_signals = [s for s in self.whale_signals if now - s.timestamp < 300]  # 5 min
+        
+        buy_signals = [s for s in recent_signals if s.side == 'buy']
+        sell_signals = [s for s in recent_signals if s.side == 'sell']
+        
+        buy_volume = sum(s.volume_usd for s in buy_signals)
+        sell_volume = sum(s.volume_usd for s in sell_signals)
+        total_volume = buy_volume + sell_volume
+        
+        if total_volume > 0:
+            buy_ratio = buy_volume / total_volume
+            
+            if buy_ratio > 0.65:
+                consensus['net_direction'] = 'bullish'
+                consensus['recommended_action'] = 'buy'
+                consensus['confidence'] = buy_ratio
+            elif buy_ratio < 0.35:
+                consensus['net_direction'] = 'bearish'
+                consensus['recommended_action'] = 'sell'
+                consensus['confidence'] = 1 - buy_ratio
+            else:
+                consensus['net_direction'] = 'neutral'
+                consensus['recommended_action'] = 'hold'
+                consensus['confidence'] = 0.5
+        
+        consensus['whale_count'] = len([s for s in recent_signals if s.volume_usd > 100000])
+        consensus['shark_count'] = len([s for s in recent_signals if 25000 <= s.volume_usd < 100000])
+        
+        # Check for manipulation (lots of signals but no clear direction)
+        if len(recent_signals) > 10 and consensus['confidence'] < 0.55:
+            consensus['manipulation_detected'] = True
+        
+        return consensus
+    
     def _update_symbol_heat(self, symbol: str, volume: float, direction: str):
         """Track symbol 'heat' - how active/attractive it is."""
         current_heat = self.hot_symbols.get(symbol, 0.0)
@@ -1271,6 +1642,13 @@ class OrcaKillerWhaleIntelligence:
         🦈🔪 THE HUNT BEGINS 🔪🦈
         
         Analyze all intelligence to find the best whale wakes to ride.
+        Now includes:
+        - 🐋 Recent Whale Activity (direct detections)
+        - 🐋⚔️ Moby Dick Predictions (legendary strategies)
+        - 🔥 Hot Symbol Momentum
+        - 📊 Market Thesis Alignment
+        - 😱 Fear & Greed Contrarian
+        - 🌊 Wave Consensus Filtering
         """
         print("DEBUG: Inside Orca scan_for_opportunities method!")
         logger.info("DEBUG: Entering scan_for_opportunities")
@@ -1293,6 +1671,12 @@ class OrcaKillerWhaleIntelligence:
         # if len(self.active_hunts) >= self.max_concurrent_hunts:
         #     logger.info(f"DEBUG: Max concurrent hunts reached ({len(self.active_hunts)})")
         #     return []
+        
+        # === SIGNAL 0: Moby Dick Whale Predictions ===
+        moby_predictions = self.scan_moby_dick_predictions()
+        for prediction in moby_predictions:
+            self.whale_signals.append(prediction)
+            logger.info(f"🐋⚔️ Moby Dick prediction added: {prediction.symbol} {prediction.side}")
         
         # === SIGNAL 1: Recent Whale Activity ===
         recent_whales = [w for w in self.whale_signals if now - w.timestamp < 60]  # Last 60s
@@ -1366,6 +1750,21 @@ class OrcaKillerWhaleIntelligence:
                 if opp.action == 'sell':
                     opp.confidence = min(1.0, opp.confidence + 0.15)
                     opp.reasoning.append(f"Contrarian: Extreme Greed ({self.fear_greed_index})")
+        
+        # === SIGNAL 5: Wave Consensus Filtering ===
+        wave_consensus = self.get_wave_consensus()
+        if wave_consensus['manipulation_detected']:
+            # Reduce all confidence when manipulation detected
+            logger.warning("🐙 MANIPULATION DETECTED - Reducing confidence on all opportunities")
+            for opp in opportunities:
+                opp.confidence *= 0.7
+                opp.reasoning.append("⚠️ Manipulation detected - confidence reduced")
+        elif wave_consensus['confidence'] > 0.7:
+            # Boost opportunities aligned with wave consensus
+            for opp in opportunities:
+                if opp.action == wave_consensus['recommended_action']:
+                    opp.confidence = min(1.0, opp.confidence + 0.1)
+                    opp.reasoning.append(f"🌊 Wave consensus: {wave_consensus['net_direction']} ({wave_consensus['confidence']:.0%})")
         
         # Sort by confidence
         opportunities.sort(key=lambda x: x.confidence, reverse=True)

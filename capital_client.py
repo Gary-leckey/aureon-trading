@@ -38,6 +38,8 @@ class CapitalClient:
         self.market_index: Dict[str, Dict[str, Any]] = {}
         self.market_cache_time = 0.0
         self.market_cache_ttl = int(os.getenv('CAPITAL_MARKET_CACHE_TTL', '900'))  # 15 minutes
+        self._rate_limit_until = 0  # Timestamp when rate limit expires
+        self._session_error_logged = False  # Only log session errors once
         
         if not self.api_key or not self.identifier or not self.password:
             logger.warning("Capital.com credentials not fully set. Client will be disabled.")
@@ -50,6 +52,10 @@ class CapitalClient:
         """Create a new session to get CST and X-SECURITY-TOKEN."""
         if not self.enabled:
             return
+        
+        # Check if we're rate limited
+        if time.time() < self._rate_limit_until:
+            return  # Still rate limited, skip silently
 
         url = f"{self.base_url}/session"
         payload = {
@@ -67,12 +73,23 @@ class CapitalClient:
                 self.cst = response.headers.get('CST')
                 self.x_security_token = response.headers.get('X-SECURITY-TOKEN')
                 self.session_start_time = time.time()
+                self._session_error_logged = False  # Reset on success
                 logger.info("Capital.com session established.")
+            elif response.status_code == 429 or 'too-many.requests' in response.text.lower():
+                # Rate limited - back off for 5 minutes
+                self._rate_limit_until = time.time() + 300
+                if not self._session_error_logged:
+                    logger.warning("Capital.com rate limited - backing off for 5 minutes")
+                    self._session_error_logged = True
             else:
-                logger.error(f"Failed to create Capital.com session: {response.text}")
+                if not self._session_error_logged:
+                    logger.error(f"Failed to create Capital.com session: {response.text}")
+                    self._session_error_logged = True
                 self.enabled = False
         except Exception as e:
-            logger.error(f"Capital.com connection error: {e}")
+            if not self._session_error_logged:
+                logger.error(f"Capital.com connection error: {e}")
+                self._session_error_logged = True
             self.enabled = False
 
     def _session_is_expired(self) -> bool:

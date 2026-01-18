@@ -317,6 +317,10 @@ class BaseAnimalScanner:
                     syms.append(sym)
             base_universe = sorted(syms)
         
+        # 🎯 FILTER: Only USD pairs - USDC/USDT/BTC pairs have no historical data for Nexus!
+        base_universe = [s for s in base_universe if s.endswith('/USD') and 
+                        'USDC' not in s and 'USDT' not in s]
+        
         # 🦈 WHALE WAKE RIDING: Prioritize Orca-detected whale symbols first!
         # Clear stale targets after 5 minutes
         if time.time() - self._orca_target_time > 300:

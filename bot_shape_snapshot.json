@@ -1,76 +1,156 @@
 {
-  "timestamp": 1768743979.950796,
+  "timestamp": 1768753882.9629533,
   "shapes": [
     {
       "symbol": "BTCUSDT",
-      "timestamp": 1768743979.931989,
-      "dominant_freqs": [
-        0.0016666666666666668,
-        4.323333333333333,
-        0.885
-      ],
-      "amplitudes": [
-        13.738839347271337,
-        10.827361505827456,
-        10.450450350132101
+      "timestamp": 1768753882.9173312,
+      "spectrum_results": [
+        {
+          "band_name": "INFRA_LOW",
+          "dominant_freq": 0.0031944444444444446,
+          "amplitude": 37.382103556665115,
+          "activity_score": 37.382103556665115,
+          "state_description": "STANDING WAVE \u26a0\ufe0f"
+        },
+        {
+          "band_name": "MID_RANGE",
+          "dominant_freq": 0.32833333333333337,
+          "amplitude": 34.58042206719254,
+          "activity_score": 34.58042206719254,
+          "state_description": "STANDING WAVE \u26a0\ufe0f"
+        },
+        {
+          "band_name": "HIGH_FREQ",
+          "dominant_freq": 8.583178346474984,
+          "amplitude": 0.5,
+          "activity_score": 0.5,
+          "state_description": "Drizzle"
+        },
+        {
+          "band_name": "ULTRA_HIGH",
+          "dominant_freq": 300.0,
+          "amplitude": 0.075,
+          "activity_score": 0.075,
+          "state_description": "Micro-Ripples"
+        }
       ],
       "volume_profile": [],
       "layering_score": 0.0,
-      "bot_class": "ACCUMULATION_BOT",
+      "bot_class": "WHALE_ACCUMULATOR",
       "confidence": 0.85
     },
     {
       "symbol": "ETHUSDT",
-      "timestamp": 1768743979.9364746,
-      "dominant_freqs": [
-        0.0016666666666666668,
-        4.838333333333334,
-        0.325
-      ],
-      "amplitudes": [
-        564.377824549984,
-        393.5668662141411,
-        362.4041615908332
+      "timestamp": 1768753882.9298365,
+      "spectrum_results": [
+        {
+          "band_name": "INFRA_LOW",
+          "dominant_freq": 0.0059722222222222225,
+          "amplitude": 44.65267445391013,
+          "activity_score": 44.65267445391013,
+          "state_description": "STANDING WAVE \u26a0\ufe0f"
+        },
+        {
+          "band_name": "MID_RANGE",
+          "dominant_freq": 1.24,
+          "amplitude": 48.81195128453159,
+          "activity_score": 48.81195128453159,
+          "state_description": "STANDING WAVE \u26a0\ufe0f"
+        },
+        {
+          "band_name": "HIGH_FREQ",
+          "dominant_freq": 32.83551718462397,
+          "amplitude": 0.5,
+          "activity_score": 0.5,
+          "state_description": "Drizzle"
+        },
+        {
+          "band_name": "ULTRA_HIGH",
+          "dominant_freq": 84800.0,
+          "amplitude": 0.9636363636363636,
+          "activity_score": 0.9636363636363636,
+          "state_description": "SINGULARITY \u269b\ufe0f"
+        }
       ],
       "volume_profile": [],
       "layering_score": 0.0,
-      "bot_class": "ACCUMULATION_BOT",
+      "bot_class": "MARKET_MAKER",
       "confidence": 0.85
     },
     {
       "symbol": "SOLUSDT",
-      "timestamp": 1768743979.9446456,
-      "dominant_freqs": [
-        0.0016666666666666668,
-        2.6583333333333337,
-        4.835
-      ],
-      "amplitudes": [
-        2103.716078140643,
-        1708.0317437453903,
-        1698.0599320072542
+      "timestamp": 1768753882.9518938,
+      "spectrum_results": [
+        {
+          "band_name": "INFRA_LOW",
+          "dominant_freq": 0.03138888888888889,
+          "amplitude": 56.32275610199158,
+          "activity_score": 56.32275610199158,
+          "state_description": "STANDING WAVE \u26a0\ufe0f"
+        },
+        {
+          "band_name": "MID_RANGE",
+          "dominant_freq": 1.1783333333333335,
+          "amplitude": 63.523110981606344,
+          "activity_score": 63.523110981606344,
+          "state_description": "STANDING WAVE \u26a0\ufe0f"
+        },
+        {
+          "band_name": "HIGH_FREQ",
+          "dominant_freq": 7.461501827694934,
+          "amplitude": 0.5,
+          "activity_score": 0.5,
+          "state_description": "Drizzle"
+        },
+        {
+          "band_name": "ULTRA_HIGH",
+          "dominant_freq": 8200.0,
+          "amplitude": 0.8631578947368421,
+          "activity_score": 0.8631578947368421,
+          "state_description": "SINGULARITY \u269b\ufe0f"
+        }
       ],
       "volume_profile": [],
       "layering_score": 0.0,
-      "bot_class": "ACCUMULATION_BOT",
+      "bot_class": "MARKET_MAKER",
       "confidence": 0.85
     },
     {
       "symbol": "ADAUSDT",
-      "timestamp": 1768743979.9487705,
-      "dominant_freqs": [
-        0.22,
-        0.8566666666666667,
-        4.605
-      ],
-      "amplitudes": [
-        170225.8942141577,
-        169021.34043209086,
-        168264.4062410143
+      "timestamp": 1768753882.9600415,
+      "spectrum_results": [
+        {
+          "band_name": "INFRA_LOW",
+          "dominant_freq": 0.035972222222222225,
+          "amplitude": 51.559491779280364,
+          "activity_score": 51.559491779280364,
+          "state_description": "STANDING WAVE \u26a0\ufe0f"
+        },
+        {
+          "band_name": "MID_RANGE",
+          "dominant_freq": 2.52,
+          "amplitude": 47.131898224340766,
+          "activity_score": 47.131898224340766,
+          "state_description": "STANDING WAVE \u26a0\ufe0f"
+        },
+        {
+          "band_name": "HIGH_FREQ",
+          "dominant_freq": 1.5196229527223617,
+          "amplitude": 0.5,
+          "activity_score": 0.5,
+          "state_description": "Drizzle"
+        },
+        {
+          "band_name": "ULTRA_HIGH",
+          "dominant_freq": 1500.0,
+          "amplitude": 0.8333333333333334,
+          "activity_score": 0.8333333333333334,
+          "state_description": "SINGULARITY \u269b\ufe0f"
+        }
       ],
       "volume_profile": [],
       "layering_score": 0.0,
-      "bot_class": "MM_SPOOF",
+      "bot_class": "WHALE_ACCUMULATOR",
       "confidence": 0.85
     }
   ]

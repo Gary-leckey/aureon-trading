@@ -1370,8 +1370,21 @@ class AlpacaClient:
                     quantity = req
         except Exception:
             pass
-            
-        return self.place_order(symbol, quantity, side, type="market", position_intent=position_intent)
+        
+        # 🆕 Alpaca crypto trading TIF rules:
+        # - For fractional orders: must be 'day' or 'ioc'  
+        # - For USDT pairs: 'gtc' works but some assets not fractionable
+        # - For regular USD crypto: 'ioc' (instant) works best
+        is_crypto = "/" in symbol or (symbol.endswith("USD") and len(symbol) > 5)
+        is_usdt = "USDT" in symbol.upper()
+        
+        # Use 'ioc' for instant crypto fills, but 'gtc' for USDT pairs
+        if is_crypto:
+            tif = "gtc" if is_usdt else "ioc"
+        else:
+            tif = "gtc"
+        
+        return self.place_order(symbol, quantity, side, type="market", time_in_force=tif, position_intent=position_intent)
 
     def place_stop_loss_order(self, symbol: str, side: str, quantity: float, stop_price: float, limit_price: float = None) -> Dict[str, Any]:
         """

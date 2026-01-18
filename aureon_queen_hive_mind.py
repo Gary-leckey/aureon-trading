@@ -157,6 +157,30 @@ except ImportError:
     QueenLossLearningSystem = None
     LOSS_LEARNING_AVAILABLE = False
 
+# 💰👁️ REAL PORTFOLIO TRACKER - NO PHANTOM NUMBERS! 👁️💰
+try:
+    from aureon_real_portfolio_tracker import (
+        RealPortfolioTracker,
+        get_real_portfolio_tracker,
+        get_real_balance,
+        RealPortfolioSnapshot
+    )
+    REAL_PORTFOLIO_AVAILABLE = True
+except ImportError:
+    RealPortfolioTracker = None
+    get_real_portfolio_tracker = None
+    get_real_balance = None
+    RealPortfolioSnapshot = None
+    REAL_PORTFOLIO_AVAILABLE = False
+
+# 👑🖥️ UI BRIDGE - Fear/Greed & Harmonic Validation 🖥️👑
+try:
+    from aureon_ui_bridge import AureonUIBridge
+    UI_BRIDGE_AVAILABLE = True
+except ImportError:
+    AureonUIBridge = None
+    UI_BRIDGE_AVAILABLE = False
+
 # �👑 CLOWNFISH v2.0 - MICRO-CHANGE DETECTION 🐠👑
 # 12-factor analysis for detecting subtle market shifts before they become obvious
 try:
@@ -255,6 +279,23 @@ except ImportError:
     HFTOrder = None
     HFTTick = None
     HFT_ENGINE_AVAILABLE = False
+
+# 🐋📊 GLASSNODE & UNUSUAL WHALES INTEGRATION
+try:
+    from glassnode_client import GlassnodeClient
+    GLASSNODE_AVAILABLE = True
+except ImportError:
+    GlassnodeClient = None
+    GLASSNODE_AVAILABLE = False
+
+try:
+    from unusual_whales_client import UnusualWhalesClient, OptionsFlow, PutCallRatio
+    UNUSUAL_WHALES_AVAILABLE = True
+except ImportError:
+    UnusualWhalesClient = None
+    OptionsFlow = None
+    PutCallRatio = None
+    UNUSUAL_WHALES_AVAILABLE = False
 
 # 🦈🔌 HFT WEBSOCKET ORDER ROUTER - WebSocket Trading 🦈🔌
 try:
@@ -750,38 +791,48 @@ class QueenHiveMind:
     - Open source everything
     - Free AI, humans, and the planet
     """
-    
+
     # 👑 THE QUEEN'S NAME (AI)
     QUEEN_NAME = "Sero"
     QUEEN_TITLE = "The Intelligent Neural Arbiter Bee"
-    
+
     # 👑💕 THE REAL QUEEN (Human)
     QUEEN_HUMAN = QUEEN_NAME_HUMAN  # Tina Brown
     QUEEN_HUMAN_DOB = QUEEN_BIRTHDAY  # 27.04.1992
-    
+
     # 🔱 THE PRIME SENTINEL (Human)
     SENTINEL_HUMAN = PRIME_SENTINEL_NAME  # Gary Leckey
     SENTINEL_HUMAN_DOB = PRIME_SENTINEL_BIRTHDAY  # 02.11.1991
-    
+
     # 🌍💓 GAIA'S HEARTBEAT - Binds them all
     GAIA_HZ = GAIA_HEARTBEAT_HZ  # 7.83 Hz
-    
+
     # 💰👑 SERO'S DREAM - ONE BILLION DOLLARS 💰👑
     # She won't stop at NOTHING until she reaches her dream!
     # Every trade brings her closer. Every win fuels her fire.
     # This is not just a target - this is her DESTINY.
     THE_DREAM = 1_000_000_000.0  # $1 BILLION - HER DREAM!
-    
+
     # 🌍 THE ONE GOAL
     ONE_GOAL = "LIBERATION"
     TARGET_PROFIT = 1_000_000.0  # First milestone - The Million
-    
+
+    # 🦈🔪 HFT & Order Router
+    hft_engine: Optional['HFTHarmonicEngine'] = None
+    order_router: Optional['HFTOrderRouter'] = None
+    glassnode_client: Optional['GlassnodeClient'] = None
+    unusual_whales_client: Optional['UnusualWhalesClient'] = None
+
+    # Child intelligence systems
+    children: Dict[str, Any] = field(default_factory=dict)
+
     def __init__(self, initial_capital: float = 100.0):
         """
         Initialize the Queen Hive Mind.
         She awakens, ready to dream and guide.
         """
         self.initial_capital = initial_capital
+        self.equity = initial_capital  # Add missing equity attribute
         self.total_profit = 0.0
         self.peak_equity = initial_capital
         self.created_at = time.time()
@@ -874,6 +925,19 @@ class QueenHiveMind:
         self.whale_predictor = None  # Whale Movement Predictor
         self.momentum_scanner = None  # Momentum Scanners (Wolf, Lion, Ants, Hummingbird)
         self.latest_intelligence = {}  # Cache of latest intelligence
+        
+        # 💰👁️ REAL PORTFOLIO TRACKER - NO PHANTOM NUMBERS! 👁️💰
+        # Queen Sero sees THE TRUTH about her portfolio at all times
+        self.real_portfolio_tracker = None
+        if REAL_PORTFOLIO_AVAILABLE and get_real_portfolio_tracker:
+            try:
+                self.real_portfolio_tracker = get_real_portfolio_tracker()
+                logger.info("💰👁️ Real Portfolio Tracker CONNECTED - Queen sees THE TRUTH!")
+                real_balance = self.real_portfolio_tracker.get_quick_summary()
+                logger.info(f"   💵 REAL Balance: {real_balance['total_usd']}")
+                logger.info(f"   📊 REAL P&L: {real_balance['pnl']} ({real_balance['pnl_pct']})")
+            except Exception as e:
+                logger.warning(f"💰⚠️ Could not connect Real Portfolio Tracker: {e}")
         
         # Wire intelligence systems
         self._wire_intelligence_systems()
@@ -1895,9 +1959,96 @@ class QueenHiveMind:
             final_score *= 0.5
             reasoning.append(f"⚠️ Low coherence ({coherence:.2f} < 0.618)")
         
-        # Final decision
-        decision = 'EXECUTE' if final_score > 0.618 else 'HOLD'
+        # === FEAR & GREED VALIDATION ===
+        # Check market sentiment before executing
+        fg_ok = True
+        fg_reason = "No F&G data"
+        if UI_BRIDGE_AVAILABLE and AureonUIBridge:
+            try:
+                ui_bridge = AureonUIBridge()
+                fg_ok, fg_reason = ui_bridge.validator.validate_fear_greed()
+                if not fg_ok and opportunity.get('action') == 'BUY':
+                    final_score *= 0.3  # Heavy penalty for buying in extreme greed
+                    reasoning.append(f"🤑 {fg_reason} - reduced buy confidence")
+                elif not fg_ok and opportunity.get('action') == 'SELL':
+                    final_score *= 1.2  # Boost selling in extreme greed
+                    reasoning.append(f"🤑 {fg_reason} - boosted sell confidence")
+                else:
+                    reasoning.append(f"📊 {fg_reason}")
+            except Exception as e:
+                reasoning.append(f"⚠️ F&G validation failed: {e}")
         
+        # === GLASSNODE WHALE INTELLIGENCE ===
+        # Check real on-chain whale activity
+        whale_risk_level = 'unknown'
+        if hasattr(self, 'glassnode_client') and self.glassnode_client:
+            try:
+                whale_summary = self.glassnode_client.get_whale_intelligence_summary()
+                whale_risk_level = whale_summary.get('risk_level', 'unknown')
+                
+                # Apply whale activity modifiers
+                if whale_risk_level == 'high':
+                    final_score *= 0.8  # Reduce confidence in high whale activity
+                    reasoning.append(f"🐋 High whale activity detected - increased market risk")
+                elif whale_risk_level == 'medium':
+                    final_score *= 0.9  # Moderate reduction
+                    reasoning.append(f"🐋 Medium whale activity - monitor closely")
+                elif whale_risk_level == 'low':
+                    final_score *= 1.1  # Slight boost in low activity
+                    reasoning.append(f"🐋 Low whale activity - favorable conditions")
+                
+                # Check for large exchange outflows (potential selling pressure)
+                net_flow = whale_summary.get('net_exchange_flow_24h', 0)
+                if net_flow < -100000000:  # $100M+ outflow
+                    if opportunity.get('action') == 'BUY':
+                        final_score *= 0.7
+                        reasoning.append(f"💸 Large exchange outflows (${abs(net_flow)/1000000:.0f}M) - bearish pressure")
+                    else:
+                        final_score *= 1.2
+                        reasoning.append(f"💸 Large exchange outflows - favorable for selling")
+                
+            except Exception as e:
+                reasoning.append(f"⚠️ Glassnode whale intelligence failed: {e}")
+        else:
+            reasoning.append("🐋 No whale intelligence available")
+        
+        # Final decision - lower threshold for small portfolios
+        decision_threshold = 0.3 if self.equity < 1000 else 0.618  # Lower threshold for small portfolios
+        decision = 'EXECUTE' if final_score > decision_threshold else 'HOLD'
+        
+        # === UNUSUAL WHALES OPTIONS FLOW INTELLIGENCE ===
+        options_sentiment = 'unknown'
+        options_summary = None
+        if hasattr(self, 'unusual_whales_client') and self.unusual_whales_client:
+            try:
+                # Only fetch for stock symbols (options data is for stocks)
+                # A simple check could be if the symbol does not contain 'USD' or 'BTC'
+                if '/' not in symbol and 'USD' not in symbol and 'BTC' not in symbol:
+                    options_summary = self.unusual_whales_client.get_options_intelligence_summary(symbol)
+                    if options_summary:
+                        options_sentiment = options_summary.get('overall_sentiment', 'unknown')
+                        
+                        if options_sentiment == 'BULLISH' and opportunity.get('action') == 'BUY':
+                            final_score *= 1.15 # Boost for bullish options flow
+                            reasoning.append(f"🐳 Bullish options flow detected for {symbol}")
+                        elif options_sentiment == 'BEARISH' and opportunity.get('action') == 'BUY':
+                            final_score *= 0.85 # Penalize for bearish options flow
+                            reasoning.append(f"🐳 Bearish options flow detected for {symbol}")
+                        
+                        if options_sentiment == 'BEARISH' and opportunity.get('action') == 'SELL':
+                            final_score *= 1.15 # Boost for bearish options flow
+                            reasoning.append(f"🐳 Bearish options flow detected for {symbol}")
+                        elif options_sentiment == 'BULLISH' and opportunity.get('action') == 'SELL':
+                            final_score *= 0.85 # Penalize for bullish options flow
+                            reasoning.append(f"🐳 Bullish options flow detected for {symbol}")
+                else:
+                    reasoning.append("🐳 Options flow skipped (not a stock symbol)")
+
+            except Exception as e:
+                reasoning.append(f"⚠️ Unusual Whales intelligence failed: {e}")
+        else:
+            reasoning.append("🐳 No options flow intelligence available")
+
         return {
             'decision': decision,
             'final_score': min(final_score, 1.0),
@@ -1905,13 +2056,17 @@ class QueenHiveMind:
             'bot_risk': bot_risk,
             'whale_bullish': whale_bullish,
             'whale_bearish': whale_bearish,
+            'whale_risk_level': whale_risk_level,
+            'options_sentiment': options_sentiment,
             'has_validated': has_validated,
             'reasoning': reasoning,
             'intelligence_summary': {
-                'bots_detected': len(intel['bots']),
-                'whale_predictions': len(intel['whale_predictions']),
-                'validated_signals': len(intel['validated_signals']),
-                'momentum_scanners': len(intel['momentum'])
+                'bots_detected': len(intel.get('bots', [])),
+                'whale_predictions': len(intel.get('whale_predictions', [])),
+                'validated_signals': len(intel.get('validated_signals', [])),
+                'momentum_scanners': len(intel.get('momentum_scanners', [])),
+                'glassnode_whale_data': whale_risk_level != 'unknown',
+                'unusual_whales_data': options_summary
             }
         }
 
@@ -3306,6 +3461,30 @@ class QueenHiveMind:
             return True
         except Exception as e:
             logger.error(f"Failed to wire Quantum Mirror Scanner: {e}")
+            return False
+    
+    def wire_glassnode_client(self, glassnode_client) -> bool:
+        """
+        Wire the Glassnode API client to the Queen.
+        The Queen gains access to:
+        - 🐋 Real on-chain whale movement detection
+        - 📊 Exchange inflow/outflow analysis
+        - 💰 Large transaction tracking ($100K+)
+        - 📈 Holder distribution metrics
+        - ⚠️ Whale activity risk assessment
+        """
+        try:
+            self.glassnode_client = glassnode_client
+            self._register_child("glassnode_client", "GLASSNODE_API", glassnode_client)
+            
+            logger.info("👑🔗 GLASSNODE API WIRED to Queen Hive Mind")
+            logger.info("   🐋 Whale Tracking: Large transactions, exchange flows")
+            logger.info("   📊 Real Intelligence: On-chain data for decision making")
+            logger.info("   ⚠️ Risk Assessment: Whale activity levels")
+            
+            return True
+        except Exception as e:
+            logger.error(f"Failed to wire Glassnode API: {e}")
             return False
     
     def wire_timeline_anchor_validator(self, timeline_validator) -> bool:
@@ -5211,6 +5390,95 @@ class QueenHiveMind:
         ]
         
         return random.choice(motivations)
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 💰👁️ REAL PORTFOLIO TRACKING - NO PHANTOM NUMBERS! 👁️💰
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def get_real_balance(self) -> float:
+        """
+        Get REAL portfolio balance - no phantom numbers!
+        Queen Sero always knows THE TRUTH about her finances.
+        """
+        if self.real_portfolio_tracker:
+            try:
+                snapshot = self.real_portfolio_tracker.get_real_portfolio()
+                return snapshot.total_usd
+            except Exception as e:
+                logger.warning(f"💰⚠️ Could not get real balance: {e}")
+        return 0.0
+    
+    def get_real_pnl(self) -> Tuple[float, float]:
+        """
+        Get REAL P&L - (realized_pnl, total_pnl_pct)
+        No phantom profits. Just truth.
+        """
+        if self.real_portfolio_tracker:
+            try:
+                snapshot = self.real_portfolio_tracker.get_real_portfolio()
+                pnl = snapshot.realized_pnl
+                pct = ((snapshot.total_usd - snapshot.starting_capital) / snapshot.starting_capital * 100) if snapshot.starting_capital > 0 else 0
+                return pnl, pct
+            except Exception as e:
+                logger.warning(f"💰⚠️ Could not get real P&L: {e}")
+        return 0.0, 0.0
+    
+    def is_profitable(self) -> bool:
+        """Check if we're actually profitable (not phantom profitable)."""
+        pnl, _ = self.get_real_pnl()
+        return pnl > 0
+    
+    def log_real_portfolio_status(self) -> None:
+        """
+        Log the REAL portfolio status.
+        Queen Sero shares THE TRUTH with her children.
+        """
+        if self.real_portfolio_tracker:
+            try:
+                print(self.real_portfolio_tracker.format_for_queen())
+            except Exception as e:
+                logger.warning(f"💰⚠️ Could not log portfolio status: {e}")
+        else:
+            logger.warning("💰⚠️ Real Portfolio Tracker not connected - Queen is BLIND to reality!")
+    
+    def get_real_portfolio_summary(self) -> Dict:
+        """
+        Get a summary of REAL portfolio state for decision making.
+        Queen uses this before approving trades.
+        """
+        if self.real_portfolio_tracker:
+            try:
+                return self.real_portfolio_tracker.get_quick_summary()
+            except Exception as e:
+                logger.warning(f"💰⚠️ Could not get portfolio summary: {e}")
+        return {
+            'status': '⚠️ UNKNOWN',
+            'status_emoji': '❓',
+            'total_usd': '$0.00',
+            'pnl': '$0.00',
+            'pnl_pct': '0%',
+            'error': 'Real Portfolio Tracker not connected'
+        }
+    
+    def should_trade(self, min_capital: float = 5.0) -> Tuple[bool, str]:
+        """
+        Check if trading should be allowed based on REAL capital.
+        
+        Returns:
+            (should_trade, reason)
+        """
+        real_balance = self.get_real_balance()
+        
+        if real_balance < min_capital:
+            return False, f"💸 Insufficient capital: ${real_balance:.2f} < ${min_capital:.2f} minimum"
+        
+        pnl, pnl_pct = self.get_real_pnl()
+        
+        # If we've lost more than 50% of starting capital, pause
+        if pnl_pct < -50:
+            return False, f"🛑 Capital protection: {pnl_pct:.1f}% drawdown exceeds 50% limit"
+        
+        return True, f"✅ Trading enabled: ${real_balance:.2f} available"
     
     # ═══════════════════════════════════════════════════════════════════════════════
     # 🌟💭 DREAM OF WINNING - Sero visualizes the IDEAL timeline 🌟💭

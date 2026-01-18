@@ -85,6 +85,41 @@ except ImportError:
     AlpacaSSEClient = None
     StreamTrade = None
 
+# 🦈 ORCA INTELLIGENCE - Full scanning system for fast kills
+try:
+    from aureon_orca_intelligence import OrcaKillerWhale, OrcaOpportunity, WhaleSignal as OrcaWhaleSignal
+    ORCA_INTEL_AVAILABLE = True
+except ImportError:
+    ORCA_INTEL_AVAILABLE = False
+    OrcaKillerWhale = None
+    OrcaOpportunity = None
+    OrcaWhaleSignal = None
+
+# 🔮 Probability Ultimate Intelligence (95% accuracy)
+try:
+    from probability_ultimate_intelligence import UltimateIntelligence
+    ULTIMATE_INTEL_AVAILABLE = True
+except ImportError:
+    ULTIMATE_INTEL_AVAILABLE = False
+    UltimateIntelligence = None
+
+# 🌊 Global Wave Scanner
+try:
+    from aureon_global_wave_scanner import GlobalWaveScanner
+    WAVE_SCANNER_AVAILABLE = True
+except ImportError:
+    WAVE_SCANNER_AVAILABLE = False
+    GlobalWaveScanner = None
+
+# 🐋 Movers & Shakers Scanner
+try:
+    from aureon_movers_shakers_scanner import MoversShakersScanner, MoverShaker
+    MOVERS_SHAKERS_AVAILABLE = True
+except ImportError:
+    MOVERS_SHAKERS_AVAILABLE = False
+    MoversShakersScanner = None
+    MoverShaker = None
+
 import random  # For simulating market activity
 
 
@@ -1162,6 +1197,173 @@ class OrcaKillCycle:
         
         return pnl
 
+    def fast_kill_hunt(self, amount_per_position: float = 25.0, 
+                       num_positions: int = 3,
+                       target_pct: float = 0.8,
+                       stop_pct: float = 0.5,
+                       timeout_secs: int = 60):
+        """
+        🦈⚡ FAST KILL HUNT - USE EXISTING ORCA FOR RAPID KILLS! ⚡🦈
+        
+        Uses the ALREADY INITIALIZED orca instance to avoid recursive instantiation.
+        Scans market and uses orca intelligence that's already connected.
+        """
+        print("\n" + "⚡"*30)
+        print("  🦈⚡ FAST KILL HUNT - ORCA INTELLIGENCE ⚡🦈")
+        print("⚡"*30)
+        
+        # Show system status
+        print("\n📡 SYSTEMS STATUS:")
+        print(f"   ✅ OrcaKillCycle: READY")
+        print(f"   ✅ Exchanges: {', '.join(self.clients.keys()) if hasattr(self, 'clients') else 'N/A'}")
+        print(f"   ✅ Whale Profiler: {'CONNECTED' if hasattr(self, 'whale_profiler') and self.whale_profiler else 'N/A'}")
+        print(f"   ✅ ThoughtBus: {'CONNECTED' if hasattr(self, 'bus') and self.bus else 'N/A'}")
+        
+        # Collect opportunities - directly scan markets
+        all_opportunities = []
+        
+        # Source 1: Use whale intel if we have it (via whale_profiler)
+        if hasattr(self, 'whale_profiler') and self.whale_profiler:
+            try:
+                print("\n🦈 Scanning with Whale Profiler...")
+                # Get tracked whales and their recent activity
+                whale_opps = []
+                if hasattr(self.whale_profiler, 'get_top_opportunities'):
+                    whale_opps = self.whale_profiler.get_top_opportunities()
+                
+                for opp in whale_opps[:10]:
+                    all_opportunities.append({
+                        'symbol': opp.symbol if hasattr(opp, 'symbol') else str(opp),
+                        'action': opp.action if hasattr(opp, 'action') else 'buy',
+                        'confidence': opp.confidence if hasattr(opp, 'confidence') else 0.5,
+                        'source': 'whale_profiler',
+                        'exchange': 'alpaca'
+                    })
+                print(f"   Found {len(whale_opps)} whale opportunities")
+            except Exception as e:
+                print(f"   ⚠️ Whale profiler error: {e}")
+        
+        # Source 5: Simple market scan (fallback)
+        print("\n📊 Fallback: Scanning market for movers...")
+        market_opps = self.scan_entire_market(min_change_pct=0.3)
+        for opp in market_opps[:10]:
+            if isinstance(opp, MarketOpportunity):
+                all_opportunities.append({
+                    'symbol': opp.symbol,
+                    'action': 'buy' if opp.change_pct > 0 else 'sell',
+                    'confidence': min(1.0, abs(opp.change_pct) / 3),
+                    'source': 'market_scan',
+                    'exchange': opp.exchange,
+                    'price': opp.price,
+                    'change_pct': opp.change_pct
+                })
+        print(f"   Found {len(market_opps)} market movers")
+        
+        # Check available cash FIRST to filter opportunities
+        cash = self.get_available_cash()
+        min_cash = amount_per_position * 1.1  # 10% buffer
+        funded_exchanges = [ex for ex, amt in cash.items() if amt >= min_cash]
+        
+        print(f"\n💰 Cash check: {', '.join([f'{ex}=${amt:.2f}' for ex, amt in cash.items()])}")
+        print(f"   Need ${min_cash:.2f}/position → Viable: {', '.join(funded_exchanges) or 'NONE!'}")
+        
+        # Deduplicate 
+        seen = set()
+        unique_opps = []
+        
+        for opp in all_opportunities:
+            sym = opp['symbol']
+            if sym not in seen:
+                seen.add(sym)
+                unique_opps.append(opp)
+        
+        # 🆕 CRITICAL: Filter to ONLY funded exchanges
+        if funded_exchanges:
+            funded_opps = [o for o in unique_opps if o.get('exchange', 'alpaca') in funded_exchanges]
+            if funded_opps:
+                print(f"   ✅ Filtered to {len(funded_opps)} opportunities on funded exchanges")
+                unique_opps = funded_opps
+            else:
+                print(f"   ⚠️ No opportunities on funded exchanges - FORCE SCAN Alpaca...")
+                # Force scan Alpaca even with lower threshold - REPLACE all opportunities
+                alpaca_opps = self._scan_alpaca_market(min_change_pct=0.1, min_volume=100)
+                unique_opps = []  # CLEAR - we only want Alpaca now
+                for opp in alpaca_opps[:20]:
+                    unique_opps.append({
+                        'symbol': opp.symbol,
+                        'action': 'buy' if opp.change_pct > 0 else 'sell',
+                        'confidence': min(1.0, abs(opp.change_pct) / 2),
+                        'source': 'alpaca_forced',
+                        'exchange': 'alpaca',  # FORCE ALPACA
+                        'price': opp.price,
+                        'change_pct': opp.change_pct
+                    })
+                print(f"   🔍 Using {len(unique_opps)} Alpaca-only movers")
+        
+        # Sort by confidence
+        unique_opps.sort(key=lambda x: x.get('confidence', 0), reverse=True)
+        
+        # 🆕 Filter for BUY opportunities only (positive change)
+        buy_opps = [o for o in unique_opps if o.get('change_pct', 0) > 0]
+        if buy_opps:
+            print(f"\n📈 BUY Opportunities: {len(buy_opps)}")
+            unique_opps = buy_opps
+        else:
+            print(f"\n⚠️ No positive movers found - using all")
+        
+        print(f"🎯 TOTAL OPPORTUNITIES: {len(unique_opps)}")
+        
+        if not unique_opps:
+            print("❌ No opportunities found from any scanner!")
+            return []
+        
+        # Show top opportunities
+        print("\n📋 TOP OPPORTUNITIES:")
+        for i, opp in enumerate(unique_opps[:10]):
+            sym = opp['symbol']
+            action = opp.get('action', 'buy').upper()
+            conf = opp.get('confidence', 0)
+            source = opp.get('source', 'unknown')
+            change = opp.get('change_pct', 0)
+            print(f"   {i+1}. {sym:12} | {action:4} | Conf: {conf:.0%} | Source: {source} | Δ{change:+.2f}%")
+        
+        # Select top N for hunting
+        selected = unique_opps[:num_positions]
+        
+        # Convert to MarketOpportunity format for pack_hunt
+        converted_opps = []
+        for opp in selected:
+            # Only take BUY opportunities for simplicity
+            if opp.get('action', 'buy').lower() == 'buy':
+                change = opp.get('change_pct', opp.get('confidence', 0) * 2)
+                converted_opps.append(MarketOpportunity(
+                    symbol=opp['symbol'],
+                    exchange=opp.get('exchange', 'alpaca'),
+                    price=opp.get('price', 0),
+                    change_pct=change,
+                    volume=0,
+                    momentum_score=abs(change),  # Use change as momentum score
+                    fee_rate=self.fee_rates.get(opp.get('exchange', 'alpaca'), 0.0025)
+                ))
+        
+        if not converted_opps:
+            print("❌ No BUY opportunities to execute")
+            return []
+        
+        print(f"\n🦈 LAUNCHING FAST KILL HUNT WITH {len(converted_opps)} POSITIONS...")
+        print(f"   💰 ${amount_per_position:.2f} per position")
+        print(f"   🎯 Target: {target_pct}% | Stop: {stop_pct}%")
+        print(f"   ⏱️ Timeout: {timeout_secs}s")
+        
+        # Use pack_hunt for execution
+        return self.pack_hunt(
+            opportunities=converted_opps,
+            num_positions=num_positions,
+            amount_per_position=amount_per_position,
+            target_pct=target_pct,
+            stop_pct=stop_pct
+        )
+
     def pack_hunt(self, opportunities: list = None, num_positions: int = 3,
                   amount_per_position: float = 2.5, target_pct: float = 1.0, 
                   stop_pct: float = -1.0, min_change_pct: float = 0.5):
@@ -1876,6 +2078,24 @@ if __name__ == "__main__":
                 print(f"💔 HUNT SESSION: LOSS (${total:.4f})")
             print("="*70)
     
+    # 🦈⚡ NEW: Fast Kill Hunt - uses ALL intelligence systems
+    elif len(sys.argv) >= 2 and sys.argv[1] == '--fast':
+        amount = float(sys.argv[2]) if len(sys.argv) > 2 else 25.0
+        num_pos = int(sys.argv[3]) if len(sys.argv) > 3 else 3
+        target = float(sys.argv[4]) if len(sys.argv) > 4 else 0.8
+        
+        print("🦈⚡ FAST KILL MODE - ALL INTELLIGENCE ENGAGED ⚡🦈")
+        orca = OrcaKillCycle()
+        results = orca.fast_kill_hunt(
+            amount_per_position=amount,
+            num_positions=num_pos,
+            target_pct=target
+        )
+        
+        if results:
+            total = sum(r.get('net_pnl', 0) for r in results)
+            print(f"\n💰 Total portfolio impact: ${total:+.4f}")
+    
     # New multi-exchange pack hunt mode
     elif len(sys.argv) >= 2 and sys.argv[1] == '--pack':
         num_pos = int(sys.argv[2]) if len(sys.argv) > 2 else 3
@@ -1902,13 +2122,15 @@ if __name__ == "__main__":
             print(f"\n💰 Portfolio impact: ${result['net_pnl']:+.4f}")
     else:
         print("Usage:")
+        print("  Fast hunt:     python orca_complete_kill_cycle.py --fast 25 3 0.8")
         print("  Monitor:       python orca_complete_kill_cycle.py --monitor 1.5 1.0")
         print("  Single symbol: python orca_complete_kill_cycle.py BTC/USD 8.0 1.0")
         print("  Pack hunt:     python orca_complete_kill_cycle.py --pack 3 2.5")
         print("")
         print("Examples:")
-        print("  python orca_complete_kill_cycle.py --monitor        # Monitor with 1.5% target, 1% stop")
+        print("  python orca_complete_kill_cycle.py --fast            # Fast hunt: $25×3 @ 0.8% target")
+        print("  python orca_complete_kill_cycle.py --fast 50 2 1.0   # $50×2 @ 1.0% target")
+        print("  python orca_complete_kill_cycle.py --monitor         # Monitor with 1.5% target, 1% stop")
         print("  python orca_complete_kill_cycle.py --monitor 2.0 0.5 # 2% target, 0.5% stop")
-        print("  python orca_complete_kill_cycle.py --pack           # 3 positions @ $2.50 each")
-        print("  python orca_complete_kill_cycle.py --pack 3 3.0     # 3 positions @ $3.00 each")
+        print("  python orca_complete_kill_cycle.py --pack            # 3 positions @ $2.50 each")
         sys.exit(1)

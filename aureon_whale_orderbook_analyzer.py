@@ -127,6 +127,32 @@ class WhaleOrderbookAnalyzer:
             self._thread.join(timeout=2.0)
         logger.info("🐋 WhaleOrderbookAnalyzer stopped")
 
+    def _init_market_connections(self):
+        """Initialize connections to various exchange clients."""
+        if KRAKEN_AVAILABLE and KrakenClient:
+            try:
+                self.kraken_client = KrakenClient()
+                logger.info("WhaleOrderbookAnalyzer: Kraken client initialized.")
+            except Exception as e:
+                logger.error(f"Failed to initialize Kraken client: {e}")
+
+        if BINANCE_WS_AVAILABLE and BinanceWebSocketClient:
+            try:
+                self.binance_ws = BinanceWebSocketClient()
+                # Construct stream names like 'btcusdt@depth5'
+                streams = [f"{s.lower().replace('/', '')}@depth5" for s in self.poll_symbols]
+                self.binance_ws.start(streams=streams)
+                logger.info("WhaleOrderbookAnalyzer: Binance WebSocket client started.")
+            except Exception as e:
+                logger.error(f"Failed to initialize Binance WebSocket client: {e}")
+
+        if CAPITAL_AVAILABLE and CapitalClient:
+            try:
+                self.capital_client = CapitalClient()
+                logger.info("WhaleOrderbookAnalyzer: Capital.com client initialized.")
+            except Exception as e:
+                logger.error(f"Failed to initialize Capital.com client: {e}")
+
     def _run_loop(self) -> None:
         while not self._stop.is_set():
             start = time.time()
