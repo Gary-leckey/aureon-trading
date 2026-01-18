@@ -1638,9 +1638,10 @@ if __name__ == "__main__":
         hunt_validations = []  # Track successful hunts
         whale_update_counter = 0  # Only update whale intel every 5 ticks
         whale_signals_cache: Dict[str, WhaleSignal] = {}
+        should_exit = False  # Flag to control loop exit
         
         try:
-            while positions:
+            while positions and not should_exit:
                 display_lines = []
                 whale_update_counter += 1
                 
@@ -1779,33 +1780,67 @@ if __name__ == "__main__":
                 time.sleep(0.2)  # Slightly slower for readability
                 
         except KeyboardInterrupt:
-            print("\n\n🛑 USER ABORT - Closing all positions...")
-            # Stop SSE streaming
-            if sse_client:
-                try:
-                    sse_client.stop()
-                    print("   📡 Live stream stopped")
-                except Exception:
-                    pass
-            for pos in positions:
-                try:
-                    sell_order = pos.client.place_market_order(symbol=pos.symbol, side='sell', quantity=pos.entry_qty)
-                    if sell_order:
-                        fee_rate = orca.fee_rates.get(pos.exchange, 0.0025)
-                        sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
-                        entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
-                        final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
-                        final_pnl = final_exit - entry_cost
-                        results.append({
-                            'symbol': pos.symbol,
-                            'exchange': pos.exchange,
-                            'reason': 'USER_ABORT',
-                            'net_pnl': final_pnl,
-                            'success': final_pnl > 0
-                        })
-                        print(f"   Closed {pos.symbol}: ${final_pnl:+.4f}")
-                except Exception as e:
-                    print(f"   ⚠️ Error closing {pos.symbol}: {e}")
+            print("\n\n⚠️  INTERRUPT DETECTED!")
+            print("="*60)
+            print("🦈 ORCA SAFETY CHECK - What do you want to do?")
+            print("="*60)
+            print("  [1] CLOSE ALL positions and exit")
+            print("  [2] KEEP positions open and just exit monitor")
+            print("  [3] RESUME monitoring (cancel interrupt)")
+            print("="*60)
+            
+            try:
+                choice = input("\n👉 Enter choice (1/2/3) [default=2 KEEP]: ").strip()
+            except EOFError:
+                # Non-interactive mode (piped input) - default to KEEP
+                choice = "2"
+            
+            if choice == "1":
+                print("\n🛑 CONFIRMED: Closing all positions...")
+                # Stop SSE streaming
+                if sse_client:
+                    try:
+                        sse_client.stop()
+                        print("   📡 Live stream stopped")
+                    except Exception:
+                        pass
+                for pos in positions:
+                    try:
+                        sell_order = pos.client.place_market_order(symbol=pos.symbol, side='sell', quantity=pos.entry_qty)
+                        if sell_order:
+                            fee_rate = orca.fee_rates.get(pos.exchange, 0.0025)
+                            sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
+                            entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
+                            final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
+                            final_pnl = final_exit - entry_cost
+                            results.append({
+                                'symbol': pos.symbol,
+                                'exchange': pos.exchange,
+                                'reason': 'USER_ABORT',
+                                'net_pnl': final_pnl,
+                                'success': final_pnl > 0
+                            })
+                            print(f"   Closed {pos.symbol}: ${final_pnl:+.4f}")
+                    except Exception as e:
+                        print(f"   ⚠️ Error closing {pos.symbol}: {e}")
+                should_exit = True  # Exit the loop after closing
+            
+            elif choice == "3":
+                print("\n🔄 Resuming monitor... (Ctrl+C again to see options)")
+                # Don't set should_exit, just continue the loop
+            
+            else:  # Default: choice == "2" or anything else
+                print("\n✅ KEEPING positions open - exiting monitor only")
+                print("   Your positions are still active on the exchange!")
+                if sse_client:
+                    try:
+                        sse_client.stop()
+                        print("   📡 Live stream stopped")
+                    except Exception:
+                        pass
+                # Don't close positions, just exit cleanly
+                results = []  # Clear results so no "failed" report
+                should_exit = True  # Exit the loop
         
         # Hunt Validation Summary
         if results:
