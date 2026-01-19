@@ -426,6 +426,13 @@ class WarRoomDisplay:
             'best_opportunity': None,
             'last_scan': None,
         }
+        # 🦈🔍 Predator Detection stats
+        self.predator_data = {
+            'threat_level': 'green',
+            'front_run_rate': 0.0,
+            'top_predator': None,
+            'strategy_decay': False,
+        }
         
     def _create_layout(self) -> Layout:
         """Create the war room layout."""
@@ -585,6 +592,24 @@ class WarRoomDisplay:
             if opt.get('positions'):
                 intel.add_row(Text(f"  📈 {len(opt['positions'])} option positions"))
         
+        # 🦈🔍 Predator Detection Stats
+        if hasattr(self, 'predator_data') and self.predator_data:
+            intel.add_row("")
+            intel.add_row(Text("🦈🔍 PREDATOR DETECTION", style="bold red"))
+            intel.add_row("")
+            pd = self.predator_data
+            threat = pd.get('threat_level', 'green')
+            threat_emoji = {"green": "🟢", "yellow": "🟡", "orange": "🟠", "red": "🔴"}.get(threat, "⚪")
+            threat_color = "green" if threat == "green" else "yellow" if threat == "yellow" else "red"
+            intel.add_row(Text(f"  Threat: {threat_emoji} [{threat_color}]{threat.upper()}[/]"))
+            front_run = pd.get('front_run_rate', 0) * 100
+            fr_color = "green" if front_run < 15 else "yellow" if front_run < 30 else "red"
+            intel.add_row(Text(f"  Front-Run: [{fr_color}]{front_run:.0f}%[/]"))
+            if pd.get('top_predator'):
+                intel.add_row(Text(f"  👁️ Hunter: {pd['top_predator'][:12]}"))
+            if pd.get('strategy_decay'):
+                intel.add_row(Text("  ⚠️ DECAY DETECTED", style="bold red"))
+        
         return Panel(intel, title="[bold yellow]🎯 INTELLIGENCE[/]", border_style="yellow")
     
     def _build_footer(self) -> Panel:
@@ -693,6 +718,18 @@ class WarRoomDisplay:
         if best_opportunity is not None:
             self.options_data['best_opportunity'] = best_opportunity
         self.options_data['last_scan'] = time.time()
+    
+    def update_predator(self, threat_level: str = None, front_run_rate: float = None,
+                        top_predator: str = None, strategy_decay: bool = None):
+        """Update predator detection data."""
+        if threat_level is not None:
+            self.predator_data['threat_level'] = threat_level
+        if front_run_rate is not None:
+            self.predator_data['front_run_rate'] = front_run_rate
+        if top_predator is not None:
+            self.predator_data['top_predator'] = top_predator
+        if strategy_decay is not None:
+            self.predator_data['strategy_decay'] = strategy_decay
     
     def increment_cycle(self):
         """Increment cycle counter."""
@@ -1597,6 +1634,19 @@ class OrcaKillCycle:
         
         # HFT Harmonic Engine - Already wired above (section 16), just set reference
         # self.hft_engine is already set above
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 🦈🔍 PREDATOR DETECTION SYSTEM - WHO'S HUNTING WHO?
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # 28. Predator Detection (front-run detection, strategy decay, stalking detection)
+        self.predator_detector = None
+        try:
+            from orca_predator_detection import OrcaPredatorDetector
+            self.predator_detector = OrcaPredatorDetector()
+            print("🦈🔍 Predator Detection: WIRED! (Front-run + stalking detection)")
+        except Exception as e:
+            print(f"🦈🔍 Predator Detection: {e}")
         
         # HFT Order Router
         self.hft_order_router = None
@@ -2753,6 +2803,25 @@ class OrcaKillCycle:
                 print(f"⚠️ Trade logger error: {e}")
         
         print(f"   📝 TRACKED: {symbol} | Order: {order_id[:8]}... | Entry: ${fill_price:.6f} | Breakeven: ${breakeven_info['breakeven_price']:.6f} (+{breakeven_info['min_price_move_pct']:.2f}%)")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 🦈🔍 PREDATOR TRACKING - Record order for front-run detection
+        # ═══════════════════════════════════════════════════════════════════
+        if self.predator_detector:
+            try:
+                from orca_predator_detection import OrderEvent
+                order_event = OrderEvent(
+                    timestamp=time.time(),
+                    symbol=symbol,
+                    side='buy',
+                    price=fill_price,
+                    quantity=fill_qty,
+                    exchange=exchange,
+                    order_id=order_id
+                )
+                self.predator_detector.record_order(order_event)
+            except Exception as e:
+                pass  # Silent fail - don't break trading
         
         return tracking_data
     
@@ -5637,6 +5706,22 @@ class OrcaKillCycle:
                                         positions=opt_positions,
                                         best_opportunity=best_opp
                                     )
+                            except Exception:
+                                pass
+                        
+                        # 🦈🔍 PREDATOR DETECTION UPDATE - Who's hunting us?
+                        if self.predator_detector:
+                            try:
+                                report = self.predator_detector.generate_hunting_report()
+                                top_predator = None
+                                if report.top_predators:
+                                    top_predator = report.top_predators[0].firm_id
+                                warroom.update_predator(
+                                    threat_level=report.threat_level,
+                                    front_run_rate=report.front_run_rate,
+                                    top_predator=top_predator,
+                                    strategy_decay=report.strategy_decay_alert
+                                )
                             except Exception:
                                 pass
                             
