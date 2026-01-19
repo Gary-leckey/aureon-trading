@@ -549,6 +549,87 @@ class HistoricalManipulationHunter:
         """Get all events involving a specific entity"""
         return [e for e in self.events if entity_name in e.entities_involved]
     
+    def analyze_current_conditions(self, symbol: str = "", price_change_pct: float = 0.0,
+                                    volume: float = 0.0, momentum: float = 0.0) -> Optional[Dict]:
+        """
+        Analyze current market conditions against historical manipulation patterns.
+        
+        Returns pattern match if current conditions resemble historical events.
+        Used by Orca Kill Cycle for quantum scoring.
+        """
+        # Calculate current condition signature
+        is_crash_signature = price_change_pct < -10.0  # Major crash
+        is_bubble_pop = price_change_pct < -5.0 and volume > 1000000  # High volume selloff
+        is_pump = price_change_pct > 20.0  # Potential pump
+        is_coordinated = abs(price_change_pct) > 8.0 and volume > 500000  # Large coordinated move
+        
+        # Check for pattern matches
+        for event in self.events:
+            pattern = event.pattern_signature
+            
+            # 1929-style crash pattern: sudden contraction after expansion
+            if event.year == 1929 and is_crash_signature:
+                return {
+                    'pattern_name': 'Great Depression Pattern',
+                    'similarity': 0.7 + (abs(price_change_pct) / 50),
+                    'historical_outcome': 'MASSIVE_CRASH',
+                    'is_danger_pattern': True,
+                    'is_opportunity_pattern': False,
+                    'warning': '⚠️ 1929-style crash pattern detected! Exit positions!',
+                    'event': event.to_dict()
+                }
+            
+            # 2008-style crash pattern: coordinated selling
+            if event.year == 2008 and is_coordinated and price_change_pct < -3:
+                return {
+                    'pattern_name': 'Financial Crisis Pattern',
+                    'similarity': 0.65 + (abs(price_change_pct) / 30),
+                    'historical_outcome': 'SYSTEMIC_CRISIS',
+                    'is_danger_pattern': True,
+                    'is_opportunity_pattern': False,
+                    'warning': '⚠️ 2008-style coordinated dump detected! Reduce exposure!',
+                    'event': event.to_dict()
+                }
+            
+            # 2010 Flash Crash pattern: sudden HFT-driven crash
+            if event.year == 2010 and price_change_pct < -8.0:
+                return {
+                    'pattern_name': 'Flash Crash Pattern',
+                    'similarity': 0.75,
+                    'historical_outcome': 'RAPID_RECOVERY',
+                    'is_danger_pattern': True,  # Dangerous short term
+                    'is_opportunity_pattern': True,  # But recovers quickly
+                    'warning': '⚡ Flash crash pattern - may recover quickly!',
+                    'event': event.to_dict()
+                }
+            
+            # 2000 Dot-com pump & dump pattern
+            if event.year == 2000 and is_pump:
+                return {
+                    'pattern_name': 'Dot-com Bubble Pattern',
+                    'similarity': 0.6 + (price_change_pct / 50),
+                    'historical_outcome': 'BUBBLE_POP',
+                    'is_danger_pattern': True,  # Top signal
+                    'is_opportunity_pattern': False,
+                    'warning': '🎈 Dot-com style pump detected - potential bubble top!',
+                    'event': event.to_dict()
+                }
+            
+            # 2020 COVID crash pattern: sudden shock then V-recovery
+            if event.year == 2020 and is_crash_signature:
+                return {
+                    'pattern_name': 'COVID Crash Pattern',
+                    'similarity': 0.7,
+                    'historical_outcome': 'V_RECOVERY',
+                    'is_danger_pattern': False,  # Opportunity in disguise
+                    'is_opportunity_pattern': True,  # Buy the dip!
+                    'warning': '📈 COVID-style crash pattern - may see V-recovery!',
+                    'event': event.to_dict()
+                }
+        
+        # No concerning pattern detected
+        return None
+    
     def calculate_total_damage(self) -> Dict:
         """Calculate total civilizational damage across all events"""
         return {

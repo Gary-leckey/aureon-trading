@@ -61,6 +61,10 @@ NOISY_MODULES = [
     'AureonMemory',
     'PhantomFilter',
     'alpaca_fee_tracker',
+    'aureon_hnc_surge_detector',
+    'aureon_hnc_live_connector',
+    'aureon_historical_manipulation_hunter',
+    'HNCSim',
     'root',
 ]
 for mod in NOISY_MODULES:
@@ -402,6 +406,38 @@ except ImportError:
     stealth_order = None
     StealthConfig = None
 
+# 🌊🎶 HNC Surge Detector - Harmonic Nexus Core surge window detection
+try:
+    from aureon_hnc_surge_detector import HncSurgeDetector, SurgeWindow, SACRED_HARMONICS
+    HNC_SURGE_AVAILABLE = True
+except ImportError:
+    HNC_SURGE_AVAILABLE = False
+    HncSurgeDetector = None
+    SurgeWindow = None
+    SACRED_HARMONICS = None
+
+# 📡 HNC Live Connector - Live harmonic surge feed
+try:
+    from aureon_hnc_live_connector import HncLiveConnector
+    HNC_LIVE_AVAILABLE = True
+except ImportError:
+    HNC_LIVE_AVAILABLE = False
+    HncLiveConnector = None
+
+# 📜⚔️ Historical Manipulation Hunter - Track manipulation patterns across decades
+try:
+    from aureon_historical_manipulation_hunter import (
+        HistoricalManipulationHunter, 
+        HISTORICAL_EVENTS,
+        EventType
+    )
+    HISTORICAL_HUNTER_AVAILABLE = True
+except ImportError:
+    HISTORICAL_HUNTER_AVAILABLE = False
+    HistoricalManipulationHunter = None
+    HISTORICAL_EVENTS = None
+    EventType = None
+
 import random  # For simulating market activity
 
 
@@ -561,6 +597,8 @@ class WarRoomDisplay:
             ("🐋 Moby Dick", self.quantum_data.get('moby_dick', 0)),
             ("🌌 Stargate", self.quantum_data.get('stargate', 0)),
             ("🔮 Quantum Mirror", self.quantum_data.get('quantum_mirror', 0)),
+            ("🌊 HNC Surge", self.quantum_data.get('hnc_surge', 0)),
+            ("📜 Historical", self.quantum_data.get('historical', 0)),
         ]
         
         for name, score in quantum_status:
@@ -1773,6 +1811,46 @@ class OrcaKillCycle:
         except Exception as e:
             pass
         
+        # ═══════════════════════════════════════════════════════════════════
+        # 🌊🎶 HNC SURGE DETECTION - HARMONIC NEXUS CORE
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # 30. HNC Surge Detector - Identifies harmonic surge windows for optimal entries
+        self.hnc_surge_detector = None
+        self.hnc_active_surge = None  # Currently active surge window
+        if HNC_SURGE_AVAILABLE and HncSurgeDetector:
+            try:
+                # 100 samples/sec, 1024 sample analysis window
+                self.hnc_surge_detector = HncSurgeDetector(sample_rate=100, analysis_window_size=1024)
+                print("🌊🎶 HNC Surge Detector: WIRED! (Harmonic frequency surge detection)")
+            except Exception as e:
+                print(f"🌊🎶 HNC Surge Detector: {e}")
+        
+        # 31. HNC Live Connector - Real-time surge feed from WebSocket prices
+        self.hnc_live_connector = None
+        if HNC_LIVE_AVAILABLE and HncLiveConnector:
+            try:
+                # Connect to BTC, ETH, SOL for surge detection
+                symbols = ['BTC/USD', 'ETH/USD', 'SOL/USD']
+                self.hnc_live_connector = HncLiveConnector(symbols=symbols, poll_interval=0.5)
+                print("📡 HNC Live Connector: WIRED! (Real-time surge feed)")
+            except Exception as e:
+                print(f"📡 HNC Live Connector: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 📜⚔️ HISTORICAL MANIPULATION HUNTER - PATTERNS ACROSS DECADES
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # 32. Historical Manipulation Hunter - Correlate current activity with historical patterns
+        self.historical_hunter = None
+        self.historical_pattern_warning = None  # Active warning from history matching
+        if HISTORICAL_HUNTER_AVAILABLE and HistoricalManipulationHunter:
+            try:
+                self.historical_hunter = HistoricalManipulationHunter()
+                print("📜⚔️ Historical Hunter: WIRED! (125 years of manipulation patterns)")
+            except Exception as e:
+                print(f"📜⚔️ Historical Hunter: {e}")
+        
         # Audit trail for all executions
         self.audit_file = 'orca_execution_audit.jsonl'
         self.audit_enabled = True
@@ -2340,6 +2418,91 @@ class OrcaKillCycle:
             except Exception:
                 pass
         
+        # ═══════════════════════════════════════════════════════════════════
+        # 🌊🎶 HNC SURGE DETECTION - HARMONIC NEXUS CORE (NEW!)
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # 10. HNC Surge Detector - Detect harmonic resonance surge windows
+        if self.hnc_surge_detector:
+            try:
+                # Feed price data to the surge detector
+                self.hnc_surge_detector.add_price_tick(symbol, price)
+                
+                # Check for active surge window
+                surge = self.hnc_surge_detector.detect_surge(symbol)
+                if surge:
+                    result['hnc_surge_active'] = True
+                    result['hnc_surge_intensity'] = surge.intensity if hasattr(surge, 'intensity') else 0.7
+                    result['hnc_dominant_harmonic'] = surge.primary_harmonic if hasattr(surge, 'primary_harmonic') else 'Unknown'
+                    
+                    # SACRED FREQUENCY ALIGNMENT - Major boost for harmonic resonance!
+                    # Map primary harmonic name to frequency for boost calculation
+                    harmonic_boosts = {
+                        'MI - Transformation & Miracles': 1.25,  # 528 Hz Love frequency
+                        'Sun': 1.2,                               # 126.22 Hz Solar energy
+                        'SOL - Awakening Intuition': 1.18,       # 741 Hz Intuition
+                        'RE - Facilitating Change': 1.15,        # 417 Hz Change
+                        'LA - Returning to Spirit': 1.15,        # 852 Hz Spirit
+                        'Schumann Resonance': 1.2,               # 7.83 Hz Earth heartbeat
+                        'UT - Liberating Guilt': 1.12,           # 396 Hz Liberation
+                        'FA - Connecting Relationships': 1.12,   # 639 Hz Connection
+                        'Moon': 1.1,                             # 210.42 Hz Lunar
+                        'Earth Day': 1.1,                        # 194.18 Hz Earth
+                    }
+                    
+                    primary = surge.primary_harmonic if hasattr(surge, 'primary_harmonic') else ''
+                    boost = harmonic_boosts.get(primary, 1.1)  # Default 1.1x boost for any harmonic
+                    result['quantum_boost'] *= boost
+                    result['hnc_resonance'] = primary or 'HARMONIC_SURGE'
+                    
+                    self.hnc_active_surge = surge  # Store for War Room display
+                else:
+                    result['hnc_surge_active'] = False
+                    result['hnc_surge_intensity'] = 0.0
+                    result['hnc_resonance'] = 'NO_SURGE'
+                    self.hnc_active_surge = None
+            except Exception as e:
+                result['hnc_surge_active'] = False
+                result['hnc_resonance'] = 'ERROR'
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 📜⚔️ HISTORICAL MANIPULATION HUNTER - PATTERN WARNINGS (NEW!)
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # 11. Historical Manipulation Hunter - Check for historical pattern matches
+        if self.historical_hunter:
+            try:
+                # Analyze current market conditions against historical patterns
+                pattern_match = self.historical_hunter.analyze_current_conditions(
+                    symbol=symbol,
+                    price_change_pct=change_pct,
+                    volume=volume,
+                    momentum=momentum
+                )
+                
+                if pattern_match:
+                    result['historical_pattern'] = pattern_match.get('pattern_name', 'Unknown')
+                    result['historical_similarity'] = pattern_match.get('similarity', 0.0)
+                    result['historical_outcome'] = pattern_match.get('historical_outcome', 'unknown')
+                    
+                    # If historical pattern predicts crash/manipulation → REDUCE confidence
+                    if pattern_match.get('is_danger_pattern', False):
+                        result['quantum_boost'] *= 0.6  # Big reduction for danger!
+                        result['historical_warning'] = True
+                        self.historical_pattern_warning = pattern_match
+                    # If historical pattern predicts recovery/bull run → BOOST
+                    elif pattern_match.get('is_opportunity_pattern', False):
+                        result['quantum_boost'] *= 1.2
+                        result['historical_warning'] = False
+                    else:
+                        result['historical_warning'] = False
+                else:
+                    result['historical_pattern'] = None
+                    result['historical_warning'] = False
+            except Exception as e:
+                result['historical_pattern'] = None
+                result['historical_warning'] = False
+        
         # Cap the quantum boost at reasonable levels (raised for more systems)
         result['quantum_boost'] = max(0.4, min(2.0, result['quantum_boost']))
         
@@ -2461,8 +2624,39 @@ class OrcaKillCycle:
         else:
             print("🔮 Quantum Mirror: Not available")
         
+        # HNC Surge Detector (NEW!)
+        if self.hnc_surge_detector:
+            try:
+                # Check if active surge is stored
+                if self.hnc_active_surge:
+                    harmonic = self.hnc_active_surge.primary_harmonic if hasattr(self.hnc_active_surge, 'primary_harmonic') else 'Unknown'
+                    intensity = self.hnc_active_surge.intensity if hasattr(self.hnc_active_surge, 'intensity') else 0.5
+                    print(f"🌊🎶 HNC Surge: ACTIVE! {harmonic} | Intensity: {intensity:.0%}")
+                else:
+                    print("🌊🎶 HNC Surge: Monitoring (no active surge windows)")
+                wired_count += 1
+            except Exception as e:
+                print(f"🌊🎶 HNC Surge: Error - {e}")
+        else:
+            print("🌊🎶 HNC Surge Detector: Not available")
+        
+        # Historical Manipulation Hunter (NEW!)
+        if self.historical_hunter:
+            try:
+                # Check for active warnings
+                if self.historical_pattern_warning:
+                    pattern = self.historical_pattern_warning.get('pattern_name', 'Unknown')
+                    print(f"📜⚔️ Historical Hunter: ⚠️ WARNING - {pattern} pattern detected!")
+                else:
+                    print("📜⚔️ Historical Hunter: CLEAR (no danger patterns)")
+                wired_count += 1
+            except Exception as e:
+                print(f"📜⚔️ Historical Hunter: Error - {e}")
+        else:
+            print("📜⚔️ Historical Manipulation Hunter: Not available")
+        
         print("-"*70)
-        print(f"⚡ TOTAL QUANTUM SYSTEMS ACTIVE: {wired_count}/9 display | 25 total wired")
+        print(f"⚡ TOTAL QUANTUM SYSTEMS ACTIVE: {wired_count}/11 display | 32 total wired")
         print("="*70)
     
     # ═══════════════════════════════════════════════════════════════════════
@@ -2496,43 +2690,113 @@ class OrcaKillCycle:
         
         # ═══════════════════════════════════════════════════════════════════
         # 🌌 QUANTUM ENHANCEMENT - Apply luck field + LIMBO probability boost
+        # 🌊🎶 HNC SURGE + 📜⚔️ HISTORICAL MANIPULATION FILTER!
         # ═══════════════════════════════════════════════════════════════════
-        if self.luck_mapper or self.inception_engine:
-            print("\n🌌 Applying quantum intelligence scoring...")
-            blessed_count = 0
-            limbo_high_count = 0
-            
-            for opp in opportunities:
-                quantum = self.get_quantum_score(
-                    symbol=opp.symbol,
-                    price=opp.price,
-                    change_pct=opp.change_pct,
-                    volume=opp.volume,
-                    momentum=opp.momentum_score
-                )
-                
-                # Apply quantum boost to momentum score
-                original_score = opp.momentum_score
-                opp.momentum_score = original_score * quantum['quantum_boost']
-                
-                if quantum['is_blessed']:
-                    blessed_count += 1
-                if quantum['limbo_probability'] >= 0.7:
-                    limbo_high_count += 1
-            
-            if blessed_count > 0:
-                print(f"   🍀 BLESSED opportunities: {blessed_count}")
-            if limbo_high_count > 0:
-                print(f"   🎬 LIMBO high probability: {limbo_high_count}")
+        print("\n🌌 Applying FULL quantum intelligence scoring...")
+        print("   🌊🎶 HNC Surge Detection | 📜⚔️ Historical Pattern Filter")
+        blessed_count = 0
+        limbo_high_count = 0
+        hnc_surge_count = 0
+        historical_blocked = 0
+        historical_boosted = 0
         
-        # Sort by quantum-boosted momentum score (highest first)
-        opportunities.sort(key=lambda x: x.momentum_score, reverse=True)
+        # Track filtered opportunities (remove danger patterns!)
+        filtered_opportunities = []
         
-        print(f"\n🎯 Total opportunities: {len(opportunities)}")
+        for opp in opportunities:
+            quantum = self.get_quantum_score(
+                symbol=opp.symbol,
+                price=opp.price,
+                change_pct=opp.change_pct,
+                volume=opp.volume,
+                momentum=opp.momentum_score
+            )
+            
+            # ═══════════════════════════════════════════════════════════════
+            # 🚨 HISTORICAL DANGER CHECK - BLOCK DANGEROUS PATTERNS!
+            # ═══════════════════════════════════════════════════════════════
+            if quantum.get('historical_warning', False):
+                historical_blocked += 1
+                pattern = quantum.get('historical_pattern', 'Unknown')
+                print(f"   🚨 BLOCKED: {opp.symbol} - Historical danger pattern: {pattern}")
+                continue  # SKIP THIS OPPORTUNITY - History says NO!
+            
+            # Apply quantum boost to momentum score
+            original_score = opp.momentum_score
+            opp.momentum_score = original_score * quantum['quantum_boost']
+            
+            # ═══════════════════════════════════════════════════════════════
+            # 🌊🎶 HNC SURGE BOOST - Harmonic resonance = PRIORITY!
+            # ═══════════════════════════════════════════════════════════════
+            if quantum.get('hnc_surge_active', False):
+                hnc_surge_count += 1
+                resonance = quantum.get('hnc_resonance', 'SURGE')
+                intensity = quantum.get('hnc_surge_intensity', 0.7)
+                # Mark as HNC-blessed for priority selection
+                opp._hnc_surge = True
+                opp._hnc_resonance = resonance
+                print(f"   🌊🎶 HNC SURGE: {opp.symbol} | {resonance} | Intensity: {intensity:.0%}")
+            else:
+                opp._hnc_surge = False
+                opp._hnc_resonance = None
+            
+            # ═══════════════════════════════════════════════════════════════
+            # 📜 HISTORICAL OPPORTUNITY BOOST - Past predicts future!
+            # ═══════════════════════════════════════════════════════════════
+            if quantum.get('historical_pattern') and not quantum.get('historical_warning'):
+                historical_boosted += 1
+                pattern = quantum.get('historical_pattern', 'Unknown')
+                opp._historical_pattern = pattern
+                print(f"   📜 HISTORICAL BOOST: {opp.symbol} - Pattern: {pattern}")
+            else:
+                opp._historical_pattern = None
+            
+            if quantum['is_blessed']:
+                blessed_count += 1
+            if quantum['limbo_probability'] >= 0.7:
+                limbo_high_count += 1
+            
+            # Add to filtered list (passed danger check!)
+            filtered_opportunities.append(opp)
+        
+        # Replace original list with filtered (danger-free!) opportunities
+        opportunities = filtered_opportunities
+        
+        # Print intelligence summary
+        print(f"\n   🛡️ INTELLIGENCE SUMMARY:")
+        if blessed_count > 0:
+            print(f"      🍀 BLESSED by luck field: {blessed_count}")
+        if limbo_high_count > 0:
+            print(f"      🎬 LIMBO high probability: {limbo_high_count}")
+        if hnc_surge_count > 0:
+            print(f"      🌊🎶 HNC SURGE ACTIVE: {hnc_surge_count} (PRIORITY!)")
+        if historical_blocked > 0:
+            print(f"      🚨 BLOCKED by history: {historical_blocked} (Danger patterns!)")
+        if historical_boosted > 0:
+            print(f"      📜 BOOSTED by history: {historical_boosted} (Opportunity patterns!)")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 🌊🎶 PRIORITY SORT: HNC Surge opportunities FIRST!
+        # Then by quantum-boosted momentum score
+        # ═══════════════════════════════════════════════════════════════════
+        def priority_sort_key(opp):
+            """HNC surge = 1000 bonus, then momentum score"""
+            hnc_bonus = 1000 if getattr(opp, '_hnc_surge', False) else 0
+            historical_bonus = 100 if getattr(opp, '_historical_pattern', None) else 0
+            return hnc_bonus + historical_bonus + opp.momentum_score
+        
+        opportunities.sort(key=priority_sort_key, reverse=True)
+        
+        print(f"\n🎯 Total opportunities: {len(opportunities)} (after danger filter)")
         if opportunities:
-            print("\nTop 5 opportunities (quantum-enhanced):")
+            print("\n🏆 TOP OPPORTUNITIES (Quantum + HNC + Historical Enhanced):")
             for i, opp in enumerate(opportunities[:5]):
-                print(f"   {i+1}. {opp.symbol} ({opp.exchange}): {opp.change_pct:+.2f}% | Score: {opp.momentum_score:.2f}")
+                hnc_tag = "🌊🎶" if getattr(opp, '_hnc_surge', False) else ""
+                hist_tag = "📜" if getattr(opp, '_historical_pattern', None) else ""
+                resonance = getattr(opp, '_hnc_resonance', '') or ''
+                if resonance:
+                    resonance = f" [{resonance[:15]}]"
+                print(f"   {i+1}. {hnc_tag}{hist_tag} {opp.symbol} ({opp.exchange}): {opp.change_pct:+.2f}% | Score: {opp.momentum_score:.2f}{resonance}")
         
         return opportunities
     
@@ -3921,6 +4185,22 @@ class OrcaKillCycle:
                             pos.current_pnl = net_pnl
                             pos.current_pnl_pct = (net_pnl / entry_cost * 100) if entry_cost > 0 else 0
                             
+                            # ═════════════════════════════════════════════════════
+                            # 🌊🎶 HNC LIVE FEED - Feed price to surge detector!
+                            # ═════════════════════════════════════════════════════
+                            hnc_status = ""
+                            if self.hnc_surge_detector:
+                                try:
+                                    self.hnc_surge_detector.add_price_tick(pos.symbol, current)
+                                    surge = self.hnc_surge_detector.detect_surge(pos.symbol)
+                                    if surge:
+                                        resonance = surge.primary_harmonic if hasattr(surge, 'primary_harmonic') else 'SURGE'
+                                        hnc_status = f"🌊🎶 {resonance[:12]}"
+                                    else:
+                                        hnc_status = ""
+                                except:
+                                    pass
+                            
                             # Calculate progress to target
                             progress_pct = min(100, max(0, (current - pos.entry_price) / (pos.target_price - pos.entry_price) * 100))
                             progress_bar = "█" * int(progress_pct / 5) + "░" * (20 - int(progress_pct / 5))
@@ -3935,7 +4215,7 @@ class OrcaKillCycle:
                                 whale_conf = "🤖 Analyzing..."
                             
                             # Display position with progress bar
-                            print(f"\n🎯 POSITION {i+1}: {pos.symbol} ({pos.exchange.upper()})")
+                            print(f"\n🎯 POSITION {i+1}: {pos.symbol} ({pos.exchange.upper()}) {hnc_status}")
                             print(f"   💰 Entry: ${pos.entry_price:,.4f} | Current: ${current:,.4f} | Target: ${pos.target_price:,.4f}")
                             print(f"   📊 P&L: ${net_pnl:+.4f} ({pos.current_pnl_pct:+.2f}%) | Progress: [{progress_bar}] {progress_pct:.1f}%")
                             print(f"   {whale_status} | {whale_conf}")
@@ -3958,6 +4238,19 @@ class OrcaKillCycle:
                                     pos.ready_to_kill = True
                                     pos.kill_reason = 'MOMENTUM_PROFIT'
                                     print(f"\n   📈📈📈 TAKING PROFIT (momentum reversal) 📈📈📈")
+                            
+                            # ═════════════════════════════════════════════════════
+                            # 🌊🎶 HNC SURGE HOLD - RIDE THE HARMONIC WAVE!
+                            # If surge is active and we're in profit, EXTEND target!
+                            # ═════════════════════════════════════════════════════
+                            if hnc_status and pos.current_pnl > 0 and not pos.ready_to_kill:
+                                # Surge is active and we're in profit - EXTEND TARGET!
+                                original_target = pos.target_price
+                                surge_extension = 1.5  # Extend target by 50% during surge!
+                                extended_target = pos.entry_price + (original_target - pos.entry_price) * surge_extension
+                                if extended_target > pos.target_price:
+                                    pos.target_price = extended_target
+                                    print(f"   🌊🎶 HNC SURGE: Extended target to ${extended_target:,.4f}!")
                             
                             # EXIT if ready
                             if pos.ready_to_kill:

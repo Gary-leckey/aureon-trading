@@ -113,9 +113,9 @@ KrakenClient = safe_import('Kraken', 'kraken_client', 'KrakenClient')
 # Intelligence Systems
 print("  🧠 Loading Intelligence Systems...")
 ProbabilityUltimateIntelligence = safe_import('UltimateIntel', 'probability_ultimate_intelligence', 'ProbabilityUltimateIntelligence')
-OrcaIntelligence = safe_import('OrcaIntelligence', 'orca_intelligence', 'OrcaIntelligence')
+OrcaIntelligence = safe_import('OrcaIntelligence', 'aureon_orca_intelligence', 'OrcaKillerWhaleIntelligence')
 GlobalWaveScanner = safe_import('WaveScanner', 'aureon_global_wave_scanner', 'GlobalWaveScanner')
-MoversShakersScanner = safe_import('MoversShakers', 'aureon_movers_shakers', 'MoversShakersScanner')
+MoversShakersScanner = safe_import('MoversShakers', 'aureon_movers_shakers_scanner', 'MoversShakersScanner')
 
 # Whale & Bot Tracking
 print("  🐋 Loading Whale Intelligence...")
