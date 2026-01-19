@@ -120,6 +120,52 @@ except ImportError:
     MoversShakersScanner = None
     MoverShaker = None
 
+# 💰 AlpacaFeeTracker - Volume-tiered fee detection + spread tracking
+try:
+    from alpaca_fee_tracker import AlpacaFeeTracker
+    ALPACA_FEE_TRACKER_AVAILABLE = True
+except ImportError:
+    ALPACA_FEE_TRACKER_AVAILABLE = False
+    AlpacaFeeTracker = None
+
+# 📊 CostBasisTracker - FIFO cost basis + can_sell_profitably() check
+try:
+    from cost_basis_tracker import CostBasisTracker
+    COST_BASIS_TRACKER_AVAILABLE = True
+except ImportError:
+    COST_BASIS_TRACKER_AVAILABLE = False
+    CostBasisTracker = None
+
+# 🦈 OrcaKillExecutor - Position tracking with order IDs
+try:
+    from orca_kill_executor import OrcaPosition, OrcaKillExecutor
+    ORCA_EXECUTOR_AVAILABLE = True
+except ImportError:
+    ORCA_EXECUTOR_AVAILABLE = False
+    OrcaPosition = None
+    OrcaKillExecutor = None
+
+# 📝 TradeLogger - Full trade entry/exit logging
+try:
+    from trade_logger import TradeLogger, TradeEntry, TradeExit
+    TRADE_LOGGER_AVAILABLE = True
+except ImportError:
+    TRADE_LOGGER_AVAILABLE = False
+    TradeLogger = None
+    TradeEntry = None
+    TradeExit = None
+
+# 🪙 Penny Profit Calculator - Exact breakeven with fees/slippage/spread
+try:
+    from penny_profit_sim import calculate_penny_profit_threshold, EXCHANGE_FEES, SLIPPAGE_PCT, SPREAD_PCT
+    PENNY_PROFIT_AVAILABLE = True
+except ImportError:
+    PENNY_PROFIT_AVAILABLE = False
+    calculate_penny_profit_threshold = None
+    EXCHANGE_FEES = {'kraken': {'taker': 0.0026}, 'alpaca': {'taker': 0.0025}}
+    SLIPPAGE_PCT = 0.001
+    SPREAD_PCT = 0.0005
+
 import random  # For simulating market activity
 
 
@@ -759,6 +805,40 @@ class OrcaKillCycle:
         except Exception:
             pass
         
+        # ═══════════════════════════════════════════════════════════════════
+        # 💰 COST TRACKING SYSTEMS - KNOW EXACTLY WHEN TO SELL!
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # 10. Alpaca Fee Tracker (volume-tiered fees + spread tracking)
+        self.alpaca_fee_tracker = None
+        if ALPACA_FEE_TRACKER_AVAILABLE and AlpacaFeeTracker:
+            try:
+                self.alpaca_fee_tracker = AlpacaFeeTracker()
+                print("💰 Alpaca Fee Tracker: WIRED! (Volume tiers + spread)")
+            except Exception as e:
+                print(f"💰 Alpaca Fee Tracker: {e}")
+        
+        # 11. Cost Basis Tracker (FIFO cost basis + can_sell_profitably check)
+        self.cost_basis_tracker = None
+        if COST_BASIS_TRACKER_AVAILABLE and CostBasisTracker:
+            try:
+                self.cost_basis_tracker = CostBasisTracker()
+                print("📊 Cost Basis Tracker: WIRED! (FIFO + profit checks)")
+            except Exception as e:
+                print(f"📊 Cost Basis Tracker: {e}")
+        
+        # 12. Trade Logger (full entry/exit records with P&L)
+        self.trade_logger = None
+        if TRADE_LOGGER_AVAILABLE and TradeLogger:
+            try:
+                self.trade_logger = TradeLogger()
+                print("📝 Trade Logger: WIRED! (Entry/Exit tracking)")
+            except Exception as e:
+                print(f"📝 Trade Logger: {e}")
+        
+        # 13. Active positions with ORDER IDs and exact costs
+        self.tracked_positions: Dict[str, dict] = {}  # symbol -> {order_id, entry_price, entry_qty, entry_cost, entry_fee, breakeven_price}
+        
         # Whale intelligence via ThoughtBus
         self.bus = None
         self.whale_signal = 'neutral'
@@ -1002,6 +1082,208 @@ class OrcaKillCycle:
                 cash['kraken'] = 5.0 if test_mode else 0.0
         
         return cash
+        
+    def calculate_exact_breakeven(self, entry_price: float, quantity: float, exchange: str = 'alpaca') -> Dict:
+        """
+        🎯 EXACT BREAKEVEN CALCULATION - WITH ALL COSTS!
+        
+        Accounts for:
+        - Entry fee (taker)
+        - Exit fee (taker)
+        - Slippage (both sides)
+        - Spread cost
+        
+        Returns dict with:
+        - entry_cost: Total cost to enter position
+        - entry_fee: Fee paid on entry
+        - breakeven_price: Minimum exit price to not lose money
+        - target_price_1pct: Price for 1% profit after all costs
+        """
+        # Get exchange-specific fees
+        if PENNY_PROFIT_AVAILABLE and calculate_penny_profit_threshold:
+            threshold = calculate_penny_profit_threshold(
+                trade_size=entry_price * quantity,
+                exchange=exchange,
+                use_maker=False  # Assume taker (worst case)
+            )
+            # Penny profit calculator gives us exact breakeven multiplier
+            breakeven_multiplier = threshold.get('breakeven_price_multiplier', 1.006)  # Default ~0.6%
+            min_price_move_pct = threshold.get('min_price_move_pct', 0.6)
+            total_costs = threshold.get('total_costs', 0)
+        else:
+            # Fallback calculation
+            fee_rate = EXCHANGE_FEES.get(exchange, {}).get('taker', 0.0026)
+            slippage = SLIPPAGE_PCT
+            spread = SPREAD_PCT
+            
+            # Round-trip costs
+            total_cost_pct = (fee_rate * 2) + (slippage * 2) + (spread * 2)  # ~0.7%
+            breakeven_multiplier = 1 + total_cost_pct
+            min_price_move_pct = total_cost_pct * 100
+            total_costs = entry_price * quantity * total_cost_pct
+        
+        # Calculate costs
+        notional = entry_price * quantity
+        fee_rate = self.fee_rates.get(exchange, 0.0025)
+        entry_fee = notional * fee_rate
+        entry_cost = notional + entry_fee
+        
+        # Breakeven price = entry_price × breakeven_multiplier
+        breakeven_price = entry_price * breakeven_multiplier
+        
+        # Target prices for various profit levels (after ALL costs)
+        target_1pct = breakeven_price * 1.01  # 1% profit after costs
+        target_half_pct = breakeven_price * 1.005  # 0.5% profit after costs
+        
+        return {
+            'entry_price': entry_price,
+            'quantity': quantity,
+            'notional': notional,
+            'entry_fee': entry_fee,
+            'entry_cost': entry_cost,
+            'total_round_trip_costs': total_costs,
+            'min_price_move_pct': min_price_move_pct,
+            'breakeven_multiplier': breakeven_multiplier,
+            'breakeven_price': breakeven_price,
+            'target_half_pct': target_half_pct,
+            'target_1pct': target_1pct,
+        }
+    
+    def track_buy_order(self, symbol: str, order_result: dict, exchange: str = 'alpaca') -> dict:
+        """
+        📝 Track a buy order with all details needed to know when to sell.
+        
+        Call this AFTER a successful buy order to store:
+        - Order ID
+        - Entry price (actual fill price)
+        - Quantity
+        - Entry cost (including fee)
+        - Exact breakeven price
+        """
+        order_id = order_result.get('id', order_result.get('order_id', order_result.get('txid', [str(time.time())])))
+        if isinstance(order_id, list):
+            order_id = order_id[0]
+        
+        fill_price = float(order_result.get('filled_avg_price', order_result.get('avg_price', order_result.get('price', 0))))
+        fill_qty = float(order_result.get('filled_qty', order_result.get('qty', order_result.get('volume', 0))))
+        
+        if fill_price == 0 or fill_qty == 0:
+            print(f"⚠️ Cannot track order - missing fill price or qty: {order_result}")
+            return {}
+        
+        # Calculate exact breakeven
+        breakeven_info = self.calculate_exact_breakeven(fill_price, fill_qty, exchange)
+        
+        # Store in tracked positions
+        tracking_data = {
+            'symbol': symbol,
+            'exchange': exchange,
+            'order_id': order_id,
+            'entry_price': fill_price,
+            'entry_qty': fill_qty,
+            'entry_cost': breakeven_info['entry_cost'],
+            'entry_fee': breakeven_info['entry_fee'],
+            'breakeven_price': breakeven_info['breakeven_price'],
+            'target_half_pct': breakeven_info['target_half_pct'],
+            'target_1pct': breakeven_info['target_1pct'],
+            'min_price_move_pct': breakeven_info['min_price_move_pct'],
+            'entry_time': time.time(),
+        }
+        
+        self.tracked_positions[symbol] = tracking_data
+        
+        # Also record in cost basis tracker if available
+        if self.cost_basis_tracker:
+            try:
+                self.cost_basis_tracker.set_entry_price(
+                    symbol=symbol,
+                    price=fill_price,
+                    quantity=fill_qty,
+                    exchange=exchange,
+                    fee=breakeven_info['entry_fee']
+                )
+            except Exception as e:
+                print(f"⚠️ Cost basis tracker error: {e}")
+        
+        # Log to trade logger if available
+        if self.trade_logger and TradeEntry:
+            try:
+                entry = TradeEntry(
+                    timestamp=datetime.now().isoformat(),
+                    symbol=symbol,
+                    side='BUY',
+                    exchange=exchange,
+                    entry_price=fill_price,
+                    entry_time=time.time(),
+                    quantity=fill_qty,
+                    entry_value=breakeven_info['entry_cost'],
+                    coherence=0.0,
+                    dominant_node='orca',
+                    hnc_frequency=0.0,
+                    hnc_is_harmonic=True,
+                    probability_score=0.95,
+                    imperial_probability=0.95,
+                    cosmic_phase='hunt',
+                    earth_coherence=0.5,
+                    gates_passed=3
+                )
+                self.trade_logger.log_entry(entry)
+            except Exception as e:
+                print(f"⚠️ Trade logger error: {e}")
+        
+        print(f"   📝 TRACKED: {symbol} | Order: {order_id[:8]}... | Entry: ${fill_price:.6f} | Breakeven: ${breakeven_info['breakeven_price']:.6f} (+{breakeven_info['min_price_move_pct']:.2f}%)")
+        
+        return tracking_data
+    
+    def can_sell_profitably(self, symbol: str, current_price: float) -> Tuple[bool, dict]:
+        """
+        🎯 CHECK IF WE CAN SELL AT A PROFIT!
+        
+        Returns (can_sell, info) where:
+        - can_sell: True if current_price > breakeven_price
+        - info: Dict with profit details
+        """
+        tracked = self.tracked_positions.get(symbol)
+        
+        if not tracked:
+            # No tracked position - use cost basis tracker as fallback
+            if self.cost_basis_tracker:
+                return self.cost_basis_tracker.can_sell_profitably(symbol, current_price)
+            # No tracking data - assume we can sell (legacy behavior)
+            return True, {'warning': 'No tracking data available'}
+        
+        breakeven = tracked['breakeven_price']
+        entry_price = tracked['entry_price']
+        entry_qty = tracked['entry_qty']
+        
+        # Calculate exit value after fees
+        fee_rate = self.fee_rates.get(tracked['exchange'], 0.0025)
+        exit_gross = current_price * entry_qty
+        exit_fee = exit_gross * fee_rate
+        exit_value = exit_gross - exit_fee
+        
+        # Net P&L
+        net_pnl = exit_value - tracked['entry_cost']
+        net_pnl_pct = (net_pnl / tracked['entry_cost']) * 100 if tracked['entry_cost'] > 0 else 0
+        
+        can_sell = current_price >= breakeven
+        
+        info = {
+            'symbol': symbol,
+            'entry_price': entry_price,
+            'current_price': current_price,
+            'breakeven_price': breakeven,
+            'price_vs_breakeven_pct': ((current_price / breakeven) - 1) * 100,
+            'entry_cost': tracked['entry_cost'],
+            'exit_value': exit_value,
+            'exit_fee': exit_fee,
+            'net_pnl': net_pnl,
+            'net_pnl_pct': net_pnl_pct,
+            'can_sell_profitably': can_sell,
+            'order_id': tracked['order_id'],
+        }
+        
+        return can_sell, info
         
     def calculate_breakeven_price(self, entry_price: float) -> float:
         """
