@@ -69,23 +69,28 @@ def run_command_center():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     center_script = os.path.join(script_dir, 'orca_command_center.py')
     
-    # Start the process
+    # Start the process with UTF-8 encoding for Windows compatibility
     process = subprocess.Popen(
         [python, center_script],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
-        cwd=script_dir
+        cwd=script_dir,
+        encoding='utf-8',
+        errors='replace'
     )
     
     # Stream output (look for the "ONLINE" message)
-    for line in iter(process.stdout.readline, ''):
-        if 'ONLINE' in line or 'localhost:8888' in line:
-            print(f"✅ Command Center: {line.strip()}")
-            break
-        elif 'Error' in line or 'error' in line:
-            print(f"⚠️  Command Center: {line.strip()}")
+    try:
+        for line in iter(process.stdout.readline, ''):
+            if 'ONLINE' in line or 'localhost:8888' in line:
+                print(f"✅ Command Center: {line.strip()}")
+                break
+            elif 'Error' in line or 'error' in line:
+                print(f"⚠️  Command Center: {line.strip()}")
+    except UnicodeDecodeError:
+        print("✅ Command Center starting...")
     
     return process
 
