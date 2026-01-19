@@ -721,14 +721,14 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"🌊 Global Wave Scanner: {e}")
         
-        # 6. Movers & Shakers Scanner
+        # 6. Movers & Shakers Scanner - SKIP (circular import with Orca)
         self.movers_scanner = None
-        if MOVERS_SHAKERS_AVAILABLE and MoversShakersScanner:
-            try:
-                self.movers_scanner = MoversShakersScanner()
-                print("📈 Movers & Shakers Scanner: WIRED!")
-            except Exception as e:
-                print(f"📈 Movers & Shakers Scanner: {e}")
+        # if MOVERS_SHAKERS_AVAILABLE and MoversShakersScanner:
+        #     try:
+        #         self.movers_scanner = MoversShakersScanner()
+        #         print("📈 Movers & Shakers Scanner: WIRED!")
+        #     except Exception as e:
+        #         print(f"📈 Movers & Shakers Scanner: {e}")
         
         # 7. Whale Intelligence Tracker (firm tracking)
         self.whale_tracker = None
@@ -1242,8 +1242,20 @@ class OrcaKillCycle:
             bids = orderbook.get('bids', [])
             current = float(bids[0].get('p', buy_price)) if bids else buy_price
         
-        # Step 3: SELL
+        # Step 3: SELL (only if profitable)
         print(f"\n🔪 STEP 3: SELL {buy_qty:.8f} {symbol}")
+        # Recalculate projected P&L at current market price and only sell if positive
+        try:
+            pnl_est = self.calculate_realized_pnl(buy_price, buy_qty, current, buy_qty)
+            if pnl_est['net_pnl'] <= 0:
+                print(f"\n⛔ NOT SELLING: projected net P&L ${pnl_est['net_pnl']:+.4f} <= 0. Waiting for profitable exit.")
+                # Do not execute sell to avoid realizing a loss
+                return None
+        except Exception:
+            # If P&L calc fails for some reason, be conservative and skip selling
+            print("\n⚠️ Could not compute projected P&L - skipping sell to avoid risk")
+            return None
+        
         try:
             sell_order = self.client.place_market_order(
                 symbol=symbol,
@@ -1992,23 +2004,27 @@ class OrcaKillCycle:
                 time.sleep(monitor_interval)
                 
         except KeyboardInterrupt:
-            print("\n\n🛑 USER ABORT - Closing all positions...")
+            print("\n\n🛑 USER ABORT - Closing profitable positions only (skip losses)...")
             for pos in positions:
                 try:
-                    sell_order = pos.client.place_market_order(symbol=pos.symbol, side='sell', quantity=pos.entry_qty)
-                    if sell_order:
-                        fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
-                        sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
-                        entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
-                        final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
-                        final_pnl = final_exit - entry_cost
-                        results.append({
-                            'symbol': pos.symbol,
-                            'exchange': pos.exchange,
-                            'reason': 'USER_ABORT',
-                            'net_pnl': final_pnl
-                        })
-                        print(f"   Closed {pos.symbol}: ${final_pnl:+.4f}")
+                    # Only close positions that would realize a positive net P&L
+                    if pos.current_pnl > 0:
+                        sell_order = pos.client.place_market_order(symbol=pos.symbol, side='sell', quantity=pos.entry_qty)
+                        if sell_order:
+                            fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
+                            sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
+                            entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
+                            final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
+                            final_pnl = final_exit - entry_cost
+                            results.append({
+                                'symbol': pos.symbol,
+                                'exchange': pos.exchange,
+                                'reason': 'USER_ABORT',
+                                'net_pnl': final_pnl
+                            })
+                            print(f"   ✅ Closed {pos.symbol}: ${final_pnl:+.4f} (USER_ABORT)")
+                    else:
+                        print(f"   ⛔ Skipping close for {pos.symbol}: current P&L ${pos.current_pnl:+.4f} -> not closing to avoid realizing loss")
                 except Exception as e:
                     print(f"   ⚠️ Error closing {pos.symbol}: {e}")
         
@@ -2125,28 +2141,35 @@ class OrcaKillCycle:
                                 pos.kill_reason = 'MOMENTUM_PROFIT'
                                 print(f"\n   📈📈📈 TAKING PROFIT (momentum reversal) 📈📈📈")
                         
-                        # EXIT if ready
+                        # EXIT if ready - SELL ONLY IF POSITIVE PROFIT
                         if pos.ready_to_kill:
-                            print(f"\n   🔪🔪🔪 EXECUTING SELL ORDER 🔪🔪🔪")
-                            sell_order = pos.client.place_market_order(
-                                symbol=pos.symbol,
-                                side='sell',
-                                quantity=pos.entry_qty
-                            )
-                            if sell_order:
-                                sell_price = float(sell_order.get('filled_avg_price', current))
-                                # Recalculate final P&L
-                                final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
-                                final_pnl = final_exit - entry_cost
-                                results.append({
-                                    'symbol': pos.symbol,
-                                    'exchange': pos.exchange,
-                                    'reason': pos.kill_reason,
-                                    'net_pnl': final_pnl
-                                })
-                                print(f"   ✅ SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
-                                print(f"   🔄 READY FOR NEXT TRADE!")
-                            positions.remove(pos)
+                            # Only execute sell if current unrealized P&L is positive
+                            if pos.current_pnl > 0:
+                                print(f"\n   🔪🔪🔪 EXECUTING SELL ORDER (PROFITABLE) 🔪🔪🔪")
+                                sell_order = pos.client.place_market_order(
+                                    symbol=pos.symbol,
+                                    side='sell',
+                                    quantity=pos.entry_qty
+                                )
+                                if sell_order:
+                                    sell_price = float(sell_order.get('filled_avg_price', current))
+                                    # Recalculate final P&L
+                                    final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
+                                    final_pnl = final_exit - entry_cost
+                                    results.append({
+                                        'symbol': pos.symbol,
+                                        'exchange': pos.exchange,
+                                        'reason': pos.kill_reason,
+                                        'net_pnl': final_pnl
+                                    })
+                                    print(f"   ✅ SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
+                                    print(f"   🔄 READY FOR NEXT TRADE!")
+                                positions.remove(pos)
+                            else:
+                                # Skip selling to avoid realizing a loss
+                                print(f"\n   ✋ NOT SELLING {pos.symbol}: current P&L ${pos.current_pnl:+.4f} <= 0 (waiting for profitable exit)")
+                                pos.ready_to_kill = False
+                                pos.kill_reason = 'NOT_PROFIT_YET'
                             
                     except Exception as e:
                         print(f"   ⚠️ Error monitoring {pos.symbol}: {e}")
