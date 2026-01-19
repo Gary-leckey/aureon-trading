@@ -435,13 +435,14 @@ class CostBasisTracker:
         pos = self.positions.get(symbol)
         
         if not pos:
-            # No cost basis data - can't determine
-            return True, {
+            # No cost basis data - DON'T SELL! We don't know if it's profitable!
+            return False, {
                 'entry_price': None,
                 'current_price': current_price,
                 'profit_pct': 0,
                 'net_profit': 0,
-                'recommendation': 'NO_DATA - Proceed with caution'
+                'cost_basis': 0,
+                'recommendation': 'NO_DATA - DO NOT SELL (unknown entry price)'
             }
         
         entry_price = pos['avg_entry_price']

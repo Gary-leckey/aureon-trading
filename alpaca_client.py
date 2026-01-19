@@ -562,6 +562,46 @@ class AlpacaClient:
 
         return all_quotes
 
+    def get_crypto_snapshot(self, symbols: List[str]) -> Dict[str, Any]:
+        """
+        🚀 BATCH API: Get latest crypto prices for multiple symbols at once.
+        
+        This wraps get_latest_crypto_quotes() and returns data in a format
+        compatible with the monitoring code expectations.
+        
+        Returns: {symbol: {'latestTrade': {'p': price}, 'latestQuote': {'bp': bid}}}
+        """
+        result = {}
+        
+        # Normalize symbols (remove /, add /USD if needed)
+        normalized = []
+        symbol_map = {}  # Map normalized back to original
+        for sym in symbols:
+            norm = self._normalize_pair_symbol(sym) or sym
+            if '/' not in norm:
+                norm = norm.replace('USD', '/USD')
+            normalized.append(norm)
+            symbol_map[norm] = sym
+        
+        # Get batch quotes
+        quotes = self.get_latest_crypto_quotes(normalized)
+        
+        for norm_sym, q in quotes.items():
+            # Get original symbol
+            orig_sym = symbol_map.get(norm_sym, norm_sym.replace('/', ''))
+            
+            # Extract price from quote
+            bp = float(q.get('bp', 0) or 0)  # bid price
+            ap = float(q.get('ap', 0) or 0)  # ask price
+            mid = (bp + ap) / 2 if (bp > 0 and ap > 0) else (bp or ap or 0)
+            
+            result[orig_sym] = {
+                'latestTrade': {'p': mid},
+                'latestQuote': {'bp': bp, 'ap': ap}
+            }
+        
+        return result
+
     def get_last_quote(self, symbol: str) -> Dict[str, Any]:
         """
         Compatibility helper used by some Aureon engines.
