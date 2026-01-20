@@ -153,7 +153,7 @@
   },
   "USDC->XRP": {
     "wins": 1.0,
-    "losses": 0.0
+    "losses": 1.0
   },
   "USDC->USD": {
     "wins": 0.0,
@@ -201,7 +201,7 @@
   },
   "USDC->ADA": {
     "wins": 1.0,
-    "losses": 0.0
+    "losses": 1.0
   },
   "ADA->USD": {
     "wins": 0.0,
@@ -381,7 +381,7 @@
   },
   "USDC->XTZ": {
     "wins": 1.0,
-    "losses": 0.0
+    "losses": 1.0
   },
   "USDT->XTZ": {
     "wins": 2.0,
@@ -685,15 +685,15 @@
   },
   "USDC->UNI": {
     "wins": 1.0,
-    "losses": 3.0
+    "losses": 4.0
   },
   "USDC->LINK": {
     "wins": 1.0,
-    "losses": 0.0
+    "losses": 1.0
   },
   "USDC->SKY": {
     "wins": 2.0,
-    "losses": 0.0
+    "losses": 1.0
   },
   "USD->LINK": {
     "wins": 1.0,
@@ -733,7 +733,7 @@
   },
   "USDC->SUSHI": {
     "wins": 3.0,
-    "losses": 0.0
+    "losses": 1.0
   },
   "USDC->BCH": {
     "wins": 3.0,
@@ -1828,6 +1828,138 @@
     "losses": 1.0
   },
   "USDC->ZRO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BIO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SHELL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ACH": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->NXPC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BARD": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->KITE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SOLV": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BTC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->DOGE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->AVAX": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->DOT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->CRV": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->CATI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->TRUMP": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->HEI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->RESOLV": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->GRT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->WLFI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SAPIEN": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ICP": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->NEO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->XLM": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->TRX": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ATOM": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ALGO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ONT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->INJ": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->OP": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SUI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->TIA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->MANTA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BLUR": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ALT": {
     "wins": 0.0,
     "losses": 1.0
   }

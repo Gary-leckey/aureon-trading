@@ -1717,7 +1717,7 @@ class WarRoomDisplay:
                 self.position_health['overall_score'] = int(score)
     
     def update_volatility(self, opportunity_count: int):
-        \"\"\"Update market volatility based on opportunity count.\"\"\"
+        """Update market volatility based on opportunity count."""
         if hasattr(self, 'market_volatility'):
             # Baseline: 1000-2000 opportunities = normal
             if opportunity_count < 500:
