@@ -1,15 +1,32 @@
 from __future__ import annotations
 
 import base64
-import fcntl
 import json
 import os
+import sys
 import threading
 import time
 import uuid
 from dataclasses import dataclass, asdict, field
 from typing import Any, Callable, Deque, Dict, List, Optional
 from collections import deque
+
+# Cross-platform file locking
+if sys.platform == 'win32':
+    import msvcrt
+    def _lock_file(f):
+        msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
+    def _unlock_file(f):
+        try:
+            msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+        except Exception:
+            pass
+else:
+    import fcntl
+    def _lock_file(f):
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+    def _unlock_file(f):
+        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
 Json = Dict[str, Any]
 
@@ -202,14 +219,14 @@ class ThoughtBus:
             return
         try:
             with open(self._persist_path, "a", encoding="utf-8") as f:
-                # Acquire exclusive lock to prevent concurrent writes
-                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                # Acquire exclusive lock to prevent concurrent writes (cross-platform)
+                _lock_file(f)
                 try:
                     f.write(json.dumps(thought.to_json(), ensure_ascii=False) + "\n")
                     f.flush()
                     os.fsync(f.fileno())  # Ensure data hits disk
                 finally:
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                    _unlock_file(f)
         except (OSError, IOError) as e:
             # Log but don't crash on persistence failure
             pass
