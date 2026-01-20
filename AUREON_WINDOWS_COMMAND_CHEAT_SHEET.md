@@ -66,6 +66,28 @@ git stash pop  # optional (only if you want your local edits back)
 
 ## 🚀 Run the system (most common)
 
+### 🏆 RECOMMENDED: Multi-Window Setup (Best Experience)
+
+Open **2 PowerShell windows** and run these:
+
+**Window 1 - Trading Engine (Orca + War Room):**
+```powershell
+cd C:\Users\<YOU>\aureon-trading
+.\.venv\Scripts\Activate.ps1
+python orca_complete_kill_cycle.py --autonomous
+```
+
+**Window 2 - Game Launcher (All Dashboards):**
+```powershell
+cd C:\Users\<YOU>\aureon-trading
+.\.venv\Scripts\Activate.ps1
+python aureon_game_launcher.py
+```
+
+This gives you the full system with all dashboards accessible!
+
+---
+
 ### 1) War Room Dashboard (AUTO-START)
 
 ```powershell
