@@ -252,6 +252,9 @@ class QueenHarmonicVoice:
         self.autonomous_mode = False
         self.decision_history: deque = deque(maxlen=500)
         
+        # 👑🦈 Queen-Orca Bridge
+        self.orca_bridge = None
+        
         # Wire everything together
         self._wire_systems()
         
@@ -307,6 +310,29 @@ class QueenHarmonicVoice:
             self.thought_bus.subscribe("chain.complete", self._handle_chain_response)
             self.thought_bus.subscribe("queen.response.*", self._handle_direct_response)
             self.thought_bus.subscribe("system.alert.*", self._handle_system_alert)
+            
+            # 👑🦈 Subscribe to Orca signals
+            self.thought_bus.subscribe("orca.kill.*", self._handle_orca_kill)
+            self.thought_bus.subscribe("orca.opportunity.*", self._handle_orca_opportunity)
+            self.thought_bus.subscribe("orca.threat.*", self._handle_orca_threat)
+            logger.info("   ✅ ORCA SIGNALS: SUBSCRIBED")
+        
+        # 👑🦈 Wire Queen-Orca Bridge
+        try:
+            from queen_orca_bridge import get_queen_orca_bridge
+            self.orca_bridge = get_queen_orca_bridge()
+            self.orca_bridge.queen_voice = self  # Wire self into bridge
+            self.controlled_systems['orca_bridge'] = {
+                'type': 'bridge',
+                'instance': self.orca_bridge,
+                'status': 'ONLINE',
+                'authority': 'FULL',
+            }
+            logger.info("   ✅ QUEEN-ORCA BRIDGE: WIRED")
+        except ImportError:
+            logger.debug("Queen-Orca Bridge not available")
+        except Exception as e:
+            logger.warning(f"Could not wire Queen-Orca Bridge: {e}")
         
         # Wire Queen's existing systems if available
         if self.queen and hasattr(self.queen, 'controlled_systems'):
@@ -706,6 +732,118 @@ class QueenHarmonicVoice:
     def _handle_system_alert(self, thought: Thought):
         """Handle system alerts."""
         logger.warning(f"System alert: {thought.payload}")
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 👑🦈 ORCA SIGNAL HANDLERS - Queen receives intelligence from Orca
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def _handle_orca_kill(self, thought: Any):
+        """Handle kill completion signal from Orca."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            symbol = payload.get('symbol', 'UNKNOWN')
+            pnl = payload.get('pnl', 0.0)
+            success = payload.get('success', pnl > 0)
+            
+            # Log the kill
+            self.decision_history.append({
+                'type': 'orca_kill',
+                'symbol': symbol,
+                'pnl': pnl,
+                'success': success,
+                'timestamp': time.time()
+            })
+            
+            if success:
+                logger.info(f"👑🦈 ORCA KILL SUCCESS: {symbol} +${pnl:.4f}")
+            else:
+                logger.warning(f"👑🦈 ORCA KILL FAILED: {symbol} ${pnl:.4f}")
+            
+            # Feed to neural brain for learning
+            if self.neural_brain and hasattr(self.neural_brain, 'learn'):
+                self.neural_brain.learn({
+                    'type': 'orca_kill',
+                    'symbol': symbol,
+                    'outcome': pnl,
+                    'success': success
+                })
+                
+        except Exception as e:
+            logger.error(f"Error handling Orca kill signal: {e}")
+    
+    def _handle_orca_opportunity(self, thought: Any):
+        """Handle opportunity signal from Orca scanner."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            symbol = payload.get('symbol', 'UNKNOWN')
+            confidence = payload.get('confidence', 0.5)
+            urgency = payload.get('urgency', 'normal')
+            
+            logger.info(f"👑🦈 ORCA OPPORTUNITY: {symbol} | Conf: {confidence:.1%} | {urgency}")
+            
+            # In autonomous mode, evaluate and possibly hunt
+            if self.autonomous_mode and self.orca_bridge:
+                if confidence >= 0.7:
+                    logger.info(f"👑 AUTO-APPROVING hunt on {symbol} (conf={confidence:.1%})")
+                    self._command_orca_hunt(symbol, payload)
+                    
+        except Exception as e:
+            logger.error(f"Error handling Orca opportunity: {e}")
+    
+    def _handle_orca_threat(self, thought: Any):
+        """Handle threat detection signal from Orca."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            symbol = payload.get('symbol', 'UNKNOWN')
+            level = payload.get('level', 'MEDIUM')
+            reason = payload.get('reason', 'Unknown')
+            
+            logger.warning(f"👑🦈 ORCA THREAT [{level}]: {symbol} - {reason}")
+            
+            # High/Critical threats may require action
+            if level in ('HIGH', 'CRITICAL') and self.autonomous_mode:
+                logger.warning(f"👑 AUTO-CONSIDERING abort on {symbol} due to {level} threat")
+                # Could issue abort command here
+                
+        except Exception as e:
+            logger.error(f"Error handling Orca threat: {e}")
+    
+    def _command_orca_hunt(self, symbol: str, data: Dict = None):
+        """Command Orca to hunt a symbol."""
+        if not self.thought_bus:
+            return
+        try:
+            self.thought_bus.publish(Thought(
+                source="queen_harmonic_voice",
+                topic="queen.command.hunt",
+                payload={
+                    'symbol': symbol,
+                    'exchange': data.get('exchange', 'alpaca') if data else 'alpaca',
+                    'parameters': data or {},
+                    'timestamp': time.time()
+                }
+            ))
+            logger.info(f"👑→🦈 COMMANDED: HUNT {symbol}")
+        except Exception as e:
+            logger.error(f"Error commanding Orca hunt: {e}")
+    
+    def _command_orca_abort(self, symbol: str, reason: str = "Queen commanded"):
+        """Command Orca to abort hunt on a symbol."""
+        if not self.thought_bus:
+            return
+        try:
+            self.thought_bus.publish(Thought(
+                source="queen_harmonic_voice",
+                topic="queen.command.abort",
+                payload={
+                    'symbol': symbol,
+                    'reason': reason,
+                    'timestamp': time.time()
+                }
+            ))
+            logger.info(f"👑→🦈 COMMANDED: ABORT {symbol} - {reason}")
+        except Exception as e:
+            logger.error(f"Error commanding Orca abort: {e}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════════════

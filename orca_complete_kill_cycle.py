@@ -1859,6 +1859,26 @@ class OrcaKillCycle:
         self.flight_check_passed = False
         self.last_flight_check = {}
         
+        # ═══════════════════════════════════════════════════════════════════
+        # 👑🦈 QUEEN-ORCA BRIDGE - Unified Command & Intelligence
+        # ═══════════════════════════════════════════════════════════════════
+        
+        self.queen_orca_bridge = None
+        try:
+            from queen_orca_bridge import get_queen_orca_bridge
+            self.queen_orca_bridge = get_queen_orca_bridge()
+            self.queen_orca_bridge.orca_kill_cycle = self  # Wire self into bridge
+            print("👑🦈 Queen-Orca Bridge: WIRED! (Unified command & intelligence)")
+            
+            # Subscribe to Queen commands
+            if self.bus:
+                self.bus.subscribe('queen.command.hunt', self._on_queen_hunt_command)
+                self.bus.subscribe('queen.command.abort', self._on_queen_abort_command)
+                self.bus.subscribe('orca.command.*', self._on_orca_command)
+                print("   📡 Subscribed to Queen commands via ThoughtBus")
+        except Exception as e:
+            print(f"👑🦈 Queen-Orca Bridge: {e}")
+        
         print("\n✅ MASTER LAUNCHER INTEGRATIONS COMPLETE")
         
     def audit_event(self, event_type: str, data: dict):
@@ -1877,6 +1897,144 @@ class OrcaKillCycle:
         except Exception:
             pass
     
+    # ═══════════════════════════════════════════════════════════════════════
+    # 👑🦈 QUEEN-ORCA BRIDGE METHODS - Emit signals & handle commands
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def emit_kill_signal(self, symbol: str, exchange: str, pnl: float, entry_price: float, 
+                         exit_price: float, qty: float, duration_secs: float):
+        """Emit kill completion signal to Queen via ThoughtBus."""
+        if not self.bus:
+            return
+        try:
+            from aureon_thought_bus import Thought
+            self.bus.publish(Thought(
+                source="orca_kill_cycle",
+                topic="orca.kill.complete",
+                payload={
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'pnl': pnl,
+                    'entry_price': entry_price,
+                    'exit_price': exit_price,
+                    'qty': qty,
+                    'duration_secs': duration_secs,
+                    'success': pnl > 0,
+                    'timestamp': time.time()
+                }
+            ))
+        except Exception as e:
+            pass
+    
+    def emit_position_signal(self, symbol: str, exchange: str, qty: float, entry_price: float,
+                             current_price: float, unrealized_pnl: float, status: str = "hunting"):
+        """Emit position update signal to Queen via ThoughtBus."""
+        if not self.bus:
+            return
+        try:
+            from aureon_thought_bus import Thought
+            self.bus.publish(Thought(
+                source="orca_kill_cycle",
+                topic="orca.position.update",
+                payload={
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'qty': qty,
+                    'entry_price': entry_price,
+                    'current_price': current_price,
+                    'unrealized_pnl': unrealized_pnl,
+                    'status': status,
+                    'timestamp': time.time()
+                }
+            ))
+        except Exception as e:
+            pass
+    
+    def emit_opportunity_signal(self, symbol: str, exchange: str, confidence: float, 
+                                data: dict, urgency: str = "normal"):
+        """Emit opportunity signal to Queen via ThoughtBus."""
+        if not self.bus:
+            return
+        try:
+            from aureon_thought_bus import Thought
+            self.bus.publish(Thought(
+                source="orca_kill_cycle",
+                topic="orca.opportunity.detected",
+                payload={
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'confidence': confidence,
+                    'urgency': urgency,
+                    'data': data,
+                    'timestamp': time.time()
+                }
+            ))
+        except Exception as e:
+            pass
+    
+    def emit_threat_signal(self, symbol: str, level: str, reason: str):
+        """Emit threat detection signal to Queen via ThoughtBus."""
+        if not self.bus:
+            return
+        try:
+            from aureon_thought_bus import Thought
+            self.bus.publish(Thought(
+                source="orca_kill_cycle",
+                topic="orca.threat.detected",
+                payload={
+                    'symbol': symbol,
+                    'level': level,  # LOW, MEDIUM, HIGH, CRITICAL
+                    'reason': reason,
+                    'timestamp': time.time()
+                }
+            ))
+        except Exception as e:
+            pass
+    
+    def _on_queen_hunt_command(self, thought):
+        """Handle hunt command from Queen."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            symbol = payload.get('symbol', '')
+            exchange = payload.get('exchange', 'alpaca')
+            params = payload.get('parameters', {})
+            
+            if symbol:
+                print(f"👑→🦈 QUEEN COMMANDED: HUNT {symbol} on {exchange}")
+                # Trigger hunt - will be implemented based on params
+                self.audit_event('queen_hunt_command', {'symbol': symbol, 'exchange': exchange, 'params': params})
+        except Exception as e:
+            print(f"Error handling Queen hunt command: {e}")
+    
+    def _on_queen_abort_command(self, thought):
+        """Handle abort command from Queen."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            symbol = payload.get('symbol', '')
+            reason = payload.get('reason', 'Queen commanded')
+            
+            if symbol:
+                print(f"👑→🦈 QUEEN COMMANDED: ABORT {symbol} - {reason}")
+                self.audit_event('queen_abort_command', {'symbol': symbol, 'reason': reason})
+            elif payload.get('abort_all', False):
+                print(f"👑→🦈 QUEEN COMMANDED: ABORT ALL - {reason}")
+                self.audit_event('queen_abort_all_command', {'reason': reason})
+        except Exception as e:
+            print(f"Error handling Queen abort command: {e}")
+    
+    def _on_orca_command(self, thought):
+        """Handle generic Orca command from ThoughtBus."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            topic = thought.topic if hasattr(thought, 'topic') else 'unknown'
+            
+            # Log all Orca commands for audit
+            self.audit_event('orca_command', {'topic': topic, 'payload': payload})
+        except Exception as e:
+            print(f"Error handling Orca command: {e}")
+    
+    # ═══════════════════════════════════════════════════════════════════════
+
     def run_flight_check(self) -> dict:
         """
         Run system flight check before execution (anti-phantom validation).
@@ -3563,6 +3721,18 @@ class OrcaKillCycle:
         else:
             print(f"❌ LOST HUNT: ${abs(pnl['net_pnl']):.4f} LOSS")
         print("="*60)
+        
+        # 👑🦈 EMIT KILL SIGNAL TO QUEEN
+        duration_secs = time.time() - position.entry_time if hasattr(position, 'entry_time') else 0
+        self.emit_kill_signal(
+            symbol=symbol,
+            exchange=self.exchange,
+            pnl=pnl['net_pnl'],
+            entry_price=buy_price,
+            exit_price=sell_price,
+            qty=buy_qty,
+            duration_secs=duration_secs
+        )
         
         return pnl
 
