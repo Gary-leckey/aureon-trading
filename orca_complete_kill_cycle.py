@@ -736,6 +736,8 @@ class WarRoomDisplay:
         self.total_pnl = 0.0
         self.best_trade = 0.0
         self.worst_trade = 0.0
+        # 💵 Cash balances per exchange
+        self.cash_balances = {'alpaca': 0.0, 'kraken': 0.0, 'binance': 0.0}
         # 🌟 Rising Star stats
         self.rising_star_stats = {}
         # 🎯 Options trading stats
@@ -815,6 +817,20 @@ class WarRoomDisplay:
                  f"💰 P&L: [{pnl_color}]{pnl_sign}${self.total_pnl:.4f}[/] | "
                  f"✅ {self.kills_data['wins']} | ❌ {self.kills_data['losses']}")
         )
+        
+        # Add cash balances row for all exchanges
+        cash_text = "💵 CASH: "
+        if hasattr(self, 'cash_balances') and self.cash_balances:
+            alpaca_cash = self.cash_balances.get('alpaca', 0)
+            kraken_cash = self.cash_balances.get('kraken', 0)
+            binance_cash = self.cash_balances.get('binance', 0)
+            total_cash = alpaca_cash + kraken_cash + binance_cash
+            
+            cash_text += f"[cyan]Alpaca[/] ${alpaca_cash:.2f} | [yellow]Kraken[/] ${kraken_cash:.2f} | [green]Binance[/] ${binance_cash:.2f} | [bold]Total[/] ${total_cash:.2f}"
+        else:
+            cash_text += "[dim]Scanning...[/]"
+        
+        header.add_row(Text(cash_text))
         
         return Panel(header, title="[bold blue]SESSION[/]", border_style="blue")
     
@@ -1199,6 +1215,15 @@ class WarRoomDisplay:
             self.stargate_data['grid_coherence'] = coherence
         if description is not None:
             self.stargate_data['description'] = description
+    
+    def update_cash(self, alpaca: float = None, kraken: float = None, binance: float = None):
+        """Update cash balances for all exchanges."""
+        if alpaca is not None:
+            self.cash_balances['alpaca'] = alpaca
+        if kraken is not None:
+            self.cash_balances['kraken'] = kraken
+        if binance is not None:
+            self.cash_balances['binance'] = binance
     
     def increment_cycle(self):
         """Increment cycle counter."""
@@ -5981,6 +6006,86 @@ class OrcaKillCycle:
                                         positions.append(pos)
                                 except Exception as e:
                                     print(f"      ⚠️ Error getting price for {symbol}: {e}")
+                
+                elif exchange_name == 'binance':
+                    # Binance positions - SCAN BALANCE FOR HOLDINGS
+                    binance_positions = client.get_balance()
+                    if binance_positions:
+                        for asset, qty in binance_positions.items():
+                            # Skip stablecoins and fiat
+                            if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR']:
+                                continue
+                            qty = float(qty)
+                            if qty > 0.000001:
+                                # Try multiple quote currencies (USDT is most common on Binance)
+                                symbol_variants = [f"{asset}/USDT", f"{asset}/USDC", f"{asset}/USD", f"{asset}/BUSD"]
+                                found_price = False
+                                
+                                for symbol in symbol_variants:
+                                    try:
+                                        ticker = client.get_ticker(symbol)
+                                        if ticker and ticker.get('bid', 0) > 0:
+                                            current_price = float(ticker.get('bid', ticker.get('price', 0)))
+                                            market_value = qty * current_price
+                                            
+                                            if market_value > 0.10:  # At least $0.10 position
+                                                print(f"   📈 {symbol} (BINANCE): {qty:.6f} @ ${current_price:.6f} (${market_value:.2f})")
+                                                
+                                                fee_rate = self.fee_rates.get(exchange_name, 0.001)  # 0.1% Binance fee
+                                                entry_price = current_price  # Estimate for manual positions
+                                                entry_cost = entry_price * qty * (1 + fee_rate)
+                                                breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
+                                                target_price = breakeven * (1 + target_pct / 100)
+                                                
+                                                # Check profitability
+                                                exit_value = current_price * qty * (1 - fee_rate)
+                                                net_pnl = exit_value - entry_cost
+                                                
+                                                if net_pnl > 0.001:  # Profitable
+                                                    print(f"      💰 PROFITABLE (+${net_pnl:.4f})! Closing to free cash...")
+                                                    try:
+                                                        sell_order = client.place_market_order(
+                                                            symbol=symbol.replace('/', ''),  # Binance wants no slash
+                                                            side='sell',
+                                                            quantity=qty
+                                                        )
+                                                        if sell_order:
+                                                            session_stats['positions_closed'] += 1
+                                                            session_stats['cash_freed'] += exit_value
+                                                            session_stats['total_pnl'] += net_pnl
+                                                            session_stats['winning_trades'] += 1
+                                                            session_stats['total_trades'] += 1
+                                                            session_stats['best_trade'] = max(session_stats['best_trade'], net_pnl)
+                                                            print(f"      ✅ CLOSED! +${net_pnl:.4f}")
+                                                            found_price = True
+                                                            break  # Position closed, skip monitoring
+                                                    except Exception as e:
+                                                        print(f"      ⚠️ Sell failed: {e}")
+                                                
+                                                # Add to monitoring if not closed
+                                                print(f"      ⏳ Adding to monitor list")
+                                                pos = LivePosition(
+                                                    symbol=symbol,
+                                                    exchange=exchange_name,
+                                                    entry_price=entry_price,
+                                                    entry_qty=qty,
+                                                    entry_cost=entry_cost,
+                                                    breakeven_price=breakeven,
+                                                    target_price=target_price,
+                                                    client=client,
+                                                    current_price=current_price,
+                                                    current_pnl=net_pnl
+                                                )
+                                                positions.append(pos)
+                                                found_price = True
+                                                break  # Found valid symbol, stop trying variants
+                                    except Exception:
+                                        continue  # Try next symbol variant
+                                
+                                if not found_price and qty * 100 > 1:  # Asset worth checking (rough estimate)
+                                    print(f"   ⚠️ {asset}: {qty:.6f} (could not get price for any trading pair)")
+                    else:
+                        print(f"   No positions on {exchange_name.upper()}")
                                     
             except Exception as e:
                 print(f"   ⚠️ Error scanning {exchange_name}: {e}")
@@ -6091,6 +6196,74 @@ class OrcaKillCycle:
                     except Exception as e:
                         pass  # Silently skip if Kraken scan fails
                     
+                    # 🆕 RE-SCAN BINANCE BALANCES FOR NEW MANUAL POSITIONS!
+                    try:
+                        binance_client = self.clients.get('binance')
+                        if binance_client:
+                            # First, batch fetch prices for existing Binance positions
+                            binance_symbols = [p.symbol for p in positions if p.exchange == 'binance']
+                            for sym in binance_symbols:
+                                try:
+                                    ticker = binance_client.get_ticker(sym)
+                                    if ticker:
+                                        batch_prices[sym] = ticker.get('bid', ticker.get('price', 0))
+                                except Exception:
+                                    pass
+                            
+                            # Now scan for NEW positions
+                            binance_balances = binance_client.get_balance()
+                            current_binance_symbols = [p.symbol for p in positions if p.exchange == 'binance']
+                            
+                            for asset, qty in binance_balances.items():
+                                if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR']:
+                                    continue  # Skip stablecoins/fiat
+                                qty = float(qty)
+                                
+                                # Check if this is a NEW position not already tracked
+                                if qty > 0.000001:
+                                    # Try multiple quote currencies
+                                    symbol_variants = [f"{asset}/USDT", f"{asset}/USDC", f"{asset}/USD", f"{asset}/BUSD"]
+                                    for symbol in symbol_variants:
+                                        if symbol in current_binance_symbols:
+                                            continue  # Already tracking
+                                        
+                                        try:
+                                            ticker = binance_client.get_ticker(symbol)
+                                            if ticker and ticker.get('bid', 0) > 0:
+                                                current_price = float(ticker.get('bid', ticker.get('price', 0)))
+                                                market_value = qty * current_price
+                                                
+                                                if market_value > 0.10:  # At least $0.10
+                                                    print(f"\n🆕 NEW BINANCE POSITION DETECTED: {symbol}")
+                                                    print(f"   📊 {qty:.6f} @ ${current_price:.6f} = ${market_value:.2f}")
+                                                    
+                                                    fee_rate = self.fee_rates.get('binance', 0.001)
+                                                    entry_price = current_price
+                                                    entry_cost = entry_price * qty * (1 + fee_rate)
+                                                    breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
+                                                    target_price = breakeven * (1 + target_pct / 100)
+                                                    
+                                                    pos = LivePosition(
+                                                        symbol=symbol,
+                                                        exchange='binance',
+                                                        entry_price=entry_price,
+                                                        entry_qty=qty,
+                                                        entry_cost=entry_cost,
+                                                        breakeven_price=breakeven,
+                                                        target_price=target_price,
+                                                        client=binance_client,
+                                                        current_price=current_price,
+                                                        current_pnl=0.0
+                                                    )
+                                                    positions.append(pos)
+                                                    batch_prices[symbol] = current_price
+                                                    print(f"   ✅ Added to monitor! Target: ${target_price:.6f}")
+                                                    break  # Found valid symbol, stop trying variants
+                                        except Exception:
+                                            continue  # Try next variant
+                    except Exception as e:
+                        pass  # Silently skip if Binance scan fails
+                    
                     # Quick check existing positions for profit using BATCH prices
                     for pos in positions[:]:  # Copy list to allow removal
                         try:
@@ -6155,6 +6328,13 @@ class OrcaKillCycle:
                         # Get available cash
                         cash = self.get_available_cash()
                         total_cash = sum(cash.values())
+                        
+                        # Update war room display with cash balances
+                        warroom.update_cash(
+                            alpaca=cash.get('alpaca', 0),
+                            kraken=cash.get('kraken', 0),
+                            binance=cash.get('binance', 0)
+                        )
                         
                         if total_cash < amount_per_position * 0.3:  # Only need 30% of target (more aggressive)
                             print(f"   💸 Waiting for cash (${total_cash:.2f} available, need ${amount_per_position * 0.3:.2f})")
