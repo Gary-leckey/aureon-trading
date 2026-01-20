@@ -96,12 +96,14 @@ python run_aureon_windows.py --dry-run
 ```powershell
 python aureon_game_launcher.py
 ```
-### 5) Command Center LITE (fastest Windows startup)
+
+### 5) Command Center (Full Dashboard with ALL systems)
 
 ```powershell
-# Use this if the full Command Center is slow to start
-python aureon_command_center_lite.py
+# Full Command Center - all intelligence systems loaded
+python aureon_command_center.py
 # Then open: http://localhost:8888
+# Systems will load in background on Windows (0/0 → 25/25 within seconds)
 ```
 ---
 

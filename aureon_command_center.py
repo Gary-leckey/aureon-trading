@@ -3820,6 +3820,11 @@ COMMAND_CENTER_HTML = """
                 case 'systems':
                     updateSystems(data.systems);
                     break;
+                case 'systems_loaded':
+                    // Systems finished loading in background (Windows fast start)
+                    updateSystems(data.systems);
+                    addAlert('✅ All intelligence systems ONLINE!', 'high');
+                    break;
                 case 'balances':
                     updateBalances(data.balances);
                     break;
@@ -6504,6 +6509,19 @@ async def start_background_tasks(app):
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, load_all_systems)
         safe_print("✅ Background system loading complete!")
+        
+        # Update state counts after loading
+        state.systems_online = sum(1 for v in SYSTEMS_STATUS.values() if v)
+        state.systems_total = len(SYSTEMS_STATUS)
+        safe_print(f"📊 Intelligence Systems: {state.systems_online}/{state.systems_total} ONLINE")
+        
+        # Broadcast updated systems to all connected clients!
+        await broadcast_to_clients({
+            'type': 'systems_loaded',
+            'systems': SYSTEMS_STATUS,
+            'systems_online': state.systems_online,
+            'systems_total': state.systems_total,
+        })
     
     if DEMO_MODE:
         app['queen_task'] = asyncio.create_task(queen_commentary_task())
