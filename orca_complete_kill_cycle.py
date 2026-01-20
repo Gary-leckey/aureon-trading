@@ -3383,9 +3383,16 @@ class OrcaKillCycle:
         if getattr(self, 'momentum_ecosystem', None):
             # Boost if this symbol is being hunted by the animal pack
             mom_data = getattr(self, 'last_momentum_result', {})
-            wolf_targets = [t['symbol'] for t in mom_data.get('wolf', [])]
-            lion_prey = [t['symbol'] for t in mom_data.get('lion', [])]
-            hb_flowers = [t['symbol'] for t in mom_data.get('hummingbird', [])]
+            
+            # Handle both dict and AnimalOpportunity objects
+            def get_symbol(item):
+                if isinstance(item, dict):
+                    return item['symbol']
+                return getattr(item, 'symbol', '')
+            
+            wolf_targets = [get_symbol(t) for t in mom_data.get('wolf', [])]
+            lion_prey = [get_symbol(t) for t in mom_data.get('lion', [])]
+            hb_flowers = [get_symbol(t) for t in mom_data.get('hummingbird', [])]
             
             animal_boost = 1.0
             if symbol in wolf_targets: animal_boost += 0.15 # Wolf pack hunting
