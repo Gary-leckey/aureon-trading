@@ -3580,6 +3580,12 @@ class OrcaKillCycle:
             opportunities.extend(kraken_opps)
             print(f"   📊 Kraken: Found {len(kraken_opps)} opportunities")
         
+        # Scan Binance
+        if 'binance' in self.clients:
+            binance_opps = self._scan_binance_market(min_change_pct, min_volume)
+            opportunities.extend(binance_opps)
+            print(f"   📊 Binance: Found {len(binance_opps)} opportunities")
+        
         # ═══════════════════════════════════════════════════════════════════
         # 🦅 MOMENTUM ECOSYSTEM - Animal Swarms & Micro Goals
         # ═══════════════════════════════════════════════════════════════════
@@ -3897,6 +3903,71 @@ class OrcaKillCycle:
         
         return opportunities
     
+    def _scan_binance_market(self, min_change_pct: float, min_volume: float) -> List[MarketOpportunity]:
+        """Scan ALL Binance pairs for momentum (UK-compliant)."""
+        opportunities = []
+        client = self.clients.get('binance')
+        if not client:
+            return opportunities
+        
+        try:
+            # Get 24h ticker for all symbols
+            r = client.session.get(f"{client.base}/api/v3/ticker/24hr", timeout=10)
+            if r.status_code != 200:
+                return opportunities
+            
+            tickers = r.json()
+            
+            for ticker in tickers:
+                try:
+                    symbol = ticker.get('symbol', '')
+                    if not symbol:
+                        continue
+                    
+                    # Only USD(T) pairs for consistency
+                    if not any(q in symbol for q in ['USDT', 'USDC', 'USD']):
+                        continue
+                    
+                    # 🇬🇧 UK Mode: Skip restricted symbols
+                    if client.uk_mode and client.is_uk_restricted_symbol(symbol):
+                        continue
+                    
+                    last_price = float(ticker.get('lastPrice', 0))
+                    change_pct = float(ticker.get('priceChangePercent', 0))
+                    volume = float(ticker.get('quoteVolume', 0))
+                    
+                    if last_price <= 0:
+                        continue
+                    
+                    # Calculate momentum score
+                    momentum = abs(change_pct) * (1 + min(volume / 1000000, 1))  # Binance has higher volume
+                    
+                    if abs(change_pct) >= min_change_pct:
+                        # Normalize symbol format (BTCUSDT -> BTC/USDT)
+                        for quote in ['USDT', 'USDC', 'USD']:
+                            if symbol.endswith(quote):
+                                base = symbol[:-len(quote)]
+                                norm_symbol = f"{base}/{quote}"
+                                break
+                        else:
+                            norm_symbol = symbol
+                        
+                        opportunities.append(MarketOpportunity(
+                            symbol=norm_symbol,
+                            exchange='binance',
+                            price=last_price,
+                            change_pct=change_pct,
+                            volume=volume,
+                            momentum_score=momentum,
+                            fee_rate=self.fee_rates.get('binance', 0.001)
+                        ))
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"⚠️ Binance scan error: {e}")
+        
+        return opportunities
+    
     def get_available_cash(self) -> Dict[str, float]:
         """Get available cash across ALL exchanges."""
         cash = {}
@@ -3918,6 +3989,20 @@ class OrcaKillCycle:
                 cash['kraken'] = bal.get('USD', 0) + bal.get('USDC', 0) + bal.get('USDT', 0) + (5.0 if test_mode else 0)  # Add $5 for testing
             except:
                 cash['kraken'] = 5.0 if test_mode else 0.0
+        
+        if 'binance' in self.clients:
+            try:
+                acct = self.clients['binance'].account()
+                balances = acct.get('balances', [])
+                # Binance cash = USDT, USDC, USD, BUSD
+                binance_cash = 0.0
+                for bal in balances:
+                    asset = bal.get('asset', '')
+                    if asset in ['USDT', 'USDC', 'USD', 'BUSD', 'FDUSD']:
+                        binance_cash += float(bal.get('free', 0))
+                cash['binance'] = binance_cash + (5.0 if test_mode else 0)
+            except:
+                cash['binance'] = 5.0 if test_mode else 0.0
         
         return cash
         
