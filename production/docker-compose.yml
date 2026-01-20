@@ -1,0 +1,133 @@
+version: '3.8'
+# ═══════════════════════════════════════════════════════════════════════════
+# 🎮👑 AUREON TRADING SYSTEM - DOCKER COMPOSE 👑🎮
+# ═══════════════════════════════════════════════════════════════════════════
+# Production deployment with all services
+# Usage: docker-compose -f production/docker-compose.yml up -d
+# ═══════════════════════════════════════════════════════════════════════════
+
+services:
+  # ═══════════════════════════════════════════════════════════════════════
+  # Main Trading Engine
+  # ═══════════════════════════════════════════════════════════════════════
+  aureon:
+    build:
+      context: ..
+      dockerfile: production/Dockerfile
+      args:
+        VERSION: "1.0.0"
+        BUILD_DATE: "${BUILD_DATE:-2026-01-20}"
+    image: aureon-trading:latest
+    container_name: aureon-game
+    restart: unless-stopped
+    
+    # Game mode by default
+    command: ["--mode", "game", "--dry-run"]
+    
+    ports:
+      - "8888:8888"   # Command Center UI
+      - "8889:8889"   # API Gateway
+      - "9090:9090"   # Metrics
+    
+    volumes:
+      # Persistent data
+      - aureon-data:/aureon/data
+      - aureon-logs:/aureon/logs
+      - aureon-config:/aureon/config
+    
+    environment:
+      - AUREON_MODE=production
+      - AUREON_DRY_RUN=true
+      - TZ=UTC
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Resource limits for safety
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    networks:
+      - aureon-network
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Prometheus Metrics (optional)
+  # ═══════════════════════════════════════════════════════════════════════
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aureon-prometheus
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    
+    ports:
+      - "9091:9090"
+    
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    
+    networks:
+      - aureon-network
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Grafana Dashboard (optional)
+  # ═══════════════════════════════════════════════════════════════════════
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aureon-grafana
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    
+    ports:
+      - "3000:3000"
+    
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=aureon2026
+      - GF_USERS_ALLOW_SIGN_UP=false
+    
+    networks:
+      - aureon-network
+    
+    depends_on:
+      - prometheus
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Networks
+# ═══════════════════════════════════════════════════════════════════════════
+networks:
+  aureon-network:
+    driver: bridge
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Volumes (persistent storage)
+# ═══════════════════════════════════════════════════════════════════════════
+volumes:
+  aureon-data:
+    name: aureon-data
+  aureon-logs:
+    name: aureon-logs
+  aureon-config:
+    name: aureon-config
+  prometheus-data:
+    name: aureon-prometheus-data
+  grafana-data:
+    name: aureon-grafana-data

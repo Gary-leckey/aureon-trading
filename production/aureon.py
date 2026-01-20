@@ -1,0 +1,283 @@
+#!/usr/bin/env python3
+"""
+🎮👑 AUREON PRODUCTION LAUNCHER 👑🎮
+====================================
+Unified entry point for production deployment.
+Handles first-run setup, mode selection, and system initialization.
+"""
+
+import sys
+import os
+import argparse
+import json
+from pathlib import Path
+from typing import Optional
+
+# UTF-8 encoding for Windows
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    try:
+        import io
+        def _is_utf8_wrapper(stream):
+            return (isinstance(stream, io.TextIOWrapper) and 
+                    hasattr(stream, 'encoding') and stream.encoding and
+                    stream.encoding.lower().replace('-', '') == 'utf8')
+        if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+        if hasattr(sys.stderr, 'buffer') and not _is_utf8_wrapper(sys.stderr):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+    except Exception:
+        pass
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Configuration
+# ═══════════════════════════════════════════════════════════════════════════
+
+def get_config_dir() -> Path:
+    """Get configuration directory"""
+    # Check environment variable first
+    if 'AUREON_CONFIG' in os.environ:
+        return Path(os.environ['AUREON_CONFIG'])
+    
+    # Default locations
+    if sys.platform == 'win32':
+        return Path(os.environ.get('APPDATA', '')) / 'AUREON'
+    elif sys.platform == 'darwin':
+        return Path.home() / 'Library' / 'Application Support' / 'AUREON'
+    else:
+        return Path.home() / '.config' / 'aureon'
+
+
+def get_data_dir() -> Path:
+    """Get data directory"""
+    if 'AUREON_DATA' in os.environ:
+        return Path(os.environ['AUREON_DATA'])
+    return get_config_dir() / 'data'
+
+
+def is_first_run() -> bool:
+    """Check if this is first run"""
+    config_file = get_config_dir() / 'aureon.json'
+    return not config_file.exists()
+
+
+def load_config() -> dict:
+    """Load configuration"""
+    config_file = get_config_dir() / 'aureon.json'
+    if config_file.exists():
+        with open(config_file) as f:
+            return json.load(f)
+    return {}
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Banner
+# ═══════════════════════════════════════════════════════════════════════════
+
+BANNER = """
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                                                                           ║
+║     █████╗ ██╗   ██╗██████╗ ███████╗ ██████╗ ███╗   ██╗                   ║
+║    ██╔══██╗██║   ██║██╔══██╗██╔════╝██╔═══██╗████╗  ██║                   ║
+║    ███████║██║   ██║██████╔╝█████╗  ██║   ██║██╔██╗ ██║                   ║
+║    ██╔══██║██║   ██║██╔══██╗██╔══╝  ██║   ██║██║╚██╗██║                   ║
+║    ██║  ██║╚██████╔╝██║  ██║███████╗╚██████╔╝██║ ╚████║                   ║
+║    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═══╝                   ║
+║                                                                           ║
+║                 🎮 QUANTUM TRADING SYSTEM 🎮                              ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+"""
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Mode Launchers
+# ═══════════════════════════════════════════════════════════════════════════
+
+def run_setup_wizard():
+    """Run first-time setup wizard"""
+    print("\n⚙️  First-run detected. Starting setup wizard...\n")
+    
+    # Try to import and run the setup wizard
+    try:
+        from production.first_run_setup import FirstRunSetup
+        wizard = FirstRunSetup()
+        wizard.run()
+    except ImportError:
+        # Fallback: run as subprocess
+        setup_script = Path(__file__).parent / 'first_run_setup.py'
+        if setup_script.exists():
+            os.system(f'{sys.executable} "{setup_script}"')
+        else:
+            print("❌ Setup wizard not found!")
+            sys.exit(1)
+
+
+def run_game_mode(dry_run: bool = True):
+    """Launch game mode (Command Center + Trading Engine)"""
+    print("\n🎮 Launching GAME MODE...")
+    print("   └─ Command Center UI: http://localhost:8888")
+    print(f"   └─ Trading: {'DRY RUN' if dry_run else 'LIVE'}")
+    print()
+    
+    # Import and run the game launcher
+    try:
+        # Set dry run environment
+        os.environ['AUREON_DRY_RUN'] = 'true' if dry_run else 'false'
+        
+        from aureon_game_launcher import run_game_mode as _run_game, GameModeConfig
+        config = GameModeConfig(
+            start_trading=True,
+            dry_run=dry_run,
+            command_center=True,
+            open_browser=True
+        )
+        return _run_game(config)
+    except ImportError as e:
+        print(f"❌ Failed to import game launcher: {e}")
+        sys.exit(1)
+
+
+def run_trading_mode(dry_run: bool = True, exchange: Optional[str] = None):
+    """Launch headless trading mode"""
+    mode_str = 'DRY RUN' if dry_run else 'LIVE'
+    print(f"\n💰 Launching TRADING MODE ({mode_str})...")
+    
+    try:
+        if dry_run:
+            os.system(f'{sys.executable} micro_profit_labyrinth.py --dry-run')
+        else:
+            os.system(f'{sys.executable} micro_profit_labyrinth.py')
+    except Exception as e:
+        print(f"❌ Trading mode failed: {e}")
+        sys.exit(1)
+
+
+def run_orca_mode(dry_run: bool = True):
+    """Launch Orca kill cycle mode"""
+    print("\n🦈 Launching ORCA KILL MODE...")
+    
+    try:
+        cmd = f'{sys.executable} orca_complete_kill_cycle.py'
+        if dry_run:
+            cmd += ' --dry-run'
+        os.system(cmd)
+    except Exception as e:
+        print(f"❌ Orca mode failed: {e}")
+        sys.exit(1)
+
+
+def run_queen_mode():
+    """Launch Queen dashboard"""
+    print("\n👑 Launching QUEEN DASHBOARD...")
+    print("   └─ Dashboard: http://localhost:13000")
+    
+    try:
+        os.system(f'{sys.executable} queen_unified_dashboard.py')
+    except Exception as e:
+        print(f"❌ Queen mode failed: {e}")
+        sys.exit(1)
+
+
+def run_interactive_menu():
+    """Show interactive mode selection menu"""
+    print(BANNER)
+    print("═" * 75)
+    print("  SELECT MODE")
+    print("═" * 75)
+    print()
+    print("  1. 🎮 GAME MODE     - Full UI + Trading (recommended)")
+    print("  2. 💰 TRADING MODE  - Headless trading engine")
+    print("  3. 🦈 ORCA MODE     - Orca kill cycle system")
+    print("  4. 👑 QUEEN MODE    - Queen dashboard only")
+    print("  5. ⚙️  SETUP         - Reconfigure settings")
+    print("  6. ❌ EXIT")
+    print()
+    
+    while True:
+        choice = input("Enter choice (1-6): ").strip()
+        
+        if choice == '1':
+            run_game_mode(dry_run=True)
+            break
+        elif choice == '2':
+            run_trading_mode(dry_run=True)
+            break
+        elif choice == '3':
+            run_orca_mode(dry_run=True)
+            break
+        elif choice == '4':
+            run_queen_mode()
+            break
+        elif choice == '5':
+            run_setup_wizard()
+            break
+        elif choice == '6':
+            print("\nGoodbye! 👋")
+            sys.exit(0)
+        else:
+            print("Invalid choice. Please enter 1-6.")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Main Entry Point
+# ═══════════════════════════════════════════════════════════════════════════
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='AUREON Trading System - Production Launcher',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python aureon.py                    # Interactive menu
+  python aureon.py --mode game        # Game mode (UI + Trading)
+  python aureon.py --mode trading     # Headless trading
+  python aureon.py --mode orca        # Orca kill cycle
+  python aureon.py --mode queen       # Queen dashboard
+  python aureon.py --setup            # Run setup wizard
+        """
+    )
+    
+    parser.add_argument('--mode', '-m',
+                       choices=['game', 'trading', 'orca', 'queen'],
+                       help='Operating mode')
+    parser.add_argument('--dry-run', '-d', action='store_true', default=True,
+                       help='Run in dry-run/paper mode (default)')
+    parser.add_argument('--live', '-l', action='store_true',
+                       help='Run in live trading mode (CAREFUL!)')
+    parser.add_argument('--setup', '-s', action='store_true',
+                       help='Run setup wizard')
+    parser.add_argument('--exchange', '-e',
+                       help='Specific exchange to trade on')
+    
+    args = parser.parse_args()
+    
+    # Determine dry run status
+    dry_run = not args.live
+    
+    # Print banner for all modes
+    print(BANNER)
+    
+    # Check for first run
+    if is_first_run() or args.setup:
+        run_setup_wizard()
+        if args.setup:
+            return  # Exit after setup if explicitly requested
+    
+    # Run requested mode
+    if args.mode == 'game':
+        run_game_mode(dry_run=dry_run)
+    elif args.mode == 'trading':
+        run_trading_mode(dry_run=dry_run, exchange=args.exchange)
+    elif args.mode == 'orca':
+        run_orca_mode(dry_run=dry_run)
+    elif args.mode == 'queen':
+        run_queen_mode()
+    else:
+        # Interactive menu if no mode specified
+        run_interactive_menu()
+
+
+if __name__ == '__main__':
+    main()
