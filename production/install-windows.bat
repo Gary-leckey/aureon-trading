@@ -102,12 +102,12 @@ echo   Step 4: Creating Desktop Shortcut
 echo ═══════════════════════════════════════════════════════════════════════════
 echo.
 
-REM Create launcher batch file
+REM Create launcher batch file with resource limits
 echo @echo off > "%USERPROFILE%\Desktop\AUREON.bat"
 echo title AUREON Trading System >> "%USERPROFILE%\Desktop\AUREON.bat"
 echo color 0A >> "%USERPROFILE%\Desktop\AUREON.bat"
-echo echo Starting AUREON Trading System... >> "%USERPROFILE%\Desktop\AUREON.bat"
-echo docker start aureon-game 2^>nul ^|^| docker run -d --name aureon-game -p 8888:8888 -v aureon-data:/aureon/data -v aureon-logs:/aureon/logs -v aureon-config:/aureon/config aureon-trading:latest >> "%USERPROFILE%\Desktop\AUREON.bat"
+echo echo Starting AUREON Trading System v1.0.0... >> "%USERPROFILE%\Desktop\AUREON.bat"
+echo docker start aureon-game 2^>nul ^|^| docker run -d --name aureon-game -p 8888:8888 -v aureon-data:/aureon/data -v aureon-logs:/aureon/logs -v aureon-config:/aureon/config --memory=2g --cpus=2.0 --restart=unless-stopped aureon-trading:latest >> "%USERPROFILE%\Desktop\AUREON.bat"
 echo timeout /t 5 /nobreak ^>nul >> "%USERPROFILE%\Desktop\AUREON.bat"
 echo start http://localhost:8888 >> "%USERPROFILE%\Desktop\AUREON.bat"
 echo echo. >> "%USERPROFILE%\Desktop\AUREON.bat"

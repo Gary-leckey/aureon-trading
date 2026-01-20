@@ -323,11 +323,36 @@ class FirstRunSetup:
             json.dump(config_data, f, indent=2)
         print(f"   ✅ Config saved to {self.config_file}")
         
-        # Save credentials (TODO: encrypt with system keyring in production)
-        with open(self.credentials_file, 'w') as f:
-            json.dump(credentials, f, indent=2)
-        os.chmod(self.credentials_file, 0o600)  # Restrict permissions
-        print(f"   ✅ Credentials saved (encrypted)")
+        # Try to save credentials to OS keyring (secure), fallback to file
+        keyring_success = self._save_to_keyring(credentials)
+        
+        if not keyring_success:
+            # Fallback: save to file with restricted permissions
+            with open(self.credentials_file, 'w') as f:
+                json.dump(credentials, f, indent=2)
+            os.chmod(self.credentials_file, 0o600)  # Restrict permissions
+            print(f"   ⚠️  Credentials saved to file (keyring unavailable)")
+            print(f"      Location: {self.credentials_file}")
+        else:
+            print(f"   ✅ Credentials saved to OS keyring (secure)")
+    
+    def _save_to_keyring(self, credentials: dict) -> bool:
+        """Attempt to save credentials to OS keyring"""
+        try:
+            import keyring
+            SERVICE_NAME = "AUREON_Trading"
+            
+            for exchange_id, creds in credentials.items():
+                # Store as JSON in keyring
+                keyring.set_password(SERVICE_NAME, exchange_id, json.dumps(creds))
+            
+            return True
+        except ImportError:
+            print("   ℹ️  keyring package not installed - using file storage")
+            return False
+        except Exception as e:
+            print(f"   ℹ️  Keyring unavailable ({e}) - using file storage")
+            return False
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -114,15 +114,20 @@ cat > "$LAUNCHER" << 'LAUNCHER_EOF'
 
 ACTION="${1:-start}"
 
+# Version for updates
+AUREON_VERSION="1.0.0"
+
 case "$ACTION" in
     start)
-        echo "🚀 Starting AUREON Trading System..."
+        echo "🚀 Starting AUREON Trading System v${AUREON_VERSION}..."
         docker start aureon-game 2>/dev/null || \
         docker run -d --name aureon-game \
             -p 8888:8888 \
             -v aureon-data:/aureon/data \
             -v aureon-logs:/aureon/logs \
             -v aureon-config:/aureon/config \
+            --memory=2g --cpus=2.0 \
+            --restart=unless-stopped \
             aureon-trading:latest
         sleep 3
         echo "✅ AUREON is running at: http://localhost:8888"
@@ -144,9 +149,21 @@ case "$ACTION" in
     shell)
         docker exec -it aureon-game /bin/bash
         ;;
+    update)
+        echo "🔄 Updating AUREON Trading System..."
+        docker stop aureon-game 2>/dev/null || true
+        docker rm aureon-game 2>/dev/null || true
+        docker pull aureon-trading:latest 2>/dev/null || \
+            echo "ℹ️  No remote image - rebuild locally with: cd aureon-trading && ./production/install.sh"
+        echo "✅ Update complete. Run 'aureon start' to launch."
+        ;;
+    version)
+        echo "AUREON Trading System v${AUREON_VERSION}"
+        docker images aureon-trading:latest --format "Image: {{.Repository}}:{{.Tag}} ({{.Size}})"
+        ;;
     *)
-        echo "AUREON Trading System"
-        echo "Usage: aureon [start|stop|logs|shell]"
+        echo "AUREON Trading System v${AUREON_VERSION}"
+        echo "Usage: aureon [start|stop|logs|shell|update|version]"
         ;;
 esac
 LAUNCHER_EOF

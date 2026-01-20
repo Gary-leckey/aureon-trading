@@ -678,7 +678,17 @@ class QueenUnifiedDashboard:
         # Setup web server
         self.app = web.Application()
         self.app.router.add_get('/', self.handle_index)
+        self.app.router.add_get('/health', self.handle_health)
         self.app.router.add_get('/ws', self.handle_websocket)
+    
+    async def handle_health(self, request):
+        """Health check endpoint for Docker/K8s liveness probes"""
+        from datetime import datetime
+        return web.json_response({
+            'status': 'healthy',
+            'service': 'aureon-queen-dashboard',
+            'timestamp': datetime.now().isoformat()
+        })
     
     async def handle_index(self, request):
         """Serve unified dashboard."""

@@ -49,6 +49,45 @@ def get_config_dir() -> Path:
         return Path.home() / '.config' / 'aureon'
 
 
+def load_config_from_env() -> Optional[dict]:
+    """Load config from AUREON_CONFIG_FILE env var for non-interactive deployments"""
+    config_file = os.environ.get('AUREON_CONFIG_FILE')
+    if config_file and Path(config_file).exists():
+        try:
+            with open(config_file) as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"⚠️  Failed to load config from {config_file}: {e}")
+    return None
+
+
+def confirm_live_mode() -> bool:
+    """Safety confirmation gate for live trading mode"""
+    print()
+    print("⚠️" * 20)
+    print("\n    🚨 LIVE TRADING MODE REQUESTED 🚨")
+    print("\n    This will execute REAL trades with REAL money!")
+    print("    You could lose your entire investment.")
+    print()
+    print("⚠️" * 20)
+    print()
+    
+    # Require explicit confirmation
+    confirm = input("Type 'I ACCEPT THE RISK' to continue: ").strip()
+    if confirm != 'I ACCEPT THE RISK':
+        print("\n❌ Live mode cancelled. Switching to DRY RUN mode.")
+        return False
+    
+    # Double confirmation
+    confirm2 = input("Are you ABSOLUTELY sure? (yes/no): ").strip().lower()
+    if confirm2 not in ['yes', 'y']:
+        print("\n❌ Live mode cancelled. Switching to DRY RUN mode.")
+        return False
+    
+    print("\n✅ Live mode confirmed. Proceeding with REAL trades...")
+    return True
+
+
 def get_data_dir() -> Path:
     """Get data directory"""
     if 'AUREON_DATA' in os.environ:
@@ -309,8 +348,21 @@ Examples:
     
     args = parser.parse_args()
     
-    # Determine dry run status
-    dry_run = not args.live
+    # Check for env-based config override (non-interactive deployments)
+    env_config = load_config_from_env()
+    if env_config:
+        print("📁 Using config from AUREON_CONFIG_FILE environment variable")
+    
+    # Determine dry run status with safety gate for live mode
+    dry_run = True
+    if args.live:
+        # Check for non-interactive override
+        if os.environ.get('AUREON_ACCEPT_LIVE_RISK') == 'true':
+            print("⚠️  Live mode enabled via AUREON_ACCEPT_LIVE_RISK env var")
+            dry_run = False
+        else:
+            # Interactive confirmation required
+            dry_run = not confirm_live_mode()
     
     # Print banner for all modes
     print(BANNER)

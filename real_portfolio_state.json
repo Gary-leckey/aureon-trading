@@ -1,6 +1,6 @@
 {
   "starting_capital": 78.51,
-  "last_update": 1768850255.1149426,
+  "last_update": 1768902969.2636545,
   "history": [
     {
       "timestamp": 1768754495.0744026,
@@ -5341,6 +5341,66 @@
       "dream_progress_pct": 2.0154081929999998e-06,
       "is_profitable": false,
       "net_change_pct": -74.33
+    },
+    {
+      "timestamp": 1768866076.266016,
+      "total_usd": 20.17,
+      "alpaca_usd": 8.28,
+      "kraken_usd": 11.89,
+      "binance_usd": 0.0,
+      "capital_usd": 0.0,
+      "starting_capital": 78.51,
+      "realized_pnl": -58.34,
+      "unrealized_pnl": 0.0,
+      "total_pnl": -58.34,
+      "total_fees_paid": 5506.64,
+      "total_trades": 929,
+      "winning_trades": 0,
+      "losing_trades": 0,
+      "win_rate": 0.0,
+      "dream_progress_pct": 2.017408193e-06,
+      "is_profitable": false,
+      "net_change_pct": -74.3
+    },
+    {
+      "timestamp": 1768866105.240711,
+      "total_usd": 20.17,
+      "alpaca_usd": 8.28,
+      "kraken_usd": 11.89,
+      "binance_usd": 0.0,
+      "capital_usd": 0.0,
+      "starting_capital": 78.51,
+      "realized_pnl": -58.34,
+      "unrealized_pnl": 0.0,
+      "total_pnl": -58.34,
+      "total_fees_paid": 5506.64,
+      "total_trades": 929,
+      "winning_trades": 0,
+      "losing_trades": 0,
+      "win_rate": 0.0,
+      "dream_progress_pct": 2.017408193e-06,
+      "is_profitable": false,
+      "net_change_pct": -74.3
+    },
+    {
+      "timestamp": 1768902969.2634752,
+      "total_usd": 8.18,
+      "alpaca_usd": 8.18,
+      "kraken_usd": 0.0,
+      "binance_usd": 0.0,
+      "capital_usd": 0.0,
+      "starting_capital": 78.51,
+      "realized_pnl": -70.33,
+      "unrealized_pnl": 0.0,
+      "total_pnl": -70.33,
+      "total_fees_paid": 5506.64,
+      "total_trades": 929,
+      "winning_trades": 0,
+      "losing_trades": 0,
+      "win_rate": 0.0,
+      "dream_progress_pct": 8.179999999999999e-07,
+      "is_profitable": false,
+      "net_change_pct": -89.58
     }
   ]
 }
