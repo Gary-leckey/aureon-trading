@@ -7,16 +7,29 @@ AUREON is a quantum trading system packaged for production deployment. It runs i
 ## Quick Start
 
 ### Windows
-```batch
-# Double-click or run:
-install-windows.bat
+**Plug & Play (Recommended)**
+
+**Option 1: One-line PowerShell install**
+```powershell
+irm https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/Install-AUREON.ps1 | iex
 ```
+
+**Option 2: Double-click installer**
+1. Download [Install-AUREON-Windows.bat](Install-AUREON-Windows.bat)
+2. Double-click to install
+
+**Option 3: Direct EXE download**
+1. Download [AUREON.exe](https://github.com/RA-CONSULTING/aureon-trading/releases/latest/download/AUREON.exe)
+2. Double-click to run
 
 ### Linux/macOS
 ```bash
 chmod +x install.sh
 ./install.sh
 ```
+
+### Docker (Advanced)
+For containerized deployments or servers, use Docker with [install-windows.bat](install-windows.bat) or [install.sh](install.sh).
 
 ## Features
 
