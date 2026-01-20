@@ -1427,9 +1427,50 @@ python micro_profit_labyrinth.py --dry-run
 
 ---
 
-## 🎮 Production Deployment (Game Mode)
+## 🎮 Windows Plug & Play (Recommended)
 
-AUREON includes a **production-ready Docker package** with one-click installers, a setup wizard, and multiple operating modes.
+**No terminal, no Docker, no dependencies** - just download and double-click!
+
+### Option 1: One-Line PowerShell Install
+
+Open PowerShell and paste:
+```powershell
+irm https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/Install-AUREON.ps1 | iex
+```
+
+This downloads AUREON.exe, creates desktop/Start Menu shortcuts, and offers to launch.
+
+### Option 2: Direct Download
+
+1. **Download**: [AUREON.exe](https://github.com/RA-CONSULTING/aureon-trading/releases/latest/download/AUREON.exe)
+2. **Run**: Double-click the downloaded file
+3. **Setup**: Complete the first-run wizard (API keys, risk settings)
+4. **Trade**: Click "Start Trading" in the Command Center UI
+
+### What's Included
+
+| Feature | Description |
+|---------|-------------|
+| 🎮 **Game Mode UI** | Visual Command Center at http://localhost:8888 |
+| 💰 **Trading Engine** | Multi-exchange profit hunting |
+| 🐋 **Orca Kill Cycle** | Aggressive profit mode |
+| 👑 **Queen Dashboard** | Neural decision viewer |
+| ⚙️ **Setup Wizard** | First-run configuration for API keys |
+
+### Safety Features
+
+| Feature | Description |
+|---------|-------------|
+| 🧪 **Dry-run default** | No real trades without explicit confirmation |
+| ⚠️ **Live confirmation** | Must type "I ACCEPT THE RISK" for live trading |
+| 🔐 **Windows Credential Manager** | API keys stored securely in Windows keyring |
+| 📁 **Sandboxed data** | All data stored in `%LOCALAPPDATA%\AUREON` |
+
+---
+
+## 🐳 Docker Deployment (Advanced)
+
+For containerized/server deployments, AUREON includes a full Docker package.
 
 ### One-Click Install
 
@@ -1437,7 +1478,7 @@ AUREON includes a **production-ready Docker package** with one-click installers,
 # Linux/macOS
 curl -fsSL https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/install.sh | bash
 
-# Windows (PowerShell as Admin)
+# Windows (with Docker Desktop)
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/install-windows.bat -OutFile install.bat; .\install.bat
 ```
 
@@ -1471,39 +1512,6 @@ docker-compose -f production/docker-compose.yml --profile monitoring up -d
 | 💰 **Trading** | `aureon --mode trading` | Headless execution engine only |
 | 🐋 **Orca** | `aureon --mode orca` | Orca kill cycle (aggressive profit hunting) |
 | 👑 **Queen** | `aureon --mode queen` | Queen unified dashboard |
-
-### Safety Features
-
-| Feature | Description |
-|---------|-------------|
-| 🔒 **Sandboxed** | Isolated Docker container with resource limits (2GB RAM, 2 CPUs) |
-| 🧪 **Dry-run default** | No real trades without explicit `--live` flag |
-| ⚠️ **Live confirmation gate** | Requires typing "I ACCEPT THE RISK" for live trading |
-| 🔐 **Keyring encryption** | API credentials stored in OS keyring (macOS Keychain, Windows Credential Vault) |
-| 📊 **Health endpoints** | `/health` on all services for orchestration monitoring |
-| 🔄 **Atomic persistence** | File-locked writes prevent crash corruption |
-
-### First-Run Setup Wizard
-
-On first launch, the interactive wizard guides you through:
-
-1. **Exchange Configuration** - API keys for Kraken, Binance, Alpaca, Capital.com
-2. **Risk Limits** - Max position size, daily loss cap, trades per day
-3. **Mode Selection** - Sandbox vs live trading
-
-All credentials are stored securely with restrictive file permissions (mode 600) and optional OS keyring integration.
-
-### Launcher Commands
-
-```bash
-aureon                    # Interactive menu
-aureon --mode game        # Game mode with UI
-aureon --mode trading     # Headless trading
-aureon --live             # Live trading (with confirmation)
-aureon --setup            # Re-run setup wizard
-aureon update             # Pull latest image
-aureon version            # Show version info
-```
 
 ### Environment Variables
 
