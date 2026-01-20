@@ -1962,5 +1962,85 @@
   "USDC->ALT": {
     "wins": 0.0,
     "losses": 1.0
+  },
+  "USDC->SEI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->JUP": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->FIL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->WLD": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->PIXEL": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->STRK": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->NEAR": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->FET": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->PENDLE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BOME": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->JTO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->WIF": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ENA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ETHFI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->YGG": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->CFX": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->RUNE": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SAGA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->APT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->GALA": {
+    "wins": 0.0,
+    "losses": 1.0
   }
 }

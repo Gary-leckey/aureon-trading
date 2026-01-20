@@ -2231,7 +2231,6 @@ class WhaleIntelligenceTracker:
 
 
 @dataclass
-@dataclass
 class LivePosition:
     """Track a live position with streaming updates."""
     symbol: str
