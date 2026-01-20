@@ -26,16 +26,29 @@ EXCHANGE_FEES = {
         'maker': 0.001,    # 0.10%
         'taker': 0.001,    # 0.10% (with BNB)
         'min_notional': 1.0,
+        'slippage': 0.0003,  # Lower slippage (high liquidity)
+        'spread': 0.0005,
     },
     'kraken': {
         'maker': 0.0016,   # 0.16%
         'taker': 0.0026,   # 0.26%
         'min_notional': 5.0,
+        'slippage': 0.0005,
+        'spread': 0.0008,
+    },
+    'alpaca': {
+        'maker': 0.0015,   # 0.15% Tier 1
+        'taker': 0.0025,   # 0.25% Tier 1
+        'min_notional': 1.0,
+        'slippage': 0.0005,
+        'spread': 0.0008,
     },
     'capital': {
         'maker': 0.001,    # ~0.1% spread
         'taker': 0.001,
         'min_notional': 10.0,
+        'slippage': 0.0008,
+        'spread': 0.0020,  # Wider spread on CFDs
     },
 }
 
@@ -67,11 +80,15 @@ def calculate_penny_profit_threshold(
     fees = EXCHANGE_FEES.get(exchange, EXCHANGE_FEES['binance'])
     fee_rate = fees['maker'] if use_maker else fees['taker']
     
+    # Use exchange-specific slippage/spread if available, else global fallback
+    slippage_rate = fees.get('slippage', SLIPPAGE_PCT)
+    spread_rate = fees.get('spread', SPREAD_PCT)
+    
     # Round-trip costs (BUY + SELL)
     entry_fee = trade_size * fee_rate
     exit_fee = trade_size * fee_rate  # Approximate (actual exit value varies slightly)
-    slippage = trade_size * SLIPPAGE_PCT * 2  # Both sides
-    spread = trade_size * SPREAD_PCT * 2
+    slippage = trade_size * slippage_rate * 2  # Both sides
+    spread = trade_size * spread_rate * 2
     
     total_costs = entry_fee + exit_fee + slippage + spread
     

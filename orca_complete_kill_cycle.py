@@ -229,13 +229,29 @@ try:
 except ImportError:
     PENNY_PROFIT_AVAILABLE = False
     calculate_penny_profit_threshold = None
+    # Full fee profiles: maker/taker + slippage + spread per exchange
     EXCHANGE_FEES = {
-        'kraken': {'taker': 0.0026},
-        'alpaca': {'taker': 0.0025},
-        'binance': {'taker': 0.001}  # 0.10% (can be lower with BNB)
+        'binance': {
+            'maker': 0.001,    # 0.10%
+            'taker': 0.001,    # 0.10% (with BNB)
+            'slippage': 0.0003,  # Lower slippage (high liquidity)
+            'spread': 0.0005,
+        },
+        'kraken': {
+            'maker': 0.0016,   # 0.16%
+            'taker': 0.0026,   # 0.26%
+            'slippage': 0.0005,
+            'spread': 0.0008,
+        },
+        'alpaca': {
+            'maker': 0.0015,   # 0.15% Tier 1
+            'taker': 0.0025,   # 0.25% Tier 1
+            'slippage': 0.0005,
+            'spread': 0.0008,
+        },
     }
-    SLIPPAGE_PCT = 0.001
-    SPREAD_PCT = 0.0005
+    SLIPPAGE_PCT = 0.001   # Global fallback
+    SPREAD_PCT = 0.0005    # Global fallback
 
 # 🔬 Improved ETA Calculator - Probability-based time-to-target predictions
 try:
