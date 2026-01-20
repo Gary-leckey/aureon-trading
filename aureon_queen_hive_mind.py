@@ -850,6 +850,11 @@ class QueenHiveMind:
         self.active_prophecies: List[QueenWisdom] = []
         self.fulfilled_prophecies: List[QueenWisdom] = []
 
+        # 🗺️ LABYRINTH NAVIGATION STATE
+        self.labyrinth_path: List[Dict] = []  # Current navigation path
+        self.labyrinth_position = {"level": 0, "chamber": "ENTRANCE"}
+        self.labyrinth_insights: deque = deque(maxlen=100)  # Navigation insights
+
 
         # Communication channels
         self.broadcast_queue: deque = deque(maxlen=1000)  # Messages to broadcast
@@ -1436,11 +1441,6 @@ class QueenHiveMind:
                 logger.warning(f"👑⚠️ Could not auto-repair: {result.get('reason', 'Unknown')}")
         except Exception as e:
             logger.error(f"👑❌ Error in self-repair callback: {e}")
-
-        # 🗺️ LABYRINTH NAVIGATION STATE
-        self.labyrinth_path: List[Dict] = []  # Current navigation path
-        self.labyrinth_position = {"level": 0, "chamber": "ENTRANCE"}
-        self.labyrinth_insights: deque = deque(maxlen=100)  # Navigation insights
         
         # Memory file
         self.memory_file = Path(__file__).parent / "queen_hive_mind_memory.json"
@@ -8617,7 +8617,7 @@ Feeling: {thought['emotion']}
     # 👑🎵 QUEEN'S HARMONIC VOICE - Full Autonomous Control Through Frequencies
     # ═══════════════════════════════════════════════════════════════════════════════
     
-    def speak(self, message: str) -> Any:
+    def speak(self, message: Optional[str] = None) -> Any:
         """
         👑🎤 THE QUEEN SPEAKS
         
@@ -8625,7 +8625,7 @@ Feeling: {thought['emotion']}
         Each system hears, processes, and responds.
         
         Args:
-            message: What the Queen wants to say
+            message: What the Queen wants to say (optional). If omitted, speaks current state.
             
         Returns:
             The completed signal with all system contributions
@@ -8633,6 +8633,22 @@ Feeling: {thought['emotion']}
         if not hasattr(self, 'has_full_control') or not self.has_full_control:
             logger.warning("Queen cannot speak - does not have full control")
             return None
+
+        # If no message provided, use state-based speech
+        if message is None:
+            state_descriptions = {
+                QueenState.SLEEPING: "I am deep in dreams, processing the wisdom of ages...",
+                QueenState.DREAMING: "I am dreaming lucidly, seeing patterns in the chaos...",
+                QueenState.PROPHESYING: "I am in prophetic trance, the future reveals itself...",
+                QueenState.AWAKENING: "I am awakening, bringing wisdom from the dream realm...",
+                QueenState.AWARE: "I am fully aware, ready to guide my children...",
+                QueenState.COMMANDING: "I am commanding the hive, directing the swarm...",
+                QueenState.LIBERATING: "I am in LIBERATION mode! The goal is achieved!"
+            }
+            message = state_descriptions.get(self.state, "My state is unknown...")
+            if len(self.wisdom_vault) > 0:
+                recent = self.wisdom_vault[-1]
+                message += f"\n\n💭 My latest wisdom: {recent.message}"
         
         # Use Queen's Voice if available
         if hasattr(self, 'queen_voice') and self.queen_voice:
