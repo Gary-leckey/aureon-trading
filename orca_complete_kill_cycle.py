@@ -1731,7 +1731,8 @@ class OrcaKillCycle:
         self.clients = {}
         self.fee_rates = {
             'alpaca': 0.0025,  # 0.25%
-            'kraken': 0.0026   # 0.26% maker/taker
+            'kraken': 0.0026,  # 0.26% maker/taker
+            'binance': 0.001   # 0.10% base (can be lower with BNB)
         }
         
         # Initialize clients for BOTH exchanges (unless specific client provided)
@@ -1754,6 +1755,14 @@ class OrcaKillCycle:
                 print("✅ Kraken: CONNECTED")
             except Exception as e:
                 print(f"⚠️ Kraken: {e}")
+            
+            # Initialize Binance
+            try:
+                from binance_client import BinanceClient
+                self.clients['binance'] = BinanceClient()
+                print("✅ Binance: CONNECTED")
+            except Exception as e:
+                print(f"⚠️ Binance: {e}")
             
             # Set primary client for backward compatibility
             self.client = self.clients.get(exchange) or list(self.clients.values())[0]
@@ -2119,6 +2128,8 @@ class OrcaKillCycle:
                     exchange_clients['alpaca'] = self.clients['alpaca']
                 if 'kraken' in self.clients and self.clients['kraken']:
                     exchange_clients['kraken'] = self.clients['kraken']
+                if 'binance' in self.clients and self.clients['binance']:
+                    exchange_clients['binance'] = self.clients['binance']
                 self.hft_order_router.wire_exchange_clients(exchange_clients)
             print("🚀 HFT Order Router: WIRED! (WebSocket routing)")
         except Exception as e:
@@ -2649,6 +2660,7 @@ class OrcaKillCycle:
             'queen_wired': False,
             'exchange_alpaca': False,
             'exchange_kraken': False,
+            'exchange_binance': False,
             'intelligence_engine': False,
             'feed_hub': False,
             'enigma': False,
@@ -2705,6 +2717,12 @@ class OrcaKillCycle:
         try:
             if 'kraken' in self.clients and self.clients['kraken']:
                 flight['exchange_kraken'] = True
+        except:
+            pass
+        
+        try:
+            if 'binance' in self.clients and self.clients['binance']:
+                flight['exchange_binance'] = True
         except:
             pass
         
