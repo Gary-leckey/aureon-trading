@@ -4669,16 +4669,44 @@ class OrcaKillCycle:
                 'reason': order.get('reason', 'Unknown')
             }
         
-        if exchange == 'binance':
-            # Binance format: executedQty, cummulativeQuoteQty, fills[]
+        # Check for errors
+        if order.get('error'):
+            return {
+                'filled_qty': 0,
+                'filled_avg_price': 0,
+                'order_id': None,
+                'status': 'error',
+                'reason': str(order.get('error'))
+            }
+        
+        # Check for dry run
+        if order.get('dryRun'):
+            return {
+                'filled_qty': 0,
+                'filled_avg_price': 0,
+                'order_id': 'DRY_RUN',
+                'status': 'dry_run'
+            }
+        
+        if exchange == 'binance' or exchange == 'kraken':
+            # Both Binance and Kraken now use similar format:
+            # executedQty, cummulativeQuoteQty, orderId, fills[]
             exec_qty = float(order.get('executedQty', 0))
             cumm_quote = float(order.get('cummulativeQuoteQty', 0))
             
             # Calculate average price from fills or cumulative
             avg_price = 0.0
-            if exec_qty > 0 and cumm_quote > 0:
+            
+            # First try the direct price field (Kraken provides this)
+            if order.get('price'):
+                avg_price = float(order.get('price', 0))
+            
+            # If no direct price, calculate from cumulative
+            if avg_price == 0 and exec_qty > 0 and cumm_quote > 0:
                 avg_price = cumm_quote / exec_qty
-            elif order.get('fills'):
+            
+            # If still no price, try fills array (Binance provides this)
+            if avg_price == 0 and order.get('fills'):
                 total_qty = 0.0
                 total_cost = 0.0
                 for fill in order.get('fills', []):
@@ -4694,22 +4722,9 @@ class OrcaKillCycle:
                 'filled_qty': exec_qty,
                 'filled_avg_price': avg_price,
                 'order_id': order.get('orderId'),
-                'status': order.get('status', 'FILLED' if exec_qty > 0 else 'UNKNOWN')
-            }
-        
-        elif exchange == 'kraken':
-            # Kraken format: vol_exec, price (avg), txid
-            exec_qty = float(order.get('vol_exec', order.get('volume', 0)))
-            avg_price = float(order.get('price', order.get('avg_price', 0)))
-            order_id = order.get('txid', order.get('order_id'))
-            if isinstance(order_id, list):
-                order_id = order_id[0] if order_id else None
-            
-            return {
-                'filled_qty': exec_qty,
-                'filled_avg_price': avg_price,
-                'order_id': order_id,
-                'status': order.get('status', 'closed' if exec_qty > 0 else 'unknown')
+                'status': order.get('status', 'FILLED' if exec_qty > 0 else 'UNKNOWN'),
+                'fee': float(order.get('fee', 0)),
+                'cumm_quote': cumm_quote
             }
         
         else:  # alpaca and default
@@ -4720,6 +4735,45 @@ class OrcaKillCycle:
                 'order_id': order.get('id', order.get('order_id')),
                 'status': order.get('status', 'filled' if order.get('filled_qty') else 'unknown')
             }
+
+    def is_order_successful(self, order: dict, exchange: str) -> bool:
+        """
+        🔍 Check if an order was successful (filled) across any exchange.
+        
+        Returns True if order executed successfully, False otherwise.
+        """
+        if not order:
+            return False
+        
+        # Check for explicit failures
+        if order.get('rejected'):
+            print(f"   ⚠️ Order rejected: {order.get('reason', 'Unknown')}")
+            return False
+        if order.get('error'):
+            print(f"   ⚠️ Order error: {order.get('error')}")
+            return False
+        if order.get('dryRun'):
+            print(f"   ℹ️ Dry run order (not executed)")
+            return False
+        
+        # Normalize and check
+        norm = self.normalize_order_response(order, exchange)
+        
+        # Check for failed status
+        if norm.get('status') in ['rejected', 'error', 'empty', 'dry_run']:
+            return False
+        
+        # For sells, just check if the order was accepted (status FILLED or similar)
+        status = str(order.get('status', '')).upper()
+        if status in ['FILLED', 'CLOSED', 'EXECUTED']:
+            return True
+        
+        # For Alpaca, check filled_qty
+        if exchange == 'alpaca':
+            return float(order.get('filled_qty', 0)) > 0
+        
+        # For Binance/Kraken, check executedQty
+        return float(order.get('executedQty', 0)) > 0
 
     def track_buy_order(self, symbol: str, order_result: dict, exchange: str = 'alpaca') -> dict:
         """
@@ -6908,7 +6962,8 @@ class OrcaKillCycle:
                                             side='sell',
                                             quantity=pos.entry_qty
                                         )
-                                        if sell_order:
+                                        # 🔍 Verify sell succeeded using is_order_successful
+                                        if self.is_order_successful(sell_order, pos.exchange):
                                             session_stats['positions_closed'] += 1
                                             session_stats['cash_freed'] += exit_value
                                             session_stats['total_pnl'] += net_pnl
