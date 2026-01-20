@@ -1425,6 +1425,100 @@ cp .env.example .env  # Edit with API keys
 python micro_profit_labyrinth.py --dry-run
 ```
 
+---
+
+## 🎮 Production Deployment (Game Mode)
+
+AUREON includes a **production-ready Docker package** with one-click installers, a setup wizard, and multiple operating modes.
+
+### One-Click Install
+
+```bash
+# Linux/macOS
+curl -fsSL https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/install.sh | bash
+
+# Windows (PowerShell as Admin)
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/install-windows.bat -OutFile install.bat; .\install.bat
+```
+
+After installation, launch from your desktop: **AUREON** icon or `aureon` command.
+
+### Manual Docker Build
+
+```bash
+# Build the production image
+cd production
+docker build -t aureon-trading:latest -f Dockerfile ..
+
+# Run with setup wizard
+docker run -it --name aureon -p 8888:8888 \
+  -v aureon-data:/aureon/data \
+  -v aureon-logs:/aureon/logs \
+  -v aureon-config:/aureon/config \
+  --memory=2g --cpus=2.0 \
+  aureon-trading:latest
+
+# Or use docker-compose with monitoring
+export GF_ADMIN_PASSWORD=$(openssl rand -base64 32)
+docker-compose -f production/docker-compose.yml --profile monitoring up -d
+```
+
+### Operating Modes
+
+| Mode | Command | Description |
+|------|---------|-------------|
+| 🎮 **Game** | `aureon --mode game` | Command Center UI + Trading Engine (default) |
+| 💰 **Trading** | `aureon --mode trading` | Headless execution engine only |
+| 🐋 **Orca** | `aureon --mode orca` | Orca kill cycle (aggressive profit hunting) |
+| 👑 **Queen** | `aureon --mode queen` | Queen unified dashboard |
+
+### Safety Features
+
+| Feature | Description |
+|---------|-------------|
+| 🔒 **Sandboxed** | Isolated Docker container with resource limits (2GB RAM, 2 CPUs) |
+| 🧪 **Dry-run default** | No real trades without explicit `--live` flag |
+| ⚠️ **Live confirmation gate** | Requires typing "I ACCEPT THE RISK" for live trading |
+| 🔐 **Keyring encryption** | API credentials stored in OS keyring (macOS Keychain, Windows Credential Vault) |
+| 📊 **Health endpoints** | `/health` on all services for orchestration monitoring |
+| 🔄 **Atomic persistence** | File-locked writes prevent crash corruption |
+
+### First-Run Setup Wizard
+
+On first launch, the interactive wizard guides you through:
+
+1. **Exchange Configuration** - API keys for Kraken, Binance, Alpaca, Capital.com
+2. **Risk Limits** - Max position size, daily loss cap, trades per day
+3. **Mode Selection** - Sandbox vs live trading
+
+All credentials are stored securely with restrictive file permissions (mode 600) and optional OS keyring integration.
+
+### Launcher Commands
+
+```bash
+aureon                    # Interactive menu
+aureon --mode game        # Game mode with UI
+aureon --mode trading     # Headless trading
+aureon --live             # Live trading (with confirmation)
+aureon --setup            # Re-run setup wizard
+aureon update             # Pull latest image
+aureon version            # Show version info
+```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `AUREON_MODE` | Operating mode | `game` |
+| `AUREON_DRY_RUN` | Force dry-run mode | `true` |
+| `AUREON_EXCHANGE` | Specific exchange to trade | all enabled |
+| `AUREON_ACCEPT_LIVE_RISK` | Skip live confirmation (CI/containers) | `false` |
+| `GF_ADMIN_PASSWORD` | Grafana admin password (required for monitoring) | - |
+
+See [production/README.md](production/README.md) for full deployment documentation.
+
+---
+
 ## Key Files
 
 | File | Purpose |
