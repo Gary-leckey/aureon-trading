@@ -6473,7 +6473,7 @@ class OrcaKillCycle:
         print("╚══════════════════════════════════════════════════════════════════╝")
         print()
         
-        # Wire up the Queen Hive Mind
+        # Wire up the Queen Hive Mind (MANDATORY for autonomous mode)
         queen = None
         try:
             from aureon_queen_hive_mind import QueenHiveMind
@@ -6483,8 +6483,9 @@ class OrcaKillCycle:
             print(f"   💰 Current equity: ${queen.equity:,.2f}")
             print()
         except Exception as e:
-            print(f"⚠️ Queen initialization: {e}")
-            print("   Running without Queen guidance (basic mode)")
+            print(f"❌ Queen initialization failed: {e}")
+            print("   Autonomous mode requires the Queen. Aborting.")
+            return
         
         # Session statistics
         session_stats = {
@@ -6504,13 +6505,45 @@ class OrcaKillCycle:
         positions: List[LivePosition] = []
         
         # Timing - SLOWER to avoid rate limits!
-        scan_interval = 10  # Every 10 seconds (was 5)
+        base_scan_interval = 10  # Every 10 seconds (was 5)
+        scan_interval = base_scan_interval
         monitor_interval = 1.0  # 1 second updates (was 0.1) - PREVENTS RATE LIMITS!
         whale_update_interval = 5.0  # Every 5 seconds (was 2)
         last_scan_time = 0
         last_whale_update = 0
         last_portfolio_scan = 0
         portfolio_scan_interval = 30  # Scan portfolio every 30 seconds (was 10)
+        # Queen-driven pacing & profit target
+        base_target_pct = target_pct
+        target_pct_current = target_pct
+        queen_update_interval = 10.0
+        last_queen_update = 0.0
+
+        def _apply_queen_controls() -> None:
+            """Adjust scan speed and profit targets based on Queen collective signal."""
+            nonlocal scan_interval, target_pct_current
+            try:
+                signal = queen.get_collective_signal()
+                confidence = float(signal.get('confidence', 0.5))
+                direction = signal.get('direction', 'NEUTRAL')
+            except Exception:
+                confidence = 0.5
+                direction = 'NEUTRAL'
+
+            # Speed: higher confidence -> faster scans
+            speed_factor = max(0.5, min(1.5, 1.5 - confidence))
+            scan_interval = max(3.0, min(20.0, base_scan_interval * speed_factor))
+
+            # Profit target: higher confidence -> higher target, bearish -> more conservative
+            target_factor = 0.8 + (confidence * 0.6)
+            if direction == 'BULLISH':
+                target_factor *= 1.1
+            elif direction == 'BEARISH':
+                target_factor *= 0.8
+            target_pct_current = max(0.3, min(3.0, base_target_pct * target_factor))
+
+        # Initial Queen pacing/targets
+        _apply_queen_controls()
         
         # ═══════════════════════════════════════════════════════════════════
         # PHASE 0 (STARTUP): SCAN EXISTING PORTFOLIO - CLOSE PROFITABLE POSITIONS
@@ -6540,7 +6573,7 @@ class OrcaKillCycle:
                                 exit_value = current_price * qty * (1 - fee_rate)
                                 net_pnl = exit_value - entry_cost
                                 breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
-                                target_price = breakeven * (1 + target_pct / 100)
+                                target_price = breakeven * (1 + target_pct_current / 100)
                                 
                                 print(f"   📈 {symbol}: {qty:.6f} @ ${entry_price:.4f}")
                                 print(f"      Current: ${current_price:.4f} | P&L: ${net_pnl:+.4f}")
@@ -6621,7 +6654,7 @@ class OrcaKillCycle:
                                         entry_price = current_price  # Best estimate for manual buys
                                         entry_cost = entry_price * qty * (1 + fee_rate)
                                         breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
-                                        target_price = breakeven * (1 + target_pct / 100)
+                                        target_price = breakeven * (1 + target_pct_current / 100)
                                         
                                         # 🚨 SAFETY: Only auto-sell if we have CONFIRMED cost basis with real entry price!
                                         # For manual Kraken buys, we DON'T know entry price, so NEVER auto-sell!
@@ -6695,7 +6728,7 @@ class OrcaKillCycle:
                                                 entry_price = current_price  # Estimate for manual positions
                                                 entry_cost = entry_price * qty * (1 + fee_rate)
                                                 breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
-                                                target_price = breakeven * (1 + target_pct / 100)
+                                                target_price = breakeven * (1 + target_pct_current / 100)
                                                 
                                                 # Check profitability
                                                 exit_value = current_price * qty * (1 - fee_rate)
@@ -6767,6 +6800,12 @@ class OrcaKillCycle:
             while True:  # ♾️ INFINITE LOOP
                 current_time = time.time()
                 session_stats['cycles'] += 1
+
+                # 👑 Queen pacing + profit target updates
+                if current_time - last_queen_update >= queen_update_interval:
+                    last_queen_update = current_time
+                    _apply_queen_controls()
+                    print(f"👑 Queen pacing: scan_interval={scan_interval:.1f}s | target_pct={target_pct_current:.2f}%")
                 
                 # ═══════════════════════════════════════════════════════════
                 # PHASE 0 (RECURRING): RE-SCAN PORTFOLIO FOR NEW PROFITS
@@ -6834,7 +6873,7 @@ class OrcaKillCycle:
                                             entry_price = current_price  # Use current as entry estimate
                                             entry_cost = entry_price * qty * (1 + fee_rate)
                                             breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
-                                            target_price = breakeven * (1 + target_pct / 100)
+                                            target_price = breakeven * (1 + target_pct_current / 100)
                                             
                                             pos = LivePosition(
                                                 symbol=symbol,
@@ -6901,7 +6940,7 @@ class OrcaKillCycle:
                                                     entry_price = current_price
                                                     entry_cost = entry_price * qty * (1 + fee_rate)
                                                     breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
-                                                    target_price = breakeven * (1 + target_pct / 100)
+                                                    target_price = breakeven * (1 + target_pct_current / 100)
                                                     
                                                     pos = LivePosition(
                                                         symbol=symbol,
@@ -7024,12 +7063,24 @@ class OrcaKillCycle:
                                 new_opps = [o for o in opportunities if o.symbol not in active_symbols]
                                 
                                 if new_opps:
-                                    # Ask Queen for guidance if available
-                                    queen_approved = True
-                                    if queen and hasattr(queen, 'consciousness_level'):
-                                        # Queen's consciousness affects decision confidence
-                                        queen_approved = queen.consciousness_level > 0.3
-                                        print(f"   👑 Queen consciousness: {queen.consciousness_level:.1%}")
+                                    # Ask Queen for guidance (MANDATORY)
+                                    queen_approved = False
+                                    try:
+                                        signal = queen.get_collective_signal(
+                                            symbol=best.symbol,
+                                            market_data={
+                                                'price': best.price,
+                                                'change_pct': best.change_pct,
+                                                'momentum': best.momentum_score,
+                                                'exchange': best.exchange
+                                            }
+                                        )
+                                        confidence = float(signal.get('confidence', 0.0))
+                                        action = signal.get('action', 'HOLD')
+                                        print(f"   👑 Queen signal: {action} (confidence {confidence:.0%})")
+                                        queen_approved = (action == 'BUY' and confidence >= 0.5)
+                                    except Exception as e:
+                                        print(f"   ⚠️ Queen signal unavailable: {e}")
                                     
                                     if queen_approved:
                                         # Take best opportunity
@@ -7065,7 +7116,7 @@ class OrcaKillCycle:
                                                             # Calculate levels
                                                             fee_rate = self.fee_rates.get(best.exchange, 0.0025)
                                                             breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
-                                                            target_price = breakeven * (1 + target_pct / 100)
+                                                            target_price = breakeven * (1 + target_pct_current / 100)
                                                             
                                                             pos = LivePosition(
                                                                 symbol=symbol_clean,
@@ -7091,7 +7142,7 @@ class OrcaKillCycle:
                                                             warroom.update_position_health()
                                                             
                                                             print(f"   ✅ BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
-                                                            print(f"      🎯 Target: ${target_price:,.4f} ({target_pct}%)")
+                                                            print(f"      🎯 Target: ${target_price:,.4f} ({target_pct_current:.2f}%)")
                                                             print(f"      🚫 NO STOP LOSS - HOLD UNTIL PROFIT!")
                                                             
                                                             session_stats['total_trades'] += 1
