@@ -1,4 +1,23 @@
 #!/usr/bin/env python3
+# Windows UTF-8 fix - MANDATORY for all Aureon modules
+import sys, os
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    try:
+        import io
+        def _is_utf8_wrapper(stream):
+            """Check if stream is already a UTF-8 TextIOWrapper."""
+            return (isinstance(stream, io.TextIOWrapper) and 
+                    hasattr(stream, 'encoding') and stream.encoding and
+                    stream.encoding.lower().replace('-', '') == 'utf8')
+        # Only wrap if not already UTF-8 wrapped (prevents re-wrapping on import)
+        if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+        if hasattr(sys.stderr, 'buffer') and not _is_utf8_wrapper(sys.stderr):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+    except Exception:
+        pass
+
 """
 🔭🤖 AUREON BOT SHAPE SCANNER 🤖🔭
 ═══════════════════════════════════════════════════════════════════════════════
@@ -144,7 +163,7 @@ class BotShapeScanner:
         
     def start(self):
         """Start the Quantum Telescope"""
-        print(f"🔭 Starting AUREON BOT SHAPE SCANNER on {len(self.symbols)} assets...")
+        logger.info(f"🔭 Starting AUREON BOT SHAPE SCANNER on {len(self.symbols)} assets...")
         
         # Build streams: trades, depth, tickers
         # Use lowercase for subscription params
@@ -170,7 +189,7 @@ class BotShapeScanner:
                     self.last_scan_time = now
                     
         except KeyboardInterrupt:
-            print("\n👋 Scaling down Bot Shape Scanner...")
+            logger.info("👋 Scaling down Bot Shape Scanner...")
             self.ws_client.stop()
 
     def _on_trade(self, trade: WSTrade):
@@ -201,9 +220,9 @@ class BotShapeScanner:
         """Process all buffers and compute 3D shapes"""
         shapes = []
         
-        print(f"\n🔎 SCANNING BOT SPECTRUM (0.001Hz - 10MHz)...")
-        print(f"{'SYMBOL':<8} {'BAND':<12} {'FREQ (Hz)':<10} {'STATE':<15} {'SHAPE'}")
-        print("-" * 65)
+        logger.info("🔎 SCANNING BOT SPECTRUM (0.001Hz - 10MHz)...")
+        logger.info(f"{'SYMBOL':<8} {'BAND':<12} {'FREQ (Hz)':<10} {'STATE':<15} {'SHAPE'}")
+        logger.info("-" * 65)
         
         for symbol in self.symbols:
             fingerprint = self._compute_full_spectrum_fingerprint(symbol)
@@ -221,7 +240,7 @@ class BotShapeScanner:
                     if fingerprint.bot_class == "ORGANIC": icon = "🌱"
                     elif fingerprint.bot_class == "QUANTUM_HFT": icon = "⚡"
                     
-                    print(f"{symbol:<8} {top_band.band_name[:10]:<12} {freq_str:<10} {top_band.state_description[:15]:<15} {icon}")
+                    logger.info(f"{symbol:<8} {top_band.band_name[:10]:<12} {freq_str:<10} {top_band.state_description[:15]:<15} {icon}")
 
         # Save snapshot for external 3D viewer
         self._save_3d_snapshot(shapes)
