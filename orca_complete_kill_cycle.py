@@ -809,6 +809,62 @@ class WarRoomDisplay:
             'scanning_active': True
         }
         
+        # ⚠️ Risk exposure tracking
+        self.risk_metrics = {
+            'max_position_size': 0.0,
+            'total_exposure': 0.0,
+            'exposure_pct': 0.0,
+            'max_drawdown': 0.0,
+            'current_drawdown': 0.0
+        }
+        
+        # 🔥 Streak tracking
+        self.streak_data = {
+            'current_streak': 0,
+            'current_streak_type': None,  # 'win' or 'loss'
+            'best_win_streak': 0,
+            'worst_loss_streak': 0,
+            'exchange_streaks': {'alpaca': 0, 'kraken': 0, 'binance': 0}
+        }
+        
+        # 🚫 Protection stats (elephant memory)
+        self.protection_stats = {
+            'blocked_count': 0,
+            'estimated_saved': 0.0,
+            'top_dangers': []  # [(symbol, loss_count), ...]
+        }
+        
+        # ⚡ Flash alerts queue
+        self.flash_alerts = []
+        
+        # 📈 Efficiency metrics
+        self.efficiency_metrics = {
+            'total_scanned': 0,
+            'total_bought': 0,
+            'conversion_rate': 0.0,
+            'avg_time_to_buy': 0.0,
+            'success_rate': 0.0,
+            'scan_times': []
+        }
+        
+        # ⏰ Time-based performance
+        self.hourly_performance = {}  # {hour: {'pnl': 0, 'trades': 0}}
+        
+        # 💪 Position health tracking
+        self.position_health = {
+            'healthy_count': 0,
+            'at_risk_count': 0,
+            'danger_count': 0,
+            'overall_score': 100
+        }
+        
+        # 🎲 Volatility tracking
+        self.market_volatility = {
+            'current_volatility': 'normal',  # low, normal, high, extreme
+            'opportunity_multiplier': 1.0,
+            'risk_level': 'normal'
+        }
+        
     def _create_layout(self) -> Layout:
         """Create the war room layout."""
         layout = Layout(name="root")
@@ -817,7 +873,7 @@ class WarRoomDisplay:
         layout.split(
             Layout(name="header", size=7),  # Increased for portfolio value
             Layout(name="main", ratio=1),
-            Layout(name="footer", size=8),  # Increased for more info
+            Layout(name="footer", size=12),  # Increased for all new panels
         )
         
         # Split main into left and right
@@ -1197,6 +1253,147 @@ class WarRoomDisplay:
             
             footer.add_row(Text(health_text))
         
+        # ⚠️ Risk Exposure Panel
+        if hasattr(self, 'risk_metrics'):
+            rm = self.risk_metrics
+            total_cash = sum(self.cash_balances.values()) if hasattr(self, 'cash_balances') else 0
+            positions_value = sum(p.get('value', 0) for p in self.positions_data)
+            total_portfolio = total_cash + positions_value
+            
+            exposure_pct = (positions_value / total_portfolio * 100) if total_portfolio > 0 else 0
+            max_pos = max([p.get('value', 0) for p in self.positions_data]) if self.positions_data else 0
+            max_pos_pct = (max_pos / total_portfolio * 100) if total_portfolio > 0 else 0
+            
+            drawdown = self.portfolio_peak_value - total_portfolio if self.portfolio_peak_value > 0 else 0
+            drawdown_pct = (drawdown / self.portfolio_peak_value * 100) if self.portfolio_peak_value > 0 else 0
+            
+            exp_color = "green" if exposure_pct < 70 else "yellow" if exposure_pct < 85 else "red"
+            dd_color = "green" if drawdown_pct < 5 else "yellow" if drawdown_pct < 10 else "red"
+            
+            risk_text = f"⚠️ RISK: [{exp_color}]${positions_value:.2f}/${total_portfolio:.2f} ({exposure_pct:.1f}%)[/] | Max Pos: ${max_pos:.2f} ({max_pos_pct:.1f}%) | Drawdown: [{dd_color}]-${drawdown:.2f} ({drawdown_pct:.1f}%)[/]"
+            footer.add_row(Text(risk_text))
+        
+        # 🔥 Streak Tracker
+        if hasattr(self, 'streak_data'):
+            sd = self.streak_data
+            current = sd.get('current_streak', 0)
+            streak_type = sd.get('current_streak_type', 'none')
+            
+            if current > 0:
+                streak_icon = "🔥" if streak_type == 'win' else "❄️"
+                streak_color = "green" if streak_type == 'win' else "red"
+                streak_text = f"{streak_icon} STREAK: [{streak_color}]{current} {streak_type}s in a row[/]"
+            else:
+                streak_text = "🔥 STREAK: Starting fresh"
+            
+            best_streak = sd.get('best_win_streak', 0)
+            if best_streak > 0:
+                streak_text += f" | Best today: {best_streak}W"
+            
+            # Hot exchange
+            hot_ex = max(sd.get('exchange_streaks', {}).items(), key=lambda x: x[1], default=(None, 0))
+            if hot_ex[1] > 0:
+                streak_text += f" | 🔥 Hot: {hot_ex[0].capitalize()} ({hot_ex[1]}W)"
+            
+            footer.add_row(Text(streak_text))
+        
+        # 🚫 Protection Stats + ⚡ Flash Alerts (combined row)
+        combined_text = ""
+        
+        # Protection stats
+        if hasattr(self, 'protection_stats'):
+            ps = self.protection_stats
+            blocked = ps.get('blocked_count', 0)
+            saved = ps.get('estimated_saved', 0)
+            top_dangers = ps.get('top_dangers', [])
+            
+            if blocked > 0:
+                combined_text = f"🚫 PROTECTED: {blocked} blocked | Saved: ~${saved:.2f}"
+                if top_dangers:
+                    top = top_dangers[0]
+                    combined_text += f" | Top danger: {top[0]} ({top[1]}x)"
+            else:
+                combined_text = "🚫 PROTECTED: Scanning for patterns..."
+        
+        # Flash alerts
+        if hasattr(self, 'flash_alerts') and self.flash_alerts:
+            latest = self.flash_alerts[-1]
+            alert_type = latest.get('type', 'info')
+            alert_icon = "⚡" if alert_type == 'critical' else "🏆" if alert_type == 'success' else "⚠️"
+            alert_color = "red" if alert_type == 'critical' else "green" if alert_type == 'success' else "yellow"
+            alert_msg = latest.get('message', '')
+            
+            if combined_text:
+                combined_text += f" | {alert_icon} [{alert_color}]{alert_msg}[/]"
+            else:
+                combined_text = f"{alert_icon} [{alert_color}]{alert_msg}[/]"
+        
+        if combined_text:
+            footer.add_row(Text(combined_text))
+        
+        # 📈 Efficiency Metrics + ⏰ Best Trading Hours (combined row)
+        efficiency_text = ""
+        
+        if hasattr(self, 'efficiency_metrics'):
+            em = self.efficiency_metrics
+            scanned = em.get('total_scanned', 0)
+            bought = em.get('total_bought', 0)
+            conversion = (bought / scanned * 100) if scanned > 0 else 0
+            success_rate = em.get('success_rate', 0)
+            
+            conv_color = "green" if conversion > 0.5 else "yellow" if conversion > 0.1 else "dim"
+            success_color = "green" if success_rate > 60 else "yellow" if success_rate > 40 else "red"
+            
+            efficiency_text = f"📈 EFFICIENCY: {scanned:,} scanned → {bought} bought ([{conv_color}]{conversion:.2f}%[/]) | Success: [{success_color}]{success_rate:.0f}%[/]"
+        
+        # Best trading hours
+        if hasattr(self, 'hourly_performance') and self.hourly_performance:
+            best_hour = max(self.hourly_performance.items(), key=lambda x: x[1].get('pnl', 0), default=(None, {}))
+            current_hour = time.localtime().tm_hour
+            current_pnl = self.hourly_performance.get(current_hour, {}).get('pnl', 0)
+            
+            if best_hour[0] is not None and best_hour[1].get('pnl', 0) > 0:
+                hour_color = "green" if current_pnl > 0 else "dim"
+                if efficiency_text:
+                    efficiency_text += f" | ⏰ Best hour: {best_hour[0]:02d}:00 (+${best_hour[1]['pnl']:.2f}) | Now: [{hour_color}]{current_pnl:+.2f}[/]"
+                else:
+                    efficiency_text = f"⏰ Best hour: {best_hour[0]:02d}:00 (+${best_hour[1]['pnl']:.2f}) | Current: [{hour_color}]{current_pnl:+.2f}[/]"
+        
+        if efficiency_text:
+            footer.add_row(Text(efficiency_text))
+        
+        # 💪 Position Health + 🎲 Volatility (combined row)
+        health_vol_text = ""
+        
+        if hasattr(self, 'position_health'):
+            ph = self.position_health
+            score = ph.get('overall_score', 100)
+            healthy = ph.get('healthy_count', 0)
+            at_risk = ph.get('at_risk_count', 0)
+            danger = ph.get('danger_count', 0)
+            
+            score_color = "green" if score >= 80 else "yellow" if score >= 60 else "red"
+            health_vol_text = f"💪 HEALTH: [{score_color}]{score}/100[/] | 🟢 {healthy} healthy | 🟡 {at_risk} at risk | 🔴 {danger} danger"
+        
+        # Market volatility
+        if hasattr(self, 'market_volatility'):
+            mv = self.market_volatility
+            vol_level = mv.get('current_volatility', 'normal')
+            opp_mult = mv.get('opportunity_multiplier', 1.0)
+            
+            vol_emoji = "🎲" if vol_level == 'extreme' else "🔥" if vol_level == 'high' else "🟢"
+            vol_color = "red" if vol_level == 'extreme' else "yellow" if vol_level == 'high' else "green"
+            
+            if health_vol_text:
+                health_vol_text += f" | {vol_emoji} MARKET: [{vol_color}]{vol_level.upper()}[/]"
+                if opp_mult > 1.5:
+                    health_vol_text += f" | Opps ↑ {(opp_mult-1)*100:.0f}%"
+            else:
+                health_vol_text = f"{vol_emoji} MARKET: [{vol_color}]{vol_level.upper()}[/]"
+        
+        if health_vol_text:
+            footer.add_row(Text(health_vol_text))
+        
         # Build status line with options info
         options_status = ""
         if hasattr(self, 'options_data') and self.options_data.get('trading_level') not in ['UNKNOWN', 'DISABLED']:
@@ -1266,7 +1463,9 @@ class WarRoomDisplay:
     
     def record_kill(self, pnl: float, symbol: str = None, exchange: str = None, hold_time: float = 0):
         """Record a kill (closed position)."""
-        if pnl >= 0:
+        is_win = pnl >= 0
+        
+        if is_win:
             self.kills_data['wins'] += 1
         else:
             self.kills_data['losses'] += 1
@@ -1275,6 +1474,9 @@ class WarRoomDisplay:
         
         if pnl > self.best_trade:
             self.best_trade = pnl
+            # 🏆 Flash alert for new best trade
+            if pnl > 1.0:  # Only alert if significant
+                self.add_flash_alert(f"New best trade! {symbol} +${pnl:.2f}", 'success')
         if pnl < self.worst_trade:
             self.worst_trade = pnl
         
@@ -1282,10 +1484,22 @@ class WarRoomDisplay:
         if exchange and hasattr(self, 'exchange_stats') and exchange in self.exchange_stats:
             self.exchange_stats[exchange]['trades'] += 1
             self.exchange_stats[exchange]['pnl'] += pnl
-            if pnl >= 0:
+            if is_win:
                 self.exchange_stats[exchange]['wins'] += 1
             else:
                 self.exchange_stats[exchange]['losses'] += 1
+        
+        # Update streak
+        self.update_streak(is_win, exchange)
+        
+        # Record hourly P&L
+        self.record_hourly_pnl(pnl)
+        
+        # Flash alerts for significant events
+        if pnl >= 5.0:
+            self.add_flash_alert(f"Big win! {symbol} +${pnl:.2f} ({hold_time:.0f}s)", 'success')
+        elif pnl <= -5.0:
+            self.add_flash_alert(f"Large loss: {symbol} -${abs(pnl):.2f}", 'critical')
         
         # Add to recent kills feed
         if hasattr(self, 'recent_kills'):
@@ -1401,6 +1615,127 @@ class WarRoomDisplay:
             self.cash_balances['kraken'] = kraken
         if binance is not None:
             self.cash_balances['binance'] = binance
+    
+    def update_streak(self, is_win: bool, exchange: str = None):
+        """Update win/loss streak tracking."""
+        if hasattr(self, 'streak_data'):
+            if is_win:
+                if self.streak_data['current_streak_type'] == 'win':
+                    self.streak_data['current_streak'] += 1
+                else:
+                    self.streak_data['current_streak'] = 1
+                    self.streak_data['current_streak_type'] = 'win'
+                
+                # Update best streak
+                if self.streak_data['current_streak'] > self.streak_data['best_win_streak']:
+                    self.streak_data['best_win_streak'] = self.streak_data['current_streak']
+                
+                # Update exchange streak
+                if exchange and exchange in self.streak_data['exchange_streaks']:
+                    self.streak_data['exchange_streaks'][exchange] += 1
+            else:
+                if self.streak_data['current_streak_type'] == 'loss':
+                    self.streak_data['current_streak'] += 1
+                else:
+                    self.streak_data['current_streak'] = 1
+                    self.streak_data['current_streak_type'] = 'loss'
+                
+                # Reset exchange streak on loss
+                if exchange and exchange in self.streak_data['exchange_streaks']:
+                    self.streak_data['exchange_streaks'][exchange] = 0
+    
+    def add_flash_alert(self, message: str, alert_type: str = 'info'):
+        """Add a flash alert (critical, success, warning, info)."""
+        if hasattr(self, 'flash_alerts'):
+            self.flash_alerts.append({
+                'message': message,
+                'type': alert_type,
+                'timestamp': time.time()
+            })
+            # Keep only last 10
+            if len(self.flash_alerts) > 10:
+                self.flash_alerts = self.flash_alerts[-10:]
+    
+    def update_protection_stats(self, blocked_count: int = None, estimated_saved: float = None, top_dangers: list = None):
+        """Update elephant memory protection stats."""
+        if hasattr(self, 'protection_stats'):
+            if blocked_count is not None:
+                self.protection_stats['blocked_count'] = blocked_count
+            if estimated_saved is not None:
+                self.protection_stats['estimated_saved'] = estimated_saved
+            if top_dangers is not None:
+                self.protection_stats['top_dangers'] = top_dangers
+    
+    def update_efficiency(self, scanned: int = None, bought: int = None, success_rate: float = None):
+        """Update efficiency metrics."""
+        if hasattr(self, 'efficiency_metrics'):
+            if scanned is not None:
+                self.efficiency_metrics['total_scanned'] = scanned
+            if bought is not None:
+                self.efficiency_metrics['total_bought'] = bought
+            if success_rate is not None:
+                self.efficiency_metrics['success_rate'] = success_rate
+            
+            # Update conversion rate
+            if self.efficiency_metrics['total_scanned'] > 0:
+                self.efficiency_metrics['conversion_rate'] = (self.efficiency_metrics['total_bought'] / self.efficiency_metrics['total_scanned']) * 100
+    
+    def record_hourly_pnl(self, pnl: float):
+        """Record P&L for current hour."""
+        if hasattr(self, 'hourly_performance'):
+            current_hour = time.localtime().tm_hour
+            if current_hour not in self.hourly_performance:
+                self.hourly_performance[current_hour] = {'pnl': 0, 'trades': 0}
+            self.hourly_performance[current_hour]['pnl'] += pnl
+            self.hourly_performance[current_hour]['trades'] += 1
+    
+    def update_position_health(self):
+        """Calculate and update position health scores."""
+        if hasattr(self, 'position_health') and self.positions_data:
+            healthy = 0
+            at_risk = 0
+            danger = 0
+            
+            for pos in self.positions_data:
+                pnl_pct = (pos.get('pnl', 0) / pos.get('value', 1)) * 100 if pos.get('value', 0) > 0 else 0
+                
+                if pnl_pct >= -5:
+                    healthy += 1
+                elif pnl_pct >= -15:
+                    at_risk += 1
+                else:
+                    danger += 1
+            
+            self.position_health['healthy_count'] = healthy
+            self.position_health['at_risk_count'] = at_risk
+            self.position_health['danger_count'] = danger
+            
+            # Calculate overall score (100 = all healthy, 0 = all in danger)
+            total = len(self.positions_data)
+            if total > 0:
+                score = ((healthy * 100) + (at_risk * 50)) / total
+                self.position_health['overall_score'] = int(score)
+    
+    def update_volatility(self, opportunity_count: int):
+        \"\"\"Update market volatility based on opportunity count.\"\"\"
+        if hasattr(self, 'market_volatility'):
+            # Baseline: 1000-2000 opportunities = normal
+            if opportunity_count < 500:
+                self.market_volatility['current_volatility'] = 'low'
+                self.market_volatility['opportunity_multiplier'] = 0.5
+                self.market_volatility['risk_level'] = 'low'
+            elif opportunity_count < 2000:
+                self.market_volatility['current_volatility'] = 'normal'
+                self.market_volatility['opportunity_multiplier'] = 1.0
+                self.market_volatility['risk_level'] = 'normal'
+            elif opportunity_count < 4000:
+                self.market_volatility['current_volatility'] = 'high'
+                self.market_volatility['opportunity_multiplier'] = 2.0
+                self.market_volatility['risk_level'] = 'elevated'
+            else:
+                self.market_volatility['current_volatility'] = 'extreme'
+                self.market_volatility['opportunity_multiplier'] = 3.0
+                self.market_volatility['risk_level'] = 'high'
     
     def increment_cycle(self):
         """Increment cycle counter."""
@@ -6518,11 +6853,23 @@ class OrcaKillCycle:
                             print(f"   💸 Waiting for cash (${total_cash:.2f} available, need ${amount_per_position * 0.3:.2f})")
                         else:
                             # Scan market
+                            scan_start = time.time()
                             opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
+                            scan_time = time.time() - scan_start
                             
                             if opportunities:
+                                # Update volatility based on opportunity count
+                                warroom.update_volatility(len(opportunities))
+                                
                                 # Update opportunity queue for display
                                 warroom.update_opportunity_queue(opportunities)
+                                
+                                # Update efficiency metrics
+                                warroom.update_efficiency(scanned=len(opportunities))
+                                
+                                # Flash alert if extreme volatility
+                                if len(opportunities) > 4000:
+                                    warroom.add_flash_alert(f"Extreme volatility! {len(opportunities):,} opportunities", 'warning')
                                 
                                 # Filter for symbols not already in positions
                                 active_symbols = [p.symbol for p in positions]
@@ -6585,6 +6932,13 @@ class OrcaKillCycle:
                                                             # Track the buy order
                                                             self.track_buy_order(symbol_clean, buy_order, best.exchange)
                                                             
+                                                            # Update efficiency metrics (bought)
+                                                            if hasattr(warroom, 'efficiency_metrics'):
+                                                                warroom.efficiency_metrics['total_bought'] = warroom.efficiency_metrics.get('total_bought', 0) + 1
+                                                            
+                                                            # Update position health
+                                                            warroom.update_position_health()
+                                                            
                                                             print(f"   ✅ BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
                                                             print(f"      🎯 Target: ${target_price:,.4f} ({target_pct}%)")
                                                             print(f"      🚫 NO STOP LOSS - HOLD UNTIL PROFIT!")
@@ -6592,6 +6946,9 @@ class OrcaKillCycle:
                                                             session_stats['total_trades'] += 1
                                         except Exception as e:
                                             print(f"   ⚠️ Buy failed: {e}")
+                                            # Flash alert for API issues
+                                            if 'timeout' in str(e).lower() or 'connection' in str(e).lower():
+                                                warroom.add_flash_alert(f"{best.exchange.upper()} API issue", 'warning')
                                     else:
                                         print(f"   👑 Queen says: Wait (consciousness too low)")
                                 else:
@@ -7513,6 +7870,12 @@ class OrcaKillCycle:
                         'pnl': session_stats['total_pnl']
                     }
                     
+                    # Update position health and success rate every cycle
+                    warroom.update_position_health()
+                    if session_stats['total_trades'] > 0:
+                        success_rate = (session_stats['winning_trades'] / session_stats['total_trades']) * 100
+                        warroom.update_efficiency(success_rate=success_rate)
+                    
                     # ═══════════════════════════════════════════════════════
                     # BATCH PRICE UPDATE
                     # ═══════════════════════════════════════════════════════
@@ -7621,6 +7984,14 @@ class OrcaKillCycle:
                             eta=eta_str,
                             firm=firm_str
                         )
+                        
+                        # Flash alert for deeply underwater positions
+                        pnl_pct = (net_pnl / entry_cost * 100) if entry_cost > 0 else 0
+                        if pnl_pct < -15 and not hasattr(pos, 'alerted_underwater'):
+                            warroom.add_flash_alert(f"{pos.symbol} underwater {pnl_pct:.1f}%", 'critical')
+                            pos.alerted_underwater = True
+                        elif pnl_pct >= -5:
+                            pos.alerted_underwater = False  # Reset alert when recovered
                         
                         # Check for profitable exit
                         if current >= pos.target_price or net_pnl > entry_cost * 0.01:

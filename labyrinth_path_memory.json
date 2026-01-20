@@ -13,7 +13,7 @@
   },
   "USDC->AXS": {
     "wins": 0.0,
-    "losses": 23.0
+    "losses": 24.0
   },
   "CHZ->USDC": {
     "wins": 0.0,
@@ -41,7 +41,7 @@
   },
   "USDC->IDEX": {
     "wins": 0.0,
-    "losses": 4.0
+    "losses": 5.0
   },
   "USDT->USDC": {
     "wins": 10.0,
@@ -97,7 +97,7 @@
   },
   "USDC->PEPE": {
     "wins": 2.0,
-    "losses": 5.0
+    "losses": 6.0
   },
   "IDEX->BONK": {
     "wins": 1.0,
@@ -181,7 +181,7 @@
   },
   "USDC->SOL": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "SOL->ADA": {
     "wins": 0.0,
@@ -197,7 +197,7 @@
   },
   "USDC->ETH": {
     "wins": 1.0,
-    "losses": 0.0
+    "losses": 1.0
   },
   "USDC->ADA": {
     "wins": 1.0,
@@ -425,7 +425,7 @@
   },
   "USDC->1000SATS": {
     "wins": 0.0,
-    "losses": 1.0
+    "losses": 2.0
   },
   "PEPE->DOGS": {
     "wins": 0.0,
@@ -1545,19 +1545,19 @@
   },
   "USD->EPIC": {
     "wins": 0.0,
-    "losses": 2.0
+    "losses": 3.0
   },
   "USD->FORM": {
     "wins": 0.0,
-    "losses": 2.0
+    "losses": 3.0
   },
   "USD->IOTA": {
     "wins": 0.0,
-    "losses": 2.0
+    "losses": 3.0
   },
   "USD->JUV": {
     "wins": 0.0,
-    "losses": 2.0
+    "losses": 3.0
   },
   "USD->THE": {
     "wins": 0.0,
@@ -1750,5 +1750,85 @@
   "USD->QNT": {
     "wins": 0.0,
     "losses": 2.0
+  },
+  "USDC->MEME": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->FLOKI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BONK": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->DOGS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->PUMP": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SAND": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->TLM": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->PHA": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->GPS": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SXT": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->HOME": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->DOLO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->EPIC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->SSV": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->NEIRO": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->PENGU": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->LUNC": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->EURI": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->BANK": {
+    "wins": 0.0,
+    "losses": 1.0
+  },
+  "USDC->ZRO": {
+    "wins": 0.0,
+    "losses": 1.0
   }
 }
