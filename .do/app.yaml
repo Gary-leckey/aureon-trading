@@ -1,92 +1,22 @@
-# 🚀 DigitalOcean App Platform Configuration
-# Deploys Aureon Trading System as a managed container
-#
-# Deploy: doctl apps create --spec .do/app.yaml
-# Update: doctl apps update <app-id> --spec .do/app.yaml
-
-name: aureon-trading
-region: nyc  # Choose: nyc, sfo, ams, sgp, blr, fra, lon, tor
-
+name: aureon-command-center
+region: nyc
 services:
-  - name: trading-engine
-    # GitHub integration
+  - name: aureon
     github:
       repo: RA-CONSULTING/aureon-trading
       branch: main
       deploy_on_push: true
-    
-    # Use Dockerfile for build
-    dockerfile_path: Dockerfile
-    
-    # Instance configuration
-    instance_count: 1  # ⚠️ CRITICAL: Never run multiple autonomous instances!
-    instance_size_slug: professional-xs  # 1GB RAM / 1 vCPU ($12/month)
-    # Upgrade options:
-    # - basic-xs: 512MB / $5/month (too small)
-    # - professional-xs: 1GB / $12/month (minimum recommended)
-    # - professional-s: 2GB / $24/month (production recommended)
-    
-    # Environment variables (add sensitive keys via DO dashboard)
+    source_dir: /
+    environment_slug: python
+    build_command: pip install -r requirements.txt
+    run_command: supervisord -n -c deploy/supervisord.conf
+    http_port: 8800
+    instance_count: 1
+    instance_size_slug: basic-xxs
     envs:
-      - key: PYTHONIOENCODING
-        value: "utf-8"
+      - key: AUREON_STATE_DIR
+        value: /tmp/aureon_state
       - key: PYTHONUNBUFFERED
         value: "1"
-      - key: LOG_LEVEL
-        value: "INFO"
-      
-      # ⚠️ ADD THESE AS ENCRYPTED VARIABLES IN DO DASHBOARD:
-      # Go to App Settings → Environment Variables → Edit
-      # - KRAKEN_API_KEY
-      # - KRAKEN_API_SECRET
-      # - BINANCE_API_KEY
-      # - BINANCE_API_SECRET
-      # - ALPACA_API_KEY
-      # - ALPACA_API_SECRET
-      # - CAPITAL_API_KEY
-      # - CAPITAL_API_PASSWORD
-      # - CAPITAL_IDENTIFIER
-    
-    # Health check configuration
-    health_check:
-      http_path: /health  # You may need to add a health endpoint
-      initial_delay_seconds: 120  # Allow 2 minutes for system initialization
-      period_seconds: 60
-      timeout_seconds: 30
-      success_threshold: 1
-      failure_threshold: 3
-    
-    # Alerts
-    alerts:
-      - rule: CPU_UTILIZATION
-        value: 80
-      - rule: MEM_UTILIZATION
-        value: 85
-      - rule: RESTART_COUNT
-        value: 3
-    
-    # Auto-scaling (optional, but dangerous for trading!)
-    # autoscaling:
-    #   min_instance_count: 1
-    #   max_instance_count: 1  # Keep at 1 for trading!
-    
-    # Log forwarding (optional - requires setup)
-    # log_destinations:
-    #   - name: aureon-logs
-    #     papertrail:
-    #       endpoint: YOUR_PAPERTRAIL_ENDPOINT
-
-# Optional: Add a database if needed
-# databases:
-#   - engine: PG
-#     name: aureon-db
-#     production: false
-#     version: "15"
-
-# Optional: Add static site for dashboard
-# static_sites:
-#   - name: dashboard
-#     github:
-#       repo: RA-CONSULTING/aureon-trading
-#       branch: main
-#     output_dir: /dashboard
+      - key: PYTHONIOENCODING
+        value: "utf-8"
