@@ -32,6 +32,9 @@ ENV AUREON_STATE_DIR=/app/state
 # Create directories for state files
 RUN mkdir -p /app/state /app/logs
 
+# Make startup scripts executable
+RUN chmod +x /app/deploy/*.sh 2>/dev/null || true
+
 # Install supervisor for process management
 RUN pip install --no-cache-dir supervisor
 
