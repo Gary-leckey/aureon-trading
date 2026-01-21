@@ -25,27 +25,34 @@ from typing import List, Dict, Any, Optional
 from binance_client import BinanceClient
 from decimal import Decimal, ROUND_DOWN
 
+# Safe print for Windows multi-module imports
+def _safe_print(*args, **kwargs):
+    try:
+        print(*args, **kwargs)
+    except (ValueError, OSError, IOError):
+        pass
+
 # 🪙 PENNY PROFIT ENGINE
 try:
     from penny_profit_engine import check_penny_exit, get_penny_engine
     PENNY_PROFIT_AVAILABLE = True
     _penny_engine = get_penny_engine()
-    print("🪙 Penny Profit Engine loaded for QGITA")
+    _safe_print("🪙 Penny Profit Engine loaded for QGITA")
 except ImportError:
     PENNY_PROFIT_AVAILABLE = False
     _penny_engine = None
-    print("⚠️ Penny Profit Engine not available")
+    _safe_print("⚠️ Penny Profit Engine not available")
 
 # 🧠 WISDOM COGNITION ENGINE - 11 Civilizations
 try:
     from aureon_miner_brain import WisdomCognitionEngine
     WISDOM_AVAILABLE = True
     _wisdom_engine = WisdomCognitionEngine()
-    print("🧠 Wisdom Engine loaded - 11 civilizations ready")
+    _safe_print("🧠 Wisdom Engine loaded - 11 civilizations ready")
 except ImportError:
     WISDOM_AVAILABLE = False
     _wisdom_engine = None
-    print("⚠️ Wisdom Engine not available")
+    _safe_print("⚠️ Wisdom Engine not available")
 
 try:
     from dotenv import load_dotenv
