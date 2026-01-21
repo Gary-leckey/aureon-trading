@@ -55,7 +55,34 @@ fi
 echo "═══════════════════════════════════════════════════════════════════"
 echo ""
 
+# Create state directory
+mkdir -p ${AUREON_STATE_DIR:-/app/state}
+
+# Write initial state so dashboard shows something
+echo '{"timestamp": 0, "session_stats": {"cycles": 0}, "positions": [], "queen_message": "Orca starting..."}' > ${AUREON_STATE_DIR:-/app/state}/dashboard_snapshot.json
+
 # Start the Orca Kill Cycle with trading parameters
 # Args: max_positions=3, amount_per_position=$1.00, target_pct=1.0%
 echo "🦈🔪 LAUNCHING ORCA AUTONOMOUS TRADING 🔪🦈"
-exec python -u orca_complete_kill_cycle.py --autonomous 3 1.0 1.0
+echo "   Max positions: 3"
+echo "   Amount per position: \$1.00"
+echo "   Target profit: 1.0%"
+echo ""
+
+# Run with error handling - restart on crash
+while true; do
+    echo "$(date): Starting Orca autonomous mode..."
+    python -u orca_complete_kill_cycle.py --autonomous 3 1.0 1.0
+    EXIT_CODE=$?
+    echo "$(date): Orca exited with code $EXIT_CODE"
+    
+    if [ $EXIT_CODE -eq 0 ]; then
+        echo "Orca completed normally, restarting in 10 seconds..."
+    else
+        echo "⚠️ Orca crashed! Restarting in 30 seconds..."
+        # Write error state
+        echo "{\"timestamp\": $(date +%s), \"session_stats\": {\"cycles\": 0}, \"positions\": [], \"queen_message\": \"Orca crashed - restarting...\"}" > ${AUREON_STATE_DIR:-/app/state}/dashboard_snapshot.json
+        sleep 20
+    fi
+    sleep 10
+done

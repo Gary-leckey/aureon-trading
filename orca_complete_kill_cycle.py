@@ -8510,7 +8510,9 @@ class OrcaKillCycle:
             with open(tmp_path, "w") as f:
                 json.dump(state, f)
             os.replace(tmp_path, final_path)
-        except Exception:
+        except Exception as e:
+            # Log state dump errors to help debugging
+            print(f"⚠️ Dashboard state dump failed: {e}")
             pass
 
     # ═══════════════════════════════════════════════════════════════════════════════
@@ -10041,6 +10043,20 @@ class OrcaKillCycle:
 
 if __name__ == "__main__":
     import sys
+    import traceback
+    
+    # 🚀 STARTUP BANNER - helps identify when Orca actually starts
+    print("")
+    print("=" * 70)
+    print("🦈🔪 ORCA COMPLETE KILL CYCLE - STARTUP 🔪🦈")
+    print("=" * 70)
+    print(f"   Started: {datetime.now().isoformat()}")
+    print(f"   Args: {sys.argv}")
+    print(f"   Python: {sys.version}")
+    print(f"   CWD: {os.getcwd()}")
+    print(f"   STATE_DIR: {os.environ.get('AUREON_STATE_DIR', 'state')}")
+    print("=" * 70)
+    print("")
     
     # Monitor mode - stream existing positions until targets hit
     if len(sys.argv) >= 2 and sys.argv[1] == '--monitor':
@@ -10493,15 +10509,28 @@ if __name__ == "__main__":
         amount = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0  # Lower to $1 for small accounts
         target = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0
         
-        orca = OrcaKillCycle()
-        
-        # 🎖️ Use War Room (Rich dashboard) by default
         print("👑🎖️ AUTONOMOUS WAR ROOM MODE 🎖️👑")
-        stats = orca.run_autonomous_warroom(
-            max_positions=max_pos,
-            amount_per_position=amount,
-            target_pct=target
-        )
+        print(f"   Max positions: {max_pos}")
+        print(f"   Amount per position: ${amount}")
+        print(f"   Target profit: {target}%")
+        print("")
+        
+        try:
+            print("🔧 Initializing OrcaKillCycle...")
+            orca = OrcaKillCycle()
+            print("✅ OrcaKillCycle initialized successfully")
+            
+            # 🎖️ Use War Room (Rich dashboard) by default
+            print("🎖️ Starting War Room...")
+            stats = orca.run_autonomous_warroom(
+                max_positions=max_pos,
+                amount_per_position=amount,
+                target_pct=target
+            )
+        except Exception as e:
+            print(f"❌ FATAL: Autonomous mode crashed: {e}")
+            traceback.print_exc()
+            sys.exit(1)
     
     # 👑🔄 LEGACY AUTONOMOUS MODE - Raw print output (for debugging)
     elif len(sys.argv) >= 2 and sys.argv[1] == '--autonomous-legacy':
