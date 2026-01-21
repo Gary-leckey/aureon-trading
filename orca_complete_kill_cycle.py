@@ -2421,13 +2421,19 @@ class OrcaKillCycle:
             except Exception as e:
                 _safe_print(f"⚠️ Binance: {e}")
             
-            # Initialize Capital.com
-            if CAPITAL_AVAILABLE:
+            # Initialize Capital.com - LAZY LOAD (only when actually used)
+            # Capital.com rate limits aggressively, so skip on init and load on-demand
+            if CAPITAL_AVAILABLE and not quick_init:
                 try:
+                    # Only initialize if explicitly needed (not in quick mode)
                     self.clients['capital'] = CapitalClient()
                     _safe_print("✅ Capital.com: CONNECTED (CFDs)")
                 except Exception as e:
                     _safe_print(f"⚠️ Capital.com: {e}")
+            elif CAPITAL_AVAILABLE and quick_init:
+                # Quick init: register lazy loader
+                self.clients['capital'] = None  # Lazy load on first use
+                _safe_print("⚡ Capital.com: LAZY LOAD (will connect on first use)")
             
             # Set primary client for backward compatibility
             self.client = self.clients.get(exchange) or list(self.clients.values())[0]
@@ -2870,8 +2876,10 @@ class OrcaKillCycle:
                     exchange_clients['kraken'] = self.clients['kraken']
                 if 'binance' in self.clients and self.clients['binance']:
                     exchange_clients['binance'] = self.clients['binance']
-                if 'capital' in self.clients and self.clients['capital']:
-                    exchange_clients['capital'] = self.clients['capital']
+                # Lazy-load Capital.com if needed
+                capital_client = self._ensure_capital_client()
+                if capital_client:
+                    exchange_clients['capital'] = capital_client
                 self.hft_order_router.wire_exchange_clients(exchange_clients)
             print("🚀 HFT Order Router: WIRED! (WebSocket routing)")
         except Exception as e:
@@ -3291,6 +3299,19 @@ class OrcaKillCycle:
         except Exception as e:
             pass
     
+    
+    def _ensure_capital_client(self):
+        """Lazy-load Capital.com client on first use (avoids rate limiting during init)."""
+        if 'capital' in self.clients and self.clients['capital'] is None:
+            try:
+                _safe_print("🔄 Lazy-loading Capital.com client...")
+                self.clients['capital'] = CapitalClient()
+                _safe_print("✅ Capital.com: CONNECTED (lazy load)")
+            except Exception as e:
+                _safe_print(f"⚠️ Capital.com lazy load failed: {e}")
+                # Keep as None to retry next time
+        return self.clients.get('capital')
+    
     def emit_position_signal(self, symbol: str, exchange: str, qty: float, entry_price: float,
                              current_price: float, unrealized_pnl: float, status: str = "hunting"):
         """Emit position update signal to Queen via ThoughtBus."""
@@ -3480,7 +3501,8 @@ class OrcaKillCycle:
             pass
         
         try:
-            if 'capital' in self.clients and self.clients['capital']:
+            # Check Capital.com without triggering lazy-load (just check if available)
+            if 'capital' in self.clients and self.clients['capital'] is not None:
                 flight['exchange_capital'] = True
         except:
             pass
@@ -4890,8 +4912,9 @@ class OrcaKillCycle:
         # Capital.com balance checking
         if 'capital' in self.clients:
             try:
-                capital_client = self.clients['capital']
-                if not getattr(capital_client, 'enabled', False):
+                # Lazy-load Capital.com client if needed
+                capital_client = self._ensure_capital_client()
+                if not capital_client or not getattr(capital_client, 'enabled', False):
                     self.last_cash_status['capital'] = 'no_keys'
                     cash['capital'] = 0.0
                 else:

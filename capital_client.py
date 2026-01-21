@@ -56,6 +56,12 @@ class CapitalClient:
         # Check if we're rate limited
         if time.time() < self._rate_limit_until:
             return  # Still rate limited, skip silently
+        
+        # Check if session is still valid (avoid unnecessary re-auth within 50 min window)
+        if (self.cst and self.x_security_token and 
+            (time.time() - self.session_start_time) < (50 * 60)):  # 50 min buffer
+            logger.debug("Capital.com session still valid (within 50 min), skipping re-auth")
+            return
 
         url = f"{self.base_url}/session"
         payload = {
