@@ -2371,7 +2371,15 @@ class OrcaKillCycle:
     🆕 MULTI-EXCHANGE MODE: Streams ENTIRE market on BOTH Alpaca AND Kraken!
     """
     
-    def __init__(self, client=None, exchange='alpaca'):
+    def __init__(self, client=None, exchange='alpaca', quick_init=False):
+        """
+        Initialize OrcaKillCycle.
+        
+        Args:
+            client: Exchange client (optional)
+            exchange: Primary exchange name
+            quick_init: If True, skip non-essential intelligence systems (faster startup for testing)
+        """
         self.primary_exchange = exchange
         self.clients = {}
         self.fee_rates = {
@@ -2428,7 +2436,55 @@ class OrcaKillCycle:
         # 🧠 WIRE UP ALL INTELLIGENCE SYSTEMS!
         # ═══════════════════════════════════════════════════════════════════
         
-        # 1. Miner Brain (aureon_miner_brain)
+        if quick_init:
+            # QUICK INIT MODE: Skip all intelligence systems for fast startup (testing/debugging)
+            _safe_print("⚡ QUICK INIT MODE: Skipping intelligence systems for fast startup")
+            self.miner_brain = None
+            self.quantum_telescope = None
+            self.ultimate_intel = None
+            self.orca_intel = None
+            self.wave_scanner = None
+            self.volume_hunter = None
+            self.movers_scanner = None
+            self.whale_tracker = None
+            self.timeline_oracle = None
+            self.prime_sentinel = None
+            self.alpaca_fee_tracker = None
+            self.cost_basis_tracker = None
+            self.trade_logger = None
+            self.tracked_positions = {}
+            self.counter_intel = None
+            self.firm_attribution = None
+            self.hft_engine = None
+            self.luck_mapper = None
+            self.phantom_filter = None
+            self.inception_engine = None
+            self.elephant = None
+            self.elephant_brain = None
+            self.russian_doll = None
+            self.immune_system = None
+            self.moby_dick = None
+            self.ocean_scanner = None
+            self.animal_scanner = None
+            self.stargate = None
+            self.quantum_mirror = None
+            self.options_client = None
+            self.options_trading_level = None
+            self.options_scanner = None
+            self.bus = None
+            self.whale_signal = 'neutral'
+            self.intelligence_engine = None
+            self.feed_hub = None
+            self.enigma = None
+            self.predator_detector = None
+            self.stealth_executor = None
+            self.stealth_mode = "normal"
+            _safe_print("⚡ QUICK INIT COMPLETE - Ready for testing!")
+        else:
+            # FULL INIT MODE: Load all 29+ intelligence systems (may take 10-30 seconds)
+            _safe_print("🧠 FULL INIT MODE: Loading all intelligence systems...")
+            
+            # 1. Miner Brain (aureon_miner_brain)
         self.miner_brain = None
         try:
             from aureon_miner_brain import MinerBrain
@@ -3174,7 +3230,18 @@ class OrcaKillCycle:
         except Exception as e:
             print(f"👑🦈 Queen-Orca Bridge: {e}")
         
-        print("\n✅ MASTER LAUNCHER INTEGRATIONS COMPLETE")
+            # End of FULL INIT MODE
+            _safe_print("✅ FULL INIT COMPLETE - All systems operational!")
+        
+        # Common settings for both quick and full init
+        self.stream_interval = 0.1  # 100ms = 10 updates/sec
+        self.stop_loss_pct = -1.0   # Stop loss at -1%
+        self.audit_file = 'orca_execution_audit.jsonl'
+        self.audit_enabled = True
+        self.flight_check_passed = False
+        self.last_flight_check = {}
+        
+        _safe_print("\n✅ ORCA KILL CYCLE INITIALIZATION COMPLETE")
         
     def audit_event(self, event_type: str, data: dict):
         """Log audit event to JSONL file for tracking and debugging."""
@@ -8485,19 +8552,32 @@ class OrcaKillCycle:
         # MAIN LOOP WITH RICH LIVE
         # ═══════════════════════════════════════════════════════════════════
         try:
-            if RICH_AVAILABLE and warroom is not None:
-                with Live(warroom.build_display(), refresh_per_second=2, console=console) as live:
-                    while True:
-                        current_time = time.time()
-                        session_stats['cycles'] += 1
-                        warroom.cycle_count = session_stats['cycles']
-                        warroom.total_pnl = session_stats['total_pnl']
-                        warroom.kills_data = {
-                            'wins': session_stats['winning_trades'],
-                            'losses': session_stats['losing_trades'],
-                            'pnl': session_stats['total_pnl']
-                        }
-            else:
+            # Only use Rich Live if available, warroom exists, console is valid, AND stdout is open
+            use_rich_live = (RICH_AVAILABLE and 
+                           warroom is not None and 
+                           console is not None and
+                           hasattr(sys.stdout, 'closed') and 
+                           not sys.stdout.closed)
+            
+            if use_rich_live:
+                try:
+                    with Live(warroom.build_display(), refresh_per_second=2, console=console) as live:
+                        while True:
+                            current_time = time.time()
+                            session_stats['cycles'] += 1
+                            warroom.cycle_count = session_stats['cycles']
+                            warroom.total_pnl = session_stats['total_pnl']
+                            warroom.kills_data = {
+                                'wins': session_stats['winning_trades'],
+                                'losses': session_stats['losing_trades'],
+                                'pnl': session_stats['total_pnl']
+                            }
+                except (ValueError, OSError, IOError) as e:
+                    # Rich Live crashed - fall back to text mode
+                    _safe_print(f"⚠️ Rich display failed ({e}), switching to text mode...")
+                    use_rich_live = False
+            
+            if not use_rich_live:
                 # Fallback: simple loop without Rich warroom display
                 while True:
                     current_time = time.time()
