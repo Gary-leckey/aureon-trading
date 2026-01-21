@@ -7566,6 +7566,9 @@ class OrcaKillCycle:
             while True:  # ♾️ INFINITE LOOP
                 current_time = time.time()
                 session_stats['cycles'] += 1
+                
+                # Update dashboard state for Command Center UI (legacy mode)
+                self._dump_dashboard_state(session_stats, positions, queen)
 
                 # 👑 Queen pacing + profit target updates
                 if current_time - last_queen_update >= queen_update_interval:

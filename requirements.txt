@@ -18,3 +18,4 @@ cryptography
 flask
 psutil>=5.9.0
 supervisor
+rich>=13.7.0
