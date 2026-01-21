@@ -6576,6 +6576,8 @@ class QueenHiveMind:
         """
         Get a collective signal from all children.
         The Queen aggregates all perspectives into one unified view.
+        
+        If no children provide signals, use market_data as a fallback.
         """
         signals = []
         weights = []
@@ -6609,6 +6611,29 @@ class QueenHiveMind:
             queen_signal = queen_wisdom.confidence * (1 if queen_wisdom.direction == "BULLISH" else -1)
             signals.append(queen_signal)
             weights.append(2.0)  # Queen's signal is weighted higher
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 🆕 FALLBACK: If no children gave useful signals, use market_data
+        # ═══════════════════════════════════════════════════════════════════
+        non_zero_signals = [s for s in signals if abs(s) > 0.001]
+        if not non_zero_signals and market_data:
+            # Use market data to generate a basic signal
+            change_pct = market_data.get('change_pct', 0)
+            momentum = market_data.get('momentum', 0)
+            
+            # Basic heuristic: positive change + positive momentum = bullish
+            market_signal = 0.0
+            if change_pct > 0.5 and momentum > 0.3:
+                market_signal = min(0.8, change_pct / 5.0 + momentum * 0.5)  # Cap at 0.8
+            elif change_pct > 0.2:
+                market_signal = min(0.6, change_pct / 5.0)  # Moderate signal
+            elif change_pct < -2.0:
+                market_signal = max(-0.8, change_pct / 5.0)  # Bearish
+            
+            if abs(market_signal) > 0.1:
+                signals.append(market_signal)
+                weights.append(1.5)  # Market data gets reasonable weight
+                logger.debug(f"👑 Using market data fallback: signal={market_signal:.2f} (change={change_pct:.2f}%, momentum={momentum:.2f})")
         
         # Calculate weighted average
         if signals and weights:

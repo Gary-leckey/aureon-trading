@@ -7842,7 +7842,7 @@ class OrcaKillCycle:
                                             confidence = float(signal.get('confidence', 0.0))
                                             action = signal.get('action', 'HOLD')
                                             print(f"   👑 Queen signal: {action} (confidence {confidence:.0%})")
-                                            queen_approved = (action == 'BUY' and confidence >= 0.5)
+                                            queen_approved = (action == 'BUY' and confidence >= 0.3)  # Lowered from 0.5
                                         except Exception as e:
                                             print(f"   ⚠️ Queen signal unavailable: {e}")
                                     
@@ -9425,7 +9425,7 @@ class OrcaKillCycle:
                                                 )
                                             else:
                                                 print(f"👑 Queen signal {action} {confidence:.0%} for {winner.symbol}")
-                                            queen_approved = (action == 'BUY' and confidence >= 0.5)
+                                            queen_approved = (action == 'BUY' and confidence >= 0.3)  # Lowered from 0.5
                                         except Exception:
                                             queen_approved = False
 
@@ -9511,7 +9511,7 @@ class OrcaKillCycle:
                                                         f"Queen signal {action} {confidence:.0%} for {best.symbol}",
                                                         'info'
                                                     )
-                                                    queen_approved = (action == 'BUY' and confidence >= 0.5)
+                                                    queen_approved = (action == 'BUY' and confidence >= 0.3)  # Lowered from 0.5
                                                 except Exception:
                                                     queen_approved = False
 
