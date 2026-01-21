@@ -44,13 +44,22 @@ class SafeStreamHandler(logging.StreamHandler):
         try:
             msg = self.format(record)
             stream = self.stream
+            if getattr(stream, 'closed', False):
+                return
             # If on Windows and stream has a buffer, write bytes directly to bypass cp1252
             if os.name == 'nt' and hasattr(stream, 'buffer'):
+                try:
+                    if getattr(stream.buffer, 'closed', False):
+                        return
+                except (ValueError, AttributeError):
+                    return
                 stream.buffer.write((msg + self.terminator).encode('utf-8'))
                 stream.flush()
             else:
                 stream.write(msg + self.terminator)
                 self.flush()
+        except (ValueError, OSError, IOError):
+            return
         except Exception:
             self.handleError(record)
 
