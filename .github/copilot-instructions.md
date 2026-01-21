@@ -128,10 +128,18 @@ if sys.platform == 'win32':
             return (isinstance(stream, io.TextIOWrapper) and 
                     hasattr(stream, 'encoding') and stream.encoding and
                     stream.encoding.lower().replace('-', '') == 'utf8')
-        # Only wrap if not already UTF-8 wrapped (prevents re-wrapping on import)
-        if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
+        def _is_buffer_valid(stream):
+            """Check if stream buffer is valid and not closed."""
+            if not hasattr(stream, 'buffer'):
+                return False
+            try:
+                return stream.buffer is not None and not stream.buffer.closed
+            except (ValueError, AttributeError):
+                return False
+        # Only wrap if not already UTF-8 wrapped AND buffer is valid (prevents re-wrapping + closed buffer errors)
+        if _is_buffer_valid(sys.stdout) and not _is_utf8_wrapper(sys.stdout):
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        if hasattr(sys.stderr, 'buffer') and not _is_utf8_wrapper(sys.stderr):
+        if _is_buffer_valid(sys.stderr) and not _is_utf8_wrapper(sys.stderr):
             sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
     except Exception:
         pass
