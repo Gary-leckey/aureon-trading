@@ -2348,18 +2348,22 @@ Object.entries(systems).forEach(([name, online]) => {
         
         # START WEB SERVER FIRST - so health checks pass immediately!
         if AIOHTTP_AVAILABLE:
-            runner = web.AppRunner(self.app)
-            await runner.setup()
-            site = web.TCPSite(runner, '0.0.0.0', self.port)
-            await site.start()
-            
-            print(f"\n{'=' * 70}")
-            print(f"👑🌌 AUREON COMMAND CENTER STARTING...")
-            print(f"{'=' * 70}")
-            print(f"🌐 Dashboard: http://localhost:{self.port}")
-            print(f"📡 WebSocket: ws://localhost:{self.port}/ws")
-            print(f"✅ Health endpoint ready at /health")
-            print(f"{'=' * 70}\n")
+            try:
+                runner = web.AppRunner(self.app)
+                await runner.setup()
+                site = web.TCPSite(runner, '0.0.0.0', self.port)
+                await site.start()
+
+                print(f"\n{'=' * 70}")
+                print(f"👑🌌 AUREON COMMAND CENTER STARTING...")
+                print(f"{'=' * 70}")
+                print(f"🌐 Dashboard: http://localhost:{self.port}")
+                print(f"📡 WebSocket: ws://localhost:{self.port}/ws")
+                print(f"✅ Health endpoint ready at /health")
+                print(f"{'=' * 70}\n")
+            except Exception as e:
+                logger.exception("AIOHTTP server failed to start, falling back to basic HTTP", exc_info=e)
+                self._start_basic_http_server()
         else:
             self._start_basic_http_server()
         
@@ -2440,3 +2444,6 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         print("\n\n👑 Command Center stopped")
+    except Exception as e:
+        logger.exception("Command Center crashed", exc_info=e)
+        raise
