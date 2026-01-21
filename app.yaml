@@ -7,6 +7,7 @@ services:
       branch: main
       deploy_on_push: true
     source_dir: /
+    environment_slug: python
     build_command: pip install -r requirements.txt
     run_command: supervisord -n -c deploy/supervisord.conf
     http_port: 8800
