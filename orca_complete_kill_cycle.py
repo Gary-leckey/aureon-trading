@@ -4817,13 +4817,71 @@ class OrcaKillCycle:
         
         return opportunities
     
+    def _get_live_crypto_prices(self) -> Dict[str, float]:
+        """Get LIVE prices from exchange APIs for portfolio valuation."""
+        prices = {}
+        
+        # Kraken prices (for Kraken holdings + GBP rate)
+        if 'kraken' in self.clients:
+            kraken = self.clients['kraken']
+            kraken_pairs = ['ETHUSD', 'SOLUSD', 'BTCUSD', 'TRXUSD', 'ADAUSD', 'DOTUSD', 'ATOMUSD', 'GBPUSD']
+            for pair in kraken_pairs:
+                try:
+                    ticker = kraken.get_ticker(pair)
+                    if ticker:
+                        if 'c' in ticker and isinstance(ticker['c'], list):
+                            prices[pair] = float(ticker['c'][0])
+                        elif 'price' in ticker:
+                            prices[pair] = float(ticker['price'])
+                        elif 'last' in ticker:
+                            prices[pair] = float(ticker['last'])
+                except Exception:
+                    pass
+        
+        # Binance prices (for Binance holdings)
+        if 'binance' in self.clients:
+            binance = self.clients['binance']
+            binance_pairs = ['ETHUSDT', 'SOLUSDT', 'BTCUSDT', 'BNBUSDT', 'TRXUSDT', 
+                            'ADAUSDT', 'DOTUSDT', 'AVAXUSDT', 'LINKUSDT', 'MATICUSDT', 'XRPUSDT']
+            for pair in binance_pairs:
+                try:
+                    result = binance.get_ticker_price(pair)
+                    if isinstance(result, dict):
+                        prices[pair] = float(result.get('price', 0))
+                    elif result:
+                        prices[pair] = float(result)
+                except Exception:
+                    pass
+        
+        # Fallback prices if API calls failed (approximate)
+        fallbacks = {
+            'ETHUSD': 3000.0, 'ETHUSDT': 3000.0,
+            'SOLUSD': 130.0, 'SOLUSDT': 130.0,
+            'BTCUSD': 90000.0, 'BTCUSDT': 90000.0,
+            'GBPUSD': 1.27,
+            'TRXUSD': 0.25, 'TRXUSDT': 0.25,
+            'BNBUSDT': 700.0,
+            'ADAUSD': 1.0, 'ADAUSDT': 1.0,
+            'DOTUSD': 7.0, 'DOTUSDT': 7.0,
+            'ATOMUSD': 10.0,
+        }
+        for pair, fallback in fallbacks.items():
+            if pair not in prices or prices[pair] == 0:
+                prices[pair] = fallback
+        
+        return prices
+    
     def get_available_cash(self) -> Dict[str, float]:
-        """Get available cash across ALL exchanges."""
+        """Get available cash across ALL exchanges using LIVE API prices."""
         cash: Dict[str, float] = {}
         self.last_cash_status = {'alpaca': 'unknown', 'kraken': 'unknown', 'binance': 'unknown', 'capital': 'unknown'}
         
         # 🆕 TEST MODE: Add funds for testing fallback logic
         test_mode = os.environ.get('AUREON_TEST_MODE', '').lower() == 'true'
+        
+        # 📊 Get LIVE prices from APIs (cached for this call)
+        live_prices = self._get_live_crypto_prices()
+        gbp_usd_rate = live_prices.get('GBPUSD', 1.27)  # Live or fallback
         
         if 'alpaca' in self.clients:
             try:
@@ -4889,26 +4947,24 @@ class OrcaKillCycle:
                         for key in ['ZUSD', 'USD', 'USDC', 'USDT', 'TUSD', 'DAI', 'USDD']:
                             kraken_cash += float(bal.get(key, 0))
                         
-                        # 🇬🇧 ADD GBP (ZGBP) - Convert to USD at ~1.27 rate
+                        # 🇬🇧 ADD GBP (ZGBP) - Convert to USD using LIVE rate
                         gbp_balance = float(bal.get('ZGBP', 0) or bal.get('GBP', 0))
                         if gbp_balance > 0:
-                            gbp_to_usd = 1.27  # Approximate GBP/USD rate
-                            kraken_cash += gbp_balance * gbp_to_usd
+                            kraken_cash += gbp_balance * gbp_usd_rate
                         
-                        # 🪙 ADD CRYPTO BALANCES - Convert ETH, SOL, etc. to USD
-                        crypto_conversions = {
-                            'ETH': 3300.0,   # Approximate ETH/USD
-                            'XETH': 3300.0,  # Kraken ETH symbol
-                            'SOL': 250.0,    # Approximate SOL/USD
-                            'TRX': 0.25,     # Approximate TRX/USD
-                            'ADA': 1.0,      # Approximate ADA/USD
-                            'DOT': 7.0,      # Approximate DOT/USD
-                            'ATOM': 10.0,    # Approximate ATOM/USD
+                        # 🪙 ADD CRYPTO BALANCES - Convert using LIVE prices from API
+                        crypto_symbols = {
+                            'ETH': 'ETHUSD', 'XETH': 'ETHUSD',
+                            'SOL': 'SOLUSD', 'TRX': 'TRXUSD',
+                            'ADA': 'ADAUSD', 'DOT': 'DOTUSD',
+                            'ATOM': 'ATOMUSD', 'BTC': 'BTCUSD', 'XXBT': 'BTCUSD'
                         }
-                        for crypto, usd_rate in crypto_conversions.items():
+                        for crypto, pair in crypto_symbols.items():
                             crypto_bal = float(bal.get(crypto, 0))
                             if crypto_bal > 0.0001:  # Only count meaningful amounts
-                                kraken_cash += crypto_bal * usd_rate
+                                usd_rate = live_prices.get(pair, 0)
+                                if usd_rate > 0:
+                                    kraken_cash += crypto_bal * usd_rate
                         
                         self.last_cash_status['kraken'] = 'ok'
                         cash['kraken'] = kraken_cash + (5.0 if test_mode else 0)
@@ -4950,26 +5006,21 @@ class OrcaKillCycle:
                     except Exception:
                         pass
                 
-                # 🪙 ADD CRYPTO BALANCES - Convert ETH, SOL, etc. to USD
+                # 🪙 ADD CRYPTO BALANCES - Convert using LIVE prices from API
                 try:
                     balances = binance_client.get_balance() if hasattr(binance_client, 'get_balance') else {}
-                    crypto_conversions = {
-                        'ETH': 3300.0,   # Approximate ETH/USD
-                        'SOL': 250.0,    # Approximate SOL/USD
-                        'BTC': 105000.0, # Approximate BTC/USD
-                        'BNB': 700.0,    # Approximate BNB/USD
-                        'TRX': 0.25,     # Approximate TRX/USD
-                        'ADA': 1.0,      # Approximate ADA/USD
-                        'DOT': 7.0,      # Approximate DOT/USD
-                        'AVAX': 40.0,    # Approximate AVAX/USD
-                        'LINK': 25.0,    # Approximate LINK/USD
-                        'MATIC': 0.50,   # Approximate MATIC/USD
-                        'XRP': 3.0,      # Approximate XRP/USD
+                    crypto_symbols = {
+                        'ETH': 'ETHUSDT', 'SOL': 'SOLUSDT', 'BTC': 'BTCUSDT',
+                        'BNB': 'BNBUSDT', 'TRX': 'TRXUSDT', 'ADA': 'ADAUSDT',
+                        'DOT': 'DOTUSDT', 'AVAX': 'AVAXUSDT', 'LINK': 'LINKUSDT',
+                        'MATIC': 'MATICUSDT', 'XRP': 'XRPUSDT'
                     }
-                    for crypto, usd_rate in crypto_conversions.items():
+                    for crypto, pair in crypto_symbols.items():
                         crypto_bal = float(balances.get(crypto, 0) or 0)
                         if crypto_bal > 0.0001:  # Only count meaningful amounts
-                            binance_cash += crypto_bal * usd_rate
+                            usd_rate = live_prices.get(pair, 0)
+                            if usd_rate > 0:
+                                binance_cash += crypto_bal * usd_rate
                 except Exception:
                     pass
                 
@@ -4998,10 +5049,9 @@ class OrcaKillCycle:
                         capital_available = float(acc.get('available', 0) or 0)
                         currency = acc.get('currency', 'GBP')
                         
-                        # Convert GBP to USD if needed
-                        gbp_to_usd = 1.27
+                        # Convert GBP to USD using LIVE rate
                         if currency == 'GBP':
-                            capital_cash = capital_balance * gbp_to_usd
+                            capital_cash = capital_balance * gbp_usd_rate
                         else:
                             capital_cash = capital_balance
                         
