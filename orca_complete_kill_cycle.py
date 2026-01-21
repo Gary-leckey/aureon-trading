@@ -7847,8 +7847,8 @@ class OrcaKillCycle:
             print()
         except Exception as e:
             print(f"❌ Queen initialization failed: {e}")
-            print("   War Room autonomous mode requires the Queen. Aborting.")
-            return
+            print("   War Room autonomous mode requires the Queen. Falling back to legacy autonomous mode.")
+            return self.run_autonomous(max_positions, amount_per_position, target_pct, min_change_pct)
         
         # ═══════════════════════════════════════════════════════════════════
         # 🌟 RISING STAR INITIALIZATION
