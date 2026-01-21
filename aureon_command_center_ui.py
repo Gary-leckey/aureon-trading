@@ -364,6 +364,63 @@ COMMAND_CENTER_HTML = """
             font-weight: bold;
         }
 
+        .tab-btn .tab-badge.orca-pulse {
+            background: var(--accent-gold);
+            animation: orca-pulse 2s infinite;
+        }
+
+        @keyframes orca-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Orca Console Styles */
+        .exchange-dot {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            font-size: 10px;
+            font-weight: bold;
+            margin: 0 2px;
+        }
+        .exchange-dot.kraken { background: #5741d9; color: #fff; }
+        .exchange-dot.alpaca { background: #ffcd00; color: #000; }
+        .exchange-dot.binance { background: #f3ba2f; color: #000; }
+        .exchange-dot.offline { background: #333 !important; color: #666 !important; }
+
+        .orca-log-entry { margin: 2px 0; }
+        .orca-log-buy { color: #00ff88; }
+        .orca-log-sell { color: #ff6b6b; }
+        .orca-log-info { color: #888; }
+        .orca-log-success { color: #00ff00; }
+        .orca-log-warning { color: #ffaa00; }
+        .orca-log-error { color: #ff4444; }
+        .orca-log-cycle { color: #00bfff; font-weight: bold; }
+        .orca-log-pnl-pos { color: #00ff88; font-weight: bold; }
+        .orca-log-pnl-neg { color: #ff6b6b; font-weight: bold; }
+
+        .execution-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            margin: 4px 0;
+            background: rgba(255,255,255,0.03);
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        .execution-item.buy { border-left: 3px solid var(--accent-green); }
+        .execution-item.sell { border-left: 3px solid var(--accent-red); }
+        .execution-item.convert { border-left: 3px solid var(--accent-gold); }
+
         /* Tab Content */
         .tab-content {
             display: none;
@@ -799,6 +856,10 @@ COMMAND_CENTER_HTML = """
         <button class="tab-btn" onclick="switchTab('quantum')" data-tab="quantum">
             <span class="tab-icon">🔮</span>Quantum
         </button>
+        <button class="tab-btn" onclick="switchTab('orca')" data-tab="orca">
+            <span class="tab-icon">🦈</span>Orca Live
+            <span class="tab-badge orca-pulse" id="orca-cycle">0</span>
+        </button>
         <button class="tab-btn" onclick="switchTab('systems')" data-tab="systems">
             <span class="tab-icon">⚙️</span>All Systems
         </button>
@@ -1149,6 +1210,96 @@ COMMAND_CENTER_HTML = """
                         <span style="color: var(--accent-purple);" id="delta-hz">2.1 Hz</span>
                     </div>
                     <div class="signal-confidence"><div class="signal-confidence-bar" style="width: 35%; background: var(--accent-purple);"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 7: ORCA LIVE - Real-time Orca Kill Cycle Monitor -->
+    <div id="tab-orca" class="tab-content">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; padding: 15px; height: 100%;">
+            <!-- Left: Status & Stats -->
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- Orca Status Card -->
+                <div class="panel" style="text-align: center;">
+                    <div id="orca-avatar" style="font-size: 80px; margin: 10px 0;">🦈</div>
+                    <div id="orca-status-text" style="font-size: 24px; font-weight: bold; color: var(--accent-gold);">INITIALIZING...</div>
+                    <div id="orca-mode" style="color: #888; margin-top: 5px;">Mode: --</div>
+                    <div style="margin-top: 15px; display: flex; justify-content: center; gap: 10px;">
+                        <div id="orca-heartbeat" style="width: 12px; height: 12px; border-radius: 50%; background: #666; animation: pulse 1s infinite;"></div>
+                        <span id="orca-last-activity">Last activity: --</span>
+                    </div>
+                </div>
+                
+                <!-- Session Stats -->
+                <div class="panel">
+                    <h2>📊 SESSION STATS</h2>
+                    <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <div class="stat-card">
+                            <div class="stat-label">Cycles</div>
+                            <div class="stat-value gold" id="orca-cycles">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Trades</div>
+                            <div class="stat-value" id="orca-trades">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Winning</div>
+                            <div class="stat-value" id="orca-wins">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Win Rate</div>
+                            <div class="stat-value" id="orca-winrate">--%</div>
+                        </div>
+                        <div class="stat-card" style="grid-column: span 2;">
+                            <div class="stat-label">Total P&L</div>
+                            <div class="stat-value gold" id="orca-pnl">$0.0000</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Active Positions -->
+                <div class="panel" style="flex: 1; overflow: hidden;">
+                    <h2>🎯 ACTIVE POSITIONS (<span id="orca-position-count">0</span>)</h2>
+                    <div id="orca-positions" style="max-height: 200px; overflow-y: auto;">
+                        <div style="text-align: center; color: #666; padding: 20px;">No active positions</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right: Live Console -->
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- Console Header -->
+                <div class="panel" style="padding: 10px 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="margin: 0;">🖥️ ORCA LIVE CONSOLE</h2>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span id="orca-exchange-status" style="font-size: 0.9em;">
+                                <span class="exchange-dot kraken">K</span>
+                                <span class="exchange-dot alpaca">A</span>
+                                <span class="exchange-dot binance">B</span>
+                            </span>
+                            <button onclick="clearOrcaConsole()" style="background: #333; border: 1px solid #555; color: #fff; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Clear</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Live Console Output -->
+                <div class="panel" style="flex: 1; overflow: hidden; background: #0a0a0a;">
+                    <div id="orca-console" style="height: 100%; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 13px; padding: 10px; white-space: pre-wrap; line-height: 1.5;">
+<span style="color: #00ff00;">🦈 ORCA KILL CYCLE - LIVE MONITOR</span>
+<span style="color: #888;">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+<span style="color: #888;">Waiting for Orca activity...</span>
+<span style="color: #666;">Connect to WebSocket for live updates</span>
+                    </div>
+                </div>
+                
+                <!-- Recent Executions -->
+                <div class="panel" style="max-height: 200px; overflow: hidden;">
+                    <h2>📝 RECENT EXECUTIONS</h2>
+                    <div id="orca-executions" style="max-height: 150px; overflow-y: auto;">
+                        <div style="text-align: center; color: #666; padding: 10px;">No executions yet</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1769,6 +1920,197 @@ COMMAND_CENTER_HTML = """
             }
         }
 
+        // ═══════════════════════════════════════════════════════════════════
+        // ORCA LIVE TAB FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════════
+        
+        let orcaConsoleLines = [];
+        const MAX_CONSOLE_LINES = 200;
+        let lastOrcaCycle = 0;
+        let orcaStartTime = Date.now();
+        
+        function clearOrcaConsole() {
+            orcaConsoleLines = [];
+            const console = document.getElementById('orca-console');
+            if (console) {
+                console.innerHTML = `<span style="color: #00ff00;">🦈 ORCA KILL CYCLE - LIVE MONITOR</span>
+<span style="color: #888;">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+<span style="color: #888;">Console cleared. Waiting for activity...</span>`;
+            }
+        }
+        
+        function addOrcaConsoleLog(message, type = 'info') {
+            const console = document.getElementById('orca-console');
+            if (!console) return;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = {
+                'buy': 'orca-log-buy',
+                'sell': 'orca-log-sell',
+                'info': 'orca-log-info',
+                'success': 'orca-log-success',
+                'warning': 'orca-log-warning',
+                'error': 'orca-log-error',
+                'cycle': 'orca-log-cycle',
+                'pnl-pos': 'orca-log-pnl-pos',
+                'pnl-neg': 'orca-log-pnl-neg'
+            }[type] || 'orca-log-info';
+            
+            const line = `<span class="orca-log-entry ${colorClass}">[${timestamp}] ${message}</span>`;
+            orcaConsoleLines.push(line);
+            
+            // Keep only last N lines
+            while (orcaConsoleLines.length > MAX_CONSOLE_LINES) {
+                orcaConsoleLines.shift();
+            }
+            
+            console.innerHTML = orcaConsoleLines.join('\\n');
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        function updateOrcaTab(data) {
+            if (!data) return;
+            
+            const snapshot = data.data || data;
+            const stats = snapshot.session_stats || {};
+            const positions = snapshot.positions || [];
+            const executions = snapshot.recent_trades || data.recent_trades || [];
+            
+            // Update cycle counter
+            const cycles = stats.cycles || 0;
+            const cycleEl = document.getElementById('orca-cycle');
+            const cyclesEl = document.getElementById('orca-cycles');
+            if (cycleEl) cycleEl.textContent = cycles;
+            if (cyclesEl) cyclesEl.textContent = cycles;
+            
+            // Log new cycle
+            if (cycles > lastOrcaCycle && lastOrcaCycle > 0) {
+                addOrcaConsoleLog(`═══ CYCLE ${cycles} STARTED ═══`, 'cycle');
+            }
+            lastOrcaCycle = cycles;
+            
+            // Update session stats
+            const trades = stats.total_trades || 0;
+            const wins = stats.winning_trades || 0;
+            const pnl = stats.total_pnl || 0;
+            const winRate = trades > 0 ? ((wins / trades) * 100).toFixed(1) : '--';
+            
+            const tradesEl = document.getElementById('orca-trades');
+            const winsEl = document.getElementById('orca-wins');
+            const winrateEl = document.getElementById('orca-winrate');
+            const pnlEl = document.getElementById('orca-pnl');
+            
+            if (tradesEl) tradesEl.textContent = trades;
+            if (winsEl) winsEl.textContent = wins;
+            if (winrateEl) winrateEl.textContent = winRate + '%';
+            if (pnlEl) {
+                pnlEl.textContent = '$' + pnl.toFixed(4);
+                pnlEl.style.color = pnl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+            }
+            
+            // Update status
+            const statusEl = document.getElementById('orca-status-text');
+            const heartbeat = document.getElementById('orca-heartbeat');
+            const lastActivityEl = document.getElementById('orca-last-activity');
+            const modeEl = document.getElementById('orca-mode');
+            
+            const isActive = cycles > 0 || positions.length > 0 || trades > 0;
+            if (statusEl) {
+                statusEl.textContent = isActive ? 'HUNTING' : 'STANDBY';
+                statusEl.style.color = isActive ? 'var(--accent-green)' : 'var(--accent-gold)';
+            }
+            if (heartbeat) {
+                heartbeat.style.background = isActive ? '#00ff00' : '#666';
+            }
+            if (lastActivityEl) {
+                const elapsed = Math.floor((Date.now() - orcaStartTime) / 1000);
+                const mins = Math.floor(elapsed / 60);
+                const secs = elapsed % 60;
+                lastActivityEl.textContent = `Running: ${mins}m ${secs}s`;
+            }
+            if (modeEl) {
+                modeEl.textContent = 'Mode: ' + (snapshot.mode || 'STANDARD');
+            }
+            
+            // Update positions count
+            const posCountEl = document.getElementById('orca-position-count');
+            if (posCountEl) posCountEl.textContent = positions.length;
+            
+            // Update positions display
+            const posContainer = document.getElementById('orca-positions');
+            if (posContainer) {
+                if (positions.length === 0) {
+                    posContainer.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">No active positions</div>';
+                } else {
+                    posContainer.innerHTML = positions.map(pos => {
+                        const pnl = pos.current_pnl || 0;
+                        const pnlPct = pos.current_pnl_pct || 0;
+                        const pnlColor = pnl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+                        return `
+                            <div class="balance-item" style="border-left: 3px solid ${pnlColor};">
+                                <div style="flex: 1;">
+                                    <span class="balance-asset">${pos.symbol}</span>
+                                    <span style="font-size: 0.8em; color: #888;">${pos.exchange || ''}</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: ${pnlColor}; font-weight: bold;">$${pnl.toFixed(4)}</div>
+                                    <div style="font-size: 0.8em; color: ${pnlColor};">${pnlPct.toFixed(2)}%</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+            
+            // Update executions
+            const execContainer = document.getElementById('orca-executions');
+            if (execContainer && executions.length > 0) {
+                execContainer.innerHTML = executions.slice(0, 10).map(exec => {
+                    const side = (exec.side || exec.execution_type || 'BUY').toLowerCase();
+                    const sideColor = side === 'buy' ? 'var(--accent-green)' : 
+                                     side === 'sell' ? 'var(--accent-red)' : 'var(--accent-gold)';
+                    const orderIdShort = exec.order_id ? (exec.order_id.slice(0, 10) + '...') : '--';
+                    const ts = exec.timestamp ? new Date(exec.timestamp * 1000).toLocaleTimeString() : '--';
+                    
+                    return `
+                        <div class="execution-item ${side}">
+                            <div>
+                                <span style="color: ${sideColor}; font-weight: bold;">${side.toUpperCase()}</span>
+                                <span>${exec.symbol || '?'}</span>
+                                <span style="color: #666; font-size: 0.8em;">${exec.exchange || ''}</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <div>$${(exec.value_usd || exec.price * exec.quantity || 0).toFixed(2)}</div>
+                                <div style="font-size: 0.75em; color: #666;">ID: ${orderIdShort}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Log new executions to console
+                executions.slice(0, 3).forEach(exec => {
+                    const side = (exec.side || 'BUY').toUpperCase();
+                    const symbol = exec.symbol || '?';
+                    const orderId = exec.order_id ? exec.order_id.slice(0, 12) : '--';
+                    const value = (exec.value_usd || 0).toFixed(2);
+                    
+                    if (exec.timestamp && (exec.timestamp * 1000) > (Date.now() - 10000)) {
+                        // Only log very recent executions
+                        addOrcaConsoleLog(
+                            `${side === 'BUY' ? '🟢' : '🔴'} ${side} ${symbol} | $${value} | OrderID: ${orderId}`,
+                            side === 'BUY' ? 'buy' : 'sell'
+                        );
+                    }
+                });
+            }
+            
+            // Log session stats periodically
+            if (cycles % 10 === 0 && cycles > 0) {
+                const pnlType = pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+                addOrcaConsoleLog(`📊 Stats: Cycles=${cycles} | Trades=${trades} | Wins=${wins} | P&L=$${pnl.toFixed(4)}`, pnlType);
+            }
+        }
+
         // Update systems tab
         function updateSystemsTab(data) {
             if (data.systems_registry) {
@@ -1809,6 +2151,7 @@ COMMAND_CENTER_HTML = """
             updateBotTab(data);
             updateMarketFeedTab(data);
             updateQuantumTab(data);
+            updateOrcaTab(data);
             updateSystemsTab(data);
         };
 
