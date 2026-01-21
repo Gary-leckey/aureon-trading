@@ -1937,6 +1937,9 @@ class AureonCommandCenter:
                 self.conversion_hub = MyceliumConversionHub()
                 print("   🍄 Conversion Hub: WIRED")
                 time.sleep(0.1) # Yield GIL
+            except Exception as e:
+                logger.error(f"ConversionHub error: {e}")
+
         working = sum([
             1 for x in [
                 self.kraken, self.binance, self.alpaca,
