@@ -109,6 +109,9 @@ class TradeEntry:
     cosmic_phase: str
     earth_coherence: float
     gates_passed: int
+    # Exchange order tracking
+    order_id: str = ""  # Exchange order ID (txid for Kraken, id for Alpaca, orderId for Binance)
+    order_status: str = ""  # filled, partial, pending, rejected
     
 @dataclass
 class TradeExit:
@@ -126,6 +129,9 @@ class TradeExit:
     reason: str  # TP/SL/REBALANCE/etc
     hold_time_seconds: float
     hold_time_minutes: float
+    # Exchange order tracking
+    order_id: str = ""  # Exchange order ID for exit
+    order_status: str = ""
     
 @dataclass
 class ProbabilityValidation:
@@ -170,6 +176,8 @@ class TradeLogger:
         self.exits_file = self.output_dir / f"exits_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
         self.validations_file = self.output_dir / f"validations_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
         self.market_sweep_file = self.output_dir / f"market_sweep_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
+        # CRITICAL: Execution log for exchange order IDs
+        self.executions_file = self.output_dir / f"executions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
         
         # In-memory tracking
         self.active_trades: Dict[str, Dict] = {}  # {trade_id: trade_data}
@@ -250,6 +258,96 @@ class TradeLogger:
         
         result = "✅ WIN" if exit_record.net_pnl > 0 else "❌ LOSS"
         logger.info(f"📊 Trade Exit: {trade_id} | {result} | P&L: ${exit_record.net_pnl:+.2f} ({exit_record.pnl_pct:+.2f}%) | Reason: {exit_record.reason}")
+    
+    def log_execution(self, execution_type: str, exchange: str, symbol: str, 
+                      side: str, order_id: str, quantity: float = 0.0,
+                      price: float = 0.0, value_usd: float = 0.0,
+                      status: str = "executed", raw_response: Dict = None,
+                      error: str = None) -> None:
+        """
+        📝 Log every exchange execution with order ID for verification.
+        
+        Args:
+            execution_type: 'BUY', 'SELL', 'CONVERT', 'CANCEL'
+            exchange: 'kraken', 'binance', 'alpaca', 'capital'
+            symbol: Trading pair (e.g., 'BTC/USD', 'ETHUSD')
+            side: 'buy' or 'sell'
+            order_id: Exchange order ID (txid for Kraken, id for Alpaca, orderId for Binance)
+            quantity: Amount of base asset
+            price: Execution price
+            value_usd: Total value in USD
+            status: 'executed', 'pending', 'rejected', 'cancelled', 'partial'
+            raw_response: Raw exchange response (optional, for debugging)
+            error: Error message if failed
+        """
+        execution_record = {
+            "type": "execution",
+            "timestamp": datetime.now().isoformat(),
+            "unix_time": time.time(),
+            "execution_type": execution_type.upper(),
+            "exchange": exchange.lower(),
+            "symbol": symbol,
+            "side": side.lower(),
+            "order_id": order_id or "UNKNOWN",
+            "quantity": quantity,
+            "price": price,
+            "value_usd": value_usd,
+            "status": status,
+            "error": error,
+        }
+        
+        # Include raw response for debugging (sanitized)
+        if raw_response:
+            # Don't include sensitive data
+            safe_response = {k: v for k, v in raw_response.items() 
+                           if k not in ['api_key', 'signature', 'secret']}
+            execution_record["raw_response"] = safe_response
+        
+        # Write to executions file
+        with open(self.executions_file, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(execution_record) + '\n')
+        
+        # Also write to general trades file for unified view
+        with open(self.trades_file, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(execution_record) + '\n')
+        
+        # Log to console with clear visibility
+        status_icon = "✅" if status in ["executed", "filled"] else "⚠️" if status == "partial" else "❌"
+        order_short = (order_id[:12] + "...") if order_id and len(order_id) > 12 else order_id
+        
+        log_msg = (
+            f"{status_icon} EXECUTION | {execution_type.upper()} | {exchange.upper()} | "
+            f"{symbol} | {side.upper()} | Qty: {quantity:.6f} | Price: ${price:.4f} | "
+            f"Value: ${value_usd:.2f} | OrderID: {order_short} | Status: {status}"
+        )
+        
+        if error:
+            logger.error(f"{log_msg} | ERROR: {error}")
+        else:
+            logger.info(log_msg)
+    
+    def log_conversion(self, exchange: str, from_asset: str, to_asset: str,
+                       from_amount: float, to_amount: float, order_id: str,
+                       status: str = "executed", fee: float = 0.0) -> None:
+        """Log a conversion (swap) between assets."""
+        self.log_execution(
+            execution_type="CONVERT",
+            exchange=exchange,
+            symbol=f"{from_asset}/{to_asset}",
+            side="convert",
+            order_id=order_id,
+            quantity=from_amount,
+            price=to_amount / from_amount if from_amount > 0 else 0,
+            value_usd=0,  # Would need price lookup
+            status=status,
+            raw_response={
+                "from_asset": from_asset,
+                "to_asset": to_asset,
+                "from_amount": from_amount,
+                "to_amount": to_amount,
+                "fee": fee
+            }
+        )
     
     def log_probability_validation(self, validation_data: Dict[str, Any]) -> None:
         """Log prediction vs actual outcome for ML training"""

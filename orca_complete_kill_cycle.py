@@ -5233,9 +5233,25 @@ class OrcaKillCycle:
                     imperial_probability=0.95,
                     cosmic_phase='hunt',
                     earth_coherence=0.5,
-                    gates_passed=3
+                    gates_passed=3,
+                    order_id=order_id,
+                    order_status=normalized.get('status', 'filled')
                 )
                 self.trade_logger.log_entry(entry)
+                
+                # 📝 CRITICAL: Log execution with order ID for verification
+                self.trade_logger.log_execution(
+                    execution_type='BUY',
+                    exchange=exchange,
+                    symbol=symbol,
+                    side='buy',
+                    order_id=order_id,
+                    quantity=fill_qty,
+                    price=fill_price,
+                    value_usd=breakeven_info['entry_cost'],
+                    status=normalized.get('status', 'filled'),
+                    raw_response=order_result
+                )
             except Exception as e:
                 print(f"⚠️ Trade logger error: {e}")
         
@@ -5312,6 +5328,53 @@ class OrcaKillCycle:
             )
         else:
             return client.place_market_order(symbol=symbol, side='sell', quantity=quantity)
+    
+    def execute_sell_with_logging(self, client: Any, symbol: str, quantity: float,
+                                   exchange: str, current_price: float = 0, 
+                                   entry_cost: float = 0, reason: str = "TP") -> Dict:
+        """
+        📝 Execute a SELL order with comprehensive logging.
+        
+        Logs the order ID to verify execution on the exchange.
+        """
+        sell_order = client.place_market_order(symbol=symbol, side='sell', quantity=quantity)
+        
+        if sell_order:
+            # Normalize the order response
+            normalized = self.normalize_order_response(sell_order, exchange)
+            order_id = normalized.get('order_id', 'UNKNOWN')
+            fill_price = normalized.get('filled_avg_price', current_price)
+            fill_qty = normalized.get('filled_qty', quantity)
+            status = normalized.get('status', 'filled')
+            
+            # Calculate P&L
+            fee_rate = self.fee_rates.get(exchange, 0.0025)
+            exit_value = fill_price * fill_qty * (1 - fee_rate)
+            net_pnl = exit_value - entry_cost if entry_cost > 0 else 0
+            
+            # Log to trade logger
+            if self.trade_logger:
+                try:
+                    self.trade_logger.log_execution(
+                        execution_type='SELL',
+                        exchange=exchange,
+                        symbol=symbol,
+                        side='sell',
+                        order_id=order_id,
+                        quantity=fill_qty,
+                        price=fill_price,
+                        value_usd=exit_value,
+                        status=status,
+                        raw_response=sell_order
+                    )
+                except Exception as e:
+                    print(f"⚠️ Sell log error: {e}")
+            
+            # Print confirmation
+            pnl_emoji = "✅" if net_pnl >= 0 else "❌"
+            print(f"   {pnl_emoji} SELL EXECUTED | {exchange.upper()} | {symbol} | Qty: {fill_qty:.6f} | Price: ${fill_price:.4f} | P&L: ${net_pnl:+.4f} | OrderID: {order_id[:12]}...")
+        
+        return sell_order
     
     def set_stealth_mode(self, mode: str):
         """
@@ -6611,7 +6674,15 @@ class OrcaKillCycle:
                 try:
                     # Only close positions that would realize a positive net P&L
                     if pos.current_pnl > 0:
-                        sell_order = pos.client.place_market_order(symbol=pos.symbol, side='sell', quantity=pos.entry_qty)
+                        sell_order = self.execute_sell_with_logging(
+                            client=pos.client,
+                            symbol=pos.symbol,
+                            quantity=pos.entry_qty,
+                            exchange=pos.exchange,
+                            current_price=pos.current_price,
+                            entry_cost=pos.entry_cost,
+                            reason='USER_ABORT'
+                        )
                         if sell_order:
                             fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
                             sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
@@ -6748,10 +6819,14 @@ class OrcaKillCycle:
                             # Only execute sell if current unrealized P&L is positive
                             if pos.current_pnl > 0:
                                 print(f"\n   🔪🔪🔪 EXECUTING SELL ORDER (PROFITABLE) 🔪🔪🔪")
-                                sell_order = pos.client.place_market_order(
+                                sell_order = self.execute_sell_with_logging(
+                                    client=pos.client,
                                     symbol=pos.symbol,
-                                    side='sell',
-                                    quantity=pos.entry_qty
+                                    quantity=pos.entry_qty,
+                                    exchange=pos.exchange,
+                                    current_price=current,
+                                    entry_cost=pos.entry_cost,
+                                    reason=pos.kill_reason
                                 )
                                 if sell_order:
                                     sell_price = float(sell_order.get('filled_avg_price', current))
@@ -6796,7 +6871,15 @@ class OrcaKillCycle:
             print("\n\n🛑 USER ABORT - Closing all positions...")
             for pos in positions:
                 try:
-                    sell_order = pos.client.place_market_order(symbol=pos.symbol, side='sell', quantity=pos.entry_qty)
+                    sell_order = self.execute_sell_with_logging(
+                        client=pos.client,
+                        symbol=pos.symbol,
+                        quantity=pos.entry_qty,
+                        exchange=pos.exchange,
+                        current_price=pos.current_price,
+                        entry_cost=pos.entry_cost,
+                        reason='USER_ABORT'
+                    )
                     if sell_order:
                         fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
                         sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
@@ -6817,7 +6900,15 @@ class OrcaKillCycle:
             print("\n\n🛑 USER ABORT - Closing all positions...")
             for pos in positions:
                 try:
-                    sell_order = pos.client.place_market_order(symbol=pos.symbol, side='sell', quantity=pos.entry_qty)
+                    sell_order = self.execute_sell_with_logging(
+                        client=pos.client,
+                        symbol=pos.symbol,
+                        quantity=pos.entry_qty,
+                        exchange=pos.exchange,
+                        current_price=pos.current_price,
+                        entry_cost=pos.entry_cost,
+                        reason='USER_ABORT'
+                    )
                     if sell_order:
                         fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
                         sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
