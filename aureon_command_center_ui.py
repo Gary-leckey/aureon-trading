@@ -1800,6 +1800,7 @@ class AureonCommandCenter:
             try:
                 self.kraken = KrakenClient()
                 print("   🐙 Kraken: CONNECTED")
+                time.sleep(0.1) # Yield GIL
             except Exception as e:
                 logger.error(f"Kraken error: {e}")
         
@@ -1807,6 +1808,7 @@ class AureonCommandCenter:
             try:
                 self.binance = BinanceClient()
                 print("   🟡 Binance: CONNECTED")
+                time.sleep(0.1) # Yield GIL
             except Exception as e:
                 logger.error(f"Binance error: {e}")
         
@@ -1814,6 +1816,7 @@ class AureonCommandCenter:
             try:
                 self.alpaca = AlpacaClient()
                 print("   🦙 Alpaca: CONNECTED")
+                time.sleep(0.1) # Yield GIL
             except Exception as e:
                 logger.error(f"Alpaca error: {e}")
         
@@ -1824,6 +1827,7 @@ class AureonCommandCenter:
             try:
                 self.thought_bus = ThoughtBus()
                 print("   📡 Thought Bus: WIRED")
+                time.sleep(0.1) # Yield GIL
             except Exception as e:
                 logger.error(f"ThoughtBus error: {e}")
         
@@ -1831,6 +1835,7 @@ class AureonCommandCenter:
             try:
                 self.mycelium = MyceliumNetwork(initial_capital=1000.0)
                 print("   🍄 Mycelium Network: WIRED")
+                time.sleep(0.1) # Yield GIL
             except Exception as e:
                 logger.error(f"Mycelium error: {e}")
         
@@ -1838,6 +1843,7 @@ class AureonCommandCenter:
             try:
                 self.queen = QueenHiveMind()
                 print("   👑 Queen Hive Mind: WIRED")
+                time.sleep(0.1) # Yield GIL
             except Exception as e:
                 logger.error(f"Queen error: {e}")
         
@@ -1848,6 +1854,7 @@ class AureonCommandCenter:
             try:
                 self.miner = MinerBrain()
                 print("   🧠 Miner Brain: WIRED")
+                time.sleep(0.1) # Yield GIL
             except Exception as e:
                 logger.error(f"MinerBrain error: {e}")
         
@@ -1855,6 +1862,7 @@ class AureonCommandCenter:
             try:
                 self.ultimate_intel = ProbabilityUltimateIntelligence()
                 print("   💎 Ultimate Intelligence: WIRED")
+                time.sleep(0.1) # Yield GIL
             except Exception as e:
                 logger.error(f"UltimateIntel error: {e}")
         
@@ -1862,6 +1870,7 @@ class AureonCommandCenter:
             try:
                 self.timeline_oracle = TimelineOracle()
                 print("   ⏳🔮 Timeline Oracle: WIRED")
+                time.sleep(0.1) # Yield GIL
             except Exception as e:
                 logger.error(f"TimelineOracle error: {e}")
         
@@ -1869,6 +1878,7 @@ class AureonCommandCenter:
             try:
                 self.quantum_mirror = QuantumMirrorScanner()
                 print("   🔮 Quantum Mirror: WIRED")
+                time.sleep(0.1) # Yield GIL
             except Exception as e:
                 logger.error(f"QuantumMirror error: {e}")
         
@@ -1879,6 +1889,7 @@ class AureonCommandCenter:
             try:
                 self.harmonic = HarmonicWaveFusion()
                 print("   🌊 Harmonic Fusion: WIRED")
+                time.sleep(0.1) # Yield GIL
             except Exception as e:
                 logger.error(f"Harmonic error: {e}")
         
@@ -1886,18 +1897,16 @@ class AureonCommandCenter:
             try:
                 self.wave_scanner = GlobalWaveScanner()
                 print("   🌊🔭 Wave Scanner: WIRED")
+                time.sleep(0.1) # Yield GIL
             except Exception as e:
                 logger.error(f"WaveScanner error: {e}")
-        
+
         # Conversion Hub
         if MyceliumConversionHub:
             try:
                 self.conversion_hub = MyceliumConversionHub()
                 print("   🍄 Conversion Hub: WIRED")
-            except Exception as e:
-                logger.error(f"ConversionHub error: {e}")
-        
-        # Count working systems
+                time.sleep(0.1) # Yield GIL
         working = sum([
             1 for x in [
                 self.kraken, self.binance, self.alpaca,
