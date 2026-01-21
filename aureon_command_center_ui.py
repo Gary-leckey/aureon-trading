@@ -1787,7 +1787,7 @@ class AureonCommandCenter:
             self.app.router.add_get('/hub/queen/ws', self.handle_hub_queen_ws)
             self.app.router.add_get('/hub/registry', self.handle_hub_registry)
     
-    async def initialize_systems(self):
+    def initialize_systems(self):
         """Initialize all trading systems."""
         print("\n" + "=" * 70)
         print("👑🌌 AUREON COMMAND CENTER - INITIALIZING ALL SYSTEMS")
@@ -2324,7 +2324,8 @@ Object.entries(systems).forEach(([name, online]) => {
         
         # THEN initialize heavy systems (in background, so health checks don't fail)
         print("🔧 Initializing trading systems in background...")
-        await self.initialize_systems()
+        loop = asyncio.get_running_loop()
+        loop.run_in_executor(None, self.initialize_systems)
         
         print(f"\n{'=' * 70}")
         print(f"👑🌌 AUREON COMMAND CENTER FULLY ONLINE")
