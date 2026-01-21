@@ -8580,817 +8580,817 @@ class OrcaKillCycle:
                 current_time = time.time()
                 session_stats['cycles'] += 1
 
-                    # 👑 Queen pacing + profit target updates
-                    if current_time - last_queen_update >= queen_update_interval:
-                        last_queen_update = current_time
-                        _apply_queen_controls()
-                        if warroom is not None:
-                            warroom.add_flash_alert(
-                                f"Queen pacing: scan={scan_interval:.1f}s target={target_pct_current:.2f}%",
-                                'info'
-                            )
-                        else:
-                            print(f"👑 Queen pacing: scan={scan_interval:.1f}s target={target_pct_current:.2f}%")
-                    
-                    # Update position health and success rate every cycle
+                # 👑 Queen pacing + profit target updates
+                if current_time - last_queen_update >= queen_update_interval:
+                    last_queen_update = current_time
+                    _apply_queen_controls()
                     if warroom is not None:
-                        warroom.update_position_health()
-                        if session_stats['total_trades'] > 0:
-                            success_rate = (session_stats['winning_trades'] / session_stats['total_trades']) * 100
-                            warroom.update_efficiency(success_rate=success_rate)
-                    else:
-                        if session_stats['total_trades'] > 0:
-                            success_rate = (session_stats['winning_trades'] / session_stats['total_trades']) * 100
-                            print(f"📊 Success rate: {success_rate:.1f}%")
-                    
-                    # ═══════════════════════════════════════════════════════
-                    # BATCH PRICE UPDATE
-                    # ═══════════════════════════════════════════════════════
-                    all_prices = {}
-                    try:
-                        alpaca_client = self.clients.get('alpaca')
-                        if alpaca_client:
-                            symbols = [p.symbol for p in positions if p.exchange == 'alpaca']
-                            if symbols:
-                                snapshot = alpaca_client.get_crypto_snapshot(symbols)
-                                if snapshot:
-                                    for sym, data in snapshot.items():
-                                        if data and 'latestTrade' in data:
-                                            all_prices[sym] = float(data['latestTrade'].get('p', 0))
-                                        elif data and 'latestQuote' in data:
-                                            all_prices[sym] = float(data['latestQuote'].get('bp', 0))
-                    except Exception:
-                        pass
-                    
-                    try:
-                        kraken_client = self.clients.get('kraken')
-                        if kraken_client:
-                            kraken_symbols = [p.symbol for p in positions if p.exchange == 'kraken']
-                            for sym in kraken_symbols:
-                                try:
-                                    ticker = kraken_client.get_ticker(sym)
-                                    if ticker:
-                                        all_prices[sym] = ticker.get('bid', ticker.get('price', 0))
-                                except Exception:
-                                    pass
-                    except Exception:
-                        pass
-                    
-                    # ═══════════════════════════════════════════════════════
-                    # UPDATE POSITIONS & CHECK FOR EXITS
-                    # ═══════════════════════════════════════════════════════
-                    if warroom is not None:
-                        warroom.positions_data = []  # Clear and rebuild
-                    else:
-                        # No warroom display - nothing to clear
-                        pass
-                    
-                    for pos in positions[:]:
-                        current = all_prices.get(pos.symbol, 0)
-                        if current <= 0:
-                            current = pos.current_price or pos.entry_price or 0
-                        if current <= 0:
-                            continue
-                        
-                        fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
-                        entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
-                        exit_value = current * pos.entry_qty * (1 - fee_rate)
-                        net_pnl = exit_value - entry_cost
-                        market_value = current * pos.entry_qty
-                        
-                        pos.current_price = current
-                        pos.current_pnl = net_pnl
-                        
-                        # Calculate progress
-                        if pos.target_price > pos.entry_price:
-                            progress = (current - pos.entry_price) / (pos.target_price - pos.entry_price) * 100
-                        else:
-                            progress = 0
-                        
-                        # ETA calculation
-                        eta_str = "∞"
-                        if hasattr(pos, 'pnl_history'):
-                            pos.pnl_history.append((time.time(), net_pnl))
-                            if len(pos.pnl_history) > 60:
-                                pos.pnl_history = pos.pnl_history[-60:]
-                            if len(pos.pnl_history) >= 5:
-                                recent = pos.pnl_history[-5:]
-                                time_diff = recent[-1][0] - recent[0][0]
-                                pnl_diff = recent[-1][1] - recent[0][1]
-                                if time_diff > 0 and pnl_diff > 0:
-                                    target_pnl = (pos.target_price - pos.entry_price) * pos.entry_qty
-                                    remaining = target_pnl - net_pnl
-                                    rate = pnl_diff / time_diff
-                                    if rate > 0:
-                                        eta_secs = remaining / rate
-                                        if eta_secs < 60:
-                                            eta_str = f"{eta_secs:.0f}s"
-                                        elif eta_secs < 3600:
-                                            eta_str = f"{eta_secs/60:.1f}m"
-                                        else:
-                                            eta_str = f"{eta_secs/3600:.1f}h"
-                        else:
-                            pos.pnl_history = []
-                        
-                        # Get firm info (simplified)
-                        firm_str = "Scanning..."
-                        if self.counter_intel and COUNTER_INTEL_AVAILABLE:
-                            try:
-                                for firm_id in ['citadel', 'jane_street']:
-                                    ci_signal = self.counter_intel.analyze_firm_for_counter_opportunity(
-                                        firm_id, {'price': current}, {'confidence': 0.7}
-                                    )
-                                    if ci_signal:
-                                        firm_str = f"{firm_id[:8]} {ci_signal.confidence:.0%}"
-                                        if warroom is not None:
-                                            warroom.update_firm(firm_id, str(ci_signal.strategy.value)[:10] if hasattr(ci_signal.strategy, 'value') else '?', 'neutral')
-                                        break
-                            except Exception:
-                                pass
-                        
-                        # Update warroom
-                        if warroom is not None:
-                            warroom.update_position(
-                                symbol=pos.symbol,
-                                exchange=pos.exchange.upper(),
-                                value=market_value,
-                                pnl=net_pnl,
-                                progress=progress,
-                                eta=eta_str,
-                                firm=firm_str
-                            )
-                        else:
-                            print(f"POS: {pos.symbol} {pos.exchange.upper()} value=${market_value:.2f} pnl={net_pnl:+.4f} progress={progress} eta={eta_str} firm={firm_str}")
-                        
-                        # Flash alert for deeply underwater positions
-                        pnl_pct = (net_pnl / entry_cost * 100) if entry_cost > 0 else 0
-                        if pnl_pct < -15 and not hasattr(pos, 'alerted_underwater'):
-                            if warroom is not None:
-                                warroom.add_flash_alert(f"{pos.symbol} underwater {pnl_pct:.1f}%", 'critical')
-                            else:
-                                print(f"⚠️ {pos.symbol} underwater {pnl_pct:.1f}%")
-                            pos.alerted_underwater = True
-                        elif pnl_pct >= -5:
-                            pos.alerted_underwater = False  # Reset alert when recovered
-                        
-                        # Check for profitable exit
-                        if current >= pos.target_price or net_pnl > entry_cost * 0.01:
-                            try:
-                                sell_order = pos.client.place_market_order(
-                                    symbol=pos.symbol,
-                                    side='sell',
-                                    quantity=pos.entry_qty
-                                )
-                                if sell_order:
-                                    session_stats['total_pnl'] += net_pnl
-                                    session_stats['total_trades'] += 1
-                                    if net_pnl >= 0:
-                                        session_stats['winning_trades'] += 1
-                                        session_stats['best_trade'] = max(session_stats['best_trade'], net_pnl)
-                                    else:
-                                        session_stats['losing_trades'] += 1
-                                        session_stats['worst_trade'] = min(session_stats['worst_trade'], net_pnl)
-                                    
-                                    # Record kill with full details
-                                    hold_time = time.time() - pos.entry_time if hasattr(pos, 'entry_time') else 0
-                                    if warroom is not None:
-                                        warroom.record_kill(net_pnl, symbol=pos.symbol, exchange=pos.exchange, hold_time=hold_time)
-                                        warroom.remove_position(pos.symbol)
-                                    else:
-                                        print(f"🏆 Recorded kill: {pos.symbol} +${net_pnl:+.4f}")
-                                        # No warroom to remove position from, maintain local state only
-                                    positions.remove(pos)
-                                    last_scan_time = 0  # Force scan
-                            except Exception:
-                                pass
-                        
-                        # ═══════════════════════════════════════════════════════
-                        # 🌟 ACCUMULATION CHECK - BUY MORE IF PRICE DROPS
-                        # ═══════════════════════════════════════════════════════
-                        elif RISING_STAR_AVAILABLE and pos.accumulation_count < 3:
-                            # Check if price dropped enough for accumulation
-                            avg_entry = pos.avg_entry_price if pos.avg_entry_price > 0 else pos.entry_price
-                            price_drop_pct = (avg_entry - current) / avg_entry * 100 if avg_entry > 0 else 0
-                            
-                            # Accumulate if price dropped 5%+ from avg entry
-                            if price_drop_pct >= 5.0:
-                                try:
-                                    cash = self.get_available_cash()
-                                    exchange_cash = cash.get(pos.exchange, 0)
-                                    accumulate_amount = min(amount_per_position * 0.5, exchange_cash * 0.5)
-                                    
-                                    if accumulate_amount >= 0.50:
-                                        acc_order = pos.client.place_market_order(
-                                            symbol=pos.symbol,
-                                            side='buy',
-                                            quote_qty=accumulate_amount
-                                        )
-                                        if acc_order:
-                                            acc_qty = float(acc_order.get('filled_qty', 0))
-                                            acc_price = float(acc_order.get('filled_avg_price', current))
-                                            
-                                            if acc_qty > 0:
-                                                # Update position with accumulation
-                                                fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
-                                                acc_cost = acc_price * acc_qty * (1 + fee_rate)
-                                                
-                                                # New total qty and cost
-                                                new_total_qty = pos.entry_qty + acc_qty
-                                                new_total_cost = (pos.total_cost if pos.total_cost > 0 else pos.entry_cost) + acc_cost
-                                                new_avg_entry = new_total_cost / new_total_qty / (1 + fee_rate) if new_total_qty > 0 else pos.entry_price
-                                                
-                                                # Update position
-                                                pos.entry_qty = new_total_qty
-                                                pos.total_cost = new_total_cost
-                                                pos.avg_entry_price = new_avg_entry
-                                                pos.accumulation_count += 1
-                                                
-                                                # Recalculate breakeven and target
-                                                pos.breakeven_price = new_avg_entry * (1 + fee_rate) / (1 - fee_rate)
-                                                pos.target_price = pos.breakeven_price * (1 + target_pct_current / 100)
-                                                
-                                                # Track stats
-                                                rising_star_stats['accumulations_made'] += 1
-                                                rising_star_stats['total_accumulated_value'] += accumulate_amount
-                                except Exception:
-                                    pass
-                    
-                    # ═══════════════════════════════════════════════════════
-                    # 🌟 RISING STAR 4-STAGE SCAN FOR NEW OPPORTUNITIES
-                    # ═══════════════════════════════════════════════════════
-                    if current_time - last_scan_time >= scan_interval and len(positions) < max_positions:
-                        last_scan_time = current_time
-                        
-                        cash = self.get_available_cash()
-                        total_cash = sum(cash.values())
-                        
-                        if total_cash >= amount_per_position * 0.5:
-                            active_symbols = [p.symbol for p in positions]
-                            
-                            if RISING_STAR_AVAILABLE:
-                                # ═══════════════════════════════════════════════
-                                # STAGE 1: SCAN - Use ALL intelligence systems
-                                # ═══════════════════════════════════════════════
-                                candidates = self.rising_star_scanner.scan_entire_market(max_candidates=20)
-                                rising_star_stats['candidates_scanned'] += len(candidates)
-                                
-                                # Filter out symbols we already have
-                                candidates = [c for c in candidates if c.symbol.replace('/', '') not in active_symbols]
-                                
-                                if candidates:
-                                    # ═══════════════════════════════════════════════
-                                    # STAGE 2 & 3: SIMULATE + SELECT - Top 4 → Best 2
-                                    # ═══════════════════════════════════════════════
-                                    # Run 30-second simulation (Monte Carlo)
-                                    best_2 = self.rising_star_scanner.select_best_two(candidates)
-                                    rising_star_stats['simulations_run'] += min(4, len(candidates)) * 1000
-                                    rising_star_stats['winners_selected'] += len(best_2)
-                                    
-                                    # ═══════════════════════════════════════════════
-                                    # STAGE 4: EXECUTE - Open positions on winners
-                                    # ═══════════════════════════════════════════════
-                                    for winner in best_2:
-                                        if len(positions) >= max_positions:
-                                            break
-
-                                        # 👑 Queen approval required
-                                        queen_approved = False
-                                        if queen is None:
-                                            queen_approved = True  # Fallback without Queen
-                                            if warroom is not None:
-                                                warroom.add_flash_alert("Queen unavailable - proceeding with default approval", 'warning')
-                                            else:
-                                                print("👑 Queen unavailable - proceeding with default approval")
-                                        else:
-                                            try:
-                                                signal = queen.get_collective_signal(
-                                                    symbol=winner.symbol,
-                                                    market_data={
-                                                        'price': getattr(winner, 'price', 0.0),
-                                                        'change_pct': getattr(winner, 'change_pct', 0.0),
-                                                        'momentum': getattr(winner, 'momentum_score', 0.0),
-                                                        'exchange': winner.exchange
-                                                    }
-                                                )
-                                                confidence = float(signal.get('confidence', 0.0))
-                                                action = signal.get('action', 'HOLD')
-                                                if warroom is not None:
-                                                    warroom.add_flash_alert(
-                                                        f"Queen signal {action} {confidence:.0%} for {winner.symbol}",
-                                                        'info'
-                                                    )
-                                                else:
-                                                    print(f"👑 Queen signal {action} {confidence:.0%} for {winner.symbol}")
-                                                queen_approved = (action == 'BUY' and confidence >= 0.5)
-                                            except Exception:
-                                                queen_approved = False
-
-                                        if not queen_approved:
-                                            continue
-                                        
-                                        try:
-                                            client = self.clients.get(winner.exchange)
-                                            if client:
-                                                symbol_clean = winner.symbol.replace('/', '')
-                                                exchange_cash = cash.get(winner.exchange, 0)
-                                                buy_amount = min(amount_per_position, exchange_cash * 0.9)
-                                                
-                                                if buy_amount >= 0.50:
-                                                    buy_order = client.place_market_order(
-                                                        symbol=symbol_clean,
-                                                        side='buy',
-                                                        quote_qty=buy_amount
-                                                    )
-                                                    if buy_order:
-                                                        buy_qty = float(buy_order.get('filled_qty', 0))
-                                                        buy_price = float(buy_order.get('filled_avg_price', winner.price))
-                                                        
-                                                        if buy_qty > 0 and buy_price > 0:
-                                                            fee_rate = self.fee_rates.get(winner.exchange, 0.0025)
-                                                            entry_cost = buy_price * buy_qty * (1 + fee_rate)
-                                                            breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
-                                                            target_price = breakeven * (1 + target_pct_current / 100)
-                                                            
-                                                            pos = LivePosition(
-                                                                symbol=symbol_clean,
-                                                                exchange=winner.exchange,
-                                                                entry_price=buy_price,
-                                                                entry_qty=buy_qty,
-                                                                entry_cost=entry_cost,
-                                                                breakeven_price=breakeven,
-                                                                target_price=target_price,
-                                                                client=client,
-                                                                stop_price=0.0,
-                                                                # Rising Star tracking
-                                                                accumulation_count=0,
-                                                                total_cost=entry_cost,
-                                                                avg_entry_price=buy_price,
-                                                                rising_star_candidate=winner
-                                                            )
-                                                            positions.append(pos)
-                                                            session_stats['total_trades'] += 1
-                                        except Exception:
-                                            pass
-                            else:
-                                # Fallback: original scanning without Rising Star
-                                opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
-                                if opportunities:
-                                    new_opps = [o for o in opportunities if o.symbol not in active_symbols]
-                                    
-                                    if new_opps:
-                                        best = new_opps[0]
-                                        try:
-                                            client = self.clients.get(best.exchange)
-                                            if client:
-                                                # 👑 Queen approval required
-                                                queen_approved = False
-                                                if queen is None:
-                                                    queen_approved = True  # Fallback without Queen
-                                                    if warroom is not None:
-                                                        warroom.add_flash_alert("Queen unavailable - proceeding with default approval", 'warning')
-                                                    else:
-                                                        print("👑 Queen unavailable - proceeding with default approval")
-                                                else:
-                                                    try:
-                                                        signal = queen.get_collective_signal(
-                                                            symbol=best.symbol,
-                                                            market_data={
-                                                                'price': best.price,
-                                                                'change_pct': best.change_pct,
-                                                                'momentum': best.momentum_score,
-                                                                'exchange': best.exchange
-                                                            }
-                                                        )
-                                                        confidence = float(signal.get('confidence', 0.0))
-                                                        action = signal.get('action', 'HOLD')
-                                                        warroom.add_flash_alert(
-                                                            f"Queen signal {action} {confidence:.0%} for {best.symbol}",
-                                                            'info'
-                                                        )
-                                                        queen_approved = (action == 'BUY' and confidence >= 0.5)
-                                                    except Exception:
-                                                        queen_approved = False
-
-                                                if not queen_approved:
-                                                    continue
-
-                                                symbol_clean = best.symbol.replace('/', '')
-                                                exchange_cash = cash.get(best.exchange, 0)
-                                                buy_amount = min(amount_per_position, exchange_cash * 0.9)
-                                                
-                                                if buy_amount >= 0.50:
-                                                    raw_order = client.place_market_order(
-                                                        symbol=symbol_clean,
-                                                        side='buy',
-                                                        quote_qty=buy_amount
-                                                    )
-                                                    # 🔄 NORMALIZE ORDER RESPONSE across exchanges!
-                                                    buy_order = self.normalize_order_response(raw_order, best.exchange)
-                                                    
-                                                    if buy_order and buy_order.get('status') != 'rejected':
-                                                        buy_qty = buy_order.get('filled_qty', 0)
-                                                        buy_price = buy_order.get('filled_avg_price', best.price)
-                                                        
-                                                        if buy_qty > 0 and buy_price > 0:
-                                                            fee_rate = self.fee_rates.get(best.exchange, 0.0025)
-                                                            breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
-                                                            target_price = breakeven * (1 + target_pct_current / 100)
-                                                            
-                                                            pos = LivePosition(
-                                                                symbol=symbol_clean,
-                                                                exchange=best.exchange,
-                                                                entry_price=buy_price,
-                                                                entry_qty=buy_qty,
-                                                                entry_cost=buy_price * buy_qty * (1 + fee_rate),
-                                                                breakeven_price=breakeven,
-                                                                target_price=target_price,
-                                                                client=client,
-                                                                stop_price=0.0
-                                                            )
-                                                            positions.append(pos)
-                                                            session_stats['total_trades'] += 1
-                                        except Exception:
-                                            pass
-                    
-                    # ═══════════════════════════════════════════════════════
-                    # UPDATE QUANTUM SCORES FROM ALL SYSTEMS
-                    # ═══════════════════════════════════════════════════════
-                    # Initialize ALL quantum scores with defaults BEFORE any try blocks
-                    # This ensures we always have values to display even if systems fail
-                    luck_score = 0.5
-                    phantom_score = 0.5
-                    inception_score = 0.5
-                    elephant_score = 0.5
-                    russian_doll_score = 0.5
-                    immune_score = 0.5
-                    moby_score = 0.3
-                    stargate_score = 0.5
-                    mirror_score = 0.5
-                    hnc_score = 0.3
-                    historical_score = 0.5
-                    war_band_score = 0.5
-                    quantum = {}
-                    intel = {}
-                    
-                    try:
-                        # Get REAL market data for quantum scoring (NO PHANTOMS)
-                        target_symbol = "BTC/USD"
-                        if positions: target_symbol = positions[0].symbol
-                        
-                        mkt = self._get_real_market_data(target_symbol, all_prices)
-                        btc_price = mkt['price']
-                        # Tune volatility sensitivity for Luck Mapper (0.1% change should register)
-                        # We want 0-1 range. 1% move is huge for 1h. 
-                        # So let's say 1% change => 1.0 volatility.
-                        real_volatility = min(1.0, abs(mkt['change_pct']) * 1.5)
-
-                        
-                        # Gather full intelligence from all wired systems
-                        intel = self.gather_all_intelligence(all_prices)
-                        
-                        # Get quantum score with REAL parameters
-                        quantum = self.get_quantum_score(
-                            target_symbol, 
-                            mkt['price'], 
-                            mkt['change_pct'], 
-                            mkt['volume'], 
-                            mkt['momentum']
+                        warroom.add_flash_alert(
+                            f"Queen pacing: scan={scan_interval:.1f}s target={target_pct_current:.2f}%",
+                            'info'
                         )
-                        
-                        # ═══════════════════════════════════════════════════════════════════
-                        # 🔗 UNITY FIX: Get REAL scores from all wired systems
-                        # ═══════════════════════════════════════════════════════════════════
-                        
-                        # Luck Field - from quantum result or direct query
-                        luck_score = quantum.get('luck_field', 0)
-                        if luck_score == 0 and self.luck_mapper:
+                    else:
+                        print(f"👑 Queen pacing: scan={scan_interval:.1f}s target={target_pct_current:.2f}%")
+                
+                # Update position health and success rate every cycle
+                if warroom is not None:
+                    warroom.update_position_health()
+                    if session_stats['total_trades'] > 0:
+                        success_rate = (session_stats['winning_trades'] / session_stats['total_trades']) * 100
+                        warroom.update_efficiency(success_rate=success_rate)
+                else:
+                    if session_stats['total_trades'] > 0:
+                        success_rate = (session_stats['winning_trades'] / session_stats['total_trades']) * 100
+                        print(f"📊 Success rate: {success_rate:.1f}%")
+                
+                # ═══════════════════════════════════════════════════════
+                # BATCH PRICE UPDATE
+                # ═══════════════════════════════════════════════════════
+                all_prices = {}
+                try:
+                    alpaca_client = self.clients.get('alpaca')
+                    if alpaca_client:
+                        symbols = [p.symbol for p in positions if p.exchange == 'alpaca']
+                        if symbols:
+                            snapshot = alpaca_client.get_crypto_snapshot(symbols)
+                            if snapshot:
+                                for sym, data in snapshot.items():
+                                    if data and 'latestTrade' in data:
+                                        all_prices[sym] = float(data['latestTrade'].get('p', 0))
+                                    elif data and 'latestQuote' in data:
+                                        all_prices[sym] = float(data['latestQuote'].get('bp', 0))
+                except Exception:
+                    pass
+                
+                try:
+                    kraken_client = self.clients.get('kraken')
+                    if kraken_client:
+                        kraken_symbols = [p.symbol for p in positions if p.exchange == 'kraken']
+                        for sym in kraken_symbols:
                             try:
-                                reading = self.luck_mapper.read_field(
-                                    price=mkt['price'], 
-                                    volatility=real_volatility,
-                                    market_frequency=mkt['volume'] / 1000000
-                                )
-                                luck_score = reading.luck_field if reading else 0.5
-                            except: luck_score = 0.5
-                        
-                        # Phantom Filter - check if phantom is cleared
-                        phantom_score = 0.5
-                        if self.phantom_filter:
-                            try:
-                                phantom_score = 1.0 if self.phantom_filter.is_cleared() else 0.3
-                            except: phantom_score = 0.5
-                        
-                        # Inception/Limbo - from quantum result
-                        inception_score = quantum.get('limbo_probability', 0.5)
-                        
-                        # Elephant Learning - direct query
-                        elephant_score = quantum.get('elephant_score', 0)
-                        if elephant_score == 0 and self.elephant:
-                            try:
-                                raw_score = self.elephant.get_asset_score("BTC/USD")
-                                elephant_score = raw_score / 100.0  # Normalize 0-100 to 0-1
-                            except: elephant_score = 0.5
-                        elif elephant_score > 1.0:
-                             elephant_score = elephant_score / 100.0 # Fix if from quantum dict
-
-                        
-                        # Russian Doll - queen confidence
-                        russian_doll_score = quantum.get('queen_confidence', 0)
-                        if russian_doll_score == 0 and self.russian_doll:
-                            try:
-                                directives = self.russian_doll.get_queen_directives()
-                                russian_doll_score = directives.get('confidence', 0.5)
-                            except: russian_doll_score = 0.5
-                        
-                        # Immune System - health check
-                        immune_score = 0.5
-                        if self.immune_system:
-                            try:
-                                health = self.immune_system.get_health_status()
-                                immune_score = 1.0 if health.get('overall') == 'healthy' else 0.5
-                            except: immune_score = 0.5
-                        
-                        # Moby Dick - whale confidence
-                        moby_score = 0
-                        if self.moby_dick:
-                            try:
-                                preds = self.moby_dick.get_execution_ready_predictions()
-                                moby_score = 0.8 if preds else 0.3
-                            except: moby_score = 0.3
-                        
-                        # Stargate - network coherence
-                        stargate_score = quantum.get('stargate_coherence', 0)
-                        if stargate_score == 0 and self.stargate:
-                            try:
-                                status = self.stargate.get_status()
-                                stargate_score = status.get('network_coherence', 0.5)
-                            except: stargate_score = 0.5
-                        
-                        # Quantum Mirror - boost value
-                        mirror_score = quantum.get('mirror_boost', 0)
-                        if mirror_score == 0 and self.quantum_mirror:
-                            try:
-                                boost, _ = self.quantum_mirror.get_quantum_boost('USD', 'BTC', 'mixed')
-                                mirror_score = min(1.0, boost) if boost else 0.5
-                            except: mirror_score = 0.5
-                        
-                        # HNC Surge - from quantum result or detector
-                        hnc_score = quantum.get('hnc_surge_intensity', 0)
-                        if hnc_score == 0 and self.hnc_surge_detector:
-                            try:
-                                surge = self.hnc_surge_detector.detect_surge("BTC/USD")
-                                hnc_score = surge.intensity if surge else 0.3
-                            except: hnc_score = 0.3
-                        
-                        # Historical Hunter - pattern confidence
-                        historical_score = quantum.get('historical_confidence', 0)
-                        if historical_score == 0 and self.historical_hunter:
-                            try:
-                                historical_score = 0.6  # Active = baseline confidence
-                            except: historical_score = 0.5
-                        
-                        # Apache War Band - calculate unified score
-                        if war_band:
-                            try:
-                                war_band_score = war_band.calculate_unified()
-                            except: war_band_score = 0.5
-                        
-                        # (Quantum update moved OUTSIDE try block for reliability)
-                        
-                        # Update firm activity from intelligence
-                        for whale in intel.get('whale_predictions', []):
-                            firm_name = whale.get('firm', whale.get('symbol', 'Unknown'))
-                            if warroom is not None:
-                                warroom.update_firm(
-                                    firm_name[:12],
-                                    whale.get('action', 'watching'),
-                                    whale.get('direction', 'neutral')
-                                )
-                            else:
-                                print(f"FIRM: {firm_name[:12]} action={whale.get('action','watching')} dir={whale.get('direction','neutral')}")
-                        
-                        # Add bot detections to firms display
-                        for bot in intel.get('bots', [])[:3]:
-                            if warroom is not None:
-                                warroom.update_firm(
-                                    bot.get('firm', 'Bot')[:12],
-                                    bot.get('type', 'algo'),
-                                    bot.get('direction', 'neutral')
-                                )
-                            else:
-                                print(f"BOT: {bot.get('firm','Bot')[:12]} type={bot.get('type','algo')} dir={bot.get('direction','neutral')}")
-                        
-                        # 🌟 Update Rising Star stats in display
-                        if RISING_STAR_AVAILABLE:
-                            if warroom is not None:
-                                warroom.update_rising_star(rising_star_stats)
-                            else:
-                                print(f"RisingStar: {rising_star_stats}")
-                        
-                        # 🦅 Update Momentum stats
-                        mom_res = getattr(self, 'last_momentum_result', {})
-                        micro_res = getattr(self, 'last_micro_result', [])
-                        
-                        wolf_stat = 'Initializing...'
-                        lion_stat = 'Initializing...'
-                        ant_stat = 'Initializing...'
-                        hb_stat = 'Initializing...'
-                        
-                        if self.momentum_ecosystem:
-                            # Use last result or default to Stalking if empty cache but system exists
-                            if not mom_res:
-                                wolf_stat = "Stalking"
-                                lion_stat = "Napping" 
-                                ant_stat = "Marching"
-                                hb_stat = "Hovering"
-                            else:
-                                w_count = len(mom_res.get('wolf', []))
-                                l_count = len(mom_res.get('lion', []))
-                                a_count = len(mom_res.get('ants', []))
-                                hb_data = mom_res.get('hummingbird', [])
-                                hb_count = len(hb_data) if isinstance(hb_data, list) else 0
-
-                                wolf_stat = f"Hunting ({w_count} targets)" if w_count > 0 else "Stalking"
-                                lion_stat = f"Hunting ({l_count} prey)" if l_count > 0 else "Stalking"
-                                ant_stat = f"Swarming ({a_count} paths)" if a_count > 0 else "Foraging"
-                                hb_stat = f"Pollinating ({hb_count} flowers)" if hb_count > 0 else "Hovering"
-                        
-                        if warroom is not None:
-                            warroom.update_momentum(
-                                wolf_status=wolf_stat,
-                                lion_status=lion_stat,
-                                ants_status=ant_stat,
-                                hummingbird_status=hb_stat,
-                                micro_targets=len(micro_res) if micro_res else 0
-                            )
-                        else:
-                            print(f"Momentum: wolf={wolf_stat}, lion={lion_stat}, ants={ant_stat}, hb={hb_stat}, micro={len(micro_res) if micro_res else 0}")
-                        
-                        # 🌌 Stargate Grid Update
-                        if self.stargate_grid:
-                            try:
-                                active_node = self.stargate_grid.get_active_node()
-                                grid_coherence = self.stargate_grid.calculate_grid_coherence()
-                                warroom.update_stargate(
-                                    active_node=f"{active_node.name} ({active_node.element})",
-                                    coherence=grid_coherence,
-                                    description=getattr(active_node, 'description', '')
-                                )
+                                ticker = kraken_client.get_ticker(sym)
+                                if ticker:
+                                    all_prices[sym] = ticker.get('bid', ticker.get('price', 0))
                             except Exception:
                                 pass
+                except Exception:
+                    pass
+                
+                # ═══════════════════════════════════════════════════════
+                # UPDATE POSITIONS & CHECK FOR EXITS
+                # ═══════════════════════════════════════════════════════
+                if warroom is not None:
+                    warroom.positions_data = []  # Clear and rebuild
+                else:
+                    # No warroom display - nothing to clear
+                    pass
+                
+                for pos in positions[:]:
+                    current = all_prices.get(pos.symbol, 0)
+                    if current <= 0:
+                        current = pos.current_price or pos.entry_price or 0
+                    if current <= 0:
+                        continue
+                    
+                    fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
+                    entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
+                    exit_value = current * pos.entry_qty * (1 - fee_rate)
+                    net_pnl = exit_value - entry_cost
+                    market_value = current * pos.entry_qty
+                    
+                    pos.current_price = current
+                    pos.current_pnl = net_pnl
+                    
+                    # Calculate progress
+                    if pos.target_price > pos.entry_price:
+                        progress = (current - pos.entry_price) / (pos.target_price - pos.entry_price) * 100
+                    else:
+                        progress = 0
+                    
+                    # ETA calculation
+                    eta_str = "∞"
+                    if hasattr(pos, 'pnl_history'):
+                        pos.pnl_history.append((time.time(), net_pnl))
+                        if len(pos.pnl_history) > 60:
+                            pos.pnl_history = pos.pnl_history[-60:]
+                        if len(pos.pnl_history) >= 5:
+                            recent = pos.pnl_history[-5:]
+                            time_diff = recent[-1][0] - recent[0][0]
+                            pnl_diff = recent[-1][1] - recent[0][1]
+                            if time_diff > 0 and pnl_diff > 0:
+                                target_pnl = (pos.target_price - pos.entry_price) * pos.entry_qty
+                                remaining = target_pnl - net_pnl
+                                rate = pnl_diff / time_diff
+                                if rate > 0:
+                                    eta_secs = remaining / rate
+                                    if eta_secs < 60:
+                                        eta_str = f"{eta_secs:.0f}s"
+                                    elif eta_secs < 3600:
+                                        eta_str = f"{eta_secs/60:.1f}m"
+                                    else:
+                                        eta_str = f"{eta_secs/3600:.1f}h"
+                    else:
+                        pos.pnl_history = []
+                    
+                    # Get firm info (simplified)
+                    firm_str = "Scanning..."
+                    if self.counter_intel and COUNTER_INTEL_AVAILABLE:
+                        try:
+                            for firm_id in ['citadel', 'jane_street']:
+                                ci_signal = self.counter_intel.analyze_firm_for_counter_opportunity(
+                                    firm_id, {'price': current}, {'confidence': 0.7}
+                                )
+                                if ci_signal:
+                                    firm_str = f"{firm_id[:8]} {ci_signal.confidence:.0%}"
+                                    if warroom is not None:
+                                        warroom.update_firm(firm_id, str(ci_signal.strategy.value)[:10] if hasattr(ci_signal.strategy, 'value') else '?', 'neutral')
+                                    break
+                        except Exception:
+                            pass
+                    
+                    # Update warroom
+                    if warroom is not None:
+                        warroom.update_position(
+                            symbol=pos.symbol,
+                            exchange=pos.exchange.upper(),
+                            value=market_value,
+                            pnl=net_pnl,
+                            progress=progress,
+                            eta=eta_str,
+                            firm=firm_str
+                        )
+                    else:
+                        print(f"POS: {pos.symbol} {pos.exchange.upper()} value=${market_value:.2f} pnl={net_pnl:+.4f} progress={progress} eta={eta_str} firm={firm_str}")
+                    
+                    # Flash alert for deeply underwater positions
+                    pnl_pct = (net_pnl / entry_cost * 100) if entry_cost > 0 else 0
+                    if pnl_pct < -15 and not hasattr(pos, 'alerted_underwater'):
+                        if warroom is not None:
+                            warroom.add_flash_alert(f"{pos.symbol} underwater {pnl_pct:.1f}%", 'critical')
+                        else:
+                            print(f"⚠️ {pos.symbol} underwater {pnl_pct:.1f}%")
+                        pos.alerted_underwater = True
+                    elif pnl_pct >= -5:
+                        pos.alerted_underwater = False  # Reset alert when recovered
+                    
+                    # Check for profitable exit
+                    if current >= pos.target_price or net_pnl > entry_cost * 0.01:
+                        try:
+                            sell_order = pos.client.place_market_order(
+                                symbol=pos.symbol,
+                                side='sell',
+                                quantity=pos.entry_qty
+                            )
+                            if sell_order:
+                                session_stats['total_pnl'] += net_pnl
+                                session_stats['total_trades'] += 1
+                                if net_pnl >= 0:
+                                    session_stats['winning_trades'] += 1
+                                    session_stats['best_trade'] = max(session_stats['best_trade'], net_pnl)
+                                else:
+                                    session_stats['losing_trades'] += 1
+                                    session_stats['worst_trade'] = min(session_stats['worst_trade'], net_pnl)
+                                
+                                # Record kill with full details
+                                hold_time = time.time() - pos.entry_time if hasattr(pos, 'entry_time') else 0
+                                if warroom is not None:
+                                    warroom.record_kill(net_pnl, symbol=pos.symbol, exchange=pos.exchange, hold_time=hold_time)
+                                    warroom.remove_position(pos.symbol)
+                                else:
+                                    print(f"🏆 Recorded kill: {pos.symbol} +${net_pnl:+.4f}")
+                                    # No warroom to remove position from, maintain local state only
+                                positions.remove(pos)
+                                last_scan_time = 0  # Force scan
+                        except Exception:
+                            pass
+                    
+                    # ═══════════════════════════════════════════════════════
+                    # 🌟 ACCUMULATION CHECK - BUY MORE IF PRICE DROPS
+                    # ═══════════════════════════════════════════════════════
+                    elif RISING_STAR_AVAILABLE and pos.accumulation_count < 3:
+                        # Check if price dropped enough for accumulation
+                        avg_entry = pos.avg_entry_price if pos.avg_entry_price > 0 else pos.entry_price
+                        price_drop_pct = (avg_entry - current) / avg_entry * 100 if avg_entry > 0 else 0
                         
-                        # 🎯 OPTIONS SCANNING - Every 5 minutes check for income opportunities
-                        if self.options_scanner and self.options_trading_level:
+                        # Accumulate if price dropped 5%+ from avg entry
+                        if price_drop_pct >= 5.0:
                             try:
-                                # Only scan every 5 minutes (options don't change rapidly)
-                                if not hasattr(self, '_last_options_scan') or time.time() - self._last_options_scan > 300:
-                                    self._last_options_scan = time.time()
+                                cash = self.get_available_cash()
+                                exchange_cash = cash.get(pos.exchange, 0)
+                                accumulate_amount = min(amount_per_position * 0.5, exchange_cash * 0.5)
+                                
+                                if accumulate_amount >= 0.50:
+                                    acc_order = pos.client.place_market_order(
+                                        symbol=pos.symbol,
+                                        side='buy',
+                                        quote_qty=accumulate_amount
+                                    )
+                                    if acc_order:
+                                        acc_qty = float(acc_order.get('filled_qty', 0))
+                                        acc_price = float(acc_order.get('filled_avg_price', current))
+                                        
+                                        if acc_qty > 0:
+                                            # Update position with accumulation
+                                            fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
+                                            acc_cost = acc_price * acc_qty * (1 + fee_rate)
+                                            
+                                            # New total qty and cost
+                                            new_total_qty = pos.entry_qty + acc_qty
+                                            new_total_cost = (pos.total_cost if pos.total_cost > 0 else pos.entry_cost) + acc_cost
+                                            new_avg_entry = new_total_cost / new_total_qty / (1 + fee_rate) if new_total_qty > 0 else pos.entry_price
+                                            
+                                            # Update position
+                                            pos.entry_qty = new_total_qty
+                                            pos.total_cost = new_total_cost
+                                            pos.avg_entry_price = new_avg_entry
+                                            pos.accumulation_count += 1
+                                            
+                                            # Recalculate breakeven and target
+                                            pos.breakeven_price = new_avg_entry * (1 + fee_rate) / (1 - fee_rate)
+                                            pos.target_price = pos.breakeven_price * (1 + target_pct_current / 100)
+                                            
+                                            # Track stats
+                                            rising_star_stats['accumulations_made'] += 1
+                                            rising_star_stats['total_accumulated_value'] += accumulate_amount
+                            except Exception:
+                                pass
+                
+                # ═══════════════════════════════════════════════════════
+                # 🌟 RISING STAR 4-STAGE SCAN FOR NEW OPPORTUNITIES
+                # ═══════════════════════════════════════════════════════
+                if current_time - last_scan_time >= scan_interval and len(positions) < max_positions:
+                    last_scan_time = current_time
+                    
+                    cash = self.get_available_cash()
+                    total_cash = sum(cash.values())
+                    
+                    if total_cash >= amount_per_position * 0.5:
+                        active_symbols = [p.symbol for p in positions]
+                        
+                        if RISING_STAR_AVAILABLE:
+                            # ═══════════════════════════════════════════════
+                            # STAGE 1: SCAN - Use ALL intelligence systems
+                            # ═══════════════════════════════════════════════
+                            candidates = self.rising_star_scanner.scan_entire_market(max_candidates=20)
+                            rising_star_stats['candidates_scanned'] += len(candidates)
+                            
+                            # Filter out symbols we already have
+                            candidates = [c for c in candidates if c.symbol.replace('/', '') not in active_symbols]
+                            
+                            if candidates:
+                                # ═══════════════════════════════════════════════
+                                # STAGE 2 & 3: SIMULATE + SELECT - Top 4 → Best 2
+                                # ═══════════════════════════════════════════════
+                                # Run 30-second simulation (Monte Carlo)
+                                best_2 = self.rising_star_scanner.select_best_two(candidates)
+                                rising_star_stats['simulations_run'] += min(4, len(candidates)) * 1000
+                                rising_star_stats['winners_selected'] += len(best_2)
+                                
+                                # ═══════════════════════════════════════════════
+                                # STAGE 4: EXECUTE - Open positions on winners
+                                # ═══════════════════════════════════════════════
+                                for winner in best_2:
+                                    if len(positions) >= max_positions:
+                                        break
+
+                                    # 👑 Queen approval required
+                                    queen_approved = False
+                                    if queen is None:
+                                        queen_approved = True  # Fallback without Queen
+                                        if warroom is not None:
+                                            warroom.add_flash_alert("Queen unavailable - proceeding with default approval", 'warning')
+                                        else:
+                                            print("👑 Queen unavailable - proceeding with default approval")
+                                    else:
+                                        try:
+                                            signal = queen.get_collective_signal(
+                                                symbol=winner.symbol,
+                                                market_data={
+                                                    'price': getattr(winner, 'price', 0.0),
+                                                    'change_pct': getattr(winner, 'change_pct', 0.0),
+                                                    'momentum': getattr(winner, 'momentum_score', 0.0),
+                                                    'exchange': winner.exchange
+                                                }
+                                            )
+                                            confidence = float(signal.get('confidence', 0.0))
+                                            action = signal.get('action', 'HOLD')
+                                            if warroom is not None:
+                                                warroom.add_flash_alert(
+                                                    f"Queen signal {action} {confidence:.0%} for {winner.symbol}",
+                                                    'info'
+                                                )
+                                            else:
+                                                print(f"👑 Queen signal {action} {confidence:.0%} for {winner.symbol}")
+                                            queen_approved = (action == 'BUY' and confidence >= 0.5)
+                                        except Exception:
+                                            queen_approved = False
+
+                                    if not queen_approved:
+                                        continue
                                     
-                                    # Get options buying power
-                                    buying_power = self.options_client.get_options_buying_power()
-                                    
-                                    # Get options positions
-                                    opt_positions = self.options_client.get_positions()
-                                    
-                                    # Find best opportunity (if we have stocks to write calls against)
-                                    best_opp = None
                                     try:
-                                        # Check if we have any stock positions we could write calls against
-                                        stock_positions = self.clients.get('alpaca', {})
-                                        if stock_positions and hasattr(stock_positions, 'get_positions'):
-                                            for sp in stock_positions.get_positions() or []:
-                                                symbol = sp.get('symbol', '')
-                                                qty = float(sp.get('qty', 0))
-                                                current_price = float(sp.get('current_price', 0))
-                                                
-                                                # Need at least 100 shares for covered call
-                                                if qty >= 100 and current_price > 0:
-                                                    opps = self.options_scanner.scan_covered_calls(
-                                                        underlying=symbol,
-                                                        current_price=current_price,
-                                                        shares_owned=int(qty)
-                                                    )
-                                                    if opps and (not best_opp or opps[0].total_score > best_opp.get('score', 0)):
-                                                        best_opp = {
-                                                            'symbol': opps[0].contract.symbol,
-                                                            'underlying': symbol,
-                                                            'strategy': 'covered_call',
-                                                            'premium': opps[0].quote.mid_price,
-                                                            'annualized_return': opps[0].annualized_return * 100,
-                                                            'score': opps[0].total_score,
-                                                        }
+                                        client = self.clients.get(winner.exchange)
+                                        if client:
+                                            symbol_clean = winner.symbol.replace('/', '')
+                                            exchange_cash = cash.get(winner.exchange, 0)
+                                            buy_amount = min(amount_per_position, exchange_cash * 0.9)
+                                            
+                                            if buy_amount >= 0.50:
+                                                buy_order = client.place_market_order(
+                                                    symbol=symbol_clean,
+                                                    side='buy',
+                                                    quote_qty=buy_amount
+                                                )
+                                                if buy_order:
+                                                    buy_qty = float(buy_order.get('filled_qty', 0))
+                                                    buy_price = float(buy_order.get('filled_avg_price', winner.price))
+                                                    
+                                                    if buy_qty > 0 and buy_price > 0:
+                                                        fee_rate = self.fee_rates.get(winner.exchange, 0.0025)
+                                                        entry_cost = buy_price * buy_qty * (1 + fee_rate)
+                                                        breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
+                                                        target_price = breakeven * (1 + target_pct_current / 100)
+                                                        
+                                                        pos = LivePosition(
+                                                            symbol=symbol_clean,
+                                                            exchange=winner.exchange,
+                                                            entry_price=buy_price,
+                                                            entry_qty=buy_qty,
+                                                            entry_cost=entry_cost,
+                                                            breakeven_price=breakeven,
+                                                            target_price=target_price,
+                                                            client=client,
+                                                            stop_price=0.0,
+                                                            # Rising Star tracking
+                                                            accumulation_count=0,
+                                                            total_cost=entry_cost,
+                                                            avg_entry_price=buy_price,
+                                                            rising_star_candidate=winner
+                                                        )
+                                                        positions.append(pos)
+                                                        session_stats['total_trades'] += 1
                                     except Exception:
                                         pass
-                                    
-                                    # Update warroom display
-                                    warroom.update_options(
-                                        trading_level=self.options_trading_level.name if self.options_trading_level else 'N/A',
-                                        buying_power=buying_power,
-                                        positions=opt_positions,
-                                        best_opportunity=best_opp
-                                    )
-                            except Exception:
-                                pass
-                        
-                        # 🦈🔍 PREDATOR DETECTION UPDATE - Who's hunting us?
-                        if self.predator_detector:
-                            try:
-                                report = self.predator_detector.generate_hunting_report()
-                                top_predator = None
-                                if report.top_predators:
-                                    top_predator = report.top_predators[0].firm_id
-                                warroom.update_predator(
-                                    threat_level=report.threat_level,
-                                    front_run_rate=report.front_run_rate,
-                                    top_predator=top_predator,
-                                    strategy_decay=report.strategy_decay_alert
-                                )
+                        else:
+                            # Fallback: original scanning without Rising Star
+                            opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
+                            if opportunities:
+                                new_opps = [o for o in opportunities if o.symbol not in active_symbols]
                                 
-                                # 🥷 AUTO-ESCALATE STEALTH MODE based on threat level
-                                if report.threat_level == "red" and self.stealth_mode != "paranoid":
-                                    self.set_stealth_mode("paranoid")
-                                    print("🥷 AUTO-ESCALATED to PARANOID mode (threat level RED)")
-                                elif report.threat_level == "orange" and self.stealth_mode == "normal":
-                                    self.set_stealth_mode("aggressive")
-                                    print("🥷 AUTO-ESCALATED to AGGRESSIVE mode (threat level ORANGE)")
-                            except Exception:
-                                pass
-                        
-                        # 🥷 STEALTH STATS UPDATE
-                        if self.stealth_executor:
-                            try:
-                                stealth_stats = self.stealth_executor.get_stats()
-                                warroom.update_stealth(
-                                    mode=self.stealth_mode,
-                                    delayed_orders=stealth_stats.get('delayed_orders', 0),
-                                    split_orders=stealth_stats.get('split_orders', 0),
-                                    rotated_symbols=stealth_stats.get('rotated_symbols', 0),
-                                    hunted_count=len(stealth_stats.get('hunted_symbols', []))
-                                )
-                            except Exception:
-                                pass
-                            
-                    except Exception as e:
-                        pass  # Quantum gathering failed, but we still have defaults
+                                if new_opps:
+                                    best = new_opps[0]
+                                    try:
+                                        client = self.clients.get(best.exchange)
+                                        if client:
+                                            # 👑 Queen approval required
+                                            queen_approved = False
+                                            if queen is None:
+                                                queen_approved = True  # Fallback without Queen
+                                                if warroom is not None:
+                                                    warroom.add_flash_alert("Queen unavailable - proceeding with default approval", 'warning')
+                                                else:
+                                                    print("👑 Queen unavailable - proceeding with default approval")
+                                            else:
+                                                try:
+                                                    signal = queen.get_collective_signal(
+                                                        symbol=best.symbol,
+                                                        market_data={
+                                                            'price': best.price,
+                                                            'change_pct': best.change_pct,
+                                                            'momentum': best.momentum_score,
+                                                            'exchange': best.exchange
+                                                        }
+                                                    )
+                                                    confidence = float(signal.get('confidence', 0.0))
+                                                    action = signal.get('action', 'HOLD')
+                                                    warroom.add_flash_alert(
+                                                        f"Queen signal {action} {confidence:.0%} for {best.symbol}",
+                                                        'info'
+                                                    )
+                                                    queen_approved = (action == 'BUY' and confidence >= 0.5)
+                                                except Exception:
+                                                    queen_approved = False
+
+                                            if not queen_approved:
+                                                continue
+
+                                            symbol_clean = best.symbol.replace('/', '')
+                                            exchange_cash = cash.get(best.exchange, 0)
+                                            buy_amount = min(amount_per_position, exchange_cash * 0.9)
+                                            
+                                            if buy_amount >= 0.50:
+                                                raw_order = client.place_market_order(
+                                                    symbol=symbol_clean,
+                                                    side='buy',
+                                                    quote_qty=buy_amount
+                                                )
+                                                # 🔄 NORMALIZE ORDER RESPONSE across exchanges!
+                                                buy_order = self.normalize_order_response(raw_order, best.exchange)
+                                                
+                                                if buy_order and buy_order.get('status') != 'rejected':
+                                                    buy_qty = buy_order.get('filled_qty', 0)
+                                                    buy_price = buy_order.get('filled_avg_price', best.price)
+                                                    
+                                                    if buy_qty > 0 and buy_price > 0:
+                                                        fee_rate = self.fee_rates.get(best.exchange, 0.0025)
+                                                        breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
+                                                        target_price = breakeven * (1 + target_pct_current / 100)
+                                                        
+                                                        pos = LivePosition(
+                                                            symbol=symbol_clean,
+                                                            exchange=best.exchange,
+                                                            entry_price=buy_price,
+                                                            entry_qty=buy_qty,
+                                                            entry_cost=buy_price * buy_qty * (1 + fee_rate),
+                                                            breakeven_price=breakeven,
+                                                            target_price=target_price,
+                                                            client=client,
+                                                            stop_price=0.0
+                                                        )
+                                                        positions.append(pos)
+                                                        session_stats['total_trades'] += 1
+                                    except Exception:
+                                        pass
+                
+                # ═══════════════════════════════════════════════════════
+                # UPDATE QUANTUM SCORES FROM ALL SYSTEMS
+                # ═══════════════════════════════════════════════════════
+                # Initialize ALL quantum scores with defaults BEFORE any try blocks
+                # This ensures we always have values to display even if systems fail
+                luck_score = 0.5
+                phantom_score = 0.5
+                inception_score = 0.5
+                elephant_score = 0.5
+                russian_doll_score = 0.5
+                immune_score = 0.5
+                moby_score = 0.3
+                stargate_score = 0.5
+                mirror_score = 0.5
+                hnc_score = 0.3
+                historical_score = 0.5
+                war_band_score = 0.5
+                quantum = {}
+                intel = {}
+                
+                try:
+                    # Get REAL market data for quantum scoring (NO PHANTOMS)
+                    target_symbol = "BTC/USD"
+                    if positions: target_symbol = positions[0].symbol
                     
-                    # ═══════════════════════════════════════════════════════
-                    # ALWAYS UPDATE QUANTUM DISPLAY - Use whatever values we got
-                    # This is OUTSIDE the try block so it ALWAYS runs!
-                    # ═══════════════════════════════════════════════════════
-                    warroom.update_quantum(
-                        luck=luck_score,
-                        phantom=phantom_score,
-                        inception=inception_score,
-                        elephant=elephant_score,
-                        russian_doll=russian_doll_score,
-                        immune=immune_score,
-                        moby_dick=moby_score,
-                        stargate=stargate_score,
-                        quantum_mirror=mirror_score,
-                        hnc_surge=hnc_score,
-                        historical=historical_score,
-                        war_band=war_band_score,
-                        hive_state=0.8 if hive_publisher else 0.0,
-                        bot_census=0.7 if bot_census else 0.0,
-                        backtest=0.6 if backtest_engine else 0.0,
-                        global_orchestrator=0.85 if global_orchestrator else 0.0,
-                        harmonic_binary=0.75 if harmonic_binary else 0.0,
-                        harmonic_chain_master=0.8 if harmonic_chain_master else 0.0,
-                        harmonic_counter=0.7 if harmonic_counter else 0.0,
-                        harmonic_fusion=0.82 if harmonic_fusion else 0.0,
-                        harmonic_momentum=0.78 if harmonic_momentum else 0.0,
-                        harmonic_reality=0.85 if harmonic_reality else 0.0,
-                        global_bot_map=0.72 if global_bot_map else 0.0,
-                        enhanced_telescope=0.88 if enhanced_quantum_telescope else 0.0,
-                        enigma_dream=0.9 if enigma_dream else 0.0,
-                        enhancement_layer=0.85 if enhancement_layer else 0.0,
-                        enigma_integration=0.92 if enigma_integration else 0.0,
-                        firm_intelligence=0.8 if firm_intelligence else 0.0,
-                        enigma_core=0.95 if enigma_core else 0.0,
-                        aureon_miner=0.75 if aureon_miner else 0.0,
-                        multi_exchange=0.88 if multi_exchange else 0.0,
-                        multi_pair=0.82 if multi_pair else 0.0,
-                        multiverse_live=0.85 if multiverse_live else 0.0,
-                        multiverse_orchestrator=0.9 if multiverse_orchestrator else 0.0,
-                        mycelium_network=0.92 if mycelium_network else 0.0,
-                        neural_revenue=0.87 if neural_revenue else 0.0,
-                        total_boost=quantum.get('quantum_boost', 1.0) if quantum else 1.0
+                    mkt = self._get_real_market_data(target_symbol, all_prices)
+                    btc_price = mkt['price']
+                    # Tune volatility sensitivity for Luck Mapper (0.1% change should register)
+                    # We want 0-1 range. 1% move is huge for 1h. 
+                    # So let's say 1% change => 1.0 volatility.
+                    real_volatility = min(1.0, abs(mkt['change_pct']) * 1.5)
+
+                    
+                    # Gather full intelligence from all wired systems
+                    intel = self.gather_all_intelligence(all_prices)
+                    
+                    # Get quantum score with REAL parameters
+                    quantum = self.get_quantum_score(
+                        target_symbol, 
+                        mkt['price'], 
+                        mkt['change_pct'], 
+                        mkt['volume'], 
+                        mkt['momentum']
                     )
                     
-                    # Update display (Rich Live if available, otherwise just skip)
-                    if live is not None:
-                        try:
-                            live.update(warroom.build_display())
-                        except (ValueError, OSError, IOError) as e:
-                            # Rich crashed during update - stop using it
-                            _safe_print(f"⚠️ Rich display crashed ({e}), stopping display...")
-                            try:
-                                live.stop()
-                            except:
-                                pass
-                            live = None
-                    time.sleep(monitor_interval)
+                    # ═══════════════════════════════════════════════════════════════════
+                    # 🔗 UNITY FIX: Get REAL scores from all wired systems
+                    # ═══════════════════════════════════════════════════════════════════
                     
+                    # Luck Field - from quantum result or direct query
+                    luck_score = quantum.get('luck_field', 0)
+                    if luck_score == 0 and self.luck_mapper:
+                        try:
+                            reading = self.luck_mapper.read_field(
+                                price=mkt['price'], 
+                                volatility=real_volatility,
+                                market_frequency=mkt['volume'] / 1000000
+                            )
+                            luck_score = reading.luck_field if reading else 0.5
+                        except: luck_score = 0.5
+                    
+                    # Phantom Filter - check if phantom is cleared
+                    phantom_score = 0.5
+                    if self.phantom_filter:
+                        try:
+                            phantom_score = 1.0 if self.phantom_filter.is_cleared() else 0.3
+                        except: phantom_score = 0.5
+                    
+                    # Inception/Limbo - from quantum result
+                    inception_score = quantum.get('limbo_probability', 0.5)
+                    
+                    # Elephant Learning - direct query
+                    elephant_score = quantum.get('elephant_score', 0)
+                    if elephant_score == 0 and self.elephant:
+                        try:
+                            raw_score = self.elephant.get_asset_score("BTC/USD")
+                            elephant_score = raw_score / 100.0  # Normalize 0-100 to 0-1
+                        except: elephant_score = 0.5
+                    elif elephant_score > 1.0:
+                         elephant_score = elephant_score / 100.0 # Fix if from quantum dict
+
+                    
+                    # Russian Doll - queen confidence
+                    russian_doll_score = quantum.get('queen_confidence', 0)
+                    if russian_doll_score == 0 and self.russian_doll:
+                        try:
+                            directives = self.russian_doll.get_queen_directives()
+                            russian_doll_score = directives.get('confidence', 0.5)
+                        except: russian_doll_score = 0.5
+                    
+                    # Immune System - health check
+                    immune_score = 0.5
+                    if self.immune_system:
+                        try:
+                            health = self.immune_system.get_health_status()
+                            immune_score = 1.0 if health.get('overall') == 'healthy' else 0.5
+                        except: immune_score = 0.5
+                    
+                    # Moby Dick - whale confidence
+                    moby_score = 0
+                    if self.moby_dick:
+                        try:
+                            preds = self.moby_dick.get_execution_ready_predictions()
+                            moby_score = 0.8 if preds else 0.3
+                        except: moby_score = 0.3
+                    
+                    # Stargate - network coherence
+                    stargate_score = quantum.get('stargate_coherence', 0)
+                    if stargate_score == 0 and self.stargate:
+                        try:
+                            status = self.stargate.get_status()
+                            stargate_score = status.get('network_coherence', 0.5)
+                        except: stargate_score = 0.5
+                    
+                    # Quantum Mirror - boost value
+                    mirror_score = quantum.get('mirror_boost', 0)
+                    if mirror_score == 0 and self.quantum_mirror:
+                        try:
+                            boost, _ = self.quantum_mirror.get_quantum_boost('USD', 'BTC', 'mixed')
+                            mirror_score = min(1.0, boost) if boost else 0.5
+                        except: mirror_score = 0.5
+                    
+                    # HNC Surge - from quantum result or detector
+                    hnc_score = quantum.get('hnc_surge_intensity', 0)
+                    if hnc_score == 0 and self.hnc_surge_detector:
+                        try:
+                            surge = self.hnc_surge_detector.detect_surge("BTC/USD")
+                            hnc_score = surge.intensity if surge else 0.3
+                        except: hnc_score = 0.3
+                    
+                    # Historical Hunter - pattern confidence
+                    historical_score = quantum.get('historical_confidence', 0)
+                    if historical_score == 0 and self.historical_hunter:
+                        try:
+                            historical_score = 0.6  # Active = baseline confidence
+                        except: historical_score = 0.5
+                    
+                    # Apache War Band - calculate unified score
+                    if war_band:
+                        try:
+                            war_band_score = war_band.calculate_unified()
+                        except: war_band_score = 0.5
+                    
+                    # (Quantum update moved OUTSIDE try block for reliability)
+                    
+                    # Update firm activity from intelligence
+                    for whale in intel.get('whale_predictions', []):
+                        firm_name = whale.get('firm', whale.get('symbol', 'Unknown'))
+                        if warroom is not None:
+                            warroom.update_firm(
+                                firm_name[:12],
+                                whale.get('action', 'watching'),
+                                whale.get('direction', 'neutral')
+                            )
+                        else:
+                            print(f"FIRM: {firm_name[:12]} action={whale.get('action','watching')} dir={whale.get('direction','neutral')}")
+                    
+                    # Add bot detections to firms display
+                    for bot in intel.get('bots', [])[:3]:
+                        if warroom is not None:
+                            warroom.update_firm(
+                                bot.get('firm', 'Bot')[:12],
+                                bot.get('type', 'algo'),
+                                bot.get('direction', 'neutral')
+                            )
+                        else:
+                            print(f"BOT: {bot.get('firm','Bot')[:12]} type={bot.get('type','algo')} dir={bot.get('direction','neutral')}")
+                    
+                    # 🌟 Update Rising Star stats in display
+                    if RISING_STAR_AVAILABLE:
+                        if warroom is not None:
+                            warroom.update_rising_star(rising_star_stats)
+                        else:
+                            print(f"RisingStar: {rising_star_stats}")
+                    
+                    # 🦅 Update Momentum stats
+                    mom_res = getattr(self, 'last_momentum_result', {})
+                    micro_res = getattr(self, 'last_micro_result', [])
+                    
+                    wolf_stat = 'Initializing...'
+                    lion_stat = 'Initializing...'
+                    ant_stat = 'Initializing...'
+                    hb_stat = 'Initializing...'
+                    
+                    if self.momentum_ecosystem:
+                        # Use last result or default to Stalking if empty cache but system exists
+                        if not mom_res:
+                            wolf_stat = "Stalking"
+                            lion_stat = "Napping" 
+                            ant_stat = "Marching"
+                            hb_stat = "Hovering"
+                        else:
+                            w_count = len(mom_res.get('wolf', []))
+                            l_count = len(mom_res.get('lion', []))
+                            a_count = len(mom_res.get('ants', []))
+                            hb_data = mom_res.get('hummingbird', [])
+                            hb_count = len(hb_data) if isinstance(hb_data, list) else 0
+
+                            wolf_stat = f"Hunting ({w_count} targets)" if w_count > 0 else "Stalking"
+                            lion_stat = f"Hunting ({l_count} prey)" if l_count > 0 else "Stalking"
+                            ant_stat = f"Swarming ({a_count} paths)" if a_count > 0 else "Foraging"
+                            hb_stat = f"Pollinating ({hb_count} flowers)" if hb_count > 0 else "Hovering"
+                    
+                    if warroom is not None:
+                        warroom.update_momentum(
+                            wolf_status=wolf_stat,
+                            lion_status=lion_stat,
+                            ants_status=ant_stat,
+                            hummingbird_status=hb_stat,
+                            micro_targets=len(micro_res) if micro_res else 0
+                        )
+                    else:
+                        print(f"Momentum: wolf={wolf_stat}, lion={lion_stat}, ants={ant_stat}, hb={hb_stat}, micro={len(micro_res) if micro_res else 0}")
+                    
+                    # 🌌 Stargate Grid Update
+                    if self.stargate_grid:
+                        try:
+                            active_node = self.stargate_grid.get_active_node()
+                            grid_coherence = self.stargate_grid.calculate_grid_coherence()
+                            warroom.update_stargate(
+                                active_node=f"{active_node.name} ({active_node.element})",
+                                coherence=grid_coherence,
+                                description=getattr(active_node, 'description', '')
+                            )
+                        except Exception:
+                            pass
+                    
+                    # 🎯 OPTIONS SCANNING - Every 5 minutes check for income opportunities
+                    if self.options_scanner and self.options_trading_level:
+                        try:
+                            # Only scan every 5 minutes (options don't change rapidly)
+                            if not hasattr(self, '_last_options_scan') or time.time() - self._last_options_scan > 300:
+                                self._last_options_scan = time.time()
+                                
+                                # Get options buying power
+                                buying_power = self.options_client.get_options_buying_power()
+                                
+                                # Get options positions
+                                opt_positions = self.options_client.get_positions()
+                                
+                                # Find best opportunity (if we have stocks to write calls against)
+                                best_opp = None
+                                try:
+                                    # Check if we have any stock positions we could write calls against
+                                    stock_positions = self.clients.get('alpaca', {})
+                                    if stock_positions and hasattr(stock_positions, 'get_positions'):
+                                        for sp in stock_positions.get_positions() or []:
+                                            symbol = sp.get('symbol', '')
+                                            qty = float(sp.get('qty', 0))
+                                            current_price = float(sp.get('current_price', 0))
+                                            
+                                            # Need at least 100 shares for covered call
+                                            if qty >= 100 and current_price > 0:
+                                                opps = self.options_scanner.scan_covered_calls(
+                                                    underlying=symbol,
+                                                    current_price=current_price,
+                                                    shares_owned=int(qty)
+                                                )
+                                                if opps and (not best_opp or opps[0].total_score > best_opp.get('score', 0)):
+                                                    best_opp = {
+                                                        'symbol': opps[0].contract.symbol,
+                                                        'underlying': symbol,
+                                                        'strategy': 'covered_call',
+                                                        'premium': opps[0].quote.mid_price,
+                                                        'annualized_return': opps[0].annualized_return * 100,
+                                                        'score': opps[0].total_score,
+                                                    }
+                                except Exception:
+                                    pass
+                                
+                                # Update warroom display
+                                warroom.update_options(
+                                    trading_level=self.options_trading_level.name if self.options_trading_level else 'N/A',
+                                    buying_power=buying_power,
+                                    positions=opt_positions,
+                                    best_opportunity=best_opp
+                                )
+                        except Exception:
+                            pass
+                    
+                    # 🦈🔍 PREDATOR DETECTION UPDATE - Who's hunting us?
+                    if self.predator_detector:
+                        try:
+                            report = self.predator_detector.generate_hunting_report()
+                            top_predator = None
+                            if report.top_predators:
+                                top_predator = report.top_predators[0].firm_id
+                            warroom.update_predator(
+                                threat_level=report.threat_level,
+                                front_run_rate=report.front_run_rate,
+                                top_predator=top_predator,
+                                strategy_decay=report.strategy_decay_alert
+                            )
+                            
+                            # 🥷 AUTO-ESCALATE STEALTH MODE based on threat level
+                            if report.threat_level == "red" and self.stealth_mode != "paranoid":
+                                self.set_stealth_mode("paranoid")
+                                print("🥷 AUTO-ESCALATED to PARANOID mode (threat level RED)")
+                            elif report.threat_level == "orange" and self.stealth_mode == "normal":
+                                self.set_stealth_mode("aggressive")
+                                print("🥷 AUTO-ESCALATED to AGGRESSIVE mode (threat level ORANGE)")
+                        except Exception:
+                            pass
+                    
+                    # 🥷 STEALTH STATS UPDATE
+                    if self.stealth_executor:
+                        try:
+                            stealth_stats = self.stealth_executor.get_stats()
+                            warroom.update_stealth(
+                                mode=self.stealth_mode,
+                                delayed_orders=stealth_stats.get('delayed_orders', 0),
+                                split_orders=stealth_stats.get('split_orders', 0),
+                                rotated_symbols=stealth_stats.get('rotated_symbols', 0),
+                                hunted_count=len(stealth_stats.get('hunted_symbols', []))
+                            )
+                        except Exception:
+                            pass
+                        
+                except Exception as e:
+                    pass  # Quantum gathering failed, but we still have defaults
+                
+                # ═══════════════════════════════════════════════════════
+                # ALWAYS UPDATE QUANTUM DISPLAY - Use whatever values we got
+                # This is OUTSIDE the try block so it ALWAYS runs!
+                # ═══════════════════════════════════════════════════════
+                warroom.update_quantum(
+                    luck=luck_score,
+                    phantom=phantom_score,
+                    inception=inception_score,
+                    elephant=elephant_score,
+                    russian_doll=russian_doll_score,
+                    immune=immune_score,
+                    moby_dick=moby_score,
+                    stargate=stargate_score,
+                    quantum_mirror=mirror_score,
+                    hnc_surge=hnc_score,
+                    historical=historical_score,
+                    war_band=war_band_score,
+                    hive_state=0.8 if hive_publisher else 0.0,
+                    bot_census=0.7 if bot_census else 0.0,
+                    backtest=0.6 if backtest_engine else 0.0,
+                    global_orchestrator=0.85 if global_orchestrator else 0.0,
+                    harmonic_binary=0.75 if harmonic_binary else 0.0,
+                    harmonic_chain_master=0.8 if harmonic_chain_master else 0.0,
+                    harmonic_counter=0.7 if harmonic_counter else 0.0,
+                    harmonic_fusion=0.82 if harmonic_fusion else 0.0,
+                    harmonic_momentum=0.78 if harmonic_momentum else 0.0,
+                    harmonic_reality=0.85 if harmonic_reality else 0.0,
+                    global_bot_map=0.72 if global_bot_map else 0.0,
+                    enhanced_telescope=0.88 if enhanced_quantum_telescope else 0.0,
+                    enigma_dream=0.9 if enigma_dream else 0.0,
+                    enhancement_layer=0.85 if enhancement_layer else 0.0,
+                    enigma_integration=0.92 if enigma_integration else 0.0,
+                    firm_intelligence=0.8 if firm_intelligence else 0.0,
+                    enigma_core=0.95 if enigma_core else 0.0,
+                    aureon_miner=0.75 if aureon_miner else 0.0,
+                    multi_exchange=0.88 if multi_exchange else 0.0,
+                    multi_pair=0.82 if multi_pair else 0.0,
+                    multiverse_live=0.85 if multiverse_live else 0.0,
+                    multiverse_orchestrator=0.9 if multiverse_orchestrator else 0.0,
+                    mycelium_network=0.92 if mycelium_network else 0.0,
+                    neural_revenue=0.87 if neural_revenue else 0.0,
+                    total_boost=quantum.get('quantum_boost', 1.0) if quantum else 1.0
+                )
+                
+                # Update display (Rich Live if available, otherwise just skip)
+                if live is not None:
+                    try:
+                        live.update(warroom.build_display())
+                    except (ValueError, OSError, IOError) as e:
+                        # Rich crashed during update - stop using it
+                        _safe_print(f"⚠️ Rich display crashed ({e}), stopping display...")
+                        try:
+                            live.stop()
+                        except:
+                            pass
+                        live = None
+                time.sleep(monitor_interval)
+                
         except KeyboardInterrupt:
             if console:
                 try:
