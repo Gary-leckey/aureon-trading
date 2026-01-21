@@ -8001,6 +8001,46 @@ class OrcaKillCycle:
             
         return session_stats
 
+    def _dump_dashboard_state(self, session_stats, positions, queen=None):
+        """Dump live state to JSON for Command Center UI."""
+        try:
+            import json
+            # Prepare serializable positions
+            serializable_positions = []
+            for p in positions:
+                p_dict = {
+                    'symbol': p.symbol,
+                    'exchange': p.exchange,
+                    'entry_price': p.entry_price,
+                    'entry_qty': p.entry_qty,
+                    'current_price': p.current_price,
+                    'current_pnl': p.current_pnl,
+                    'current_pnl_pct': p.current_pnl_pct,
+                    'target_price': p.target_price,
+                    'entry_time': p.entry_time
+                }
+                serializable_positions.append(p_dict)
+
+            state = {
+                "timestamp": time.time(),
+                "session_stats": session_stats,
+                "positions": serializable_positions,
+                "active_count": len(positions),
+                "queen_message": "War Room Active",
+                "queen_equity": queen.equity if queen else 0.0
+            }
+
+            # Atomic write into shared state dir
+            state_dir = os.environ.get("AUREON_STATE_DIR", "state")
+            os.makedirs(state_dir, exist_ok=True)
+            tmp_path = os.path.join(state_dir, "dashboard_snapshot.json.tmp")
+            final_path = os.path.join(state_dir, "dashboard_snapshot.json")
+            with open(tmp_path, "w") as f:
+                json.dump(state, f)
+            os.replace(tmp_path, final_path)
+        except Exception:
+            pass
+
     # ═══════════════════════════════════════════════════════════════════════════════
     # 🎖️ WAR ROOM MODE - RICH TERMINAL UI (NO SPAM)
     # ═══════════════════════════════════════════════════════════════════════════════
@@ -8602,8 +8642,12 @@ class OrcaKillCycle:
             while True:
                 current_time = time.time()
                 session_stats['cycles'] += 1
+                
+                # Update dashboard state for Command Center UI
+                self._dump_dashboard_state(session_stats, positions, queen)
 
                 # 👑 Queen pacing + profit target updates
+
                 if current_time - last_queen_update >= queen_update_interval:
                     last_queen_update = current_time
                     _apply_queen_controls()

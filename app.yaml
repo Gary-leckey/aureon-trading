@@ -1,0 +1,15 @@
+name: aureon-command-center
+services:
+  - name: aureon
+    github:
+      repo: RA-CONSULTING/aureon-trading
+      branch: main
+    run_command: supervisord -c deploy/supervisord.conf
+    http_port: 8800
+    envs:
+      - key: AUREON_STATE_DIR
+        value: /tmp/aureon_state
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONIOENCODING
+        value: "utf-8"

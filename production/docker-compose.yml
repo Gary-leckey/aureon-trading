@@ -38,6 +38,7 @@ services:
     environment:
       - AUREON_MODE=production
       - AUREON_DRY_RUN=true
+      - AUREON_STATE_DIR=/aureon/data
       - TZ=UTC
     
     healthcheck:
@@ -57,6 +58,27 @@ services:
           cpus: '0.5'
           memory: 512M
     
+    networks:
+      - aureon-network
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Command Center UI (Web Dashboard)
+  # ═══════════════════════════════════════════════════════════════════════
+  command-center:
+    image: aureon-trading:latest
+    container_name: aureon-command-center
+    restart: unless-stopped
+    command: ["python", "app/aureon_command_center_ui.py"]
+    ports:
+      - "8800:8800"
+    volumes:
+      - aureon-data:/aureon/data
+      - aureon-logs:/aureon/logs
+      - aureon-config:/aureon/config
+    environment:
+      - AUREON_MODE=production
+      - AUREON_STATE_DIR=/aureon/data
+      - TZ=UTC
     networks:
       - aureon-network
 

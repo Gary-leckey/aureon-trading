@@ -568,6 +568,11 @@ COMMAND_CENTER_HTML = """
                 </div>
             </div>
             
+            <h2>⚔️ ACTIVE POSITIONS</h2>
+            <div id="positions-list" style="margin-bottom: 20px;">
+                <div style="text-align: center; color: #666; font-style: italic;">No active positions</div>
+            </div>
+            
             <h2>🔌 SYSTEMS</h2>
             <div id="systems-list"></div>
             
@@ -663,6 +668,9 @@ COMMAND_CENTER_HTML = """
                     break;
                 case 'systems_update':
                     updateSystems(data.systems);
+                    break;
+                case 'live_update':
+                    handleLiveUpdate(data.data);
                     break;
             }
         }
@@ -829,6 +837,63 @@ COMMAND_CENTER_HTML = """
             return num.toFixed(4);
         }
         
+        function handleLiveUpdate(data) {
+             if (data.positions) {
+                 updatePositions(data.positions);
+             }
+             if (data.queen_message) {
+                 document.getElementById('queen-message').textContent = data.queen_message;
+             }
+             if (data.session_stats) {
+                 const stats = data.session_stats;
+                 const winRate = (stats.total_trades > 0) ? (stats.winning_trades / stats.total_trades * 100) : 50;
+                 document.getElementById('queen-confidence').textContent = winRate.toFixed(0);
+                 
+                 if (stats.total_pnl !== undefined) {
+                     const pnlEl = document.getElementById('pnl-today');
+                     pnlEl.textContent = '$' + formatNumber(stats.total_pnl);
+                     pnlEl.className = 'stat-value ' + (stats.total_pnl >= 0 ? '' : 'negative');
+                 }
+                 
+                 // Generate cosmic score based on live activity
+                 const activity = (stats.cycles % 99) + 1;
+                 document.getElementById('cosmic-score').textContent = activity.toFixed(0);
+             }
+        }
+
+        function updatePositions(positions) {
+             const container = document.getElementById('positions-list');
+             if (!positions || positions.length === 0) {
+                 container.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">No active positions</div>';
+                 return;
+             }
+             
+             container.innerHTML = '';
+             positions.forEach(p => {
+                 const pnl = p.current_pnl || 0;
+                 const pnlPct = p.current_pnl_pct || 0;
+                 const isPos = pnl >= 0;
+                 
+                 const div = document.createElement('div');
+                 div.className = 'balance-item';
+                 div.style.borderLeft = isPos ? '3px solid var(--accent-green)' : '3px solid var(--accent-red)';
+                 
+                 div.innerHTML = `
+                    <div style="flex: 1">
+                        <span class="balance-asset">${p.symbol}</span>
+                        <span style="font-size: 0.8em; color: #888;">${p.exchange}</span>
+                    </div>
+                    <div style="text-align: right">
+                        <div style="color: #fff; font-weight: bold;">$${formatNumber(pnl)}</div>
+                        <div style="font-size: 0.8em; color: ${isPos ? 'var(--accent-green)' : 'var(--accent-red)'}">
+                            ${pnlPct.toFixed(2)}%
+                        </div>
+                    </div>
+                 `;
+                 container.appendChild(div);
+             });
+        }
+
         // Clock
         function updateClock() {
             const now = new Date();
@@ -1178,22 +1243,43 @@ class AureonCommandCenter:
         """Main update loop."""
         while self.running:
             try:
-                # Fetch balances every 30 seconds
+                # 1. Read live dashboard snapshot from Orca
+                state_dir = os.environ.get("AUREON_STATE_DIR", "state")
+                snapshot_file = os.path.join(state_dir, "dashboard_snapshot.json")
+                if os.path.exists(snapshot_file):
+                    try:
+                        with open(snapshot_file, "r") as f:
+                             data = json.load(f)
+                        
+                        # Broadcast live update
+                        await self.broadcast({
+                            "type": "live_update",
+                            "data": data
+                        })
+                        
+                        # Sync positions
+                        if 'positions' in data:
+                            self.portfolio.positions = data['positions']
+                        
+                        # Sync queen message if present
+                        if 'queen_message' in data:
+                             await self.broadcast_queen_update(
+                                data['queen_message'],
+                                cosmic=0.7,
+                                confidence=0.8,
+                                strategy="WAR ROOM"
+                            )
+
+                    except Exception:
+                        pass
+
+                # 2. Fetch balances every 30 seconds
                 if time.time() - self.last_update > 30:
                     await self.fetch_all_balances()
                     await self.broadcast_portfolio()
                     self.last_update = time.time()
                 
-                # Queen commentary
-                if self.queen:
-                    await self.broadcast_queen_update(
-                        "Monitoring markets. All systems operational.",
-                        cosmic=0.62,
-                        confidence=0.55,
-                        strategy="BALANCED"
-                    )
-                
-                await asyncio.sleep(5)
+                await asyncio.sleep(1) 
                 
             except Exception as e:
                 logger.error(f"Update loop error: {e}")
@@ -1232,7 +1318,8 @@ class AureonCommandCenter:
 
 async def main():
     """Main entry point."""
-    center = AureonCommandCenter(port=8800)
+    port = int(os.environ.get("PORT", os.environ.get("AUREON_UI_PORT", "8800")))
+    center = AureonCommandCenter(port=port)
     await center.start()
 
 

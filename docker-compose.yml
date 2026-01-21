@@ -14,6 +14,7 @@ services:
     environment:
       - PYTHONIOENCODING=utf-8
       - PYTHONUNBUFFERED=1
+      - AUREON_STATE_DIR=/app/state
     volumes:
       # Persist state files
       - ./state:/app/state
@@ -53,6 +54,7 @@ services:
     environment:
       - PYTHONIOENCODING=utf-8
       - PYTHONUNBUFFERED=1
+      - AUREON_STATE_DIR=/app/state
     command: ["python", "aureon_command_center_ui.py"]
     volumes:
       - ./state:/app/state
