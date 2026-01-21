@@ -104,28 +104,45 @@ timer.cancel()  # Cancel timeout if successful
 
 ## Usage Guide
 
-### Testing on Windows
+### ⚠️ IMPORTANT: When to Use Each Mode
+
+**`quick_init=True`** → **TESTING ONLY** (boots in 2-3 seconds)
+- ✅ Use for: Verifying system boots on Windows without crashes
+- ✅ Use for: Testing imports, checking for errors
+- ❌ **NEVER** use for: Actual trading, autonomous mode, production
+- ⚠️ Skips ALL intelligence systems - can't trade effectively!
+
+**`quick_init=False` (default)** → **PRODUCTION TRADING** (boots in 10-30 seconds)
+- ✅ Use for: Autonomous mode, pack hunts, actual trading
+- ✅ Loads: All 29+ intelligence systems for maximum edge
+- ✅ This is what autonomous mode uses automatically
+
+### Testing on Windows (TESTING ONLY)
 ```powershell
-# Quick test (2-3 seconds)
+# Quick test (2-3 seconds) - NOT FOR TRADING!
 python test_windows_startup.py
 
-# OR manually test with quick init
+# OR manually test with quick init - NOT FOR TRADING!
 python -c "from orca_complete_kill_cycle import OrcaKillCycle; o = OrcaKillCycle(quick_init=True); print('✅ OK')"
 ```
 
-### Production Trading
+### Production Trading (ALWAYS USE THIS)
 ```python
-# Full power mode (all 29+ systems)
-orca = OrcaKillCycle()  # Default: quick_init=False
+# Full power mode (all 29+ systems) - THIS IS THE DEFAULT
+orca = OrcaKillCycle()  # Automatically uses quick_init=False
 
-# OR explicit full init
+# OR explicit full init (same thing)
 orca = OrcaKillCycle(quick_init=False)
 ```
 
-### Autonomous Mode
+### Autonomous Mode (ALWAYS FULL INIT)
 ```powershell
-# Now safe on Windows - Rich display crash protected
-python orca_complete_kill_cycle.py
+# Autonomous mode ALWAYS uses full init automatically
+# All 29+ intelligence systems are loaded
+python orca_complete_kill_cycle.py --autonomous
+
+# OR War Room mode (Rich display with all systems)
+python orca_complete_kill_cycle.py --autonomous
 ```
 
 ## What Gets Skipped in Quick Init?

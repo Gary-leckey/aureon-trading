@@ -70,11 +70,14 @@ try:
     from orca_complete_kill_cycle import OrcaKillCycle
     
     test_step("Step 4: Create OrcaKillCycle instance (QUICK MODE for fast testing)...")
-    print("   (Skipping 29+ intelligence systems for fast startup...)")
+    print("   ⚠️  WARNING: This is TESTING ONLY - quick_init=True skips all intelligence systems")
+    print("   ⚠️  For ACTUAL TRADING, use: OrcaKillCycle() which loads all 29+ systems")
+    print("   (Skipping 29+ intelligence systems for fast startup test...)")
     start_time = time.time()
-    orca = OrcaKillCycle(quick_init=True)  # Use quick_init=True for Windows testing
+    orca = OrcaKillCycle(quick_init=True)  # TESTING ONLY - NOT FOR TRADING!
     elapsed = time.time() - start_time
     print(f"   Instance created in {elapsed:.1f} seconds")
+    print("   ✅ Boot test passed - but remember: autonomous mode uses FULL init!")
     
     # Cancel timeout
     timer.cancel()

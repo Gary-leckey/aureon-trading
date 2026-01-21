@@ -2379,6 +2379,9 @@ class OrcaKillCycle:
             client: Exchange client (optional)
             exchange: Primary exchange name
             quick_init: If True, skip non-essential intelligence systems (faster startup for testing)
+                        ⚠️ WARNING: quick_init=True is for TESTING ONLY!
+                        Never use for autonomous trading - you'll have NO intelligence systems!
+                        Autonomous mode uses quick_init=False (default) automatically.
         """
         self.primary_exchange = exchange
         self.clients = {}
