@@ -78,6 +78,14 @@ from typing import Dict, Optional, List, Tuple, Any
 from dataclasses import dataclass, field
 from datetime import datetime
 
+# Load environment variables from .env file (CRITICAL for API keys!)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    print("✅ Loaded .env file")
+except ImportError:
+    print("⚠️ python-dotenv not installed, using system env vars only")
+
 # Windows UTF-8 fix (MANDATORY)
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'

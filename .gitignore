@@ -24,10 +24,10 @@ dist-ssr
 *.sw?
 
 # Environment files
-.env
+# .env  -- REMOVED: Need .env in repo for DigitalOcean deployment
 .env.local
 .env.*.local
-*.env
+# *.env  -- REMOVED
 scripts/binanceKeys.json
 .venv/
 

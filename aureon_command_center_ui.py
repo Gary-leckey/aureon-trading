@@ -52,6 +52,14 @@ if sys.platform == 'win32':
     except Exception:
         pass
 
+# Load environment variables from .env file (CRITICAL for API keys!)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    print("✅ Loaded .env file")
+except ImportError:
+    print("⚠️ python-dotenv not installed, using system env vars only")
+
 import asyncio
 import json
 import time
