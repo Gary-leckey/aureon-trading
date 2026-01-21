@@ -64,6 +64,8 @@ import asyncio
 import json
 import time
 import logging
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Set
 from dataclasses import dataclass, field, asdict
@@ -2358,6 +2360,8 @@ Object.entries(systems).forEach(([name, online]) => {
             print(f"📡 WebSocket: ws://localhost:{self.port}/ws")
             print(f"✅ Health endpoint ready at /health")
             print(f"{'=' * 70}\n")
+        else:
+            self._start_basic_http_server()
         
         # THEN initialize heavy systems (in background, so health checks don't fail)
         print("🔧 Initializing trading systems in background...")
@@ -2378,6 +2382,50 @@ Object.entries(systems).forEach(([name, online]) => {
         
         # Keep running
         await asyncio.Event().wait()
+
+    def _start_basic_http_server(self):
+        """Fallback HTTP server when aiohttp isn't available."""
+        center = self
+
+        class HealthHandler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                if self.path == "/health":
+                    body = json.dumps({
+                        "status": "healthy",
+                        "service": "aureon-command-center",
+                        "timestamp": time.time()
+                    }).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
+
+                if self.path == "/":
+                    body = "Aureon Command Center".encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/plain; charset=utf-8")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
+
+                self.send_response(404)
+                self.end_headers()
+
+            def log_message(self, format, *args):
+                logger.info("Basic HTTP server: " + format, *args)
+
+        server = HTTPServer(("0.0.0.0", center.port), HealthHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        print(f"\n{'=' * 70}")
+        print(f"👑🌌 AUREON COMMAND CENTER STARTING (BASIC HTTP FALLBACK)...")
+        print(f"{'=' * 70}")
+        print(f"🌐 Health endpoint ready at http://localhost:{center.port}/health")
+        print(f"{'=' * 70}\n")
 
 
 async def main():
