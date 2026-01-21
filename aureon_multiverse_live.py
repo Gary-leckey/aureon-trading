@@ -96,6 +96,16 @@ if sys.platform == 'win32':
         pass
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# SAFE PRINT - Handles closed stdout gracefully (Windows multi-module imports)
+# ═══════════════════════════════════════════════════════════════════════════════
+def _safe_print(*args, **kwargs):
+    """Print that won't crash if stdout is closed."""
+    try:
+        print(*args, **kwargs)
+    except (ValueError, OSError, IOError):
+        pass  # stdout closed or unavailable - skip silently
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # CORE IMPORTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -125,10 +135,10 @@ try:
         InternalMultiverse, World, OmegaConverter, ConsensusEngine
     )
     MULTIVERSE_AVAILABLE = True
-    print("🌌 Internal Multiverse WIRED! (10-9-1-10 many worlds)")
+    _safe_print("🌌 Internal Multiverse WIRED! (10-9-1-10 many worlds)")
 except ImportError as e:
     MULTIVERSE_AVAILABLE = False
-    print(f"⚠️ Internal Multiverse not available: {e}")
+    _safe_print(f"⚠️ Internal Multiverse not available: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🦅 COMMANDO DOCTRINE - Zero Fear Trading
@@ -139,7 +149,7 @@ try:
         ZERO_FEAR, ONE_GOAL, GROWTH_AGGRESSION, COMPOUND_RATE, MIN_PROFIT_TARGET
     )
     COMMANDO_AVAILABLE = True
-    print("🦅 Conversion Commando WIRED! (Zero Fear Doctrine)")
+    _safe_print("🦅 Conversion Commando WIRED! (Zero Fear Doctrine)")
 except ImportError:
     COMMANDO_AVAILABLE = False
     ZERO_FEAR = True
@@ -156,7 +166,7 @@ try:
     from aureon_miner_brain import MinerBrain, SandboxEvolution
     MINER_BRAIN_AVAILABLE = True
     _miner_brain = MinerBrain() if hasattr(MinerBrain, '__init__') else None
-    print("🧠 Miner Brain WIRED! (Critical thinking engine)")
+    _safe_print("🧠 Miner Brain WIRED! (Critical thinking engine)")
 except ImportError:
     MINER_BRAIN_AVAILABLE = False
     _miner_brain = None
@@ -167,7 +177,7 @@ except ImportError:
 try:
     from aureon_nexus import AURIS_NODES, RAINBOW_STATES, PHI, LOVE_FREQUENCY
     NEXUS_AVAILABLE = True
-    print("💎 Nexus WIRED! (9 Auris nodes active)")
+    _safe_print("💎 Nexus WIRED! (9 Auris nodes active)")
 except ImportError:
     NEXUS_AVAILABLE = False
     PHI = (1 + math.sqrt(5)) / 2
@@ -181,7 +191,7 @@ except ImportError:
 try:
     from aureon_mycelium import Synapse, Neuron, Agent, Hive, MyceliumNetwork
     MYCELIUM_AVAILABLE = True
-    print("🍄 Mycelium Network WIRED! (Neural substrate)")
+    _safe_print("🍄 Mycelium Network WIRED! (Neural substrate)")
 except ImportError:
     MYCELIUM_AVAILABLE = False
 
@@ -191,7 +201,7 @@ except ImportError:
 try:
     from binance_client import BinanceClient
     BINANCE_AVAILABLE = True
-    print("📈 Binance Client WIRED!")
+    _safe_print("📈 Binance Client WIRED!")
 except ImportError:
     BINANCE_AVAILABLE = False
     BinanceClient = None
@@ -199,7 +209,7 @@ except ImportError:
 try:
     from kraken_client import KrakenClient
     KRAKEN_AVAILABLE = True
-    print("📈 Kraken Client WIRED!")
+    _safe_print("📈 Kraken Client WIRED!")
 except ImportError:
     KRAKEN_AVAILABLE = False
     KrakenClient = None
@@ -207,7 +217,7 @@ except ImportError:
 try:
     from alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
-    print("📈 Alpaca Client WIRED!")
+    _safe_print("📈 Alpaca Client WIRED!")
 except ImportError:
     ALPACA_AVAILABLE = False
     AlpacaClient = None
@@ -215,7 +225,7 @@ except ImportError:
 try:
     from unified_exchange_client import UnifiedExchangeClient
     UNIFIED_CLIENT_AVAILABLE = True
-    print("📈 Unified Exchange Client WIRED!")
+    _safe_print("📈 Unified Exchange Client WIRED!")
 except ImportError:
     UNIFIED_CLIENT_AVAILABLE = False
     UnifiedExchangeClient = None
@@ -226,7 +236,7 @@ except ImportError:
 try:
     from aureon_miner import AureonMiner, KNOWN_POOLS, BINANCE_COINS
     MINER_AVAILABLE = True
-    print("⛏️ Quantum Miner WIRED!")
+    _safe_print("⛏️ Quantum Miner WIRED!")
 except ImportError:
     MINER_AVAILABLE = False
     AureonMiner = None
@@ -237,7 +247,7 @@ except ImportError:
 try:
     from aureon_qgita import AurisState, CONFIG as QGITA_CONFIG
     QGITA_AVAILABLE = True
-    print("🎵 QGITA Engine WIRED! (Quantum Auris)")
+    _safe_print("🎵 QGITA Engine WIRED! (Quantum Auris)")
 except ImportError:
     QGITA_AVAILABLE = False
 
@@ -250,7 +260,7 @@ try:
         UltimatePrediction
     )
     PROBABILITY_AVAILABLE = True
-    print("🔱 Probability Intelligence WIRED! (95% accuracy)")
+    _safe_print("🔱 Probability Intelligence WIRED! (95% accuracy)")
 except ImportError:
     PROBABILITY_AVAILABLE = False
     ultimate_predict = None
@@ -265,11 +275,11 @@ try:
     )
     INCEPTION_AVAILABLE = True
     _inception_engine = get_inception_engine()
-    print("🎬 INCEPTION ENGINE WIRED! (Russian Doll: REALITY → DREAM_1 → DREAM_2 → LIMBO)")
+    _safe_print("🎬 INCEPTION ENGINE WIRED! (Russian Doll: REALITY → DREAM_1 → DREAM_2 → LIMBO)")
 except ImportError as e:
     INCEPTION_AVAILABLE = False
     _inception_engine = None
-    print(f"⚠️ Inception Engine not available: {e}")
+    _safe_print(f"⚠️ Inception Engine not available: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🪜 CONVERSION LADDER - A-Z / Z-A Full Spectrum Sweep
@@ -277,11 +287,11 @@ except ImportError as e:
 try:
     from aureon_conversion_ladder import ConversionLadder, LadderDecision
     LADDER_AVAILABLE = True
-    print("🪜 Conversion Ladder WIRED! (A-Z / Z-A Full Spectrum Sweep)")
+    _safe_print("🪜 Conversion Ladder WIRED! (A-Z / Z-A Full Spectrum Sweep)")
 except ImportError as e:
     LADDER_AVAILABLE = False
     ConversionLadder = None
-    print(f"⚠️ Conversion Ladder not available: {e}")
+    _safe_print(f"⚠️ Conversion Ladder not available: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🛡️ COGNITION RUNTIME
@@ -289,7 +299,7 @@ except ImportError as e:
 try:
     from aureon_cognition_runtime import MinerModule, RiskModule, ExecutionModule, AureonRuntime
     COGNITION_AVAILABLE = True
-    print("🛡️ Cognition Runtime WIRED!")
+    _safe_print("🛡️ Cognition Runtime WIRED!")
 except ImportError:
     COGNITION_AVAILABLE = False
 
@@ -299,11 +309,11 @@ except ImportError:
 try:
     from aureon_revenue_board import RevenueBoard, get_revenue_board, print_revenue_board
     REVENUE_BOARD_AVAILABLE = True
-    print("💰 Revenue Board WIRED! (Live portfolio tracking)")
+    _safe_print("💰 Revenue Board WIRED! (Live portfolio tracking)")
 except ImportError as e:
     REVENUE_BOARD_AVAILABLE = False
     RevenueBoard = None
-    print(f"⚠️ Revenue Board not available: {e}")
+    _safe_print(f"⚠️ Revenue Board not available: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🎯 UNIFIED SNIPER BRAIN - Million Kill Training
@@ -315,11 +325,11 @@ try:
     )
     SNIPER_BRAIN_AVAILABLE = True
     _sniper_brain = UnifiedSniperBrain(exchange='binance', position_size=10.0)
-    print("🎯 Unified Sniper Brain WIRED! (Million Kill Training)")
+    _safe_print("🎯 Unified Sniper Brain WIRED! (Million Kill Training)")
 except ImportError as e:
     SNIPER_BRAIN_AVAILABLE = False
     _sniper_brain = None
-    print(f"⚠️ Sniper Brain not available: {e}")
+    _safe_print(f"⚠️ Sniper Brain not available: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ☘️ IRISH PATRIOT SCOUTS - Force Scouts with Celtic Intelligence
@@ -330,11 +340,11 @@ try:
         PATRIOT_CONFIG, PATRIOT_WISDOM
     )
     SCOUTS_AVAILABLE = True
-    print("☘️ Irish Patriot Scouts WIRED! (Force Scouts)")
+    _safe_print("☘️ Irish Patriot Scouts WIRED! (Force Scouts)")
 except ImportError as e:
     SCOUTS_AVAILABLE = False
     PatriotScoutNetwork = None
-    print(f"⚠️ Patriot Scouts not available: {e}")
+    _safe_print(f"⚠️ Patriot Scouts not available: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🔭 QUANTUM TELESCOPE - Multi-Dimensional Geometric Analysis
@@ -342,11 +352,11 @@ except ImportError as e:
 try:
     from aureon_quantum_telescope import QuantumTelescope, LightBeam, GeometricSolid
     QUANTUM_TELESCOPE_AVAILABLE = True
-    print("🔭 Quantum Telescope WIRED! (5 Platonic Lenses)")
+    _safe_print("🔭 Quantum Telescope WIRED! (5 Platonic Lenses)")
 except ImportError as e:
     QUANTUM_TELESCOPE_AVAILABLE = False
     QuantumTelescope = None
-    print(f"⚠️ Quantum Telescope not available: {e}")
+    _safe_print(f"⚠️ Quantum Telescope not available: {e}")
 
 # Logging Setup
 logging.basicConfig(
@@ -3772,7 +3782,7 @@ class MultiverseLiveEngine:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def main():
-    print("""
+    _safe_print("""
 ╔═══════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                                   ║
 ║     ⚡🌌 AUREON MULTIVERSE LIVE - THE ULTIMATE UNIFIED TRADING SYSTEM 🌌⚡                          ║
