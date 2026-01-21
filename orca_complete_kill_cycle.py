@@ -135,7 +135,13 @@ except ImportError:
     Text = None
     Style = None
 
-from alpaca_client import AlpacaClient
+try:
+    from alpaca_client import AlpacaClient
+    ALPACA_AVAILABLE = True
+except Exception as e:
+    ALPACA_AVAILABLE = False
+    AlpacaClient = None
+    _safe_print(f"⚠️ AlpacaClient import failed: {e}")
 
 try:
     from capital_client import CapitalClient

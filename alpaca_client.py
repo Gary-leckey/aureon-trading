@@ -1,9 +1,33 @@
 import os
+import sys
 import requests
 import time
 import logging
 from pathlib import Path
 from typing import Dict, Any, Iterable, List, Optional
+
+# Windows UTF-8 fix (MANDATORY - must be early)
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    try:
+        import io
+        def _is_utf8_wrapper(stream):
+            return (isinstance(stream, io.TextIOWrapper) and 
+                    hasattr(stream, 'encoding') and stream.encoding and
+                    stream.encoding.lower().replace('-', '') == 'utf8')
+        def _is_buffer_valid(stream):
+            if not hasattr(stream, 'buffer'):
+                return False
+            try:
+                return stream.buffer is not None and not stream.buffer.closed
+            except (ValueError, AttributeError):
+                return False
+        if _is_buffer_valid(sys.stdout) and not _is_utf8_wrapper(sys.stdout):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+        if _is_buffer_valid(sys.stderr) and not _is_utf8_wrapper(sys.stderr):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+    except Exception:
+        pass
 
 # Load environment variables from .env file
 #
