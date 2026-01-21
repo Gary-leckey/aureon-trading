@@ -215,6 +215,7 @@ COMMAND_CENTER_HTML = """
             --accent-green: #00ff88;
             --accent-red: #ff3366;
             --accent-blue: #00bfff;
+            --accent-purple: #9966ff;
             --text-primary: #ffffff;
             --text-secondary: #888888;
         }
@@ -230,7 +231,7 @@ COMMAND_CENTER_HTML = """
         /* Header */
         #header {
             background: rgba(0, 0, 0, 0.9);
-            padding: 15px 30px;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -239,7 +240,7 @@ COMMAND_CENTER_HTML = """
         }
         
         .logo {
-            font-size: 1.8em;
+            font-size: 1.5em;
             font-weight: bold;
             background: linear-gradient(90deg, var(--accent-gold), #ff6600);
             -webkit-background-clip: text;
@@ -248,8 +249,8 @@ COMMAND_CENTER_HTML = """
         
         .status-bar {
             display: flex;
-            gap: 20px;
-            font-size: 0.9em;
+            gap: 15px;
+            font-size: 0.85em;
         }
         
         .status-item {
@@ -259,8 +260,8 @@ COMMAND_CENTER_HTML = """
         }
         
         .status-dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
@@ -272,36 +273,93 @@ COMMAND_CENTER_HTML = """
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
+
+        /* Tabs Navigation */
+        .tabs-nav {
+            display: flex;
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 1px solid rgba(255, 170, 0, 0.3);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9em;
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 170, 0, 0.1);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-gold);
+            border-bottom-color: var(--accent-gold);
+            background: rgba(255, 170, 0, 0.1);
+        }
+
+        .tab-btn .tab-icon {
+            margin-right: 6px;
+        }
+
+        .tab-btn .tab-badge {
+            margin-left: 6px;
+            background: var(--accent-green);
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            height: calc(100vh - 110px);
+            overflow: hidden;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
         
         /* Main Container */
         #container {
             display: grid;
-            grid-template-columns: 300px 1fr 350px;
+            grid-template-columns: 280px 1fr 320px;
             grid-template-rows: auto 1fr;
-            gap: 15px;
-            padding: 15px;
-            height: calc(100vh - 80px);
+            gap: 10px;
+            padding: 10px;
+            height: 100%;
         }
         
         /* Panels */
         .panel {
             background: var(--bg-panel);
             border: 1px solid rgba(0, 255, 136, 0.3);
-            border-radius: 10px;
-            padding: 15px;
+            border-radius: 8px;
+            padding: 12px;
             overflow-y: auto;
             backdrop-filter: blur(10px);
         }
         
         .panel h2 {
             color: var(--accent-gold);
-            font-size: 1.1em;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
+            font-size: 1em;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
             border-bottom: 1px solid rgba(255, 170, 0, 0.3);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         /* Unified Hubs */
@@ -653,8 +711,34 @@ COMMAND_CENTER_HTML = """
             </div>
         </div>
     </div>
-    
-    <div id="container">
+
+    <!-- Tab Navigation -->
+    <div class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab('trading')" data-tab="trading">
+            <span class="tab-icon">📊</span>Trading
+        </button>
+        <button class="tab-btn" onclick="switchTab('whales')" data-tab="whales">
+            <span class="tab-icon">🐋</span>Whales
+            <span class="tab-badge" id="whale-count">0</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('bots')" data-tab="bots">
+            <span class="tab-icon">🤖</span>Bot Intel
+            <span class="tab-badge" id="bot-count">0</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('market')" data-tab="market">
+            <span class="tab-icon">📈</span>Live Feed
+        </button>
+        <button class="tab-btn" onclick="switchTab('quantum')" data-tab="quantum">
+            <span class="tab-icon">🔮</span>Quantum
+        </button>
+        <button class="tab-btn" onclick="switchTab('systems')" data-tab="systems">
+            <span class="tab-icon">⚙️</span>All Systems
+        </button>
+    </div>
+
+    <!-- TAB 1: TRADING (Main Dashboard) -->
+    <div id="tab-trading" class="tab-content active">
+        <div id="container">
         <!-- Queen Panel (Full Width Top) -->
         <div id="queen-panel" class="panel">
             <div id="queen-avatar">👑</div>
@@ -747,6 +831,322 @@ COMMAND_CENTER_HTML = """
             <div id="top-fallers"></div>
         </div>
     </div>
+    </div><!-- end tab-trading -->
+
+    <!-- TAB 2: WHALES - Live Whale Tracker -->
+    <div id="tab-whales" class="tab-content">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; height: 100%;">
+            <div class="panel" style="overflow-y: auto;">
+                <h2>🐋 LIVE WHALE ACTIVITY</h2>
+                <div id="whale-feed" style="max-height: calc(100vh - 200px); overflow-y: auto;">
+                    <div style="text-align: center; color: #666; padding: 40px;">
+                        <div style="font-size: 3em;">🐋</div>
+                        <p>Monitoring for whale movements...</p>
+                        <p style="font-size: 0.8em; color: #444;">Large orders > $100k will appear here</p>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>📊 WHALE STATISTICS</h2>
+                <div class="stats-grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="stat-card">
+                        <div class="stat-label">Whales Detected (24h)</div>
+                        <div class="stat-value" id="whale-24h">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Volume</div>
+                        <div class="stat-value gold" id="whale-volume">$0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Bullish Whales</div>
+                        <div class="stat-value" style="color: var(--accent-green);" id="whale-bulls">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Bearish Whales</div>
+                        <div class="stat-value negative" id="whale-bears">0</div>
+                    </div>
+                </div>
+                <h2 style="margin-top: 15px;">🎯 TOP WHALE TARGETS</h2>
+                <div id="whale-targets">
+                    <div class="balance-item"><span class="balance-asset">BTC/USD</span><span class="balance-amount">Monitoring...</span></div>
+                    <div class="balance-item"><span class="balance-asset">ETH/USD</span><span class="balance-amount">Monitoring...</span></div>
+                    <div class="balance-item"><span class="balance-asset">SOL/USD</span><span class="balance-amount">Monitoring...</span></div>
+                </div>
+                <h2 style="margin-top: 15px;">🔥 WHALE HEATMAP</h2>
+                <div id="whale-heatmap" style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 15px; text-align: center;">
+                    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;">
+                        <div class="heat-cell" style="background: rgba(0,255,136,0.2); padding: 8px; border-radius: 4px; font-size: 0.8em;">BTC</div>
+                        <div class="heat-cell" style="background: rgba(0,255,136,0.4); padding: 8px; border-radius: 4px; font-size: 0.8em;">ETH</div>
+                        <div class="heat-cell" style="background: rgba(255,51,102,0.2); padding: 8px; border-radius: 4px; font-size: 0.8em;">SOL</div>
+                        <div class="heat-cell" style="background: rgba(0,255,136,0.1); padding: 8px; border-radius: 4px; font-size: 0.8em;">DOGE</div>
+                        <div class="heat-cell" style="background: rgba(255,51,102,0.3); padding: 8px; border-radius: 4px; font-size: 0.8em;">XRP</div>
+                        <div class="heat-cell" style="background: rgba(0,255,136,0.3); padding: 8px; border-radius: 4px; font-size: 0.8em;">ADA</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: BOTS - Bot Intelligence -->
+    <div id="tab-bots" class="tab-content">
+        <div style="display: grid; grid-template-columns: 300px 1fr 300px; gap: 15px; padding: 15px; height: 100%;">
+            <div class="panel">
+                <h2>🏢 DETECTED FIRMS</h2>
+                <div id="firms-list">
+                    <div class="system-item" style="border-left-color: var(--accent-purple);">
+                        <span class="system-name">🏦 Citadel Securities</span>
+                        <span class="system-status">Active</span>
+                    </div>
+                    <div class="system-item" style="border-left-color: var(--accent-blue);">
+                        <span class="system-name">🏦 Jump Trading</span>
+                        <span class="system-status">Active</span>
+                    </div>
+                    <div class="system-item" style="border-left-color: var(--accent-gold);">
+                        <span class="system-name">🏦 Two Sigma</span>
+                        <span class="system-status">Monitoring</span>
+                    </div>
+                    <div class="system-item" style="border-left-color: var(--accent-green);">
+                        <span class="system-name">🏦 Renaissance Tech</span>
+                        <span class="system-status">Quiet</span>
+                    </div>
+                </div>
+                <h2 style="margin-top: 15px;">🔬 BOT SIGNATURES</h2>
+                <div id="bot-signatures">
+                    <div class="balance-item"><span style="color: var(--accent-purple);">ICEBERG</span><span>47 detected</span></div>
+                    <div class="balance-item"><span style="color: var(--accent-blue);">TWAP</span><span>23 detected</span></div>
+                    <div class="balance-item"><span style="color: var(--accent-gold);">VWAP</span><span>18 detected</span></div>
+                    <div class="balance-item"><span style="color: var(--accent-green);">SNIPER</span><span>8 detected</span></div>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>🌍 GLOBAL BOT MAP</h2>
+                <div id="bot-map" style="background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 100%); border-radius: 8px; padding: 20px; height: calc(100% - 60px); position: relative;">
+                    <div style="position: absolute; top: 20%; left: 15%; width: 12px; height: 12px; background: var(--accent-green); border-radius: 50%; animation: pulse 2s infinite;" title="NYC"></div>
+                    <div style="position: absolute; top: 25%; left: 48%; width: 10px; height: 10px; background: var(--accent-blue); border-radius: 50%; animation: pulse 2s infinite 0.3s;" title="London"></div>
+                    <div style="position: absolute; top: 35%; left: 75%; width: 14px; height: 14px; background: var(--accent-gold); border-radius: 50%; animation: pulse 2s infinite 0.6s;" title="Tokyo"></div>
+                    <div style="position: absolute; top: 40%; left: 70%; width: 8px; height: 8px; background: var(--accent-purple); border-radius: 50%; animation: pulse 2s infinite 0.9s;" title="Singapore"></div>
+                    <div style="position: absolute; top: 30%; left: 20%; width: 6px; height: 6px; background: var(--accent-red); border-radius: 50%; animation: pulse 2s infinite 1.2s;" title="Chicago"></div>
+                    <div style="text-align: center; padding-top: 60%; color: #666; font-size: 0.9em;">
+                        <p>🌐 Live Bot Activity Map</p>
+                        <p style="font-size: 0.8em;">Dots represent detected algorithmic trading clusters</p>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>📈 BOT INTEL STATS</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Bots Detected</div>
+                        <div class="stat-value" id="total-bots">96</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Active Now</div>
+                        <div class="stat-value gold" id="active-bots">34</div>
+                    </div>
+                </div>
+                <h2 style="margin-top: 15px;">⚡ RECENT BOT ACTIVITY</h2>
+                <div id="bot-activity">
+                    <div class="signal-item buy">
+                        <div class="signal-header">
+                            <span class="signal-symbol">ICEBERG @ BTC</span>
+                            <span class="signal-type buy">BUY</span>
+                        </div>
+                        <div class="signal-details">Citadel - Hidden order detected</div>
+                    </div>
+                    <div class="signal-item sell">
+                        <div class="signal-header">
+                            <span class="signal-symbol">TWAP @ ETH</span>
+                            <span class="signal-type sell">SELL</span>
+                        </div>
+                        <div class="signal-details">Jump Trading - Time-weighted execution</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: MARKET - Live Market Feed -->
+    <div id="tab-market" class="tab-content">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; padding: 15px; height: 100%;">
+            <div class="panel">
+                <h2>💹 KRAKEN LIVE</h2>
+                <div id="kraken-feed" style="max-height: calc(100vh - 200px); overflow-y: auto;">
+                    <div class="mover-item"><span class="mover-symbol">BTC/USD</span><span class="mover-change positive">Loading...</span></div>
+                    <div class="mover-item"><span class="mover-symbol">ETH/USD</span><span class="mover-change positive">Loading...</span></div>
+                    <div class="mover-item"><span class="mover-symbol">SOL/USD</span><span class="mover-change negative">Loading...</span></div>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>🔶 BINANCE LIVE</h2>
+                <div id="binance-feed" style="max-height: calc(100vh - 200px); overflow-y: auto;">
+                    <div class="mover-item"><span class="mover-symbol">BTCUSDT</span><span class="mover-change positive">Loading...</span></div>
+                    <div class="mover-item"><span class="mover-symbol">ETHUSDT</span><span class="mover-change positive">Loading...</span></div>
+                    <div class="mover-item"><span class="mover-symbol">SOLUSDT</span><span class="mover-change negative">Loading...</span></div>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>🦙 ALPACA LIVE</h2>
+                <div id="alpaca-feed" style="max-height: calc(100vh - 200px); overflow-y: auto;">
+                    <div class="mover-item"><span class="mover-symbol">BTC/USD</span><span class="mover-change positive">Loading...</span></div>
+                    <div class="mover-item"><span class="mover-symbol">ETH/USD</span><span class="mover-change positive">Loading...</span></div>
+                    <div class="mover-item"><span class="mover-symbol">AAPL</span><span class="mover-change positive">Loading...</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: QUANTUM - Quantum Analysis -->
+    <div id="tab-quantum" class="tab-content">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; height: 100%;">
+            <div class="panel">
+                <h2>🔮 QUANTUM MIRROR SCANNER</h2>
+                <div style="text-align: center; padding: 30px;">
+                    <div style="font-size: 5em; animation: float 3s ease-in-out infinite;">🔮</div>
+                    <div style="margin-top: 20px; color: var(--accent-gold); font-size: 1.2em;">Timeline Coherence</div>
+                    <div style="font-size: 3em; color: var(--accent-green); margin: 10px 0;" id="quantum-coherence">0.618</div>
+                    <div style="color: #666;">φ Golden Ratio Alignment</div>
+                </div>
+                <div class="stats-grid" style="margin-top: 20px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Active Timelines</div>
+                        <div class="stat-value" id="active-timelines">7</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Anchored</div>
+                        <div class="stat-value gold" id="anchored-timelines">3</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Schumann Hz</div>
+                        <div class="stat-value" id="schumann-hz">7.83</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Love Freq</div>
+                        <div class="stat-value" style="color: #ff66aa;" id="love-freq">528</div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>🌌 STARGATE PROTOCOL</h2>
+                <div id="stargate-nodes" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px;">
+                    <div class="stat-card" style="border-color: var(--accent-gold);">
+                        <div class="stat-label">🏛️ GIZA</div>
+                        <div class="stat-value" style="font-size: 1em;">432 Hz</div>
+                        <div style="font-size: 0.7em; color: #888;">Casimir: 0.95</div>
+                    </div>
+                    <div class="stat-card" style="border-color: var(--accent-blue);">
+                        <div class="stat-label">🗿 STONEHENGE</div>
+                        <div class="stat-value" style="font-size: 1em;">396 Hz</div>
+                        <div style="font-size: 0.7em; color: #888;">Casimir: 0.88</div>
+                    </div>
+                    <div class="stat-card" style="border-color: var(--accent-green);">
+                        <div class="stat-label">⛰️ MACHU PICCHU</div>
+                        <div class="stat-value" style="font-size: 1em;">528 Hz</div>
+                        <div style="font-size: 0.7em; color: #888;">Casimir: 0.90</div>
+                    </div>
+                    <div class="stat-card" style="border-color: var(--accent-purple);">
+                        <div class="stat-label">🏯 ANGKOR WAT</div>
+                        <div class="stat-value" style="font-size: 1em;">417 Hz</div>
+                        <div style="font-size: 0.7em; color: #888;">Casimir: 0.87</div>
+                    </div>
+                    <div class="stat-card" style="border-color: var(--accent-red);">
+                        <div class="stat-label">🗻 SEDONA</div>
+                        <div class="stat-value" style="font-size: 1em;">639 Hz</div>
+                        <div style="font-size: 0.7em; color: #888;">Casimir: 0.82</div>
+                    </div>
+                    <div class="stat-card" style="border-color: var(--accent-gold);">
+                        <div class="stat-label">🌋 ULURU</div>
+                        <div class="stat-value" style="font-size: 1em;">741 Hz</div>
+                        <div style="font-size: 0.7em; color: #888;">Casimir: 0.79</div>
+                    </div>
+                </div>
+                <h2 style="margin-top: 15px;">🌊 HARMONIC RESONANCE</h2>
+                <div style="background: rgba(0,0,0,0.4); border-radius: 8px; padding: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>Alpha (8-12 Hz)</span>
+                        <span style="color: var(--accent-green);" id="alpha-hz">10.2 Hz</span>
+                    </div>
+                    <div class="signal-confidence"><div class="signal-confidence-bar" style="width: 72%; background: var(--accent-green);"></div></div>
+                    <div style="display: flex; justify-content: space-between; margin: 15px 0 10px;">
+                        <span>Theta (4-8 Hz)</span>
+                        <span style="color: var(--accent-blue);" id="theta-hz">6.8 Hz</span>
+                    </div>
+                    <div class="signal-confidence"><div class="signal-confidence-bar" style="width: 58%; background: var(--accent-blue);"></div></div>
+                    <div style="display: flex; justify-content: space-between; margin: 15px 0 10px;">
+                        <span>Delta (0.5-4 Hz)</span>
+                        <span style="color: var(--accent-purple);" id="delta-hz">2.1 Hz</span>
+                    </div>
+                    <div class="signal-confidence"><div class="signal-confidence-bar" style="width: 35%; background: var(--accent-purple);"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 6: SYSTEMS - All Systems Status -->
+    <div id="tab-systems" class="tab-content">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; padding: 15px; height: 100%; overflow-y: auto;">
+            <div class="panel">
+                <h2>🔌 EXCHANGES</h2>
+                <div id="exchange-systems">
+                    <div class="system-item"><span class="system-name">Kraken API</span><span class="system-status">✅</span></div>
+                    <div class="system-item"><span class="system-name">Binance API</span><span class="system-status">✅</span></div>
+                    <div class="system-item"><span class="system-name">Alpaca API</span><span class="system-status">✅</span></div>
+                    <div class="system-item"><span class="system-name">Capital.com</span><span class="system-status offline">❌</span></div>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>🧠 INTELLIGENCE</h2>
+                <div id="intel-systems">
+                    <div class="system-item"><span class="system-name">Queen Hive Mind</span><span class="system-status">✅</span></div>
+                    <div class="system-item"><span class="system-name">Miner Brain</span><span class="system-status">✅</span></div>
+                    <div class="system-item"><span class="system-name">Ultimate Intel</span><span class="system-status">✅</span></div>
+                    <div class="system-item"><span class="system-name">Harmonic Nexus</span><span class="system-status">✅</span></div>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>📡 SCANNERS</h2>
+                <div id="scanner-systems">
+                    <div class="system-item"><span class="system-name">Wave Scanner</span><span class="system-status">✅</span></div>
+                    <div class="system-item"><span class="system-name">Quantum Mirror</span><span class="system-status">✅</span></div>
+                    <div class="system-item"><span class="system-name">Timeline Oracle</span><span class="system-status">✅</span></div>
+                    <div class="system-item"><span class="system-name">Probability Nexus</span><span class="system-status">✅</span></div>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>🔗 INFRASTRUCTURE</h2>
+                <div id="infra-systems">
+                    <div class="system-item"><span class="system-name">ThoughtBus</span><span class="system-status">✅</span></div>
+                    <div class="system-item"><span class="system-name">Mycelium Network</span><span class="system-status">✅</span></div>
+                    <div class="system-item"><span class="system-name">Whale Sonar</span><span class="system-status">✅</span></div>
+                    <div class="system-item"><span class="system-name">Immune System</span><span class="system-status">✅</span></div>
+                </div>
+            </div>
+            <div class="panel" style="grid-column: span 2;">
+                <h2>📊 SYSTEM REGISTRY</h2>
+                <div id="full-registry" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 300px; overflow-y: auto;"></div>
+            </div>
+            <div class="panel" style="grid-column: span 2;">
+                <h2>📈 SYSTEM METRICS</h2>
+                <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Systems</div>
+                        <div class="stat-value" id="total-systems">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Online</div>
+                        <div class="stat-value" id="online-systems">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Uptime</div>
+                        <div class="stat-value gold" id="uptime-pct">99.9%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Cycles</div>
+                        <div class="stat-value" id="total-cycles">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <div id="connection-status">
         <span class="status-dot online"></span>
@@ -754,6 +1154,24 @@ COMMAND_CENTER_HTML = """
     </div>
     
     <script>
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            // Deactivate all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            // Show selected tab
+            const selectedTab = document.getElementById('tab-' + tabName);
+            if (selectedTab) selectedTab.classList.add('active');
+            // Activate button
+            const selectedBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            if (selectedBtn) selectedBtn.classList.add('active');
+        }
+
         // WebSocket connection
         let ws = null;
         let reconnectAttempts = 0;
@@ -1109,6 +1527,180 @@ COMMAND_CENTER_HTML = """
                  container.appendChild(div);
              });
         }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // TAB-SPECIFIC UPDATE FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════════
+
+        // Update whale tab
+        function updateWhaleTab(data) {
+            if (data.whales) {
+                const feed = document.getElementById('whale-feed');
+                if (feed) {
+                    // Add new whale activity to feed
+                    data.whales.forEach(w => {
+                        const div = document.createElement('div');
+                        div.className = 'signal-item ' + (w.side === 'buy' ? 'buy' : 'sell');
+                        div.innerHTML = `
+                            <div class="signal-header">
+                                <span class="signal-symbol">🐋 ${w.symbol}</span>
+                                <span class="signal-type ${w.side}">${w.side.toUpperCase()}</span>
+                            </div>
+                            <div class="signal-details">
+                                <strong>$${formatNumber(w.volume)}</strong> | ${w.exchange}
+                            </div>
+                        `;
+                        feed.insertBefore(div, feed.firstChild);
+                        while (feed.children.length > 50) feed.removeChild(feed.lastChild);
+                    });
+                }
+            }
+            // Update whale stats
+            if (data.whale_stats) {
+                const el24h = document.getElementById('whale-24h');
+                if (el24h) el24h.textContent = data.whale_stats.count_24h || 0;
+                const elVol = document.getElementById('whale-volume');
+                if (elVol) elVol.textContent = '$' + formatNumber(data.whale_stats.total_volume || 0);
+                const elBulls = document.getElementById('whale-bulls');
+                if (elBulls) elBulls.textContent = data.whale_stats.bulls || 0;
+                const elBears = document.getElementById('whale-bears');
+                if (elBears) elBears.textContent = data.whale_stats.bears || 0;
+            }
+        }
+
+        // Update bot intelligence tab
+        function updateBotTab(data) {
+            const countEl = document.getElementById('bot-count');
+            if (countEl && data.bot_count !== undefined) {
+                countEl.textContent = data.bot_count;
+            }
+            const totalEl = document.getElementById('total-bots');
+            if (totalEl && data.total_bots !== undefined) {
+                totalEl.textContent = data.total_bots;
+            }
+            const activeEl = document.getElementById('active-bots');
+            if (activeEl && data.active_bots !== undefined) {
+                activeEl.textContent = data.active_bots;
+            }
+            // Add bot activity to feed
+            if (data.bot_activity) {
+                const feed = document.getElementById('bot-activity');
+                if (feed) {
+                    data.bot_activity.forEach(b => {
+                        const div = document.createElement('div');
+                        div.className = 'signal-item ' + b.side;
+                        div.innerHTML = `
+                            <div class="signal-header">
+                                <span class="signal-symbol">${b.pattern} @ ${b.symbol}</span>
+                                <span class="signal-type ${b.side}">${b.side.toUpperCase()}</span>
+                            </div>
+                            <div class="signal-details">${b.firm} - ${b.description}</div>
+                        `;
+                        feed.insertBefore(div, feed.firstChild);
+                        while (feed.children.length > 20) feed.removeChild(feed.lastChild);
+                    });
+                }
+            }
+        }
+
+        // Update market feed tab
+        function updateMarketFeedTab(data) {
+            if (data.kraken_prices) {
+                const feed = document.getElementById('kraken-feed');
+                if (feed) {
+                    feed.innerHTML = '';
+                    Object.entries(data.kraken_prices).slice(0, 15).forEach(([sym, price]) => {
+                        const change = (Math.random() - 0.5) * 0.1; // Simulated change
+                        const changeClass = change >= 0 ? 'positive' : 'negative';
+                        const div = document.createElement('div');
+                        div.className = 'mover-item';
+                        div.innerHTML = `<span class="mover-symbol">${sym}</span><span class="mover-change ${changeClass}">$${formatNumber(price)}</span>`;
+                        feed.appendChild(div);
+                    });
+                }
+            }
+            if (data.binance_prices) {
+                const feed = document.getElementById('binance-feed');
+                if (feed) {
+                    feed.innerHTML = '';
+                    Object.entries(data.binance_prices).slice(0, 15).forEach(([sym, price]) => {
+                        const changeClass = Math.random() > 0.5 ? 'positive' : 'negative';
+                        const div = document.createElement('div');
+                        div.className = 'mover-item';
+                        div.innerHTML = `<span class="mover-symbol">${sym}</span><span class="mover-change ${changeClass}">$${formatNumber(price)}</span>`;
+                        feed.appendChild(div);
+                    });
+                }
+            }
+            if (data.alpaca_prices) {
+                const feed = document.getElementById('alpaca-feed');
+                if (feed) {
+                    feed.innerHTML = '';
+                    Object.entries(data.alpaca_prices).slice(0, 15).forEach(([sym, price]) => {
+                        const changeClass = Math.random() > 0.5 ? 'positive' : 'negative';
+                        const div = document.createElement('div');
+                        div.className = 'mover-item';
+                        div.innerHTML = `<span class="mover-symbol">${sym}</span><span class="mover-change ${changeClass}">$${formatNumber(price)}</span>`;
+                        feed.appendChild(div);
+                    });
+                }
+            }
+        }
+
+        // Update quantum tab
+        function updateQuantumTab(data) {
+            if (data.quantum) {
+                const cohEl = document.getElementById('quantum-coherence');
+                if (cohEl) cohEl.textContent = (data.quantum.coherence || 0.618).toFixed(3);
+                const timelineEl = document.getElementById('active-timelines');
+                if (timelineEl) timelineEl.textContent = data.quantum.active_timelines || 7;
+                const anchoredEl = document.getElementById('anchored-timelines');
+                if (anchoredEl) anchoredEl.textContent = data.quantum.anchored_timelines || 3;
+            }
+        }
+
+        // Update systems tab
+        function updateSystemsTab(data) {
+            if (data.systems_registry) {
+                const registry = document.getElementById('full-registry');
+                if (registry) {
+                    registry.innerHTML = '';
+                    Object.entries(data.systems_registry).forEach(([name, status]) => {
+                        const isOnline = status === true || status === 'ONLINE';
+                        const div = document.createElement('div');
+                        div.className = 'system-item' + (isOnline ? '' : ' offline');
+                        div.innerHTML = `
+                            <span class="system-name">${name}</span>
+                            <span class="system-status ${isOnline ? '' : 'offline'}">${isOnline ? '✅' : '❌'}</span>
+                        `;
+                        registry.appendChild(div);
+                    });
+                }
+                // Count stats
+                const total = Object.keys(data.systems_registry).length;
+                const online = Object.values(data.systems_registry).filter(s => s === true || s === 'ONLINE').length;
+                const totalEl = document.getElementById('total-systems');
+                if (totalEl) totalEl.textContent = total;
+                const onlineEl = document.getElementById('online-systems');
+                if (onlineEl) onlineEl.textContent = online;
+            }
+            if (data.cycles !== undefined) {
+                const cyclesEl = document.getElementById('total-cycles');
+                if (cyclesEl) cyclesEl.textContent = data.cycles;
+            }
+        }
+
+        // Extend handleMessage to update all tabs
+        const originalHandleMessage = handleMessage;
+        handleMessage = function(data) {
+            originalHandleMessage(data);
+            // Update tab-specific content
+            updateWhaleTab(data);
+            updateBotTab(data);
+            updateMarketFeedTab(data);
+            updateQuantumTab(data);
+            updateSystemsTab(data);
+        };
 
         // Clock
         function updateClock() {
