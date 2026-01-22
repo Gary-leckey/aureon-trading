@@ -72,7 +72,21 @@ echo ""
 # Run with error handling - restart on crash
 while true; do
     echo "$(date): Starting Orca autonomous mode..."
-    python -u orca_complete_kill_cycle.py --autonomous 3 1.0 1.0
+    
+    # 🔍 Auto-detect Environment
+    if [ -f "/root/aureon-trading/venv/bin/python" ]; then
+        # Droplet / VM with venv
+        PYTHON_CMD="/root/aureon-trading/venv/bin/python"
+    elif [ -f "/app/venv/bin/python" ]; then
+        # Deployment with custom venv
+        PYTHON_CMD="/app/venv/bin/python"
+    else
+        # Docker / System default
+        PYTHON_CMD="python"
+    fi
+    
+    echo "   Using Python: $PYTHON_CMD"
+    $PYTHON_CMD -u orca_complete_kill_cycle.py --autonomous 3 1.0 1.0
     EXIT_CODE=$?
     echo "$(date): Orca exited with code $EXIT_CODE"
     

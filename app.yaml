@@ -1,0 +1,46 @@
+name: aureon-trading
+region: lon
+services:
+- name: aureon-command-center
+  dockerfile_path: Dockerfile
+  source_dir: /
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: RA-CONSULTING/aureon-trading
+  http_port: 8080
+  instance_count: 1
+  instance_size_slug: professional-xs
+  health_check:
+    http_path: /health
+    initial_delay_seconds: 120
+    period_seconds: 60
+  envs:
+  - key: PYTHONUNBUFFERED
+    scope: RUN_AND_BUILD_TIME
+    value: "1"
+  - key: AUREON_STATE_DIR
+    scope: RUN_TIME
+    value: /app/state
+  - key: PORT
+    scope: RUN_TIME
+    value: "8080"
+  # ⚠️ REPLACE THESE WITH YOUR API KEYS ⚠️
+  - key: KRAKEN_API_KEY
+    scope: RUN_TIME
+    value: "place_your_key_here"
+  - key: KRAKEN_API_SECRET
+    scope: RUN_TIME
+    value: "place_your_secret_here"
+  - key: BINANCE_API_KEY
+    scope: RUN_TIME
+    value: "place_your_key_here"
+  - key: BINANCE_API_SECRET
+    scope: RUN_TIME
+    value: "place_your_secret_here"
+  - key: ALPACA_API_KEY
+    scope: RUN_TIME
+    value: "place_your_key_here"
+  - key: ALPACA_SECRET_KEY
+    scope: RUN_TIME
+    value: "place_your_secret_here"

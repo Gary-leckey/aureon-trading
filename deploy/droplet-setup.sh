@@ -47,7 +47,20 @@ pip install -r requirements.txt
 # Create .env template
 echo "📝 Creating .env template..."
 if [ ! -f .env ]; then
-    cat > .env << 'EOF'
+    cp .env.example .env 2>/dev/null || touch .env
+    echo "⚠️  IMPORTANT: Please edit .env with your API keys!"
+fi
+
+# Install Systemd Service
+echo "⚙️ Installing Systemd Service..."
+cp deploy/orca-kill-cycle.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable orca-kill-cycle
+systemctl start orca-kill-cycle
+
+echo "✅ Setup Complete! The Orca Kill Cycle is running."
+echo "👉 Check logs with: journalctl -u orca-kill-cycle -f"
+echo "👉 Edit config with: nano .env"
 # 🔑 API Keys - Replace with your actual keys
 KRAKEN_API_KEY=your_kraken_key_here
 KRAKEN_API_SECRET=your_kraken_secret_here

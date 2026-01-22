@@ -48,5 +48,8 @@ EXPOSE 8080
 HEALTHCHECK --interval=60s --timeout=10s --start-period=120s --retries=3 \
   CMD curl -f http://localhost:8080/health || exit 1
 
+# Start Supervisor (runs both Command Center and Orca Engine)
+CMD ["/usr/local/bin/supervisord", "-n", "-c", "/app/deploy/supervisord.conf"]
+
 # Run both trading engine + web UI via supervisor
 CMD ["supervisord", "-n", "-c", "/etc/supervisord.conf"]

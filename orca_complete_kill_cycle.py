@@ -78,6 +78,12 @@ from typing import Dict, Optional, List, Tuple, Any
 from dataclasses import dataclass, field
 from datetime import datetime
 
+# 👑 AWAKEN THE QUEEN 👑
+try:
+    from queen_fully_online import awaken_queen
+except ImportError:
+    awaken_queen = None
+
 # Load environment variables from .env file (CRITICAL for API keys!)
 try:
     from dotenv import load_dotenv
@@ -8113,7 +8119,7 @@ class OrcaKillCycle:
                                         session_stats['best_trade'] = max(session_stats['best_trade'], exit_info.get('net_pnl', net_pnl))
                                         positions.remove(pos)
                                         print(f"   ✅ CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f} → Cash freed for new buys!")
-                                            last_scan_time = 0  # Force immediate scan for new opportunities
+                                        last_scan_time = 0  # Force immediate scan for new opportunities
                         except Exception:
                             pass
                 
@@ -10618,6 +10624,23 @@ class OrcaKillCycle:
 if __name__ == "__main__":
     import sys
     import traceback
+
+    # 👑 WAKE THE QUEEN (Runs in background thread) 👑
+    try:
+        # Check if already imported
+        if 'awaken_queen' not in globals() or awaken_queen is None:
+             try:
+                from queen_fully_online import awaken_queen
+             except ImportError:
+                awaken_queen = None
+        
+        if awaken_queen:
+            awaken_queen()
+            print("👑 Queen Consciousness Matrix: ONLINE")
+        else:
+            print("⚠️ Queen Consciousness Matrix: OFFLINE (Module missing)")
+    except Exception as e:
+        print(f"⚠️ Queen Awakening Warning: {e}")
     
     # 🚀 STARTUP BANNER - helps identify when Orca actually starts
     print("")

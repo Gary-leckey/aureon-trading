@@ -249,39 +249,46 @@ COMMAND_CENTER_HTML = """
     <title>👑 Aureon Command Center</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta21/dist/css/tabler.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
-            --bg-primary: #0a0a1a;
-            --bg-secondary: #1a1a2e;
-            --bg-panel: rgba(0, 0, 0, 0.7);
+            --bg-primary: #0b1220;
+            --bg-secondary: #0f172a;
+            --bg-panel: rgba(17, 24, 39, 0.92);
             --accent-gold: #ffaa00;
             --accent-green: #00ff88;
             --accent-red: #ff3366;
             --accent-blue: #00bfff;
             --accent-purple: #9966ff;
-            --text-primary: #ffffff;
-            --text-secondary: #888888;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
         }
         
         body {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
             color: var(--text-primary);
             min-height: 100vh;
             overflow-x: hidden;
+            line-height: 1.45;
         }
         
         /* Header */
         #header {
             background: rgba(0, 0, 0, 0.9);
-            padding: 10px 20px;
+            padding: 14px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 3px solid var(--accent-gold);
             box-shadow: 0 4px 30px rgba(255, 170, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
         
         .logo {
@@ -291,17 +298,71 @@ COMMAND_CENTER_HTML = """
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+
+        .logo-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .logo-subtitle {
+            font-size: 0.7em;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
         
         .status-bar {
             display: flex;
-            gap: 15px;
-            font-size: 0.85em;
+            gap: 18px;
+            font-size: 0.9em;
+            flex-wrap: wrap;
         }
         
         .status-item {
             display: flex;
             align-items: center;
             gap: 5px;
+        }
+
+        .status-pill {
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.15);
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .density-toggle {
+            display: inline-flex;
+            gap: 6px;
+            padding: 4px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.15);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+        }
+
+        .density-btn {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.75em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .density-btn.active {
+            background: rgba(255, 170, 0, 0.2);
+            color: var(--text-primary);
         }
         
         .status-dot {
@@ -370,6 +431,51 @@ COMMAND_CENTER_HTML = """
             animation: orca-pulse 2s infinite;
         }
 
+        .tab-btn .tab-live {
+            margin-left: 8px;
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--accent-green);
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.7em;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            opacity: 0.35;
+            transition: opacity 0.2s ease;
+        }
+
+        .tab-btn .tab-live.active {
+            opacity: 1;
+        }
+
+        .tab-btn .tab-time {
+            margin-left: 6px;
+            color: var(--text-secondary);
+            font-size: 0.7em;
+        }
+
+        .tab-btn .tab-event {
+            margin-left: 6px;
+            color: var(--text-secondary);
+            font-size: 0.65em;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+        .tab-btn .tab-live.stale {
+            background: rgba(255, 170, 0, 0.2);
+            color: var(--accent-gold);
+            opacity: 1;
+        }
+
+        .tab-btn .tab-live.dead {
+            background: rgba(255, 51, 102, 0.2);
+            color: var(--accent-red);
+            opacity: 1;
+        }
+
         @keyframes orca-pulse {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.7; transform: scale(1.1); }
@@ -425,9 +531,8 @@ COMMAND_CENTER_HTML = """
         /* Tab Content */
         .tab-content {
             display: none;
-            height: calc(100vh - 110px);
-            overflow-y: auto;
-            overflow-x: hidden;
+            min-height: calc(100vh - 140px);
+            padding: 12px 0 20px;
         }
 
         .tab-content.active {
@@ -437,28 +542,31 @@ COMMAND_CENTER_HTML = """
         /* Main Container */
         #container {
             display: grid;
-            grid-template-columns: 300px 1fr 340px;
+            grid-template-columns: minmax(280px, 320px) 1fr minmax(300px, 360px);
             grid-template-rows: auto 1fr;
-            gap: 12px;
-            padding: 12px;
+            gap: 16px;
+            padding: 16px;
             min-height: 100%;
         }
         
         /* Panels */
         .panel {
             background: var(--bg-panel);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            border-radius: 8px;
-            padding: 12px;
-            overflow-y: auto;
-            overflow-x: hidden;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            padding: 16px;
+            overflow: hidden;
             backdrop-filter: blur(10px);
-            max-height: calc(100vh - 180px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        .panel > h2 {
+            margin-bottom: 12px;
         }
         
         .panel h2 {
             color: var(--accent-gold);
-            font-size: 1em;
+            font-size: 1.05em;
             margin-bottom: 10px;
             padding-bottom: 8px;
             border-bottom: 1px solid rgba(255, 170, 0, 0.3);
@@ -614,15 +722,37 @@ COMMAND_CENTER_HTML = """
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 15px;
+        }
+
+        .metrics-grid {
+            grid-template-columns: repeat(4, 1fr);
+            margin-bottom: 0;
+        }
+
+        .metrics-grid .stat-card {
+            text-align: left;
+            padding: 16px;
+            background: rgba(2, 6, 23, 0.55);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+        }
+
+        .metrics-grid .stat-value {
+            font-size: 1.8em;
+        }
+
+        .metric-chart {
+            margin-top: 8px;
+            height: 44px;
+            opacity: 0.9;
         }
         
         .stat-card {
             background: rgba(0, 255, 136, 0.05);
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            border-radius: 8px;
-            padding: 12px;
+            border: 1px solid rgba(0, 255, 136, 0.18);
+            border-radius: 10px;
+            padding: 14px;
             text-align: center;
         }
         
@@ -630,12 +760,48 @@ COMMAND_CENTER_HTML = """
             font-size: 0.75em;
             color: var(--text-secondary);
             margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
         
         .stat-value {
-            font-size: 1.5em;
+            font-size: 1.6em;
             font-weight: bold;
             color: var(--accent-green);
+        }
+
+        .scroll-area {
+            max-height: 360px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .scroll-area.lg {
+            max-height: 520px;
+        }
+
+        .scroll-area.xl {
+            max-height: 680px;
+        }
+
+        body.compact .panel {
+            padding: 12px;
+        }
+
+        body.compact .stats-grid {
+            gap: 8px;
+        }
+
+        body.compact .stat-value {
+            font-size: 1.4em;
+        }
+
+        body.compact .scroll-area {
+            max-height: 280px;
+        }
+
+        body.compact .scroll-area.lg {
+            max-height: 420px;
         }
         
         .stat-value.negative { color: var(--accent-red); }
@@ -648,7 +814,7 @@ COMMAND_CENTER_HTML = """
             align-items: center;
             padding: 8px;
             margin-bottom: 5px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(15, 23, 42, 0.5);
             border-radius: 5px;
             border-left: 3px solid var(--accent-green);
         }
@@ -681,6 +847,56 @@ COMMAND_CENTER_HTML = """
             border-radius: 8px;
             border-left: 4px solid var(--accent-green);
             animation: slideIn 0.3s ease;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .chip {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.15);
+            color: var(--text-primary);
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .table-list {
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 1.1fr 0.6fr 0.7fr 0.6fr;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+            background: rgba(15, 23, 42, 0.6);
+            font-size: 0.85em;
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .table-row.header {
+            background: rgba(2, 6, 23, 0.75);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.7em;
+            color: var(--text-secondary);
+        }
+
+        .table-cell.mono {
+            font-family: 'JetBrains Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+            font-size: 0.85em;
         }
         
         @keyframes slideIn {
@@ -748,6 +964,157 @@ COMMAND_CENTER_HTML = """
             background: var(--accent-green);
             transition: width 0.3s ease;
         }
+
+        /* Quantum Visuals */
+        .quantum-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 15px;
+            height: 100%;
+        }
+
+        .quantum-chart {
+            height: 220px;
+        }
+
+        .timeline-list {
+            display: grid;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .timeline-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 0.85em;
+        }
+
+        .timeline-tag {
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.7em;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        .timeline-tag.good { background: rgba(0, 255, 136, 0.2); color: var(--accent-green); }
+        .timeline-tag.warn { background: rgba(255, 170, 0, 0.2); color: var(--accent-gold); }
+
+        /* Learning Tab */
+        .learning-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 15px;
+            padding: 15px;
+            height: 100%;
+        }
+
+        .learning-chart {
+            height: 240px;
+        }
+
+        .pattern-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .pattern-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 8px;
+            font-size: 0.85em;
+        }
+
+        .pattern-badge {
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.7em;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        .pattern-badge.win { background: rgba(0, 255, 136, 0.2); color: var(--accent-green); }
+        .pattern-badge.loss { background: rgba(255, 51, 102, 0.2); color: var(--accent-red); }
+
+        .stargate-map {
+            position: relative;
+            height: 260px;
+            border-radius: 12px;
+            background: radial-gradient(circle at 20% 20%, rgba(0, 191, 255, 0.12), transparent 40%),
+                        radial-gradient(circle at 80% 30%, rgba(255, 170, 0, 0.12), transparent 40%),
+                        linear-gradient(135deg, rgba(2, 6, 23, 0.9), rgba(15, 23, 42, 0.9));
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            overflow: hidden;
+        }
+
+        .stargate-map::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+            background-size: 26px 26px;
+            opacity: 0.35;
+        }
+
+        .stargate-node {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(148, 163, 184, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .stargate-node.active {
+            background: var(--accent-green);
+            box-shadow: 0 0 14px rgba(0, 255, 136, 0.6);
+        }
+
+        .stargate-label {
+            position: absolute;
+            transform: translate(-50%, -130%);
+            font-size: 0.7em;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            z-index: 3;
+        }
+
+        .bot-map-node {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            box-shadow: 0 0 12px rgba(0, 191, 255, 0.6);
+            transform: translate(-50%, -50%);
+            animation: pulse 2s infinite;
+        }
+
+        .bot-map-node.active {
+            background: var(--accent-green);
+            box-shadow: 0 0 14px rgba(0, 255, 136, 0.7);
+        }
+
+        .bot-map-label {
+            position: absolute;
+            transform: translate(-50%, -140%);
+            font-size: 0.7em;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
         
         /* Market Overview */
         .mover-item {
@@ -755,7 +1122,7 @@ COMMAND_CENTER_HTML = """
             justify-content: space-between;
             padding: 8px;
             margin-bottom: 5px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(15, 23, 42, 0.5);
             border-radius: 5px;
         }
         
@@ -774,8 +1141,18 @@ COMMAND_CENTER_HTML = """
             justify-content: space-between;
             padding: 8px;
             margin-bottom: 5px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(15, 23, 42, 0.5);
             border-radius: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #7c879a;
+            font-style: italic;
+            padding: 16px 8px;
+            border: 1px dashed rgba(148, 163, 184, 0.25);
+            border-radius: 8px;
+            background: rgba(2, 6, 23, 0.35);
         }
         
         .balance-asset { color: var(--accent-blue); font-weight: bold; }
@@ -809,19 +1186,36 @@ COMMAND_CENTER_HTML = """
         /* Responsive */
         @media (max-width: 1400px) {
             #container {
-                grid-template-columns: 280px 1fr 280px;
+                grid-template-columns: minmax(260px, 300px) 1fr;
             }
         }
         
         @media (max-width: 1100px) {
             #container {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1fr;
             }
             #queen-panel {
                 grid-column: 1 / -1;
             }
             .panel:last-child {
                 grid-column: 1 / -1;
+            }
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 680px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .tabs-nav {
+                position: sticky;
+                top: 64px;
+                z-index: 90;
             }
         }
         
@@ -840,17 +1234,27 @@ COMMAND_CENTER_HTML = """
 </head>
 <body>
     <div id="header">
-        <div class="logo">👑 AUREON COMMAND CENTER</div>
-        <div class="status-bar">
-            <div class="status-item">
-                <span class="status-dot online" id="ws-status"></span>
-                <span>WebSocket</span>
+        <div class="logo-stack">
+            <div class="logo">👑 AUREON COMMAND CENTER</div>
+            <div class="logo-subtitle">Real-time command & control</div>
+        </div>
+        <div class="header-actions">
+            <div class="density-toggle" aria-label="UI density">
+                <button class="density-btn" id="density-comfort" onclick="setDensity('comfort')">Comfort</button>
+                <button class="density-btn" id="density-compact" onclick="setDensity('compact')">Compact</button>
             </div>
-            <div class="status-item">
-                <span id="system-count">0</span> Systems Online
-            </div>
-            <div class="status-item">
-                <span id="clock">--:--:--</span>
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-dot online" id="ws-status"></span>
+                    <span>WebSocket</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-pill" id="system-count">0</span>
+                    <span>Systems Online</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-pill" id="clock">--:--:--</span>
+                </div>
             </div>
         </div>
     </div>
@@ -859,27 +1263,54 @@ COMMAND_CENTER_HTML = """
     <div class="tabs-nav">
         <button class="tab-btn active" onclick="switchTab('trading')" data-tab="trading">
             <span class="tab-icon">📊</span>Trading
+            <span class="tab-live" id="live-trading">Live</span>
+            <span class="tab-time" id="time-trading">--:--</span>
+            <span class="tab-event" id="event-trading">--</span>
         </button>
         <button class="tab-btn" onclick="switchTab('whales')" data-tab="whales">
             <span class="tab-icon">🐋</span>Whales
             <span class="tab-badge" id="whale-count">0</span>
+            <span class="tab-live" id="live-whales">Live</span>
+            <span class="tab-time" id="time-whales">--:--</span>
+            <span class="tab-event" id="event-whales">--</span>
         </button>
         <button class="tab-btn" onclick="switchTab('bots')" data-tab="bots">
             <span class="tab-icon">🤖</span>Bot Intel
             <span class="tab-badge" id="bot-count">0</span>
+            <span class="tab-live" id="live-bots">Live</span>
+            <span class="tab-time" id="time-bots">--:--</span>
+            <span class="tab-event" id="event-bots">--</span>
         </button>
         <button class="tab-btn" onclick="switchTab('market')" data-tab="market">
             <span class="tab-icon">📈</span>Live Feed
+            <span class="tab-live" id="live-market">Live</span>
+            <span class="tab-time" id="time-market">--:--</span>
+            <span class="tab-event" id="event-market">--</span>
         </button>
         <button class="tab-btn" onclick="switchTab('quantum')" data-tab="quantum">
             <span class="tab-icon">🔮</span>Quantum
+            <span class="tab-live" id="live-quantum">Live</span>
+            <span class="tab-time" id="time-quantum">--:--</span>
+            <span class="tab-event" id="event-quantum">--</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('learning')" data-tab="learning">
+            <span class="tab-icon">🧠</span>Learning
+            <span class="tab-live" id="live-learning">Live</span>
+            <span class="tab-time" id="time-learning">--:--</span>
+            <span class="tab-event" id="event-learning">--</span>
         </button>
         <button class="tab-btn" onclick="switchTab('orca')" data-tab="orca">
             <span class="tab-icon">🦈</span>Orca Live
             <span class="tab-badge orca-pulse" id="orca-cycle">0</span>
+            <span class="tab-live" id="live-orca">Live</span>
+            <span class="tab-time" id="time-orca">--:--</span>
+            <span class="tab-event" id="event-orca">--</span>
         </button>
         <button class="tab-btn" onclick="switchTab('systems')" data-tab="systems">
             <span class="tab-icon">⚙️</span>All Systems
+            <span class="tab-live" id="live-systems">Live</span>
+            <span class="tab-time" id="time-systems">--:--</span>
+            <span class="tab-event" id="event-systems">--</span>
         </button>
     </div>
 
@@ -896,49 +1327,55 @@ COMMAND_CENTER_HTML = """
                 <div>Strategy: <span id="queen-strategy">SCANNING</span></div>
             </div>
         </div>
-        
-        <!-- Left Panel: Portfolio & Systems -->
-        <div class="panel">
-            <h2>💰 PORTFOLIO</h2>
-            <div class="stats-grid">
+
+        <div class="panel" style="grid-column: 1 / -1; max-height: none;">
+            <h2>📊 KEY METRICS</h2>
+            <div class="stats-grid metrics-grid">
                 <div class="stat-card">
                     <div class="stat-label">Total Value</div>
                     <div class="stat-value gold" id="total-value">$0.00</div>
+                    <div class="metric-chart" id="chart-total-value"></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Cash Available</div>
                     <div class="stat-value" id="cash-available">$0.00</div>
+                    <div class="metric-chart" id="chart-cash-available"></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Today's P&L</div>
                     <div class="stat-value" id="pnl-today">$0.00</div>
+                    <div class="metric-chart" id="chart-pnl-today"></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Total P&L</div>
                     <div class="stat-value" id="pnl-total">$0.00</div>
+                    <div class="metric-chart" id="chart-pnl-total"></div>
                 </div>
             </div>
-
+        </div>
+        
+        <!-- Left Panel: Operations -->
+        <div class="panel">
             <h2>✈️ FLIGHT CHECK</h2>
             <div id="flight-check" class="flight-check-panel">
                 <div class="flight-status offline">Awaiting status...</div>
             </div>
             
             <h2>⚔️ ACTIVE POSITIONS</h2>
-            <div id="positions-list" style="margin-bottom: 20px;">
-                <div style="text-align: center; color: #666; font-style: italic;">No active positions</div>
+            <div id="positions-list" class="scroll-area" style="margin-bottom: 20px;">
+                <div class="empty-state">No active positions</div>
             </div>
             
-            <h2>� RECENT TRADES</h2>
-            <div id="recent-trades" style="margin-bottom: 20px; max-height: 200px; overflow-y: auto;">
-                <div style="text-align: center; color: #666; font-style: italic;">No recent trades</div>
+            <h2>🧾 RECENT TRADES</h2>
+            <div id="recent-trades" class="scroll-area" style="margin-bottom: 20px;">
+                <div class="empty-state">No recent trades</div>
             </div>
             
-            <h2>�🔌 SYSTEMS</h2>
-            <div id="systems-list"></div>
+            <h2>🔌 SYSTEMS</h2>
+            <div id="systems-list" class="scroll-area"></div>
             
             <h2 style="margin-top: 15px;">💎 BALANCES</h2>
-            <div id="balances-list"></div>
+            <div id="balances-list" class="scroll-area"></div>
 
             <h2 style="margin-top: 15px;">🧩 UNIFIED HUBS</h2>
             <div class="hub-summary">
@@ -957,14 +1394,28 @@ COMMAND_CENTER_HTML = """
         </div>
         
         <!-- Center Panel: Signals Feed -->
-        <div class="panel" style="min-height: 400px;">
-            <h2>📡 LIVE SIGNALS</h2>
-            <div id="signals-feed" style="max-height: calc(100% - 50px); overflow-y: auto;"></div>
+        <div class="panel" style="min-height: 420px;">
+            <div class="section-header">
+                <h2>📡 LIVE SIGNALS</h2>
+                <span class="chip">Real-time</span>
+            </div>
+            <div class="table-list" style="margin-bottom: 10px;">
+                <div class="table-row header">
+                    <div>Symbol</div>
+                    <div>Type</div>
+                    <div>Confidence</div>
+                    <div>Exchange</div>
+                </div>
+            </div>
+            <div id="signals-feed" class="scroll-area lg"></div>
         </div>
         
         <!-- Right Panel: Market Overview -->
-        <div class="panel" style="min-height: 400px;">
-            <h2>📈 MARKET OVERVIEW</h2>
+        <div class="panel" style="min-height: 420px;">
+            <div class="section-header">
+                <h2>📈 MARKET OVERVIEW</h2>
+                <span class="chip">Live</span>
+            </div>
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">Assets Tracked</div>
@@ -977,10 +1428,22 @@ COMMAND_CENTER_HTML = """
             </div>
             
             <h2>🚀 TOP MOVERS</h2>
-            <div id="top-movers" style="max-height: 200px; overflow-y: auto;"></div>
+            <div class="table-list" style="margin-bottom: 8px;">
+                <div class="table-row header" style="grid-template-columns: 1fr 0.7fr;">
+                    <div>Asset</div>
+                    <div>Change</div>
+                </div>
+            </div>
+            <div id="top-movers" class="scroll-area"></div>
             
             <h2 style="margin-top: 15px;">📉 TOP FALLERS</h2>
-            <div id="top-fallers" style="max-height: 200px; overflow-y: auto;"></div>
+            <div class="table-list" style="margin-bottom: 8px;">
+                <div class="table-row header" style="grid-template-columns: 1fr 0.7fr;">
+                    <div>Asset</div>
+                    <div>Change</div>
+                </div>
+            </div>
+            <div id="top-fallers" class="scroll-area"></div>
         </div>
     </div>
     </div><!-- end tab-trading -->
@@ -989,9 +1452,17 @@ COMMAND_CENTER_HTML = """
     <div id="tab-whales" class="tab-content">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; height: 100%;">
             <div class="panel" style="overflow-y: auto;">
-                <h2>🐋 LIVE WHALE ACTIVITY</h2>
+                <div class="section-header">
+                    <h2>🐋 LIVE WHALE ACTIVITY</h2>
+                    <span class="chip">Alerts</span>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="chip">$100k+</span>
+                    <span class="chip">Buys</span>
+                    <span class="chip">Sells</span>
+                </div>
                 <div id="whale-feed" style="max-height: calc(100vh - 200px); overflow-y: auto;">
-                    <div style="text-align: center; color: #666; padding: 40px;">
+                    <div class="empty-state" style="margin: 20px;">
                         <div style="font-size: 3em;">🐋</div>
                         <p>Monitoring for whale movements...</p>
                         <p style="font-size: 0.8em; color: #444;">Large orders > $100k will appear here</p>
@@ -999,7 +1470,10 @@ COMMAND_CENTER_HTML = """
                 </div>
             </div>
             <div class="panel">
-                <h2>📊 WHALE STATISTICS</h2>
+                <div class="section-header">
+                    <h2>📊 WHALE STATISTICS</h2>
+                    <span class="chip">24h</span>
+                </div>
                 <div class="stats-grid" style="grid-template-columns: 1fr 1fr;">
                     <div class="stat-card">
                         <div class="stat-label">Whales Detected (24h)</div>
@@ -1019,10 +1493,16 @@ COMMAND_CENTER_HTML = """
                     </div>
                 </div>
                 <h2 style="margin-top: 15px;">🎯 TOP WHALE TARGETS</h2>
+                <div class="table-list" style="margin-bottom: 8px;">
+                    <div class="table-row header" style="grid-template-columns: 1fr 0.8fr;">
+                        <div>Asset</div>
+                        <div>Status</div>
+                    </div>
+                </div>
                 <div id="whale-targets">
-                    <div class="balance-item"><span class="balance-asset">BTC/USD</span><span class="balance-amount">Monitoring...</span></div>
-                    <div class="balance-item"><span class="balance-asset">ETH/USD</span><span class="balance-amount">Monitoring...</span></div>
-                    <div class="balance-item"><span class="balance-asset">SOL/USD</span><span class="balance-amount">Monitoring...</span></div>
+                    <div class="table-row" style="grid-template-columns: 1fr 0.8fr;"><div class="table-cell">BTC/USD</div><div class="table-cell">Monitoring</div></div>
+                    <div class="table-row" style="grid-template-columns: 1fr 0.8fr;"><div class="table-cell">ETH/USD</div><div class="table-cell">Monitoring</div></div>
+                    <div class="table-row" style="grid-template-columns: 1fr 0.8fr;"><div class="table-cell">SOL/USD</div><div class="table-cell">Monitoring</div></div>
                 </div>
                 <h2 style="margin-top: 15px;">🔥 WHALE HEATMAP</h2>
                 <div id="whale-heatmap" style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 15px; text-align: center;">
@@ -1045,39 +1525,17 @@ COMMAND_CENTER_HTML = """
             <div class="panel">
                 <h2>🏢 DETECTED FIRMS</h2>
                 <div id="firms-list">
-                    <div class="system-item" style="border-left-color: var(--accent-purple);">
-                        <span class="system-name">🏦 Citadel Securities</span>
-                        <span class="system-status">Active</span>
-                    </div>
-                    <div class="system-item" style="border-left-color: var(--accent-blue);">
-                        <span class="system-name">🏦 Jump Trading</span>
-                        <span class="system-status">Active</span>
-                    </div>
-                    <div class="system-item" style="border-left-color: var(--accent-gold);">
-                        <span class="system-name">🏦 Two Sigma</span>
-                        <span class="system-status">Monitoring</span>
-                    </div>
-                    <div class="system-item" style="border-left-color: var(--accent-green);">
-                        <span class="system-name">🏦 Renaissance Tech</span>
-                        <span class="system-status">Quiet</span>
-                    </div>
+                    <div class="empty-state">Awaiting firm intelligence...</div>
                 </div>
                 <h2 style="margin-top: 15px;">🔬 BOT SIGNATURES</h2>
                 <div id="bot-signatures">
-                    <div class="balance-item"><span style="color: var(--accent-purple);">ICEBERG</span><span>47 detected</span></div>
-                    <div class="balance-item"><span style="color: var(--accent-blue);">TWAP</span><span>23 detected</span></div>
-                    <div class="balance-item"><span style="color: var(--accent-gold);">VWAP</span><span>18 detected</span></div>
-                    <div class="balance-item"><span style="color: var(--accent-green);">SNIPER</span><span>8 detected</span></div>
+                    <div class="empty-state">No bot signatures detected yet.</div>
                 </div>
             </div>
             <div class="panel">
                 <h2>🌍 GLOBAL BOT MAP</h2>
-                <div id="bot-map" style="background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 100%); border-radius: 8px; padding: 20px; height: calc(100% - 60px); position: relative;">
-                    <div style="position: absolute; top: 20%; left: 15%; width: 12px; height: 12px; background: var(--accent-green); border-radius: 50%; animation: pulse 2s infinite;" title="NYC"></div>
-                    <div style="position: absolute; top: 25%; left: 48%; width: 10px; height: 10px; background: var(--accent-blue); border-radius: 50%; animation: pulse 2s infinite 0.3s;" title="London"></div>
-                    <div style="position: absolute; top: 35%; left: 75%; width: 14px; height: 14px; background: var(--accent-gold); border-radius: 50%; animation: pulse 2s infinite 0.6s;" title="Tokyo"></div>
-                    <div style="position: absolute; top: 40%; left: 70%; width: 8px; height: 8px; background: var(--accent-purple); border-radius: 50%; animation: pulse 2s infinite 0.9s;" title="Singapore"></div>
-                    <div style="position: absolute; top: 30%; left: 20%; width: 6px; height: 6px; background: var(--accent-red); border-radius: 50%; animation: pulse 2s infinite 1.2s;" title="Chicago"></div>
+                <div id="bot-map" style="background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 100%); border-radius: 8px; padding: 20px; height: calc(100% - 60px); position: relative; overflow: hidden;">
+                    <div id="bot-map-nodes"></div>
                     <div style="text-align: center; padding-top: 60%; color: #666; font-size: 0.9em;">
                         <p>🌐 Live Bot Activity Map</p>
                         <p style="font-size: 0.8em;">Dots represent detected algorithmic trading clusters</p>
@@ -1089,29 +1547,16 @@ COMMAND_CENTER_HTML = """
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-label">Bots Detected</div>
-                        <div class="stat-value" id="total-bots">96</div>
+                        <div class="stat-value" id="total-bots">0</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Active Now</div>
-                        <div class="stat-value gold" id="active-bots">34</div>
+                        <div class="stat-value gold" id="active-bots">0</div>
                     </div>
                 </div>
                 <h2 style="margin-top: 15px;">⚡ RECENT BOT ACTIVITY</h2>
                 <div id="bot-activity">
-                    <div class="signal-item buy">
-                        <div class="signal-header">
-                            <span class="signal-symbol">ICEBERG @ BTC</span>
-                            <span class="signal-type buy">BUY</span>
-                        </div>
-                        <div class="signal-details">Citadel - Hidden order detected</div>
-                    </div>
-                    <div class="signal-item sell">
-                        <div class="signal-header">
-                            <span class="signal-symbol">TWAP @ ETH</span>
-                            <span class="signal-type sell">SELL</span>
-                        </div>
-                        <div class="signal-details">Jump Trading - Time-weighted execution</div>
-                    </div>
+                    <div class="empty-state">No bot activity yet.</div>
                 </div>
             </div>
         </div>
@@ -1149,23 +1594,21 @@ COMMAND_CENTER_HTML = """
 
     <!-- TAB 5: QUANTUM - Quantum Analysis -->
     <div id="tab-quantum" class="tab-content">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; height: 100%;">
+        <div class="quantum-grid">
             <div class="panel">
-                <h2>🔮 QUANTUM MIRROR SCANNER</h2>
-                <div style="text-align: center; padding: 30px;">
-                    <div style="font-size: 5em; animation: float 3s ease-in-out infinite;">🔮</div>
-                    <div style="margin-top: 20px; color: var(--accent-gold); font-size: 1.2em;">Timeline Coherence</div>
-                    <div style="font-size: 3em; color: var(--accent-green); margin: 10px 0;" id="quantum-coherence">0.618</div>
-                    <div style="color: #666;">φ Golden Ratio Alignment</div>
+                <div class="section-header">
+                    <h2>🔮 QUANTUM MIRROR SCANNER</h2>
+                    <span class="chip">Live</span>
                 </div>
-                <div class="stats-grid" style="margin-top: 20px;">
+                <div id="quantum-coherence-chart" class="quantum-chart"></div>
+                <div class="stats-grid" style="margin-top: 10px;">
                     <div class="stat-card">
                         <div class="stat-label">Active Timelines</div>
-                        <div class="stat-value" id="active-timelines">7</div>
+                        <div class="stat-value" id="active-timelines">0</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Anchored</div>
-                        <div class="stat-value gold" id="anchored-timelines">3</div>
+                        <div class="stat-value gold" id="anchored-timelines">0</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Schumann Hz</div>
@@ -1176,58 +1619,59 @@ COMMAND_CENTER_HTML = """
                         <div class="stat-value" style="color: #ff66aa;" id="love-freq">528</div>
                     </div>
                 </div>
+                <h2 style="margin-top: 15px;">🧭 ACTIVE TIMELINES</h2>
+                <div id="quantum-timelines" class="timeline-list">
+                    <div class="empty-state">Awaiting timeline signals...</div>
+                </div>
             </div>
             <div class="panel">
-                <h2>🌌 STARGATE PROTOCOL</h2>
-                <div id="stargate-nodes" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px;">
-                    <div class="stat-card" style="border-color: var(--accent-gold);">
-                        <div class="stat-label">🏛️ GIZA</div>
-                        <div class="stat-value" style="font-size: 1em;">432 Hz</div>
-                        <div style="font-size: 0.7em; color: #888;">Casimir: 0.95</div>
+                <div class="section-header">
+                    <h2>🌌 STARGATE PROTOCOL</h2>
+                    <span class="chip">Resonance</span>
+                </div>
+                <div id="stargate-map" class="stargate-map"></div>
+                <h2 style="margin-top: 15px;">🌊 HARMONIC FREQUENCIES</h2>
+                <div id="quantum-frequency-chart" class="quantum-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 6: LEARNING - Adaptive Intelligence -->
+    <div id="tab-learning" class="tab-content">
+        <div class="learning-grid">
+            <div class="panel">
+                <div class="section-header">
+                    <h2>🧠 ADAPTIVE LEARNING</h2>
+                    <span class="chip">Live</span>
+                </div>
+                <div id="learning-pnl-chart" class="learning-chart"></div>
+                <div class="stats-grid" style="margin-top: 10px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Trades</div>
+                        <div class="stat-value" id="learning-total-trades">0</div>
                     </div>
-                    <div class="stat-card" style="border-color: var(--accent-blue);">
-                        <div class="stat-label">🗿 STONEHENGE</div>
-                        <div class="stat-value" style="font-size: 1em;">396 Hz</div>
-                        <div style="font-size: 0.7em; color: #888;">Casimir: 0.88</div>
+                    <div class="stat-card">
+                        <div class="stat-label">Win Rate</div>
+                        <div class="stat-value" id="learning-win-rate">0%</div>
                     </div>
-                    <div class="stat-card" style="border-color: var(--accent-green);">
-                        <div class="stat-label">⛰️ MACHU PICCHU</div>
-                        <div class="stat-value" style="font-size: 1em;">528 Hz</div>
-                        <div style="font-size: 0.7em; color: #888;">Casimir: 0.90</div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg PnL</div>
+                        <div class="stat-value" id="learning-avg-pnl">$0.00</div>
                     </div>
-                    <div class="stat-card" style="border-color: var(--accent-purple);">
-                        <div class="stat-label">🏯 ANGKOR WAT</div>
-                        <div class="stat-value" style="font-size: 1em;">417 Hz</div>
-                        <div style="font-size: 0.7em; color: #888;">Casimir: 0.87</div>
-                    </div>
-                    <div class="stat-card" style="border-color: var(--accent-red);">
-                        <div class="stat-label">🗻 SEDONA</div>
-                        <div class="stat-value" style="font-size: 1em;">639 Hz</div>
-                        <div style="font-size: 0.7em; color: #888;">Casimir: 0.82</div>
-                    </div>
-                    <div class="stat-card" style="border-color: var(--accent-gold);">
-                        <div class="stat-label">🌋 ULURU</div>
-                        <div class="stat-value" style="font-size: 1em;">741 Hz</div>
-                        <div style="font-size: 0.7em; color: #888;">Casimir: 0.79</div>
+                    <div class="stat-card">
+                        <div class="stat-label">Loss Events</div>
+                        <div class="stat-value" id="learning-loss-events">0</div>
                     </div>
                 </div>
-                <h2 style="margin-top: 15px;">🌊 HARMONIC RESONANCE</h2>
-                <div style="background: rgba(0,0,0,0.4); border-radius: 8px; padding: 15px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                        <span>Alpha (8-12 Hz)</span>
-                        <span style="color: var(--accent-green);" id="alpha-hz">10.2 Hz</span>
-                    </div>
-                    <div class="signal-confidence"><div class="signal-confidence-bar" style="width: 72%; background: var(--accent-green);"></div></div>
-                    <div style="display: flex; justify-content: space-between; margin: 15px 0 10px;">
-                        <span>Theta (4-8 Hz)</span>
-                        <span style="color: var(--accent-blue);" id="theta-hz">6.8 Hz</span>
-                    </div>
-                    <div class="signal-confidence"><div class="signal-confidence-bar" style="width: 58%; background: var(--accent-blue);"></div></div>
-                    <div style="display: flex; justify-content: space-between; margin: 15px 0 10px;">
-                        <span>Delta (0.5-4 Hz)</span>
-                        <span style="color: var(--accent-purple);" id="delta-hz">2.1 Hz</span>
-                    </div>
-                    <div class="signal-confidence"><div class="signal-confidence-bar" style="width: 35%; background: var(--accent-purple);"></div></div>
+            </div>
+            <div class="panel">
+                <div class="section-header">
+                    <h2>📚 LEARNED PATTERNS</h2>
+                    <span class="chip">Top</span>
+                </div>
+                <div id="learning-winloss-chart" class="learning-chart"></div>
+                <div id="learning-patterns" class="pattern-list" style="margin-top: 12px;">
+                    <div class="empty-state">Learning patterns will appear here...</div>
                 </div>
             </div>
         </div>
@@ -1278,9 +1722,19 @@ COMMAND_CENTER_HTML = """
                 
                 <!-- Active Positions -->
                 <div class="panel" style="flex: 1; overflow: hidden;">
-                    <h2>🎯 ACTIVE POSITIONS (<span id="orca-position-count">0</span>)</h2>
-                    <div id="orca-positions" style="max-height: 200px; overflow-y: auto;">
-                        <div style="text-align: center; color: #666; padding: 20px;">No active positions</div>
+                    <div class="section-header">
+                        <h2>🎯 ACTIVE POSITIONS (<span id="orca-position-count">0</span>)</h2>
+                        <span class="chip">Live</span>
+                    </div>
+                    <div class="table-list" style="margin-bottom: 8px;">
+                        <div class="table-row header" style="grid-template-columns: 1fr 0.7fr 0.7fr;">
+                            <div>Asset</div>
+                            <div>Size</div>
+                            <div>P&L</div>
+                        </div>
+                    </div>
+                    <div id="orca-positions" style="max-height: 220px; overflow-y: auto;">
+                        <div class="empty-state">No active positions</div>
                     </div>
                 </div>
             </div>
@@ -1314,9 +1768,20 @@ COMMAND_CENTER_HTML = """
                 
                 <!-- Recent Executions -->
                 <div class="panel" style="max-height: 200px; overflow: hidden;">
-                    <h2>📝 RECENT EXECUTIONS</h2>
+                    <div class="section-header">
+                        <h2>📝 RECENT EXECUTIONS</h2>
+                        <span class="chip">Auto</span>
+                    </div>
+                    <div class="table-list" style="margin-bottom: 8px;">
+                        <div class="table-row header" style="grid-template-columns: 1fr 0.6fr 0.6fr 0.6fr;">
+                            <div>Asset</div>
+                            <div>Side</div>
+                            <div>Qty</div>
+                            <div>Price</div>
+                        </div>
+                    </div>
                     <div id="orca-executions" style="max-height: 150px; overflow-y: auto;">
-                        <div style="text-align: center; color: #666; padding: 10px;">No executions yet</div>
+                        <div class="empty-state">No executions yet</div>
                     </div>
                 </div>
             </div>
@@ -1414,6 +1879,22 @@ COMMAND_CENTER_HTML = """
             if (selectedBtn) selectedBtn.classList.add('active');
         }
 
+        function setDensity(mode) {
+            const body = document.body;
+            if (mode === 'compact') {
+                body.classList.add('compact');
+            } else {
+                body.classList.remove('compact');
+            }
+            localStorage.setItem('aureon_ui_density', mode);
+            const comfortBtn = document.getElementById('density-comfort');
+            const compactBtn = document.getElementById('density-compact');
+            if (comfortBtn && compactBtn) {
+                comfortBtn.classList.toggle('active', mode !== 'compact');
+                compactBtn.classList.toggle('active', mode === 'compact');
+            }
+        }
+
         // WebSocket connection
         let ws = null;
         let reconnectAttempts = 0;
@@ -1449,32 +1930,316 @@ COMMAND_CENTER_HTML = """
                 handleMessage(data);
             };
         }
+
+        // Apply density preference on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('aureon_ui_density') || 'comfort';
+            setDensity(saved);
+            setInterval(updateStaleBadges, 15000);
+            let chartInitAttempts = 0;
+            const tryInitCharts = () => {
+                chartInitAttempts += 1;
+                initMetricCharts();
+                initQuantumCharts();
+                initLearningCharts();
+                if (!window.__metricChartsInitialized && chartInitAttempts < 6) {
+                    setTimeout(tryInitCharts, 500);
+                }
+            };
+            tryInitCharts();
+        });
+
+        const metricCharts = {};
+        const metricSeries = {
+            total_value: [],
+            cash_available: [],
+            pnl_today: [],
+            pnl_total: []
+        };
+        const metricMaxPoints = 40;
+
+        const quantumCharts = {};
+        const stargateDefaults = [
+            { id: 'giza', label: 'Giza', x: 22, y: 38, freq: 432, casimir: 0.95 },
+            { id: 'stonehenge', label: 'Stonehenge', x: 42, y: 28, freq: 396, casimir: 0.88 },
+            { id: 'machu', label: 'Machu', x: 26, y: 66, freq: 528, casimir: 0.9 },
+            { id: 'angkor', label: 'Angkor', x: 70, y: 58, freq: 417, casimir: 0.87 },
+            { id: 'sedona', label: 'Sedona', x: 20, y: 44, freq: 639, casimir: 0.82 },
+            { id: 'uluru', label: 'Uluru', x: 78, y: 78, freq: 741, casimir: 0.79 }
+        ];
+
+        const learningCharts = {};
+        const learningSeries = {
+            pnl: [],
+            wins: 0,
+            losses: 0
+        };
+
+        function initMetricCharts() {
+            if (window.__metricChartsInitialized) return;
+            if (!window.ApexCharts) return;
+            const configs = [
+                { key: 'total_value', el: 'chart-total-value', color: '#ffaa00' },
+                { key: 'cash_available', el: 'chart-cash-available', color: '#00bfff' },
+                { key: 'pnl_today', el: 'chart-pnl-today', color: '#00ff88' },
+                { key: 'pnl_total', el: 'chart-pnl-total', color: '#9966ff' }
+            ];
+            configs.forEach(cfg => {
+                const container = document.getElementById(cfg.el);
+                if (!container) return;
+                const chart = new ApexCharts(container, {
+                    chart: {
+                        type: 'line',
+                        height: 44,
+                        sparkline: { enabled: true }
+                    },
+                    stroke: { width: 2, curve: 'smooth' },
+                    colors: [cfg.color],
+                    tooltip: { enabled: false },
+                    series: [{ name: cfg.key, data: metricSeries[cfg.key] || [] }]
+                });
+                chart.render();
+                metricCharts[cfg.key] = chart;
+            });
+            window.__metricChartsInitialized = true;
+        }
+
+        function pushMetric(key, value) {
+            if (value === undefined || value === null || Number.isNaN(value)) return;
+            if (!metricSeries[key]) metricSeries[key] = [];
+            metricSeries[key].push(value);
+            if (metricSeries[key].length > metricMaxPoints) metricSeries[key].shift();
+            const chart = metricCharts[key];
+            if (chart) chart.updateSeries([{ data: metricSeries[key] }], true);
+        }
+
+        function initQuantumCharts() {
+            if (window.__quantumChartsInitialized) return;
+            if (!window.ApexCharts) return;
+
+            const coherenceEl = document.getElementById('quantum-coherence-chart');
+            if (coherenceEl) {
+                const coherenceChart = new ApexCharts(coherenceEl, {
+                    chart: {
+                        type: 'radialBar',
+                        height: 220,
+                        sparkline: { enabled: true }
+                    },
+                    series: [61.8],
+                    labels: ['Coherence'],
+                    colors: ['#00ff88'],
+                    plotOptions: {
+                        radialBar: {
+                            hollow: { size: '55%' },
+                            dataLabels: {
+                                name: { show: false },
+                                value: {
+                                    fontSize: '22px',
+                                    color: '#e2e8f0',
+                                    formatter: val => `${val.toFixed(1)}%`
+                                }
+                            }
+                        }
+                    },
+                    stroke: { lineCap: 'round' }
+                });
+                coherenceChart.render();
+                quantumCharts.coherence = coherenceChart;
+            }
+
+            const freqEl = document.getElementById('quantum-frequency-chart');
+            if (freqEl) {
+                const freqChart = new ApexCharts(freqEl, {
+                    chart: {
+                        type: 'bar',
+                        height: 220,
+                        toolbar: { show: false }
+                    },
+                    plotOptions: { bar: { borderRadius: 6, columnWidth: '50%' } },
+                    colors: ['#00bfff'],
+                    dataLabels: { enabled: false },
+                    xaxis: {
+                        categories: ['Schumann', 'Love', 'Alpha', 'Theta', 'Delta'],
+                        labels: { style: { colors: '#94a3b8', fontSize: '11px' } }
+                    },
+                    yaxis: {
+                        labels: { style: { colors: '#94a3b8', fontSize: '11px' } }
+                    },
+                    series: [{ name: 'Hz', data: [7.83, 528, 10.2, 6.8, 2.1] }]
+                });
+                freqChart.render();
+                quantumCharts.frequencies = freqChart;
+            }
+
+            renderStargateMap(stargateDefaults);
+            window.__quantumChartsInitialized = true;
+        }
+
+        function renderStargateMap(nodes) {
+            const map = document.getElementById('stargate-map');
+            if (!map) return;
+            map.innerHTML = '';
+            nodes.forEach(node => {
+                const dot = document.createElement('div');
+                dot.className = 'stargate-node';
+                dot.style.left = `${node.x}%`;
+                dot.style.top = `${node.y}%`;
+                dot.dataset.stargateId = node.id;
+
+                const label = document.createElement('div');
+                label.className = 'stargate-label';
+                label.style.left = `${node.x}%`;
+                label.style.top = `${node.y}%`;
+                label.textContent = node.label;
+
+                map.appendChild(dot);
+                map.appendChild(label);
+            });
+        }
+
+        function updateStargateMap(nodes) {
+            if (!nodes || nodes.length === 0) return;
+            const map = document.getElementById('stargate-map');
+            if (!map) return;
+            const byId = {};
+            nodes.forEach(n => { byId[n.id] = n; });
+            map.querySelectorAll('.stargate-node').forEach(node => {
+                const id = node.dataset.stargateId;
+                const info = byId[id];
+                if (!info) return;
+                const resonance = info.resonance || info.coherence || 0;
+                node.classList.toggle('active', resonance >= 0.618);
+                node.style.boxShadow = resonance >= 0.618 ? '0 0 14px rgba(0, 255, 136, 0.6)' : 'none';
+            });
+        }
+
+        function initLearningCharts() {
+            if (window.__learningChartsInitialized) return;
+            if (!window.ApexCharts) return;
+
+            const pnlEl = document.getElementById('learning-pnl-chart');
+            if (pnlEl) {
+                const pnlChart = new ApexCharts(pnlEl, {
+                    chart: {
+                        type: 'line',
+                        height: 240,
+                        toolbar: { show: false }
+                    },
+                    stroke: { width: 2, curve: 'smooth' },
+                    colors: ['#00ff88'],
+                    series: [{ name: 'PnL', data: learningSeries.pnl }],
+                    xaxis: { labels: { show: false } },
+                    yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '11px' } } },
+                    grid: { borderColor: 'rgba(148, 163, 184, 0.1)' },
+                    tooltip: { enabled: false }
+                });
+                pnlChart.render();
+                learningCharts.pnl = pnlChart;
+            }
+
+            const winLossEl = document.getElementById('learning-winloss-chart');
+            if (winLossEl) {
+                const winLossChart = new ApexCharts(winLossEl, {
+                    chart: {
+                        type: 'bar',
+                        height: 240,
+                        toolbar: { show: false }
+                    },
+                    plotOptions: { bar: { borderRadius: 6, columnWidth: '40%' } },
+                    colors: ['#00ff88', '#ff3366'],
+                    dataLabels: { enabled: false },
+                    xaxis: {
+                        categories: ['Wins', 'Losses'],
+                        labels: { style: { colors: '#94a3b8', fontSize: '11px' } }
+                    },
+                    yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '11px' } } },
+                    series: [{ name: 'Count', data: [0, 0] }]
+                });
+                winLossChart.render();
+                learningCharts.winloss = winLossChart;
+            }
+
+            window.__learningChartsInitialized = true;
+        }
         
         function handleMessage(data) {
             switch(data.type) {
                 case 'full_state':
                     updateFullState(data);
+                    markLive('trading', 'Full State');
+                    markLive('systems', 'Full State');
                     break;
                 case 'queen_update':
                     updateQueen(data);
+                    markLive('trading', 'Queen Update');
                     break;
                 case 'signal':
                     addSignal(data.signal);
+                    markLive('trading', 'Signal');
                     break;
                 case 'portfolio_update':
                     updatePortfolio(data);
+                    markLive('trading', 'Portfolio');
                     break;
                 case 'market_update':
                     updateMarket(data);
+                    markLive('market', 'Market Update');
                     break;
                 case 'systems_update':
                     updateSystems(data.systems);
+                    markLive('systems', 'Systems Update');
+                    break;
+                case 'learning_update':
+                    updateLearningTab(data);
+                    markLive('learning', 'Learning Update');
                     break;
                 case 'live_update':
                     handleLiveUpdate(data.data);
                     updateHubStats(data.data);
+                    markLive('orca', 'Orca Live');
                     break;
             }
+
+            if (typeof data.type === 'string') {
+                if (data.type.includes('whale')) markLive('whales', 'Whale Activity');
+                if (data.type.includes('bot')) markLive('bots', 'Bot Intel');
+                if (data.type.includes('quantum') || data.type.includes('timeline')) markLive('quantum', 'Quantum Signal');
+                if (data.type.includes('learning')) markLive('learning', 'Learning Update');
+            }
+        }
+
+        function markLive(tab, eventLabel) {
+            const badge = document.getElementById(`live-${tab}`);
+            if (badge) {
+                badge.classList.add('active');
+                badge.classList.remove('stale', 'dead');
+            }
+            const now = Date.now();
+            const timeEl = document.getElementById(`time-${tab}`);
+            if (timeEl) timeEl.textContent = new Date(now).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            if (eventLabel) {
+                const eventEl = document.getElementById(`event-${tab}`);
+                if (eventEl) eventEl.textContent = eventLabel;
+            }
+            window.__aureonTabLast = window.__aureonTabLast || {};
+            window.__aureonTabLast[tab] = now;
+        }
+
+        function updateStaleBadges() {
+            const thresholds = { stale: 45000, dead: 120000 }; // 45s stale, 2m dead
+            const last = window.__aureonTabLast || {};
+            const tabs = ['trading', 'whales', 'bots', 'market', 'quantum', 'learning', 'orca', 'systems'];
+            const now = Date.now();
+            tabs.forEach(tab => {
+                const badge = document.getElementById(`live-${tab}`);
+                if (!badge) return;
+                const ts = last[tab];
+                if (!ts) return;
+                const age = now - ts;
+                badge.classList.remove('stale', 'dead');
+                if (age > thresholds.dead) badge.classList.add('dead');
+                else if (age > thresholds.stale) badge.classList.add('stale');
+            });
         }
 
         function openHub(name) {
@@ -1555,6 +2320,7 @@ COMMAND_CENTER_HTML = """
             if (data.systems) updateSystems(data.systems);
             if (data.market) updateMarket(data);
             if (data.queen) updateQueen(data);
+            if (data.learning) updateLearningTab({ learning: data.learning });
             if (data.signals) {
                 data.signals.forEach(s => addSignal(s));
             }
@@ -1578,18 +2344,24 @@ COMMAND_CENTER_HTML = """
         
         function updatePortfolio(data) {
             if (data.portfolio) {
-                document.getElementById('total-value').textContent = '$' + formatNumber(data.portfolio.total_value_usd || 0);
-                document.getElementById('cash-available').textContent = '$' + formatNumber(data.portfolio.cash_available || 0);
+                const totalValue = data.portfolio.total_value_usd || 0;
+                const cashAvailable = data.portfolio.cash_available || 0;
+                document.getElementById('total-value').textContent = '$' + formatNumber(totalValue);
+                document.getElementById('cash-available').textContent = '$' + formatNumber(cashAvailable);
+                pushMetric('total_value', totalValue);
+                pushMetric('cash_available', cashAvailable);
                 
                 const pnlToday = data.portfolio.pnl_today || 0;
                 const pnlTodayEl = document.getElementById('pnl-today');
                 pnlTodayEl.textContent = '$' + formatNumber(pnlToday);
                 pnlTodayEl.className = 'stat-value ' + (pnlToday >= 0 ? '' : 'negative');
+                pushMetric('pnl_today', pnlToday);
                 
                 const pnlTotal = data.portfolio.pnl_total || 0;
                 const pnlTotalEl = document.getElementById('pnl-total');
                 pnlTotalEl.textContent = '$' + formatNumber(pnlTotal);
                 pnlTotalEl.className = 'stat-value ' + (pnlTotal >= 0 ? '' : 'negative');
+                pushMetric('pnl_total', pnlTotal);
             }
             
             if (data.balances) {
@@ -1765,6 +2537,7 @@ COMMAND_CENTER_HTML = """
                      const pnlEl = document.getElementById('pnl-today');
                      pnlEl.textContent = '$' + formatNumber(stats.total_pnl);
                      pnlEl.className = 'stat-value ' + (stats.total_pnl >= 0 ? '' : 'negative');
+                     pushMetric('pnl_today', stats.total_pnl);
                  }
                  
                  // Generate cosmic score based on live activity
@@ -1882,34 +2655,109 @@ COMMAND_CENTER_HTML = """
 
         // Update bot intelligence tab
         function updateBotTab(data) {
+            const intel = data?.bot_intel || data?.bot_snapshot || data;
+            if (!intel) return;
+
             const countEl = document.getElementById('bot-count');
-            if (countEl && data.bot_count !== undefined) {
-                countEl.textContent = data.bot_count;
+            if (countEl && intel.bot_count !== undefined) {
+                countEl.textContent = intel.bot_count;
             }
             const totalEl = document.getElementById('total-bots');
-            if (totalEl && data.total_bots !== undefined) {
-                totalEl.textContent = data.total_bots;
+            if (totalEl && intel.total_bots !== undefined) {
+                totalEl.textContent = intel.total_bots;
             }
             const activeEl = document.getElementById('active-bots');
-            if (activeEl && data.active_bots !== undefined) {
-                activeEl.textContent = data.active_bots;
+            if (activeEl && intel.active_bots !== undefined) {
+                activeEl.textContent = intel.active_bots;
             }
-            // Add bot activity to feed
-            if (data.bot_activity) {
+
+            if (Array.isArray(intel.bot_firms)) {
+                const list = document.getElementById('firms-list');
+                if (list) {
+                    list.innerHTML = '';
+                    intel.bot_firms.slice(0, 8).forEach((f, idx) => {
+                        const div = document.createElement('div');
+                        const colors = ['var(--accent-purple)', 'var(--accent-blue)', 'var(--accent-gold)', 'var(--accent-green)'];
+                        const color = colors[idx % colors.length];
+                        div.className = 'system-item';
+                        div.style.borderLeftColor = color;
+                        div.innerHTML = `
+                            <span class="system-name">🏦 ${f.name || f.firm_name || 'Unknown Firm'}</span>
+                            <span class="system-status">${f.status || 'Monitoring'}</span>
+                        `;
+                        list.appendChild(div);
+                    });
+                    if (!intel.bot_firms.length) {
+                        list.innerHTML = '<div class="empty-state">Awaiting firm intelligence...</div>';
+                    }
+                }
+            }
+
+            if (Array.isArray(intel.bot_signatures)) {
+                const signatures = document.getElementById('bot-signatures');
+                if (signatures) {
+                    signatures.innerHTML = '';
+                    const colors = ['var(--accent-purple)', 'var(--accent-blue)', 'var(--accent-gold)', 'var(--accent-green)'];
+                    intel.bot_signatures.slice(0, 6).forEach((sig, idx) => {
+                        const div = document.createElement('div');
+                        div.className = 'balance-item';
+                        div.innerHTML = `
+                            <span style="color: ${colors[idx % colors.length]};">${sig.name}</span>
+                            <span>${sig.count} detected</span>
+                        `;
+                        signatures.appendChild(div);
+                    });
+                    if (!intel.bot_signatures.length) {
+                        signatures.innerHTML = '<div class="empty-state">No bot signatures detected yet.</div>';
+                    }
+                }
+            }
+
+            if (Array.isArray(intel.bot_activity)) {
                 const feed = document.getElementById('bot-activity');
                 if (feed) {
-                    data.bot_activity.forEach(b => {
+                    feed.innerHTML = '';
+                    intel.bot_activity.slice(0, 12).forEach(b => {
                         const div = document.createElement('div');
-                        div.className = 'signal-item ' + b.side;
+                        const side = b.side || 'hold';
+                        div.className = 'signal-item ' + side;
                         div.innerHTML = `
                             <div class="signal-header">
                                 <span class="signal-symbol">${b.pattern} @ ${b.symbol}</span>
-                                <span class="signal-type ${b.side}">${b.side.toUpperCase()}</span>
+                                <span class="signal-type ${side}">${side.toUpperCase()}</span>
                             </div>
                             <div class="signal-details">${b.firm} - ${b.description}</div>
                         `;
-                        feed.insertBefore(div, feed.firstChild);
-                        while (feed.children.length > 20) feed.removeChild(feed.lastChild);
+                        feed.appendChild(div);
+                    });
+                    if (!intel.bot_activity.length) {
+                        feed.innerHTML = '<div class="empty-state">No bot activity yet.</div>';
+                    }
+                }
+            }
+
+            if (Array.isArray(intel.bot_map)) {
+                const map = document.getElementById('bot-map-nodes');
+                if (map) {
+                    map.innerHTML = '';
+                    intel.bot_map.forEach((node, idx) => {
+                        const dot = document.createElement('div');
+                        dot.className = 'bot-map-node' + (node.active ? ' active' : '');
+                        const size = Math.max(6, Math.min(16, 6 + (node.intensity || 0) * 10));
+                        dot.style.width = `${size}px`;
+                        dot.style.height = `${size}px`;
+                        dot.style.left = `${node.x}%`;
+                        dot.style.top = `${node.y}%`;
+                        dot.style.animationDelay = `${(idx % 5) * 0.2}s`;
+                        dot.title = `${node.city} · ${node.firm}`;
+                        map.appendChild(dot);
+
+                        const label = document.createElement('div');
+                        label.className = 'bot-map-label';
+                        label.style.left = `${node.x}%`;
+                        label.style.top = `${node.y}%`;
+                        label.textContent = node.city;
+                        map.appendChild(label);
                     });
                 }
             }
@@ -1962,12 +2810,108 @@ COMMAND_CENTER_HTML = """
         // Update quantum tab
         function updateQuantumTab(data) {
             if (data.quantum) {
-                const cohEl = document.getElementById('quantum-coherence');
-                if (cohEl) cohEl.textContent = (data.quantum.coherence || 0.618).toFixed(3);
+                markLive('quantum', 'Quantum Update');
+                const coherence = data.quantum.coherence ?? 0.618;
                 const timelineEl = document.getElementById('active-timelines');
                 if (timelineEl) timelineEl.textContent = data.quantum.active_timelines || 7;
                 const anchoredEl = document.getElementById('anchored-timelines');
                 if (anchoredEl) anchoredEl.textContent = data.quantum.anchored_timelines || 3;
+                const schumannEl = document.getElementById('schumann-hz');
+                if (schumannEl && data.quantum.schumann_hz !== undefined) schumannEl.textContent = data.quantum.schumann_hz.toFixed(2);
+                const loveEl = document.getElementById('love-freq');
+                if (loveEl && data.quantum.love_freq !== undefined) loveEl.textContent = data.quantum.love_freq;
+
+                if (quantumCharts.coherence) {
+                    quantumCharts.coherence.updateSeries([coherence * 100], true);
+                }
+
+                if (quantumCharts.frequencies && data.quantum.frequencies) {
+                    const freq = data.quantum.frequencies;
+                    const freqData = [
+                        freq.schumann ?? 7.83,
+                        freq.love ?? 528,
+                        freq.alpha ?? 10.2,
+                        freq.theta ?? 6.8,
+                        freq.delta ?? 2.1
+                    ];
+                    quantumCharts.frequencies.updateSeries([{ data: freqData }], true);
+                }
+
+                if (data.quantum.stargates) {
+                    if (!document.querySelector('.stargate-node')) {
+                        renderStargateMap(data.quantum.stargates);
+                    }
+                    updateStargateMap(data.quantum.stargates);
+                }
+
+                if (data.quantum.timelines) {
+                    const list = document.getElementById('quantum-timelines');
+                    if (list) {
+                        list.innerHTML = '';
+                        data.quantum.timelines.slice(0, 6).forEach(t => {
+                            const div = document.createElement('div');
+                            div.className = 'timeline-item';
+                            const coherenceVal = t.coherence ?? t.score ?? 0;
+                            const tagClass = coherenceVal >= 0.618 ? 'good' : 'warn';
+                            div.innerHTML = `
+                                <span>${t.name || t.id || 'timeline'}</span>
+                                <span class="timeline-tag ${tagClass}">${coherenceVal.toFixed(3)}</span>
+                            `;
+                            list.appendChild(div);
+                        });
+                        if (!data.quantum.timelines.length) {
+                            list.innerHTML = '<div class="empty-state">Awaiting timeline signals...</div>';
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateLearningTab(data) {
+            if (!data || !data.learning) return;
+            const learning = data.learning;
+            const totalTrades = learning.total_trades || 0;
+            const wins = learning.wins || 0;
+            const losses = learning.losses || 0;
+            const winRate = learning.win_rate || 0;
+
+            const totalEl = document.getElementById('learning-total-trades');
+            if (totalEl) totalEl.textContent = totalTrades;
+            const winRateEl = document.getElementById('learning-win-rate');
+            if (winRateEl) winRateEl.textContent = `${winRate.toFixed(1)}%`;
+            const avgEl = document.getElementById('learning-avg-pnl');
+            if (avgEl) avgEl.textContent = `$${formatNumber(learning.avg_pnl || 0)}`;
+            const lossEl = document.getElementById('learning-loss-events');
+            if (lossEl) lossEl.textContent = losses;
+
+            if (learningCharts.pnl && Array.isArray(learning.pnl_series)) {
+                learningCharts.pnl.updateSeries([{ data: learning.pnl_series }], true);
+            }
+            if (learningCharts.winloss) {
+                learningCharts.winloss.updateSeries([{ data: [wins, losses] }], true);
+            }
+
+            if (learning.patterns) {
+                const list = document.getElementById('learning-patterns');
+                if (list) {
+                    list.innerHTML = '';
+                    learning.patterns.slice(0, 8).forEach(p => {
+                        const div = document.createElement('div');
+                        div.className = 'pattern-item';
+                        const winsCount = p.total_wins || 0;
+                        const lossesCount = p.total_losses || 0;
+                        const pnl = p.total_pnl || 0;
+                        const badgeClass = pnl >= 0 ? 'win' : 'loss';
+                        div.innerHTML = `
+                            <span>${p.symbol || p.key || 'pattern'}</span>
+                            <span class="pattern-badge ${badgeClass}">${winsCount}W/${lossesCount}L</span>
+                        `;
+                        list.appendChild(div);
+                    });
+                    if (!learning.patterns.length) {
+                        list.innerHTML = '<div class="empty-state">Learning patterns will appear here...</div>';
+                    }
+                }
             }
         }
 
@@ -2202,6 +3146,7 @@ COMMAND_CENTER_HTML = """
             updateBotTab(data);
             updateMarketFeedTab(data);
             updateQuantumTab(data);
+            updateLearningTab(data);
             updateOrcaTab(data);
             updateSystemsTab(data);
         };
@@ -2267,6 +3212,14 @@ class AureonCommandCenter:
             "systems": [],
             "timestamp": 0.0
         }
+
+        # Learning state
+        self.learning_last_update = 0.0
+        self.learning_snapshot: Dict[str, Any] = {}
+
+        # Bot intelligence state
+        self.bot_last_update = 0.0
+        self.bot_snapshot: Dict[str, Any] = {}
         
         # Stats
         self.updates_sent = 0
@@ -2455,11 +3408,15 @@ class AureonCommandCenter:
         
         # Send initial state
         await self.load_recent_trades()  # Load trades before sending
+        learning_snapshot = self.load_learning_snapshot()
+        bot_snapshot = self.load_bot_intel_snapshot()
         await ws.send_json({
             "type": "full_state",
             "systems": SYSTEMS_STATUS,
             "portfolio": asdict(self.portfolio),
             "market": asdict(self.market),
+            "learning": learning_snapshot,
+            "bot_intel": bot_snapshot,
             "signals": [asdict(s) if hasattr(s, '__dataclass_fields__') else s for s in list(self.signals)[-20:]],
             "recent_trades": [asdict(t) for t in list(self.recent_trades)[:15]],
             "queen": {
@@ -2931,6 +3888,217 @@ Object.entries(systems).forEach(([name, online]) => {
                 }
             }
         )
+
+    def load_learning_snapshot(self) -> Dict[str, Any]:
+        """Load adaptive learning data for UI display."""
+        now = time.time()
+        learning = {
+            "total_trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "win_rate": 0.0,
+            "avg_pnl": 0.0,
+            "pnl_series": [],
+            "patterns": []
+        }
+
+        history_path = Path("adaptive_learning_history.json")
+        if history_path.exists():
+            try:
+                with history_path.open("r") as f:
+                    history = json.load(f)
+                trades = history.get("trades", [])
+                learning["total_trades"] = len(trades)
+                if trades:
+                    pnl_values = [float(t.get("pnl", 0) or 0) for t in trades[-40:]]
+                    learning["pnl_series"] = pnl_values
+                    wins = sum(1 for v in pnl_values if v >= 0)
+                    losses = sum(1 for v in pnl_values if v < 0)
+                    total = wins + losses
+                    learning["wins"] = wins
+                    learning["losses"] = losses
+                    learning["win_rate"] = (wins / total * 100) if total else 0.0
+                    learning["avg_pnl"] = sum(pnl_values) / max(len(pnl_values), 1)
+            except Exception as e:
+                logger.debug(f"Learning history load error: {e}")
+
+        patterns_path = Path("adaptive_learned_patterns.json")
+        if patterns_path.exists():
+            try:
+                with patterns_path.open("r") as f:
+                    patterns = json.load(f)
+                pattern_rows = []
+                for key, val in patterns.items():
+                    if key == "default" or not isinstance(val, dict):
+                        continue
+                    pattern_rows.append({
+                        "symbol": key,
+                        "total_wins": int(val.get("total_wins", 0) or 0),
+                        "total_losses": int(val.get("total_losses", 0) or 0),
+                        "total_pnl": float(val.get("total_pnl", 0) or 0),
+                        "verified_winner": bool(val.get("verified_winner", False))
+                    })
+                pattern_rows.sort(key=lambda p: (p.get("total_pnl", 0), p.get("total_wins", 0)), reverse=True)
+                learning["patterns"] = pattern_rows[:10]
+            except Exception as e:
+                logger.debug(f"Learning patterns load error: {e}")
+
+        learning["last_update"] = now
+        self.learning_snapshot = learning
+        return learning
+
+    def load_bot_intel_snapshot(self) -> Dict[str, Any]:
+        """Load bot intelligence data for UI display."""
+        now = time.time()
+        snapshot = {
+            "bot_count": 0,
+            "total_bots": 0,
+            "active_bots": 0,
+            "bot_firms": [],
+            "bot_signatures": [],
+            "bot_activity": [],
+            "bot_map": [],
+            "last_update": now
+        }
+
+        report_path = Path(os.environ.get("AUREON_BOT_INTEL_REPORT", "bot_intelligence_report.json"))
+        firms_db_path = Path("all_firms_complete.json")
+        if report_path.exists():
+            try:
+                with report_path.open("r") as f:
+                    report = json.load(f)
+
+                firms = report.get("firms", []) or []
+                all_bots = report.get("all_bots", {}) or {}
+
+                snapshot["bot_count"] = report.get("firms_detected", len(firms))
+                snapshot["total_bots"] = report.get("total_bots_profiled", len(all_bots))
+
+                # Active bots within last hour
+                active_cutoff = now - 3600
+                active_bots = [b for b in all_bots.values() if b.get("last_seen", 0) >= active_cutoff]
+                snapshot["active_bots"] = len(active_bots)
+
+                firm_rows = []
+                for firm in firms:
+                    total_bots = int(firm.get("total_bots", 0) or 0)
+                    status = "Active" if total_bots > 0 else "Monitoring"
+                    firm_rows.append({
+                        "name": firm.get("firm_name") or firm.get("name") or firm.get("firm_id") or "Unknown",
+                        "status": status,
+                        "total_bots": total_bots,
+                        "country": firm.get("country", ""),
+                        "strategies": firm.get("strategies", []),
+                        "total_volume_usd": firm.get("total_volume_usd", 0)
+                    })
+                firm_rows.sort(key=lambda f: f.get("total_bots", 0), reverse=True)
+                snapshot["bot_firms"] = firm_rows
+
+                # Signature counts from bot patterns
+                signature_counts: Dict[str, int] = {}
+                for bot in all_bots.values():
+                    pattern = (bot.get("pattern") or "unknown").upper()
+                    signature_counts[pattern] = signature_counts.get(pattern, 0) + 1
+                snapshot["bot_signatures"] = [
+                    {"name": name, "count": count}
+                    for name, count in sorted(signature_counts.items(), key=lambda x: x[1], reverse=True)
+                ]
+
+                # Activity feed
+                def _side_for_bot(bot_id: str, strategies: List[str]) -> str:
+                    if any("arbitrage" in s for s in strategies):
+                        return "sell"
+                    if any("market_making" in s for s in strategies):
+                        return "buy"
+                    try:
+                        return "buy" if int(bot_id[-1], 16) % 2 == 0 else "sell"
+                    except Exception:
+                        return "buy"
+
+                activity = []
+                sorted_bots = sorted(
+                    all_bots.values(),
+                    key=lambda b: b.get("last_seen", b.get("first_seen", 0)),
+                    reverse=True
+                )
+                for bot in sorted_bots[:12]:
+                    strategies = bot.get("strategies", []) or []
+                    side = _side_for_bot(bot.get("bot_id", "0"), strategies)
+                    role = bot.get("role", "")
+                    size_class = bot.get("size_class", "")
+                    desc_parts = [p for p in [role, size_class] if p]
+                    desc = " · ".join(desc_parts) or "Algorithmic activity detected"
+                    activity.append({
+                        "pattern": (bot.get("pattern") or "HFT").upper(),
+                        "symbol": bot.get("symbol", "--"),
+                        "firm": bot.get("owner_name") or bot.get("likely_owner") or "Unknown",
+                        "description": desc,
+                        "side": side
+                    })
+                snapshot["bot_activity"] = activity
+
+                # Build bot map nodes from detected firms
+                city_coords = {
+                    "Chicago": (20, 30),
+                    "New York": (25, 28),
+                    "London": (48, 26),
+                    "Amsterdam": (47, 24),
+                    "Paris": (49, 28),
+                    "Zug": (50, 26),
+                    "Toronto": (22, 27),
+                    "San Francisco": (12, 30),
+                    "Los Angeles": (12, 36),
+                    "Singapore": (76, 42),
+                    "Hong Kong": (78, 36),
+                    "Tokyo": (82, 30),
+                    "Sydney": (86, 66),
+                    "Dubai": (62, 42)
+                }
+
+                firms_db: Dict[str, Any] = {}
+                if firms_db_path.exists():
+                    try:
+                        with firms_db_path.open("r") as f:
+                            firms_db = json.load(f).get("firms", {})
+                    except Exception as e:
+                        logger.debug(f"Firm database load error: {e}")
+
+                max_bots = max([f.get("total_bots", 0) for f in firm_rows], default=1) or 1
+                map_nodes = []
+                for firm in firm_rows:
+                    firm_id = firm.get("firm_id") or ""
+                    firm_name = firm.get("name") or firm.get("firm_name") or firm_id
+                    total_bots = firm.get("total_bots", 0)
+                    intensity = min(1.0, max(0.25, total_bots / max_bots))
+
+                    offices = []
+                    firm_details = firms_db.get(firm_id, {}) if firm_id else {}
+                    if firm_details.get("offices"):
+                        offices = [o.get("city") for o in firm_details.get("offices", []) if o.get("city")]
+                    if not offices:
+                        hq = firm.get("hq_location") or firm_details.get("hq_location") or ""
+                        if hq:
+                            offices = [hq.split(",")[0].strip()]
+
+                    for city in offices:
+                        if city not in city_coords:
+                            continue
+                        x, y = city_coords[city]
+                        map_nodes.append({
+                            "city": city,
+                            "x": x,
+                            "y": y,
+                            "intensity": intensity,
+                            "firm": firm_name,
+                            "active": total_bots > 0
+                        })
+
+                snapshot["bot_map"] = map_nodes
+            except Exception as e:
+                logger.debug(f"Bot intelligence report load error: {e}")
+
+        self.bot_snapshot = snapshot
+        return snapshot
     
     async def fetch_all_balances(self):
         """Fetch balances from all exchanges and calculate total USD value."""
@@ -3327,6 +4495,24 @@ Object.entries(systems).forEach(([name, online]) => {
                     )
                     
                     self.last_update = time.time()
+
+                # 4. Learning updates every 15 seconds
+                if time.time() - self.learning_last_update > 15:
+                    learning_snapshot = self.load_learning_snapshot()
+                    await self.broadcast({
+                        "type": "learning_update",
+                        "learning": learning_snapshot
+                    })
+                    self.learning_last_update = time.time()
+
+                # 5. Bot intelligence updates every 20 seconds
+                if time.time() - self.bot_last_update > 20:
+                    bot_snapshot = self.load_bot_intel_snapshot()
+                    await self.broadcast({
+                        "type": "bot_update",
+                        "bot_intel": bot_snapshot
+                    })
+                    self.bot_last_update = time.time()
                 
                 await asyncio.sleep(1) 
                 
