@@ -5752,6 +5752,127 @@ class OrcaKillCycle:
         }
         
         return can_sell, info
+    
+    def queen_approved_exit(self, symbol: str, exchange: str, current_price: float, 
+                            entry_price: float, entry_qty: float, entry_cost: float,
+                            queen: object = None, reason: str = 'target') -> Tuple[bool, dict]:
+        """
+        👑 QUEEN-GATED EXIT - Only sell when profit is MATHEMATICALLY CERTAIN!
+        
+        This function ensures:
+        1. Cost basis is CONFIRMED (real entry price, not estimated)
+        2. Net profit after ALL fees is positive
+        3. Queen confidence is acceptable (if Queen is wired)
+        
+        Returns (can_exit, info) where:
+        - can_exit: True ONLY if profit is mathematically certain
+        - info: Dict with exit details and reasoning
+        """
+        fee_rate = self.fee_rates.get(exchange, 0.0025)
+        
+        # Calculate exit value after fees
+        exit_gross = current_price * entry_qty
+        exit_fee = exit_gross * fee_rate
+        exit_value = exit_gross - exit_fee
+        
+        # Calculate net P&L
+        net_pnl = exit_value - entry_cost
+        net_pnl_pct = (net_pnl / entry_cost * 100) if entry_cost > 0 else 0
+        
+        # Build info dict
+        info = {
+            'symbol': symbol,
+            'exchange': exchange,
+            'entry_price': entry_price,
+            'current_price': current_price,
+            'entry_cost': entry_cost,
+            'exit_value': exit_value,
+            'exit_fee': exit_fee,
+            'net_pnl': net_pnl,
+            'net_pnl_pct': net_pnl_pct,
+            'reason': reason,
+            'queen_approved': False,
+            'blocked_reason': None
+        }
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # CHECK 1: Is entry price CONFIRMED (not estimated)?
+        # ═══════════════════════════════════════════════════════════════════
+        if self.cost_basis_tracker:
+            can_sell, cb_info = self.cost_basis_tracker.can_sell_profitably(symbol, current_price)
+            if cb_info.get('entry_price') is None:
+                # No confirmed cost basis - BLOCK SELL!
+                info['blocked_reason'] = 'NO_CONFIRMED_COST_BASIS'
+                print(f"   👑❌ EXIT BLOCKED: {symbol} - No confirmed cost basis (entry price unknown)")
+                return False, info
+            # Use confirmed entry price for accurate P&L
+            confirmed_entry = cb_info.get('entry_price', entry_price)
+            confirmed_cost = cb_info.get('cost_basis', entry_cost)
+            net_pnl = exit_value - confirmed_cost
+            info['confirmed_entry_price'] = confirmed_entry
+            info['confirmed_cost_basis'] = confirmed_cost
+            info['net_pnl'] = net_pnl
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # CHECK 2: Is net P&L POSITIVE (mathematically certain profit)?
+        # ═══════════════════════════════════════════════════════════════════
+        MIN_PROFIT_THRESHOLD = 0.0001  # At least $0.0001 net profit required
+        if net_pnl < MIN_PROFIT_THRESHOLD:
+            info['blocked_reason'] = f'NET_PNL_NEGATIVE_OR_ZERO ({net_pnl:.6f})'
+            print(f"   👑❌ EXIT BLOCKED: {symbol} - Net P&L ${net_pnl:.6f} < ${MIN_PROFIT_THRESHOLD:.4f} threshold")
+            return False, info
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # CHECK 3: Use is_real_win() for ACCURATE fee calculation (if available)
+        # ═══════════════════════════════════════════════════════════════════
+        if self.is_real_win:
+            try:
+                win_check = self.is_real_win(
+                    exchange=exchange,
+                    entry_price=entry_price,
+                    current_price=current_price,
+                    quantity=entry_qty,
+                    is_maker=False,
+                    gate_level='breakeven'
+                )
+                if not win_check.get('is_win', False):
+                    info['blocked_reason'] = f"PROFIT_GATE_SAYS_NO ({win_check.get('reason', 'unknown')})"
+                    print(f"   👑❌ EXIT BLOCKED: {symbol} - Profit gate says NO: {win_check.get('reason', 'fees exceed profit')}")
+                    return False, info
+                # Update net_pnl with accurate calculation
+                info['net_pnl'] = win_check.get('net_pnl', net_pnl)
+                info['profit_gate_result'] = win_check
+            except Exception as e:
+                # Profit gate failed - fall back to our calculation but log warning
+                print(f"   ⚠️ Profit gate check failed ({e}), using manual calculation")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # CHECK 4: Queen confidence check (advisory, not blocking)
+        # ═══════════════════════════════════════════════════════════════════
+        if queen:
+            try:
+                queen_signal = queen.get_collective_signal(
+                    symbol=symbol,
+                    market_data={'price': current_price, 'exchange': exchange}
+                )
+                queen_confidence = float(queen_signal.get('confidence', 0.5))
+                queen_action = queen_signal.get('action', 'HOLD')
+                info['queen_confidence'] = queen_confidence
+                info['queen_action'] = queen_action
+                
+                # Queen can advise but NOT block profitable exits
+                if queen_confidence < 0.3 and queen_action != 'SELL':
+                    print(f"   👑⚠️ Queen confidence low ({queen_confidence:.0%}) but profit is certain - ALLOWING exit")
+            except Exception:
+                pass
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # ALL CHECKS PASSED - PROFIT IS MATHEMATICALLY CERTAIN!
+        # ═══════════════════════════════════════════════════════════════════
+        info['queen_approved'] = True
+        info['blocked_reason'] = None
+        print(f"   👑✅ EXIT APPROVED: {symbol} - Net P&L ${info['net_pnl']:.4f} is CERTAIN ({reason})")
+        return True, info
         
     def calculate_breakeven_price(self, entry_price: float) -> float:
         """
@@ -6940,23 +7061,40 @@ class OrcaKillCycle:
                             print(f"   {whale_status} | {whale_conf}")
                             
                             # ═════════════════════════════════════════════════════
-                            # EXIT CONDITIONS - ONLY THESE, NO TIMEOUT!
+                            # 👑 QUEEN-GATED EXIT CONDITIONS - PROFIT MUST BE CERTAIN!
                             # ═════════════════════════════════════════════════════
                             
-                            # 1. TARGET HIT - perfect exit!
-                            if current >= pos.target_price:
-                                pos.ready_to_kill = True
-                                pos.kill_reason = 'TARGET_HIT'
-                                print(f"\n   🎯🎯🎯 TARGET HIT! SELLING NOW! 🎯🎯🎯")
+                            # First check Queen approval (profit must be mathematically certain)
+                            can_exit, exit_info = self.queen_approved_exit(
+                                symbol=pos.symbol,
+                                exchange=pos.exchange,
+                                current_price=current,
+                                entry_price=pos.entry_price,
+                                entry_qty=pos.entry_qty,
+                                entry_cost=entry_cost,
+                                queen=None,  # Queen may not be wired in this flow
+                                reason='dynamic_pack_hunt'
+                            )
                             
-                            # 2. MOMENTUM REVERSAL - ONLY IF IN PROFIT!
-                            elif pos.current_pnl > 0 and len(pos.price_history) >= 10:
+                            # 1. TARGET HIT + Queen approved - perfect exit!
+                            if current >= pos.target_price and can_exit:
+                                pos.ready_to_kill = True
+                                pos.kill_reason = 'TARGET_HIT_QUEEN_APPROVED'
+                                print(f"\n   👑🎯 TARGET HIT & QUEEN APPROVED! SELLING NOW! 🎯👑")
+                            
+                            # 2. MOMENTUM REVERSAL + Queen approved - ONLY IF QUEEN SAYS PROFITABLE!
+                            elif can_exit and len(pos.price_history) >= 10:
                                 recent = pos.price_history[-10:]
                                 momentum = (recent[-1] - recent[0]) / recent[0] * 100 if recent[0] > 0 else 0
-                                if momentum < -0.3:  # Losing momentum while in profit
+                                if momentum < -0.3:  # Losing momentum while Queen says profitable
                                     pos.ready_to_kill = True
-                                    pos.kill_reason = 'MOMENTUM_PROFIT'
-                                    print(f"\n   📈📈📈 TAKING PROFIT (momentum reversal) 📈📈📈")
+                                    pos.kill_reason = 'MOMENTUM_PROFIT_QUEEN_APPROVED'
+                                    print(f"\n   👑📈 QUEEN APPROVED (momentum reversal) 📈👑")
+                            
+                            # If not approved, log why
+                            if not can_exit and (current >= pos.target_price or net_pnl > 0.001):
+                                blocked_reason = exit_info.get('blocked_reason', 'unknown')
+                                print(f"   👑⏳ Exit blocked: {blocked_reason}")
                             
                             # ═════════════════════════════════════════════════════
                             # 🌊🎶 HNC SURGE HOLD - RIDE THE HARMONIC WAVE!
@@ -6971,9 +7109,9 @@ class OrcaKillCycle:
                                     pos.target_price = extended_target
                                     print(f"   🌊🎶 HNC SURGE: Extended target to ${extended_target:,.4f}!")
                             
-                            # EXIT if ready
+                            # EXIT if ready (Queen already approved)
                             if pos.ready_to_kill:
-                                print(f"\n   🔪🔪🔪 EXECUTING SELL ORDER 🔪🔪🔪")
+                                print(f"\n   👑🔪 QUEEN APPROVED SELL EXECUTING 🔪👑")
                                 sell_order = pos.client.place_market_order(
                                     symbol=pos.symbol,
                                     side='sell',
@@ -6990,7 +7128,7 @@ class OrcaKillCycle:
                                         'reason': pos.kill_reason,
                                         'net_pnl': final_pnl
                                     })
-                                    print(f"   ✅ SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
+                                    print(f"   👑✅ SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
                                     
                                     # 🔥🔥🔥 IMMEDIATE RE-SCAN & RE-BUY AFTER PROFITABLE SELL! 🔥🔥🔥
                                     print(f"\n   🔄🔄🔄 IMMEDIATE RE-SCAN - AGGRESSIVE MODE! 🔄🔄🔄")
@@ -7502,9 +7640,20 @@ class OrcaKillCycle:
                                 print(f"   📈 {symbol}: {qty:.6f} @ ${entry_price:.4f}")
                                 print(f"      Current: ${current_price:.4f} | P&L: ${net_pnl:+.4f}")
                                 
-                                # Check if we should close this profitable position
-                                if net_pnl > 0.001:  # Profitable by at least $0.001
-                                    print(f"      💰 PROFITABLE! Closing to free cash...")
+                                # 👑 QUEEN-GATED EXIT - Only close if profit is MATHEMATICALLY CERTAIN!
+                                can_exit, exit_info = self.queen_approved_exit(
+                                    symbol=symbol,
+                                    exchange=exchange_name,
+                                    current_price=current_price,
+                                    entry_price=entry_price,
+                                    entry_qty=qty,
+                                    entry_cost=entry_cost,
+                                    queen=queen,
+                                    reason='phase0_profitable_close'
+                                )
+                                
+                                if can_exit:  # Profit MATHEMATICALLY CERTAIN
+                                    print(f"      💰 QUEEN APPROVED! Closing to free cash...")
                                     try:
                                         sell_order = client.place_market_order(
                                             symbol=symbol,
@@ -7514,11 +7663,11 @@ class OrcaKillCycle:
                                         if sell_order:
                                             session_stats['positions_closed'] += 1
                                             session_stats['cash_freed'] += exit_value
-                                            session_stats['total_pnl'] += net_pnl
+                                            session_stats['total_pnl'] += exit_info.get('net_pnl', net_pnl)
                                             session_stats['winning_trades'] += 1
                                             session_stats['total_trades'] += 1
-                                            session_stats['best_trade'] = max(session_stats['best_trade'], net_pnl)
-                                            print(f"      ✅ CLOSED! +${net_pnl:.4f} freed ${exit_value:.2f}")
+                                            session_stats['best_trade'] = max(session_stats['best_trade'], exit_info.get('net_pnl', net_pnl))
+                                            print(f"      ✅ CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f} freed ${exit_value:.2f}")
                                     except Exception as e:
                                         print(f"      ⚠️ Sell failed: {e}")
                                         # Keep as live position to monitor
@@ -7536,8 +7685,8 @@ class OrcaKillCycle:
                                         )
                                         positions.append(pos)
                                 else:
-                                    # Not profitable - keep monitoring
-                                    print(f"      ⏳ UNDERWATER - keeping (will sell on profit)")
+                                    # 👑 Queen says NO - keep monitoring (blocked reason in exit_info)
+                                    print(f"      ⏳ HOLDING - {exit_info.get('blocked_reason', 'not profitable yet')}")
                                     pos = LivePosition(
                                         symbol=symbol,
                                         exchange=exchange_name,
@@ -7580,31 +7729,43 @@ class OrcaKillCycle:
                                         breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
                                         target_price = breakeven * (1 + target_pct_current / 100)
                                         
-                                        # 🚨 SAFETY: Only auto-sell if we have CONFIRMED cost basis with real entry price!
-                                        # For manual Kraken buys, we DON'T know entry price, so NEVER auto-sell!
-                                        if self.cost_basis_tracker:
-                                            can_sell, info = self.cost_basis_tracker.can_sell_profitably(symbol, current_price)
-                                            # ONLY sell if: can_sell=True AND we have a real entry price (not None)
-                                            if can_sell and info.get('entry_price') is not None:
-                                                print(f"      💰 PROFITABLE per cost basis (entry: ${info['entry_price']:.8f})! Closing...")
-                                                try:
-                                                    sell_order = client.place_market_order(symbol, 'sell', quantity=qty)
-                                                    if sell_order:
-                                                        exit_value = current_price * qty * (1 - fee_rate)
-                                                        net_pnl = exit_value - info.get('cost_basis', exit_value * 0.99)
-                                                        session_stats['positions_closed'] += 1
-                                                        session_stats['cash_freed'] += exit_value
-                                                        session_stats['total_pnl'] += net_pnl
-                                                        session_stats['winning_trades'] += 1
-                                                        session_stats['total_trades'] += 1
-                                                        print(f"      ✅ CLOSED! +${net_pnl:.4f}")
-                                                        continue  # Skip adding to positions
-                                                except Exception as e:
-                                                    print(f"      ⚠️ Sell failed: {e}")
-                                            elif not can_sell:
-                                                print(f"      ⏳ NOT PROFITABLE yet - keeping position")
+                                        # � QUEEN-GATED EXIT - Only auto-sell if profit is MATHEMATICALLY CERTAIN!
+                                        # Uses queen_approved_exit() which checks:
+                                        # 1. Confirmed cost basis exists (real entry price, not estimated)
+                                        # 2. Net profit after ALL fees is positive
+                                        can_exit, exit_info = self.queen_approved_exit(
+                                            symbol=symbol,
+                                            exchange=exchange_name,
+                                            current_price=current_price,
+                                            entry_price=entry_price,
+                                            entry_qty=qty,
+                                            entry_cost=entry_cost,
+                                            queen=queen,
+                                            reason='phase0_kraken_profitable'
+                                        )
+                                        
+                                        if can_exit:
+                                            print(f"      💰 QUEEN APPROVED (entry: ${exit_info.get('confirmed_entry_price', entry_price):.8f})! Closing...")
+                                            try:
+                                                sell_order = client.place_market_order(symbol, 'sell', quantity=qty)
+                                                if sell_order:
+                                                    net_pnl = exit_info.get('net_pnl', 0)
+                                                    exit_value = exit_info.get('exit_value', current_price * qty)
+                                                    session_stats['positions_closed'] += 1
+                                                    session_stats['cash_freed'] += exit_value
+                                                    session_stats['total_pnl'] += net_pnl
+                                                    session_stats['winning_trades'] += 1
+                                                    session_stats['total_trades'] += 1
+                                                    print(f"      ✅ CLOSED! +${net_pnl:.4f}")
+                                                    continue  # Skip adding to positions
+                                            except Exception as e:
+                                                print(f"      ⚠️ Sell failed: {e}")
+                                        else:
+                                            blocked_reason = exit_info.get('blocked_reason', 'unknown')
+                                            if 'NO_CONFIRMED_COST_BASIS' in str(blocked_reason):
+                                                print(f"      ⚠️ NO CONFIRMED COST BASIS - will NOT auto-sell (tracking from now)")
                                             else:
-                                                print(f"      ⚠️ NO COST BASIS - will NOT auto-sell (tracking from now)")
+                                                print(f"      ⏳ {blocked_reason} - keeping position")
                                         
                                         # 🆕 ADD KRAKEN POSITION TO MONITORING LIST!
                                         print(f"      ⏳ Adding to monitor list (tracking from current price)")
@@ -7654,12 +7815,20 @@ class OrcaKillCycle:
                                                 breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
                                                 target_price = breakeven * (1 + target_pct_current / 100)
                                                 
-                                                # Check profitability
-                                                exit_value = current_price * qty * (1 - fee_rate)
-                                                net_pnl = exit_value - entry_cost
+                                                # 👑 QUEEN-GATED EXIT - Only sell if profit is MATHEMATICALLY CERTAIN!
+                                                can_exit, exit_info = self.queen_approved_exit(
+                                                    symbol=symbol,
+                                                    exchange=exchange_name,
+                                                    current_price=current_price,
+                                                    entry_price=entry_price,
+                                                    entry_qty=qty,
+                                                    entry_cost=entry_cost,
+                                                    queen=queen,
+                                                    reason='phase0_binance_profitable'
+                                                )
                                                 
-                                                if net_pnl > 0.001:  # Profitable
-                                                    print(f"      💰 PROFITABLE (+${net_pnl:.4f})! Closing to free cash...")
+                                                if can_exit:  # Profit MATHEMATICALLY CERTAIN!
+                                                    print(f"      💰 QUEEN APPROVED (+${exit_info.get('net_pnl', 0):.4f})! Closing to free cash...")
                                                     try:
                                                         sell_order = client.place_market_order(
                                                             symbol=symbol.replace('/', ''),  # Binance wants no slash
@@ -7667,6 +7836,8 @@ class OrcaKillCycle:
                                                             quantity=qty
                                                         )
                                                         if sell_order:
+                                                            net_pnl = exit_info.get('net_pnl', 0)
+                                                            exit_value = exit_info.get('exit_value', current_price * qty)
                                                             session_stats['positions_closed'] += 1
                                                             session_stats['cash_freed'] += exit_value
                                                             session_stats['total_pnl'] += net_pnl
@@ -7678,9 +7849,15 @@ class OrcaKillCycle:
                                                             break  # Position closed, skip monitoring
                                                     except Exception as e:
                                                         print(f"      ⚠️ Sell failed: {e}")
+                                                else:
+                                                    # 👑 Queen says NO - blocked reason in exit_info
+                                                    blocked_reason = exit_info.get('blocked_reason', 'unknown')
+                                                    print(f"      ⏳ HOLDING - {blocked_reason}")
                                                 
                                                 # Add to monitoring if not closed
                                                 print(f"      ⏳ Adding to monitor list")
+                                                exit_value = current_price * qty * (1 - fee_rate)
+                                                net_pnl = exit_value - entry_cost
                                                 pos = LivePosition(
                                                     symbol=symbol,
                                                     exchange=exchange_name,
@@ -7906,38 +8083,36 @@ class OrcaKillCycle:
                                 pos.current_price = current
                                 pos.current_pnl = net_pnl
                                 
-                                # Auto-close if hit target or profitable enough
-                                if current >= pos.target_price or net_pnl > entry_cost * 0.01:  # Target or 1% profit
-                                    # 🚨 SAFETY CHECK: For Kraken positions, verify with cost_basis_tracker!
-                                    # Only sell if we have CONFIRMED profitability with real entry price
-                                    can_sell = True
-                                    if pos.exchange == 'kraken' and self.cost_basis_tracker:
-                                        can_sell, info = self.cost_basis_tracker.can_sell_profitably(pos.symbol, current)
-                                        if not can_sell or info.get('entry_price') is None:
-                                            # No confirmed cost basis - DO NOT SELL!
-                                            print(f"\n⚠️ {pos.symbol}: Would sell but NO CONFIRMED COST BASIS - HOLDING!")
-                                            print(f"   📊 Calculated P&L: ${net_pnl:.4f} (but entry price unknown)")
-                                            can_sell = False
-                                        else:
-                                            print(f"   ✅ Cost basis confirmed: entry ${info['entry_price']:.8f}")
-                                    
-                                    if can_sell:
-                                        print(f"\n🎯 AUTO-CLOSE: {pos.symbol} is PROFITABLE! (+${net_pnl:.4f})")
-                                        sell_order = pos.client.place_market_order(
-                                            symbol=pos.symbol,
-                                            side='sell',
-                                            quantity=pos.entry_qty
-                                        )
-                                        # 🔍 Verify sell succeeded using is_order_successful
-                                        if self.is_order_successful(sell_order, pos.exchange):
-                                            session_stats['positions_closed'] += 1
-                                            session_stats['cash_freed'] += exit_value
-                                            session_stats['total_pnl'] += net_pnl
-                                            session_stats['winning_trades'] += 1
-                                            session_stats['total_trades'] += 1
-                                            session_stats['best_trade'] = max(session_stats['best_trade'], net_pnl)
-                                            positions.remove(pos)
-                                            print(f"   ✅ CLOSED! +${net_pnl:.4f} → Cash freed for new buys!")
+                                # 👑 QUEEN-GATED EXIT - Only close if profit is MATHEMATICALLY CERTAIN!
+                                # (Replaces old "target hit or 1% profit" rule)
+                                can_exit, exit_info = self.queen_approved_exit(
+                                    symbol=pos.symbol,
+                                    exchange=pos.exchange,
+                                    current_price=current,
+                                    entry_price=pos.entry_price,
+                                    entry_qty=pos.entry_qty,
+                                    entry_cost=entry_cost,
+                                    queen=queen,
+                                    reason='phase2_auto_close' if current >= pos.target_price else 'phase2_profit_close'
+                                )
+                                
+                                if can_exit:
+                                    print(f"\n🎯👑 QUEEN APPROVED AUTO-CLOSE: {pos.symbol} is PROFITABLE! (+${exit_info.get('net_pnl', net_pnl):.4f})")
+                                    sell_order = pos.client.place_market_order(
+                                        symbol=pos.symbol,
+                                        side='sell',
+                                        quantity=pos.entry_qty
+                                    )
+                                    # 🔍 Verify sell succeeded using is_order_successful
+                                    if self.is_order_successful(sell_order, pos.exchange):
+                                        session_stats['positions_closed'] += 1
+                                        session_stats['cash_freed'] += exit_value
+                                        session_stats['total_pnl'] += exit_info.get('net_pnl', net_pnl)
+                                        session_stats['winning_trades'] += 1
+                                        session_stats['total_trades'] += 1
+                                        session_stats['best_trade'] = max(session_stats['best_trade'], exit_info.get('net_pnl', net_pnl))
+                                        positions.remove(pos)
+                                        print(f"   ✅ CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f} → Cash freed for new buys!")
                                             last_scan_time = 0  # Force immediate scan for new opportunities
                         except Exception:
                             pass
@@ -8390,27 +8565,44 @@ class OrcaKillCycle:
                             print(f"   {whale_str}")
                             
                             # ═════════════════════════════════════════════════
-                            # EXIT CONDITIONS - PROFIT ONLY!
+                            # 👑 QUEEN-GATED EXIT CONDITIONS - PROFIT MUST BE CERTAIN!
                             # ═════════════════════════════════════════════════
                             
                             should_sell = False
                             sell_reason = ''
                             
-                            # 1. Target hit - PERFECT EXIT!
-                            if current >= pos.target_price:
-                                should_sell = True
-                                sell_reason = 'TARGET_HIT'
-                                print(f"   🎯🎯🎯 TARGET HIT! SELLING! 🎯🎯🎯")
+                            # First check if Queen approves exit (profit must be mathematically certain)
+                            can_exit, exit_info = self.queen_approved_exit(
+                                symbol=pos.symbol,
+                                exchange=pos.exchange,
+                                current_price=current,
+                                entry_price=pos.entry_price,
+                                entry_qty=pos.entry_qty,
+                                entry_cost=entry_cost,
+                                queen=queen if 'queen' in dir() else None,
+                                reason='monitor_mode_check'
+                            )
                             
-                            # 2. Profitable momentum reversal
-                            elif net_pnl > 0.01 and len(pos.price_history) >= 10:
+                            # 1. Target hit + Queen approved - PERFECT EXIT!
+                            if current >= pos.target_price and can_exit:
+                                should_sell = True
+                                sell_reason = 'TARGET_HIT_QUEEN_APPROVED'
+                                print(f"   👑🎯 TARGET HIT & QUEEN APPROVED! SELLING! 🎯👑")
+                            
+                            # 2. Profitable momentum reversal + Queen approved
+                            elif can_exit and len(pos.price_history) >= 10:
                                 recent = pos.price_history[-10:]
                                 if recent[0] > 0:
                                     momentum = (recent[-1] - recent[0]) / recent[0] * 100
-                                    if momentum < -0.3:  # Losing momentum while in profit
+                                    if momentum < -0.3:  # Losing momentum while Queen says profitable
                                         should_sell = True
-                                        sell_reason = 'MOMENTUM_PROFIT'
-                                        print(f"   📈 TAKING PROFIT (momentum reversal)")
+                                        sell_reason = 'MOMENTUM_PROFIT_QUEEN_APPROVED'
+                                        print(f"   👑📈 TAKING PROFIT (momentum reversal, Queen approved)")
+                            
+                            # If not approved, log why
+                            if not can_exit and (current >= pos.target_price or net_pnl > 0.001):
+                                blocked_reason = exit_info.get('blocked_reason', 'unknown')
+                                print(f"   👑⏳ Exit blocked: {blocked_reason}")
                             
                             # Track price history
                             pos.price_history.append(current)
@@ -8467,31 +8659,45 @@ class OrcaKillCycle:
             print("👑 QUEEN AUTONOMOUS MODE - STOPPING")
             print("="*80)
             
-            # Close ONLY profitable positions
-            print("\n🛑 Closing PROFITABLE positions only (keeping losers)...")
+            # 👑 QUEEN-GATED CLEANUP - Only close positions Queen approves!
+            print("\n🛑 Closing QUEEN-APPROVED PROFITABLE positions only...")
             closed_pnl = 0.0
             kept_count = 0
             
             for pos in positions:
                 try:
-                    if pos.current_pnl > 0:
+                    fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
+                    entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
+                    
+                    # Ask Queen if this exit is approved
+                    can_exit, exit_info = self.queen_approved_exit(
+                        symbol=pos.symbol,
+                        exchange=pos.exchange,
+                        current_price=pos.current_price,
+                        entry_price=pos.entry_price,
+                        entry_qty=pos.entry_qty,
+                        entry_cost=entry_cost,
+                        queen=queen if 'queen' in dir() else None,
+                        reason='ctrl_c_cleanup'
+                    )
+                    
+                    if can_exit:
                         sell_order = pos.client.place_market_order(
                             symbol=pos.symbol,
                             side='sell',
                             quantity=pos.entry_qty
                         )
                         if sell_order:
-                            fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
                             sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
-                            entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
                             final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
                             final_pnl = final_exit - entry_cost
                             closed_pnl += final_pnl
                             session_stats['total_pnl'] += final_pnl
-                            print(f"   ✅ Closed {pos.symbol}: ${final_pnl:+.4f}")
+                            print(f"   👑✅ Closed {pos.symbol}: ${final_pnl:+.4f}")
                     else:
                         kept_count += 1
-                        print(f"   ⛔ KEEPING {pos.symbol} (P&L: ${pos.current_pnl:+.4f} - not selling at a loss)")
+                        blocked_reason = exit_info.get('blocked_reason', 'not profitable')
+                        print(f"   👑⛔ KEEPING {pos.symbol} (P&L: ${pos.current_pnl:+.4f} - {blocked_reason})")
                 except Exception as e:
                     print(f"   ⚠️ Error: {e}")
             
@@ -9477,8 +9683,20 @@ class OrcaKillCycle:
                     elif pnl_pct >= -5:
                         pos.alerted_underwater = False  # Reset alert when recovered
                     
-                    # Check for profitable exit
-                    if current >= pos.target_price or net_pnl > entry_cost * 0.01:
+                    # 👑 QUEEN-GATED EXIT - Only close if profit is MATHEMATICALLY CERTAIN!
+                    # (Replaces old "target hit or 1% profit" rule)
+                    can_exit, exit_info = self.queen_approved_exit(
+                        symbol=pos.symbol,
+                        exchange=pos.exchange,
+                        current_price=current,
+                        entry_price=pos.entry_price,
+                        entry_qty=pos.entry_qty,
+                        entry_cost=entry_cost,
+                        queen=queen,
+                        reason='war_room_target' if current >= pos.target_price else 'war_room_profit'
+                    )
+                    
+                    if can_exit:
                         try:
                             sell_order = pos.client.place_market_order(
                                 symbol=pos.symbol,
@@ -9486,23 +9704,23 @@ class OrcaKillCycle:
                                 quantity=pos.entry_qty
                             )
                             if sell_order:
-                                session_stats['total_pnl'] += net_pnl
+                                queen_pnl = exit_info.get('net_pnl', net_pnl)
+                                session_stats['total_pnl'] += queen_pnl
                                 session_stats['total_trades'] += 1
-                                if net_pnl >= 0:
+                                if queen_pnl >= 0:
                                     session_stats['winning_trades'] += 1
-                                    session_stats['best_trade'] = max(session_stats['best_trade'], net_pnl)
+                                    session_stats['best_trade'] = max(session_stats['best_trade'], queen_pnl)
                                 else:
                                     session_stats['losing_trades'] += 1
-                                    session_stats['worst_trade'] = min(session_stats['worst_trade'], net_pnl)
+                                    session_stats['worst_trade'] = min(session_stats['worst_trade'], queen_pnl)
                                 
                                 # Record kill with full details
                                 hold_time = time.time() - pos.entry_time if hasattr(pos, 'entry_time') else 0
                                 if warroom is not None:
-                                    warroom.record_kill(net_pnl, symbol=pos.symbol, exchange=pos.exchange, hold_time=hold_time)
+                                    warroom.record_kill(queen_pnl, symbol=pos.symbol, exchange=pos.exchange, hold_time=hold_time)
                                     warroom.remove_position(pos.symbol)
                                 else:
-                                    print(f"🏆 Recorded kill: {pos.symbol} +${net_pnl:+.4f}")
-                                    # No warroom to remove position from, maintain local state only
+                                    print(f"👑🏆 QUEEN APPROVED KILL: {pos.symbol} +${queen_pnl:+.4f}")
                                 positions.remove(pos)
                                 last_scan_time = 0  # Force scan
                         except Exception:
