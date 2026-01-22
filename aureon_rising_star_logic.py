@@ -83,18 +83,32 @@ class RisingStarScanner:
         """
         candidates = []
         
+        # UK users: BinanceClient now handles UK restrictions internally (626 allowed pairs)
+        # No need to skip entire exchange - let BinanceClient filter restricted tokens
+        SKIP_EXCHANGES = set()  # All exchanges welcome (with internal filtering)
+        
         # Get all available opportunities
         opportunities = self.orca.scan_entire_market(min_change_pct=0.3)
         
-        for opp in opportunities[:max_candidates]:
+        for opp in opportunities[:max_candidates * 5]:  # Scan more to find non-restricted
             try:
+                # FILTER: (No exchange-level filter needed - handled by exchange clients)
+                if opp.exchange.lower() in SKIP_EXCHANGES:
+                    continue  # Reserved for future use
+                
+                # Handle both attribute naming conventions
+                price = getattr(opp, 'current_price', None) or getattr(opp, 'price', 0.0)
+                change_pct = getattr(opp, 'change_24h_pct', None) or getattr(opp, 'change_pct', 0.0)
+                volume = getattr(opp, 'volume_24h', None) or getattr(opp, 'volume', 0.0)
+                momentum = getattr(opp, 'momentum_score', 0.0)
+                
                 # QUANTUM SCORE (all systems)
                 quantum = self.orca.get_quantum_score(
                     symbol=opp.symbol,
-                    price=opp.current_price,
-                    change_pct=opp.change_24h_pct,
-                    volume=opp.volume_24h,
-                    momentum=opp.momentum_score
+                    price=price,
+                    change_pct=change_pct,
+                    volume=volume,
+                    momentum=momentum
                 )
                 
                 # PROBABILITY PREDICTION
@@ -103,16 +117,15 @@ class RisingStarScanner:
                     try:
                         pred = self.orca.ultimate_intelligence.predict(
                             symbol=opp.symbol,
-                            price=opp.current_price,
-                            volume=opp.volume_24h
+                            price=price,
+                            volume=volume
                         )
                         if hasattr(pred, 'probability'):
                             prob_win = pred.probability
                     except:
                         pass
                 
-                # MOMENTUM (wave scanner)
-                momentum = opp.momentum_score
+                # MOMENTUM (wave scanner) - already extracted above
                 
                 # FIRM ALIGNMENT (smart money)
                 firm_score = 0.5  # Neutral default
@@ -121,8 +134,8 @@ class RisingStarScanner:
                         signal = self.orca.whale_tracker.get_whale_signal(
                             symbol=opp.symbol,
                             our_direction='long',
-                            current_price=opp.current_price,
-                            price_change_pct=opp.change_24h_pct
+                            current_price=price,
+                            price_change_pct=change_pct
                         )
                         firm_score = signal.whale_support
                     except:
@@ -140,24 +153,28 @@ class RisingStarScanner:
                 candidate = RisingStarCandidate(
                     symbol=opp.symbol,
                     exchange=opp.exchange,
-                    price=opp.current_price,
+                    price=price,
                     score=combined_score,
                     quantum_boost=quantum.get('total_boost', 1.0),
                     probability_win=prob_win,
                     momentum_strength=momentum,
                     firm_alignment=firm_score,
-                    volume_24h=opp.volume_24h,
-                    change_24h_pct=opp.change_24h_pct,
+                    volume_24h=volume,
+                    change_24h_pct=change_pct,
                     reasoning=f"Q:{quantum.get('total_boost', 1.0):.2f} P:{prob_win:.0%} M:{momentum:.2f} F:{firm_score:.2f}"
                 )
                 candidates.append(candidate)
+                
+                # Stop if we have enough valid candidates
+                if len(candidates) >= max_candidates:
+                    break
                 
             except Exception:
                 pass
         
         # Sort by combined score
         candidates.sort(key=lambda c: c.score, reverse=True)
-        return candidates
+        return candidates[:max_candidates]  # Return exactly max_candidates
     
     def run_monte_carlo_simulations(self, candidate: RisingStarCandidate, 
                                      amount_per_position: float = 2.5) -> Dict:
@@ -228,7 +245,7 @@ class RisingStarScanner:
     
     def select_best_two(self, candidates: List[RisingStarCandidate]) -> List[RisingStarCandidate]:
         """
-        🎯 STAGE 3: SELECT - Pick best 2 from top 4 after simulations.
+        🎯 STAGE 3: SELECT - Pick best 4 from top 8 after simulations (more fallback options).
         
         Criteria:
         - Highest simulation confidence
@@ -238,11 +255,11 @@ class RisingStarScanner:
         if len(candidates) < 2:
             return candidates
         
-        # Take top 4 for simulation
-        top_4 = candidates[:4]
+        # Take top 8 for simulation (more fallback in case some fail)
+        top_candidates = candidates[:8]
         
         # Run simulations on each
-        for candidate in top_4:
+        for candidate in top_candidates:
             sim_results = self.run_monte_carlo_simulations(candidate)
             candidate.simulation_win_rate = sim_results['win_rate']
             candidate.simulation_profit = sim_results['avg_profit']
@@ -250,16 +267,16 @@ class RisingStarScanner:
             candidate.simulation_confidence = sim_results['confidence']
         
         # Sort by simulation confidence (combines win rate + speed)
-        top_4.sort(key=lambda c: c.simulation_confidence, reverse=True)
+        top_candidates.sort(key=lambda c: c.simulation_confidence, reverse=True)
         
-        # Return best 2
-        best_2 = top_4[:2]
+        # Return all 4 (more fallback options in case some fail due to restrictions/minimums)
+        best = top_candidates[:4]
         
         # Update reasoning
-        for c in best_2:
+        for c in best:
             c.reasoning += f" | Sim: {c.simulation_win_rate:.0%} win, {c.time_to_profit_avg:.0f}s"
         
-        return best_2
+        return best
     
     def execute_with_accumulation(self, candidate: RisingStarCandidate, 
                                    amount: float) -> Optional[Dict]:

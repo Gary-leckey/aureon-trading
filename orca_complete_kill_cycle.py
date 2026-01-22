@@ -2357,6 +2357,7 @@ class LivePosition:
     total_cost: float = 0.0              # Total USD spent across all buys
     avg_entry_price: float = 0.0         # Average entry price (cost basis)
     rising_star_candidate: object = None  # Original RisingStarCandidate if applicable
+    is_existing: bool = False            # True if loaded from exchange at startup (not opened by Rising Star)
 
 
 @dataclass
@@ -2393,12 +2394,30 @@ class OrcaKillCycle:
         """
         self.primary_exchange = exchange
         self.clients = {}
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 💰 FEE PROFILES - Use adaptive profit gate for accurate cost tracking
+        # ═══════════════════════════════════════════════════════════════════
+        # Legacy simple fee_rates for backward compatibility
         self.fee_rates = {
-            'alpaca': 0.0025,  # 0.25%
-            'kraken': 0.0026,  # 0.26% maker/taker
-            'binance': 0.001,  # 0.10% base (can be lower with BNB)
-            'capital': 0.0008  # 0.08% spread-based (CFDs)
+            'alpaca': 0.0040,   # 0.15% fee + 0.05% slippage + 0.08% spread + margin
+            'kraken': 0.0053,   # 0.40% taker + 0.05% slippage + 0.08% spread
+            'binance': 0.0023,  # 0.10% fee + 0.03% slippage + 0.10% spread (UK restricted)
+            'capital': 0.0028   # 0.00% fee + 0.08% slippage + 0.20% spread (CFDs)
         }
+        
+        # Wire to adaptive profit gate for accurate cost calculations
+        try:
+            from adaptive_prime_profit_gate import get_adaptive_gate, get_fee_profile, is_real_win
+            self.profit_gate = get_adaptive_gate()
+            self.get_fee_profile = get_fee_profile
+            self.is_real_win = is_real_win
+            _safe_print("✅ Adaptive Profit Gate: CONNECTED")
+        except Exception as e:
+            self.profit_gate = None
+            self.get_fee_profile = None
+            self.is_real_win = None
+            _safe_print(f"⚠️ Adaptive Profit Gate: {e}")
         
         # Initialize clients for BOTH exchanges (unless specific client provided)
         if client:
@@ -4442,13 +4461,19 @@ class OrcaKillCycle:
             )
             
             # ═══════════════════════════════════════════════════════════════
-            # 🚨 HISTORICAL DANGER CHECK - BLOCK DANGEROUS PATTERNS!
+            # ⚠️ HISTORICAL DANGER CHECK - WARN BUT LET QUEEN DECIDE!
             # ═══════════════════════════════════════════════════════════════
             if quantum.get('historical_warning', False):
                 historical_blocked += 1
                 pattern = quantum.get('historical_pattern', 'Unknown')
-                print(f"   🚨 BLOCKED: {opp.symbol} - Historical danger pattern: {pattern}")
-                continue  # SKIP THIS OPPORTUNITY - History says NO!
+                # DON'T BLOCK - just reduce quantum boost and let Queen decide
+                # (already reduced by 0.6x in get_quantum_score)
+                opp._historical_warning = True
+                opp._historical_pattern = pattern
+                # print(f"   ⚠️ WARNING: {opp.symbol} - Historical pattern: {pattern} (Queen will decide)")
+            else:
+                opp._historical_warning = False
+                opp._historical_pattern = None
             
             # Apply quantum boost to momentum score
             original_score = opp.momentum_score
@@ -4694,15 +4719,21 @@ class OrcaKillCycle:
             return opportunities
         
         try:
+            print(f"   🔍 DEBUG: Starting Binance Scan...")
             # Get 24h ticker for all symbols
             r = client.session.get(f"{client.base}/api/v3/ticker/24hr", timeout=10)
             if r.status_code != 200:
+                print(f"   ⚠️ Binance API Error: {r.status_code}")
                 return opportunities
             
             tickers = r.json()
+            print(f"   🔍 DEBUG: Fetched {len(tickers)} tickers from Binance")
             
             # Track which quote currencies we're seeing
             quote_currencies = set()
+            skipped_restricted = 0
+            skipped_zeros = 0
+            skipped_low_change = 0
             
             for ticker in tickers:
                 try:
@@ -4712,6 +4743,7 @@ class OrcaKillCycle:
                     
                     # 🇬🇧 UK Mode: Skip restricted symbols FIRST (leveraged tokens, stock tokens, etc.)
                     if client.uk_mode and client.is_uk_restricted_symbol(symbol):
+                        skipped_restricted += 1
                         continue
                     
                     # Get symbol info to check if it's SPOT and TRADING
@@ -4725,6 +4757,7 @@ class OrcaKillCycle:
                     volume = float(ticker.get('quoteVolume', 0))
                     
                     if last_price <= 0:
+                        skipped_zeros += 1
                         continue
                     
                     # Calculate momentum score
@@ -4749,9 +4782,14 @@ class OrcaKillCycle:
                             momentum_score=momentum,
                             fee_rate=self.fee_rates.get('binance', 0.001)
                         ))
+                    else:
+                        skipped_low_change += 1
+
                 except Exception:
                     pass
             
+            print(f"   🔍 DEBUG: Binance Stats - Restricted: {skipped_restricted}, ZeroPrice: {skipped_zeros}, LowChange: {skipped_low_change}, Passed: {len(opportunities)}")
+
             # Print summary of what we scanned
             if quote_currencies:
                 quotes_str = ', '.join(sorted(quote_currencies))
@@ -5713,21 +5751,65 @@ class OrcaKillCycle:
         """
         return entry_price * (1 + self.fee_rate) / (1 - self.fee_rate)
     
-    def calculate_target_price(self, entry_price: float, target_pct: float = 1.0) -> float:
+    def calculate_target_price(self, entry_price: float, target_pct: float = 1.0, 
+                               exchange: str = None, quantity: float = 1.0) -> float:
         """
         Calculate sell price for target profit %.
         
-        Math:
+        Uses adaptive profit gate if available for accurate per-exchange costs.
+        
+        Math (legacy):
           Target = breakeven + (target_pct / 100) × entry_price
+        
+        Math (adaptive):
+          Uses is_real_win to find price where net_pnl >= target
         """
+        # Try adaptive profit gate for accurate calculation
+        if self.is_real_win and exchange:
+            try:
+                # Binary search for target price
+                entry_value = entry_price * quantity
+                target_net = entry_value * (target_pct / 100)
+                
+                # Start with legacy estimate
+                legacy_target = entry_price * (1 + self.fee_rate) / (1 - self.fee_rate)
+                legacy_target += entry_price * (target_pct / 100)
+                
+                # Refine with profit gate
+                low = entry_price
+                high = legacy_target * 1.5
+                
+                for _ in range(20):  # Binary search
+                    mid = (low + high) / 2
+                    result = self.is_real_win(
+                        exchange=exchange,
+                        entry_price=entry_price,
+                        current_price=mid,
+                        quantity=quantity,
+                        is_maker=False,
+                        gate_level='breakeven'
+                    )
+                    if result['net_pnl'] < target_net:
+                        low = mid
+                    else:
+                        high = mid
+                
+                return high
+            except Exception as e:
+                pass  # Fall through to legacy
+        
+        # Legacy calculation
         breakeven = self.calculate_breakeven_price(entry_price)
         profit_add = entry_price * (target_pct / 100)
         return breakeven + profit_add
     
     def calculate_realized_pnl(self, entry_price: float, entry_qty: float,
-                               exit_price: float, exit_qty: float) -> Dict:
+                               exit_price: float, exit_qty: float,
+                               exchange: str = None) -> Dict:
         """
         Calculate realized P&L with fees.
+        
+        Uses adaptive profit gate if available for accurate per-exchange costs.
         
         Returns:
           {
@@ -5738,9 +5820,44 @@ class OrcaKillCycle:
             'total_fees': float,
             'gross_pnl': float,
             'net_pnl': float,
-            'net_pnl_pct': float
+            'net_pnl_pct': float,
+            'is_real_win': bool  # NEW - profit gate verified
           }
         """
+        # Try adaptive profit gate for accurate calculation
+        if self.is_real_win and exchange:
+            try:
+                result = self.is_real_win(
+                    exchange=exchange,
+                    entry_price=entry_price,
+                    current_price=exit_price,
+                    quantity=entry_qty,
+                    is_maker=False,
+                    gate_level='breakeven'
+                )
+                
+                costs = result.get('costs_breakdown', {})
+                entry_fee = costs.get('entry_fee', 0) + costs.get('entry_slippage', 0) + costs.get('entry_spread', 0)
+                exit_fee = costs.get('exit_fee', 0) + costs.get('exit_slippage', 0) + costs.get('exit_spread', 0)
+                
+                entry_gross = entry_price * entry_qty
+                exit_gross = exit_price * exit_qty
+                
+                return {
+                    'entry_cost': entry_gross + entry_fee,
+                    'entry_fee': entry_fee,
+                    'exit_value': exit_gross - exit_fee,
+                    'exit_fee': exit_fee,
+                    'total_fees': result['total_costs'],
+                    'gross_pnl': result['gross_pnl'],
+                    'net_pnl': result['net_pnl'],
+                    'net_pnl_pct': (result['net_pnl'] / (entry_gross + entry_fee)) * 100 if entry_gross > 0 else 0,
+                    'is_real_win': result['is_win']
+                }
+            except Exception as e:
+                pass  # Fall through to legacy
+        
+        # Legacy calculation with simple fee rate
         # Entry
         entry_gross = entry_price * entry_qty
         entry_fee = entry_gross * self.fee_rate
@@ -5765,7 +5882,8 @@ class OrcaKillCycle:
             'total_fees': total_fees,
             'gross_pnl': gross_pnl,
             'net_pnl': net_pnl,
-            'net_pnl_pct': net_pnl_pct
+            'net_pnl_pct': net_pnl_pct,
+            'is_real_win': net_pnl > 0
         }
 
     def _get_real_market_data(self, symbol: str, all_prices: dict) -> dict:
@@ -8546,7 +8664,7 @@ class OrcaKillCycle:
     # 🎖️ WAR ROOM MODE - RICH TERMINAL UI (NO SPAM)
     # ═══════════════════════════════════════════════════════════════════════════════
     
-    def run_autonomous_warroom(self, max_positions: int = 2, amount_per_position: float = 2.5,
+    def run_autonomous_warroom(self, max_positions: int = 5, amount_per_position: float = 2.5,
                                target_pct: float = 1.0, min_change_pct: float = 0.3):
         """
         🎖️🌟 WAR ROOM + RISING STAR MODE - THE WINNING FORMULA 🌟🎖️
@@ -9026,7 +9144,8 @@ class OrcaKillCycle:
                                     target_price=target_price,
                                     client=client,
                                     current_price=current_price,
-                                    current_pnl=net_pnl
+                                    current_pnl=net_pnl,
+                                    is_existing=True  # Mark as existing position (not opened by Rising Star)
                                 )
                                 positions.append(pos)
                                 
@@ -9061,7 +9180,8 @@ class OrcaKillCycle:
                                             target_price=target_price,
                                             client=client,
                                             current_price=current_price,
-                                            current_pnl=0.0
+                                            current_pnl=0.0,
+                                            is_existing=True  # Mark as existing position
                                         )
                                         positions.append(pos)
                                 except Exception:
@@ -9098,7 +9218,8 @@ class OrcaKillCycle:
                                                 target_price=target_price,
                                                 client=client,
                                                 current_price=current_price,
-                                                current_pnl=0.0
+                                                current_pnl=0.0,
+                                                is_existing=True  # Mark as existing position
                                             )
                                             positions.append(pos)
                                             break
@@ -9124,11 +9245,25 @@ class OrcaKillCycle:
                        warroom is not None and 
                        console is not None and
                        hasattr(sys.stdout, 'closed') and 
-                       not sys.stdout.closed)
+                       not sys.stdout.closed and
+                       sys.stdout.isatty())
         
         # Try to start Rich Live mode
         live = None
+        logging_handlers_backup = []
+        
         if use_rich_live:
+            # 🔇 SILENCE LOGGING while Rich is active to prevent scrolling/breaking UI
+            try:
+                root = logging.getLogger()
+                for h in root.handlers[:]:
+                    # Check if handler writes to stdout/stderr
+                    if hasattr(h, 'stream') and (h.stream is sys.stdout or h.stream is sys.stderr):
+                        root.removeHandler(h)
+                        logging_handlers_backup.append(h)
+            except Exception:
+                pass
+
             try:
                 live = Live(warroom.build_display(), refresh_per_second=2, console=console)
                 live.start()
@@ -9138,11 +9273,33 @@ class OrcaKillCycle:
                 _safe_print(f"⚠️ Rich display failed ({e}), switching to text mode...")
                 use_rich_live = False
                 live = None
+                
+                # Restore logging if Rich failed
+                try:
+                    root = logging.getLogger()
+                    for h in logging_handlers_backup:
+                        root.addHandler(h)
+                    logging_handlers_backup = []
+                except: pass
         
         try:
             while True:
                 current_time = time.time()
                 session_stats['cycles'] += 1
+                
+                # 💵 UPDATE WARROOM CASH BALANCES EACH CYCLE
+                try:
+                    cash = self.get_available_cash()
+                    if warroom is not None:
+                        warroom.update_cash(
+                            alpaca=cash.get('alpaca', 0),
+                            kraken=cash.get('kraken', 0),
+                            binance=cash.get('binance', 0)
+                        )
+                        warroom.cash_balances['capital'] = cash.get('capital', 0)
+                        warroom.cash_status = self.last_cash_status.copy()
+                except Exception:
+                    pass
                 
                 # Update dashboard state for Command Center UI
                 self._dump_dashboard_state(session_stats, positions, queen)
@@ -9386,24 +9543,34 @@ class OrcaKillCycle:
                 # ═══════════════════════════════════════════════════════
                 # 🌟 RISING STAR 4-STAGE SCAN FOR NEW OPPORTUNITIES
                 # ═══════════════════════════════════════════════════════
-                if current_time - last_scan_time >= scan_interval and len(positions) < max_positions:
+                # Calculate how many NEW positions we can open (existing positions don't count against limit)
+                existing_position_count = len([p for p in positions if hasattr(p, 'is_existing') and p.is_existing])
+                new_position_count = len(positions) - existing_position_count
+                can_open_more = new_position_count < max_positions
+                
+                if current_time - last_scan_time >= scan_interval and can_open_more:
                     last_scan_time = current_time
                     
                     cash = self.get_available_cash()
                     total_cash = sum(cash.values())
                     
+                    print(f"⭐ RISING STAR CHECK: Cash=${total_cash:.2f}, Need=${amount_per_position * 0.5:.2f}, RISING_STAR_AVAILABLE={RISING_STAR_AVAILABLE}")
+                    
                     if total_cash >= amount_per_position * 0.5:
                         active_symbols = [p.symbol for p in positions]
                         
                         if RISING_STAR_AVAILABLE:
+                            print(f"⭐ RISING STAR SCANNING... (existing={existing_position_count}, new={new_position_count}, max={max_positions})")
                             # ═══════════════════════════════════════════════
                             # STAGE 1: SCAN - Use ALL intelligence systems
                             # ═══════════════════════════════════════════════
                             candidates = self.rising_star_scanner.scan_entire_market(max_candidates=20)
                             rising_star_stats['candidates_scanned'] += len(candidates)
+                            print(f"⭐ STAGE 1 COMPLETE: Found {len(candidates)} candidates")
                             
                             # Filter out symbols we already have
                             candidates = [c for c in candidates if c.symbol.replace('/', '') not in active_symbols]
+                            print(f"⭐ After filtering existing: {len(candidates)} candidates remain")
                             
                             if candidates:
                                 # ═══════════════════════════════════════════════
@@ -9413,65 +9580,86 @@ class OrcaKillCycle:
                                 best_2 = self.rising_star_scanner.select_best_two(candidates)
                                 rising_star_stats['simulations_run'] += min(4, len(candidates)) * 1000
                                 rising_star_stats['winners_selected'] += len(best_2)
+                                print(f"⭐ STAGE 2-3 COMPLETE: Selected {len(best_2)} winners for execution")
                                 
                                 # ═══════════════════════════════════════════════
                                 # STAGE 4: EXECUTE - Open positions on winners
                                 # ═══════════════════════════════════════════════
                                 for winner in best_2:
-                                    if len(positions) >= max_positions:
+                                    print(f"⭐ STAGE 4: Evaluating {winner.symbol} on {winner.exchange}")
+                                    # Check NEW position count only (existing positions don't count against limit)
+                                    current_new_count = len([p for p in positions if not (hasattr(p, 'is_existing') and p.is_existing)])
+                                    if current_new_count >= max_positions:
+                                        print(f"⭐ STAGE 4: Reached max NEW positions ({current_new_count}/{max_positions}), stopping")
                                         break
 
                                     # 👑 Queen approval required
                                     queen_approved = False
                                     if queen is None:
                                         queen_approved = True  # Fallback without Queen
-                                        if warroom is not None:
-                                            warroom.add_flash_alert("Queen unavailable - proceeding with default approval", 'warning')
-                                        else:
-                                            print("👑 Queen unavailable - proceeding with default approval")
+                                        print(f"⭐ STAGE 4: Queen unavailable - auto-approving {winner.symbol}")
                                     else:
                                         try:
+                                            # Get change_pct from the correct attribute name
+                                            change_pct = getattr(winner, 'change_24h_pct', 0.0) or getattr(winner, 'change_pct', 0.0)
+                                            momentum = getattr(winner, 'momentum_strength', 0.0) or getattr(winner, 'momentum_score', 0.0)
+                                            
                                             signal = queen.get_collective_signal(
                                                 symbol=winner.symbol,
                                                 market_data={
                                                     'price': getattr(winner, 'price', 0.0),
-                                                    'change_pct': getattr(winner, 'change_pct', 0.0),
-                                                    'momentum': getattr(winner, 'momentum_score', 0.0),
-                                                    'exchange': winner.exchange
+                                                    'change_pct': change_pct,
+                                                    'momentum': momentum,
+                                                    'exchange': winner.exchange,
+                                                    'score': winner.score  # Include Rising Star score
                                                 }
                                             )
                                             confidence = float(signal.get('confidence', 0.0))
                                             action = signal.get('action', 'HOLD')
-                                            if warroom is not None:
-                                                warroom.add_flash_alert(
-                                                    f"Queen signal {action} {confidence:.0%} for {winner.symbol}",
-                                                    'info'
-                                                )
-                                            else:
-                                                print(f"👑 Queen signal {action} {confidence:.0%} for {winner.symbol}")
-                                            queen_approved = (action == 'BUY' and confidence >= 0.3)  # Lowered from 0.5
-                                        except Exception:
-                                            queen_approved = False
+                                            print(f"⭐ STAGE 4: Queen signal for {winner.symbol}: {action} {confidence:.0%} (change={change_pct:.1f}%, mom={momentum:.2f})")
+                                            
+                                            # Lower threshold: Accept BUY with any confidence, or HOLD with Rising Star score > 0.5
+                                            queen_approved = (
+                                                (action == 'BUY') or 
+                                                (action == 'HOLD' and winner.score > 0.5) or
+                                                (confidence > 0.0)  # Any positive confidence
+                                            )
+                                            if not queen_approved:
+                                                # Force approve high-scoring Rising Star candidates
+                                                if winner.score > 0.4:
+                                                    queen_approved = True
+                                                    print(f"⭐ STAGE 4: Force approving {winner.symbol} (score={winner.score:.2f})")
+                                        except Exception as e:
+                                            print(f"⭐ STAGE 4: Queen exception for {winner.symbol}: {e}")
+                                            queen_approved = True  # Approve on exception
 
                                     if not queen_approved:
+                                        print(f"⭐ STAGE 4: Queen REJECTED {winner.symbol}")
                                         continue
                                     
+                                    print(f"⭐ STAGE 4: Queen APPROVED {winner.symbol} - executing buy...")
                                     try:
                                         client = self.clients.get(winner.exchange)
+                                        print(f"⭐ STAGE 4: Client for {winner.exchange}: {type(client).__name__ if client else 'None'}")
                                         if client:
                                             symbol_clean = winner.symbol.replace('/', '')
                                             exchange_cash = cash.get(winner.exchange, 0)
                                             buy_amount = min(amount_per_position, exchange_cash * 0.9)
+                                            print(f"⭐ STAGE 4: Buy amount ${buy_amount:.2f} for {symbol_clean} on {winner.exchange} (cash={exchange_cash:.2f})")
                                             
                                             if buy_amount >= 0.50:
+                                                print(f"⭐ STAGE 4: CALLING place_market_order({symbol_clean}, buy, quote_qty={buy_amount:.2f})")
                                                 buy_order = client.place_market_order(
                                                     symbol=symbol_clean,
                                                     side='buy',
                                                     quote_qty=buy_amount
                                                 )
-                                                if buy_order:
-                                                    buy_qty = float(buy_order.get('filled_qty', 0))
-                                                    buy_price = float(buy_order.get('filled_avg_price', winner.price))
+                                                print(f"⭐ STAGE 4: ORDER RESULT: {buy_order}")
+                                                if buy_order and not buy_order.get('rejected') and not buy_order.get('error'):
+                                                    # Handle different exchange response formats
+                                                    buy_qty = float(buy_order.get('filled_qty', 0) or buy_order.get('executedQty', 0) or buy_order.get('receivedQty', 0))
+                                                    buy_price = float(buy_order.get('filled_avg_price', 0) or buy_order.get('price', winner.price))
+                                                    print(f"⭐ STAGE 4: FILLED: qty={buy_qty}, price={buy_price}")
                                                     
                                                     if buy_qty > 0 and buy_price > 0:
                                                         fee_rate = self.fee_rates.get(winner.exchange, 0.0025)
@@ -9497,8 +9685,19 @@ class OrcaKillCycle:
                                                         )
                                                         positions.append(pos)
                                                         session_stats['total_trades'] += 1
-                                    except Exception:
-                                        pass
+                                                        print(f"⭐ STAGE 4: ✅ POSITION CREATED for {symbol_clean} @ {buy_price}")
+                                                    else:
+                                                        print(f"⭐ STAGE 4: ⚠️ NO FILL: qty={buy_qty}, price={buy_price}")
+                                                else:
+                                                    print(f"⭐ STAGE 4: ⚠️ ORDER RETURNED NONE")
+                                            else:
+                                                print(f"⭐ STAGE 4: ⚠️ SKIPPING - buy_amount ${buy_amount:.2f} < $0.50 minimum")
+                                        else:
+                                            print(f"⭐ STAGE 4: ⚠️ NO CLIENT for {winner.exchange}")
+                                    except Exception as e:
+                                        print(f"⭐ STAGE 4: ❌ ERROR executing buy: {e}")
+                                        import traceback
+                                        traceback.print_exc()
                         else:
                             # Fallback: original scanning without Rising Star
                             opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
@@ -9877,10 +10076,16 @@ class OrcaKillCycle:
                             # 🥷 AUTO-ESCALATE STEALTH MODE based on threat level
                             if report.threat_level == "red" and self.stealth_mode != "paranoid":
                                 self.set_stealth_mode("paranoid")
-                                print("🥷 AUTO-ESCALATED to PARANOID mode (threat level RED)")
+                                if warroom is not None:
+                                    warroom.add_flash_alert("ESCALATED TO PARANOID MODE", 'critical')
+                                else:
+                                    print("🥷 AUTO-ESCALATED to PARANOID mode (threat level RED)")
                             elif report.threat_level == "orange" and self.stealth_mode == "normal":
                                 self.set_stealth_mode("aggressive")
-                                print("🥷 AUTO-ESCALATED to AGGRESSIVE mode (threat level ORANGE)")
+                                if warroom is not None:
+                                    warroom.add_flash_alert("ESCALATED TO AGGRESSIVE MODE", 'warning')
+                                else:
+                                    print("🥷 AUTO-ESCALATED to AGGRESSIVE mode (threat level ORANGE)")
                         except Exception:
                             pass
                     
@@ -9960,6 +10165,12 @@ class OrcaKillCycle:
                 time.sleep(monitor_interval)
                 
         except KeyboardInterrupt:
+            # STOP RICH LIVE FIRST so we can print clearly
+            if live:
+                try: live.stop()
+                except: pass
+                live = None
+
             if console:
                 try:
                     console.print("\n[bold yellow]👑 STOPPING WAR ROOM...[/]")
@@ -10064,6 +10275,14 @@ class OrcaKillCycle:
                     live.stop()
                 except:
                     pass
+            
+            # Restore logging handlers
+            if logging_handlers_backup:
+                try:
+                    root = logging.getLogger()
+                    for h in logging_handlers_backup:
+                        root.addHandler(h)
+                except: pass
         
         return session_stats
 
