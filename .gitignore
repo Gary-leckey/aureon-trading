@@ -60,3 +60,4 @@ ws_cache/
 queen_backups/
 queen_strategies/queen_learning_turn_*_*.py
 queen_strategies/queen_research_enhancement_*.py
+real_portfolio_state.json

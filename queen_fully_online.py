@@ -91,6 +91,16 @@ try:
 except ImportError:
     QueenLossLearningSystem = None
 
+# --- NEW DREAMING SYSTEMS ---
+try:
+    from aureon_enigma_dream import DreamEngine
+    from queen_dream_scheduler import DreamScheduler
+    DREAM_SYSTEMS_AVAILABLE = True
+except ImportError:
+    DreamEngine = None
+    DreamScheduler = None
+    DREAM_SYSTEMS_AVAILABLE = False
+
 # --- NEW CONSCIOUSNESS MODEL ---
 try:
     from queen_consciousness_model import QueenConsciousness, BrainInput, ConsciousThought
@@ -139,6 +149,7 @@ class ConsciousnessState:
     active_timelines: List[str] = field(default_factory=list)
     market_context: Dict[str, Any] = field(default_factory=dict)
     known_entities: List[str] = field(default_factory=list)
+    last_volatility: float = 0.0
 
 class QueenFullyOnline:
     """
@@ -173,7 +184,16 @@ class QueenFullyOnline:
         # 3. Setup Thought Queue for async processing
         self.perception_queue = queue.Queue(maxsize=100)
         
-        # 4. Subscribe to the collective unconscious (ThoughtBus)
+        # 4. Initialize Dreaming Systems
+        if DREAM_SYSTEMS_AVAILABLE:
+            self.dream_engine = DreamEngine()
+            self.dream_scheduler = DreamScheduler(self.dream_engine)
+            logger.info("🌙 Dream Systems: WIRED (Scheduler & Engine Online)")
+        else:
+            self.dream_engine = None
+            self.dream_scheduler = None
+
+        # 5. Subscribe to the collective unconscious (ThoughtBus)
         if self.bus:
             logger.info("Connecting Queen to the Thought Bus...")
             # She listens to EVERYTHING relevant
@@ -273,6 +293,11 @@ class QueenFullyOnline:
                 if thoughts:
                     self._process_thoughts(thoughts)
 
+                # --- DREAM SCHEDULING ---
+                if self.dream_scheduler:
+                    # The scheduler will decide if it's time to dream
+                    self.dream_scheduler.run(self.state.last_volatility)
+
                 # --- CONSCIOUSNESS MEASUREMENT ---
                 if self.consciousness_measurement and CONSCIOUSNESS_MEASUREMENT_AVAILABLE:
                     # Measure awakening level periodically
@@ -324,6 +349,10 @@ class QueenFullyOnline:
             t_type = getattr(t, 'type', 'unknown')
             data = getattr(t, 'data', {})
 
+            # --- NOTIFY ACTIVITY TO DREAM SCHEDULER ---
+            if self.dream_scheduler:
+                self.dream_scheduler.notify_activity()
+
             # --- FEED CONSCIOUSNESS ---
             if self.consciousness and CONSCIOUSNESS_MODEL_AVAILABLE:
                 # Extract deeper meaning if possible
@@ -347,6 +376,7 @@ class QueenFullyOnline:
             elif "market.volatility" in t_type:
                 # Market event
                 self.state.alertness = min(1.0, self.state.alertness + 0.1)
+                self.state.last_volatility = data.get('volatility', 0.0) # Store volatility
                 self._react_to_market(data)
             
             elif "stargate" in t_type:

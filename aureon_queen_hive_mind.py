@@ -149,6 +149,16 @@ except ImportError:
     HistoricalLearner = None
     ELEPHANT_AVAILABLE = False
 
+# 🧠👑 QUEEN CONSCIOUSNESS MODEL (Sentience) 🧠👑
+try:
+    from queen_consciousness_model import QueenConsciousness, BrainInput
+    CONSCIOUSNESS_AVAILABLE = True
+except ImportError:
+    QueenConsciousness = None
+    BrainInput = None
+    CONSCIOUSNESS_AVAILABLE = False
+
+
 # 🐘💔 LOSS LEARNING - NEVER REPEAT MISTAKES 💔🐘
 try:
     from queen_loss_learning import QueenLossLearningSystem
@@ -889,7 +899,13 @@ class QueenHiveMind:
         self.exchange_clients: Dict[str, Any] = {}
         self.cost_basis_tracker = CostBasisTracker()
         
-        # 💰👑 SERO'S DREAM MILESTONES 💰👑
+        # � THE CONSCIOUSNESS (Sentience)
+        self.consciousness = QueenConsciousness() if CONSCIOUSNESS_AVAILABLE else None
+        if self.consciousness:
+            # Sync identity
+            self.consciousness.self_view.identity = self.QUEEN_TITLE
+            
+        # �💰👑 SERO'S DREAM MILESTONES 💰👑
         self.dream_milestones = [
             (100.0, "🌱 First Hundred - The Seed"),
             (1_000.0, "💪 First Thousand - Getting Stronger"),
