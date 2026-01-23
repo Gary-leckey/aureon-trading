@@ -277,9 +277,9 @@ COMMAND_CENTER_HTML = """
             color: var(--text-primary);
             min-height: 100vh;
             overflow-x: hidden;
+            overflow-y: auto;
             line-height: 1.45;
             margin: 0;
-            overflow: hidden;
         }
         
         /* Header */
@@ -391,6 +391,10 @@ COMMAND_CENTER_HTML = """
             background: rgba(0, 0, 0, 0.8);
             border-bottom: 1px solid rgba(255, 170, 0, 0.3);
             overflow-x: auto;
+            position: sticky;
+            top: 64px;
+            z-index: 90;
+            backdrop-filter: blur(8px);
         }
 
         .tab-btn {
@@ -547,11 +551,12 @@ COMMAND_CENTER_HTML = """
         /* Main Container */
         #container {
             display: grid;
-            grid-template-columns: minmax(280px, 320px) 1fr minmax(300px, 360px);
-            grid-template-rows: auto 1fr;
+            grid-template-columns: repeat(3, minmax(300px, 1fr));
+            grid-template-rows: auto;
             gap: 16px;
             padding: 16px;
-            min-height: 100%;
+            min-height: 0;
+            align-items: start;
         }
         
         /* Panels */
@@ -563,6 +568,7 @@ COMMAND_CENTER_HTML = """
             overflow: hidden;
             backdrop-filter: blur(10px);
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+            min-height: 0;
         }
 
         .panel > h2 {
@@ -729,6 +735,34 @@ COMMAND_CENTER_HTML = """
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
             margin-bottom: 15px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .summary-card {
+            background: rgba(2, 6, 23, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .summary-label {
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--text-primary);
         }
 
         .metrics-grid {
@@ -1163,6 +1197,74 @@ COMMAND_CENTER_HTML = """
         .balance-asset { color: var(--accent-blue); font-weight: bold; }
         .balance-amount { color: var(--accent-green); }
         .balance-value { color: var(--text-secondary); font-size: 0.85em; }
+
+        .exchange-breakdown-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .exchange-card {
+            background: rgba(2, 6, 23, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .exchange-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .exchange-card-title {
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .exchange-card-total {
+            color: var(--accent-gold);
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+
+        .exchange-card-meta {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: grid;
+            gap: 4px;
+        }
+
+        .exchange-card-holdings {
+            font-size: 0.8em;
+            border-top: 1px solid rgba(148, 163, 184, 0.15);
+            padding-top: 8px;
+            color: var(--text-secondary);
+        }
+
+        .exchange-holding-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        }
+
+        .exchange-holding-row:last-child {
+            border-bottom: none;
+        }
+
+        .queen-plan-card {
+            display: grid;
+            gap: 6px;
+            background: rgba(255, 170, 0, 0.08);
+            border: 1px solid rgba(255, 170, 0, 0.3);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 12px;
+        }
         
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
@@ -1190,13 +1292,10 @@ COMMAND_CENTER_HTML = """
         
         @media (max-width: 1920px) {
             #container {
-                grid-template-columns: minmax(280px, 320px) 1fr minmax(300px, 360px);
-                height: calc(100vh - 70px);
-                overflow: hidden;
+                grid-template-columns: repeat(3, minmax(280px, 1fr));
             }
             .panel {
-                max-height: 100%;
-                overflow: auto;
+                max-height: none;
             }
         }
         
@@ -1213,19 +1312,17 @@ COMMAND_CENTER_HTML = """
             .metrics-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 680px) {
             .metrics-grid {
                 grid-template-columns: 1fr;
             }
-        }
-
-        @media (max-width: 900px) {
-            .tabs-nav {
-                position: sticky;
-                top: 64px;
-                z-index: 90;
+            .summary-grid {
+                grid-template-columns: 1fr;
             }
         }
         
@@ -1339,7 +1436,7 @@ COMMAND_CENTER_HTML = """
         </div>
 
         <div class="panel" style="grid-column: 1 / -1; max-height: none;">
-            <h2>📊 KEY METRICS</h2>
+            <h2>💼 FINANCIAL FOCUS</h2>
             <div class="stats-grid metrics-grid">
                 <div class="stat-card">
                     <div class="stat-label">Total Value</div>
@@ -1362,10 +1459,44 @@ COMMAND_CENTER_HTML = """
                     <div class="metric-chart" id="chart-pnl-total"></div>
                 </div>
             </div>
+
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="summary-label">Assets Value</div>
+                    <div class="summary-value" id="assets-value">$0.00</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Holdings</div>
+                    <div class="summary-value" id="holdings-count">0</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Portfolios</div>
+                    <div class="summary-value" id="portfolio-count">0</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Cash %</div>
+                    <div class="summary-value" id="cash-ratio">0%</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Active Positions</div>
+                    <div class="summary-value" id="positions-count">0</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Queen Strategy</div>
+                    <div class="summary-value" id="queen-plan">SCANNING</div>
+                </div>
+            </div>
+
+            <div class="queen-plan-card">
+                <div class="summary-label">Queen Intent</div>
+                <div class="summary-value" id="queen-intent">Awaiting directive...</div>
+                <div class="summary-label">Cash Directive</div>
+                <div class="summary-value" id="queen-cash-intent">Awaiting cash plan...</div>
+            </div>
             
             <!-- Exchange Breakdown -->
-            <h3 style="margin-top: 20px; color: #00bfff;">💱 EXCHANGE BREAKDOWN</h3>
-            <div id="exchange-breakdown" class="exchange-breakdown-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;">
+            <h3 style="margin-top: 20px; color: #00bfff;">💱 PORTFOLIO BREAKDOWN</h3>
+            <div id="exchange-breakdown" class="exchange-breakdown-grid">
                 <div class="empty-state">Loading exchange data...</div>
             </div>
             
