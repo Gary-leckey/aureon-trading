@@ -94,6 +94,7 @@ except ImportError:
 # --- Sacred Frequencies ---
 FREQ_SOLFEGGIO_396 = 396.0  # Liberating Guilt and Fear
 FREQ_SOLFEGGIO_528 = 528.0  # Miracle Tone / Transformation (DNA Repair)
+FREQ_528 = FREQ_SOLFEGGIO_528
 FREQ_SCHUMANN = 7.83       # Earth Resonance
 FREQ_ORCA_CLICK = 15000.0  # Echolocation
 

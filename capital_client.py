@@ -39,6 +39,7 @@ class CapitalClient:
         self.market_cache_time = 0.0
         self.market_cache_ttl = int(os.getenv('CAPITAL_MARKET_CACHE_TTL', '900'))  # 15 minutes
         self._rate_limit_until = 0  # Timestamp when rate limit expires
+        self._rate_limit_logged = False  # Only log rate limits once
         self._session_error_logged = False  # Only log session errors once
         
         if not self.api_key or not self.identifier or not self.password:
@@ -125,6 +126,19 @@ class CapitalClient:
         except Exception as e:
             logger.error(f"Capital.com request error ({method} {path}): {e}")
             raise
+
+        # Rate limit handling
+        rate_limit_hit = resp.status_code == 429 or ('too-many.requests' in (resp.text or '').lower())
+        if rate_limit_hit:
+            self._rate_limit_until = time.time() + 300
+            if not self._rate_limit_logged:
+                logger.warning("Capital.com rate limited - backing off for 5 minutes")
+                self._rate_limit_logged = True
+            return resp
+
+        # Reset rate limit log flag on success
+        if resp.status_code == 200 and self._rate_limit_logged:
+            self._rate_limit_logged = False
 
         # Handle invalid session
         if resp.status_code in (401, 403) or ('error.invalid.session.token' in (resp.text or '').lower()):
@@ -262,6 +276,8 @@ class CapitalClient:
             response = self._request('GET', f'/markets/{epic}')
             if response.status_code == 200:
                 return response.json()
+            if response.status_code == 429 or 'too-many.requests' in (response.text or '').lower():
+                return None
             logger.error(f"Capital.com market snapshot failed for {epic}: {response.text}")
         except Exception as e:
             logger.error(f"Capital.com market snapshot error for {epic}: {e}")
