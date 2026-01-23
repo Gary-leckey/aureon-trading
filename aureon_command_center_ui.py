@@ -3761,38 +3761,57 @@ Object.entries(systems).forEach(([name, online]) => {
         narrative_parts = []
         
         # 1. CURRENT STATE & INTENT
+        context_time = datetime.utcnow().strftime("%H:%M")
+        
         if active_count == 0:
-            narrative_parts.append(f"I am currently in <strong>Hunter Mode</strong>, scanning the {where} ecosystem for high-probability setups.")
+            narrative_parts.append(f"It is {context_time} UTC. I am currently in <strong>Hunter Mode</strong>, scanning the {where} ecosystem for high-probability setups.")
         else:
-            narrative_parts.append(f"I am actively managing {active_count} positions across {where}.")
+            narrative_parts.append(f"It is {context_time} UTC. I am actively managing {active_count} positions across {where}.")
             narrative_parts.append(f"My primary focus is maximizing our floating PnL of {pnl:+.4f}.")
             
-            # 🔍 POSITION DEEP DIVE (New Feature)
-            # Explain specific positions with context "opened at X, hoping to make Y"
+            # 🔍 POSITION DEEP DIVE (Refined)
             for p in top_positions[:2]:  # Focus on top 2 movers
                 sym = p.get('symbol', 'UNKNOWN')
                 curr_pnl = float(p.get('current_pnl', 0.0) or 0.0)
+                curr_price = float(p.get('current_price', 0.0) or 0.0)
+                entry_price = float(p.get('entry_price', 0.0) or 0.0)
+                target_price = float(p.get('target_price', 0.0) or 0.0)
                 
+                # Calculate PnL % safely
+                if entry_price > 0:
+                    pnl_pct = ((curr_price - entry_price) / entry_price) * 100
+                else:
+                    pnl_pct = 0.0
+                
+                # Calculate Target distance
+                if curr_price > 0 and target_price > 0:
+                    dist_to_target = ((target_price - curr_price) / curr_price) * 100
+                    target_str = f"aiming for {target_price:.4f} (+{dist_to_target:.1f}%)"
+                else:
+                    target_str = "calculating optimal exit"
+
                 # Attempt to determine entry time
                 try:
                     # Look for timestamp keys, fallback to recent
                     entry_ts = float(p.get('timestamp') or p.get('entry_time') or p.get('open_time') or (time.time() - 7200))
+                    duration_hrs = (time.time() - entry_ts) / 3600
                     entry_dt = datetime.fromtimestamp(entry_ts)
                     # Format: "9am on Friday"
                     time_str = entry_dt.strftime("%I%p").lstrip('0').lower() + " on " + entry_dt.strftime("%A")
+                    duration_str = f"({duration_hrs:.1f}h ago)"
                 except:
                     time_str = "earlier this session"
+                    duration_str = ""
                 
                 # Determine narrative arc based on PnL
                 if curr_pnl > 0:
-                    pct_gain = "?" # If we had entry price, we could calc. Assuming PnL is cash for now.
-                    performance = f"has gained profit"
-                    projection = f"My probability systems project a target exit window within 4 hours."
+                    performance = f"has gained <strong>{pnl_pct:+.2f}%</strong> since entry"
+                    projection = f"My probability systems are {target_str}."
                 else:
-                    performance = f"is currently in a consolidation phase"
-                    projection = "Deep learning suggests a momentum reversal is likely at the next support node."
+                    performance = f"is currently <strong>{pnl_pct:+.2f}%</strong> down"
+                    projection = f"Deep learning suggests holding for reversal; {target_str}."
                 
-                narrative_parts.append(f"Regarding <strong>{sym}</strong>: I opened this position at {time_str}. It {performance}. {projection}")
+                narrative_parts.append(f"Regarding <strong>{sym}</strong>: I opened this position at {time_str} {duration_str}. It {performance}. {projection}")
 
         # 2. DECISION PROCESS & PICKS
         if picks:
@@ -3829,18 +3848,21 @@ Object.entries(systems).forEach(([name, online]) => {
         }
         
         # Select proverb based on session state
-        if pnl > 0.5 or wins > trades/2:
+        if pnl > 0.5 or wins > trades/2 or (active_count > 0 and pnl >= 0):
             wisdom = random.choice(mogollon_proverbs["profit"])
+            wisdom_context = "The tribe gathers for harvest"
         elif pnl < -0.5:
             wisdom = random.choice(mogollon_proverbs["loss"])
+            wisdom_context = "The tribe seeks shelter in the mountains"
         else:
             wisdom = random.choice(mogollon_proverbs["neutral"])
+            wisdom_context = "The tribe waits for the rain"
             
         narrative_parts.append(f"<br><strong>🏺 Mogollon Wisdom</strong>: \"{wisdom}\"")
         
         # 4. LEARNING & COGNITION
         if learning_active:
-            narrative_parts.append("My deep learning modules are actively <strong>synthesizing</strong> this historical context with live price action.")
+            narrative_parts.append(f"My deep learning modules are synthesizing this ancient wisdom ({wisdom_context}) with live price action.")
         elif memory_active:
             narrative_parts.append("I am cross-referencing this pattern against my <strong>Elephant Memory</strong> database.")
         else:
