@@ -258,16 +258,16 @@ COMMAND_CENTER_HTML = """
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
-            --bg-primary: #0b1220;
+            --bg-primary: #0b1221;
             --bg-secondary: #0f172a;
-            --bg-panel: rgba(17, 24, 39, 0.92);
-            --accent-gold: #ffaa00;
-            --accent-green: #00ff88;
-            --accent-red: #ff3366;
-            --accent-blue: #00bfff;
-            --accent-purple: #9966ff;
-            --text-primary: #e2e8f0;
-            --text-secondary: #94a3b8;
+            --bg-panel: #111827;
+            --accent-gold: #facc15;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-blue: #38bdf8;
+            --accent-purple: #a855f7;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5f5;
         }
         
         body {
@@ -278,7 +278,9 @@ COMMAND_CENTER_HTML = """
             min-height: 100vh;
             overflow-x: hidden;
             overflow-y: auto;
-            line-height: 1.45;
+            line-height: 1.55;
+            font-size: 15px;
+            letter-spacing: 0.1px;
             margin: 0;
         }
         
@@ -562,12 +564,12 @@ COMMAND_CENTER_HTML = """
         /* Panels */
         .panel {
             background: var(--bg-panel);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 10px;
-            padding: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 14px;
+            padding: 18px 20px;
             overflow: hidden;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(6px);
+            box-shadow: 0 12px 28px rgba(2, 6, 23, 0.4);
             min-height: 0;
         }
 
@@ -732,53 +734,56 @@ COMMAND_CENTER_HTML = """
         /* Stats Cards */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
         }
 
         .summary-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 10px;
-            margin-top: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 14px;
         }
 
         .summary-card {
-            background: rgba(2, 6, 23, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 10px;
-            padding: 12px;
+            background: #0f172a;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-radius: 12px;
+            padding: 14px 16px;
+            box-shadow: 0 10px 22px rgba(2, 6, 23, 0.35);
         }
 
         .summary-label {
-            font-size: 0.7em;
+            font-size: 0.75em;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            color: var(--text-secondary);
-            margin-bottom: 6px;
+            color: #94a3b8;
+            margin-bottom: 8px;
         }
 
         .summary-value {
-            font-size: 1.1em;
+            font-size: 1.2em;
             font-weight: 700;
-            color: var(--text-primary);
+            color: #f8fafc;
+            line-height: 1.25;
         }
 
         .metrics-grid {
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             margin-bottom: 0;
         }
 
         .metrics-grid .stat-card {
             text-align: left;
-            padding: 16px;
-            background: rgba(2, 6, 23, 0.55);
-            border: 1px solid rgba(148, 163, 184, 0.25);
+            padding: 18px 20px;
+            background: #0f172a;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            border-radius: 12px;
         }
 
         .metrics-grid .stat-value {
-            font-size: 1.8em;
+            font-size: 1.9em;
         }
 
         .metric-chart {
@@ -788,25 +793,27 @@ COMMAND_CENTER_HTML = """
         }
         
         .stat-card {
-            background: rgba(0, 255, 136, 0.05);
-            border: 1px solid rgba(0, 255, 136, 0.18);
-            border-radius: 10px;
-            padding: 14px;
+            background: #0f172a;
+            border: 1px solid rgba(34, 197, 94, 0.25);
+            border-radius: 12px;
+            padding: 16px 18px;
             text-align: center;
+            box-shadow: 0 8px 18px rgba(2, 6, 23, 0.35);
         }
         
         .stat-label {
-            font-size: 0.75em;
-            color: var(--text-secondary);
-            margin-bottom: 5px;
+            font-size: 0.78em;
+            color: #94a3b8;
+            margin-bottom: 8px;
             text-transform: uppercase;
             letter-spacing: 0.08em;
         }
         
         .stat-value {
-            font-size: 1.6em;
-            font-weight: bold;
+            font-size: 1.8em;
+            font-weight: 700;
             color: var(--accent-green);
+            line-height: 1.25;
         }
 
         .scroll-area {
@@ -1418,6 +1425,12 @@ COMMAND_CENTER_HTML = """
             <span class="tab-live" id="live-systems">Live</span>
             <span class="tab-time" id="time-systems">--:--</span>
             <span class="tab-event" id="event-systems">--</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('gamma')" data-tab="gamma">
+            <span class="tab-icon">🎨</span>Gamma
+            <span class="tab-live" id="live-gamma">Live</span>
+            <span class="tab-time" id="time-gamma">--:--</span>
+            <span class="tab-event" id="event-gamma">--</span>
         </button>
     </div>
 
@@ -2059,6 +2072,20 @@ COMMAND_CENTER_HTML = """
             </div>
         </div>
     </div>
+
+    <!-- TAB 7: GAMMA - Latest Gamma Embed -->
+    <div id="tab-gamma" class="tab-content">
+        <div class="panel" style="height: 100%; padding: 15px;">
+            <div class="section-header">
+                <h2>🎨 GAMMA LATEST</h2>
+                <span class="chip">Embed</span>
+            </div>
+            <div id="gamma-fallback" class="empty-state" style="margin: 20px;">
+                No Gamma URL available yet. Run gamma sync to generate the latest view.
+            </div>
+            <iframe id="gamma-frame" title="Gamma Latest" style="width: 100%; height: calc(100vh - 280px); border: 0; border-radius: 8px; display: none; background: #0b0b0b;"></iframe>
+        </div>
+    </div>
     
     <div id="connection-status">
         <span class="status-dot online"></span>
@@ -2196,6 +2223,8 @@ COMMAND_CENTER_HTML = """
             const saved = localStorage.getItem('aureon_ui_density') || 'comfort';
             setDensity(saved);
             setInterval(updateStaleBadges, 15000);
+            loadGammaLatest();
+            setInterval(loadGammaLatest, 60000);
             let chartInitAttempts = 0;
             const tryInitCharts = () => {
                 chartInitAttempts += 1;
@@ -2499,7 +2528,7 @@ COMMAND_CENTER_HTML = """
         function updateStaleBadges() {
             const thresholds = { stale: 45000, dead: 120000 }; // 45s stale, 2m dead
             const last = window.__aureonTabLast || {};
-            const tabs = ['trading', 'whales', 'bots', 'market', 'quantum', 'learning', 'orca', 'systems'];
+            const tabs = ['trading', 'whales', 'bots', 'market', 'quantum', 'learning', 'orca', 'systems', 'gamma'];
             const now = Date.now();
             tabs.forEach(tab => {
                 const badge = document.getElementById(`live-${tab}`);
@@ -2511,6 +2540,30 @@ COMMAND_CENTER_HTML = """
                 if (age > thresholds.dead) badge.classList.add('dead');
                 else if (age > thresholds.stale) badge.classList.add('stale');
             });
+        }
+
+        async function loadGammaLatest() {
+            const frame = document.getElementById('gamma-frame');
+            const fallback = document.getElementById('gamma-fallback');
+            if (!frame || !fallback) return;
+            try {
+                const res = await fetch('/api/gamma/latest');
+                if (!res.ok) throw new Error('Gamma latest unavailable');
+                const data = await res.json();
+                const gammaUrl = data.gammaUrl || data.gamma_url || data.url;
+                if (gammaUrl) {
+                    frame.src = gammaUrl;
+                    frame.style.display = 'block';
+                    fallback.style.display = 'none';
+                    markLive('gamma', 'Gamma Latest');
+                } else {
+                    frame.style.display = 'none';
+                    fallback.style.display = 'block';
+                }
+            } catch (e) {
+                frame.style.display = 'none';
+                fallback.style.display = 'block';
+            }
         }
 
         function openHub(name) {
@@ -3717,6 +3770,7 @@ class AureonCommandCenter:
             self.app.router.add_get('/api/status', self.handle_api_status)
             self.app.router.add_get('/api/portfolio', self.handle_api_portfolio)
             self.app.router.add_get('/api/signals', self.handle_api_signals)
+            self.app.router.add_get('/api/gamma/latest', self.handle_api_gamma_latest)
             self.app.router.add_get('/api/unified/hubs', self.handle_api_unified_hubs)
             self.app.router.add_get('/api/unified/registry', self.handle_api_unified_registry)
             self.app.router.add_get('/hub/orca', self.handle_hub_orca)
@@ -4005,6 +4059,18 @@ class AureonCommandCenter:
         return web.json_response({
             "signals": [asdict(s) if hasattr(s, '__dataclass_fields__') else s for s in list(self.signals)[-50:]]
         })
+
+    async def handle_api_gamma_latest(self, request):
+        """REST API: Latest Gamma embed data."""
+        state_dir = os.environ.get("AUREON_STATE_DIR", "state")
+        latest_file = os.path.join(state_dir, "gamma_latest.json")
+        if not os.path.exists(latest_file):
+            return web.json_response({"status": "not_found"}, status=404)
+        try:
+            with open(latest_file, "r") as f:
+                return web.json_response(json.load(f))
+        except Exception as e:
+            return web.json_response({"status": "error", "error": str(e)}, status=500)
 
     # ═══════════════════════════════════════════════════════════════════════
     # UNIFIED HUB HANDLERS
@@ -4701,6 +4767,21 @@ Object.entries(systems).forEach(([name, online]) => {
         all_balances = {}
         exchange_breakdown = {}
         now_ts = time.time()
+        # Optional CoinGecko cache (improves valuation for less common assets)
+        coingecko_prices = {}
+        try:
+            cache_path = Path("coingecko_market_cache.json")
+            if cache_path.exists():
+                with cache_path.open("r") as f:
+                    cache_data = json.load(f)
+                ticker_cache = cache_data.get("ticker_cache", {})
+                for pair, entry in ticker_cache.items():
+                    base = (entry.get("base") or "").upper()
+                    price = float(entry.get("price", 0) or 0)
+                    if base and price > 0:
+                        coingecko_prices[base] = price
+        except Exception:
+            coingecko_prices = {}
         price_fetch_budget = {
             "kraken": 8,
             "binance": 8,
@@ -4750,6 +4831,10 @@ Object.entries(systems).forEach(([name, online]) => {
             for price_key in cache_keys:
                 if price_key in self.prices:
                     return amount * self.prices[price_key]
+
+            # CoinGecko cache fallback
+            if normalized in coingecko_prices:
+                return amount * coingecko_prices[normalized]
             
             # Live lookup with lightweight budget + failure backoff
             fail_key = f"{exchange}:{normalized}"
@@ -4925,6 +5010,29 @@ Object.entries(systems).forEach(([name, online]) => {
         self.portfolio.pnl_total = round(pnl_total, 4)
         self.portfolio.exchange_breakdown = exchange_breakdown
         self.portfolio.baseline_value = round(baseline_value, 4)
+
+        # Fallback positions from balances if Orca snapshot is unavailable
+        if not self.portfolio.positions:
+            fallback_positions = []
+            for exchange, assets in all_balances.items():
+                for asset, amount in assets.items():
+                    if asset.upper() in cash_assets:
+                        continue
+                    value_usd = get_usd_value(asset, amount, exchange)
+                    if value_usd <= 0:
+                        continue
+                    fallback_positions.append({
+                        "symbol": asset,
+                        "exchange": exchange,
+                        "qty": amount,
+                        "current_pnl": 0.0,
+                        "current_pnl_pct": 0.0,
+                        "entry_price": 0.0,
+                        "current_price": 0.0,
+                        "value": value_usd,
+                    })
+            if fallback_positions:
+                self.portfolio.positions = fallback_positions
 
         # Basic market overview from balances
         unique_assets = set()
@@ -5304,6 +5412,7 @@ Object.entries(systems).forEach(([name, online]) => {
         print(f"   GET /api/status   - System status")
         print(f"   GET /api/portfolio - Portfolio data")
         print(f"   GET /api/signals  - Recent signals")
+        print(f"   GET /api/gamma/latest - Latest Gamma URL")
         print(f"{'=' * 70}\n")
         
         # Start update loop

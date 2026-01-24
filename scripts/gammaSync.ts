@@ -17,6 +17,15 @@ import path from 'path';
 const GAMMA_API_KEY = process.env.GAMMA_API_KEY || 'sk-gamma-0iwjLpcbswHzIuX1yGJLxvKmQsR7drEcV9ppnRyycUs';
 const GAMMA_BASE_URL = 'https://public-api.gamma.app/v1.0';
 const COMMAND_SERVER_URL = process.env.NEXUS_COMMAND_URL || 'http://localhost:8790';
+const STATE_DIR = path.resolve(process.cwd(), process.env.AUREON_STATE_DIR || 'state');
+
+function writeGammaLatest(payload: Record<string, unknown>, filename = 'gamma_latest.json'): void {
+  fs.mkdirSync(STATE_DIR, { recursive: true });
+  const targetPath = path.join(STATE_DIR, filename);
+  const tmpPath = `${targetPath}.tmp`;
+  fs.writeFileSync(tmpPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf-8');
+  fs.renameSync(tmpPath, targetPath);
+}
 
 interface GammaGenerationRequest {
   inputText: string;
@@ -152,6 +161,16 @@ async function generateGamma(request: GammaGenerationRequest): Promise<GammaStat
   if (result.credits) {
     console.log(`💳 Credits used: ${result.credits.deducted} (${result.credits.remaining} remaining)`);
   }
+
+  writeGammaLatest({
+    generationId: result.generationId,
+    status: result.status,
+    gammaUrl: result.gammaUrl ?? null,
+    exportUrl: result.exportUrl ?? null,
+    format: request.format ?? null,
+    textMode: request.textMode,
+    updatedAt: new Date().toISOString(),
+  });
 
   return result;
 }
