@@ -273,7 +273,31 @@ except ImportError:
     QueenValidatedTrader = None
     ValidatedTrade = None
 
-# 📊 CostBasisTracker - FIFO cost basis + can_sell_profitably() check
+# �🌍 Queen Exchange Autonomy - Full routing control & restriction learning
+try:
+    from aureon_queen_exchange_autonomy import get_queen_autonomy, QueenExchangeAutonomy, RestrictionType
+    QUEEN_AUTONOMY_AVAILABLE = True
+except ImportError:
+    QUEEN_AUTONOMY_AVAILABLE = False
+    get_queen_autonomy = None
+    QueenExchangeAutonomy = None
+    RestrictionType = None
+
+# 👑🎯 Queen Trade Executor - FULL AUTONOMY over trade routing!
+try:
+    from aureon_queen_trade_executor import (
+        queen_execute_trade, queen_get_exchange_status, 
+        queen_preload_uk_restrictions, TradeResult
+    )
+    QUEEN_EXECUTOR_AVAILABLE = True
+except ImportError:
+    QUEEN_EXECUTOR_AVAILABLE = False
+    queen_execute_trade = None
+    queen_get_exchange_status = None
+    queen_preload_uk_restrictions = None
+    TradeResult = None
+
+# �📊 CostBasisTracker - FIFO cost basis + can_sell_profitably() check
 try:
     from cost_basis_tracker import CostBasisTracker
     COST_BASIS_TRACKER_AVAILABLE = True
@@ -2605,6 +2629,16 @@ class OrcaKillCycle:
         
         self.exchange = exchange
         self.fee_rate = self.fee_rates.get(exchange, 0.0025)
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 👑 QUEEN AUTONOMY - Preload UK restrictions so she doesn't fail first!
+        # ═══════════════════════════════════════════════════════════════════
+        if QUEEN_EXECUTOR_AVAILABLE and queen_preload_uk_restrictions:
+            try:
+                queen_preload_uk_restrictions()
+                _safe_print("👑 Queen Exchange Autonomy: ACTIVE (UK restrictions preloaded)")
+            except Exception as e:
+                _safe_print(f"⚠️ Queen Autonomy preload error: {e}")
         
         # ═══════════════════════════════════════════════════════════════════
         # 🧠 WIRE UP ALL INTELLIGENCE SYSTEMS!
