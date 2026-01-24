@@ -2539,6 +2539,27 @@ class OrcaKillCycle:
     🆕 MULTI-EXCHANGE MODE: Streams ENTIRE market on BOTH Alpaca AND Kraken!
     """
     
+    def _load_tracked_positions(self):
+        """Load tracked positions from disk for persistence."""
+        if os.path.exists(self.positions_file):
+            try:
+                with open(self.positions_file, 'r') as f:
+                    self.tracked_positions = json.load(f)
+                _safe_print(f"🦈 Orca: Loaded {len(self.tracked_positions)} tracked positions from disk")
+            except Exception as e:
+                _safe_print(f"⚠️ Failed to load tracked positions: {e}")
+                self.tracked_positions = {}
+        else:
+            self.tracked_positions = {}
+
+    def _save_tracked_positions(self):
+        """Save current tracked positions to disk."""
+        try:
+            with open(self.positions_file, 'w') as f:
+                json.dump(self.tracked_positions, f, indent=4)
+        except Exception as e:
+            _safe_print(f"⚠️ Failed to save tracked positions: {e}")
+
     def __init__(self, client=None, exchange='alpaca', quick_init=False):
         """
         Initialize OrcaKillCycle.
@@ -2818,6 +2839,8 @@ class OrcaKillCycle:
         
         # 13. Active positions with ORDER IDs and exact costs
         self.tracked_positions: Dict[str, dict] = {}  # symbol -> {order_id, entry_price, entry_qty, entry_cost, entry_fee, breakeven_price}
+        self.positions_file = "tracked_positions.json"
+        self._load_tracked_positions()
         
         # 14. Queen Validated Trader - 100% accuracy validation system
         self.queen_validator = None
@@ -5994,6 +6017,7 @@ class OrcaKillCycle:
         }
         
         self.tracked_positions[symbol] = tracking_data
+        self._save_tracked_positions()
         
         # Also record in cost basis tracker if available
         if self.cost_basis_tracker:
@@ -6165,6 +6189,12 @@ class OrcaKillCycle:
                 except Exception as e:
                     print(f"⚠️ Sell log error: {e}")
             
+            # 🦈 Position Removal & Save
+            if symbol in self.tracked_positions:
+                del self.tracked_positions[symbol]
+                self._save_tracked_positions()
+                print(f"   🗑️ UNTRACKED: {symbol} (Position closed)")
+
             # Print confirmation
             pnl_emoji = "✅" if net_pnl >= 0 else "❌"
             print(f"   {pnl_emoji} SELL EXECUTED | {exchange.upper()} | {symbol} | Qty: {fill_qty:.6f} | Price: ${fill_price:.4f} | P&L: ${net_pnl:+.4f} | OrderID: {order_id[:12]}...")

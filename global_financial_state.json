@@ -1,9 +1,9 @@
 {
-  "updated": "2026-01-20T23:33:53.962353",
+  "updated": "2026-01-24T14:48:23.203214",
   "last_snapshot": {
-    "timestamp": "2026-01-20T23:33:53.962310",
-    "crypto_fear_greed": 32,
-    "crypto_fg_classification": "Fear",
+    "timestamp": "2026-01-24T14:48:23.203187",
+    "crypto_fear_greed": 25,
+    "crypto_fg_classification": "Extreme Fear",
     "vix": 20.0,
     "vix_change": 0,
     "dxy": 100.0,
@@ -19,11 +19,11 @@
     "gold_change": 0,
     "oil": 75,
     "oil_change": 0,
-    "total_crypto_mcap": 3066653876413.6587,
-    "btc_dominance": 57.39498740034591,
-    "eur_usd": 1.1636607370394376,
-    "gbp_usd": 1.3416479730382422,
-    "usd_jpy": 158.051376,
+    "total_crypto_mcap": 3106096544379.216,
+    "btc_dominance": 57.48060158539919,
+    "eur_usd": 1.1783073614752408,
+    "gbp_usd": 1.3570325497827391,
+    "usd_jpy": 156.810429,
     "risk_on_off": "NEUTRAL",
     "market_regime": "NORMAL"
   }

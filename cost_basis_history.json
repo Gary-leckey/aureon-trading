@@ -1492,14 +1492,14 @@
       "exchange": "binance",
       "asset": "GUN",
       "quote": "USDC",
-      "avg_entry_price": 0.01601927716663668,
-      "total_quantity": 5.0,
-      "total_cost": 0.08009638583318339,
-      "total_fees": 4.83455,
-      "trade_count": 14,
+      "avg_entry_price": 0.0369961339385153,
+      "total_quantity": 58.0,
+      "total_cost": 2.1457757684338876,
+      "total_fees": 8.800799999999997,
+      "trade_count": 31,
       "first_trade": 1765657465533,
-      "last_trade": 1765918994070,
-      "synced_at": 1766709046.6799865
+      "last_trade": 1769264986552,
+      "synced_at": 1769266295.6550121
     },
     "ECUSD": {
       "exchange": "kraken",
@@ -1596,14 +1596,14 @@
       "exchange": "binance",
       "asset": "IO",
       "quote": "USDC",
-      "avg_entry_price": 0.173,
-      "total_quantity": 0.03999999999999915,
-      "total_cost": 0.006919999999999852,
-      "total_fees": 0.039026,
-      "trade_count": 1,
+      "avg_entry_price": 0.169002457002457,
+      "total_quantity": 0.12000000000000455,
+      "total_cost": 0.020280294840295608,
+      "total_fees": 0.100852,
+      "trade_count": 3,
       "first_trade": 1765782844408,
-      "last_trade": 1765788455002,
-      "synced_at": 1766709042.8825889
+      "last_trade": 1769264985255,
+      "synced_at": 1769266295.1769812
     },
     "FORMUSDC": {
       "exchange": "binance",
@@ -1762,17 +1762,15 @@
       "synced_at": 1766081919.5100524
     },
     "ETHUSD": {
-      "exchange": "kraken",
-      "asset": "ETH",
+      "exchange": "alpaca",
+      "asset": "ETHUSD",
       "quote": "USD",
-      "avg_entry_price": 2982.04,
-      "total_quantity": 0.00402379,
-      "total_cost": 11.9991027316,
-      "total_fees": 0.048,
+      "avg_entry_price": 3106.9,
+      "total_quantity": 0.000401479,
+      "total_cost": 1.2473551051,
+      "total_fees": 0,
       "trade_count": 1,
-      "first_trade": 1767180066458,
-      "last_trade": 1767180066458,
-      "synced_at": 1767362716.8002384
+      "synced_at": 1769266296.9565659
     },
     "2USD": {
       "exchange": "kraken",
@@ -2087,12 +2085,12 @@
       "exchange": "alpaca",
       "asset": "BTCUSD",
       "quote": "USD",
-      "avg_entry_price": 88750.49,
-      "total_quantity": 0.000134953,
-      "total_cost": 11.97714487697,
+      "avg_entry_price": 90484.23,
+      "total_quantity": 1.3786e-05,
+      "total_cost": 1.2474155947799999,
       "total_fees": 0,
       "trade_count": 1,
-      "synced_at": 1767362717.1152601
+      "synced_at": 1769266296.95655
     },
     "CYBERUSDC": {
       "exchange": "binance",
@@ -2260,8 +2258,143 @@
       "first_trade": 1767350964715,
       "last_trade": 1767350964715,
       "synced_at": 1767362716.80012
+    },
+    "ZROUSDC": {
+      "exchange": "binance",
+      "asset": "ZRO",
+      "quote": "USDC",
+      "avg_entry_price": 2.3144363406408095,
+      "total_quantity": 0.21999999999999886,
+      "total_cost": 0.5091759949409754,
+      "total_fees": 0.022534000000000002,
+      "trade_count": 10,
+      "first_trade": 1769146807623,
+      "last_trade": 1769264985904,
+      "synced_at": 1769266295.404788
+    },
+    "SENTUSDC": {
+      "exchange": "binance",
+      "asset": "SENT",
+      "quote": "USDC",
+      "avg_entry_price": 0.030418787074993976,
+      "total_quantity": 4147.0,
+      "total_cost": 126.14671000000001,
+      "total_fees": 3.9396499999999985,
+      "trade_count": 23,
+      "first_trade": 1769107575649,
+      "last_trade": 1769146902218,
+      "synced_at": 1769266296.2935767
+    },
+    "TRUSTUSD": {
+      "exchange": "kraken",
+      "asset": "TRUST",
+      "quote": "USD",
+      "avg_entry_price": 0.10869,
+      "total_quantity": 30.0,
+      "total_cost": 3.2607,
+      "total_fees": 0.01304,
+      "trade_count": 1,
+      "first_trade": 1769190552569,
+      "last_trade": 1769190552569,
+      "synced_at": 1769266296.4925687
+    },
+    "INUSD": {
+      "exchange": "kraken",
+      "asset": "IN",
+      "quote": "USD",
+      "avg_entry_price": 0.08032666666666667,
+      "total_quantity": 210.0,
+      "total_cost": 16.8686,
+      "total_fees": 0.06748,
+      "trade_count": 3,
+      "first_trade": 1769146816667,
+      "last_trade": 1769190552188,
+      "synced_at": 1769266296.4926956
+    },
+    "ACUUSD": {
+      "exchange": "kraken",
+      "asset": "ACU",
+      "quote": "USD",
+      "avg_entry_price": 0.16310413494497836,
+      "total_quantity": 40.110569999999996,
+      "total_cost": 6.542199822,
+      "total_fees": 0.02617,
+      "trade_count": 2,
+      "first_trade": 1769146734273,
+      "last_trade": 1769146815642,
+      "synced_at": 1769266296.4927237
+    },
+    "ROLLUSD": {
+      "exchange": "kraken",
+      "asset": "ROLL",
+      "quote": "USD",
+      "avg_entry_price": 0.13165,
+      "total_quantity": 60.0,
+      "total_cost": 7.898999999999999,
+      "total_fees": 0.0316,
+      "trade_count": 2,
+      "first_trade": 1769146735306,
+      "last_trade": 1769146739896,
+      "synced_at": 1769266296.4928582
+    },
+    "ASRRUSD": {
+      "exchange": "kraken",
+      "asset": "ASRR",
+      "quote": "USD",
+      "avg_entry_price": 0.01192,
+      "total_quantity": 2181.20799,
+      "total_cost": 25.999999240799998,
+      "total_fees": 0.10400000000000004,
+      "trade_count": 13,
+      "first_trade": 1769112950160,
+      "last_trade": 1769113172156,
+      "synced_at": 1769266296.4928987
+    },
+    "BATUSD": {
+      "exchange": "alpaca",
+      "asset": "BATUSD",
+      "quote": "USD",
+      "avg_entry_price": 0.192700336,
+      "total_quantity": 21.965786822,
+      "total_cost": 4.232814501103772,
+      "total_fees": 0,
+      "trade_count": 1,
+      "synced_at": 1769266296.9564824
+    },
+    "PEPEUSD": {
+      "exchange": "alpaca",
+      "asset": "PEPEUSD",
+      "quote": "USD",
+      "avg_entry_price": 5.09e-06,
+      "total_quantity": 1e-09,
+      "total_cost": 5.090000000000001e-15,
+      "total_fees": 0,
+      "trade_count": 1,
+      "synced_at": 1769266296.9565735
+    },
+    "SHIBUSD": {
+      "exchange": "alpaca",
+      "asset": "SHIBUSD",
+      "quote": "USD",
+      "avg_entry_price": 7.85e-06,
+      "total_quantity": 1e-09,
+      "total_cost": 7.85e-15,
+      "total_fees": 0,
+      "trade_count": 1,
+      "synced_at": 1769266296.956581
+    },
+    "TRUMPUSD": {
+      "exchange": "alpaca",
+      "asset": "TRUMPUSD",
+      "quote": "USD",
+      "avg_entry_price": 4.936,
+      "total_quantity": 0.012888362,
+      "total_cost": 0.063616954832,
+      "total_fees": 0,
+      "trade_count": 1,
+      "synced_at": 1769266296.956587
     }
   },
-  "last_sync": 1768651933.3698535,
-  "updated_at": "2026-01-17T12:12:13.621544"
+  "last_sync": 1769266296.2937846,
+  "updated_at": "2026-01-24T14:51:36.956595"
 }
