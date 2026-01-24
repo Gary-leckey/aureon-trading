@@ -18,7 +18,8 @@ import os
 import time
 import json
 import asyncio
-from datetime import datetime
+import subprocess
+from datetime import datetime, timedelta
 from dataclasses import dataclass, field, asdict
 from typing import Optional, List, Dict, Any
 import math
@@ -66,6 +67,7 @@ class SystemState:
     stargate_active: bool = False
     quantum_mirror_active: bool = False
     timeline_validator_active: bool = False
+    last_gamma_sync: Optional[str] = None
 
 class AureonFullOrchestrator:
     """
@@ -482,13 +484,40 @@ class AureonFullOrchestrator:
                 print("   [DRY-RUN] Would sell here")
         
         return pnl
-    
+
+    def _trigger_gamma_sync(self):
+        """Triggers the gammaSync.ts script if enough time has passed."""
+        now = datetime.now()
+        sync_needed = False
+        
+        if self.state.last_gamma_sync:
+            last_sync_time = datetime.fromisoformat(self.state.last_gamma_sync)
+            if (now - last_sync_time) > timedelta(minutes=30):
+                sync_needed = True
+        else:
+            # First time running
+            sync_needed = True
+
+        if sync_needed:
+            print("\n🔄 Triggering Gamma.io Sync...")
+            try:
+                # Assumes npx and ts-node are in the environment PATH
+                command = ["npx", "ts-node", "scripts/gammaSync.ts"]
+                subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                self.state.last_gamma_sync = now.isoformat()
+                print("   ✅ Gamma sync process started in background.")
+            except Exception as e:
+                print(f"   ❌ Failed to start Gamma sync: {e}")
+
     def run_cycle(self, live: bool = False, target_profit: float = 1.0):
         """Run one complete orchestration cycle"""
         print("\n" + "="*70)
         print(f"🌍 AUREON ORCHESTRATOR CYCLE - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("="*70)
         
+        # 0. Trigger background syncs
+        self._trigger_gamma_sync()
+
         # 1. Check active position first
         pnl = self.check_active_position(target_profit=target_profit, live=live)
         
