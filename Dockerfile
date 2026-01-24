@@ -35,5 +35,5 @@ RUN mkdir -p /app/state /app/logs
 # Expose HTTP port for DO App Platform (only for web service)
 EXPOSE 8080
 
-# Default command - will be overridden by app.yaml run_command
-CMD ["python", "-c", "print('Aureon container ready - use app.yaml run_command')"]
+# Default command for web service (worker overrides via app.yaml run_command)
+CMD ["python", "-u", "aureon_command_center_ui.py"]
