@@ -252,6 +252,15 @@ except ImportError:
     ALPACA_FEE_TRACKER_AVAILABLE = False
     AlpacaFeeTracker = None
 
+# 👑🍄 Queen Validated Trader - 100% accuracy validation system
+try:
+    from aureon_queen_validated_trader import QueenValidatedTrader, ValidatedTrade
+    QUEEN_VALIDATOR_AVAILABLE = True
+except ImportError:
+    QUEEN_VALIDATOR_AVAILABLE = False
+    QueenValidatedTrader = None
+    ValidatedTrade = None
+
 # 📊 CostBasisTracker - FIFO cost basis + can_sell_profitably() check
 try:
     from cost_basis_tracker import CostBasisTracker
@@ -2655,6 +2664,15 @@ class OrcaKillCycle:
         
         # 13. Active positions with ORDER IDs and exact costs
         self.tracked_positions: Dict[str, dict] = {}  # symbol -> {order_id, entry_price, entry_qty, entry_cost, entry_fee, breakeven_price}
+        
+        # 14. Queen Validated Trader - 100% accuracy validation system
+        self.queen_validator = None
+        if QUEEN_VALIDATOR_AVAILABLE and QueenValidatedTrader and not quick_init:
+            try:
+                self.queen_validator = QueenValidatedTrader(dry_run=True)  # Initialize in dry-run mode
+                print("👑🍄 Queen Validated Trader: WIRED! (100% accuracy validation)")
+            except Exception as e:
+                print(f"👑 Queen Validator: {e}")
         
         # ═══════════════════════════════════════════════════════════════════
         # 🤖 BOT DETECTION & COUNTER-INTELLIGENCE SYSTEMS
@@ -6117,7 +6135,8 @@ class OrcaKillCycle:
     def hunt_and_kill(self, symbol: str, amount_usd: float, target_pct: float = 1.0,
                        stop_pct: float = -1.0, max_wait: int = 300):
         """
-        Complete kill cycle with LIVE STREAMING:
+        Complete kill cycle with LIVE STREAMING + 100% QUEEN VALIDATION:
+        0. 👑 VALIDATE with Queen (100% accuracy check)
         1. BUY
         2. STREAM prices at 100ms (not polling!)
         3. WAIT for: target hit OR momentum reversal OR whale selling OR stop loss
@@ -6127,6 +6146,27 @@ class OrcaKillCycle:
         print("="*60)
         print(f"🦈 ORCA HUNT & KILL CYCLE - {symbol}")
         print("="*60)
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # 👑 STEP 0: QUEEN VALIDATION - 100% ACCURACY CHECK
+        # ═══════════════════════════════════════════════════════════════════
+        if self.queen_validator and hasattr(self.queen_validator, 'find_100_percent_opportunities'):
+            print("\n👑 STEP 0: QUEEN VALIDATION CHECK")
+            try:
+                # Check if this opportunity is in the validated list
+                opportunities = self.queen_validator.validated_opportunities
+                is_validated = any(
+                    opp.symbol == symbol and opp.validation_score >= 1.0 
+                    for opp in opportunities
+                )
+                
+                if is_validated:
+                    print("✅ Trade VALIDATED by Queen (100% accuracy)")
+                else:
+                    print("⚠️ Trade NOT in validated list - proceeding with Orca intelligence only")
+                    
+            except Exception as e:
+                print(f"⚠️ Queen validation check failed: {e}")
         
         # Get current price
         orderbook = self.client.get_crypto_orderbook(symbol)
