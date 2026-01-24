@@ -409,18 +409,102 @@ class CostBasisTracker:
         
         return total
     
-    def get_cost_basis(self, symbol: str, exchange: str = None) -> Optional[Dict[str, Any]]:
-        """Get cost basis for a symbol, optionally scoped to an exchange."""
+    def _find_position(self, symbol: str, exchange: str = None) -> Optional[tuple[Dict[str, Any], str]]:
+        """
+        🔍 ENHANCED: 5-strategy symbol matching with quote currency swapping.
+        
+        Returns: (position_dict, matched_key) if found, else (None, None)
+        
+        Strategies:
+        1. Direct match with exchange prefix (binance:SHELL/USDT)
+        2. Match without exchange prefix (SHELL/USDT)
+        3. Normalized format without slashes (binance:SHELLUSDT, SHELLUSDT)
+        4. Quote currency swapping (SHELL/USDT → SHELLUSDC, SHELL/USD)
+        5. Deep base asset match (SHELL → any SHELL-based pair)
+        """
+        pos = None
+        matched_key = None
+        
+        # Strategy 1: Direct match with exchange context
         if exchange:
             position_key = f"{exchange.lower()}:{symbol}"
-            return self.positions.get(position_key)
+            pos = self.positions.get(position_key)
+            if pos:
+                return (pos, position_key)
         
-        # Fallback for old format or general queries
-        return self.positions.get(symbol)
+        # Strategy 2: Try without exchange prefix
+        pos = self.positions.get(symbol)
+        if pos:
+            return (pos, symbol)
+        
+        # Strategy 3: Try normalized (no slashes)
+        norm_symbol = symbol.replace('/', '')
+        if exchange:
+            norm_key = f"{exchange.lower()}:{norm_symbol}"
+            pos = self.positions.get(norm_key)
+            if pos:
+                return (pos, norm_key)
+        
+        pos = self.positions.get(norm_symbol)
+        if pos:
+            return (pos, norm_symbol)
+        
+        # Strategy 4: Try swapping quote currencies (USDT ↔ USDC ↔ USD)
+        # Extract base asset
+        if '/' in symbol:
+            base = symbol.split('/')[0]
+        else:
+            base = symbol.rstrip('USDT').rstrip('USDC').rstrip('USD').rstrip('EUR').rstrip('GBP')
+        
+        # Try all quote currency combinations
+        for quote_in in ['USDT', 'USDC', 'USD', 'EUR', 'GBP']:
+            if symbol.endswith(quote_in) or symbol.endswith(f'/{quote_in}'):
+                # Try other quotes
+                for quote_out in ['USDT', 'USDC', 'USD', 'ZUSD', 'USDC.P']:
+                    # Try with slash and without
+                    test_symbols = [
+                        f"{base}/{quote_out}",
+                        f"{base}{quote_out}",
+                    ]
+                    
+                    for test_symbol in test_symbols:
+                        if exchange:
+                            test_key = f"{exchange.lower()}:{test_symbol}"
+                            pos = self.positions.get(test_key)
+                            if pos:
+                                # Debug message
+                                # print(f"   ✓ Matched via quote swap: {symbol} → {test_key}")
+                                return (pos, test_key)
+                        
+                        pos = self.positions.get(test_symbol)
+                        if pos:
+                            # Debug message
+                            # print(f"   ✓ Matched via quote swap: {symbol} → {test_symbol}")
+                            return (pos, test_symbol)
+        
+        # Strategy 5: Deep base asset match
+        base_asset = symbol.split('/')[0] if '/' in symbol else symbol
+        # Remove common quote assets to find base
+        for quote in ['USD', 'USDT', 'USDC', 'EUR', 'GBP', 'BTC', 'ETH']:
+            if base_asset.endswith(quote) and len(base_asset) > len(quote):
+                base_asset = base_asset[:-len(quote)]
+                break
+        
+        for s, p in self.positions.items():
+            stored_symbol = p.get('symbol', s)
+            if stored_symbol.startswith(base_asset):
+                return (p, s)
+        
+        return (None, None)
+    
+    def get_cost_basis(self, symbol: str, exchange: str = None) -> Optional[Dict[str, Any]]:
+        """Get cost basis for a symbol, optionally scoped to an exchange."""
+        pos, matched_key = self._find_position(symbol, exchange)
+        return pos
 
     def get_entry_price(self, symbol: str, exchange: str = None) -> Optional[float]:
-        """Get average entry price for a symbol."""
-        pos = self.get_cost_basis(symbol, exchange)
+        """Get average entry price for a symbol using 5-strategy matching."""
+        pos, matched_key = self._find_position(symbol, exchange)
         if pos:
             return pos.get('avg_entry_price')
         return None
@@ -533,96 +617,8 @@ class CostBasisTracker:
             - potential_loss: float (if negative)
             - recommendation: str
         """
-        # 🔍 ENHANCED SYMBOL MATCHING with multiple fallback strategies
-        pos = None
-        matched_key = None
-        
-        # Strategy 1: Direct match with exchange context
-        if exchange:
-            position_key = f"{exchange.lower()}:{symbol}"
-            pos = self.positions.get(position_key)
-            if pos:
-                matched_key = position_key
-        
-        # Strategy 2: Try without exchange prefix
-        if not pos:
-            pos = self.positions.get(symbol)
-            if pos:
-                matched_key = symbol
-        
-        # Strategy 3: Try normalized (no slashes)
-        if not pos:
-            norm_symbol = symbol.replace('/', '')
-            if exchange:
-                norm_key = f"{exchange.lower()}:{norm_symbol}"
-                pos = self.positions.get(norm_key)
-                if pos:
-                    matched_key = norm_key
-            
-            if not pos:
-                pos = self.positions.get(norm_symbol)
-                if pos:
-                    matched_key = norm_symbol
-        
-        # Strategy 4: Try swapping quote currencies (USDT ↔ USDC ↔ USD)
-        if not pos:
-            # Extract base asset
-            base_asset = symbol.split('/')[0] if '/' in symbol else symbol.rstrip('USDT').rstrip('USDC').rstrip('USD')
-            
-            # Try all quote currency combinations
-            for quote_in in ['USDT', 'USDC', 'USD', 'EUR', 'GBP']:
-                if symbol.endswith(quote_in) or symbol.endswith(f'/{quote_in}'):
-                    # Remove current quote
-                    if '/' in symbol:
-                        base = symbol.split('/')[0]
-                    else:
-                        base = symbol.rstrip(quote_in)
-                    
-                    # Try other quotes
-                    for quote_out in ['USDT', 'USDC', 'USD', 'ZUSD', 'USDC.P']:
-                        # Try with slash
-                        test_symbols = [
-                            f"{base}/{quote_out}",
-                            f"{base}{quote_out}",
-                        ]
-                        
-                        for test_symbol in test_symbols:
-                            if exchange:
-                                test_key = f"{exchange.lower()}:{test_symbol}"
-                                pos = self.positions.get(test_key)
-                                if pos:
-                                    matched_key = test_key
-                                    logger.debug(f"   ✓ Matched via quote swap: {symbol} → {test_key}")
-                                    break
-                            
-                            if not pos:
-                                pos = self.positions.get(test_symbol)
-                                if pos:
-                                    matched_key = test_symbol
-                                    logger.debug(f"   ✓ Matched via quote swap: {symbol} → {test_symbol}")
-                                    break
-                        
-                        if pos:
-                            break
-                    if pos:
-                        break
-        
-        # Strategy 5: Deep base asset match
-        if not pos:
-            base_asset = symbol.split('/')[0] if '/' in symbol else symbol
-            # Remove common quote assets to find base
-            for quote in ['USD', 'USDT', 'USDC', 'EUR', 'GBP', 'BTC', 'ETH']:
-                if base_asset.endswith(quote) and len(base_asset) > len(quote):
-                    base_asset = base_asset[:-len(quote)]
-                    break
-            
-            for s, p in self.positions.items():
-                # Check new and old formats
-                stored_symbol = p.get('symbol', s)
-                if stored_symbol.startswith(base_asset):
-                    pos = p
-                    matched_key = s
-                    break
+        # 🔍 Use the centralized 5-strategy matching logic
+        pos, matched_key = self._find_position(symbol, exchange)
         
         # 🚨 NO POSITION FOUND - Critical debugging info
         if not pos:
