@@ -800,10 +800,6 @@ class AureonUnifiedDashboard:
                     })
                     
                     self.last_update = time.time()
-                        "type": "system_update",
-                        "data": systems
-                    })
-                    self.last_update = time.time()
             
             except Exception as e:
                 logger.error(f"Metrics stream error: {e}")
