@@ -63,6 +63,19 @@ services:
   - key: ALPACA_DRY_RUN
     scope: RUN_TIME
     value: "false"
+  # 💼 CAPITAL.COM (CFD Trading)
+  - key: CAPITAL_API_KEY
+    scope: RUN_TIME
+    value: "place_your_key_here"
+  - key: CAPITAL_IDENTIFIER
+    scope: RUN_TIME
+    value: "place_your_email_here"
+  - key: CAPITAL_PASSWORD
+    scope: RUN_TIME
+    value: "place_your_password_here"
+  - key: CAPITAL_DEMO
+    scope: RUN_TIME
+    value: "false"
 
 # 👑 The Queen's Autonomous Engine 👑
 # This is the core brain, running all 9 autonomous loops.
