@@ -85,6 +85,10 @@ class RealPortfolioSnapshot:
     dream_target: float = 1_000_000_000.0  # $1 BILLION
     dream_progress_pct: float = 0.0
     
+    # Treasury Tracking (Avalanche Harvester)
+    treasury_usd: float = 0.0
+    harvest_reserve_breakdown: Dict[str, float] = field(default_factory=dict)
+    
     def to_dict(self) -> Dict:
         return {
             'timestamp': self.timestamp,
@@ -93,6 +97,8 @@ class RealPortfolioSnapshot:
             'kraken_usd': round(self.kraken_usd, 2),
             'binance_usd': round(self.binance_usd, 2),
             'capital_usd': round(self.capital_usd, 2),
+            'treasury_usd': round(self.treasury_usd, 2),
+            'harvest_reserves': self.harvest_reserve_breakdown,
             'starting_capital': self.starting_capital,
             'realized_pnl': round(self.realized_pnl, 2),
             'unrealized_pnl': round(self.unrealized_pnl, 2),
@@ -335,6 +341,21 @@ class RealPortfolioTracker:
                 'losing_trades': 0
             }
     
+    def _get_treasury_state(self) -> Dict:
+        """Get Avalanche Treasury state."""
+        try:
+            treasury_file = Path("state/avalanche_treasury.json")
+            if treasury_file.exists():
+                with open(treasury_file, 'r') as f:
+                    return json.load(f)
+        except Exception as e:
+            logger.debug(f"Could not load treasury state: {e}")
+        
+        return {
+            'total_usd': 0.0,
+            'reserves': {}
+        }
+
     def get_real_portfolio(self) -> RealPortfolioSnapshot:
         """
         Get REAL portfolio snapshot from ALL exchanges.
@@ -358,6 +379,10 @@ class RealPortfolioTracker:
         # Get trade stats
         trade_stats = self._get_trade_stats()
         
+        # Get treasury state
+        treasury = self._get_treasury_state()
+        treasury_usd = float(treasury.get('total_usd', 0.0))
+        
         # Calculate P&L
         realized_pnl = total_usd - self.starting_capital
         
@@ -375,7 +400,9 @@ class RealPortfolioTracker:
             total_trades=trade_stats['total_trades'],
             winning_trades=trade_stats['winning_trades'],
             losing_trades=trade_stats['losing_trades'],
-            dream_progress_pct=(total_usd / 1_000_000_000.0) * 100 if total_usd > 0 else 0
+            dream_progress_pct=(total_usd / 1_000_000_000.0) * 100 if total_usd > 0 else 0,
+            treasury_usd=treasury_usd,
+            harvest_reserve_breakdown=treasury.get('reserves', {})
         )
         
         # Update history
@@ -409,6 +436,7 @@ class RealPortfolioTracker:
             'pnl_pct': f"{((snapshot.total_usd - snapshot.starting_capital) / snapshot.starting_capital * 100):+.1f}%",
             'total_trades': snapshot.total_trades,
             'dream_progress': f"{snapshot.dream_progress_pct:.10f}%",
+            'treasury': f"${snapshot.treasury_usd:.2f}",
             'exchanges': {
                 'alpaca': f"${snapshot.alpaca_usd:.2f}",
                 'kraken': f"${snapshot.kraken_usd:.2f}",
@@ -429,6 +457,7 @@ class RealPortfolioTracker:
             f"  Status: {summary['status_emoji']} {summary['status']}",
             f"  ",
             f"  💵 TOTAL VALUE: {summary['total_usd']}",
+            f"  💎 TREASURY: {summary['treasury']}",
             f"  📊 Started With: {summary['starting_capital']}",
             f"  📈 P&L: {summary['pnl']} ({summary['pnl_pct']})",
             f"  ",

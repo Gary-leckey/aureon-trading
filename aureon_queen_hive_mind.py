@@ -228,9 +228,8 @@ try:
         AutonomousAction,
         AutonomousDecision
     )
-    # 🚨 TEMPORARILY DISABLED TO PREVENT INFINITE LOOP
-    AUTONOMOUS_CONTROL_AVAILABLE = False
-    # AUTONOMOUS_CONTROL_AVAILABLE = True
+    # 🚨 Guarded enable to prevent unintended infinite loops
+    AUTONOMOUS_CONTROL_AVAILABLE = os.getenv("AUREON_ENABLE_AUTONOMOUS_CONTROL", "0") == "1"
 except ImportError:
     QueenAutonomousControl = None
     create_queen_autonomous_control = None

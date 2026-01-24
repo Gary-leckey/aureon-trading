@@ -3,9 +3,22 @@
 🦈⚔️ ORCA LAUNCHER - START EVERYTHING AT ONCE ⚔️🦈
 ═══════════════════════════════════════════════════════════════════════════════
 
-Launches BOTH:
-  1. 🌐 Orca Command Center (Web Dashboard) - http://localhost:8888
-  2. 🔪 Orca Kill Cycle (Autonomous Trading)
+Launches ALL systems in parallel:
+  1. 🌐 PARALLEL ORCHESTRATOR - All Intelligence Systems
+  2. 🌐 Orca Command Center (Web Dashboard) - http://localhost:8888
+  3. 🔪 Orca Kill Cycle (Autonomous Trading)
+
+The Parallel Orchestrator starts FIRST, ensuring:
+  • ThoughtBus (Central Nervous System)
+  • Queen Hive Mind (Central Consciousness)
+  • Probability Nexus (9-Factor Validation)
+  • Global Wave Scanner (A-Z Market Coverage)
+  • Miner Brain (Critical Thinking)
+  • Mycelium Network (Distributed Intelligence)
+  • Timeline Oracle (7-Day Predictions)
+  • Quantum Mirror (Branch Coherence)
+  • Whale Sonar (Subsystem Health)
+  • Avalanche Harvester (Profit Scraping)
 
 Just run: python orca_launcher.py
 
@@ -37,6 +50,10 @@ if sys.platform == 'win32':
         pass
 
 
+# Global orchestrator reference
+_orchestrator = None
+
+
 def print_banner():
     """Print the epic launch banner."""
     print("""
@@ -44,15 +61,20 @@ def print_banner():
 ║                                                                               ║
 ║   🦈⚔️  ORCA UNIFIED LAUNCHER  ⚔️🦈                                            ║
 ║                                                                               ║
-║   Starting ALL systems:                                                       ║
+║   Starting ALL systems in parallel:                                           ║
 ║                                                                               ║
-║   1. 🌐 COMMAND CENTER (Web Dashboard)                                        ║
+║   PHASE 1: 🌐 PARALLEL ORCHESTRATOR                                           ║
+║      → ThoughtBus, Queen, Validators, Scanners                               ║
+║      → Miner Brain, Mycelium, Timeline Oracle                                ║
+║      → All intelligence feeds warming up                                      ║
+║                                                                               ║
+║   PHASE 2: 🌐 COMMAND CENTER (Web Dashboard)                                  ║
 ║      → http://localhost:8888                                                  ║
-║      → Real-time positions, kills, predator detection                         ║
+║      → Real-time positions, kills, intelligence                              ║
 ║                                                                               ║
-║   2. 🔪 KILL CYCLE (Autonomous Trading)                                       ║
+║   PHASE 3: 🔪 KILL CYCLE (Autonomous Trading)                                 ║
 ║      → War Room terminal display                                              ║
-║      → Multi-exchange hunting                                                 ║
+║      → Multi-exchange hunting with full intel                                ║
 ║                                                                               ║
 ║   Press Ctrl+C to stop all systems                                            ║
 ║                                                                               ║
@@ -60,8 +82,57 @@ def print_banner():
     """)
 
 
+def start_parallel_orchestrator():
+    """
+    Start the Parallel Orchestrator to initialize all intelligence systems.
+    This MUST run before the Kill Cycle to ensure all feeds are warm.
+    """
+    global _orchestrator
+    
+    print("\n" + "🌐" * 30)
+    print("  PHASE 1: PARALLEL ORCHESTRATOR - INITIALIZING ALL SYSTEMS")
+    print("🌐" * 30 + "\n")
+    
+    try:
+        from aureon_parallel_orchestrator import get_orchestrator, start_all_parallel_systems
+        
+        # Get the orchestrator singleton
+        _orchestrator = get_orchestrator()
+        
+        # Start all systems with a 15-second warm-up
+        results = start_all_parallel_systems(skip_warmup=False)
+        
+        # Check if critical systems are online
+        if _orchestrator.is_ready():
+            print("\n✅ PARALLEL ORCHESTRATOR: ALL CRITICAL SYSTEMS ONLINE")
+            
+            # Count successes
+            success_count = sum(1 for v in results.values() if v)
+            total = len(results)
+            print(f"   {success_count}/{total} systems initialized successfully")
+            
+            return True
+        else:
+            print("\n⚠️ PARALLEL ORCHESTRATOR: Some systems failed to start")
+            print("   Continuing anyway - Orca will use available systems")
+            return True
+            
+    except ImportError as e:
+        print(f"⚠️ Parallel Orchestrator not available: {e}")
+        print("   Continuing without parallel intelligence - Orca will initialize systems itself")
+        return False
+    except Exception as e:
+        print(f"❌ Error starting Parallel Orchestrator: {e}")
+        print("   Continuing without parallel intelligence")
+        return False
+
+
 def run_command_center():
     """Run the Command Center in a subprocess."""
+    print("\n" + "🌐" * 30)
+    print("  PHASE 2: COMMAND CENTER - WEB DASHBOARD")
+    print("🌐" * 30 + "\n")
+    
     print("🌐 Starting Command Center...")
     
     # Get the Python executable
@@ -97,6 +168,10 @@ def run_command_center():
 
 def run_kill_cycle():
     """Run the Kill Cycle in a subprocess."""
+    print("\n" + "🔪" * 30)
+    print("  PHASE 3: KILL CYCLE - AUTONOMOUS TRADING")
+    print("🔪" * 30 + "\n")
+    
     print("🔪 Starting Kill Cycle...")
     
     # Get the Python executable
@@ -139,16 +214,21 @@ def open_browser():
 
 def main():
     """Launch everything!"""
+    global _orchestrator
+    
     print_banner()
     
     processes = []
     
     try:
-        # 1. Start Command Center first (background)
+        # PHASE 1: Start Parallel Orchestrator FIRST
+        orchestrator_ready = start_parallel_orchestrator()
+        
+        # PHASE 2: Start Command Center (background)
         center_process = run_command_center()
         processes.append(('Command Center', center_process))
         
-        # 2. Open browser in background thread
+        # Open browser in background thread
         browser_thread = threading.Thread(target=open_browser, daemon=True)
         browser_thread.start()
         
@@ -157,9 +237,11 @@ def main():
         
         print("\n" + "="*80)
         print("🌐 Command Center running at: http://localhost:8888")
+        if orchestrator_ready:
+            print("🧠 Parallel Intelligence: ACTIVE (All systems feeding Queen)")
         print("="*80 + "\n")
         
-        # 3. Start Kill Cycle (this will take over the terminal)
+        # PHASE 3: Start Kill Cycle (this will take over the terminal)
         kill_process = run_kill_cycle()
         processes.append(('Kill Cycle', kill_process))
         
@@ -170,6 +252,14 @@ def main():
         print("\n\n🛑 Stopping all Orca systems...")
         
     finally:
+        # Shutdown orchestrator first
+        if _orchestrator:
+            print("   Stopping Parallel Orchestrator...")
+            try:
+                _orchestrator.shutdown()
+            except Exception:
+                pass
+        
         # Clean up all processes
         for name, proc in processes:
             if proc and proc.poll() is None:

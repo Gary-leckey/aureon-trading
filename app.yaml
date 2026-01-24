@@ -44,3 +44,63 @@ services:
   - key: ALPACA_SECRET_KEY
     scope: RUN_TIME
     value: "place_your_secret_here"
+  - key: AUREON_REDIS_URL
+    scope: RUN_TIME
+    value: ${db.REDIS_URL}
+  - key: AUREON_ENABLE_AUTONOMOUS_CONTROL
+    scope: RUN_TIME
+    value: "1"
+
+# 👑 The Queen's Autonomous Engine 👑
+# This is the core brain, running all 9 autonomous loops.
+- name: aureon-autonomous-engine
+  dockerfile_path: Dockerfile
+  source_dir: /
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: RA-CONSULTING/aureon-trading
+  # This is a worker, not a web service. It runs continuously.
+  instance_count: 1
+  instance_size_slug: professional-xs
+  run_command: python aureon_autonomous_worker.py
+  envs:
+  - key: PYTHONUNBUFFERED
+    scope: RUN_AND_BUILD_TIME
+    value: "1"
+  - key: AUREON_STATE_DIR
+    scope: RUN_TIME
+    value: /app/state
+  # ⚠️ REPLACE THESE WITH YOUR API KEYS ⚠️
+  - key: KRAKEN_API_KEY
+    scope: RUN_TIME
+    value: "place_your_key_here"
+  - key: KRAKEN_API_SECRET
+    scope: RUN_TIME
+    value: "place_your_secret_here"
+  - key: BINANCE_API_KEY
+    scope: RUN_TIME
+    value: "place_your_key_here"
+  - key: BINANCE_API_SECRET
+    scope: RUN_TIME
+    value: "place_your_secret_here"
+  - key: ALPACA_API_KEY
+    scope: RUN_TIME
+    value: "place_your_key_here"
+  - key: ALPACA_SECRET_KEY
+    scope: RUN_TIME
+    value: "place_your_secret_here"
+  - key: AUREON_REDIS_URL
+    scope: RUN_TIME
+    value: ${db.REDIS_URL}
+  - key: AUREON_ENABLE_AUTONOMOUS_CONTROL
+    scope: RUN_TIME
+    value: "1"
+
+# 🧠 Centralized Brain/Nervous System 🧠
+# Redis is used for the ThoughtBus Pub/Sub to connect all services.
+databases:
+- name: db
+  engine: REDIS
+  production: true
+  version: "7"

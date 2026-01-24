@@ -77,6 +77,18 @@ import asyncio
 from typing import Dict, Optional, List, Tuple, Any
 from dataclasses import dataclass, field
 from datetime import datetime
+try:
+    from aureon_avalanche_harvester import AvalancheHarvester
+except ImportError:
+    AvalancheHarvester = None
+
+try:
+    from aureon_parallel_orchestrator import get_orchestrator, ParallelOrchestrator
+    PARALLEL_ORCHESTRATOR_AVAILABLE = True
+except ImportError:
+    get_orchestrator = None
+    ParallelOrchestrator = None
+    PARALLEL_ORCHESTRATOR_AVAILABLE = False
 
 # 👑 AWAKEN THE QUEEN 👑
 try:
@@ -932,6 +944,26 @@ class WarRoomDisplay:
             'risk_level': 'normal'
         }
         
+        # 🌐 Parallel Intelligence Status
+        self.parallel_intel = {
+            'orchestrator_ready': False,
+            'systems_online': 0,
+            'systems_total': 10,
+            'last_update': None,
+            'feeds': {
+                'thought_bus': {'status': '⬜', 'thoughts': 0},
+                'queen': {'status': '⬜', 'state': 'unknown'},
+                'probability_nexus': {'status': '⬜', 'win_rate': 0.0},
+                'global_wave_scanner': {'status': '⬜', 'opportunities': 0},
+                'miner_brain': {'status': '⬜', 'analyses': 0},
+                'mycelium': {'status': '⬜', 'signal': 'neutral'},
+                'timeline_oracle': {'status': '⬜', 'predictions': 0},
+                'quantum_mirror': {'status': '⬜', 'coherence': 0.0},
+                'whale_sonar': {'status': '⬜', 'whales': 0},
+                'avalanche': {'status': '⬜', 'treasury': 0.0},
+            }
+        }
+        
     def _create_layout(self) -> Layout:
         """Create the war room layout."""
         layout = Layout(name="root")
@@ -1268,6 +1300,37 @@ class WarRoomDisplay:
             if st.get('hunted_count', 0) > 0:
                 intel.add_row(Text(f"  🎯 Hunted: {st['hunted_count']} symbols", style="yellow"))
         
+        # 🌐 PARALLEL INTELLIGENCE SYSTEMS
+        if hasattr(self, 'parallel_intel') and self.parallel_intel:
+            intel.add_row("")
+            intel.add_row(Text("🌐 PARALLEL INTELLIGENCE", style="bold blue"))
+            intel.add_row("")
+            
+            pi = self.parallel_intel
+            online = pi.get('systems_online', 0)
+            total = pi.get('systems_total', 10)
+            overall_color = "green" if online >= total * 0.8 else "yellow" if online >= total * 0.5 else "red"
+            intel.add_row(Text(f"  Systems: [{overall_color}]{online}/{total} ONLINE[/]"))
+            
+            # Show individual feed statuses
+            feeds = pi.get('feeds', {})
+            for feed_name, feed_data in list(feeds.items())[:6]:
+                status = feed_data.get('status', '⬜')
+                # Format feed-specific info
+                if feed_name == 'probability_nexus':
+                    info = f"Win: {feed_data.get('win_rate', 0)*100:.0f}%"
+                elif feed_name == 'quantum_mirror':
+                    info = f"Coh: {feed_data.get('coherence', 0):.2f}"
+                elif feed_name == 'mycelium':
+                    info = feed_data.get('signal', 'neutral')
+                elif feed_name == 'avalanche':
+                    info = f"${feed_data.get('treasury', 0):.2f}"
+                else:
+                    info = ""
+                
+                name_display = feed_name.replace('_', ' ').title()[:12]
+                intel.add_row(Text(f"  {status} {name_display}: {info}"))
+        
         return Panel(intel, title="[bold yellow]🎯 INTELLIGENCE[/]", border_style="yellow")
     
     def _build_footer(self) -> Panel:
@@ -1559,6 +1622,63 @@ class WarRoomDisplay:
     def update_quantum(self, **scores):
         """Update quantum system scores."""
         self.quantum_data.update(scores)
+    
+    def update_parallel_intel(self, orchestrator=None):
+        """Update parallel intelligence display from orchestrator."""
+        if not orchestrator:
+            return
+        
+        try:
+            online_count = 0
+            
+            for name, state in orchestrator.systems.items():
+                feed_key = name
+                if feed_key in self.parallel_intel['feeds']:
+                    # Map status to emoji
+                    status_map = {
+                        'not_started': '⬜',
+                        'starting': '🔄',
+                        'running': '🟢',
+                        'warming_up': '🟡',
+                        'ready': '✅',
+                        'error': '🔴',
+                        'stopped': '⬛'
+                    }
+                    status = status_map.get(state.status.value, '❓')
+                    self.parallel_intel['feeds'][feed_key]['status'] = status
+                    
+                    if state.is_healthy:
+                        online_count += 1
+                    
+                    # Populate feed-specific data
+                    if state.instance:
+                        if feed_key == 'probability_nexus' and hasattr(state.instance, 'get_win_rate'):
+                            try:
+                                self.parallel_intel['feeds'][feed_key]['win_rate'] = state.instance.get_win_rate()
+                            except:
+                                pass
+                        elif feed_key == 'quantum_mirror' and hasattr(state.instance, 'get_coherence'):
+                            try:
+                                self.parallel_intel['feeds'][feed_key]['coherence'] = state.instance.get_coherence()
+                            except:
+                                pass
+                        elif feed_key == 'mycelium' and hasattr(state.instance, 'get_network_signal'):
+                            try:
+                                self.parallel_intel['feeds'][feed_key]['signal'] = state.instance.get_network_signal()
+                            except:
+                                pass
+                        elif feed_key == 'avalanche' and hasattr(state.instance, 'treasury'):
+                            try:
+                                self.parallel_intel['feeds'][feed_key]['treasury'] = state.instance.treasury.total_harvested_usd
+                            except:
+                                pass
+            
+            self.parallel_intel['systems_online'] = online_count
+            self.parallel_intel['orchestrator_ready'] = orchestrator.is_ready()
+            self.parallel_intel['last_update'] = time.time()
+            
+        except Exception:
+            pass
     
     def update_firm(self, firm_name: str, action: str, direction: str):
         """Update firm activity."""
@@ -2674,6 +2794,19 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"👑 Queen Validator: {e}")
         
+        # 15. Avalanche Harvester - Continuous Profit Scraping
+        self.avalanche = None
+        if AvalancheHarvester and not quick_init:
+            try:
+                self.avalanche = AvalancheHarvester(
+                    min_profit_pct=0.5,
+                    harvest_pct=30.0,
+                    scan_interval=30.0
+                )
+                print("❄️ Avalanche Harvester: WIRED! (Continuous Profit Scraping)")
+            except Exception as e:
+                print(f"❄️ Avalanche Harvester: {e}")
+
         # ═══════════════════════════════════════════════════════════════════
         # 🤖 BOT DETECTION & COUNTER-INTELLIGENCE SYSTEMS
         # ═══════════════════════════════════════════════════════════════════
@@ -3299,6 +3432,39 @@ class OrcaKillCycle:
             # End of FULL INIT MODE
             _safe_print("✅ FULL INIT COMPLETE - All systems operational!")
         
+        # ═══════════════════════════════════════════════════════════════════
+        # 🌐 PARALLEL ORCHESTRATOR - Wire up ALL parallel intelligence feeds
+        # ═══════════════════════════════════════════════════════════════════
+        
+        self.parallel_orchestrator = None
+        self._intel_snapshot_cache = {}
+        self._intel_snapshot_time = 0
+        self._intel_cache_ttl = 2.0  # 2 second cache
+        
+        if PARALLEL_ORCHESTRATOR_AVAILABLE and get_orchestrator and not quick_init:
+            try:
+                self.parallel_orchestrator = get_orchestrator()
+                _safe_print("🌐 Parallel Orchestrator: WIRED! (All intelligence feeds connected)")
+                
+                # Subscribe to intelligence streams via ThoughtBus
+                if self.bus:
+                    # Scanner updates
+                    self.bus.subscribe('scanner.opportunity', self._on_scanner_opportunity)
+                    self.bus.subscribe('scanner.wave_complete', self._on_wave_complete)
+                    
+                    # Validation updates
+                    self.bus.subscribe('validation.probability', self._on_probability_update)
+                    self.bus.subscribe('validation.coherence', self._on_coherence_update)
+                    self.bus.subscribe('validation.timeline', self._on_timeline_update)
+                    
+                    # Cognition updates
+                    self.bus.subscribe('miner.analysis', self._on_miner_analysis)
+                    self.bus.subscribe('mycelium.signal', self._on_mycelium_signal)
+                    
+                    _safe_print("   📡 Subscribed to parallel intelligence streams")
+            except Exception as e:
+                _safe_print(f"🌐 Parallel Orchestrator: {e}")
+        
         # Common settings for both quick and full init
         self.stream_interval = 0.1  # 100ms = 10 updates/sec
         self.stop_loss_pct = -1.0   # Stop loss at -1%
@@ -3474,6 +3640,256 @@ class OrcaKillCycle:
         except Exception as e:
             print(f"Error handling Orca command: {e}")
     
+    # ═══════════════════════════════════════════════════════════════════════
+    # 🌐 PARALLEL INTELLIGENCE FEED HANDLERS - Receive from all systems
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    def _on_scanner_opportunity(self, thought):
+        """Handle opportunity detected from Global Wave Scanner or other scanners."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            symbol = payload.get('symbol', '')
+            exchange = payload.get('exchange', 'alpaca')
+            score = payload.get('score', 0)
+            change_pct = payload.get('change_pct', 0)
+            
+            if score >= 0.7:
+                # High-quality opportunity - log it
+                self.audit_event('scanner_opportunity', payload)
+        except Exception:
+            pass
+    
+    def _on_wave_complete(self, thought):
+        """Handle wave scan completion from Global Wave Scanner."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            scan_type = payload.get('scan_type', 'unknown')  # 'az_sweep', 'za_sweep'
+            opportunities = payload.get('opportunities', [])
+            
+            # Update orchestrator heartbeat
+            if self.parallel_orchestrator:
+                self.parallel_orchestrator.heartbeat('global_wave_scanner')
+        except Exception:
+            pass
+    
+    def _on_probability_update(self, thought):
+        """Handle probability update from Probability Nexus."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            symbol = payload.get('symbol', '')
+            win_probability = payload.get('win_probability', 0)
+            confidence = payload.get('confidence', 0)
+            
+            # Cache high-confidence predictions
+            if confidence >= 0.8 and win_probability >= 0.65:
+                self._intel_snapshot_cache[f'nexus:{symbol}'] = {
+                    'probability': win_probability,
+                    'confidence': confidence,
+                    'timestamp': time.time()
+                }
+            
+            # Update orchestrator heartbeat
+            if self.parallel_orchestrator:
+                self.parallel_orchestrator.heartbeat('probability_nexus')
+        except Exception:
+            pass
+    
+    def _on_coherence_update(self, thought):
+        """Handle coherence update from Quantum Mirror Scanner."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            symbol = payload.get('symbol', '')
+            coherence = payload.get('coherence', 0)
+            branch_phase = payload.get('phase', 'unknown')
+            
+            # Cache coherence for symbol
+            if coherence >= 0.618:  # Golden ratio threshold
+                self._intel_snapshot_cache[f'coherence:{symbol}'] = {
+                    'coherence': coherence,
+                    'phase': branch_phase,
+                    'timestamp': time.time()
+                }
+            
+            # Update orchestrator heartbeat
+            if self.parallel_orchestrator:
+                self.parallel_orchestrator.heartbeat('quantum_mirror')
+        except Exception:
+            pass
+    
+    def _on_timeline_update(self, thought):
+        """Handle timeline update from Timeline Oracle."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            symbol = payload.get('symbol', '')
+            prediction = payload.get('prediction', {})
+            days_ahead = payload.get('days_ahead', 1)
+            
+            # Cache timeline predictions
+            self._intel_snapshot_cache[f'timeline:{symbol}'] = {
+                'prediction': prediction,
+                'days_ahead': days_ahead,
+                'timestamp': time.time()
+            }
+            
+            # Update orchestrator heartbeat
+            if self.parallel_orchestrator:
+                self.parallel_orchestrator.heartbeat('timeline_oracle')
+        except Exception:
+            pass
+    
+    def _on_miner_analysis(self, thought):
+        """Handle analysis from Miner Brain."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            symbol = payload.get('symbol', '')
+            analysis_type = payload.get('type', 'general')  # 'skeptical', 'speculative', 'truth'
+            conclusion = payload.get('conclusion', '')
+            confidence = payload.get('confidence', 0)
+            
+            # Cache miner insights
+            if confidence >= 0.7:
+                self._intel_snapshot_cache[f'miner:{symbol}'] = {
+                    'type': analysis_type,
+                    'conclusion': conclusion,
+                    'confidence': confidence,
+                    'timestamp': time.time()
+                }
+            
+            # Update orchestrator heartbeat
+            if self.parallel_orchestrator:
+                self.parallel_orchestrator.heartbeat('miner_brain')
+        except Exception:
+            pass
+    
+    def _on_mycelium_signal(self, thought):
+        """Handle signal from Mycelium Network."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            signal_type = payload.get('type', 'unknown')
+            strength = payload.get('strength', 0)
+            direction = payload.get('direction', 'neutral')  # 'bullish', 'bearish', 'neutral'
+            
+            # Cache network signals
+            self._intel_snapshot_cache['mycelium:network'] = {
+                'signal_type': signal_type,
+                'strength': strength,
+                'direction': direction,
+                'timestamp': time.time()
+            }
+            
+            # Update orchestrator heartbeat
+            if self.parallel_orchestrator:
+                self.parallel_orchestrator.heartbeat('mycelium')
+        except Exception:
+            pass
+    
+    def get_intel_snapshot(self, symbol: str = None) -> Dict[str, Any]:
+        """
+        Get intelligence snapshot from all parallel systems.
+        
+        Args:
+            symbol: Optional symbol to filter intel for
+        
+        Returns:
+            Dict with intelligence data from all systems
+        """
+        now = time.time()
+        
+        # Use cached snapshot if fresh enough
+        if (now - self._intel_snapshot_time) < self._intel_cache_ttl:
+            if symbol:
+                return {k: v for k, v in self._intel_snapshot_cache.items() if symbol in k}
+            return self._intel_snapshot_cache.copy()
+        
+        # Refresh from orchestrator
+        if self.parallel_orchestrator:
+            snapshot = self.parallel_orchestrator.get_intelligence_snapshot()
+            self._intel_snapshot_cache = snapshot.get('data', {})
+            self._intel_snapshot_time = now
+        
+        if symbol:
+            return {k: v for k, v in self._intel_snapshot_cache.items() if symbol in k}
+        return self._intel_snapshot_cache.copy()
+    
+    def check_symbol_intelligence(self, symbol: str) -> Dict[str, Any]:
+        """
+        Check all intelligence feeds for a specific symbol before trading.
+        
+        Returns a consolidated recommendation based on all parallel systems.
+        """
+        intel = self.get_intel_snapshot(symbol)
+        
+        result = {
+            'symbol': symbol,
+            'timestamp': time.time(),
+            'recommendation': 'NEUTRAL',
+            'confidence': 0.5,
+            'reasons': [],
+            'feeds': {}
+        }
+        
+        total_score = 0
+        feed_count = 0
+        
+        # Check Probability Nexus
+        nexus_key = f'nexus:{symbol}'
+        if nexus_key in intel:
+            data = intel[nexus_key]
+            result['feeds']['probability_nexus'] = data
+            if data.get('probability', 0) >= 0.65:
+                total_score += data['probability']
+                result['reasons'].append(f"Nexus: {data['probability']*100:.1f}% win probability")
+            feed_count += 1
+        
+        # Check Quantum Coherence
+        coh_key = f'coherence:{symbol}'
+        if coh_key in intel:
+            data = intel[coh_key]
+            result['feeds']['quantum_coherence'] = data
+            if data.get('coherence', 0) >= 0.618:
+                total_score += data['coherence']
+                result['reasons'].append(f"Coherence: {data['coherence']:.3f} (φ threshold)")
+            feed_count += 1
+        
+        # Check Timeline Oracle
+        tl_key = f'timeline:{symbol}'
+        if tl_key in intel:
+            data = intel[tl_key]
+            result['feeds']['timeline'] = data
+            pred = data.get('prediction', {})
+            if pred.get('direction') == 'bullish':
+                total_score += 0.7
+                result['reasons'].append(f"Timeline: {pred.get('direction', 'neutral')} ({data.get('days_ahead', 1)}d)")
+            feed_count += 1
+        
+        # Check Miner Brain
+        miner_key = f'miner:{symbol}'
+        if miner_key in intel:
+            data = intel[miner_key]
+            result['feeds']['miner_brain'] = data
+            if data.get('confidence', 0) >= 0.7:
+                total_score += data['confidence']
+                result['reasons'].append(f"Miner: {data.get('type', 'analysis')}")
+            feed_count += 1
+        
+        # Calculate overall recommendation
+        if feed_count > 0:
+            avg_score = total_score / feed_count
+            result['confidence'] = avg_score
+            
+            if avg_score >= 0.75:
+                result['recommendation'] = 'STRONG_BUY'
+            elif avg_score >= 0.65:
+                result['recommendation'] = 'BUY'
+            elif avg_score >= 0.55:
+                result['recommendation'] = 'NEUTRAL'
+            elif avg_score >= 0.45:
+                result['recommendation'] = 'HOLD'
+            else:
+                result['recommendation'] = 'AVOID'
+        
+        return result
+
     # ═══════════════════════════════════════════════════════════════════════
 
     def run_flight_check(self) -> dict:
@@ -7943,6 +8359,10 @@ class OrcaKillCycle:
             print(f"   {exchange.upper()}: ${amount:.2f}")
         print()
         
+        # Avalanche timing
+        last_avalanche_time = 0
+        avalanche_interval = 30.0
+
         try:
             while True:  # ♾️ INFINITE LOOP
                 current_time = time.time()
@@ -7950,6 +8370,20 @@ class OrcaKillCycle:
                 
                 # Update dashboard state for Command Center UI (legacy mode)
                 self._dump_dashboard_state(session_stats, positions, queen)
+
+                # ❄️ AVALANCHE HARVEST (Run independently of scanner)
+                if self.avalanche and (current_time - last_avalanche_time >= avalanche_interval):
+                    last_avalanche_time = current_time
+                    try:
+                        # Non-blocking harvest check
+                        h_results = self.avalanche.run_harvest_cycle(dry_run=False)
+                        if h_results['harvested_count'] > 0:
+                            amt = h_results['total_harvested_usd']
+                            print(f"\n❄️ AVALANCHE: Harvested ${amt:.2f} from {h_results['harvested_count']} positions! (Treasury growing)")
+                            # Add to stats but differentiate from realized kill PnL
+                            session_stats['total_pnl'] += amt
+                    except Exception as e:
+                        print(f"⚠️ Avalanche cycle error: {e}")
 
                 # 👑 Queen pacing + profit target updates
                 if current_time - last_queen_update >= queen_update_interval:
@@ -9571,6 +10005,10 @@ class OrcaKillCycle:
                     logging_handlers_backup = []
                 except: pass
         
+        # Avalanche timing
+        last_avalanche_time = 0
+        avalanche_interval = 30.0
+
         try:
             while True:
                 current_time = time.time()
@@ -9592,6 +10030,33 @@ class OrcaKillCycle:
                 
                 # Update dashboard state for Command Center UI
                 self._dump_dashboard_state(session_stats, positions, queen)
+
+                # ❄️ AVALANCHE HARVEST
+                if self.avalanche and (current_time - last_avalanche_time >= avalanche_interval):
+                    last_avalanche_time = current_time
+                    try:
+                        h_results = self.avalanche.run_harvest_cycle(dry_run=False)
+                        if h_results['harvested_count'] > 0:
+                            amt = h_results['total_harvested_usd']
+                            cnt = h_results['harvested_count']
+                            session_stats['total_pnl'] += amt
+                            
+                            # Update WarRoom
+                            if warroom:
+                                warroom.total_pnl = session_stats['total_pnl']
+                                warroom.recent_kills.insert(0, {
+                                    'time': datetime.now().strftime('%H:%M:%S'),
+                                    'symbol': f"❄️ HARVEST x{cnt}",
+                                    'side': 'SELL',
+                                    'pnl': amt,
+                                    'pnl_pct': 0.0,
+                                    'exchange': 'MIXED',
+                                    'type': 'win'
+                                })
+                                warroom.recent_kills = warroom.recent_kills[:10]
+                    except Exception:
+                        pass
+
 
                 # 👑 Queen pacing + profit target updates
 
