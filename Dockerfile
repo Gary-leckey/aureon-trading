@@ -32,22 +32,8 @@ ENV AUREON_STATE_DIR=/app/state
 # Create directories for state files
 RUN mkdir -p /app/state /app/logs
 
-# Make startup scripts executable
-RUN chmod +x /app/deploy/*.sh 2>/dev/null || true
-
-# Install supervisor for process management
-RUN pip install --no-cache-dir supervisor
-
-# Copy supervisor config
-COPY deploy/supervisord.conf /etc/supervisord.conf
-
-# Expose HTTP port for DO App Platform
+# Expose HTTP port for DO App Platform (only for web service)
 EXPOSE 8080
 
-# Healthcheck - verify web UI is responding
-# Increased start-period to 180s to allow systems to initialize
-HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=5 \
-  CMD curl -f http://localhost:8080/health || exit 1
-
-# Start Supervisor (runs both Command Center and Orca Engine)
-CMD ["supervisord", "-n", "-c", "/app/deploy/supervisord.conf"]
+# Default command - will be overridden by app.yaml run_command
+CMD ["python", "-c", "print('Aureon container ready - use app.yaml run_command')"]
