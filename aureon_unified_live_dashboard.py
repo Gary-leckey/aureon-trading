@@ -669,12 +669,52 @@ class AureonUnifiedDashboard:
         metrics = {
             "timestamp": time.time(),
             "bots_detected": 0,
-            "whale_signals": 0,
-            "validation_pipeline": {}
+            "whale_signals": [],
+            "validation_pipeline": {},
+            "top_firms": [],
+            "bot_percentage": 0.0,
+            "active_symbols": []
         }
         
-        # This would integrate with bot detection systems, whale sonar, etc.
-        # For now, return placeholder
+        try:
+            # Check for whale sonar data
+            sonar_file = Path('whale_sonar_state.json')
+            if sonar_file.exists():
+                with open(sonar_file, 'r') as f:
+                    sonar_data = json.load(f)
+                    metrics["whale_signals"] = sonar_data.get("whales", [])[:10]  # Top 10
+            
+            # Check for bot detection data
+            bot_file = Path('bot_detection_state.json')
+            if bot_file.exists():
+                with open(bot_file, 'r') as f:
+                    bot_data = json.load(f)
+                    metrics["bots_detected"] = bot_data.get("total_bots", 0)
+                    metrics["bot_percentage"] = bot_data.get("bot_percentage", 0.0)
+                    metrics["active_symbols"] = bot_data.get("active_symbols", [])[:20]
+            
+            # Check for firm intelligence
+            firm_file = Path('all_firms_complete.json')
+            if firm_file.exists():
+                with open(firm_file, 'r') as f:
+                    firm_data = json.load(f)
+                    # Get top 10 firms by capital
+                    firms = firm_data.get("firms", [])
+                    sorted_firms = sorted(firms, key=lambda x: x.get("estimated_capital_usd", 0), reverse=True)
+                    metrics["top_firms"] = sorted_firms[:10]
+            
+            # Check validation pipeline
+            validation_file = Path('7day_pending_validations.json')
+            if validation_file.exists():
+                with open(validation_file, 'r') as f:
+                    validation_data = json.load(f)
+                    metrics["validation_pipeline"] = {
+                        "pending_count": len(validation_data) if isinstance(validation_data, list) else 0,
+                        "pending_symbols": [v.get("symbol") for v in (validation_data if isinstance(validation_data, list) else [])][:10]
+                    }
+        
+        except Exception as e:
+            logger.debug(f"Failed to collect intelligence metrics: {e}")
         
         return metrics
     
@@ -748,6 +788,18 @@ class AureonUnifiedDashboard:
                 if time.time() - self.last_update > 5:
                     systems = self.collect_system_metrics()
                     await self.broadcast({
+                        "type": "system_update",
+                        "data": systems
+                    })
+                    
+                    # Also broadcast intelligence metrics
+                    intelligence = self.collect_intelligence_metrics()
+                    await self.broadcast({
+                        "type": "intelligence_update",
+                        "data": intelligence
+                    })
+                    
+                    self.last_update = time.time()
                         "type": "system_update",
                         "data": systems
                     })
@@ -1069,7 +1121,67 @@ class AureonUnifiedDashboard:
         <!-- INTELLIGENCE TAB -->
         <div id="intelligence-tab" class="tab-content">
             <h2 style="color: #61dafb; margin-bottom: 1rem;">🧠 Market Intelligence</h2>
-            <p style="color: #888;">Bot detection, whale tracking, and market analysis coming soon...</p>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="label">Bots Detected</div>
+                    <div class="value" id="bots-detected">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Bot Trade %</div>
+                    <div class="value" id="bot-percentage">0%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Whale Signals</div>
+                    <div class="value" id="whale-count">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Validation Queue</div>
+                    <div class="value" id="validation-pending">0</div>
+                </div>
+            </div>
+            
+            <div class="positions-table" style="margin-top: 2rem;">
+                <h3 style="padding: 1rem; color: #61dafb;">🐋 Active Whale Signals</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Whale</th>
+                            <th>Signal Strength</th>
+                            <th>Event Rate</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="whale-signals-body">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #888;">
+                                No whale signals detected
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="positions-table" style="margin-top: 2rem;">
+                <h3 style="padding: 1rem; color: #61dafb;">🏢 Top Trading Firms</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Firm</th>
+                            <th>Capital (Est.)</th>
+                            <th>HQ Location</th>
+                            <th>Activity</th>
+                        </tr>
+                    </thead>
+                    <tbody id="firms-body">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #888;">
+                                No firm data available
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         <!-- SYSTEMS TAB -->
@@ -1148,11 +1260,20 @@ class AureonUnifiedDashboard:
                 case 'system_update':
                     updateSystemsDisplay(msg.data);
                     break;
+                case 'intelligence_update':
+                    updateIntelligenceDisplay(msg.data);
+                    break;
                 case 'trade_executed':
                     showTradeNotification(msg.data);
                     break;
                 case 'harvest_event':
                     showHarvestNotification(msg.data);
+                    break;
+                case 'bot_detected':
+                    showBotNotification(msg.data);
+                    break;
+                case 'whale_signal':
+                    showWhaleNotification(msg.data);
                     break;
             }
         }
@@ -1214,6 +1335,62 @@ class AureonUnifiedDashboard:
             }
         }
         
+        function updateIntelligenceDisplay(data) {
+            // Update intelligence metrics
+            document.getElementById('bots-detected').textContent = data.bots_detected || 0;
+            document.getElementById('bot-percentage').textContent = 
+                (data.bot_percentage || 0).toFixed(1) + '%';
+            document.getElementById('whale-count').textContent = 
+                (data.whale_signals?.length || 0);
+            document.getElementById('validation-pending').textContent = 
+                (data.validation_pipeline?.pending_count || 0);
+            
+            // Update whale signals table
+            const whaleBody = document.getElementById('whale-signals-body');
+            if (data.whale_signals && data.whale_signals.length > 0) {
+                whaleBody.innerHTML = data.whale_signals.map(whale => `
+                    <tr>
+                        <td><strong>${whale.name || whale.whale || 'Unknown'}</strong></td>
+                        <td>${(whale.signal_strength || whale.score || 0).toFixed(2)}</td>
+                        <td>${(whale.event_rate || 0).toFixed(1)}/s</td>
+                        <td>
+                            <span class="status-badge ${whale.critical ? 'offline' : 'online'}">
+                                ${whale.critical ? 'CRITICAL' : 'Active'}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                whaleBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #888;">No whale signals detected</td></tr>';
+            }
+            
+            // Update firms table
+            const firmsBody = document.getElementById('firms-body');
+            if (data.top_firms && data.top_firms.length > 0) {
+                firmsBody.innerHTML = data.top_firms.map(firm => `
+                    <tr>
+                        <td><strong>${firm.name || 'Unknown'}</strong></td>
+                        <td>${formatCurrency(firm.estimated_capital_usd || 0)}</td>
+                        <td>${firm.hq_location || firm.country || '--'}</td>
+                        <td>
+                            <span class="status-badge online">
+                                ${firm.active_symbols?.length || 0} symbols
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                firmsBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #888;">No firm data available</td></tr>';
+            }
+        }
+        
+        function formatCurrency(value) {
+            if (value >= 1e12) return '$' + (value / 1e12).toFixed(1) + 'T';
+            if (value >= 1e9) return '$' + (value / 1e9).toFixed(1) + 'B';
+            if (value >= 1e6) return '$' + (value / 1e6).toFixed(1) + 'M';
+            return '$' + value.toFixed(0);
+        }
+        
         function showTradeNotification(data) {
             console.log('Trade executed:', data);
             // TODO: Show toast notification
@@ -1222,6 +1399,26 @@ class AureonUnifiedDashboard:
         function showHarvestNotification(data) {
             console.log('Harvest event:', data);
             // TODO: Show toast notification
+        }
+        
+        function showBotNotification(data) {
+            console.log('Bot detected:', data);
+            // Flash bot count
+            const botEl = document.getElementById('bots-detected');
+            if (botEl) {
+                botEl.style.color = '#f44336';
+                setTimeout(() => { botEl.style.color = '#61dafb'; }, 1000);
+            }
+        }
+        
+        function showWhaleNotification(data) {
+            console.log('Whale signal:', data);
+            // Flash whale count
+            const whaleEl = document.getElementById('whale-count');
+            if (whaleEl) {
+                whaleEl.style.color = '#4caf50';
+                setTimeout(() => { whaleEl.style.color = '#61dafb'; }, 1000);
+            }
         }
         
         function switchTab(tabName) {
