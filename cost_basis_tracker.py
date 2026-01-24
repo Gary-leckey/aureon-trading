@@ -564,39 +564,48 @@ class CostBasisTracker:
                 if pos:
                     matched_key = norm_symbol
         
-        # Strategy 4: Try adding/removing common quote currencies
+        # Strategy 4: Try swapping quote currencies (USDT ↔ USDC ↔ USD)
         if not pos:
-            for quote in ['USDT', 'USDC', 'USD', 'EUR', 'GBP']:
-                # Try adding quote
-                test_symbol = f"{symbol}{quote}"
-                if exchange:
-                    test_key = f"{exchange.lower()}:{test_symbol}"
-                    pos = self.positions.get(test_key)
-                    if pos:
-                        matched_key = test_key
-                        break
-                
-                if not pos:
-                    pos = self.positions.get(test_symbol)
-                    if pos:
-                        matched_key = test_symbol
-                        break
-                
-                # Try removing quote
-                if symbol.endswith(quote):
-                    test_symbol = symbol[:-len(quote)]
-                    if exchange:
-                        test_key = f"{exchange.lower()}:{test_symbol}"
-                        pos = self.positions.get(test_key)
-                        if pos:
-                            matched_key = test_key
-                            break
+            # Extract base asset
+            base_asset = symbol.split('/')[0] if '/' in symbol else symbol.rstrip('USDT').rstrip('USDC').rstrip('USD')
+            
+            # Try all quote currency combinations
+            for quote_in in ['USDT', 'USDC', 'USD', 'EUR', 'GBP']:
+                if symbol.endswith(quote_in) or symbol.endswith(f'/{quote_in}'):
+                    # Remove current quote
+                    if '/' in symbol:
+                        base = symbol.split('/')[0]
+                    else:
+                        base = symbol.rstrip(quote_in)
                     
-                    if not pos:
-                        pos = self.positions.get(test_symbol)
+                    # Try other quotes
+                    for quote_out in ['USDT', 'USDC', 'USD', 'ZUSD', 'USDC.P']:
+                        # Try with slash
+                        test_symbols = [
+                            f"{base}/{quote_out}",
+                            f"{base}{quote_out}",
+                        ]
+                        
+                        for test_symbol in test_symbols:
+                            if exchange:
+                                test_key = f"{exchange.lower()}:{test_symbol}"
+                                pos = self.positions.get(test_key)
+                                if pos:
+                                    matched_key = test_key
+                                    logger.debug(f"   ✓ Matched via quote swap: {symbol} → {test_key}")
+                                    break
+                            
+                            if not pos:
+                                pos = self.positions.get(test_symbol)
+                                if pos:
+                                    matched_key = test_symbol
+                                    logger.debug(f"   ✓ Matched via quote swap: {symbol} → {test_symbol}")
+                                    break
+                        
                         if pos:
-                            matched_key = test_symbol
                             break
+                    if pos:
+                        break
         
         # Strategy 5: Deep base asset match
         if not pos:
@@ -619,7 +628,20 @@ class CostBasisTracker:
         if not pos:
             _safe_print(f"   🚨 COST BASIS NOT FOUND for {symbol}")
             _safe_print(f"      Exchange: {exchange}")
-            _safe_print(f"      Available positions: {list(self.positions.keys())[:5]}")
+            
+            # Show base asset extraction for debugging
+            base = symbol.split('/')[0] if '/' in symbol else symbol
+            for q in ['USDT', 'USDC', 'USD']:
+                base = base.rstrip(q)
+            _safe_print(f"      Base asset: {base}")
+            
+            # Show some available positions that might be close matches
+            available = list(self.positions.keys())
+            matching_base = [p for p in available if base.upper() in p.upper()]
+            if matching_base:
+                _safe_print(f"      Possible matches: {matching_base[:5]}")
+            else:
+                _safe_print(f"      Available positions: {available[:5]}")
             
             # No cost basis data - DON'T SELL! We don't know if it's profitable!
             return False, {
