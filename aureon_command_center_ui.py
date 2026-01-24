@@ -4502,6 +4502,8 @@ class AureonCommandCenter:
         self.port = port
         self.running = False
         self.clients: Set = set()
+        self._systems_initialized = False
+        self._systems_initializing = False
         
         # Initialize systems
         self.kraken = None
@@ -4574,150 +4576,158 @@ class AureonCommandCenter:
     
     def initialize_systems(self):
         """Initialize all trading systems."""
-        if not SYSTEMS_STATUS:
-            load_systems()
-        print("\n" + "=" * 70)
-        print("👑🌌 AUREON COMMAND CENTER - INITIALIZING ALL SYSTEMS")
-        print("=" * 70)
-        
-        # Exchange Clients
-        print("\n📊 CONNECTING TO EXCHANGES...")
-        
-        if KrakenClient:
-            try:
-                self.kraken = KrakenClient()
-                print("   🐙 Kraken: CONNECTED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"Kraken error: {e}")
-        
-        if BinanceClient:
-            try:
-                self.binance = BinanceClient()
-                print("   🟡 Binance: CONNECTED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"Binance error: {e}")
-        
-        if AlpacaClient:
-            try:
-                self.alpaca = AlpacaClient()
-                print("   🦙 Alpaca: CONNECTED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"Alpaca error: {e}")
+        if self._systems_initialized or self._systems_initializing:
+            print("⚠️ Systems initialization already in progress or completed - skipping re-init")
+            return
+        self._systems_initializing = True
+        try:
+            if not SYSTEMS_STATUS:
+                load_systems()
+            print("\n" + "=" * 70)
+            print("👑🌌 AUREON COMMAND CENTER - INITIALIZING ALL SYSTEMS")
+            print("=" * 70)
 
-        if CapitalClient:
-            try:
-                self.capital = CapitalClient()
-                print("   💰 Capital.com: CONNECTED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"Capital error: {e}")
-        
-        # Neural Systems
-        print("\n👑 WIRING NEURAL SYSTEMS...")
-        
-        if ThoughtBus:
-            try:
-                self.thought_bus = ThoughtBus()
-                print("   📡 Thought Bus: WIRED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"ThoughtBus error: {e}")
-        
-        if MyceliumNetwork:
-            try:
-                self.mycelium = MyceliumNetwork(initial_capital=1000.0)
-                print("   🍄 Mycelium Network: WIRED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"Mycelium error: {e}")
-        
-        if QueenHiveMind:
-            try:
-                self.queen = QueenHiveMind()
-                print("   👑 Queen Hive Mind: WIRED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"Queen error: {e}")
-        
-        # Intelligence Systems
-        print("\n🧠 WIRING INTELLIGENCE SYSTEMS...")
-        
-        if MinerBrain:
-            try:
-                self.miner = MinerBrain()
-                print("   🧠 Miner Brain: WIRED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"MinerBrain error: {e}")
-        
-        if ProbabilityUltimateIntelligence:
-            try:
-                self.ultimate_intel = ProbabilityUltimateIntelligence()
-                print("   💎 Ultimate Intelligence: WIRED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"UltimateIntel error: {e}")
-        
-        if TimelineOracle:
-            try:
-                self.timeline_oracle = TimelineOracle()
-                print("   ⏳🔮 Timeline Oracle: WIRED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"TimelineOracle error: {e}")
-        
-        if QuantumMirrorScanner:
-            try:
-                self.quantum_mirror = QuantumMirrorScanner()
-                print("   🔮 Quantum Mirror: WIRED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"QuantumMirror error: {e}")
-        
-        # Harmonic & Momentum
-        print("\n🌊 WIRING HARMONIC & MOMENTUM...")
-        
-        if HarmonicWaveFusion:
-            try:
-                self.harmonic = HarmonicWaveFusion()
-                print("   🌊 Harmonic Fusion: WIRED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"Harmonic error: {e}")
-        
-        if GlobalWaveScanner:
-            try:
-                self.wave_scanner = GlobalWaveScanner()
-                print("   🌊🔭 Wave Scanner: WIRED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"WaveScanner error: {e}")
+            # Exchange Clients
+            print("\n📊 CONNECTING TO EXCHANGES...")
 
-        # Conversion Hub
-        if MyceliumConversionHub:
-            try:
-                self.conversion_hub = MyceliumConversionHub()
-                print("   🍄 Conversion Hub: WIRED")
-                time.sleep(0.1) # Yield GIL
-            except Exception as e:
-                logger.error(f"ConversionHub error: {e}")
+            if KrakenClient:
+                try:
+                    self.kraken = KrakenClient()
+                    print("   🐙 Kraken: CONNECTED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"Kraken error: {e}")
 
-        working = sum([
-            1 for x in [
-                self.kraken, self.binance, self.alpaca,
-                self.queen, self.mycelium, self.thought_bus,
-                self.miner, self.harmonic, self.wave_scanner,
-                self.ultimate_intel, self.timeline_oracle, self.quantum_mirror,
-                self.conversion_hub
-            ] if x is not None
-        ])
-        
-        print("\n" + "=" * 70)
-        print(f"✅ COMMAND CENTER INITIALIZED: {working} systems operational")
-        print("=" * 70)
+            if BinanceClient:
+                try:
+                    self.binance = BinanceClient()
+                    print("   🟡 Binance: CONNECTED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"Binance error: {e}")
+
+            if AlpacaClient:
+                try:
+                    self.alpaca = AlpacaClient()
+                    print("   🦙 Alpaca: CONNECTED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"Alpaca error: {e}")
+
+            if CapitalClient:
+                try:
+                    self.capital = CapitalClient()
+                    print("   💰 Capital.com: CONNECTED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"Capital error: {e}")
+
+            # Neural Systems
+            print("\n👑 WIRING NEURAL SYSTEMS...")
+
+            if ThoughtBus:
+                try:
+                    self.thought_bus = ThoughtBus()
+                    print("   📡 Thought Bus: WIRED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"ThoughtBus error: {e}")
+
+            if MyceliumNetwork:
+                try:
+                    self.mycelium = MyceliumNetwork(initial_capital=1000.0)
+                    print("   🍄 Mycelium Network: WIRED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"Mycelium error: {e}")
+
+            if QueenHiveMind:
+                try:
+                    self.queen = QueenHiveMind()
+                    print("   👑 Queen Hive Mind: WIRED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"Queen error: {e}")
+
+            # Intelligence Systems
+            print("\n🧠 WIRING INTELLIGENCE SYSTEMS...")
+
+            if MinerBrain:
+                try:
+                    self.miner = MinerBrain()
+                    print("   🧠 Miner Brain: WIRED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"MinerBrain error: {e}")
+
+            if ProbabilityUltimateIntelligence:
+                try:
+                    self.ultimate_intel = ProbabilityUltimateIntelligence()
+                    print("   💎 Ultimate Intelligence: WIRED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"UltimateIntel error: {e}")
+
+            if TimelineOracle:
+                try:
+                    self.timeline_oracle = TimelineOracle()
+                    print("   ⏳🔮 Timeline Oracle: WIRED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"TimelineOracle error: {e}")
+
+            if QuantumMirrorScanner:
+                try:
+                    self.quantum_mirror = QuantumMirrorScanner()
+                    print("   🔮 Quantum Mirror: WIRED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"QuantumMirror error: {e}")
+
+            # Harmonic & Momentum
+            print("\n🌊 WIRING HARMONIC & MOMENTUM...")
+
+            if HarmonicWaveFusion:
+                try:
+                    self.harmonic = HarmonicWaveFusion()
+                    print("   🌊 Harmonic Fusion: WIRED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"Harmonic error: {e}")
+
+            if GlobalWaveScanner:
+                try:
+                    self.wave_scanner = GlobalWaveScanner()
+                    print("   🌊🔭 Wave Scanner: WIRED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"WaveScanner error: {e}")
+
+            # Conversion Hub
+            if MyceliumConversionHub:
+                try:
+                    self.conversion_hub = MyceliumConversionHub()
+                    print("   🍄 Conversion Hub: WIRED")
+                    time.sleep(0.1) # Yield GIL
+                except Exception as e:
+                    logger.error(f"ConversionHub error: {e}")
+
+            working = sum([
+                1 for x in [
+                    self.kraken, self.binance, self.alpaca,
+                    self.queen, self.mycelium, self.thought_bus,
+                    self.miner, self.harmonic, self.wave_scanner,
+                    self.ultimate_intel, self.timeline_oracle, self.quantum_mirror,
+                    self.conversion_hub
+                ] if x is not None
+            ])
+
+            print("\n" + "=" * 70)
+            print(f"✅ COMMAND CENTER INITIALIZED: {working} systems operational")
+            print("=" * 70)
+            self._systems_initialized = True
+        finally:
+            self._systems_initializing = False
     
     async def handle_health(self, request):
         """Health check endpoint for Docker/K8s liveness probes."""
