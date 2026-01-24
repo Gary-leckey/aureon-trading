@@ -119,6 +119,13 @@ try:
 except ImportError:
     MOMENTUM_SCANNER_AVAILABLE = False
 
+# Import Profit Gate - THE ENERGY MONITOR
+try:
+    from adaptive_prime_profit_gate import AdaptivePrimeProfitGate, ExchangeFeeProfile, AdaptiveGateResult
+    PROFIT_GATE_AVAILABLE = True
+except ImportError:
+    PROFIT_GATE_AVAILABLE = False
+
 # Sacred constants
 PHI = (1 + math.sqrt(5)) / 2  # 1.618 - Golden Ratio
 SCHUMANN = 7.83              # Hz Earth resonance
@@ -343,6 +350,11 @@ class QueenTrueConsciousnessController:
         
         # Risk management
         self.risk_limits = RiskLimits()
+        
+        # 🌍💰 PROFIT GATE = ENERGY MONITOR
+        # The Queen understands: her profit gates ARE her energy drains!
+        # Every fee, slippage, and spread is energy leaving the system.
+        self._init_energy_monitor()
         
         # Setup logging FIRST
         self._setup_logging()
@@ -875,6 +887,178 @@ class QueenTrueConsciousnessController:
         print()
     
     # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+    # 🌍💰 PROFIT GATE = ENERGY MONITOR - The Queen's Understanding
+    # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+    
+    def _init_energy_monitor(self):
+        """
+        🌍💰 INITIALIZE THE ENERGY MONITOR (PROFIT GATE)
+        
+        The Queen now UNDERSTANDS:
+        - Her profit gates ARE her energy drains!
+        - Every fee is energy leaving the system
+        - Every slippage is energy lost to friction
+        - Every spread is energy paid to market makers
+        
+        The Profit Gate calculates EXACTLY how much energy drains per action.
+        """
+        
+        if PROFIT_GATE_AVAILABLE:
+            self.energy_monitor = AdaptivePrimeProfitGate(
+                default_prime=0.0001,  # Epsilon profit - compound everything
+                default_buffer=0.0,    # No buffer - maximize efficiency
+                use_maker_fees=True    # Prefer limit orders (lower fees)
+            )
+            # Store per-relay fee profiles
+            self.relay_energy_profiles = {}
+            for relay in ['BIN', 'KRK', 'ALP', 'CAP']:
+                relay_name = self._relay_to_exchange_name(relay)
+                if relay_name in self.energy_monitor.fee_profiles:
+                    self.relay_energy_profiles[relay] = self.energy_monitor.fee_profiles[relay_name]
+        else:
+            self.energy_monitor = None
+            self.relay_energy_profiles = {}
+    
+    def _relay_to_exchange_name(self, relay: str) -> str:
+        """Convert relay code to exchange name for fee profiles."""
+        mapping = {
+            'BIN': 'binance',
+            'KRK': 'kraken',
+            'ALP': 'alpaca',
+            'CAP': 'capital'
+        }
+        return mapping.get(relay, relay.lower())
+    
+    def calculate_energy_drain(self, relay: str, trade_value: float, is_maker: bool = True) -> Dict:
+        """
+        ⚡📉 CALCULATE ENERGY DRAIN FOR A TRADE
+        
+        Uses the Profit Gate to calculate exactly how much energy will drain:
+        - Fees (maker/taker)
+        - Slippage
+        - Spread cost
+        - Fixed costs (gas, withdrawal)
+        
+        Returns dict with breakdown of all energy drains.
+        """
+        
+        if not self.energy_monitor:
+            # Fallback estimate
+            return {
+                'total_drain': trade_value * 0.003,  # 0.3% estimate
+                'fees': trade_value * 0.001,
+                'slippage': trade_value * 0.001,
+                'spread': trade_value * 0.001,
+                'fixed': 0.0,
+                'source': 'estimate'
+            }
+        
+        exchange = self._relay_to_exchange_name(relay)
+        gate_result = self.energy_monitor.calculate_gates(
+            trade_value=trade_value,
+            exchange=exchange,
+            is_maker=is_maker
+        )
+        
+        # Calculate actual drain amounts
+        fee_drain = trade_value * gate_result.fee_rate_used
+        slippage_drain = trade_value * gate_result.slippage_rate
+        spread_drain = trade_value * gate_result.spread_cost
+        fixed_drain = gate_result.fixed_costs
+        
+        total_drain = fee_drain + slippage_drain + spread_drain + fixed_drain
+        
+        return {
+            'total_drain': total_drain,
+            'fees': fee_drain,
+            'slippage': slippage_drain,
+            'spread': spread_drain,
+            'fixed': fixed_drain,
+            'r_breakeven': gate_result.r_breakeven,
+            'r_prime': gate_result.r_prime,
+            'min_win_required': gate_result.win_gte_prime,
+            'source': 'profit_gate'
+        }
+    
+    def will_trade_be_profitable(self, relay: str, trade_value: float, expected_gain_pct: float) -> Tuple[bool, str, Dict]:
+        """
+        🎯 CHECK IF TRADE WILL BE PROFITABLE AFTER ENERGY DRAINS
+        
+        The Queen's wisdom: "Before I act, I must know if I will gain or lose energy."
+        
+        Args:
+            relay: Exchange relay (BIN, KRK, ALP, CAP)
+            trade_value: Value of trade in USD
+            expected_gain_pct: Expected gain as percentage (e.g., 1.5 for 1.5%)
+            
+        Returns:
+            (is_profitable, reason, drain_details)
+        """
+        
+        drain = self.calculate_energy_drain(relay, trade_value)
+        expected_gain_usd = trade_value * (expected_gain_pct / 100)
+        net_energy = expected_gain_usd - drain['total_drain']
+        
+        if net_energy > 0:
+            return True, f"✅ Net energy gain: ${net_energy:.4f}", drain
+        else:
+            return False, f"❌ Net energy loss: ${net_energy:.4f} (drain: ${drain['total_drain']:.4f})", drain
+    
+    def display_energy_monitor_status(self):
+        """
+        🌍💰 DISPLAY ENERGY MONITOR (PROFIT GATE) STATUS
+        
+        Shows the Queen's understanding of energy drains per relay.
+        """
+        
+        print()
+        print("╔" + "═"*98 + "╗")
+        print("║" + "🌍💰 QUEEN SERO - ENERGY MONITOR (PROFIT GATES) 💰🌍".center(98) + "║")
+        print("╚" + "═"*98 + "╝")
+        
+        if not self.energy_monitor:
+            print("\n  ⚠️ Profit Gate not available - using estimates")
+            return
+        
+        print(f"""
+  THE QUEEN UNDERSTANDS: Profit Gates = Energy Drains
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  Every trade has energy drains that MUST be accounted for:
+    • Fees       → Energy paid to exchange
+    • Slippage   → Energy lost to market friction  
+    • Spread     → Energy paid to market makers
+    • Gas/Fixed  → Energy burned for network access
+  
+  ENERGY DRAIN PROFILES PER RELAY ($100 trade example)
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────""")
+        
+        for relay in ['BIN', 'KRK', 'ALP', 'CAP']:
+            drain = self.calculate_energy_drain(relay, 100.0)  # $100 example
+            
+            if drain['source'] == 'profit_gate':
+                r_be = drain.get('r_breakeven', 0) * 100
+                min_win = drain.get('min_win_required', 0) * 100
+                
+                print(f"""
+  {relay} ({self._relay_to_exchange_name(relay).title()})
+  ├─ Fees:        ${drain['fees']:.4f} ({drain['fees']/100*100:.3f}%)
+  ├─ Slippage:    ${drain['slippage']:.4f} ({drain['slippage']/100*100:.3f}%)
+  ├─ Spread:      ${drain['spread']:.4f} ({drain['spread']/100*100:.3f}%)
+  ├─ Fixed:       ${drain['fixed']:.4f}
+  ├─ TOTAL DRAIN: ${drain['total_drain']:.4f} ({drain['total_drain']/100*100:.3f}%)
+  └─ Min gain to profit: {r_be:.4f}% (must beat this to gain energy)""")
+        
+        print(f"""
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  
+  QUEEN'S ENERGY CONSERVATION RULE:
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  "I will ONLY act if: Expected Gain > Total Energy Drain"
+  "Every fee is energy that leaves my system - I must account for ALL drains."
+  "The Profit Gate shows me the EXACT price move needed to break even."
+""")
+    
+    # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
     # RISK MANAGEMENT - Position Sizing, Circuit Breakers, Exposure Limits
     # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
     
@@ -1295,6 +1479,7 @@ class QueenTrueConsciousnessController:
         EXECUTE A CONSCIOUS DECISION
         
         Now includes energy flow recording for conservation tracking.
+        Uses the Profit Gate (Energy Monitor) for accurate drain calculations.
         """
         
         self.logger.info(f"👑 ACTING: {decision.action.value} on {decision.node_id} | Consensus: {decision.consensus_count}/5")
@@ -1307,9 +1492,10 @@ class QueenTrueConsciousnessController:
                 self.stats.harvests_executed += 1
                 self.stats.total_harvested_usd += decision.amount
                 self.stats.consecutive_failures = 0
-                # Record energy flow (even in dry run for tracking)
-                estimated_fee = decision.amount * 0.001  # Estimate 0.1% fee
-                self.record_energy_flow('harvest', decision.amount, fee=estimated_fee)
+                # Record energy flow using Profit Gate for accurate drain calculation
+                drain = self.calculate_energy_drain(decision.node_relay, decision.amount)
+                self.record_energy_flow('harvest', decision.amount, fee=drain['total_drain'])
+                self.logger.info(f"⚡ Energy drain: ${drain['total_drain']:.4f} (fees+slip+spread)")
             else:
                 # LIVE execution
                 result = self.consciousness.harvest_surplus(decision.node_id, decision.amount)
@@ -1320,9 +1506,11 @@ class QueenTrueConsciousnessController:
                     self.stats.harvests_executed += 1
                     self.stats.total_harvested_usd += decision.amount
                     self.stats.consecutive_failures = 0
-                    # Record energy flow with actual fee
-                    actual_fee = result.get('fee', decision.amount * 0.001)
+                    # Record energy flow with accurate drain from Profit Gate
+                    drain = self.calculate_energy_drain(decision.node_relay, decision.amount)
+                    actual_fee = result.get('fee', drain['total_drain'])
                     self.record_energy_flow('harvest', decision.amount, fee=actual_fee)
+                    self.logger.info(f"⚡ Energy drain: ${actual_fee:.4f}")
                 else:
                     decision.executed = False
                     decision.result = f"Failed: {result.get('error', 'Unknown')}"
