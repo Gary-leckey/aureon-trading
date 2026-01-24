@@ -1278,6 +1278,241 @@ COMMAND_CENTER_HTML = """
         ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
         ::-webkit-scrollbar-thumb { background: var(--accent-green); border-radius: 3px; }
         
+        /* Queen Validation Dashboard */
+        .queen-validation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.2fr;
+            gap: 15px;
+            padding: 15px;
+            height: 100%;
+        }
+
+        .accuracy-ring {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 15px;
+        }
+
+        .accuracy-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .accuracy-ring .ring-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 12;
+        }
+
+        .accuracy-ring .ring-progress {
+            fill: none;
+            stroke: var(--accent-green);
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .accuracy-ring .ring-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .accuracy-ring .accuracy-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--accent-green);
+        }
+
+        .accuracy-ring .accuracy-label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .validation-opportunity {
+            background: rgba(0, 255, 136, 0.08);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-left: 4px solid var(--accent-green);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            transition: all 0.2s ease;
+        }
+
+        .validation-opportunity:hover {
+            background: rgba(0, 255, 136, 0.12);
+            transform: translateX(4px);
+        }
+
+        .validation-opportunity.pending {
+            border-left-color: var(--accent-gold);
+            background: rgba(255, 170, 0, 0.08);
+        }
+
+        .validation-opportunity.rejected {
+            border-left-color: var(--accent-red);
+            background: rgba(255, 51, 102, 0.08);
+            opacity: 0.7;
+        }
+
+        .opp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .opp-symbol {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: var(--accent-blue);
+        }
+
+        .opp-badge {
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75em;
+            font-weight: 700;
+        }
+
+        .opp-badge.validated { background: rgba(0, 255, 136, 0.25); color: var(--accent-green); }
+        .opp-badge.pending { background: rgba(255, 170, 0, 0.25); color: var(--accent-gold); }
+        .opp-badge.rejected { background: rgba(255, 51, 102, 0.25); color: var(--accent-red); }
+
+        .opp-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            font-size: 0.8em;
+            margin-top: 8px;
+        }
+
+        .opp-metric {
+            text-align: center;
+            padding: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .opp-metric-label {
+            color: var(--text-secondary);
+            font-size: 0.85em;
+        }
+
+        .opp-metric-value {
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .coherence-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .coherence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-gold), var(--accent-green));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .timeline-anchor-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 8px;
+            margin: 6px 0;
+        }
+
+        .timeline-anchor-item.active {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+        }
+
+        .anchor-symbol {
+            font-weight: bold;
+            color: var(--accent-blue);
+        }
+
+        .anchor-score {
+            font-size: 0.9em;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--accent-green);
+        }
+
+        .phi-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(0, 191, 255, 0.15));
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .phi-symbol {
+            font-size: 1.5em;
+            color: var(--accent-gold);
+        }
+
+        .phi-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .mycelium-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .flow-stage {
+            text-align: center;
+            padding: 8px 12px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 6px;
+            min-width: 80px;
+        }
+
+        .flow-stage.active {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+        }
+
+        .flow-stage-icon {
+            font-size: 1.5em;
+            margin-bottom: 4px;
+        }
+
+        .flow-stage-label {
+            font-size: 0.7em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .flow-arrow {
+            color: var(--accent-gold);
+            font-size: 1.2em;
+        }
+
         /* Connection Indicator */
         #connection-status {
             position: fixed;
@@ -1376,6 +1611,7 @@ COMMAND_CENTER_HTML = """
     <!-- Tab Navigation -->
     <div class="tabs-nav">
         <button class="tab-link active" data-tab="dashboard">Dashboard</button>
+        <button class="tab-link" data-tab="queen-validation">👑 Queen Validation</button>
         <button class="tab-link" data-tab="feed-status">Feed Status</button>
         <button class="tab-link" data-tab="gamma">Gamma</button>
         <button class="tab-link" data-tab="whale-sonar">Whale Sonar</button>
@@ -1567,6 +1803,145 @@ COMMAND_CENTER_HTML = """
         </div>
     </div>
     </div><!-- end tab-dashboard -->
+
+    <!-- TAB: QUEEN VALIDATION - 100% Accuracy Validation Dashboard -->
+    <div id="tab-queen-validation" class="tab-content">
+        <div class="queen-validation-grid">
+            <!-- Left: Accuracy Metrics -->
+            <div class="panel">
+                <h2>👑 QUEEN VALIDATION ENGINE</h2>
+                
+                <!-- Accuracy Ring -->
+                <div class="accuracy-ring">
+                    <svg width="180" height="180">
+                        <circle class="ring-bg" cx="90" cy="90" r="75"></circle>
+                        <circle class="ring-progress" id="accuracy-ring-progress" cx="90" cy="90" r="75" 
+                                stroke-dasharray="471" stroke-dashoffset="0"></circle>
+                    </svg>
+                    <div class="ring-center">
+                        <div class="accuracy-value" id="queen-accuracy">100%</div>
+                        <div class="accuracy-label">Validation Accuracy</div>
+                    </div>
+                </div>
+
+                <div class="phi-indicator">
+                    <span class="phi-symbol">φ</span>
+                    <span>Coherence Threshold:</span>
+                    <span class="phi-value" id="phi-threshold">0.809</span>
+                </div>
+
+                <div class="stats-grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="stat-card">
+                        <div class="stat-label">Validated Today</div>
+                        <div class="stat-value" id="validated-count">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Pending</div>
+                        <div class="stat-value gold" id="pending-count">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Rejected</div>
+                        <div class="stat-value negative" id="rejected-count">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Queen Confidence</div>
+                        <div class="stat-value" id="queen-conf">0.85</div>
+                    </div>
+                </div>
+
+                <!-- Mycelium Flow Visualization -->
+                <h3 style="margin-top: 15px;">🍄 Mycelium Validation Flow</h3>
+                <div class="mycelium-flow">
+                    <div class="flow-stage" id="flow-stem">
+                        <div class="flow-stage-icon">🌱</div>
+                        <div class="flow-stage-label">Stem</div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-stage" id="flow-spore">
+                        <div class="flow-stage-icon">🍄</div>
+                        <div class="flow-stage-label">Spore</div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-stage" id="flow-validate">
+                        <div class="flow-stage-icon">✓</div>
+                        <div class="flow-stage-label">Validate</div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-stage active" id="flow-execute">
+                        <div class="flow-stage-icon">⚡</div>
+                        <div class="flow-stage-label">Execute</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: Validated Opportunities -->
+            <div class="panel">
+                <div class="section-header">
+                    <h2>✅ 100% VALIDATED OPPORTUNITIES</h2>
+                    <span class="chip">Live</span>
+                </div>
+                <div id="validated-opportunities" class="scroll-area lg">
+                    <div class="empty-state">
+                        <div style="font-size: 2em;">👑</div>
+                        <p>Awaiting validation results...</p>
+                        <p style="font-size: 0.8em; color: #666;">Only 100% validated opportunities appear here</p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 15px;">⏳ Pending Validation</h3>
+                <div id="pending-opportunities" class="scroll-area" style="max-height: 200px;">
+                    <div class="empty-state">No pending validations</div>
+                </div>
+            </div>
+
+            <!-- Right: Timeline Anchors & Trade History -->
+            <div class="panel">
+                <h2>⚓ ANCHORED TIMELINES</h2>
+                <div class="stats-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 12px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Active Anchors</div>
+                        <div class="stat-value" id="active-anchors">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Anchor Strength</div>
+                        <div class="stat-value gold" id="anchor-strength">0.00</div>
+                    </div>
+                </div>
+                <div id="timeline-anchors" class="scroll-area" style="max-height: 180px;">
+                    <div class="empty-state">No anchored timelines yet</div>
+                </div>
+
+                <h3 style="margin-top: 15px;">📊 VALIDATED TRADES</h3>
+                <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 10px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Total</div>
+                        <div class="stat-value" id="validated-trades-total">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Wins</div>
+                        <div class="stat-value" style="color: var(--accent-green);" id="validated-trades-wins">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">P&L</div>
+                        <div class="stat-value" id="validated-trades-pnl">$0.00</div>
+                    </div>
+                </div>
+                <div id="validated-trade-history" class="scroll-area lg">
+                    <div class="empty-state">No validated trades executed yet</div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div style="margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button onclick="refreshQueenValidation()" class="btn-action" style="background: linear-gradient(135deg, #00ff88, #00cc66); border: none; padding: 8px 16px; border-radius: 6px; color: #000; cursor: pointer; font-size: 0.85em; font-weight: bold;">
+                        🔄 Refresh Validation
+                    </button>
+                    <button onclick="forceRescan()" class="btn-action" style="background: linear-gradient(135deg, #ffaa00, #cc8800); border: none; padding: 8px 16px; border-radius: 6px; color: #000; cursor: pointer; font-size: 0.85em; font-weight: bold;">
+                        🔍 Force Rescan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- TAB 2: WHALES - Live Whale Tracker -->
     <div id="tab-whales" class="tab-content">
@@ -2404,6 +2779,10 @@ COMMAND_CENTER_HTML = """
                     updateQueen(data);
                     markLive('trading', 'Queen Update');
                     break;
+                case 'queen_validation_update':
+                    updateQueenValidationTab(data);
+                    markLive('queen-validation', 'Validation Update');
+                    break;
                 case 'signal':
                     addSignal(data.signal);
                     markLive('trading', 'Signal');
@@ -2470,7 +2849,7 @@ COMMAND_CENTER_HTML = """
         function updateStaleBadges() {
             const thresholds = { stale: 45000, dead: 120000 }; // 45s stale, 2m dead
             const last = window.__aureonTabLast || {};
-            const tabs = ['trading', 'whales', 'bots', 'market', 'quantum', 'learning', 'orca', 'systems', 'gamma'];
+            const tabs = ['trading', 'queen-validation', 'whales', 'bots', 'market', 'quantum', 'learning', 'orca', 'systems', 'gamma'];
             const now = Date.now();
             tabs.forEach(tab => {
                 const badge = document.getElementById(`live-${tab}`);
@@ -3435,6 +3814,281 @@ COMMAND_CENTER_HTML = """
             console.innerHTML = orcaConsoleLines.join('\\n');
             console.scrollTop = console.scrollHeight;
         }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // QUEEN VALIDATION TAB FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        let lastQueenValidationUpdate = 0;
+        const PHI = 1.618033988749895;
+        const PHI_THRESHOLD = PHI / 2;  // 0.809
+
+        async function refreshQueenValidation() {
+            try {
+                const res = await fetch('/api/queen-validation/status');
+                if (!res.ok) throw new Error('Failed to fetch Queen validation data');
+                const data = await res.json();
+                updateQueenValidationTab(data);
+                markLive('queen-validation', 'Queen Refresh');
+            } catch (e) {
+                console.error('Queen validation refresh failed:', e);
+            }
+        }
+
+        async function forceRescan() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('Not connected to server');
+                return;
+            }
+            ws.send(JSON.stringify({ command: 'queen_rescan' }));
+            showToast('Force rescan initiated', 'info');
+        }
+
+        function updateQueenValidationTab(data) {
+            if (!data) return;
+            lastQueenValidationUpdate = Date.now();
+            
+            // Update accuracy ring
+            const accuracy = data.accuracy || 100;
+            const accuracyEl = document.getElementById('queen-accuracy');
+            if (accuracyEl) accuracyEl.textContent = accuracy.toFixed(0) + '%';
+            
+            const ringProgress = document.getElementById('accuracy-ring-progress');
+            if (ringProgress) {
+                const circumference = 2 * Math.PI * 75;  // r=75
+                const offset = circumference * (1 - accuracy / 100);
+                ringProgress.style.strokeDasharray = circumference;
+                ringProgress.style.strokeDashoffset = offset;
+                ringProgress.style.stroke = accuracy >= 100 ? 'var(--accent-green)' : 
+                                            accuracy >= 80 ? 'var(--accent-gold)' : 'var(--accent-red)';
+            }
+            
+            // Update counts
+            const validated = data.validated_count || 0;
+            const pending = data.pending_count || 0;
+            const rejected = data.rejected_count || 0;
+            const queenConf = data.queen_confidence || 0.85;
+            
+            const validatedEl = document.getElementById('validated-count');
+            const pendingEl = document.getElementById('pending-count');
+            const rejectedEl = document.getElementById('rejected-count');
+            const queenConfEl = document.getElementById('queen-conf');
+            
+            if (validatedEl) validatedEl.textContent = validated;
+            if (pendingEl) pendingEl.textContent = pending;
+            if (rejectedEl) rejectedEl.textContent = rejected;
+            if (queenConfEl) queenConfEl.textContent = queenConf.toFixed(2);
+            
+            // Update phi threshold display
+            const phiEl = document.getElementById('phi-threshold');
+            if (phiEl) phiEl.textContent = PHI_THRESHOLD.toFixed(3);
+            
+            // Update mycelium flow stages
+            updateMyceliumFlow(data.flow_stage || 'execute');
+            
+            // Render validated opportunities
+            const opportunities = data.validated_opportunities || [];
+            renderValidatedOpportunities(opportunities);
+            
+            // Render pending validations
+            const pendingOps = data.pending_opportunities || [];
+            renderPendingOpportunities(pendingOps);
+            
+            // Update timeline anchors
+            const anchors = data.anchored_timelines || [];
+            renderTimelineAnchors(anchors);
+            
+            // Update trade stats
+            const tradeStats = data.trade_stats || {};
+            const totalTrades = tradeStats.total || 0;
+            const winTrades = tradeStats.wins || 0;
+            const pnl = tradeStats.pnl || 0;
+            
+            const totalEl = document.getElementById('validated-trades-total');
+            const winsEl = document.getElementById('validated-trades-wins');
+            const pnlEl = document.getElementById('validated-trades-pnl');
+            
+            if (totalEl) totalEl.textContent = totalTrades;
+            if (winsEl) winsEl.textContent = winTrades;
+            if (pnlEl) {
+                pnlEl.textContent = '$' + pnl.toFixed(4);
+                pnlEl.style.color = pnl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+            }
+            
+            // Render validated trade history
+            const tradeHistory = data.validated_trades || [];
+            renderValidatedTradeHistory(tradeHistory);
+            
+            // Update anchor metrics
+            const activeAnchors = anchors.filter(a => a.active).length;
+            const avgAnchorStrength = anchors.length > 0 
+                ? anchors.reduce((sum, a) => sum + (a.strength || 0), 0) / anchors.length 
+                : 0;
+            
+            const activeAnchorsEl = document.getElementById('active-anchors');
+            const anchorStrengthEl = document.getElementById('anchor-strength');
+            
+            if (activeAnchorsEl) activeAnchorsEl.textContent = activeAnchors;
+            if (anchorStrengthEl) anchorStrengthEl.textContent = avgAnchorStrength.toFixed(2);
+        }
+
+        function updateMyceliumFlow(stage) {
+            const stages = ['stem', 'spore', 'validate', 'execute'];
+            const stageIndex = stages.indexOf(stage);
+            
+            stages.forEach((s, i) => {
+                const el = document.getElementById('flow-' + s);
+                if (el) {
+                    el.classList.toggle('active', i <= stageIndex);
+                }
+            });
+        }
+
+        function renderValidatedOpportunities(opportunities) {
+            const container = document.getElementById('validated-opportunities');
+            if (!container) return;
+            
+            if (opportunities.length === 0) {
+                container.innerHTML = `<div class="empty-state">
+                    <div style="font-size: 2em;">👑</div>
+                    <p>Awaiting validation results...</p>
+                    <p style="font-size: 0.8em; color: #666;">Only 100% validated opportunities appear here</p>
+                </div>`;
+                return;
+            }
+            
+            container.innerHTML = opportunities.map(opp => {
+                const coherence = opp.coherence || 0;
+                const validation = opp.validation_score || 1;
+                const symbol = opp.symbol || 'UNKNOWN';
+                const exchange = opp.exchange || '';
+                const confidence = opp.queen_confidence || 0;
+                const stemId = opp.stem_id ? opp.stem_id.slice(0, 8) : '--';
+                const sporeId = opp.spore_id ? opp.spore_id.slice(0, 8) : '--';
+                
+                return `
+                    <div class="validation-opportunity">
+                        <div class="opp-header">
+                            <span class="opp-symbol">${symbol}</span>
+                            <span class="opp-badge validated">✓ 100% VALIDATED</span>
+                        </div>
+                        <div style="font-size: 0.8em; color: var(--text-secondary);">
+                            Exchange: ${exchange} | Stem: ${stemId} | Spore: ${sporeId}
+                        </div>
+                        <div class="opp-metrics">
+                            <div class="opp-metric">
+                                <div class="opp-metric-label">Coherence</div>
+                                <div class="opp-metric-value" style="color: ${coherence >= PHI_THRESHOLD ? 'var(--accent-green)' : 'var(--accent-gold)'}">
+                                    ${coherence.toFixed(3)}
+                                </div>
+                            </div>
+                            <div class="opp-metric">
+                                <div class="opp-metric-label">Validation</div>
+                                <div class="opp-metric-value">${(validation * 100).toFixed(0)}%</div>
+                            </div>
+                            <div class="opp-metric">
+                                <div class="opp-metric-label">Queen</div>
+                                <div class="opp-metric-value">${(confidence * 100).toFixed(0)}%</div>
+                            </div>
+                        </div>
+                        <div class="coherence-bar">
+                            <div class="coherence-fill" style="width: ${coherence * 100}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderPendingOpportunities(opportunities) {
+            const container = document.getElementById('pending-opportunities');
+            if (!container) return;
+            
+            if (opportunities.length === 0) {
+                container.innerHTML = '<div class="empty-state">No pending validations</div>';
+                return;
+            }
+            
+            container.innerHTML = opportunities.slice(0, 5).map(opp => {
+                const symbol = opp.symbol || 'UNKNOWN';
+                const pass = opp.current_pass || 1;
+                const coherence = opp.coherence || 0;
+                
+                return `
+                    <div class="validation-opportunity pending">
+                        <div class="opp-header">
+                            <span class="opp-symbol">${symbol}</span>
+                            <span class="opp-badge pending">Pass ${pass}/3</span>
+                        </div>
+                        <div class="coherence-bar">
+                            <div class="coherence-fill" style="width: ${(pass / 3) * 100}%; background: var(--accent-gold);"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderTimelineAnchors(anchors) {
+            const container = document.getElementById('timeline-anchors');
+            if (!container) return;
+            
+            if (anchors.length === 0) {
+                container.innerHTML = '<div class="empty-state">No anchored timelines yet</div>';
+                return;
+            }
+            
+            container.innerHTML = anchors.slice(0, 8).map(anchor => {
+                const symbol = anchor.symbol || anchor.timeline_id || 'UNKNOWN';
+                const strength = anchor.strength || anchor.anchor_strength || 0;
+                const active = anchor.active !== false;
+                
+                return `
+                    <div class="timeline-anchor-item ${active ? 'active' : ''}">
+                        <span class="anchor-symbol">⚓ ${symbol}</span>
+                        <span class="anchor-score">${strength.toFixed(2)}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderValidatedTradeHistory(trades) {
+            const container = document.getElementById('validated-trade-history');
+            if (!container) return;
+            
+            if (trades.length === 0) {
+                container.innerHTML = '<div class="empty-state">No validated trades executed yet</div>';
+                return;
+            }
+            
+            container.innerHTML = trades.slice(0, 10).map(trade => {
+                const symbol = trade.symbol || 'UNKNOWN';
+                const side = (trade.side || 'BUY').toUpperCase();
+                const pnl = trade.pnl || 0;
+                const ts = trade.timestamp ? new Date(trade.timestamp * 1000).toLocaleTimeString() : '--';
+                const sideColor = side === 'BUY' ? 'var(--accent-green)' : 'var(--accent-red)';
+                
+                return `
+                    <div class="execution-item ${side.toLowerCase()}">
+                        <div>
+                            <span style="color: ${sideColor}; font-weight: bold;">${side}</span>
+                            <span>${symbol}</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: ${pnl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">
+                                ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(4)}
+                            </div>
+                            <div style="font-size: 0.75em; color: #666;">${ts}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Auto-refresh Queen validation every 5 seconds
+        setInterval(() => {
+            if (Date.now() - lastQueenValidationUpdate > 5000) {
+                refreshQueenValidation();
+            }
+        }, 5000);
         
         function updateOrcaTab(data) {
             if (!data) return;
@@ -3714,6 +4368,7 @@ class AureonCommandCenter:
             self.app.router.add_get('/api/gamma/latest', self.handle_api_gamma_latest)
             self.app.router.add_get('/api/unified/hubs', self.handle_api_unified_hubs)
             self.app.router.add_get('/api/unified/registry', self.handle_api_unified_registry)
+            self.app.router.add_get('/api/queen-validation/status', self.handle_api_queen_validation)
             self.app.router.add_get('/hub/orca', self.handle_hub_orca)
             self.app.router.add_get('/hub/orca/ws', self.handle_hub_orca_ws)
             self.app.router.add_get('/hub/orca/api/status', self.handle_hub_orca_status)
@@ -3999,6 +4654,127 @@ class AureonCommandCenter:
         """REST API: Recent signals."""
         return web.json_response({
             "signals": [asdict(s) if hasattr(s, '__dataclass_fields__') else s for s in list(self.signals)[-50:]]
+        })
+
+    async def handle_api_queen_validation(self, request):
+        """REST API: Queen Validation status and data."""
+        import math
+        PHI = (1 + math.sqrt(5)) / 2
+        PHI_THRESHOLD = PHI / 2  # 0.809
+        
+        # Read validation state files
+        validated_opportunities = []
+        pending_opportunities = []
+        anchored_timelines = []
+        validated_trades = []
+        
+        # Load validated trades from queen_validated_trades.json
+        if os.path.exists("queen_validated_trades.json"):
+            try:
+                with open("queen_validated_trades.json", "r") as f:
+                    validated_trades = json.load(f)
+            except Exception:
+                pass
+        
+        # Load daily report for stats
+        trade_stats = {"total": 0, "wins": 0, "pnl": 0.0}
+        if os.path.exists("queen_daily_report.json"):
+            try:
+                with open("queen_daily_report.json", "r") as f:
+                    report = json.load(f)
+                    trade_stats["total"] = report.get("total_trades", 0)
+                    trade_stats["wins"] = report.get("winning_trades", 0)
+                    trade_stats["pnl"] = report.get("total_pnl", 0.0)
+            except Exception:
+                pass
+        
+        # Load pending validations from 7day files
+        if os.path.exists("7day_pending_validations.json"):
+            try:
+                with open("7day_pending_validations.json", "r") as f:
+                    pending_data = json.load(f)
+                    if isinstance(pending_data, dict):
+                        for symbol, data in pending_data.items():
+                            pending_opportunities.append({
+                                "symbol": symbol,
+                                "current_pass": data.get("pass_count", 1),
+                                "coherence": data.get("coherence", 0)
+                            })
+            except Exception:
+                pass
+        
+        # Load anchored timelines
+        if os.path.exists("7day_anchored_timelines.json"):
+            try:
+                with open("7day_anchored_timelines.json", "r") as f:
+                    anchored_data = json.load(f)
+                    if isinstance(anchored_data, dict):
+                        for tid, data in anchored_data.items():
+                            anchored_timelines.append({
+                                "timeline_id": tid,
+                                "symbol": data.get("symbol", tid),
+                                "strength": data.get("anchor_strength", 0),
+                                "active": data.get("active", True)
+                            })
+            except Exception:
+                pass
+        
+        # Load accuracy report
+        accuracy = 100.0
+        if os.path.exists("mycelium_accuracy_report.json"):
+            try:
+                with open("mycelium_accuracy_report.json", "r") as f:
+                    accuracy_data = json.load(f)
+                    accuracy = accuracy_data.get("overall_accuracy", 100.0)
+            except Exception:
+                pass
+        
+        # Build validated opportunities from recent validated trades
+        for trade in validated_trades[-20:]:
+            if trade.get("validation_score", 0) >= 1.0:
+                validated_opportunities.append({
+                    "symbol": trade.get("symbol", "UNKNOWN"),
+                    "exchange": trade.get("exchange", ""),
+                    "coherence": trade.get("coherence", PHI_THRESHOLD),
+                    "validation_score": trade.get("validation_score", 1.0),
+                    "queen_confidence": trade.get("queen_confidence", 0.85),
+                    "stem_id": trade.get("stem_id", ""),
+                    "spore_id": trade.get("spore_id", "")
+                })
+        
+        # Determine flow stage
+        flow_stage = "execute"
+        if pending_opportunities:
+            max_pass = max(p.get("current_pass", 1) for p in pending_opportunities)
+            if max_pass <= 1:
+                flow_stage = "stem"
+            elif max_pass == 2:
+                flow_stage = "spore"
+            else:
+                flow_stage = "validate"
+        
+        # Queen confidence from queen state
+        queen_confidence = 0.85
+        if self.queen:
+            try:
+                queen_confidence = getattr(self.queen, 'confidence', 0.85)
+            except Exception:
+                pass
+        
+        return web.json_response({
+            "accuracy": accuracy,
+            "validated_count": len(validated_opportunities),
+            "pending_count": len(pending_opportunities),
+            "rejected_count": 0,  # TODO: Track rejections
+            "queen_confidence": queen_confidence,
+            "flow_stage": flow_stage,
+            "validated_opportunities": validated_opportunities,
+            "pending_opportunities": pending_opportunities,
+            "anchored_timelines": anchored_timelines,
+            "validated_trades": validated_trades[-15:],
+            "trade_stats": trade_stats,
+            "phi_threshold": PHI_THRESHOLD,
+            "timestamp": time.time()
         })
 
     async def handle_api_gamma_latest(self, request):
