@@ -939,29 +939,29 @@ class QueenPowerRedistribution:
         try:
             # Execute via appropriate exchange client
             if opp.relay == 'BIN' and self.binance:
-                # Binance execution
-                order = self.binance.execute_trade(
+                # Binance execution - use quote_qty for USD amount
+                order = self.binance.place_market_order(
                     symbol=opp.target_asset,
                     side='buy',
-                    quantity=opp.idle_energy  # Will convert to asset quantity
+                    quote_qty=opp.idle_energy  # USD amount to spend
                 )
                 logger.info(f"✅ Binance order executed: {order}")
             
             elif opp.relay == 'KRK' and self.kraken:
-                # Kraken execution
-                order = self.kraken.execute_trade(
+                # Kraken execution - use quote_qty for USD amount
+                order = self.kraken.place_market_order(
                     symbol=opp.target_asset,
                     side='buy',
-                    quantity=opp.idle_energy
+                    quote_qty=opp.idle_energy  # USD amount to spend
                 )
                 logger.info(f"✅ Kraken order executed: {order}")
             
             elif opp.relay == 'ALP' and self.alpaca:
-                # Alpaca execution
-                order = self.alpaca.execute_trade(
+                # Alpaca execution - use quote_qty for USD amount
+                order = self.alpaca.place_market_order(
                     symbol=opp.target_asset,
                     side='buy',
-                    quantity=opp.idle_energy
+                    quote_qty=opp.idle_energy  # USD amount to spend
                 )
                 logger.info(f"✅ Alpaca order executed: {order}")
             
@@ -1041,7 +1041,8 @@ class QueenPowerRedistribution:
                 sell_quantity = node.quantity * harvest_percentage
                 
                 if node.relay == 'BIN' and self.binance:
-                    order = self.binance.execute_trade(
+                    # Binance uses place_market_order with quantity (not quote_qty for sells)
+                    order = self.binance.place_market_order(
                         symbol=node.symbol,
                         side='sell',
                         quantity=sell_quantity
@@ -1051,7 +1052,8 @@ class QueenPowerRedistribution:
                     total_harvested += harvest_amount_usd
                     
                 elif node.relay == 'KRK' and self.kraken:
-                    order = self.kraken.execute_trade(
+                    # Kraken uses place_market_order
+                    order = self.kraken.place_market_order(
                         symbol=node.symbol,
                         side='sell',
                         quantity=sell_quantity
@@ -1061,7 +1063,8 @@ class QueenPowerRedistribution:
                     total_harvested += harvest_amount_usd
                     
                 elif node.relay == 'ALP' and self.alpaca:
-                    order = self.alpaca.execute_trade(
+                    # Alpaca uses place_market_order
+                    order = self.alpaca.place_market_order(
                         symbol=node.symbol,
                         side='sell',
                         quantity=sell_quantity
