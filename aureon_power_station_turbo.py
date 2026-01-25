@@ -563,18 +563,25 @@ class PowerStationTurbo:
   ════════════════════════════════════════════════════════════
         """)
         
-        # Save state
+        # Save state for monitor integration
         try:
             with open('power_station_state.json', 'w') as f:
                 json.dump({
                     'runtime_sec': self.state.runtime_sec,
-                    'cycles': self.state.cycles_completed,
+                    'cycles_run': self.state.cycles_completed,
                     'successful_pulses': self.state.successful_pulses,
                     'failed_pulses': self.state.failed_pulses,
-                    'net_gain': self.state.net_energy_gain,
+                    'blocked_operations': self.state.failed_pulses,  # Failed = blocked
+                    'total_energy_now': self.state.total_energy,
+                    'energy_deployed': self.state.energy_deployed,
+                    'net_flow': self.state.net_energy_gain,
+                    'net_flow_24h': self.state.net_energy_gain,
                     'gain_per_sec': self.state.gain_per_sec,
+                    'gain_per_hour': self.state.gain_per_sec * 3600,
                     'fees_paid': self.state.total_fees_paid,
-                    'timestamp': time.time()
+                    'efficiency': self.state.efficiency,
+                    'timestamp': time.time(),
+                    'status': 'RUNNING' if hasattr(self, 'running') and self.running else 'STOPPED',
                 }, f, indent=2)
         except:
             pass
