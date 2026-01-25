@@ -65,6 +65,10 @@ class BinanceClient:
         self._cache_timestamp: float = 0
         self._symbol_filters_cache: dict[str, dict[str, float]] = {}
         
+        # 🇬🇧 Cache UK restricted symbols to skip known-bad symbols proactively
+        self._uk_restricted_symbols_cache: Set[str] = set()
+        self._uk_restriction_cache_timestamp: float = 0
+        
         # Server time offset for clock sync (fixes Windows clock drift)
         self._time_offset_ms: int = 0
         self._time_sync_timestamp: float = 0
@@ -226,6 +230,19 @@ class BinanceClient:
                 if attempt < self.max_retries:
                     continue
             if resp.status_code != 200:
+                # 🇬🇧 UK Mode: Cache -2010 errors (symbol not permitted)
+                if self.uk_mode and resp.status_code == 400:
+                    try:
+                        error_data = resp.json()
+                        if error_data.get('code') == -2010:
+                            # Extract symbol from params and cache it
+                            symbol = params.get('symbol') if params else None
+                            if symbol:
+                                self._uk_restricted_symbols_cache.add(symbol)
+                                self._uk_restriction_cache_timestamp = time.time()
+                                print(f"   🇬🇧 Cached UK restricted symbol: {symbol}")
+                    except Exception:
+                        pass
                 raise RuntimeError(f"Binance error {resp.status_code}: {resp.text}")
             return resp.json()
         raise RuntimeError("Binance request failed after retries")
@@ -318,17 +335,58 @@ class BinanceClient:
 
     def place_market_order(self, symbol: str, side: str, quantity: float | str | Decimal | None = None, quote_qty: float | str | Decimal | None = None) -> Dict[str, Any]:
         # 🇬🇧 UK Mode: Check restrictions before attempting trade
-        # ALLOW SELLS: If we own it, we must be allowed to sell it (harvest/exit)
-        if self.uk_mode and side.upper() != 'SELL':
-            can_trade, reason = self.can_trade_symbol(symbol)
-            if not can_trade:
+        # Also check cached restricted symbols to skip known-bad symbols
+        if self.uk_mode:
+            # Check cache first (even for SELLs to avoid wasted API calls)
+            if symbol in self._uk_restricted_symbols_cache:
                 return {
                     "rejected": True,
                     "symbol": symbol,
                     "side": side,
-                    "reason": reason,
+                    "reason": "This symbol is not permitted for this account (cached).",
                     "uk_restricted": True
                 }
+            # For BUYs, do full validation
+            if side.upper() != 'SELL':
+                can_trade, reason = self.can_trade_symbol(symbol)
+                if not can_trade:
+                    # Cache this restriction
+                    self._uk_restricted_symbols_cache.add(symbol)
+                    self._uk_restriction_cache_timestamp = time.time()
+                    return {
+                        "rejected": True,
+                        "symbol": symbol,
+                        "side": side,
+                        "reason": reason,
+                        "uk_restricted": True
+                    }
+        
+        # 🚨 CRITICAL: Verify balance before SELL orders to prevent insufficient funds errors
+        if side.upper() == 'SELL' and quantity:
+            try:
+                # Extract base asset from symbol (e.g., "BTC" from "BTCUSDT")
+                base_asset = symbol.replace('USDT', '').replace('USDC', '').replace('BUSD', '').replace('BTC', '').replace('BNB', '').replace('ETH', '')
+                if not base_asset:
+                    # Fallback: guess base asset is the first 3-4 chars
+                    base_asset = symbol[:4] if len(symbol) > 4 else symbol[:3]
+                
+                # Get actual balance from account
+                actual_balance = self.get_free_balance(base_asset)
+                requested_qty = float(quantity)
+                
+                if actual_balance < requested_qty:
+                    return {
+                        "rejected": True,
+                        "symbol": symbol,
+                        "side": side,
+                        "reason": f"Insufficient funds to sell {requested_qty:.8f} {base_asset}. Have {actual_balance:.8f}",
+                        "balance_check": True,
+                        "actual_balance": actual_balance,
+                        "requested_qty": requested_qty
+                    }
+            except Exception as e:
+                # Don't block order on balance check failure, but log it
+                print(f"   ⚠️ Balance check warning: {e}")
         
         if self.dry_run:
             return {"dryRun": True, "symbol": symbol, "side": side, "quantity": quantity, "quoteQty": quote_qty}
@@ -394,7 +452,44 @@ class BinanceClient:
         else:
             raise ValueError("Must provide either quantity or quote_qty")
             
-        return self._signed_request("POST", "/api/v3/order", params)
+        response = self._signed_request("POST", "/api/v3/order", params)
+
+        # Attach fill-derived metadata for validation
+        fills = response.get("fills") or []
+        total_qty = 0.0
+        total_cost = 0.0
+        total_fees_quote = 0.0
+
+        # Try to infer quote asset from common suffixes
+        quote_asset = None
+        for q in ("USDT", "USDC", "BUSD", "FDUSD", "TUSD", "USD", "EUR", "GBP", "BTC", "BNB", "ETH"):
+            if symbol.endswith(q):
+                quote_asset = q
+                break
+
+        for f in fills:
+            try:
+                qty = float(f.get("qty", 0) or 0)
+                price = float(f.get("price", 0) or 0)
+                commission = float(f.get("commission", 0) or 0)
+                commission_asset = str(f.get("commissionAsset", "") or "").upper()
+            except Exception:
+                qty = 0.0
+                price = 0.0
+                commission = 0.0
+                commission_asset = ""
+            if qty > 0 and price > 0:
+                total_qty += qty
+                total_cost += qty * price
+            if commission > 0 and quote_asset and commission_asset == quote_asset:
+                total_fees_quote += commission
+
+        avg_fill_price = (total_cost / total_qty) if total_qty > 0 else None
+        response["avg_fill_price"] = avg_fill_price
+        response["fees"] = total_fees_quote
+        response["fills_verified"] = True if fills else False
+
+        return response
 
     def get_symbol_filters(self, symbol: str) -> Dict[str, float]:
         symbol = symbol.upper()

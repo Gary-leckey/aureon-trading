@@ -113,6 +113,29 @@ class RedistributionDecision:
         return d
 
 
+@dataclass
+class TradeAuditRecord:
+    """Unified trade audit record (order IDs + fills)."""
+    ts: float
+    exchange: str
+    action: str
+    symbol: str
+    order_id: Optional[str]
+    client_order_id: Optional[str]
+    qty: Optional[float]
+    quote_qty: Optional[float]
+    avg_fill_price: Optional[float]
+    fills: List[Dict]
+    fees: Optional[float]
+    status: str
+    verified: bool
+    source: str
+    notes: Optional[str] = None
+
+    def to_dict(self):
+        return asdict(self)
+
+
 class QueenPowerRedistribution:
     """
     Queen's autonomous energy redistribution system.
@@ -153,6 +176,9 @@ class QueenPowerRedistribution:
         self.total_net_energy_gained = 0.0
         self.total_blocked_drains_avoided = 0.0
         self.all_energy_nodes: List[EnergyNode] = []  # All positions across all relays
+
+        # Trade audit file (jsonl)
+        self.trade_audit_file = "trade_audit.jsonl"
         
         # Load cost basis data
         self.cost_basis = self.load_state_file('cost_basis_history.json', {})
@@ -188,6 +214,33 @@ class QueenPowerRedistribution:
             logger.warning(f"Momentum scanner not available: {e}")
         
         logger.info(f"✅ Queen Power Redistribution initialized (dry_run={dry_run})")
+
+    def _append_trade_audit(self, record: TradeAuditRecord) -> None:
+        try:
+            with open(self.trade_audit_file, 'a') as f:
+                f.write(json.dumps(record.to_dict()) + "\n")
+        except Exception as e:
+            logger.debug(f"Trade audit write failed: {e}")
+
+    def _get_verified_entry_price(self, symbol: str, exchange: str) -> Optional[float]:
+        cost_basis_positions = self.cost_basis.get('positions', {})
+        candidates = [
+            f"{exchange.lower()}:{symbol}",
+            symbol,
+            symbol.replace('/', ''),
+        ]
+        for key in candidates:
+            pos = cost_basis_positions.get(key)
+            if not pos:
+                continue
+            if not pos.get('fills_verified'):
+                continue
+            if not pos.get('last_order_id'):
+                continue
+            avg_fill_price = pos.get('avg_fill_price') or pos.get('avg_entry_price')
+            if avg_fill_price and avg_fill_price > 0:
+                return avg_fill_price
+        return None
     
     def calculate_relay_energy_drain(self, relay: str, trade_value_usd: float, is_maker: bool = True) -> Dict:
         """
@@ -244,7 +297,12 @@ class QueenPowerRedistribution:
         """
         Get idle energy (USD/USDT balance) for a relay.
         Returns (amount_usd, asset_symbol).
+        
+        🔴 CRITICAL: Always prefers LIVE API data. Only falls back to state file
+        if fresh (< 5 min old). This prevents stale balance issues.
         """
+        STATE_FILE_MAX_AGE_SECONDS = 300  # 5 minutes
+        
         if relay == 'BIN':
             # Binance: Check USDT balance
             if self.binance:
@@ -254,9 +312,15 @@ class QueenPowerRedistribution:
                     return (usdt, 'USDT')
                 except Exception as e:
                     logger.warning(f"BIN balance fetch failed: {e}")
-            # Fallback to state file
+            # Fallback to state file (with TTL check)
             state = self.load_state_file('binance_truth_tracker_state.json', {})
+            last_update = state.get('last_update', 0)
+            age = time.time() - last_update
+            if age > STATE_FILE_MAX_AGE_SECONDS:
+                logger.error(f"❌ BIN state file is stale ({age:.0f}s old, max {STATE_FILE_MAX_AGE_SECONDS}s) - returning 0")
+                return (0.0, 'USDT')  # Don't use stale data
             usdt = state.get('balances', {}).get('USDT', {}).get('free', 0.0)
+            logger.warning(f"⚠️ Using cached BIN balance: ${usdt:.2f} (age: {age:.0f}s)")
             return (usdt, 'USDT')
         
         elif relay == 'KRK':
@@ -268,9 +332,15 @@ class QueenPowerRedistribution:
                     return (usd, 'ZUSD')
                 except Exception as e:
                     logger.warning(f"KRK balance fetch failed: {e}")
-            # Fallback to state file
+            # Fallback to state file (with TTL check)
             state = self.load_state_file('aureon_kraken_state.json', {})
+            last_update = state.get('last_update', 0)
+            age = time.time() - last_update
+            if age > STATE_FILE_MAX_AGE_SECONDS:
+                logger.error(f"❌ KRK state file is stale ({age:.0f}s old, max {STATE_FILE_MAX_AGE_SECONDS}s) - returning 0")
+                return (0.0, 'ZUSD')  # Don't use stale data
             usd = state.get('balances', {}).get('ZUSD', 0.0)
+            logger.warning(f"⚠️ Using cached KRK balance: ${usd:.2f} (age: {age:.0f}s)")
             return (usd, 'ZUSD')
         
         elif relay == 'ALP':
@@ -282,9 +352,15 @@ class QueenPowerRedistribution:
                     return (cash, 'USD')
                 except Exception as e:
                     logger.warning(f"ALP balance fetch failed: {e}")
-            # Fallback to state file
+            # Fallback to state file (with TTL check)
             state = self.load_state_file('alpaca_truth_tracker_state.json', {})
+            last_update = state.get('last_update', 0)
+            age = time.time() - last_update
+            if age > STATE_FILE_MAX_AGE_SECONDS:
+                logger.error(f"❌ ALP state file is stale ({age:.0f}s old, max {STATE_FILE_MAX_AGE_SECONDS}s) - returning 0")
+                return (0.0, 'USD')  # Don't use stale data
             cash = state.get('cash', 0.0)
+            logger.warning(f"⚠️ Using cached ALP balance: ${cash:.2f} (age: {age:.0f}s)")
             return (cash, 'USD')
         
         elif relay == 'CAP':
@@ -369,25 +445,38 @@ class QueenPowerRedistribution:
                         
                         # Look up cost basis from history
                         entry_price = current_price  # Default if no basis found
+                        entry_verified = False
                         cost_basis_positions = self.cost_basis.get('positions', {})
+
+                        verified_entry = self._get_verified_entry_price(symbol, 'binance')
+                        if verified_entry and verified_entry > 0:
+                            entry_price = verified_entry
+                            entry_verified = True
                         
                         # Try different key formats: ASSETUSDC, ASSETUSDT, binance:ASSETUSDC
                         for quote in ['USDC', 'USDT']:
                             basis_key = f'{asset}{quote}'
                             if basis_key in cost_basis_positions:
-                                entry_price = cost_basis_positions[basis_key].get('avg_entry_price', current_price)
+                                if not entry_verified:
+                                    entry_price = cost_basis_positions[basis_key].get('avg_entry_price', current_price)
                                 break
                             # Try with exchange prefix
                             basis_key_prefixed = f'binance:{asset}{quote}'
                             if basis_key_prefixed in cost_basis_positions:
-                                entry_price = cost_basis_positions[basis_key_prefixed].get('avg_entry_price', current_price)
+                                if not entry_verified:
+                                    entry_price = cost_basis_positions[basis_key_prefixed].get('avg_entry_price', current_price)
                                 break
                         
                         # Calculate PnL
                         pnl = (current_price - entry_price) * qty
                         pnl_pct = ((current_price - entry_price) / entry_price * 100) if entry_price > 0 else 0.0
-                        is_positive = pnl > self.min_positive_energy_to_redistribute
-                        redistributable = (pnl * 0.5) if is_positive else 0.0  # 50% of profit
+                        if entry_verified:
+                            is_positive = pnl > self.min_positive_energy_to_redistribute
+                            redistributable = (pnl * 0.5) if is_positive else 0.0  # 50% of profit
+                        else:
+                            # Unverified entry price: treat as not positive for redistribution
+                            is_positive = False
+                            redistributable = 0.0
                         
                         # ALL nodes included - quantum entanglement doesn't discriminate by size!
                         node = EnergyNode(
@@ -407,7 +496,8 @@ class QueenPowerRedistribution:
                         # Show entry price + PnL in log - include dust indicator
                         dust_marker = "🌌" if position_value < 0.50 else ""  # Quantum dust marker
                         pnl_indicator = "🟢" if is_positive else ("🔴" if pnl < -0.10 else "⚪")
-                        logger.info(f"  {pnl_indicator}{dust_marker} BIN: {symbol} | {qty:.6f} units | ${position_value:.4f} | Entry: ${entry_price:.6f} | PnL: ${pnl:.4f} ({pnl_pct:.1f}%)")
+                        verify_marker = "✅" if entry_verified else "⚠️"
+                        logger.info(f"  {pnl_indicator}{dust_marker} BIN: {symbol} | {qty:.6f} units | ${position_value:.4f} | Entry: ${entry_price:.6f} {verify_marker} | PnL: ${pnl:.4f} ({pnl_pct:.1f}%)")
                     except Exception as e:
                         logger.debug(f"  ⚪ BIN {symbol}: {e}")
             else:
@@ -1035,6 +1125,29 @@ class QueenPowerRedistribution:
                 'timestamp': time.time(),
                 'dry_run': False
             }
+
+            # Trade audit record (order_id + fills)
+            try:
+                record = TradeAuditRecord(
+                    ts=time.time(),
+                    exchange=opp.relay,
+                    action='BUY',
+                    symbol=opp.target_asset,
+                    order_id=order.get('orderId') or order.get('order_id') or order.get('txid'),
+                    client_order_id=order.get('clientOrderId'),
+                    qty=float(order.get('executedQty', 0) or 0),
+                    quote_qty=float(order.get('cummulativeQuoteQty', 0) or 0),
+                    avg_fill_price=order.get('avg_fill_price'),
+                    fills=order.get('fills') or [],
+                    fees=float(order.get('fees', order.get('fee', 0)) or 0),
+                    status=order.get('status', 'UNKNOWN'),
+                    verified=True if order.get('fills_verified') else False,
+                    source='queen_power_redistribution',
+                    notes=decision.reasoning
+                )
+                self._append_trade_audit(record)
+            except Exception as e:
+                logger.debug(f"Audit record failed: {e}")
             
             self.total_net_energy_gained += opp.net_energy_gain
             self.executions_history.append(result)

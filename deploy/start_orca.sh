@@ -10,7 +10,7 @@ sleep 30
 
 # Check if command center is healthy
 for i in {1..10}; do
-    if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+    if curl -sf http://localhost:8800/health > /dev/null 2>&1; then
         echo "✅ Command Center is healthy - starting Orca Kill Cycle"
         break
     fi

@@ -656,6 +656,7 @@ except ImportError as e:
         def __init__(self): self.positions = {}
         def sync_from_exchanges(self): return 0
         def get_entry_price(self, symbol): return None
+        def get_verified_entry_price(self, symbol, exchange=None): return None
         def set_entry_price(self, *args, **kwargs): pass
         def update_position(self, *args, **kwargs): pass
         def can_sell_profitably(self, symbol, price, quantity=None, **kw): return True, {'recommendation': 'NO_TRACKER'}
@@ -14909,14 +14910,24 @@ class AureonKrakenEcosystem:
                 if symbol in self.positions:
                     continue
                 
-                # 💰 TRY TO GET REAL COST BASIS FROM TRACKER
-                real_entry_price = cost_tracker.get_entry_price(symbol)
-                if real_entry_price and real_entry_price > 0:
+                # 💰 TRY TO GET REAL COST BASIS FROM VERIFIED FILLS
+                verified_entry_price = None
+                if hasattr(cost_tracker, 'get_verified_entry_price'):
+                    verified_entry_price = cost_tracker.get_verified_entry_price(symbol, exchange)
+
+                real_entry_price = verified_entry_price or cost_tracker.get_entry_price(symbol)
+                if real_entry_price and real_entry_price > 0 and verified_entry_price:
                     entry_price = real_entry_price
                     entry_value = amount * entry_price
                     is_historical = False  # We have real data!
-                    cost_source = "REAL"
-                    print(f"   💰 {symbol}: Using REAL entry price ${entry_price:.6f} from trade history")
+                    cost_source = "VERIFIED"
+                    print(f"   💰 {symbol}: Using VERIFIED entry price ${entry_price:.6f} from fills/order IDs")
+                elif real_entry_price and real_entry_price > 0:
+                    entry_price = real_entry_price
+                    entry_value = amount * entry_price
+                    is_historical = False  # We have real data, but not verified
+                    cost_source = "REAL_UNVERIFIED"
+                    print(f"   ⚠️ {symbol}: Using entry price ${entry_price:.6f} (unverified, no fills/order ID)")
                 else:
                     entry_price = price  # Fall back to current price
                     entry_value = gbp_value

@@ -433,16 +433,31 @@ class AvalancheHarvester:
                     
                     # 💰 GET REAL ENTRY PRICE from cost basis tracker!
                     entry_price = None
+                    entry_verified = False
                     if self._cost_basis_tracker:
                         try:
-                            # Try to get actual entry price
-                            tracked_entry = self._cost_basis_tracker.get_entry_price(
-                                symbol=symbol, 
-                                exchange='kraken'
-                            )
+                            # Prefer verified fills (order_id + fills)
+                            tracked_entry = None
+                            if hasattr(self._cost_basis_tracker, 'get_verified_entry_price'):
+                                tracked_entry = self._cost_basis_tracker.get_verified_entry_price(
+                                    symbol=symbol,
+                                    exchange='kraken'
+                                )
+                                if tracked_entry and tracked_entry > 0:
+                                    entry_verified = True
+
+                            if not tracked_entry:
+                                tracked_entry = self._cost_basis_tracker.get_entry_price(
+                                    symbol=symbol,
+                                    exchange='kraken'
+                                )
+
                             if tracked_entry and tracked_entry > 0:
                                 entry_price = tracked_entry
-                                logger.debug(f"✓ Found cost basis for {symbol}: ${entry_price:.4f}")
+                                if entry_verified:
+                                    logger.debug(f"✓ Verified cost basis for {symbol}: ${entry_price:.4f}")
+                                else:
+                                    logger.debug(f"⚠️ Unverified cost basis for {symbol}: ${entry_price:.4f}")
                         except Exception as e:
                             logger.debug(f"Cost basis lookup failed for {symbol}: {e}")
                     
@@ -450,6 +465,7 @@ class AvalancheHarvester:
                     if entry_price is None or entry_price <= 0:
                         entry_price = current_price * 0.95
                         logger.debug(f"⚠️ Using estimated entry for {symbol}: ${entry_price:.4f}")
+                        entry_verified = False
                     
                     # Calculate profit
                     unrealized_pnl_usd = market_value - (qty * entry_price)
@@ -460,7 +476,9 @@ class AvalancheHarvester:
                     net_profit = unrealized_pnl_usd - estimated_fees
                     net_profit_pct = (net_profit / (qty * entry_price)) * 100
                     
-                    # Check if profitable enough
+                    # Check if profitable enough (require verified entry)
+                    if not entry_verified:
+                        continue
                     if net_profit_pct < self.min_profit_pct:
                         continue
                     

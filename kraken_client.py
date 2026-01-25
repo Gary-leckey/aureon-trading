@@ -696,6 +696,15 @@ class KrakenClient:
                 pass
         
         # Return Binance-compatible response structure with ACTUAL values
+        fills = []
+        if actual_price > 0 and actual_qty > 0:
+            fills = [{
+                "price": str(actual_price),
+                "qty": str(actual_qty),
+                "commission": str(actual_fee),
+                "commissionAsset": (pair_info.get("quote", "") or "").replace("X", "").replace("Z", "")
+            }]
+
         return {
             "symbol": symbol,
             "orderId": txid,
@@ -709,8 +718,11 @@ class KrakenClient:
             "timeInForce": "GTC",
             "type": "MARKET",
             "side": side.upper(),
-            "fills": [],
+            "fills": fills,
             "fee": str(actual_fee),
+            "fees": float(actual_fee) if actual_fee else 0.0,
+            "avg_fill_price": actual_price if actual_price > 0 else None,
+            "fills_verified": True if fills else False,
             "receivedQty": str(actual_cost) if side.lower() == 'sell' else str(actual_qty)  # What we actually received
         }
 

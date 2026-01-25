@@ -623,11 +623,13 @@ class AdaptiveConversionCommando:
         mycelium: Any = None,
         client: Any = None,
         ladder: Any = None,  # ConversionLadder instance
+        queen: Any = None,
     ):
         self.bus = bus
         self.mycelium = mycelium
         self.client = client
         self.ladder = ladder
+        self.queen = queen
 
         # 🔭 PAIR SCANNER - Constantly scan ALL pairs as targets
         self.scanner = PairScanner(client)
@@ -715,6 +717,19 @@ class AdaptiveConversionCommando:
         max_slots = self.slot_config.get(commando, 1)
         active = self._get_active_slots(commando)
         return active < max_slots
+
+    def _queen_gate_mission(self, *, decision: Any, order_validation: Optional[Dict[str, Any]] = None) -> Tuple[bool, str]:
+        if not self.queen or not hasattr(self.queen, 'gate_trade_decision'):
+            return True, "NO_QUEEN"
+        order_data = order_validation or {}
+        allowed, reason = self.queen.gate_trade_decision(
+            action='CONVERT',
+            symbol=f"{decision.from_asset}->{decision.to_asset}",
+            exchange=decision.exchange,
+            order_data=order_data,
+            portfolio_impact=None
+        )
+        return allowed, reason
 
     # ═══════════════════════════════════════════════════════════════════════════
     # 🔭 CONTINUOUS SCANNING - ALL PAIRS ARE TARGETS
@@ -966,6 +981,7 @@ class AdaptiveConversionCommando:
         balances: Dict[str, Dict[str, float]] = None,
         preferred_assets: Optional[List[str]] = None,
         locked_assets: Optional[List[str]] = None,
+        order_validation: Optional[Dict[str, Any]] = None,
     ) -> Optional[CommandoMission]:
         """
         Execute one commando step.
@@ -995,6 +1011,12 @@ class AdaptiveConversionCommando:
         )
 
         if not decision:
+            return None
+
+        # 👑 Queen gating (uses validated order data if provided)
+        allowed, reason = self._queen_gate_mission(decision=decision, order_validation=order_validation)
+        if not allowed:
+            logger.info(f"👑 Queen gate blocked conversion: {reason}")
             return None
 
         # Map decision to commando

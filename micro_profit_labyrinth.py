@@ -101,6 +101,29 @@ from adaptive_prime_profit_gate import AdaptivePrimeProfitGate
 from cost_basis_tracker import CostBasisTracker
 
 
+@dataclass
+class TradeAuditRecord:
+    """Unified trade audit record (order IDs + fills)."""
+    ts: float
+    exchange: str
+    action: str
+    symbol: str
+    order_id: Optional[str]
+    client_order_id: Optional[str]
+    qty: Optional[float]
+    quote_qty: Optional[float]
+    avg_fill_price: Optional[float]
+    fills: List[Dict]
+    fees: Optional[float]
+    status: str
+    verified: bool
+    source: str
+    notes: Optional[str] = None
+
+    def to_dict(self):
+        return asdict(self)
+
+
 if TYPE_CHECKING:
     try:
         from mycelium_conversion_hub import MyceliumConversionHub as MyceliumConversionHubType
@@ -4284,6 +4307,9 @@ class MicroProfitLabyrinth:
 
         # 📊 COST BASIS TRACKER - Realized profit guardrails
         self.cost_basis_tracker = CostBasisTracker()
+
+        # 🧾 Trade audit (unified jsonl stream)
+        self.trade_audit_file = Path("trade_audit.jsonl")
         
         # 💧🔀 LIQUIDITY ENGINE - Dynamic Asset Aggregation ("Top-Up" Mechanism)
         # When we need funds for a trade, liquidate low-performers to fund it!
@@ -4525,6 +4551,95 @@ class MicroProfitLabyrinth:
         else:
             # Silent logging for Queen's learning
             logger.info(f"[REJECTED] {message}")
+
+    def _append_trade_audit(self, record: TradeAuditRecord) -> None:
+        try:
+            with open(self.trade_audit_file, 'a') as f:
+                f.write(json.dumps(record.to_dict()) + "\n")
+        except Exception as e:
+            logger.debug(f"Trade audit write failed: {e}")
+
+    def _extract_execution_details(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        order_id = result.get('orderId') or result.get('order_id') or result.get('txid')
+        client_order_id = result.get('clientOrderId')
+        fills = result.get('fills') or []
+        avg_fill_price = result.get('avg_fill_price')
+        if avg_fill_price is None:
+            try:
+                price = float(result.get('price', 0) or 0)
+                avg_fill_price = price if price > 0 else None
+            except Exception:
+                avg_fill_price = None
+        fees = result.get('fees')
+        if fees is None:
+            try:
+                fees = float(result.get('fee', 0) or 0)
+            except Exception:
+                fees = 0.0
+        executed_qty = None
+        try:
+            executed_qty = float(result.get('executedQty', 0) or 0)
+        except Exception:
+            executed_qty = None
+        quote_qty = None
+        try:
+            quote_qty = float(result.get('cummulativeQuoteQty', 0) or 0)
+        except Exception:
+            quote_qty = None
+
+        return {
+            'order_id': order_id,
+            'client_order_id': client_order_id,
+            'fills': fills,
+            'avg_fill_price': avg_fill_price,
+            'fees': fees,
+            'executed_qty': executed_qty,
+            'quote_qty': quote_qty,
+            'status': result.get('status', 'UNKNOWN'),
+            'verified': True if result.get('fills_verified') or fills else False
+        }
+
+    def _record_execution_to_cost_basis(self, exchange: str, symbol: str, side: str, result: Dict[str, Any]) -> None:
+        details = self._extract_execution_details(result)
+        order_id = details.get('order_id')
+        avg_fill_price = details.get('avg_fill_price')
+        executed_qty = details.get('executed_qty')
+        if not order_id or not avg_fill_price or not executed_qty:
+            return
+        try:
+            self.cost_basis_tracker.record_order_execution(
+                exchange=exchange,
+                symbol=symbol,
+                side=side,
+                order_id=order_id,
+                fills=details.get('fills') or [],
+                avg_fill_price=avg_fill_price,
+                fees=float(details.get('fees') or 0),
+                executed_qty=executed_qty
+            )
+        except Exception as e:
+            logger.debug(f"Cost basis update failed: {e}")
+
+    def _audit_order_execution(self, *, exchange: str, action: str, symbol: str, result: Dict[str, Any], source: str, notes: Optional[str] = None) -> None:
+        details = self._extract_execution_details(result)
+        record = TradeAuditRecord(
+            ts=time.time(),
+            exchange=exchange,
+            action=action,
+            symbol=symbol,
+            order_id=details.get('order_id'),
+            client_order_id=details.get('client_order_id'),
+            qty=details.get('executed_qty'),
+            quote_qty=details.get('quote_qty'),
+            avg_fill_price=details.get('avg_fill_price'),
+            fills=details.get('fills') or [],
+            fees=float(details.get('fees') or 0),
+            status=details.get('status') or 'UNKNOWN',
+            verified=bool(details.get('verified')),
+            source=source,
+            notes=notes
+        )
+        self._append_trade_audit(record)
 
     def _print_connectivity_banner(self):
         """
@@ -9731,6 +9846,14 @@ class MicroProfitLabyrinth:
                         if result and 'error' not in str(result).lower():
                             sell_success = True
                             received_usd = step['expected_usd'] * 0.97  # Estimate
+                            self._audit_order_execution(
+                                exchange='kraken',
+                                action='SELL',
+                                symbol=f"{victim_asset}USD",
+                                result=result,
+                                source='liquidity_aggregation'
+                            )
+                            self._record_execution_to_cost_basis('kraken', f"{victim_asset}USD", 'SELL', result)
                             
                     elif victim_exchange == 'binance' and self.binance:
                         # Sell to USDC on Binance (UK mode) or USDT
@@ -9743,6 +9866,14 @@ class MicroProfitLabyrinth:
                         if result and result.get('status') == 'FILLED':
                             sell_success = True
                             received_usd = float(result.get('cummulativeQuoteQty', step['expected_usd'] * 0.97))
+                            self._audit_order_execution(
+                                exchange='binance',
+                                action='SELL',
+                                symbol=f"{victim_asset}{quote}",
+                                result=result,
+                                source='liquidity_aggregation'
+                            )
+                            self._record_execution_to_cost_basis('binance', f"{victim_asset}{quote}", 'SELL', result)
                             
                     elif victim_exchange == 'alpaca' and self.alpaca:
                         # 🔒 Check Alpaca verify-only gate
@@ -9759,6 +9890,13 @@ class MicroProfitLabyrinth:
                         if result:
                             sell_success = True
                             received_usd = step['expected_usd'] * 0.97
+                            self._audit_order_execution(
+                                exchange='alpaca',
+                                action='SELL',
+                                symbol=f"{victim_asset}/USD",
+                                result=result,
+                                source='liquidity_aggregation'
+                            )
                             
                 except Exception as e:
                     safe_print(f"   ❌ SELL failed for {victim_asset}: {e}")
@@ -9832,6 +9970,34 @@ class MicroProfitLabyrinth:
                 if buy_success:
                     success_count += 1
                     safe_print(f"   ✅ BOUGHT {target_asset}")
+                    if result:
+                        if target_exchange == 'kraken':
+                            self._audit_order_execution(
+                                exchange='kraken',
+                                action='BUY',
+                                symbol=f"{target_asset}USD",
+                                result=result,
+                                source='liquidity_aggregation'
+                            )
+                            self._record_execution_to_cost_basis('kraken', f"{target_asset}USD", 'BUY', result)
+                        elif target_exchange == 'binance':
+                            quote = 'USDC' if self.binance_uk_mode else 'USDT'
+                            self._audit_order_execution(
+                                exchange='binance',
+                                action='BUY',
+                                symbol=f"{target_asset}{quote}",
+                                result=result,
+                                source='liquidity_aggregation'
+                            )
+                            self._record_execution_to_cost_basis('binance', f"{target_asset}{quote}", 'BUY', result)
+                        elif target_exchange == 'alpaca':
+                            self._audit_order_execution(
+                                exchange='alpaca',
+                                action='BUY',
+                                symbol=f"{target_asset}/USD",
+                                result=result,
+                                source='liquidity_aggregation'
+                            )
                     
                     # Update stats
                     self.liquidity_engine.executed_aggregations += 1
@@ -9924,6 +10090,15 @@ class MicroProfitLabyrinth:
                         harvests_done += 1
                         
                         safe_print(f"      ✅ SOLD! Profit: ${candidate.unrealized_pl:.2f} → Cash: ${candidate.market_value:.2f}")
+
+                        # Trade audit + cost basis update
+                        self._audit_order_execution(
+                            exchange='alpaca',
+                            action='SELL',
+                            symbol=candidate.symbol if '/' in candidate.symbol else f"{candidate.asset}/USD",
+                            result=sell_result,
+                            source='profit_harvest'
+                        )
                         
                         # Log to trading log
                         logger.info(f"🌾💰 HARVESTED: {candidate.asset} | Profit: ${candidate.unrealized_pl:.2f} | Cash: ${candidate.market_value:.2f}")

@@ -506,8 +506,22 @@ class CostBasisTracker:
         """Get average entry price for a symbol using 5-strategy matching."""
         pos, matched_key = self._find_position(symbol, exchange)
         if pos:
+            # Prefer verified fills when available
+            if pos.get('fills_verified') and pos.get('avg_fill_price'):
+                return pos.get('avg_fill_price')
             return pos.get('avg_entry_price')
         return None
+
+    def get_verified_entry_price(self, symbol: str, exchange: str = None) -> Optional[float]:
+        """Return entry price only if backed by verified fills + order_id."""
+        pos, matched_key = self._find_position(symbol, exchange)
+        if not pos:
+            return None
+        if not pos.get('fills_verified'):
+            return None
+        if not pos.get('last_order_id'):
+            return None
+        return pos.get('avg_fill_price') or pos.get('avg_entry_price')
     
     def set_entry_price(self, symbol: str, price: float, quantity: float, 
                        exchange: str = 'binance', fee: float = 0.0, order_id: str = None):
@@ -536,7 +550,11 @@ class CostBasisTracker:
             'last_trade': int(time.time() * 1000),
             'synced_at': time.time(),
             'source': 'manual',
-            'order_ids': [order_id] if order_id else []
+            'order_ids': [order_id] if order_id else [],
+            'last_order_id': order_id,
+            'avg_fill_price': price,
+            'fills_verified': True if order_id else False,
+            'last_fills': []
         }
         
         # Store under BOTH keys for better matching
@@ -593,13 +611,60 @@ class CostBasisTracker:
                 'first_trade': pos.get('first_trade', int(time.time() * 1000)),
                 'last_trade': int(time.time() * 1000),
                 'synced_at': time.time(),
-                'order_ids': order_ids
+                'order_ids': order_ids,
+                'last_order_id': order_id or pos.get('last_order_id'),
+                'avg_fill_price': new_price if is_buy else pos.get('avg_fill_price'),
+                'fills_verified': True if order_id else pos.get('fills_verified', False),
+                'last_fills': pos.get('last_fills', [])
             }
         else:
             # Position closed
             self.positions.pop(position_key, None)
 
         self._save()
+
+    def record_order_execution(
+        self,
+        *,
+        exchange: str,
+        symbol: str,
+        side: str,
+        order_id: str,
+        fills: list,
+        avg_fill_price: Optional[float],
+        fees: float,
+        executed_qty: float,
+    ) -> None:
+        """Record a validated execution using order_id + fills."""
+        if not symbol or not exchange:
+            return
+        if executed_qty <= 0:
+            return
+
+        is_buy = str(side or '').upper() == 'BUY'
+        price = float(avg_fill_price or 0)
+        if price <= 0:
+            return
+
+        self.update_position(
+            symbol=symbol,
+            new_qty=executed_qty,
+            new_price=price,
+            exchange=exchange,
+            is_buy=is_buy,
+            fee=float(fees or 0),
+            order_id=order_id
+        )
+
+        position_key = f"{exchange.lower()}:{symbol}"
+        pos = self.positions.get(position_key)
+        if pos:
+            pos['last_order_id'] = order_id
+            pos['avg_fill_price'] = price
+            pos['fills_verified'] = True if fills else False
+            pos['last_fills'] = fills or []
+            self.positions[position_key] = pos
+            self._save()
     
     def can_sell_profitably(self, symbol: str, current_price: float, 
                            exchange: str = None, quantity: float = None, 

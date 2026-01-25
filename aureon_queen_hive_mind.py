@@ -2938,6 +2938,58 @@ class QueenHiveMind:
             logger.error(f"Failed to wire Cost Basis Tracker: {e}")
             return False
 
+    def validate_order_data(self, order_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate order execution data (order_id + fills + avg fill price)."""
+        order_id = order_data.get('order_id') or order_data.get('orderId') or order_data.get('txid')
+        fills = order_data.get('fills') or []
+        avg_fill_price = order_data.get('avg_fill_price') or order_data.get('price')
+        fills_verified = bool(order_data.get('fills_verified') or fills)
+
+        return {
+            'order_id': order_id,
+            'avg_fill_price': avg_fill_price,
+            'fills_verified': fills_verified,
+            'has_order_id': True if order_id else False,
+        }
+
+    def gate_trade_decision(
+        self,
+        *,
+        action: str,
+        symbol: str,
+        exchange: str,
+        order_data: Dict[str, Any],
+        portfolio_impact: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[bool, str]:
+        """
+        Queen's authoritative gate for BUY/SELL/CONVERT.
+
+        FILL_VALIDATION_MODE:
+          - block: reject if missing order_id/fills/avg_fill_price
+          - retry: reject and signal retry if missing validation
+          - allow_unverified: allow but warn
+        """
+        mode = os.getenv('FILL_VALIDATION_MODE', 'allow_unverified').lower()
+        validation = self.validate_order_data(order_data)
+
+        missing = []
+        if not validation.get('has_order_id'):
+            missing.append('order_id')
+        if not validation.get('fills_verified'):
+            missing.append('fills')
+        if not validation.get('avg_fill_price'):
+            missing.append('avg_fill_price')
+
+        if missing:
+            reason = f"missing:{','.join(missing)}"
+            if mode == 'block':
+                return False, f"FILL_VALIDATION_BLOCK:{reason}"
+            if mode == 'retry':
+                return False, f"FILL_VALIDATION_RETRY:{reason}"
+            return True, f"FILL_VALIDATION_ALLOW_UNVERIFIED:{reason}"
+
+        return True, "OK"
+
     def _resolve_cost_basis_symbol(self, asset: str, quote_candidates: List[str]) -> Optional[str]:
         if not self.cost_basis_tracker or not getattr(self.cost_basis_tracker, 'positions', None):
             return None
