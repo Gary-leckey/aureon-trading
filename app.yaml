@@ -1,25 +1,28 @@
-# 👑🌌 AUREON TRADING SYSTEM - DIGITAL OCEAN APP PLATFORM
+# ⚡🌌 AUREON POWER STATION - DIGITAL OCEAN APP PLATFORM
 # ═══════════════════════════════════════════════════════════════════════════
 #
-# SINGLE SERVICE with PARALLEL PROCESSES via supervisord:
-#   1. 👑 Command Center UI (port 8080) - Dashboard & WebSocket
-#   2. 🦈 Orca Kill Cycle - Trading Engine  
-#   3. 🧠 Autonomous Engine - 9 Intelligence Loops
-#   4. 🐝 Queen Power Redistribution - Energy optimization
-#   5. 📊 Queen Power Dashboard - Real-time monitoring
-#   6. 🔄 Kraken Cache Feeder - Centralized API access
+# PRIMARY INTERFACE: Queen Power Station (Port 8080)
+#   Shows everything as ENERGY - reserves, generation, consumption, flows
+#
+# PARALLEL PROCESSES via supervisord (startup order by priority):
+#   1. ⚡ Queen Power Station (port 8080) - PRIMARY energy monitoring interface
+#   2. 🔄 Kraken Cache (pri 5) - Data feed optimization
+#   3. 🦈 Orca Kill Cycle (pri 10) - Energy redistribution execution
+#   4. 🧠 Autonomous Engine (pri 20) - 9 Intelligence loops
+#   5. 🐝 Queen Redistribution (pri 25) - Autonomous energy optimization
+#   6. 👑 Command Center (port 8800, pri 50) - Internal operations dashboard
 #
 # All processes start together on boot via supervisord.conf
 #
-# Gary Leckey | January 2026 | DIGITAL OCEAN DEPLOYMENT
+# Gary Leckey | January 2026 | ENERGY-FOCUSED INTERFACE
 # ═══════════════════════════════════════════════════════════════════════════
 
 name: aureon-trading
 region: lon
 
 services:
-  # 👑 MAIN SERVICE - Runs ALL parallel processes via supervisord
-  - name: aureon-command-center
+  # ⚡ MAIN SERVICE - Runs ALL parallel processes via supervisord
+  - name: aureon-power-station
     dockerfile_path: Dockerfile
     source_dir: /
     github:

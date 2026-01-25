@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 """
-Queen Power Dashboard - Integrated View
-Shows Queen's power redistribution + live power monitoring in one interface.
+⚡ AUREON POWER STATION - MAIN ENERGY INTERFACE ⚡
 
-Real-time display of:
-- Queen's redistribution decisions
-- Energy flow across relays
-- Net energy gained vs drains avoided
-- Power station output
-- Scanning system metrics
+Everything is Energy. This is the primary dashboard for all system activity.
+
+Real-time Energy Visualization:
+- Total System Energy (all balances)
+- Energy Flow (in/out per relay)
+- Energy Generation (profits/gains)
+- Energy Consumption (fees/drains)
+- Energy Reserves (idle capital)
+- Energy Deployment (active positions)
+- Queen's Energy Decisions
+- System Power Output
+
+All trading activity, balances, profits, and losses shown as ENERGY.
+Port: 8080 (Primary Interface)
 """
 
 import sys, os
@@ -75,7 +82,8 @@ def format_pct(value: float) -> str:
 
 class QueenPowerDashboard:
     """
-    Integrated dashboard showing Queen's intelligence in action.
+    ⚡ PRIMARY ENERGY INTERFACE ⚡
+    Everything displayed as energy flows and reserves.
     """
     
     def __init__(self):
@@ -83,6 +91,55 @@ class QueenPowerDashboard:
         self.update_interval = 3  # seconds
         self.cycle_count = 0
         self.start_time = time.time()
+        self.total_energy_at_start = 0.0
+        
+        # Calculate baseline energy
+        self._calculate_baseline_energy()
+    
+    def _calculate_baseline_energy(self):
+        """Calculate total system energy at startup."""
+        total = 0.0
+        for relay in ['BIN', 'KRK', 'ALP', 'CAP']:
+            energy = self.get_relay_energy(relay)
+            total += energy['total']
+        self.total_energy_at_start = total
+    
+    def get_total_system_energy(self) -> Dict:
+        """Get comprehensive system energy metrics."""
+        relays = ['BIN', 'KRK', 'ALP', 'CAP']
+        
+        total_energy = 0.0
+        total_reserves = 0.0
+        total_deployed = 0.0
+        relay_breakdown = {}
+        
+        for relay in relays:
+            energy = self.get_relay_energy(relay)
+            total_energy += energy['total']
+            total_reserves += energy['idle']
+            total_deployed += energy['positions']
+            relay_breakdown[relay] = energy
+        
+        # Get Queen's energy metrics
+        queen_state = self.get_queen_redistribution_state()
+        net_gained = queen_state.get('total_net_energy_gained', 0.0)
+        drains_avoided = queen_state.get('total_blocked_drains_avoided', 0.0)
+        
+        # Calculate system growth
+        energy_growth = total_energy - self.total_energy_at_start
+        
+        return {
+            'total_energy': total_energy,
+            'total_reserves': total_reserves,
+            'total_deployed': total_deployed,
+            'reserve_percentage': (total_reserves / total_energy * 100) if total_energy > 0 else 0,
+            'deployed_percentage': (total_deployed / total_energy * 100) if total_energy > 0 else 0,
+            'net_energy_gained': net_gained,
+            'energy_conserved': drains_avoided,
+            'energy_growth': energy_growth,
+            'growth_percentage': (energy_growth / self.total_energy_at_start * 100) if self.total_energy_at_start > 0 else 0,
+            'relay_breakdown': relay_breakdown
+        }
     
     def get_queen_redistribution_state(self) -> Dict:
         """Get Queen's redistribution state."""
@@ -174,22 +231,41 @@ class QueenPowerDashboard:
         return {'total': 0.0, 'idle': 0.0, 'positions': 0.0, 'idle_pct': 0.0}
     
     def display_header(self):
-        """Display dashboard header."""
+        """Display dashboard header with total system energy."""
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         runtime = time.time() - self.start_time
         runtime_str = f"{int(runtime//60)}m {int(runtime%60)}s"
         
+        # Get total system energy
+        energy_data = self.get_total_system_energy()
+        total_energy = energy_data['total_energy']
+        energy_growth = energy_data['energy_growth']
+        growth_pct = energy_data['growth_percentage']
+        
+        # Energy growth indicator
+        if energy_growth > 0:
+            growth_icon = "⚡📈"
+            growth_color = '\033[92m'  # Green
+        elif energy_growth < 0:
+            growth_icon = "⚠️📉"
+            growth_color = '\033[91m'  # Red
+        else:
+            growth_icon = "⚡━"
+            growth_color = '\033[93m'  # Yellow
+        
         print("\033[2J\033[H")  # Clear screen
         print("\n")
-        print("┏" + "━" * 78 + "┓")
-        print(f"┃  🐝 QUEEN POWER DASHBOARD{' ' * 51}┃")
-        print("┠" + "─" * 78 + "┨")
-        print(f"┃  📅 {now}  ⏱️  Runtime: {runtime_str:<10} 🔄 Cycle: #{self.cycle_count:<6}┃")
-        print("┗" + "━" * 78 + "┛")
+        print("╔" + "═" * 78 + "╗")
+        print(f"║  ⚡ AUREON POWER STATION - PRIMARY ENERGY INTERFACE{' ' * 26}║")
+        print("╠" + "═" * 78 + "╣")
+        print(f"║  📅 {now}  ⏱️  Runtime: {runtime_str:<10} 🔄 Cycle: #{self.cycle_count:<6}║")
+        print("╠" + "─" * 78 + "╣")
+        print(f"║  💎 Total System Energy: {format_usd(total_energy):<15} {growth_icon} Growth: {growth_color}{format_usd(energy_growth):>10}\033[0m ({growth_pct:+.2f}%)  ║")
+        print("╚" + "═" * 78 + "╝")
         print()
     
     def display_queen_intelligence(self):
-        """Display Queen's redistribution intelligence."""
+        """Display Queen's energy generation intelligence."""
         state = self.get_queen_redistribution_state()
         
         net_gained = state.get('total_net_energy_gained', 0.0)
@@ -207,35 +283,33 @@ class QueenPowerDashboard:
             heartbeat = "\033[91m💔 IDLE\033[0m"
             status_msg = "\033[90m(no recent activity)\033[0m"
         
-        print("┏" + "━" * 78 + "┓")
-        print("┃  🐝 QUEEN'S REDISTRIBUTION ENGINE" + " " * 43 + "┃")
-        print("┗" + "━" * 78 + "┛")
+        # Calculate Queen efficiency (energy generated per decision)
+        if decisions > 0:
+            efficiency = (net_gained + drains_avoided) / decisions
+        else:
+            efficiency = 0.0
+        
+        print("╔" + "═" * 78 + "╗")
+        print("║  🐝 QUEEN ENERGY GENERATION INTELLIGENCE" + " " * 36 + "║")
+        print("╚" + "═" * 78 + "╝")
         print()
         print(f"  ⚡ Engine Status:       {heartbeat} {status_msg}")
         print()
-        print("  💰 Financial Performance:")
-        print(f"     ├─ Net Energy Gained:        {format_usd(net_gained)}")
-        print(f"     ├─ Drains Blocked:           {format_usd(drains_avoided)}")
-        print(f"     └─ Total Conserved:          {format_usd(net_gained + drains_avoided)}")
+        print(f"  📊 Energy Generation Summary:")
+        print(f"     ├─ ⚡ Energy Generated:      {format_usd(net_gained):<15} (Net positive moves)")
+        print(f"     ├─ 🛡️  Energy Conserved:      {format_usd(drains_avoided):<15} (Blocked drains)")
+        print(f"     └─ 💎 Total Energy Impact:   {format_usd(net_gained + drains_avoided)}")
         print()
-        print("  📈 Decision Metrics:")
-        print(f"     ├─ Total Decisions:          {decisions}")
-        print(f"     ├─ Executed Orders:          {executions}")
-        print(f"     └─ Execution Rate:           {(executions/decisions*100 if decisions > 0 else 0):.1f}%")
-        
-        # Show efficiency (gained vs total conserved)
-        total_conserved = net_gained + drains_avoided
-        if total_conserved > 0:
-            efficiency = (net_gained / total_conserved * 100)
-            efficiency_bar = "█" * int(efficiency / 10) + "░" * (10 - int(efficiency / 10))
-            print()
-            print(f"  🎯 Queen Efficiency:     {efficiency:.1f}% [{efficiency_bar}]")
+        print(f"  🎯 Queen Performance:")
+        print(f"     ├─ Decisions Analyzed:      {decisions} opportunities")
+        print(f"     ├─ Energy Moves Executed:   {executions} redistributions")
+        print(f"     └─ Efficiency:              {format_usd(efficiency)} per decision")
         
         # Show recent decisions
         recent = state.get('recent_decisions', [])
         if recent:
             print()
-            print("  📊 Recent Decisions:")
+            print("  📊 Recent Energy Decisions:")
             for i, dec in enumerate(recent[-3:], 1):
                 opp = dec.get('opportunity', {})
                 decision = dec.get('decision', 'UNKNOWN')
@@ -249,14 +323,14 @@ class QueenPowerDashboard:
                 conf_bar = "●" * int(confidence * 5) + "○" * (5 - int(confidence * 5))
                 
                 prefix = "     └─" if i == len(recent[-3:]) else "     ├─"
-                print(f"{prefix} {decision_icon} {decision_color}{decision:<8}\033[0m │ {relay} → {target:<12} │ {format_usd(net_gain):<12} │ Confidence: {conf_bar}")
+                print(f"{prefix} {decision_icon} {decision_color}{decision:<8}\033[0m │ {relay} → {target:<12} │ {format_usd(net_gain):<12} │ {conf_bar}")
         else:
             print()
             print("  📊 \033[90m🔍 Scanning for profitable opportunities...\033[0m")
         print()
     
     def display_power_station(self):
-        """Display power station output."""
+        """Display power station energy flow."""
         state = self.get_power_station_state()
         
         status = state.get('status', 'UNKNOWN')
@@ -269,28 +343,28 @@ class QueenPowerDashboard:
         status_icon = "🟢" if status == 'RUNNING' else "🟡"
         status_color = '\033[92m' if status == 'RUNNING' else '\033[93m'
         
-        print("┏" + "━" * 78 + "┓")
-        print("┃  ⚡ POWER STATION" + " " * 59 + "┃")
-        print("┗" + "━" * 78 + "┛")
+        print("╔" + "═" * 78 + "╗")
+        print("║  ⚡ ENERGY RESERVES & FLOW" + " " * 50 + "║")
+        print("╚" + "═" * 78 + "╝")
         print()
-        print(f"  {status_icon} Station Status:      {status_color}{status}\033[0m  \033[90m({cycles} cycles completed)\033[0m")
+        print(f"  {status_icon} Power Station Status:  {status_color}{status}\033[0m  \033[90m({cycles} energy cycles)\033[0m")
         print()
-        print("  💎 Energy Reserves:")
-        print(f"     ├─ Total Energy:             {format_usd(total_energy)}")
-        print(f"     ├─ Currently Deployed:       {format_usd(deployed)}")
-        print(f"     └─ Net Flow (24h):           {format_usd(net_flow)}")
+        print("  💎 System Energy Status:")
+        print(f"     ├─ Total Energy Reserves:    {format_usd(total_energy)}")
+        print(f"     ├─ Energy in Positions:      {format_usd(deployed)}")
+        print(f"     └─ Net Energy Flow (24h):    {format_usd(net_flow)}")
         print()
         efficiency_bar = "█" * int(efficiency / 10) + "░" * (10 - int(efficiency / 10))
-        print(f"  📊 Efficiency:           {efficiency:.1f}% [{efficiency_bar}]")
+        print(f"  📊 Energy Efficiency:         {efficiency:.1f}% [{efficiency_bar}]")
         print()
     
     def display_relay_status(self):
-        """Display status of all relays."""
-        print("┏" + "━" * 78 + "┓")
-        print("┃  🔌 RELAY ENERGY STATUS" + " " * 52 + "┃")
-        print("┗" + "━" * 78 + "┛")
+        """Display energy distribution across relays."""
+        print("╔" + "═" * 78 + "╗")
+        print("║  🔌 ENERGY DISTRIBUTION BY RELAY" + " " * 44 + "║")
+        print("╚" + "═" * 78 + "╝")
         print()
-        print("  \033[90m(Internal isolation: Energy moves within relay only)\033[0m")
+        print("  \033[90m(Each relay operates independently with internal energy isolation)\033[0m")
         print()
         
         relays = ['BIN', 'KRK', 'ALP', 'CAP']
@@ -298,7 +372,7 @@ class QueenPowerDashboard:
         total_system_energy = 0.0
         total_idle_energy = 0.0
         
-        print(f"  {'RELAY':<10} {'TOTAL':<12} {'IDLE':<12} {'POSITIONS':<12} {'MOBILITY':<20}")
+        print(f"  {'RELAY':<10} {'TOTAL':<12} {'IDLE':<12} {'DEPLOYED':<12} {'MOBILITY':<20}")
         print("  " + "─" * 74)
         
         for relay in relays:
@@ -334,16 +408,16 @@ class QueenPowerDashboard:
         print()
     
     def display_energy_conservation(self):
-        """Display energy conservation metrics."""
+        """Display energy conservation and generation metrics."""
         queen_state = self.get_queen_redistribution_state()
         net_gained = queen_state.get('total_net_energy_gained', 0.0)
         drains_avoided = queen_state.get('total_blocked_drains_avoided', 0.0)
         
         total_conserved = net_gained + drains_avoided
         
-        print("┏" + "━" * 78 + "┓")
-        print("┃  🌿 ENERGY CONSERVATION" + " " * 52 + "┃")
-        print("┗" + "━" * 78 + "┛")
+        print("╔" + "═" * 78 + "╗")
+        print("║  🌿 ENERGY CONSERVATION & GENERATION" + " " * 40 + "║")
+        print("╚" + "═" * 78 + "╝")
         print()
         
         if total_conserved > 0:
