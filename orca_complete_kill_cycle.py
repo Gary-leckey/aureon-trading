@@ -5465,17 +5465,16 @@ class OrcaKillCycle:
                         self.last_cash_status['alpaca'] = 'error'
                         cash['alpaca'] = 0.0
                     else:
-                        # Use portfolio_value (total equity) which includes positions
-                        alpaca_cash = float(acct.get('portfolio_value', 0) or acct.get('equity', 0) or 0)
+                        # 🔧 FIX: Use actual CASH balance, not portfolio_value
+                        # portfolio_value includes positions which can't be used to buy new assets!
+                        alpaca_cash = float(acct.get('cash', 0) or 0)
                         
-                        # 🪙 ADD POSITIONS VALUE - Include all crypto/stock positions
+                        # Still track positions for sell opportunities (but don't add to cash)
                         try:
                             positions = alpaca_client.get_positions()
-                            positions_value = 0.0
                             self.alpaca_positions = []  # Store for tracking
                             for pos in positions:
                                 market_val = float(pos.get('market_value', 0) or 0)
-                                positions_value += abs(market_val)
                                 # Track position for sell opportunities
                                 self.alpaca_positions.append({
                                     'symbol': pos.get('symbol', ''),
@@ -5485,9 +5484,6 @@ class OrcaKillCycle:
                                     'avg_entry_price': float(pos.get('avg_entry_price', 0) or 0),
                                     'current_price': float(pos.get('current_price', 0) or 0)
                                 })
-                            # Use the higher of portfolio_value or cash + positions
-                            base_cash = float(acct.get('cash', 0) or 0)
-                            alpaca_cash = max(alpaca_cash, base_cash + positions_value)
                         except Exception:
                             pass
                         
@@ -5511,29 +5507,21 @@ class OrcaKillCycle:
                         self.last_cash_status['kraken'] = 'error'
                         cash['kraken'] = 0.0
                     else:
+                        # 🔧 FIX: Only count SPENDABLE stablecoins, NOT crypto positions
+                        # Crypto positions can't be used to buy other crypto directly!
                         # Kraken uses ZUSD for USD, also check TUSD, DAI and other stables
                         kraken_cash = 0.0
                         for key in ['ZUSD', 'USD', 'USDC', 'USDT', 'TUSD', 'DAI', 'USDD']:
                             kraken_cash += float(bal.get(key, 0))
                         
-                        # 🇬🇧 ADD GBP (ZGBP) - Convert to USD using LIVE rate
+                        # 🇬🇧 ADD GBP (ZGBP) - Convert to USD using LIVE rate (GBP IS spendable)
                         gbp_balance = float(bal.get('ZGBP', 0) or bal.get('GBP', 0))
                         if gbp_balance > 0:
                             kraken_cash += gbp_balance * gbp_usd_rate
                         
-                        # 🪙 ADD CRYPTO BALANCES - Convert using LIVE prices from API
-                        crypto_symbols = {
-                            'ETH': 'ETHUSD', 'XETH': 'ETHUSD',
-                            'SOL': 'SOLUSD', 'TRX': 'TRXUSD',
-                            'ADA': 'ADAUSD', 'DOT': 'DOTUSD',
-                            'ATOM': 'ATOMUSD', 'BTC': 'BTCUSD', 'XXBT': 'BTCUSD'
-                        }
-                        for crypto, pair in crypto_symbols.items():
-                            crypto_bal = float(bal.get(crypto, 0))
-                            if crypto_bal > 0.0001:  # Only count meaningful amounts
-                                usd_rate = live_prices.get(pair, 0)
-                                if usd_rate > 0:
-                                    kraken_cash += crypto_bal * usd_rate
+                        # ❌ REMOVED: Crypto balances should NOT be counted as "cash"
+                        # They are positions, not spendable buying power for new orders
+                        # The system was incorrectly thinking it had $16 when it only had $1.68 USD
                         
                         self.last_cash_status['kraken'] = 'ok'
                         cash['kraken'] = kraken_cash + (5.0 if test_mode else 0)
@@ -5575,23 +5563,9 @@ class OrcaKillCycle:
                     except Exception:
                         pass
                 
-                # 🪙 ADD CRYPTO BALANCES - Convert using LIVE prices from API
-                try:
-                    balances = binance_client.get_balance() if hasattr(binance_client, 'get_balance') else {}
-                    crypto_symbols = {
-                        'ETH': 'ETHUSDT', 'SOL': 'SOLUSDT', 'BTC': 'BTCUSDT',
-                        'BNB': 'BNBUSDT', 'TRX': 'TRXUSDT', 'ADA': 'ADAUSDT',
-                        'DOT': 'DOTUSDT', 'AVAX': 'AVAXUSDT', 'LINK': 'LINKUSDT',
-                        'MATIC': 'MATICUSDT', 'XRP': 'XRPUSDT'
-                    }
-                    for crypto, pair in crypto_symbols.items():
-                        crypto_bal = float(balances.get(crypto, 0) or 0)
-                        if crypto_bal > 0.0001:  # Only count meaningful amounts
-                            usd_rate = live_prices.get(pair, 0)
-                            if usd_rate > 0:
-                                binance_cash += crypto_bal * usd_rate
-                except Exception:
-                    pass
+                # ❌ REMOVED: Crypto balances should NOT be counted as "cash"
+                # They are positions, not spendable buying power for new orders
+                # The system was incorrectly counting portfolio value as available cash
                 
                 self.last_cash_status['binance'] = 'ok'
                 cash['binance'] = binance_cash + (5.0 if test_mode else 0)
