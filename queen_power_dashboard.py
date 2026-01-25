@@ -81,10 +81,13 @@ class QueenPowerDashboard:
     def __init__(self):
         self.last_update = 0
         self.update_interval = 3  # seconds
+        self.cycle_count = 0
+        self.start_time = time.time()
     
     def get_queen_redistribution_state(self) -> Dict:
         """Get Queen's redistribution state."""
-        return load_json_safe('queen_redistribution_state.json', {
+        state = load_json_safe('queen_redistribution_state.json', {
+            'last_update': 0.0,
             'total_net_energy_gained': 0.0,
             'total_blocked_drains_avoided': 0.0,
             'decisions_count': 0,
@@ -92,6 +95,17 @@ class QueenPowerDashboard:
             'recent_decisions': [],
             'recent_executions': []
         })
+        
+        # Calculate time since last update (heartbeat)
+        last_update = state.get('last_update', 0.0)
+        if last_update > 0:
+            state['seconds_since_update'] = time.time() - last_update
+            state['is_alive'] = state['seconds_since_update'] < 60  # Active if updated in last minute
+        else:
+            state['seconds_since_update'] = 999999
+            state['is_alive'] = False
+        
+        return state
     
     def get_power_station_state(self) -> Dict:
         """Get power station state."""
@@ -162,9 +176,12 @@ class QueenPowerDashboard:
     def display_header(self):
         """Display dashboard header."""
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        runtime = time.time() - self.start_time
+        runtime_str = f"{int(runtime//60)}m {int(runtime%60)}s"
+        
         print("\033[2J\033[H")  # Clear screen
         print("=" * 80)
-        print(f"🐝 QUEEN POWER DASHBOARD - {now}")
+        print(f"🐝 QUEEN POWER DASHBOARD - {now} | Runtime: {runtime_str} | Cycle: #{self.cycle_count}")
         print("=" * 80)
     
     def display_queen_intelligence(self):
@@ -175,14 +192,31 @@ class QueenPowerDashboard:
         drains_avoided = state.get('total_blocked_drains_avoided', 0.0)
         decisions = state.get('decisions_count', 0)
         executions = state.get('executions_count', 0)
+        seconds_since = state.get('seconds_since_update', 999999)
+        is_alive = state.get('is_alive', False)
         
-        print("\n🐝 QUEEN'S INTELLIGENCE")
+        # Heartbeat indicator
+        if is_alive:
+            heartbeat = "\033[92m💚 ACTIVE\033[0m"
+            status_msg = f"(updated {seconds_since:.0f}s ago)"
+        else:
+            heartbeat = "\033[91m💔 IDLE\033[0m"
+            status_msg = "(no recent activity)"
+        
+        print("\n🐝 QUEEN'S REDISTRIBUTION ENGINE")
         print("-" * 80)
+        print(f"Status:                 {heartbeat} {status_msg}")
         print(f"Net Energy Gained:      {format_usd(net_gained)}")
         print(f"Drains Avoided:         {format_usd(drains_avoided)}")
         print(f"Total Decisions Made:   {decisions}")
         print(f"Total Executions:       {executions}")
         print(f"Execution Rate:         {(executions/decisions*100 if decisions > 0 else 0):.1f}%")
+        
+        # Show efficiency (gained vs total conserved)
+        total_conserved = net_gained + drains_avoided
+        if total_conserved > 0:
+            efficiency = (net_gained / total_conserved * 100)
+            print(f"Queen Efficiency:       {efficiency:.1f}% (gained/conserved)")
         
         # Show recent decisions
         recent = state.get('recent_decisions', [])
@@ -194,9 +228,12 @@ class QueenPowerDashboard:
                 relay = opp.get('relay', '???')
                 target = opp.get('target_asset', '???')
                 net_gain = opp.get('net_energy_gain', 0.0)
+                confidence = dec.get('queen_confidence', 0.0)
                 
                 decision_color = '\033[92m' if decision == 'EXECUTE' else '\033[91m'
-                print(f"  {decision_color}{decision}\033[0m | {relay} → {target} | Net: {format_usd(net_gain)}")
+                print(f"  {decision_color}{decision}\033[0m | {relay} → {target} | Net: {format_usd(net_gain)} | Conf: {confidence:.2f}")
+        else:
+            print("\n📊 No decisions made yet (scanning for opportunities...)")
     
     def display_power_station(self):
         """Display power station output."""
@@ -277,6 +314,8 @@ class QueenPowerDashboard:
         
         try:
             while True:
+                self.cycle_count += 1
+                
                 self.display_header()
                 self.display_queen_intelligence()
                 self.display_power_station()
