@@ -168,12 +168,12 @@ class QueenPowerRedistribution:
         }
         
         # Configuration
-        self.min_idle_energy_usd = 0.50  # Min USD to consider redistribution (LOWERED for small accounts)
+        self.min_idle_energy_usd = 0.10  # Min USD to consider redistribution (LOWERED for small accounts)
         self.min_net_gain_usd = 0.01  # Min net gain required (LOWERED to catch micro-profits)
-        self.min_positive_energy_to_redistribute = 0.10  # Min profit before we redistribute (LOWERED)
-        self.profit_redistribution_percentage = 0.50  # Take 50% of profit to redistribute
-        self.scan_interval_seconds = 30  # How often to scan for opportunities
-        self.max_redistribution_per_relay = 0.25  # Max 25% of idle energy per cycle
+        self.min_positive_energy_to_redistribute = 0.05  # Min profit before we redistribute (LOWERED)
+        self.profit_redistribution_percentage = 0.75  # Take 75% of profit to redistribute
+        self.scan_interval_seconds = 10  # How often to scan for opportunities
+        self.max_redistribution_per_relay = 0.50  # Max 50% of idle energy per cycle
         
         # Momentum scanner integration
         self.momentum_scanner = None
