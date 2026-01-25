@@ -379,9 +379,11 @@ class QueenPowerRedistribution:
         
         # Scan BIN (Binance) - Get LIVE balances from API
         try:
+            binance_api_available = False
             if self.binance:
                 logger.info("  🔍 Scanning Binance via LIVE API...")
                 balances = self.binance.get_balance()
+                binance_api_available = True
                 logger.info(f"  📊 BIN: Found {len(balances)} assets")
                 
                 for asset, qty in balances.items():
@@ -502,8 +504,18 @@ class QueenPowerRedistribution:
                         logger.debug(f"  ⚪ BIN {symbol}: {e}")
             else:
                 logger.warning("  ⚠️ BIN: Client not available")
+            
+            # Store Binance API availability for fail-safe checks
+            if not hasattr(self, '_exchange_api_status'):
+                self._exchange_api_status = {}
+            self._exchange_api_status['BIN'] = binance_api_available
+            
         except Exception as e:
             logger.warning(f"BIN node scan failed: {e}")
+            # Mark Binance API as unavailable on error
+            if not hasattr(self, '_exchange_api_status'):
+                self._exchange_api_status = {}
+            self._exchange_api_status['BIN'] = False
         
         # Scan KRK (Kraken) - Multi-source approach (adapt to data availability)
         try:
@@ -564,6 +576,9 @@ class QueenPowerRedistribution:
             # --- CORRECTED LOGIC V4: Final Fallback Authority ---
             symbols_to_process = {} # Use a dict to store symbol and its determined source
 
+            # Track API availability for fail-safe checks during execution
+            kraken_api_available = bool(api_balances)
+            
             if api_balances:
                 logger.info(f"  📊 KRK: Using API as primary source for {len(api_balances)} symbols.")
                 for symbol, qty in api_balances.items():
@@ -571,13 +586,14 @@ class QueenPowerRedistribution:
                         symbols_to_process[symbol] = 'api'
             else:
                 logger.warning("  ⚠️ KRK: API unavailable. State file is now the SOLE authority for existing positions.")
+                logger.warning("  🚫 KRK: BLOCKING ALL KRAKEN TRADES - Cannot verify balances without live API.")
                 # When API fails, the state file is the ONLY source of truth for what positions EXIST.
                 # Cost basis will be used for entry price lookup ONLY.
                 for symbol, data in krk_state_positions.items():
                     if data.get('quantity', 0.0) > 0.000001:
                         symbols_to_process[symbol] = 'state'
                 
-                logger.info(f"  📊 KRK: Scanning {len(symbols_to_process)} positions EXCLUSIVELY from state file.")
+                logger.info(f"  📊 KRK: Scanning {len(symbols_to_process)} positions EXCLUSIVELY from state file (VIEW ONLY).")
 
             for symbol, source in symbols_to_process.items():
                 qty = 0.0
@@ -672,6 +688,12 @@ class QueenPowerRedistribution:
                     nodes.append(node)
                     pnl_indicator = "🟢" if is_positive else ("🔴" if pnl < -0.01 else "⚪")
                     logger.info(f"  {pnl_indicator} KRK: {symbol} | {qty:.6f} units | ${position_value:.4f} | Entry: ${entry_price:.6f} | PnL: ${pnl:.4f} ({pnl_pct:.1f}%)")
+            
+            # Store API availability status for fail-safe checks during execution
+            if not hasattr(self, '_exchange_api_status'):
+                self._exchange_api_status = {}
+            self._exchange_api_status['KRK'] = kraken_api_available
+            
         except Exception as e:
             logger.error(f"CRITICAL KRK node scan failed: {e}", exc_info=True)
         
@@ -1023,6 +1045,18 @@ class QueenPowerRedistribution:
         # LIVE EXECUTION (when dry_run=False)
         logger.info(f"⚡ LIVE: Executing {opp.relay} {opp.target_asset} with ${opp.idle_energy:.2f}")
         
+        # 🚫 FAIL-SAFE: Block execution if exchange API was unavailable during scan
+        if hasattr(self, '_exchange_api_status') and not self._exchange_api_status.get(opp.relay, True):
+            logger.error(f"❌ Execution failed for {opp.relay} {opp.target_asset}: Exchange API unavailable (cannot verify balances)")
+            result = {
+                'success': False,
+                'net_energy_gained': 0.0,
+                'reason': 'Exchange API unavailable - stale data risk',
+                'opportunity': opp
+            }
+            self.failed_redistributions.append(result)
+            return result
+        
         try:
             # Execute via appropriate exchange client
             order = None
@@ -1203,6 +1237,12 @@ class QueenPowerRedistribution:
             
             # LIVE EXECUTION: Sell position
             try:
+                # 🚫 FAIL-SAFE: Block execution if exchange API was unavailable during scan
+                # This prevents trading on stale state file data
+                if hasattr(self, '_exchange_api_status') and not self._exchange_api_status.get(node.relay, True):
+                    logger.error(f"❌ BLOCKED: Cannot harvest {node.symbol} on {node.relay} - Exchange API unavailable (stale data risk)")
+                    continue
+                
                 logger.info(f"⚡ HARVESTING: Selling {harvest_percentage*100:.0f}% of {node.symbol} on {node.relay} (${harvest_amount_usd:.2f})")
                 
                 # Calculate how much of the position to sell
