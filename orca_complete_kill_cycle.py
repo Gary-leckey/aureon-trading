@@ -6574,22 +6574,6 @@ class OrcaKillCycle:
             info['net_pnl'] = net_pnl
         
         # ═══════════════════════════════════════════════════════════════════
-        # STOP-LOSS: Allow exit even at loss if position dropped too far
-        # This prevents "bag holding" forever on bad positions
-        # ═══════════════════════════════════════════════════════════════════
-        STOP_LOSS_PCT = -30.0  # Exit if down more than 30%
-        net_pnl_pct = ((exit_value - confirmed_cost) / confirmed_cost * 100) if confirmed_cost > 0 else 0
-        
-        if net_pnl_pct <= STOP_LOSS_PCT:
-            # STOP-LOSS TRIGGERED - Allow exit to cut losses
-            print(f"   🛑 STOP-LOSS TRIGGERED: {symbol} at {net_pnl_pct:.1f}% loss (threshold: {STOP_LOSS_PCT}%)")
-            info['stop_loss_triggered'] = True
-            info['loss_pct'] = net_pnl_pct
-            info['queen_approved'] = True  # Force approval for stop-loss
-            info['reason'] = f"STOP_LOSS at {net_pnl_pct:.1f}%"
-            return True, info  # ALLOW EXIT despite loss!
-        
-        # ═══════════════════════════════════════════════════════════════════
         # CHECK 2: Is net P&L POSITIVE (mathematically certain profit)?
         # ═══════════════════════════════════════════════════════════════════
         MIN_PROFIT_THRESHOLD = 0.0001  # At least $0.0001 net profit required
