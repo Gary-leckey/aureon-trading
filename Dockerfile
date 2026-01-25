@@ -53,9 +53,9 @@ RUN touch /app/queen_redistribution_state.json \
 # Expose ports
 EXPOSE 8080 8800
 
-# Health check endpoint
-HEALTHCHECK --interval=60s --timeout=10s --start-period=120s --retries=3 \
-  CMD python -c "import os; exit(0 if os.path.exists('/app/queen_redistribution_state.json') else 1)"
+# Health check - use HTTP endpoint on port 8080
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
 
 # Run startup validation before supervisor
 RUN chmod +x /app/deploy/validate_startup.sh
