@@ -592,130 +592,659 @@ async def handle_api_status(request):
 
 
 async def handle_root(request):
-    """Serve HTML dashboard."""
+    """Serve enhanced HTML dashboard with visualizations."""
     html = """<!DOCTYPE html>
 <html>
 <head>
     <title>⚡ Queen Power Station</title>
     <meta charset="utf-8">
-    <meta http-equiv="refresh" content="5">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --bg-panel: #111118;
+            --green: #00ff88;
+            --cyan: #00d4ff;
+            --purple: #a855f7;
+            --gold: #ffd700;
+            --red: #ff4466;
+            --text: #e0e0e0;
+            --text-dim: #666;
+        }
+        
+        * { box-sizing: border-box; }
+        
         body { 
-            background: #0a0a0a; 
-            color: #00ff88; 
-            font-family: 'Courier New', monospace;
-            padding: 20px;
+            background: var(--bg-dark);
+            color: var(--text);
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+        }
+        
+        /* Energy Flow Bar - Top */
+        .energy-flow-bar {
+            height: 4px;
+            background: linear-gradient(90deg, var(--green), var(--cyan), var(--purple), var(--green));
+            background-size: 200% 100%;
+            animation: energyFlow 2s linear infinite;
+        }
+        
+        @keyframes energyFlow {
+            0% { background-position: 200% 0; }
+            100% { background-position: 0 0; }
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 25px 20px;
+            background: linear-gradient(180deg, rgba(0,255,136,0.05) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(0,255,136,0.2);
+        }
+        
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2em;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--gold), #ff6600, var(--gold));
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s linear infinite;
             margin: 0;
         }
-        .header { 
-            text-align: center; 
-            border: 2px solid #00ff88;
-            padding: 20px;
-            margin-bottom: 20px;
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
         }
+        
+        .header p {
+            color: var(--text-dim);
+            margin: 5px 0 0 0;
+            font-size: 0.9em;
+        }
+        
+        /* Status Indicator */
+        .queen-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            padding: 5px 15px;
+            background: rgba(0,255,136,0.1);
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-dot.danger {
+            background: var(--red);
+            animation: blink 0.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(0,255,136,0.7); }
+            50% { opacity: 0.8; transform: scale(1.2); box-shadow: 0 0 10px 3px rgba(0,255,136,0.3); }
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        /* Main Content */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Energy Summary Cards */
+        .energy-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .summary-card {
+            background: var(--bg-panel);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--green), var(--cyan));
+        }
+        
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.85em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .summary-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--green);
+            transition: transform 0.3s, filter 0.3s;
+        }
+        
+        .summary-value.updating {
+            animation: numberPop 0.3s ease;
+        }
+        
+        @keyframes numberPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); filter: brightness(1.5); }
+            100% { transform: scale(1); }
+        }
+        
+        .summary-value.negative { color: var(--red); }
+        .summary-value.neutral { color: var(--text-dim); }
+        
+        /* Chart Section */
+        .chart-section {
+            background: var(--bg-panel);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .chart-section h2 {
+            margin: 0 0 15px 0;
+            font-size: 1em;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .chart-container {
+            height: 150px;
+            position: relative;
+        }
+        
+        /* Relay Grid */
+        .relay-section h2 {
+            color: var(--text);
+            font-size: 1.1em;
+            margin: 0 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
         .relay-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 15px;
-            margin: 20px 0;
+            margin-bottom: 25px;
         }
+        
         .relay-card {
-            background: #111;
-            border: 1px solid #333;
-            padding: 15px;
-            border-radius: 5px;
+            background: var(--bg-panel);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 18px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .relay-card h3 { margin: 0 0 10px 0; }
-        .value { font-size: 1.5em; font-weight: bold; }
-        .positive { color: #00ff88; }
-        .negative { color: #ff4444; }
-        .neutral { color: #888; }
-        .stats { margin-top: 20px; }
-        .stat-row { 
-            display: flex; 
+        
+        /* Rotating border glow on hover */
+        .relay-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(transparent, rgba(0,255,136,0.15), transparent 30%);
+            animation: rotateBorder 4s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .relay-card:hover::before {
+            opacity: 1;
+        }
+        
+        .relay-card::after {
+            content: '';
+            position: absolute;
+            inset: 2px;
+            background: var(--bg-panel);
+            border-radius: 10px;
+            z-index: 0;
+        }
+        
+        .relay-card > * {
+            position: relative;
+            z-index: 1;
+        }
+        
+        @keyframes rotateBorder {
+            100% { transform: rotate(360deg); }
+        }
+        
+        .relay-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(0,255,136,0.3);
+        }
+        
+        .relay-header {
+            display: flex;
             justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px solid #222;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .relay-name {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .relay-name.bin { color: #f0b90b; }
+        .relay-name.krk { color: #5741d9; }
+        .relay-name.alp { color: #00d632; }
+        .relay-name.cap { color: #00aaff; }
+        
+        .relay-total {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4em;
+            font-weight: 700;
+            color: var(--text);
+        }
+        
+        /* Energy Progress Bar */
+        .energy-bar-container {
+            margin: 12px 0;
+        }
+        
+        .energy-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75em;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+        
+        .energy-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .energy-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), var(--cyan));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .energy-bar-fill.low {
+            background: linear-gradient(90deg, var(--red), #ff8844);
+        }
+        
+        .energy-bar-fill.medium {
+            background: linear-gradient(90deg, #ffaa00, var(--gold));
+        }
+        
+        .relay-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: var(--text-dim);
+            margin-top: 8px;
+        }
+        
+        .relay-stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        /* Queen Intelligence Section */
+        .queen-section {
+            background: var(--bg-panel);
+            border: 1px solid rgba(168,85,247,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .queen-section h2 {
+            color: var(--purple);
+            margin: 0 0 15px 0;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .queen-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .queen-stat {
+            text-align: center;
+        }
+        
+        .queen-stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6em;
+            font-weight: 700;
+            color: var(--purple);
+        }
+        
+        .queen-stat-value.positive { color: var(--green); }
+        
+        .queen-stat-label {
+            font-size: 0.8em;
+            color: var(--text-dim);
+            margin-top: 5px;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.8em;
+            padding: 15px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .footer span {
+            margin: 0 10px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1000px) {
+            .energy-summary, .relay-grid { grid-template-columns: repeat(2, 1fr); }
+            .queen-stats { grid-template-columns: 1fr; }
+        }
+        
+        @media (max-width: 600px) {
+            .energy-summary, .relay-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
+    <!-- Energy Flow Bar -->
+    <div class="energy-flow-bar"></div>
+    
+    <!-- Header -->
     <div class="header">
-        <h1>⚡ QUEEN POWER STATION ⚡</h1>
-        <p>Energy-Based Trading Dashboard</p>
+        <h1 class="logo">⚡ QUEEN POWER STATION ⚡</h1>
+        <p>Real-Time Energy Distribution Dashboard</p>
+        <div class="queen-status">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Initializing...</span>
+        </div>
     </div>
     
-    <div id="status">Loading...</div>
+    <div class="container">
+        <!-- Energy Summary Cards -->
+        <div class="energy-summary">
+            <div class="summary-card">
+                <h3>💎 Total Energy</h3>
+                <div class="summary-value" id="totalEnergy">$0.00</div>
+            </div>
+            <div class="summary-card">
+                <h3>⚡ Reserves</h3>
+                <div class="summary-value" id="totalReserves">$0.00</div>
+            </div>
+            <div class="summary-card">
+                <h3>🎯 Deployed</h3>
+                <div class="summary-value" id="totalDeployed">$0.00</div>
+            </div>
+            <div class="summary-card">
+                <h3>📈 Growth</h3>
+                <div class="summary-value" id="growthPct">0.00%</div>
+            </div>
+        </div>
+        
+        <!-- Energy History Chart -->
+        <div class="chart-section">
+            <h2>📊 Energy Flow History</h2>
+            <div class="chart-container">
+                <canvas id="energyChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Relay Status -->
+        <div class="relay-section">
+            <h2>🔌 Relay Energy Distribution</h2>
+            <div class="relay-grid" id="relayGrid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+        
+        <!-- Queen Intelligence -->
+        <div class="queen-section">
+            <h2>🐝 Queen Intelligence</h2>
+            <div class="queen-stats">
+                <div class="queen-stat">
+                    <div class="queen-stat-value" id="queenDecisions">0</div>
+                    <div class="queen-stat-label">Decisions Made</div>
+                </div>
+                <div class="queen-stat">
+                    <div class="queen-stat-value positive" id="queenGained">$0.00</div>
+                    <div class="queen-stat-label">Net Energy Gained</div>
+                </div>
+                <div class="queen-stat">
+                    <div class="queen-stat-value positive" id="queenAvoided">$0.00</div>
+                    <div class="queen-stat-label">Drains Avoided</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <span id="cycleInfo">Cycle: 0</span>
+        <span id="uptimeInfo">Uptime: 0m</span>
+        <span id="updateInfo">Last Update: --:--:--</span>
+    </div>
+    
+    <!-- Energy Flow Bar Bottom -->
+    <div class="energy-flow-bar"></div>
     
     <script>
+        // Energy history for chart
+        const energyHistory = [];
+        const maxHistoryPoints = 60;
+        let lastValues = {};
+        
+        // Initialize Chart
+        const ctx = document.getElementById('energyChart').getContext('2d');
+        const energyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Total Energy',
+                    data: [],
+                    borderColor: '#00ff88',
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0,
+                    pointHoverRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { display: false },
+                    y: {
+                        display: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { 
+                            color: '#666',
+                            callback: v => '$' + v.toFixed(0)
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+        
+        // Animate value changes
+        function animateValue(elementId, newValue, prefix = '', suffix = '') {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            
+            const oldValue = lastValues[elementId];
+            const displayValue = prefix + newValue + suffix;
+            
+            if (oldValue !== undefined && oldValue !== newValue) {
+                el.classList.add('updating');
+                setTimeout(() => el.classList.remove('updating'), 300);
+            }
+            
+            el.textContent = displayValue;
+            lastValues[elementId] = newValue;
+        }
+        
+        // Build relay card HTML
+        function buildRelayCard(code, name, colorClass, data) {
+            const total = data.total || 0;
+            const idle = data.idle || 0;
+            const positions = data.positions_count || 0;
+            const idlePct = total > 0 ? (idle / total * 100) : 0;
+            
+            let barClass = 'energy-bar-fill';
+            if (idlePct < 20) barClass += ' low';
+            else if (idlePct < 50) barClass += ' medium';
+            
+            return `
+                <div class="relay-card">
+                    <div class="relay-header">
+                        <span class="relay-name ${colorClass}">${name}</span>
+                        <span class="relay-total">$${total.toFixed(2)}</span>
+                    </div>
+                    <div class="energy-bar-container">
+                        <div class="energy-bar-label">
+                            <span>Mobility</span>
+                            <span>${idlePct.toFixed(0)}%</span>
+                        </div>
+                        <div class="energy-bar">
+                            <div class="${barClass}" style="width: ${Math.min(idlePct, 100)}%"></div>
+                        </div>
+                    </div>
+                    <div class="relay-stats">
+                        <span>💰 Idle: $${idle.toFixed(2)}</span>
+                        <span>📊 ${positions} nodes</span>
+                    </div>
+                </div>
+            `;
+        }
+        
         async function updateStatus() {
             try {
                 const resp = await fetch('/api/status');
                 const data = await resp.json();
                 
+                // Update status indicator
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('statusText');
+                statusDot.className = 'status-dot';
+                statusText.textContent = 'ONLINE • Cycle ' + data.cycle;
+                
+                // Update summary values with animation
+                animateValue('totalEnergy', (data.total_energy || 0).toFixed(2), '$');
+                animateValue('totalReserves', (data.total_reserves || 0).toFixed(2), '$');
+                animateValue('totalDeployed', (data.total_deployed || 0).toFixed(2), '$');
+                
                 const growth = data.growth_percentage || 0;
-                const growthClass = growth > 0 ? 'positive' : growth < 0 ? 'negative' : 'neutral';
+                const growthEl = document.getElementById('growthPct');
+                growthEl.textContent = (growth >= 0 ? '+' : '') + growth.toFixed(2) + '%';
+                growthEl.className = 'summary-value ' + (growth > 0 ? 'positive' : growth < 0 ? 'negative' : 'neutral');
                 
-                let html = `
-                    <div class="relay-grid">
-                        <div class="relay-card">
-                            <h3>💰 Total Energy</h3>
-                            <div class="value">$${(data.total_energy || 0).toFixed(2)}</div>
-                        </div>
-                        <div class="relay-card">
-                            <h3>⚡ Reserves</h3>
-                            <div class="value">$${(data.total_reserves || 0).toFixed(2)}</div>
-                        </div>
-                        <div class="relay-card">
-                            <h3>🎯 Deployed</h3>
-                            <div class="value">$${(data.total_deployed || 0).toFixed(2)}</div>
-                        </div>
-                        <div class="relay-card">
-                            <h3>📈 Growth</h3>
-                            <div class="value ${growthClass}">${growth >= 0 ? '+' : ''}${growth.toFixed(2)}%</div>
-                        </div>
-                    </div>
-                    
-                    <h2>🔌 Relay Status</h2>
-                    <div class="relay-grid">
-                `;
+                // Update chart
+                const now = new Date().toLocaleTimeString();
+                energyHistory.push({ time: now, value: data.total_energy || 0 });
+                if (energyHistory.length > maxHistoryPoints) energyHistory.shift();
                 
-                const relayNames = {BIN: '🟡 Binance', KRK: '🔵 Kraken', ALP: '🟢 Alpaca', CAP: '🏛️ Capital'};
-                for (const [code, name] of Object.entries(relayNames)) {
-                    const relay = data.relays?.[code] || {};
-                    html += `
-                        <div class="relay-card">
-                            <h3>${name}</h3>
-                            <div class="stat-row"><span>Total:</span><span>$${(relay.total || 0).toFixed(2)}</span></div>
-                            <div class="stat-row"><span>Idle:</span><span>$${(relay.idle || 0).toFixed(2)}</span></div>
-                            <div class="stat-row"><span>Positions:</span><span>${relay.positions_count || 0}</span></div>
-                        </div>
-                    `;
+                energyChart.data.labels = energyHistory.map(h => h.time);
+                energyChart.data.datasets[0].data = energyHistory.map(h => h.value);
+                energyChart.update('none');
+                
+                // Update relay grid
+                const relayInfo = [
+                    { code: 'BIN', name: '🟡 Binance', colorClass: 'bin' },
+                    { code: 'KRK', name: '🔵 Kraken', colorClass: 'krk' },
+                    { code: 'ALP', name: '🟢 Alpaca', colorClass: 'alp' },
+                    { code: 'CAP', name: '🏛️ Capital', colorClass: 'cap' }
+                ];
+                
+                let relayHTML = '';
+                for (const r of relayInfo) {
+                    const relayData = data.relays?.[r.code] || {};
+                    relayHTML += buildRelayCard(r.code, r.name, r.colorClass, relayData);
                 }
+                document.getElementById('relayGrid').innerHTML = relayHTML;
                 
-                html += `</div>
-                    <div class="stats">
-                        <h2>🐝 Queen Intelligence</h2>
-                        <div class="stat-row"><span>Decisions Made:</span><span>${data.queen?.decisions_count || 0}</span></div>
-                        <div class="stat-row"><span>Net Energy Gained:</span><span class="positive">$${(data.queen?.net_gained || 0).toFixed(2)}</span></div>
-                        <div class="stat-row"><span>Drains Avoided:</span><span class="positive">$${(data.queen?.drains_avoided || 0).toFixed(2)}</span></div>
-                    </div>
-                    
-                    <p style="color: #666; margin-top: 20px;">
-                        Cycle: ${data.cycle || 0} | 
-                        Uptime: ${Math.floor((data.uptime_seconds || 0) / 60)}m | 
-                        Last Update: ${new Date(data.timestamp * 1000).toLocaleTimeString()}
-                    </p>
-                `;
+                // Update Queen stats
+                animateValue('queenDecisions', data.queen?.decisions_count || 0);
+                animateValue('queenGained', (data.queen?.net_gained || 0).toFixed(2), '$');
+                animateValue('queenAvoided', (data.queen?.drains_avoided || 0).toFixed(2), '$');
                 
-                document.getElementById('status').innerHTML = html;
+                // Update footer
+                document.getElementById('cycleInfo').textContent = 'Cycle: ' + data.cycle;
+                document.getElementById('uptimeInfo').textContent = 'Uptime: ' + Math.floor((data.uptime_seconds || 0) / 60) + 'm';
+                document.getElementById('updateInfo').textContent = 'Last Update: ' + new Date().toLocaleTimeString();
+                
             } catch (err) {
-                document.getElementById('status').innerHTML = '<p class="negative">Error loading status: ' + err + '</p>';
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('statusText');
+                statusDot.className = 'status-dot danger';
+                statusText.textContent = 'CONNECTION ERROR';
             }
         }
         
+        // Initial load and interval
         updateStatus();
-        setInterval(updateStatus, 5000);
+        setInterval(updateStatus, 3000);
     </script>
 </body>
 </html>"""
