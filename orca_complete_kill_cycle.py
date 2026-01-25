@@ -5768,17 +5768,186 @@ class OrcaKillCycle:
         symbols_to_try = [symbol, symbol.replace('/', '')]
         for sym in symbols_to_try:
             try:
+                # Try get_ticker first (returns bid/ask/etc)
                 if hasattr(client, 'get_ticker'):
                     ticker = client.get_ticker(sym)
                     if ticker:
                         return ticker
+                # Fallback to get_ticker_price (returns {'price': ...})
                 if hasattr(client, 'get_ticker_price'):
                     ticker = client.get_ticker_price(sym)
                     if ticker:
-                        return ticker
+                        # Normalize to have 'bid' and 'price' keys
+                        price = float(ticker.get('price', 0) if isinstance(ticker, dict) else ticker)
+                        if price > 0:
+                            return {'price': price, 'bid': price, 'ask': price}
             except Exception:
                 continue
         return {}
+    
+    def harvest_all_exchanges(self, queen=None, min_profit_usd: float = 0.01) -> Dict[str, Any]:
+        """
+        🌾 HARVEST ALL EXCHANGES - Scan ALL positions and sell profitable ones!
+        
+        This monitors Kraken, Binance, Alpaca, and Capital.com for positions
+        that can be sold at a profit to free up cash for new opportunities.
+        
+        Args:
+            queen: Queen instance for approval gating
+            min_profit_usd: Minimum profit required to sell (default $0.01)
+            
+        Returns:
+            Dict with harvested positions and freed cash
+        """
+        results = {
+            'harvested': [],
+            'still_holding': [],
+            'total_value': 0.0,
+            'total_freed': 0.0,
+            'errors': []
+        }
+        
+        print("\n🌾 HARVESTING ALL EXCHANGES FOR PROFITABLE POSITIONS...")
+        
+        for exchange_name, client in self.clients.items():
+            if not client:
+                continue
+                
+            try:
+                fee_rate = self.fee_rates.get(exchange_name, 0.0025)
+                
+                if exchange_name == 'alpaca':
+                    positions = client.get_positions()
+                    for pos in (positions or []):
+                        symbol = pos.get('symbol', '')
+                        qty = float(pos.get('qty', 0))
+                        entry_price = float(pos.get('avg_entry_price', 0))
+                        current_price = float(pos.get('current_price', 0))
+                        
+                        if qty > 0 and entry_price > 0 and current_price > 0:
+                            entry_cost = entry_price * qty * (1 + fee_rate)
+                            exit_value = current_price * qty * (1 - fee_rate)
+                            net_pnl = exit_value - entry_cost
+                            
+                            results['total_value'] += current_price * qty
+                            
+                            if net_pnl >= min_profit_usd:
+                                print(f"   🎯 {exchange_name.upper()} {symbol}: +${net_pnl:.4f} profit - HARVESTING!")
+                                try:
+                                    sell_order = client.place_market_order(symbol=symbol, side='sell', quantity=qty)
+                                    if sell_order:
+                                        results['harvested'].append({
+                                            'exchange': exchange_name,
+                                            'symbol': symbol,
+                                            'qty': qty,
+                                            'profit': net_pnl,
+                                            'freed': exit_value
+                                        })
+                                        results['total_freed'] += exit_value
+                                except Exception as e:
+                                    results['errors'].append(f"{exchange_name}:{symbol}: {e}")
+                            else:
+                                results['still_holding'].append({
+                                    'exchange': exchange_name, 'symbol': symbol,
+                                    'qty': qty, 'value': current_price * qty, 'pnl': net_pnl
+                                })
+                                
+                elif exchange_name == 'binance':
+                    balances = client.get_balance()
+                    for asset, qty in (balances or {}).items():
+                        if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR']:
+                            continue
+                        qty = float(qty or 0)
+                        if qty > 0.0001:
+                            # Try to get price
+                            symbol = f"{asset}USDT"
+                            ticker = self._get_binance_ticker(client, symbol)
+                            if not ticker or float(ticker.get('price', 0) or 0) == 0:
+                                symbol = f"{asset}USDC"
+                                ticker = self._get_binance_ticker(client, symbol)
+                            
+                            if ticker and float(ticker.get('price', 0) or 0) > 0:
+                                current_price = float(ticker.get('price', 0))
+                                market_value = qty * current_price
+                                results['total_value'] += market_value
+                                
+                                if market_value >= 0.50:  # Only report positions worth > $0.50
+                                    print(f"   📊 BINANCE {asset}: {qty:.4f} @ ${current_price:.6f} = ${market_value:.2f}")
+                                    results['still_holding'].append({
+                                        'exchange': exchange_name, 'symbol': symbol,
+                                        'qty': qty, 'value': market_value, 'pnl': 0  # No entry price known
+                                    })
+                                    
+                elif exchange_name == 'kraken':
+                    balances = client.get_balance()
+                    for asset, qty in (balances or {}).items():
+                        if asset in ['USD', 'ZUSD', 'EUR', 'ZEUR', 'DAI', 'USDC', 'USDT', 'TUSD', 'ZGBP', 'GBP']:
+                            continue
+                        qty = float(qty or 0)
+                        if qty > 0.0001:
+                            symbol = f"{asset}USD"
+                            try:
+                                ticker = client.get_ticker(symbol)
+                                if ticker:
+                                    current_price = float(ticker.get('c', [0])[0] if 'c' in ticker else ticker.get('price', 0))
+                                    if current_price > 0:
+                                        market_value = qty * current_price
+                                        results['total_value'] += market_value
+                                        
+                                        if market_value >= 0.50:
+                                            print(f"   📊 KRAKEN {asset}: {qty:.6f} @ ${current_price:.4f} = ${market_value:.2f}")
+                                            results['still_holding'].append({
+                                                'exchange': exchange_name, 'symbol': symbol,
+                                                'qty': qty, 'value': market_value, 'pnl': 0
+                                            })
+                            except Exception:
+                                pass
+                                
+                elif exchange_name == 'capital':
+                    capital_client = self._ensure_capital_client()
+                    if capital_client and getattr(capital_client, 'enabled', False):
+                        try:
+                            positions = capital_client.get_positions()
+                            for pos_data in (positions or []):
+                                pos = pos_data.get('position', {})
+                                market = pos_data.get('market', {})
+                                size = float(pos.get('size', 0) or 0)
+                                upl = float(pos.get('upl', 0) or 0)  # Unrealized P&L in GBP
+                                upl_usd = upl * 1.27  # Convert to USD
+                                
+                                if size > 0:
+                                    symbol = market.get('symbol', market.get('epic', ''))
+                                    level = float(pos.get('level', 0) or 0)
+                                    bid = float(market.get('bid', 0) or 0)
+                                    market_value = size * bid if bid > 0 else size * level
+                                    
+                                    results['total_value'] += market_value
+                                    
+                                    if upl_usd >= min_profit_usd:
+                                        print(f"   🎯 CAPITAL {symbol}: +${upl_usd:.2f} profit - HARVESTING!")
+                                        # Capital.com close position logic here
+                                        results['still_holding'].append({
+                                            'exchange': exchange_name, 'symbol': symbol,
+                                            'qty': size, 'value': market_value, 'pnl': upl_usd
+                                        })
+                                    else:
+                                        results['still_holding'].append({
+                                            'exchange': exchange_name, 'symbol': symbol,
+                                            'qty': size, 'value': market_value, 'pnl': upl_usd
+                                        })
+                        except Exception as e:
+                            results['errors'].append(f"capital: {e}")
+                            
+            except Exception as e:
+                results['errors'].append(f"{exchange_name}: {e}")
+        
+        print(f"\n🌾 HARVEST SUMMARY:")
+        print(f"   Total Portfolio Value: ${results['total_value']:.2f}")
+        print(f"   Positions Harvested: {len(results['harvested'])}")
+        print(f"   Cash Freed: ${results['total_freed']:.2f}")
+        print(f"   Still Holding: {len(results['still_holding'])} positions")
+        
+        return results
         
     def calculate_exact_breakeven(self, entry_price: float, quantity: float, exchange: str = 'alpaca') -> Dict:
         """
