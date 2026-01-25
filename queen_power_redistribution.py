@@ -4,11 +4,12 @@ Queen Power Redistribution Engine
 Autonomous energy optimization and power growth across all relays.
 
 The Queen uses her built-in intelligence to:
-1. Monitor idle energy in each relay
-2. Calculate exact energy drains
-3. Find optimal conversion opportunities
-4. Execute ONLY when (gain - drain) > 0
-5. Compound gains back into system
+1. Monitor ALL nodes (positions) across ALL relays for energy state
+2. Identify nodes with positive energy (unrealized profit)
+3. Redistribute profit energy to feed winning nodes or create new nodes
+4. KEEP original positions profitable (don't close winners)
+5. Move energy between nodes for optimal compound growth
+6. Execute ONLY when (gain - drain) > 0
 """
 
 import sys, os
@@ -55,6 +56,25 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
+class EnergyNode:
+    """A position/asset holding representing an energy node."""
+    relay: str  # BIN, KRK, ALP, CAP
+    symbol: str  # BTC/USD, ETHUSDT, AAPL, etc.
+    quantity: float  # Amount held
+    entry_price: float  # Average entry price
+    current_price: float  # Current market price
+    unrealized_pnl: float  # Unrealized profit/loss (the energy state)
+    pnl_percentage: float  # PnL as percentage
+    position_value_usd: float  # Current USD value
+    is_positive_energy: bool  # True if profitable
+    energy_available_to_redistribute: float  # Profit we can move without closing
+    timestamp: float
+    
+    def to_dict(self):
+        return asdict(self)
+
+
+@dataclass
 class RedistributionOpportunity:
     """A potential energy redistribution opportunity."""
     relay: str
@@ -67,10 +87,14 @@ class RedistributionOpportunity:
     net_energy_gain: float  # Expected gain - drain
     momentum_score: float  # Asset momentum (0-1)
     confidence: float  # Queen's confidence (0-1)
+    source_node: Optional['EnergyNode']  # Source node if redistributing from position
     timestamp: float
     
     def to_dict(self):
-        return asdict(self)
+        d = asdict(self)
+        if self.source_node:
+            d['source_node'] = self.source_node.to_dict()
+        return d
 
 
 @dataclass
@@ -128,10 +152,13 @@ class QueenPowerRedistribution:
         self.executions_history: List[Dict] = []
         self.total_net_energy_gained = 0.0
         self.total_blocked_drains_avoided = 0.0
+        self.all_energy_nodes: List[EnergyNode] = []  # All positions across all relays
         
         # Configuration
         self.min_idle_energy_usd = 10.0  # Min USD to consider redistribution
         self.min_net_gain_usd = 0.50  # Min net gain required
+        self.min_positive_energy_to_redistribute = 5.0  # Min profit before we redistribute
+        self.profit_redistribution_percentage = 0.50  # Take 50% of profit to redistribute
         self.scan_interval_seconds = 30  # How often to scan for opportunities
         self.max_redistribution_per_relay = 0.25  # Max 25% of idle energy per cycle
         
@@ -201,6 +228,127 @@ class QueenPowerRedistribution:
         
         return (0.0, 'UNKNOWN')
     
+    def scan_all_energy_nodes(self) -> List[EnergyNode]:
+        """
+        Scan ALL positions across ALL relays to find energy nodes.
+        Returns list of all positions with their energy states.
+        """
+        nodes = []
+        
+        # Scan BIN (Binance)
+        try:
+            bin_state = self.load_state_file('binance_truth_tracker_state.json', {})
+            positions = bin_state.get('positions', {})
+            for symbol, pos_data in positions.items():
+                if isinstance(pos_data, dict):
+                    qty = pos_data.get('quantity', 0.0)
+                    entry = pos_data.get('entry_price', 0.0)
+                    current = pos_data.get('current_price', entry)
+                    pnl = (current - entry) * qty if qty > 0 else 0.0
+                    pnl_pct = ((current - entry) / entry * 100) if entry > 0 else 0.0
+                    position_value = current * qty
+                    
+                    if qty > 0 and position_value > 1.0:  # Min $1 position
+                        node = EnergyNode(
+                            relay='BIN',
+                            symbol=symbol,
+                            quantity=qty,
+                            entry_price=entry,
+                            current_price=current,
+                            unrealized_pnl=pnl,
+                            pnl_percentage=pnl_pct,
+                            position_value_usd=position_value,
+                            is_positive_energy=pnl > 0,
+                            energy_available_to_redistribute=max(0, pnl * self.profit_redistribution_percentage) if pnl > self.min_positive_energy_to_redistribute else 0.0,
+                            timestamp=time.time()
+                        )
+                        nodes.append(node)
+                        if node.is_positive_energy:
+                            logger.info(f"  🟢 BIN node: {symbol} | +${pnl:.2f} ({pnl_pct:.1f}%) | Redistributable: ${node.energy_available_to_redistribute:.2f}")
+        except Exception as e:
+            logger.warning(f"BIN node scan failed: {e}")
+        
+        # Scan KRK (Kraken)
+        try:
+            krk_state = self.load_state_file('aureon_kraken_state.json', {})
+            positions = krk_state.get('positions', {})
+            for symbol, pos_data in positions.items():
+                if isinstance(pos_data, dict):
+                    qty = pos_data.get('volume', 0.0)
+                    entry = pos_data.get('avg_price', 0.0)
+                    current = pos_data.get('current_price', entry)
+                    pnl = (current - entry) * qty if qty > 0 else 0.0
+                    pnl_pct = ((current - entry) / entry * 100) if entry > 0 else 0.0
+                    position_value = current * qty
+                    
+                    if qty > 0 and position_value > 1.0:
+                        node = EnergyNode(
+                            relay='KRK',
+                            symbol=symbol,
+                            quantity=qty,
+                            entry_price=entry,
+                            current_price=current,
+                            unrealized_pnl=pnl,
+                            pnl_percentage=pnl_pct,
+                            position_value_usd=position_value,
+                            is_positive_energy=pnl > 0,
+                            energy_available_to_redistribute=max(0, pnl * self.profit_redistribution_percentage) if pnl > self.min_positive_energy_to_redistribute else 0.0,
+                            timestamp=time.time()
+                        )
+                        nodes.append(node)
+                        if node.is_positive_energy:
+                            logger.info(f"  🟢 KRK node: {symbol} | +${pnl:.2f} ({pnl_pct:.1f}%) | Redistributable: ${node.energy_available_to_redistribute:.2f}")
+        except Exception as e:
+            logger.warning(f"KRK node scan failed: {e}")
+        
+        # Scan ALP (Alpaca)
+        try:
+            alp_state = self.load_state_file('alpaca_truth_tracker_state.json', {})
+            positions = alp_state.get('positions', [])
+            for pos in positions:
+                if isinstance(pos, dict):
+                    symbol = pos.get('symbol', 'UNKNOWN')
+                    qty = float(pos.get('qty', 0.0))
+                    entry = float(pos.get('avg_entry_price', 0.0))
+                    current = float(pos.get('current_price', entry))
+                    pnl = float(pos.get('unrealized_pl', 0.0))
+                    pnl_pct = float(pos.get('unrealized_plpc', 0.0)) * 100
+                    position_value = float(pos.get('market_value', 0.0))
+                    
+                    if abs(qty) > 0 and position_value > 1.0:
+                        node = EnergyNode(
+                            relay='ALP',
+                            symbol=symbol,
+                            quantity=qty,
+                            entry_price=entry,
+                            current_price=current,
+                            unrealized_pnl=pnl,
+                            pnl_percentage=pnl_pct,
+                            position_value_usd=position_value,
+                            is_positive_energy=pnl > 0,
+                            energy_available_to_redistribute=max(0, pnl * self.profit_redistribution_percentage) if pnl > self.min_positive_energy_to_redistribute else 0.0,
+                            timestamp=time.time()
+                        )
+                        nodes.append(node)
+                        if node.is_positive_energy:
+                            logger.info(f"  🟢 ALP node: {symbol} | +${pnl:.2f} ({pnl_pct:.1f}%) | Redistributable: ${node.energy_available_to_redistribute:.2f}")
+        except Exception as e:
+            logger.warning(f"ALP node scan failed: {e}")
+        
+        # Scan CAP (Capital.com) - manual for now
+        # TODO: Add Capital.com API integration
+        
+        self.all_energy_nodes = nodes
+        
+        positive_nodes = [n for n in nodes if n.is_positive_energy]
+        total_positive_energy = sum(n.unrealized_pnl for n in positive_nodes)
+        total_redistributable = sum(n.energy_available_to_redistribute for n in positive_nodes)
+        
+        logger.info(f"📊 Node Scan Complete: {len(nodes)} total nodes, {len(positive_nodes)} with positive energy")
+        logger.info(f"💎 Total Positive Energy: ${total_positive_energy:.2f} | Redistributable: ${total_redistributable:.2f}")
+        
+        return nodes
+    
     def find_best_conversion(self, relay: str, idle_usd: float) -> Optional[Tuple[str, float, float]]:
         """
         Find best asset to convert idle energy into.
@@ -249,15 +397,25 @@ class QueenPowerRedistribution:
         """
         Scan all relays for energy redistribution opportunities.
         Queen's first step: Perceive the energy landscape.
+        
+        TWO SOURCES OF ENERGY:
+        1. Idle cash (USD/USDT) in relay accounts
+        2. Profit from positive energy nodes (winning positions)
         """
         opportunities = []
         
+        # STEP 1: Scan all energy nodes (positions)
+        logger.info("🔍 Scanning all energy nodes across relays...")
+        all_nodes = self.scan_all_energy_nodes()
+        
+        # STEP 2: Find opportunities from IDLE CASH
+        logger.info("💰 Checking idle cash opportunities...")
         for relay in ['BIN', 'KRK', 'ALP']:
             # Get idle energy
             idle_usd, source_asset = self.get_relay_idle_energy(relay)
             
             if idle_usd < self.min_idle_energy_usd:
-                logger.debug(f"{relay}: Idle energy too low (${idle_usd:.2f} < ${self.min_idle_energy_usd})")
+                logger.debug(f"{relay}: Idle cash too low (${idle_usd:.2f} < ${self.min_idle_energy_usd})")
                 continue
             
             # Cap at max redistribution per cycle
@@ -266,7 +424,7 @@ class QueenPowerRedistribution:
             # Find best conversion target
             conversion = self.find_best_conversion(relay, max_deploy)
             if not conversion:
-                logger.debug(f"{relay}: No profitable conversions found")
+                logger.debug(f"{relay}: No profitable conversions found for idle cash")
                 continue
             
             target_asset, expected_gain_pct, momentum_score = conversion
@@ -293,13 +451,64 @@ class QueenPowerRedistribution:
                     energy_drain=energy_drain,
                     net_energy_gain=net_energy_gain,
                     momentum_score=momentum_score,
-                    confidence=momentum_score,  # Use momentum as confidence
+                    confidence=0.7,  # Base confidence
+                    source_node=None,  # From idle cash
                     timestamp=time.time()
                 )
                 opportunities.append(opp)
-                logger.info(f"✨ {relay} opportunity: {target_asset}, net gain ${net_energy_gain:.4f}")
+                logger.info(f"✨ {relay} idle cash opportunity: {target_asset}, net gain ${net_energy_gain:.4f}")
             else:
                 logger.debug(f"{relay}: Net gain too low (${net_energy_gain:.4f})")
+        
+        # STEP 3: Find opportunities from POSITIVE ENERGY NODES
+        logger.info("🌱 Checking profit redistribution opportunities...")
+        positive_nodes = [n for n in all_nodes if n.is_positive_energy and n.energy_available_to_redistribute > 0]
+        
+        for node in positive_nodes:
+            # This node has profit we can redistribute
+            redistributable = node.energy_available_to_redistribute
+            
+            if redistributable < self.min_idle_energy_usd:
+                continue
+            
+            # Find best target in SAME relay (internal redistribution)
+            conversion = self.find_best_conversion(node.relay, redistributable)
+            if not conversion:
+                logger.debug(f"{node.relay} {node.symbol}: No target for profit redistribution")
+                continue
+            
+            target_asset, expected_gain_pct, momentum_score = conversion
+            
+            # Calculate expected gain and drain
+            expected_gain_usd = redistributable * (expected_gain_pct / 100.0)
+            
+            # Ask Queen to calculate energy drain
+            drain_info = self.queen.calculate_energy_drain(node.relay, redistributable, is_maker=True)
+            energy_drain = drain_info['total_drain']
+            
+            # Calculate net energy gain
+            net_energy_gain = expected_gain_usd - energy_drain
+            
+            # Only consider if net positive
+            if net_energy_gain > self.min_net_gain_usd:
+                opp = RedistributionOpportunity(
+                    relay=node.relay,
+                    source_asset=node.symbol,
+                    target_asset=target_asset,
+                    idle_energy=redistributable,
+                    expected_gain_pct=expected_gain_pct,
+                    expected_gain_usd=expected_gain_usd,
+                    energy_drain=energy_drain,
+                    net_energy_gain=net_energy_gain,
+                    momentum_score=momentum_score,
+                    confidence=0.8,  # Higher confidence (from winning position)
+                    source_node=node,  # From profitable node
+                    timestamp=time.time()
+                )
+                opportunities.append(opp)
+                logger.info(f"✨ {node.relay} node profit opportunity: {node.symbol} → {target_asset}, net gain ${net_energy_gain:.4f}")
+            else:
+                logger.debug(f"{node.relay} {node.symbol}: Net gain too low (${net_energy_gain:.4f})")
         
         return opportunities
     
