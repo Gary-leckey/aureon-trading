@@ -938,6 +938,7 @@ class QueenPowerRedistribution:
         
         try:
             # Execute via appropriate exchange client
+            order = None
             if opp.relay == 'BIN' and self.binance:
                 # Binance execution - use quote_qty for USD amount
                 order = self.binance.place_market_order(
@@ -945,7 +946,6 @@ class QueenPowerRedistribution:
                     side='buy',
                     quote_qty=opp.idle_energy  # USD amount to spend
                 )
-                logger.info(f"✅ Binance order executed: {order}")
             
             elif opp.relay == 'KRK' and self.kraken:
                 # Kraken execution - use quote_qty for USD amount
@@ -954,7 +954,6 @@ class QueenPowerRedistribution:
                     side='buy',
                     quote_qty=opp.idle_energy  # USD amount to spend
                 )
-                logger.info(f"✅ Kraken order executed: {order}")
             
             elif opp.relay == 'ALP' and self.alpaca:
                 # Alpaca execution - use quote_qty for USD amount
@@ -963,10 +962,64 @@ class QueenPowerRedistribution:
                     side='buy',
                     quote_qty=opp.idle_energy  # USD amount to spend
                 )
-                logger.info(f"✅ Alpaca order executed: {order}")
             
             else:
                 raise Exception(f"Exchange client not available for {opp.relay}")
+            
+            # ✅ CRITICAL: Extract ACTUAL fill price from order response
+            actual_fill_price = 0.0
+            actual_qty = 0.0
+            actual_cost = 0.0
+            actual_fee = 0.0
+            order_id = None
+            
+            if order:
+                # Kraken format
+                if 'actual_price' in order:
+                    actual_fill_price = float(order.get('actual_price', 0))
+                    actual_qty = float(order.get('actual_qty', 0))
+                    actual_cost = float(order.get('actual_cost', 0))
+                    actual_fee = float(order.get('actual_fee', 0))
+                    order_id = order.get('txid', order.get('orderId', 'unknown'))
+                # Binance format
+                elif 'fills' in order:
+                    # Binance returns array of fills
+                    fills = order.get('fills', [])
+                    total_qty = 0.0
+                    total_cost = 0.0
+                    total_fee = 0.0
+                    for fill in fills:
+                        fill_qty = float(fill.get('qty', 0))
+                        fill_price = float(fill.get('price', 0))
+                        fill_fee = float(fill.get('commission', 0))
+                        total_qty += fill_qty
+                        total_cost += fill_qty * fill_price
+                        total_fee += fill_fee
+                    actual_qty = total_qty
+                    actual_cost = total_cost
+                    actual_fee = total_fee
+                    actual_fill_price = total_cost / total_qty if total_qty > 0 else 0
+                    order_id = order.get('orderId', 'unknown')
+                # Alpaca format
+                elif 'filled_avg_price' in order:
+                    actual_fill_price = float(order.get('filled_avg_price', 0))
+                    actual_qty = float(order.get('filled_qty', 0))
+                    actual_cost = actual_fill_price * actual_qty
+                    order_id = order.get('id', 'unknown')
+                # Fallback - try to extract from common fields
+                else:
+                    actual_fill_price = float(order.get('price', order.get('avgPrice', 0)))
+                    actual_qty = float(order.get('executedQty', order.get('qty', 0)))
+                    order_id = order.get('id', order.get('orderId', 'unknown'))
+            
+            # Log actual execution vs expected
+            expected_vs_actual = ""
+            if actual_fill_price > 0:
+                expected_vs_actual = f" | Fill: ${actual_fill_price:.6f} | Qty: {actual_qty:.6f} | Cost: ${actual_cost:.2f} | Fee: ${actual_fee:.4f}"
+                logger.info(f"✅ {opp.relay} BUY executed: Order #{order_id}{expected_vs_actual}")
+            else:
+                logger.warning(f"⚠️ {opp.relay} order executed but couldn't extract fill price: {order}")
+                logger.info(f"✅ {opp.relay} order executed: {order}")
             
             result = {
                 'success': True,
@@ -977,6 +1030,11 @@ class QueenPowerRedistribution:
                 'net_energy_gain': opp.net_energy_gain,
                 'energy_drain': opp.energy_drain,
                 'order': order,
+                'order_id': order_id,
+                'actual_fill_price': actual_fill_price,
+                'actual_qty': actual_qty,
+                'actual_cost': actual_cost,
+                'actual_fee': actual_fee,
                 'timestamp': time.time(),
                 'dry_run': False
             }
@@ -1040,6 +1098,7 @@ class QueenPowerRedistribution:
                 # Calculate how much of the position to sell
                 sell_quantity = node.quantity * harvest_percentage
                 
+                order = None
                 if node.relay == 'BIN' and self.binance:
                     # Binance uses place_market_order with quantity (not quote_qty for sells)
                     order = self.binance.place_market_order(
@@ -1047,9 +1106,6 @@ class QueenPowerRedistribution:
                         side='sell',
                         quantity=sell_quantity
                     )
-                    logger.info(f"✅ Binance sell executed: {order}")
-                    harvested_count += 1
-                    total_harvested += harvest_amount_usd
                     
                 elif node.relay == 'KRK' and self.kraken:
                     # Kraken uses place_market_order
@@ -1058,9 +1114,6 @@ class QueenPowerRedistribution:
                         side='sell',
                         quantity=sell_quantity
                     )
-                    logger.info(f"✅ Kraken sell executed: {order}")
-                    harvested_count += 1
-                    total_harvested += harvest_amount_usd
                     
                 elif node.relay == 'ALP' and self.alpaca:
                     # Alpaca uses place_market_order
@@ -1069,7 +1122,52 @@ class QueenPowerRedistribution:
                         side='sell',
                         quantity=sell_quantity
                     )
-                    logger.info(f"✅ Alpaca sell executed: {order}")
+                
+                # ✅ CRITICAL: Verify ACTUAL fill price from order response
+                actual_fill_price = 0.0
+                actual_proceeds = 0.0
+                actual_fee = 0.0
+                order_id = None
+                
+                if order:
+                    # Kraken format
+                    if 'actual_price' in order:
+                        actual_fill_price = float(order.get('actual_price', 0))
+                        actual_proceeds = float(order.get('actual_cost', 0))  # For sells, cost = proceeds
+                        actual_fee = float(order.get('actual_fee', 0))
+                        order_id = order.get('txid', 'unknown')
+                    # Binance format
+                    elif 'fills' in order:
+                        fills = order.get('fills', [])
+                        total_proceeds = 0.0
+                        total_fee = 0.0
+                        for fill in fills:
+                            fill_qty = float(fill.get('qty', 0))
+                            fill_price = float(fill.get('price', 0))
+                            fill_fee = float(fill.get('commission', 0))
+                            total_proceeds += fill_qty * fill_price
+                            total_fee += fill_fee
+                        actual_proceeds = total_proceeds
+                        actual_fee = total_fee
+                        actual_fill_price = total_proceeds / sell_quantity if sell_quantity > 0 else 0
+                        order_id = order.get('orderId', 'unknown')
+                    # Alpaca format
+                    elif 'filled_avg_price' in order:
+                        actual_fill_price = float(order.get('filled_avg_price', 0))
+                        actual_qty = float(order.get('filled_qty', 0))
+                        actual_proceeds = actual_fill_price * actual_qty
+                        order_id = order.get('id', 'unknown')
+                
+                # Log actual vs expected
+                if actual_fill_price > 0:
+                    actual_profit = actual_proceeds - actual_fee - (node.cost_basis * harvest_percentage)
+                    logger.info(f"✅ {node.relay} SELL: Order #{order_id} | Fill: ${actual_fill_price:.6f} | Proceeds: ${actual_proceeds:.2f} | Fee: ${actual_fee:.4f} | Profit: ${actual_profit:.2f}")
+                    # Update actual harvested amount
+                    harvested_count += 1
+                    total_harvested += actual_proceeds - actual_fee
+                else:
+                    logger.warning(f"⚠️ {node.relay} sell executed but couldn't verify fill price: {order}")
+                    # Use estimated amount
                     harvested_count += 1
                     total_harvested += harvest_amount_usd
                 
