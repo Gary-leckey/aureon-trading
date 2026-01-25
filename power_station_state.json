@@ -1,6 +1,6 @@
 {
   "runtime_sec": 31.556674242019653,
-  "cycles_run": 61,
+  "cycles_run": 83,
   "successful_pulses": 0,
   "failed_pulses": 0,
   "blocked_operations": 0,
@@ -14,5 +14,5 @@
   "efficiency": 0.0,
   "timestamp": 1769300023.6864214,
   "status": "RUNNING",
-  "last_update": 1769306384.9060206
+  "last_update": 1769307465.6747887
 }

@@ -48,6 +48,11 @@ import time
 from datetime import datetime
 from typing import Dict, Optional
 
+from aiohttp import web
+
+# Global reference to dashboard for web handlers
+_dashboard_instance = None
+
 
 def load_json_safe(filepath: str, default=None) -> Dict:
     """Load JSON file safely with fallback."""
@@ -437,6 +442,41 @@ class QueenPowerDashboard:
             print("  \033[90m📈 Begin trading to track conservation metrics\033[0m")
         print()
     
+    def get_dashboard_data(self) -> Dict:
+        """Get dashboard data as dict for web API."""
+        energy = self.get_total_system_energy()
+        queen_state = self.get_queen_redistribution_state()
+        
+        # Get relay breakdown
+        relays = {}
+        for relay_code in ['BIN', 'KRK', 'ALP', 'CAP']:
+            relay_energy = self.get_relay_energy(relay_code)
+            relays[relay_code] = {
+                'total': relay_energy.get('total', 0),
+                'idle': relay_energy.get('idle', 0),
+                'positions': relay_energy.get('positions', 0),
+                'positions_count': relay_energy.get('positions_count', 0),
+            }
+        
+        return {
+            'timestamp': time.time(),
+            'cycle': self.cycle_count,
+            'uptime_seconds': time.time() - self.start_time,
+            'total_energy': energy.get('total_energy', 0),
+            'total_reserves': energy.get('total_reserves', 0),
+            'total_deployed': energy.get('total_deployed', 0),
+            'net_energy_gained': energy.get('net_energy_gained', 0),
+            'energy_conserved': energy.get('energy_conserved', 0),
+            'energy_growth': energy.get('energy_growth', 0),
+            'growth_percentage': energy.get('growth_percentage', 0),
+            'relays': relays,
+            'queen': {
+                'decisions_count': queen_state.get('decisions_count', 0),
+                'net_gained': queen_state.get('total_net_energy_gained', 0),
+                'drains_avoided': queen_state.get('total_blocked_drains_avoided', 0),
+            }
+        }
+    
     async def run(self):
         """Run continuous dashboard updates."""
         print("🐝 Queen Power Dashboard starting...")
@@ -463,16 +503,217 @@ class QueenPowerDashboard:
             print("\n\n🛑 Dashboard stopped by user")
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# WEB SERVER - Health Check & API for DigitalOcean
+# ═══════════════════════════════════════════════════════════════════════════════
+
+async def handle_health(request):
+    """Health check endpoint for DigitalOcean."""
+    global _dashboard_instance
+    
+    health_data = {
+        'status': 'healthy',
+        'service': 'queen-power-dashboard',
+        'timestamp': datetime.utcnow().isoformat(),
+        'uptime_seconds': time.time() - _dashboard_instance.start_time if _dashboard_instance else 0,
+        'cycle_count': _dashboard_instance.cycle_count if _dashboard_instance else 0,
+    }
+    
+    return web.json_response(health_data)
+
+
+async def handle_api_status(request):
+    """Get full dashboard status as JSON."""
+    global _dashboard_instance
+    
+    if not _dashboard_instance:
+        return web.json_response({'error': 'Dashboard not initialized'}, status=503)
+    
+    data = _dashboard_instance.get_dashboard_data()
+    return web.json_response(data)
+
+
+async def handle_root(request):
+    """Serve HTML dashboard."""
+    html = """<!DOCTYPE html>
+<html>
+<head>
+    <title>⚡ Queen Power Station</title>
+    <meta charset="utf-8">
+    <meta http-equiv="refresh" content="5">
+    <style>
+        body { 
+            background: #0a0a0a; 
+            color: #00ff88; 
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            margin: 0;
+        }
+        .header { 
+            text-align: center; 
+            border: 2px solid #00ff88;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .relay-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .relay-card {
+            background: #111;
+            border: 1px solid #333;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .relay-card h3 { margin: 0 0 10px 0; }
+        .value { font-size: 1.5em; font-weight: bold; }
+        .positive { color: #00ff88; }
+        .negative { color: #ff4444; }
+        .neutral { color: #888; }
+        .stats { margin-top: 20px; }
+        .stat-row { 
+            display: flex; 
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #222;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ QUEEN POWER STATION ⚡</h1>
+        <p>Energy-Based Trading Dashboard</p>
+    </div>
+    
+    <div id="status">Loading...</div>
+    
+    <script>
+        async function updateStatus() {
+            try {
+                const resp = await fetch('/api/status');
+                const data = await resp.json();
+                
+                const growth = data.growth_percentage || 0;
+                const growthClass = growth > 0 ? 'positive' : growth < 0 ? 'negative' : 'neutral';
+                
+                let html = `
+                    <div class="relay-grid">
+                        <div class="relay-card">
+                            <h3>💰 Total Energy</h3>
+                            <div class="value">$${(data.total_energy || 0).toFixed(2)}</div>
+                        </div>
+                        <div class="relay-card">
+                            <h3>⚡ Reserves</h3>
+                            <div class="value">$${(data.total_reserves || 0).toFixed(2)}</div>
+                        </div>
+                        <div class="relay-card">
+                            <h3>🎯 Deployed</h3>
+                            <div class="value">$${(data.total_deployed || 0).toFixed(2)}</div>
+                        </div>
+                        <div class="relay-card">
+                            <h3>📈 Growth</h3>
+                            <div class="value ${growthClass}">${growth >= 0 ? '+' : ''}${growth.toFixed(2)}%</div>
+                        </div>
+                    </div>
+                    
+                    <h2>🔌 Relay Status</h2>
+                    <div class="relay-grid">
+                `;
+                
+                const relayNames = {BIN: '🟡 Binance', KRK: '🔵 Kraken', ALP: '🟢 Alpaca', CAP: '🏛️ Capital'};
+                for (const [code, name] of Object.entries(relayNames)) {
+                    const relay = data.relays?.[code] || {};
+                    html += `
+                        <div class="relay-card">
+                            <h3>${name}</h3>
+                            <div class="stat-row"><span>Total:</span><span>$${(relay.total || 0).toFixed(2)}</span></div>
+                            <div class="stat-row"><span>Idle:</span><span>$${(relay.idle || 0).toFixed(2)}</span></div>
+                            <div class="stat-row"><span>Positions:</span><span>${relay.positions_count || 0}</span></div>
+                        </div>
+                    `;
+                }
+                
+                html += `</div>
+                    <div class="stats">
+                        <h2>🐝 Queen Intelligence</h2>
+                        <div class="stat-row"><span>Decisions Made:</span><span>${data.queen?.decisions_count || 0}</span></div>
+                        <div class="stat-row"><span>Net Energy Gained:</span><span class="positive">$${(data.queen?.net_gained || 0).toFixed(2)}</span></div>
+                        <div class="stat-row"><span>Drains Avoided:</span><span class="positive">$${(data.queen?.drains_avoided || 0).toFixed(2)}</span></div>
+                    </div>
+                    
+                    <p style="color: #666; margin-top: 20px;">
+                        Cycle: ${data.cycle || 0} | 
+                        Uptime: ${Math.floor((data.uptime_seconds || 0) / 60)}m | 
+                        Last Update: ${new Date(data.timestamp * 1000).toLocaleTimeString()}
+                    </p>
+                `;
+                
+                document.getElementById('status').innerHTML = html;
+            } catch (err) {
+                document.getElementById('status').innerHTML = '<p class="negative">Error loading status: ' + err + '</p>';
+            }
+        }
+        
+        updateStatus();
+        setInterval(updateStatus, 5000);
+    </script>
+</body>
+</html>"""
+    return web.Response(text=html, content_type='text/html')
+
+
+async def start_web_server(dashboard, port):
+    """Start aiohttp web server."""
+    app = web.Application()
+    app.router.add_get('/', handle_root)
+    app.router.add_get('/health', handle_health)
+    app.router.add_get('/api/status', handle_api_status)
+    
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    
+    print(f"🌐 Web server started on http://0.0.0.0:{port}")
+    print(f"   💚 Health: http://localhost:{port}/health")
+    print(f"   📊 Status: http://localhost:{port}/api/status")
+    
+    return runner
+
+
 async def main():
+    global _dashboard_instance
+    
     import argparse
     parser = argparse.ArgumentParser(description="Queen Power Dashboard")
     parser.add_argument('--interval', type=int, default=3, help='Update interval in seconds (default: 3)')
+    parser.add_argument('--port', type=int, default=8080, help='Web server port (default: 8080)')
+    parser.add_argument('--no-console', action='store_true', help='Disable console output')
     args = parser.parse_args()
+    
+    port = int(os.environ.get('PORT', args.port))
     
     dashboard = QueenPowerDashboard()
     dashboard.update_interval = args.interval
+    _dashboard_instance = dashboard
     
-    await dashboard.run()
+    # Start web server
+    runner = await start_web_server(dashboard, port)
+    
+    try:
+        if args.no_console:
+            # Just keep updating cycle count for health checks
+            print("🐝 Queen Power Dashboard running (console disabled)")
+            while True:
+                dashboard.cycle_count += 1
+                await asyncio.sleep(dashboard.update_interval)
+        else:
+            # Run console dashboard
+            await dashboard.run()
+    finally:
+        await runner.cleanup()
 
 
 if __name__ == '__main__':
