@@ -998,6 +998,91 @@ class QueenPowerRedistribution:
             self.executions_history.append(result)
             return result
     
+    async def harvest_profitable_positions(self) -> Dict:
+        """
+        CRITICAL: Sell profitable positions to convert back to stablecoins.
+        This replenishes the spendable cash pool.
+        """
+        logger.info("💰 Step 0: Harvesting profitable positions...")
+        
+        # Scan all positions
+        all_nodes = []
+        for relay in ['BIN', 'KRK', 'ALP']:
+            nodes = self.scan_relay_energy_nodes(relay)
+            all_nodes.extend(nodes)
+        
+        # Filter for profitable positions that meet minimum threshold
+        harvestable_nodes = [
+            n for n in all_nodes 
+            if n.is_positive_energy and n.unrealized_pnl >= self.min_positive_energy_to_redistribute
+        ]
+        
+        if not harvestable_nodes:
+            logger.info("💰 No profitable positions to harvest this cycle.")
+            return {'harvested_count': 0, 'total_harvested_usd': 0.0}
+        
+        logger.info(f"💰 Found {len(harvestable_nodes)} profitable positions to harvest")
+        
+        harvested_count = 0
+        total_harvested = 0.0
+        
+        for node in harvestable_nodes:
+            harvest_percentage = self.profit_redistribution_percentage
+            harvest_amount_usd = node.unrealized_pnl * harvest_percentage
+            
+            if self.dry_run:
+                logger.info(f"🔶 DRY-RUN: Would sell {node.asset} on {node.relay} for ${harvest_amount_usd:.2f} profit")
+                harvested_count += 1
+                total_harvested += harvest_amount_usd
+                continue
+            
+            # LIVE EXECUTION: Sell position
+            try:
+                logger.info(f"⚡ HARVESTING: Selling {harvest_percentage*100:.0f}% of {node.asset} on {node.relay} (${harvest_amount_usd:.2f})")
+                
+                # Calculate how much of the position to sell
+                sell_quantity = node.quantity * harvest_percentage
+                
+                if node.relay == 'BIN' and self.binance:
+                    order = self.binance.execute_trade(
+                        symbol=node.asset,
+                        side='sell',
+                        quantity=sell_quantity
+                    )
+                    logger.info(f"✅ Binance sell executed: {order}")
+                    harvested_count += 1
+                    total_harvested += harvest_amount_usd
+                    
+                elif node.relay == 'KRK' and self.kraken:
+                    order = self.kraken.execute_trade(
+                        symbol=node.asset,
+                        side='sell',
+                        quantity=sell_quantity
+                    )
+                    logger.info(f"✅ Kraken sell executed: {order}")
+                    harvested_count += 1
+                    total_harvested += harvest_amount_usd
+                    
+                elif node.relay == 'ALP' and self.alpaca:
+                    order = self.alpaca.execute_trade(
+                        symbol=node.asset,
+                        side='sell',
+                        quantity=sell_quantity
+                    )
+                    logger.info(f"✅ Alpaca sell executed: {order}")
+                    harvested_count += 1
+                    total_harvested += harvest_amount_usd
+                
+            except Exception as e:
+                logger.error(f"❌ Failed to harvest {node.asset} on {node.relay}: {e}")
+        
+        logger.info(f"💰 Harvest complete: {harvested_count} positions, ${total_harvested:.2f} converted to stablecoins")
+        
+        return {
+            'harvested_count': harvested_count,
+            'total_harvested_usd': total_harvested
+        }
+    
     async def run_redistribution_cycle(self) -> Dict:
         """
         Run one complete redistribution cycle.
@@ -1009,7 +1094,10 @@ class QueenPowerRedistribution:
         logger.info("🐝 QUEEN POWER REDISTRIBUTION CYCLE STARTING")
         logger.info("=" * 60)
         
-        # Calculate and update total system energy FIRST
+        # STEP 0: Harvest profitable positions first (convert to stablecoins)
+        harvest_result = await self.harvest_profitable_positions()
+        
+        # Calculate and update total system energy AFTER harvest
         total_energy = 0.0
         for relay in ['BIN', 'KRK', 'ALP', 'CAP']:
             idle, _ = self.get_relay_idle_energy(relay)
@@ -1027,6 +1115,7 @@ class QueenPowerRedistribution:
         power_state['net_flow'] = self.total_net_energy_gained
         power_state['efficiency'] = 0.0  # TODO: Calculate
         power_state['last_update'] = time.time()
+        power_state['last_harvest'] = harvest_result
         
         with open('power_station_state.json', 'w') as f:
             json.dump(power_state, f, indent=2)
@@ -1072,6 +1161,8 @@ class QueenPowerRedistribution:
         
         cycle_summary = {
             'cycle_duration': time.time() - cycle_start,
+            'positions_harvested': harvest_result['harvested_count'],
+            'energy_harvested_usd': harvest_result['total_harvested_usd'],
             'opportunities_found': len(opportunities),
             'decisions_made': len(decisions),
             'executions_attempted': len(executions),
@@ -1084,6 +1175,7 @@ class QueenPowerRedistribution:
         logger.info("=" * 60)
         logger.info("🐝 QUEEN POWER REDISTRIBUTION CYCLE COMPLETE")
         logger.info(f"Duration: {cycle_summary['cycle_duration']:.2f}s")
+        logger.info(f"Harvested: {cycle_summary['positions_harvested']} positions → ${cycle_summary['energy_harvested_usd']:.2f}")
         logger.info(f"Opportunities: {cycle_summary['opportunities_found']}")
         logger.info(f"Executions: {cycle_summary['executions_successful']}/{cycle_summary['executions_attempted']}")
         logger.info(f"Net Energy Gained This Cycle: ${cycle_summary['net_energy_gained_this_cycle']:.4f}")
