@@ -386,7 +386,8 @@ class QueenPowerRedistribution:
                     for try_symbol in [f'{ticker_asset}{quote}', f'{ticker_asset}USD', symbol, f'{asset}USD']:
                         try:
                             ticker = self.kraken.get_ticker(try_symbol)
-                            fetched_price = float(ticker.get('last', 0))
+                            # Kraken returns 'price' field, not 'last'
+                            fetched_price = float(ticker.get('price', ticker.get('last', 0)))
                             if fetched_price > 0:
                                 current_price = fetched_price
                                 break

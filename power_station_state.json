@@ -1,10 +1,10 @@
 {
   "runtime_sec": 31.556674242019653,
-  "cycles_run": 12,
+  "cycles_run": 61,
   "successful_pulses": 0,
   "failed_pulses": 0,
   "blocked_operations": 0,
-  "total_energy_now": 95.575634,
+  "total_energy_now": 93.75999999999999,
   "energy_deployed": 0.0,
   "net_flow": 0.0,
   "net_flow_24h": 0.0,
@@ -13,5 +13,6 @@
   "fees_paid": 0.0,
   "efficiency": 0.0,
   "timestamp": 1769300023.6864214,
-  "status": "STOPPED"
+  "status": "RUNNING",
+  "last_update": 1769306384.9060206
 }
