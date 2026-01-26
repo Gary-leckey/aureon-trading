@@ -40,6 +40,19 @@ from typing import List, Dict, Tuple, Optional
 from collections import deque
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 👑💰 QUEEN'S SACRED 1.88% LAW - SURGE = PROFIT! 💰👑
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+#   THE QUEEN COMMANDS: MIN_COP = 1.0188 (1.88% MINIMUM REALIZED PROFIT)
+#   Only trade surges that can achieve 1.88%!
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+QUEEN_MIN_COP = 1.0188               # 👑 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88          # 👑 The sacred number as percentage
+QUEEN_SURGE_MIN_STRENGTH = 0.60      # 👑 Minimum surge strength for profit potential
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # 🎶 HNC SACRED CONSTANTS & FREQUENCIES
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -54,6 +67,9 @@ class Harmonic:
 SACRED_HARMONICS = [
     # Earth's "heartbeat" - the fundamental market rhythm
     Harmonic("Schumann Resonance", 7.83, 1.0, "Geophysical"),
+    
+    # 👑 Queen's Profit Frequency - THE SACRED 1.88!
+    Harmonic("Queen's Profit", 188.0, 1.0, "Sacred"),  # NEW!
     
     # Solfeggio Frequencies - ancient tones of creation and transformation
     Harmonic("UT - Liberating Guilt", 396.0, 0.5, "Solfeggio"),

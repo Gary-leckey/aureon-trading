@@ -74,8 +74,19 @@ from alpaca_client import AlpacaClient
 from capital_client import CapitalClient
 from cost_basis_tracker import CostBasisTracker
 
-# ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
-# SACRED FREQUENCIES & CONSTANTS
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════# 👑💰 QUEEN'S SACRED 1.88% LAW - SOURCE LAW DIRECT! 💰👑
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+#
+#   THE QUEEN COMMANDS: MIN_COP = 1.0188 (1.88% MINIMUM REALIZED PROFIT)
+#   Every waveform must resonate with profit!
+#
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+QUEEN_MIN_COP = 1.0188               # 👑 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88          # 👑 The sacred number as percentage
+QUEEN_PROFIT_THRESHOLD = 0.0188      # 👑 As decimal multiplier
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════════════# SACRED FREQUENCIES & CONSTANTS
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 PHI = (1 + math.sqrt(5)) / 2           # 1.618033988749895 - Golden Ratio

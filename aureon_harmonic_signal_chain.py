@@ -66,7 +66,20 @@ if sys.platform == 'win32':
         pass
 
 # ═══════════════════════════════════════════════════════════════════════════════════════
-# 🔌 IMPORTS - Graceful degradation if modules missing
+# �💰 QUEEN'S SACRED 1.88% LAW - SIGNALS CARRY PROFIT! 💰👑
+# ═══════════════════════════════════════════════════════════════════════════════════════
+#
+#   THE QUEEN COMMANDS: MIN_COP = 1.0188 (1.88% MINIMUM REALIZED PROFIT)
+#   Every signal in the chain carries the profit mandate!
+#
+# ═══════════════════════════════════════════════════════════════════════════════════════
+
+QUEEN_MIN_COP = 1.0188               # 👑 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88          # 👑 The sacred number as percentage
+QUEEN_SIGNAL_PROFIT_FREQ = 188.0     # 👑 Profit frequency in signal chain (Hz)
+
+# ═══════════════════════════════════════════════════════════════════════════════════════
+# �🔌 IMPORTS - Graceful degradation if modules missing
 # ═══════════════════════════════════════════════════════════════════════════════════════
 
 # ThoughtBus

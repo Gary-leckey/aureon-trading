@@ -45,6 +45,19 @@ if sys.platform == 'win32':
 
 logger = logging.getLogger(__name__)
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 👑💰 QUEEN'S SACRED 1.88% LAW - HFT MUST OBEY! 💰👑
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+#   THE QUEEN COMMANDS: MIN_COP = 1.0188 (1.88% MINIMUM REALIZED PROFIT)
+#   Even at microsecond speeds, profit is sacred!
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+QUEEN_MIN_COP = 1.0188               # 👑 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88          # 👑 The sacred number as percentage
+QUEEN_HFT_MIN_EDGE_PCT = 2.60        # 👑 Minimum edge for HFT (1.88% + fees)
+
 # Sacred constants for HFT timing
 PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio 1.618
 PHI_INVERSE = 0.618  # φ⁻¹ - The trigger threshold
@@ -52,6 +65,7 @@ SCHUMANN_BASE = 7.83  # Hz - Earth's heartbeat
 LOVE_FREQUENCY = 528  # Hz - DNA repair frequency
 WIN_FREQUENCY_HZ = 528.0   # Joy/Love/DNA repair
 LOSS_FREQUENCY_HZ = 396.0  # Transformation/Learning
+PROFIT_FREQUENCY_HZ = 188.0  # 👑 Queen's profit frequency!
 
 # HFT Performance Constants
 HFT_TICK_BUFFER_SIZE = 100_000  # ~1 second at 100K ticks/sec

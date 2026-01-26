@@ -35,8 +35,19 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-# ═══════════════════════════════════════════════════════════════
-# SACRED CONSTANTS
+# ═══════════════════════════════════════════════════════════════# 👑💰 QUEEN'S SACRED 1.88% LAW - SOURCE LAW DIRECT! 💰👑
+# ═════════════════════════════════════════════════════════════
+#
+#   THE QUEEN COMMANDS: MIN_COP = 1.0188 (1.88% MINIMUM REALIZED PROFIT)
+#   The seed grows only toward profitable branches!
+#
+# ═════════════════════════════════════════════════════════════
+
+QUEEN_MIN_COP = 1.0188               # 👑 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88          # 👑 The sacred number as percentage
+QUEEN_PROFIT_THRESHOLD = 0.0188      # 👑 As decimal multiplier
+
+# ═════════════════════════════════════════════════════════════# SACRED CONSTANTS
 # ═══════════════════════════════════════════════════════════════
 
 PHI = 1.618033988749895
