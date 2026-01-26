@@ -66,6 +66,27 @@ done
 # Power Station Dashboard (API + UI)
 start_bg "queen_power_dashboard" "python -u queen_power_dashboard.py"
 
+# Ensure critical Python deps are installed (websocket-client, prometheus_client)
+python - <<'PY'
+import importlib
+import sys
+
+missing = []
+for mod in ("websocket", "prometheus_client"):
+    try:
+        importlib.import_module(mod)
+    except Exception:
+        missing.append(mod)
+
+if missing:
+    print(f"⚠️ Missing Python modules: {', '.join(missing)}")
+    sys.exit(2)
+PY
+if [ $? -ne 0 ]; then
+    echo "📦 Installing missing dependencies..."
+    python -m pip install -r requirements.txt
+fi
+
 # Power Redistribution Engine (Autonomous profit harvesting & reinvestment)
 start_bg "power_redistribution_engine" "python -u aureon_power_redistribution_engine.py"
 

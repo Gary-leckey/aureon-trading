@@ -2887,15 +2887,17 @@ class OrcaKillCycle:
         
         # Wire to adaptive profit gate for accurate cost calculations
         try:
-            from adaptive_prime_profit_gate import get_adaptive_gate, get_fee_profile, is_real_win
+            from adaptive_prime_profit_gate import get_adaptive_gate, get_fee_profile, is_real_win, EPSILON_PROFIT_USD
             self.profit_gate = get_adaptive_gate()
             self.get_fee_profile = get_fee_profile
             self.is_real_win = is_real_win
+            self.epsilon_profit_usd = EPSILON_PROFIT_USD
             _safe_print("✅ Adaptive Profit Gate: CONNECTED")
         except Exception as e:
             self.profit_gate = None
             self.get_fee_profile = None
             self.is_real_win = None
+            self.epsilon_profit_usd = 0.0001
             _safe_print(f"⚠️ Adaptive Profit Gate: {e}")
         
         # Initialize clients for BOTH exchanges (unless specific client provided)
@@ -7328,6 +7330,18 @@ class OrcaKillCycle:
                     gate_level='breakeven'
                 )
                 if not win_check.get('is_win', False):
+                    net_pnl = win_check.get('net_pnl')
+                    gross_pnl = win_check.get('gross_pnl')
+                    epsilon = getattr(self, 'epsilon_profit_usd', 0.0001)
+
+                    # Override: allow exit if net PnL is clearly positive beyond epsilon
+                    if net_pnl is not None and net_pnl >= epsilon and (gross_pnl is None or gross_pnl > 0):
+                        info['profit_gate_override'] = True
+                        info['net_pnl'] = net_pnl
+                        info['profit_gate_result'] = win_check
+                        print(f"   👑✅ EXIT OVERRIDE: {symbol} - Net P&L ${net_pnl:.6f} >= ${epsilon:.6f}")
+                        return True, info
+
                     info['blocked_reason'] = f"PROFIT_GATE_SAYS_NO ({win_check.get('reason', 'unknown')})"
                     # Debug: Log the calculation
                     print(f"   👑⚠️ PROFIT GATE DEBUG: {symbol} - Gross: ${win_check.get('gross_pnl', 0):.4f}, Net: ${win_check.get('net_pnl', 0):.4f}, Costs: ${win_check.get('total_costs', 0):.4f}")
