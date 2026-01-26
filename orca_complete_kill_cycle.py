@@ -12432,554 +12432,566 @@ class OrcaKillCycle:
 if __name__ == "__main__":
     import sys
     import traceback
-
-    # 👑 WAKE THE QUEEN (Runs in background thread) 👑
+    
+    # 🛡️ Wrap entire execution in try-except to prevent crash loops
     try:
-        # Check if already imported
-        if 'awaken_queen' not in globals() or awaken_queen is None:
-             try:
-                from queen_fully_online import awaken_queen
-             except ImportError:
-                awaken_queen = None
-        
-        if awaken_queen:
-            awaken_queen()
-            print("👑 Queen Consciousness Matrix: ONLINE")
-        else:
-            print("⚠️ Queen Consciousness Matrix: OFFLINE (Module missing)")
-    except Exception as e:
-        print(f"⚠️ Queen Awakening Warning: {e}")
     
-    # 🚀 STARTUP BANNER - helps identify when Orca actually starts
-    print("")
-    print("=" * 70)
-    print("🦈🔪 ORCA COMPLETE KILL CYCLE - STARTUP 🔪🦈")
-    print("=" * 70)
-    print(f"   Started: {datetime.now().isoformat()}")
-    print(f"   Args: {sys.argv}")
-    print(f"   Python: {sys.version}")
-    print(f"   CWD: {os.getcwd()}")
-    print(f"   STATE_DIR: {os.environ.get('AUREON_STATE_DIR', 'state')}")
-    print("=" * 70)
-    print("")
-    
-    # Monitor mode - stream existing positions until targets hit
-    if len(sys.argv) >= 2 and sys.argv[1] == '--monitor':
-        target_pct = float(sys.argv[2]) if len(sys.argv) > 2 else 1.5  # Default 1.5% target
-        stop_pct = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0    # Default 1% stop
-        
-        print("🦈🦈🦈 ORCA POSITION MONITOR - STREAMING EXISTING POSITIONS 🦈🦈🦈")
-        orca = OrcaKillCycle()
-        
-        # Load existing Alpaca positions into LivePosition format
-        positions = []
-        alpaca = orca.clients.get('alpaca')
-        if alpaca:
-            try:
-                existing = alpaca.get_positions()
-                for p in existing:
-                    symbol_raw = p.get('symbol', '')
-                    # Convert PEPEUSD -> PEPE/USD
-                    if symbol_raw.endswith('USD') and '/' not in symbol_raw:
-                        symbol = symbol_raw[:-3] + '/USD'
-                    else:
-                        symbol = symbol_raw
-                    
-                    qty = float(p.get('qty', 0))
-                    entry = float(p.get('avg_entry_price', 0))
-                    current = float(p.get('current_price', 0))
-                    
-                    if qty > 0 and entry > 0:
-                        target = entry * (1 + target_pct/100)
-                        stop = entry * (1 - stop_pct/100)
-                        fee_rate = orca.fee_rates.get('alpaca', 0.0025)
-                        entry_cost = entry * qty * (1 + fee_rate)
-                        breakeven = entry * (1 + 2*fee_rate)  # Need to cover fees both ways
-                        
-                        pos = LivePosition(
-                            symbol=symbol,
-                            exchange='alpaca',
-                            entry_price=entry,
-                            entry_qty=qty,
-                            entry_cost=entry_cost,
-                            breakeven_price=breakeven,
-                            target_price=target,
-                            stop_price=stop,
-                            client=alpaca,
-                            current_price=current,
-                            current_pnl=float(p.get('unrealized_pl', 0)),
-                            kill_reason=''
-                        )
-                        positions.append(pos)
-                        print(f"   📈 {symbol}: {qty:.6f} @ ${entry:.6f} → Target: ${target:.6f} | Stop: ${stop:.6f}")
-            except Exception as e:
-                print(f"   ⚠️ Error loading positions: {e}")
-        
-        if not positions:
-            print("❌ No positions to monitor!")
-            sys.exit(1)
-        
-        print(f"\n📡 STREAMING {len(positions)} POSITIONS (NO TIMEOUT)")
-        print("="*70)
-        print(f"   ⚠️ Will ONLY exit on: TARGET HIT (100%), STOP LOSS (0%), or Ctrl+C")
-        print("="*70)
-        
-        # Progress bar helper
-        def make_progress_bar(progress_pct, width=20):
-            """Create a visual progress bar. 0% = stop loss, 100% = target."""
-            progress_pct = max(0, min(100, progress_pct))  # Clamp 0-100
-            filled = int(width * progress_pct / 100)
-            empty = width - filled
-            
-            # Color coding: red if <25%, yellow if <75%, green if >=75%
-            if progress_pct >= 75:
-                bar_char = '█'
-                color = '\033[92m'  # Green
-            elif progress_pct >= 25:
-                bar_char = '▓'
-                color = '\033[93m'  # Yellow
-            else:
-                bar_char = '░'
-                color = '\033[91m'  # Red
-            
-            reset = '\033[0m'
-            bar = color + bar_char * filled + reset + '░' * empty
-            return f"[{bar}]"
-        
-        def make_whale_bar(support: float, pressure: float, width=10):
-            """Create whale support vs pressure indicator."""
-            # Net score: positive = whales helping, negative = opposing
-            net = support - pressure
-            mid = width // 2
-            
-            if net > 0:
-                # Whales supporting - green fill from middle to right
-                fill = int(mid * min(net * 2, 1))
-                bar = '░' * mid + '\033[92m' + '▶' * fill + '\033[0m' + '░' * (mid - fill)
-            elif net < 0:
-                # Whales opposing - red fill from middle to left
-                fill = int(mid * min(abs(net) * 2, 1))
-                bar = '░' * (mid - fill) + '\033[91m' + '◀' * fill + '\033[0m' + '░' * mid
-            else:
-                bar = '░' * width
-            
-            return f"[{bar}]"
-        
-        def format_eta(seconds: float) -> str:
-            """Format ETA as human-readable string."""
-            if seconds < 60:
-                return f"{seconds:.0f}s"
-            elif seconds < 3600:
-                return f"{seconds/60:.1f}m"
-            else:
-                return f"{seconds/3600:.1f}h"
-        
-        def clear_lines(n):
-            """Clear n lines above cursor."""
-            for _ in range(n):
-                print('\033[A\033[K', end='')
-        
-        # Initialize whale intelligence tracker
-        whale_tracker = WhaleIntelligenceTracker()
-        whale_status = "🐋 Whale Intelligence: "
-        if whale_tracker.whale_profiler:
-            whale_status += "✅ Profiler "
-        else:
-            whale_status += "❌ Profiler "
-        if whale_tracker.firm_intel:
-            whale_status += "✅ Firms "
-        else:
-            whale_status += "❌ Firms "
-        if whale_tracker.bus:
-            whale_status += "✅ ThoughtBus "
-        else:
-            whale_status += "❌ ThoughtBus "
-        
-        # Initialize SSE live streaming for real-time whale detection
-        sse_client = None
-        if SSE_AVAILABLE and AlpacaSSEClient:
-            try:
-                sse_client = AlpacaSSEClient()
-                # Get position symbols for streaming
-                stream_symbols = [p.symbol.replace('/USD', 'USD') for p in positions]
-                
-                # Wire SSE trades to whale tracker
-                def on_live_trade(trade):
-                    """Feed live trades to whale intelligence."""
-                    try:
-                        symbol = trade.symbol
-                        # Convert BTCUSD -> BTC/USD
-                        if not '/' in symbol and symbol.endswith('USD'):
-                            symbol = symbol[:-3] + '/USD'
-                        whale_tracker.process_live_trade(
-                            symbol=symbol,
-                            price=trade.price,
-                            quantity=trade.size,
-                            side='buy' if hasattr(trade, 'side') and trade.side == 'buy' else 'sell',
-                            exchange='alpaca'
-                        )
-                    except Exception:
-                        pass
-                
-                sse_client.on_trade = on_live_trade
-                sse_client.start_crypto_stream(stream_symbols, trades=True)
-                whale_status += "✅ LiveStream"
-            except Exception as e:
-                whale_status += f"❌ LiveStream({e})"
-        else:
-            whale_status += "❌ LiveStream"
-        
-        print(whale_status)
-        print("="*70)
-        
-        # Monitor loop
-        results = []
-        last_display_lines = 0
-        hunt_validations = []  # Track successful hunts
-        whale_update_counter = 0  # Only update whale intel every 5 ticks
-        whale_signals_cache: Dict[str, WhaleSignal] = {}
-        should_exit = False  # Flag to control loop exit
-        
+        # 👑 WAKE THE QUEEN (Runs in background thread) 👑
         try:
-            while positions and not should_exit:
-                display_lines = []
-                whale_update_counter += 1
-                
-                for pos in positions[:]:
-                    try:
-                        # Get live price
-                        ticker = pos.client.get_ticker(pos.symbol)
-                        if not ticker:
-                            continue
-                        
-                        current = float(ticker.get('last', ticker.get('bid', 0)))
-                        if current <= 0:
-                            continue
-                        
-                        pos.current_price = current
-                        fee_rate = orca.fee_rates.get(pos.exchange, 0.0025)
-                        entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
-                        exit_value = current * pos.entry_qty * (1 - fee_rate)
-                        pos.current_pnl = exit_value - entry_cost
-                        
-                        pnl_pct = ((current / pos.entry_price) - 1) * 100
-                        
-                        # Calculate progress: 0% = stop loss, 50% = entry, 100% = target
-                        # Range from stop to target
-                        price_range = pos.target_price - pos.stop_price
-                        if price_range > 0:
-                            progress = ((current - pos.stop_price) / price_range) * 100
-                        else:
-                            progress = 50
-                        
-                        progress = max(0, min(100, progress))
-                        bar = make_progress_bar(progress)
-                        
-                        # Get whale intelligence (update every 5 ticks = 1 second)
-                        if whale_update_counter % 5 == 0 or pos.symbol not in whale_signals_cache:
-                            # Calculate price change % for firm activity simulation
-                            price_change_pct = pnl_pct  # Use position P&L as price change proxy
-                            whale_sig = whale_tracker.get_whale_signal(
-                                pos.symbol, 
-                                'long',
-                                current_price=current,
-                                price_change_pct=price_change_pct
-                            )
-                            whale_signals_cache[pos.symbol] = whale_sig
-                        else:
-                            whale_sig = whale_signals_cache.get(pos.symbol)
-                        
-                        # Build display line with whale data
-                        symbol_short = pos.symbol.replace('/USD', '')[:6]
-                        
-                        if whale_sig:
-                            whale_bar = make_whale_bar(whale_sig.whale_support, whale_sig.counter_pressure)
-                            eta_str = format_eta(whale_sig.eta_seconds)
-                            # Main line: symbol + progress + P&L
-                            line1 = f"  {symbol_short:6} {bar} {progress:5.1f}% | ${pos.current_pnl:+.4f} | ${current:.6f}"
-                            # Whale line: support indicator + ETA + whales active + firm reasoning
-                            whales_active = whale_sig.active_whales
-                            support_pct = int(whale_sig.whale_support * 100)
-                            pressure_pct = int(whale_sig.counter_pressure * 100)
-                            firm_info = whale_sig.reasoning if whale_sig.reasoning else "Scanning..."
-                            line2 = f"         {whale_bar} 🐋{whales_active} | ⬆{support_pct}% ⬇{pressure_pct}% | {firm_info[:50]}"
-                            display_lines.append(line1)
-                            display_lines.append(line2)
-                        else:
-                            display_lines.append(f"  {symbol_short:6} {bar} {progress:5.1f}% | ${pos.current_pnl:+.4f} | ${current:.6f}")
-                        
-                        # Check exit conditions - ONLY SELL IF PROFITABLE!
-                        if current >= pos.target_price:
-                            pos.kill_reason = 'TARGET_HIT'
-                        # DISABLED: NO STOP LOSS - we NEVER sell at a loss!
-                        # elif current <= pos.stop_price:
-                        #     pos.kill_reason = 'STOP_LOSS'
-                        elif pos.current_pnl > 0.01:  # Small momentum profit
-                            pos.kill_reason = 'MOMENTUM_PROFIT'
-                        
-                        # Execute exit
-                        if pos.kill_reason:
-                            sell_order = pos.client.place_market_order(
-                                symbol=pos.symbol,
-                                side='sell',
-                                quantity=pos.entry_qty
-                            )
-                            if sell_order:
-                                sell_price = float(sell_order.get('filled_avg_price', current))
-                                final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
-                                final_pnl = final_exit - entry_cost
-                                
-                                # Create hunt validation record
-                                validation = {
-                                    'symbol': pos.symbol,
-                                    'exchange': pos.exchange,
-                                    'reason': pos.kill_reason,
-                                    'net_pnl': final_pnl,
-                                    'entry_price': pos.entry_price,
-                                    'exit_price': sell_price,
-                                    'qty': pos.entry_qty,
-                                    'progress_at_kill': progress,
-                                    'success': final_pnl > 0
-                                }
-                                results.append(validation)
-                                hunt_validations.append(validation)
-                                
-                                # Print kill validation
-                                if validation['success']:
-                                    emoji = '🎯✅'
-                                    status = 'SUCCESSFUL HUNT'
-                                else:
-                                    emoji = '🛑❌'
-                                    status = 'HUNT FAILED'
-                                
-                                print(f"\n{emoji} {status}: {pos.symbol}")
-                                print(f"   ├─ Entry:  ${pos.entry_price:.6f}")
-                                print(f"   ├─ Exit:   ${sell_price:.6f}")
-                                print(f"   ├─ P&L:    ${final_pnl:+.4f}")
-                                print(f"   ├─ Reason: {pos.kill_reason}")
-                                print(f"   └─ Progress at kill: {progress:.1f}%")
-                                print()
-                                
-                            positions.remove(pos)
-                    except Exception as e:
-                        pass
-                
-                # Clear previous display and show new progress bars
-                if positions:
-                    # Clear previous lines
-                    if last_display_lines > 0:
-                        clear_lines(last_display_lines + 1)
-                    
-                    # Print header and all position bars
-                    total_pnl = sum(p.current_pnl for p in positions)
-                    print(f"📊 LIVE HUNT STATUS | Total P&L: ${total_pnl:+.4f}")
-                    for line in display_lines:
-                        print(line)
-                    
-                    last_display_lines = len(display_lines)
-                
-                time.sleep(0.2)  # Slightly slower for readability
-                
-        except KeyboardInterrupt:
-            print("\n\n⚠️  INTERRUPT DETECTED!")
-            print("="*60)
-            print("🦈 ORCA SAFETY CHECK - What do you want to do?")
-            print("="*60)
-            print("  [1] CLOSE ALL positions and exit")
-            print("  [2] KEEP positions open and just exit monitor")
-            print("  [3] RESUME monitoring (cancel interrupt)")
-            print("="*60)
+            # Check if already imported
+            if 'awaken_queen' not in globals() or awaken_queen is None:
+                 try:
+                    from queen_fully_online import awaken_queen
+                 except ImportError:
+                    awaken_queen = None
             
-            try:
-                choice = input("\n👉 Enter choice (1/2/3) [default=2 KEEP]: ").strip()
-            except EOFError:
-                # Non-interactive mode (piped input) - default to KEEP
-                choice = "2"
-            
-            if choice == "1":
-                print("\n🛑 CONFIRMED: Closing all positions...")
-                # Stop SSE streaming
-                if sse_client:
-                    try:
-                        sse_client.stop()
-                        print("   📡 Live stream stopped")
-                    except Exception:
-                        pass
-                for pos in positions:
-                    try:
-                        sell_order = pos.client.place_market_order(symbol=pos.symbol, side='sell', quantity=pos.entry_qty)
-                        if sell_order:
-                            fee_rate = orca.fee_rates.get(pos.exchange, 0.0025)
-                            sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
-                            entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
-                            final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
-                            final_pnl = final_exit - entry_cost
-                            results.append({
-                                'symbol': pos.symbol,
-                                'exchange': pos.exchange,
-                                'reason': 'USER_ABORT',
-                                'net_pnl': final_pnl,
-                                'success': final_pnl > 0
-                            })
-                            print(f"   Closed {pos.symbol}: ${final_pnl:+.4f}")
-                    except Exception as e:
-                        print(f"   ⚠️ Error closing {pos.symbol}: {e}")
-                should_exit = True  # Exit the loop after closing
-            
-            elif choice == "3":
-                print("\n🔄 Resuming monitor... (Ctrl+C again to see options)")
-                # Don't set should_exit, just continue the loop
-            
-            else:  # Default: choice == "2" or anything else
-                print("\n✅ KEEPING positions open - exiting monitor only")
-                print("   Your positions are still active on the exchange!")
-                if sse_client:
-                    try:
-                        sse_client.stop()
-                        print("   📡 Live stream stopped")
-                    except Exception:
-                        pass
-                # Don't close positions, just exit cleanly
-                results = []  # Clear results so no "failed" report
-                should_exit = True  # Exit the loop
-        
-        # Hunt Validation Summary
-        if results:
-            print("\n" + "="*70)
-            print("🦈 HUNT VALIDATION REPORT")
-            print("="*70)
-            
-            successful = [r for r in results if r.get('success', False)]
-            failed = [r for r in results if not r.get('success', False)]
-            total = sum(r['net_pnl'] for r in results)
-            
-            print(f"\n📊 HUNT STATISTICS:")
-            print(f"   ├─ Total Hunts:     {len(results)}")
-            print(f"   ├─ Successful:      {len(successful)} ✅")
-            print(f"   ├─ Failed:          {len(failed)} ❌")
-            print(f"   ├─ Win Rate:        {(len(successful)/len(results)*100) if results else 0:.1f}%")
-            print(f"   └─ Net P&L:         ${total:+.4f}")
-            
-            if successful:
-                print(f"\n✅ SUCCESSFUL HUNTS:")
-                for r in successful:
-                    print(f"   🎯 {r['symbol']}: ${r['net_pnl']:+.4f} ({r['reason']})")
-            
-            if failed:
-                print(f"\n❌ FAILED HUNTS:")
-                for r in failed:
-                    print(f"   🛑 {r['symbol']}: ${r['net_pnl']:+.4f} ({r['reason']})")
-            
-            print("\n" + "="*70)
-            if total > 0:
-                print(f"🏆 HUNT SESSION: PROFITABLE (+${total:.4f})")
+            if awaken_queen:
+                awaken_queen()
+                print("👑 Queen Consciousness Matrix: ONLINE")
             else:
-                print(f"💔 HUNT SESSION: LOSS (${total:.4f})")
-            print("="*70)
-    
-    # 🦈⚡ NEW: Fast Kill Hunt - uses ALL intelligence systems
-    elif len(sys.argv) >= 2 and sys.argv[1] == '--fast':
-        amount = float(sys.argv[2]) if len(sys.argv) > 2 else 25.0
-        num_pos = int(sys.argv[3]) if len(sys.argv) > 3 else 3
-        target = float(sys.argv[4]) if len(sys.argv) > 4 else 0.8
+                print("⚠️ Queen Consciousness Matrix: OFFLINE (Module missing)")
+        except Exception as e:
+            print(f"⚠️ Queen Awakening Warning: {e}")
         
-        print("🦈⚡ FAST KILL MODE - ALL INTELLIGENCE ENGAGED ⚡🦈")
-        orca = OrcaKillCycle()
-        results = orca.fast_kill_hunt(
-            amount_per_position=amount,
-            num_positions=num_pos,
-            target_pct=target
-        )
-        
-        if results:
-            total = sum(r.get('net_pnl', 0) for r in results)
-            print(f"\n💰 Total portfolio impact: ${total:+.4f}")
-    
-    # New multi-exchange pack hunt mode
-    elif len(sys.argv) >= 2 and sys.argv[1] == '--pack':
-        num_pos = int(sys.argv[2]) if len(sys.argv) > 2 else 3
-        amount = float(sys.argv[3]) if len(sys.argv) > 3 else 2.5
-        
-        print("🦈🦈🦈 ORCA PACK HUNT - SCANNING ENTIRE MARKET 🦈🦈🦈")
-        orca = OrcaKillCycle()
-        results = orca.pack_hunt(num_positions=num_pos, amount_per_position=amount)
-        
-        if results:
-            total = sum(r['net_pnl'] for r in results)
-            print(f"\n💰 Total portfolio impact: ${total:+.4f}")
-    
-    # 👑🔄 AUTONOMOUS MODE - Queen-guided infinite loop (WAR ROOM by default)
-    elif len(sys.argv) >= 2 and sys.argv[1] == '--autonomous':
-        max_pos = int(sys.argv[2]) if len(sys.argv) > 2 else 3
-        amount = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0  # Lower to $1 for small accounts
-        target = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0
-        
-        print("👑🎖️ AUTONOMOUS WAR ROOM MODE 🎖️👑")
-        print(f"   Max positions: {max_pos}")
-        print(f"   Amount per position: ${amount}")
-        print(f"   Target profit: {target}%")
+        # 🚀 STARTUP BANNER - helps identify when Orca actually starts
+        print("")
+        print("=" * 70)
+        print("🦈🔪 ORCA COMPLETE KILL CYCLE - STARTUP 🔪🦈")
+        print("=" * 70)
+        print(f"   Started: {datetime.now().isoformat()}")
+        print(f"   Args: {sys.argv}")
+        print(f"   Python: {sys.version}")
+        print(f"   CWD: {os.getcwd()}")
+        print(f"   STATE_DIR: {os.environ.get('AUREON_STATE_DIR', 'state')}")
+        print("=" * 70)
         print("")
         
-        try:
-            print("🔧 Initializing OrcaKillCycle...")
-            orca = OrcaKillCycle()
-            print("✅ OrcaKillCycle initialized successfully")
+        # Monitor mode - stream existing positions until targets hit
+        if len(sys.argv) >= 2 and sys.argv[1] == '--monitor':
+            target_pct = float(sys.argv[2]) if len(sys.argv) > 2 else 1.5  # Default 1.5% target
+            stop_pct = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0    # Default 1% stop
             
-            # 🎖️ Use War Room (Rich dashboard) by default
-            print("🎖️ Starting War Room...")
-            stats = orca.run_autonomous_warroom(
+            print("🦈🦈🦈 ORCA POSITION MONITOR - STREAMING EXISTING POSITIONS 🦈🦈🦈")
+            orca = OrcaKillCycle()
+            
+            # Load existing Alpaca positions into LivePosition format
+            positions = []
+            alpaca = orca.clients.get('alpaca')
+            if alpaca:
+                try:
+                    existing = alpaca.get_positions()
+                    for p in existing:
+                        symbol_raw = p.get('symbol', '')
+                        # Convert PEPEUSD -> PEPE/USD
+                        if symbol_raw.endswith('USD') and '/' not in symbol_raw:
+                            symbol = symbol_raw[:-3] + '/USD'
+                        else:
+                            symbol = symbol_raw
+                        
+                        qty = float(p.get('qty', 0))
+                        entry = float(p.get('avg_entry_price', 0))
+                        current = float(p.get('current_price', 0))
+                        
+                        if qty > 0 and entry > 0:
+                            target = entry * (1 + target_pct/100)
+                            stop = entry * (1 - stop_pct/100)
+                            fee_rate = orca.fee_rates.get('alpaca', 0.0025)
+                            entry_cost = entry * qty * (1 + fee_rate)
+                            breakeven = entry * (1 + 2*fee_rate)  # Need to cover fees both ways
+                            
+                            pos = LivePosition(
+                                symbol=symbol,
+                                exchange='alpaca',
+                                entry_price=entry,
+                                entry_qty=qty,
+                                entry_cost=entry_cost,
+                                breakeven_price=breakeven,
+                                target_price=target,
+                                stop_price=stop,
+                                client=alpaca,
+                                current_price=current,
+                                current_pnl=float(p.get('unrealized_pl', 0)),
+                                kill_reason=''
+                            )
+                            positions.append(pos)
+                            print(f"   📈 {symbol}: {qty:.6f} @ ${entry:.6f} → Target: ${target:.6f} | Stop: ${stop:.6f}")
+                except Exception as e:
+                    print(f"   ⚠️ Error loading positions: {e}")
+            
+            if not positions:
+                print("❌ No positions to monitor!")
+                sys.exit(1)
+            
+            print(f"\n📡 STREAMING {len(positions)} POSITIONS (NO TIMEOUT)")
+            print("="*70)
+            print(f"   ⚠️ Will ONLY exit on: TARGET HIT (100%), STOP LOSS (0%), or Ctrl+C")
+            print("="*70)
+            
+            # Progress bar helper
+            def make_progress_bar(progress_pct, width=20):
+                """Create a visual progress bar. 0% = stop loss, 100% = target."""
+                progress_pct = max(0, min(100, progress_pct))  # Clamp 0-100
+                filled = int(width * progress_pct / 100)
+                empty = width - filled
+                
+                # Color coding: red if <25%, yellow if <75%, green if >=75%
+                if progress_pct >= 75:
+                    bar_char = '█'
+                    color = '\033[92m'  # Green
+                elif progress_pct >= 25:
+                    bar_char = '▓'
+                    color = '\033[93m'  # Yellow
+                else:
+                    bar_char = '░'
+                    color = '\033[91m'  # Red
+                
+                reset = '\033[0m'
+                bar = color + bar_char * filled + reset + '░' * empty
+                return f"[{bar}]"
+            
+            def make_whale_bar(support: float, pressure: float, width=10):
+                """Create whale support vs pressure indicator."""
+                # Net score: positive = whales helping, negative = opposing
+                net = support - pressure
+                mid = width // 2
+                
+                if net > 0:
+                    # Whales supporting - green fill from middle to right
+                    fill = int(mid * min(net * 2, 1))
+                    bar = '░' * mid + '\033[92m' + '▶' * fill + '\033[0m' + '░' * (mid - fill)
+                elif net < 0:
+                    # Whales opposing - red fill from middle to left
+                    fill = int(mid * min(abs(net) * 2, 1))
+                    bar = '░' * (mid - fill) + '\033[91m' + '◀' * fill + '\033[0m' + '░' * mid
+                else:
+                    bar = '░' * width
+                
+                return f"[{bar}]"
+            
+            def format_eta(seconds: float) -> str:
+                """Format ETA as human-readable string."""
+                if seconds < 60:
+                    return f"{seconds:.0f}s"
+                elif seconds < 3600:
+                    return f"{seconds/60:.1f}m"
+                else:
+                    return f"{seconds/3600:.1f}h"
+            
+            def clear_lines(n):
+                """Clear n lines above cursor."""
+                for _ in range(n):
+                    print('\033[A\033[K', end='')
+            
+            # Initialize whale intelligence tracker
+            whale_tracker = WhaleIntelligenceTracker()
+            whale_status = "🐋 Whale Intelligence: "
+            if whale_tracker.whale_profiler:
+                whale_status += "✅ Profiler "
+            else:
+                whale_status += "❌ Profiler "
+            if whale_tracker.firm_intel:
+                whale_status += "✅ Firms "
+            else:
+                whale_status += "❌ Firms "
+            if whale_tracker.bus:
+                whale_status += "✅ ThoughtBus "
+            else:
+                whale_status += "❌ ThoughtBus "
+            
+            # Initialize SSE live streaming for real-time whale detection
+            sse_client = None
+            if SSE_AVAILABLE and AlpacaSSEClient:
+                try:
+                    sse_client = AlpacaSSEClient()
+                    # Get position symbols for streaming
+                    stream_symbols = [p.symbol.replace('/USD', 'USD') for p in positions]
+                    
+                    # Wire SSE trades to whale tracker
+                    def on_live_trade(trade):
+                        """Feed live trades to whale intelligence."""
+                        try:
+                            symbol = trade.symbol
+                            # Convert BTCUSD -> BTC/USD
+                            if not '/' in symbol and symbol.endswith('USD'):
+                                symbol = symbol[:-3] + '/USD'
+                            whale_tracker.process_live_trade(
+                                symbol=symbol,
+                                price=trade.price,
+                                quantity=trade.size,
+                                side='buy' if hasattr(trade, 'side') and trade.side == 'buy' else 'sell',
+                                exchange='alpaca'
+                            )
+                        except Exception:
+                            pass
+                    
+                    sse_client.on_trade = on_live_trade
+                    sse_client.start_crypto_stream(stream_symbols, trades=True)
+                    whale_status += "✅ LiveStream"
+                except Exception as e:
+                    whale_status += f"❌ LiveStream({e})"
+            else:
+                whale_status += "❌ LiveStream"
+            
+            print(whale_status)
+            print("="*70)
+            
+            # Monitor loop
+            results = []
+            last_display_lines = 0
+            hunt_validations = []  # Track successful hunts
+            whale_update_counter = 0  # Only update whale intel every 5 ticks
+            whale_signals_cache: Dict[str, WhaleSignal] = {}
+            should_exit = False  # Flag to control loop exit
+            
+            try:
+                while positions and not should_exit:
+                    display_lines = []
+                    whale_update_counter += 1
+                    
+                    for pos in positions[:]:
+                        try:
+                            # Get live price
+                            ticker = pos.client.get_ticker(pos.symbol)
+                            if not ticker:
+                                continue
+                            
+                            current = float(ticker.get('last', ticker.get('bid', 0)))
+                            if current <= 0:
+                                continue
+                            
+                            pos.current_price = current
+                            fee_rate = orca.fee_rates.get(pos.exchange, 0.0025)
+                            entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
+                            exit_value = current * pos.entry_qty * (1 - fee_rate)
+                            pos.current_pnl = exit_value - entry_cost
+                            
+                            pnl_pct = ((current / pos.entry_price) - 1) * 100
+                            
+                            # Calculate progress: 0% = stop loss, 50% = entry, 100% = target
+                            # Range from stop to target
+                            price_range = pos.target_price - pos.stop_price
+                            if price_range > 0:
+                                progress = ((current - pos.stop_price) / price_range) * 100
+                            else:
+                                progress = 50
+                            
+                            progress = max(0, min(100, progress))
+                            bar = make_progress_bar(progress)
+                            
+                            # Get whale intelligence (update every 5 ticks = 1 second)
+                            if whale_update_counter % 5 == 0 or pos.symbol not in whale_signals_cache:
+                                # Calculate price change % for firm activity simulation
+                                price_change_pct = pnl_pct  # Use position P&L as price change proxy
+                                whale_sig = whale_tracker.get_whale_signal(
+                                    pos.symbol, 
+                                    'long',
+                                    current_price=current,
+                                    price_change_pct=price_change_pct
+                                )
+                                whale_signals_cache[pos.symbol] = whale_sig
+                            else:
+                                whale_sig = whale_signals_cache.get(pos.symbol)
+                            
+                            # Build display line with whale data
+                            symbol_short = pos.symbol.replace('/USD', '')[:6]
+                            
+                            if whale_sig:
+                                whale_bar = make_whale_bar(whale_sig.whale_support, whale_sig.counter_pressure)
+                                eta_str = format_eta(whale_sig.eta_seconds)
+                                # Main line: symbol + progress + P&L
+                                line1 = f"  {symbol_short:6} {bar} {progress:5.1f}% | ${pos.current_pnl:+.4f} | ${current:.6f}"
+                                # Whale line: support indicator + ETA + whales active + firm reasoning
+                                whales_active = whale_sig.active_whales
+                                support_pct = int(whale_sig.whale_support * 100)
+                                pressure_pct = int(whale_sig.counter_pressure * 100)
+                                firm_info = whale_sig.reasoning if whale_sig.reasoning else "Scanning..."
+                                line2 = f"         {whale_bar} 🐋{whales_active} | ⬆{support_pct}% ⬇{pressure_pct}% | {firm_info[:50]}"
+                                display_lines.append(line1)
+                                display_lines.append(line2)
+                            else:
+                                display_lines.append(f"  {symbol_short:6} {bar} {progress:5.1f}% | ${pos.current_pnl:+.4f} | ${current:.6f}")
+                            
+                            # Check exit conditions - ONLY SELL IF PROFITABLE!
+                            if current >= pos.target_price:
+                                pos.kill_reason = 'TARGET_HIT'
+                            # DISABLED: NO STOP LOSS - we NEVER sell at a loss!
+                            # elif current <= pos.stop_price:
+                            #     pos.kill_reason = 'STOP_LOSS'
+                            elif pos.current_pnl > 0.01:  # Small momentum profit
+                                pos.kill_reason = 'MOMENTUM_PROFIT'
+                            
+                            # Execute exit
+                            if pos.kill_reason:
+                                sell_order = pos.client.place_market_order(
+                                    symbol=pos.symbol,
+                                    side='sell',
+                                    quantity=pos.entry_qty
+                                )
+                                if sell_order:
+                                    sell_price = float(sell_order.get('filled_avg_price', current))
+                                    final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
+                                    final_pnl = final_exit - entry_cost
+                                    
+                                    # Create hunt validation record
+                                    validation = {
+                                        'symbol': pos.symbol,
+                                        'exchange': pos.exchange,
+                                        'reason': pos.kill_reason,
+                                        'net_pnl': final_pnl,
+                                        'entry_price': pos.entry_price,
+                                        'exit_price': sell_price,
+                                        'qty': pos.entry_qty,
+                                        'progress_at_kill': progress,
+                                        'success': final_pnl > 0
+                                    }
+                                    results.append(validation)
+                                    hunt_validations.append(validation)
+                                    
+                                    # Print kill validation
+                                    if validation['success']:
+                                        emoji = '🎯✅'
+                                        status = 'SUCCESSFUL HUNT'
+                                    else:
+                                        emoji = '🛑❌'
+                                        status = 'HUNT FAILED'
+                                    
+                                    print(f"\n{emoji} {status}: {pos.symbol}")
+                                    print(f"   ├─ Entry:  ${pos.entry_price:.6f}")
+                                    print(f"   ├─ Exit:   ${sell_price:.6f}")
+                                    print(f"   ├─ P&L:    ${final_pnl:+.4f}")
+                                    print(f"   ├─ Reason: {pos.kill_reason}")
+                                    print(f"   └─ Progress at kill: {progress:.1f}%")
+                                    print()
+                                    
+                                positions.remove(pos)
+                        except Exception as e:
+                            pass
+                    
+                    # Clear previous display and show new progress bars
+                    if positions:
+                        # Clear previous lines
+                        if last_display_lines > 0:
+                            clear_lines(last_display_lines + 1)
+                        
+                        # Print header and all position bars
+                        total_pnl = sum(p.current_pnl for p in positions)
+                        print(f"📊 LIVE HUNT STATUS | Total P&L: ${total_pnl:+.4f}")
+                        for line in display_lines:
+                            print(line)
+                        
+                        last_display_lines = len(display_lines)
+                    
+                    time.sleep(0.2)  # Slightly slower for readability
+                    
+            except KeyboardInterrupt:
+                print("\n\n⚠️  INTERRUPT DETECTED!")
+                print("="*60)
+                print("🦈 ORCA SAFETY CHECK - What do you want to do?")
+                print("="*60)
+                print("  [1] CLOSE ALL positions and exit")
+                print("  [2] KEEP positions open and just exit monitor")
+                print("  [3] RESUME monitoring (cancel interrupt)")
+                print("="*60)
+                
+                try:
+                    choice = input("\n👉 Enter choice (1/2/3) [default=2 KEEP]: ").strip()
+                except EOFError:
+                    # Non-interactive mode (piped input) - default to KEEP
+                    choice = "2"
+                
+                if choice == "1":
+                    print("\n🛑 CONFIRMED: Closing all positions...")
+                    # Stop SSE streaming
+                    if sse_client:
+                        try:
+                            sse_client.stop()
+                            print("   📡 Live stream stopped")
+                        except Exception:
+                            pass
+                    for pos in positions:
+                        try:
+                            sell_order = pos.client.place_market_order(symbol=pos.symbol, side='sell', quantity=pos.entry_qty)
+                            if sell_order:
+                                fee_rate = orca.fee_rates.get(pos.exchange, 0.0025)
+                                sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
+                                entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
+                                final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
+                                final_pnl = final_exit - entry_cost
+                                results.append({
+                                    'symbol': pos.symbol,
+                                    'exchange': pos.exchange,
+                                    'reason': 'USER_ABORT',
+                                    'net_pnl': final_pnl,
+                                    'success': final_pnl > 0
+                                })
+                                print(f"   Closed {pos.symbol}: ${final_pnl:+.4f}")
+                        except Exception as e:
+                            print(f"   ⚠️ Error closing {pos.symbol}: {e}")
+                    should_exit = True  # Exit the loop after closing
+                
+                elif choice == "3":
+                    print("\n🔄 Resuming monitor... (Ctrl+C again to see options)")
+                    # Don't set should_exit, just continue the loop
+                
+                else:  # Default: choice == "2" or anything else
+                    print("\n✅ KEEPING positions open - exiting monitor only")
+                    print("   Your positions are still active on the exchange!")
+                    if sse_client:
+                        try:
+                            sse_client.stop()
+                            print("   📡 Live stream stopped")
+                        except Exception:
+                            pass
+                    # Don't close positions, just exit cleanly
+                    results = []  # Clear results so no "failed" report
+                    should_exit = True  # Exit the loop
+            
+            # Hunt Validation Summary
+            if results:
+                print("\n" + "="*70)
+                print("🦈 HUNT VALIDATION REPORT")
+                print("="*70)
+                
+                successful = [r for r in results if r.get('success', False)]
+                failed = [r for r in results if not r.get('success', False)]
+                total = sum(r['net_pnl'] for r in results)
+                
+                print(f"\n📊 HUNT STATISTICS:")
+                print(f"   ├─ Total Hunts:     {len(results)}")
+                print(f"   ├─ Successful:      {len(successful)} ✅")
+                print(f"   ├─ Failed:          {len(failed)} ❌")
+                print(f"   ├─ Win Rate:        {(len(successful)/len(results)*100) if results else 0:.1f}%")
+                print(f"   └─ Net P&L:         ${total:+.4f}")
+                
+                if successful:
+                    print(f"\n✅ SUCCESSFUL HUNTS:")
+                    for r in successful:
+                        print(f"   🎯 {r['symbol']}: ${r['net_pnl']:+.4f} ({r['reason']})")
+                
+                if failed:
+                    print(f"\n❌ FAILED HUNTS:")
+                    for r in failed:
+                        print(f"   🛑 {r['symbol']}: ${r['net_pnl']:+.4f} ({r['reason']})")
+                
+                print("\n" + "="*70)
+                if total > 0:
+                    print(f"🏆 HUNT SESSION: PROFITABLE (+${total:.4f})")
+                else:
+                    print(f"💔 HUNT SESSION: LOSS (${total:.4f})")
+                print("="*70)
+        
+        # 🦈⚡ NEW: Fast Kill Hunt - uses ALL intelligence systems
+        elif len(sys.argv) >= 2 and sys.argv[1] == '--fast':
+            amount = float(sys.argv[2]) if len(sys.argv) > 2 else 25.0
+            num_pos = int(sys.argv[3]) if len(sys.argv) > 3 else 3
+            target = float(sys.argv[4]) if len(sys.argv) > 4 else 0.8
+            
+            print("🦈⚡ FAST KILL MODE - ALL INTELLIGENCE ENGAGED ⚡🦈")
+            orca = OrcaKillCycle()
+            results = orca.fast_kill_hunt(
+                amount_per_position=amount,
+                num_positions=num_pos,
+                target_pct=target
+            )
+            
+            if results:
+                total = sum(r.get('net_pnl', 0) for r in results)
+                print(f"\n💰 Total portfolio impact: ${total:+.4f}")
+        
+        # New multi-exchange pack hunt mode
+        elif len(sys.argv) >= 2 and sys.argv[1] == '--pack':
+            num_pos = int(sys.argv[2]) if len(sys.argv) > 2 else 3
+            amount = float(sys.argv[3]) if len(sys.argv) > 3 else 2.5
+            
+            print("🦈🦈🦈 ORCA PACK HUNT - SCANNING ENTIRE MARKET 🦈🦈🦈")
+            orca = OrcaKillCycle()
+            results = orca.pack_hunt(num_positions=num_pos, amount_per_position=amount)
+            
+            if results:
+                total = sum(r['net_pnl'] for r in results)
+                print(f"\n💰 Total portfolio impact: ${total:+.4f}")
+        
+        # 👑🔄 AUTONOMOUS MODE - Queen-guided infinite loop (WAR ROOM by default)
+        elif len(sys.argv) >= 2 and sys.argv[1] == '--autonomous':
+            max_pos = int(sys.argv[2]) if len(sys.argv) > 2 else 3
+            amount = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0  # Lower to $1 for small accounts
+            target = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0
+            
+            print("👑🎖️ AUTONOMOUS WAR ROOM MODE 🎖️👑")
+            print(f"   Max positions: {max_pos}")
+            print(f"   Amount per position: ${amount}")
+            print(f"   Target profit: {target}%")
+            print("")
+            
+            try:
+                print("🔧 Initializing OrcaKillCycle...")
+                orca = OrcaKillCycle()
+                print("✅ OrcaKillCycle initialized successfully")
+                
+                # 🎖️ Use War Room (Rich dashboard) by default
+                print("🎖️ Starting War Room...")
+                stats = orca.run_autonomous_warroom(
+                    max_positions=max_pos,
+                    amount_per_position=amount,
+                    target_pct=target
+                )
+            except Exception as e:
+                print(f"❌ FATAL: Autonomous mode crashed: {e}")
+                traceback.print_exc()
+                sys.exit(1)
+        
+        # 👑🔄 LEGACY AUTONOMOUS MODE - Raw print output (for debugging)
+        elif len(sys.argv) >= 2 and sys.argv[1] == '--autonomous-legacy':
+            max_pos = int(sys.argv[2]) if len(sys.argv) > 2 else 3
+            amount = float(sys.argv[3]) if len(sys.argv) > 3 else 2.5
+            target = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0
+            
+            print("👑🦈 AUTONOMOUS QUEEN MODE - LEGACY OUTPUT 🦈👑")
+            orca = OrcaKillCycle()
+            stats = orca.run_autonomous(
                 max_positions=max_pos,
                 amount_per_position=amount,
                 target_pct=target
             )
-        except Exception as e:
-            print(f"❌ FATAL: Autonomous mode crashed: {e}")
-            traceback.print_exc()
-            sys.exit(1)
-    
-    # 👑🔄 LEGACY AUTONOMOUS MODE - Raw print output (for debugging)
-    elif len(sys.argv) >= 2 and sys.argv[1] == '--autonomous-legacy':
-        max_pos = int(sys.argv[2]) if len(sys.argv) > 2 else 3
-        amount = float(sys.argv[3]) if len(sys.argv) > 3 else 2.5
-        target = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0
         
-        print("👑🦈 AUTONOMOUS QUEEN MODE - LEGACY OUTPUT 🦈👑")
-        orca = OrcaKillCycle()
-        stats = orca.run_autonomous(
-            max_positions=max_pos,
-            amount_per_position=amount,
-            target_pct=target
-        )
+        elif len(sys.argv) >= 2:
+            # Single symbol mode (backward compatible)
+            symbol = sys.argv[1]
+            try:
+                amount = float(sys.argv[2]) if len(sys.argv) > 2 else 8.0
+                target = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
+                
+                orca = OrcaKillCycle()
+                result = orca.hunt_and_kill(symbol, amount, target)
+                
+                if result:
+                    print(f"\n💰 Portfolio impact: ${result['net_pnl']:+.4f}")
+            except ValueError:
+                # If parsing fails (e.g. user passed flags we didn't catch), default to War Room
+                 print("👑🎖️ AUTONOMOUS WAR ROOM MODE (DEFAULT) 🎖️👑")
+                 orca = OrcaKillCycle()
+                 stats = orca.run_autonomous_warroom(
+                     max_positions=3,
+                     amount_per_position=2.5,
+                     target_pct=1.0
+                 )
     
-    elif len(sys.argv) >= 2:
-        # Single symbol mode (backward compatible)
-        symbol = sys.argv[1]
-        try:
-            amount = float(sys.argv[2]) if len(sys.argv) > 2 else 8.0
-            target = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
-            
+        else:
+            # No arguments defaults to WAR ROOM
+            print("👑🎖️ AUTONOMOUS WAR ROOM MODE (DEFAULT) 🎖️👑")
             orca = OrcaKillCycle()
-            result = orca.hunt_and_kill(symbol, amount, target)
-            
-            if result:
-                print(f"\n💰 Portfolio impact: ${result['net_pnl']:+.4f}")
-        except ValueError:
-            # If parsing fails (e.g. user passed flags we didn't catch), default to War Room
-             print("👑🎖️ AUTONOMOUS WAR ROOM MODE (DEFAULT) 🎖️👑")
-             orca = OrcaKillCycle()
-             stats = orca.run_autonomous_warroom(
-                 max_positions=3,
-                 amount_per_position=2.5,
-                 target_pct=1.0
-             )
-
-    else:
-        # No arguments defaults to WAR ROOM
-        print("👑🎖️ AUTONOMOUS WAR ROOM MODE (DEFAULT) 🎖️👑")
-        orca = OrcaKillCycle()
-        stats = orca.run_autonomous_warroom(
-            max_positions=3,
-            amount_per_position=2.5,
-            target_pct=1.0
-        )
+            stats = orca.run_autonomous_warroom(
+                max_positions=3,
+                amount_per_position=2.5,
+                target_pct=1.0
+            )
+        
+    except KeyboardInterrupt:
+        print("\n\n⚠️ User interrupted Orca (Ctrl+C)")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\n\n❌ CRITICAL FAILURE: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        print("\n🛑 Orca exiting gracefully to prevent crash loop\n", file=sys.stderr)
+        sys.exit(1)
 

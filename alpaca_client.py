@@ -396,6 +396,8 @@ class AlpacaClient:
 
     def get_account(self) -> Dict[str, Any]:
         """Get account details with short-lived caching."""
+        if not self.is_authenticated:
+            return {}
         cached = None
         try:
             cached = self._account_cache.get('account')
@@ -1662,6 +1664,8 @@ class AlpacaClient:
         Returns:
             Dict of asset -> amount
         """
+        if not self.is_authenticated:
+            return {}
         balances = {}
         try:
             acct = self.get_account()

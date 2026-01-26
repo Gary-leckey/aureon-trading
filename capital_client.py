@@ -111,8 +111,14 @@ class CapitalClient:
         Perform an API request with automatic session refresh and one retry on
         invalid session token or HTTP 401.
         """
+        # Return error response if client is disabled (don't raise exception)
         if not self.enabled:
-            raise RuntimeError("Capital.com client disabled")
+            class DisabledResponse:
+                status_code = 503
+                text = '{\"errorCode\":\"client.disabled\"}'
+                def json(self):
+                    return {"errorCode": "client.disabled"}
+            return DisabledResponse()
 
         # Proactive refresh
         if self._session_is_expired():
@@ -150,8 +156,15 @@ class CapitalClient:
 
     def _get_headers(self):
         """Get headers for authenticated requests."""
+        if not self.enabled:
+            return {}  # Don't try to create session when disabled
+        
         if not self.cst or not self.x_security_token:
             self._create_session()
+            
+        # If session creation failed, return empty headers
+        if not self.cst or not self.x_security_token:
+            return {}
             
         return {
             "X-CAP-API-KEY": self.api_key,
