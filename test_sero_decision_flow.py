@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-🧪 Simplified Sero Decision Flow Test
-Demonstrates: Queen asks Sero → Gets recommendation → Applies to decision logic
+🧪 Simplified Dr Auris Throne Decision Flow Test
+Demonstrates: Queen asks Dr Auris Throne → Gets recommendation → Applies to decision logic
 
-This test bypasses full Orca initialization to focus on Sero integration.
+This test bypasses full Orca initialization to focus on Dr Auris Throne integration.
 """
 
 import sys, os
@@ -23,8 +23,8 @@ import requests
 class MockQueenDecision:
     """Simulates Queen neural gate decision"""
     base_confidence: float  # Queen's initial confidence (0.0-1.0)
-    sero_advice: SeroAdvice  # Sero's recommendation
-    final_confidence: float  # After blending Sero input
+    sero_advice: SeroAdvice  # Dr Auris Throne's recommendation
+    final_confidence: float  # After blending Dr Auris Throne input
     decision: str  # EXECUTE or REJECT
     reasoning: str  # Why the decision was made
 
@@ -35,33 +35,33 @@ def apply_sero_to_queen_confidence(
     """
     This is the ACTUAL logic from orca_complete_kill_cycle.py _queen_gate_order()
     
-    Blends Sero's AI recommendation into Queen's neural confidence score.
+    Blends Dr Auris Throne's AI recommendation into Queen's neural confidence score.
     
     Returns: (final_confidence, reasoning)
     """
     
     if not sero_advice:
-        return queen_base_confidence, "⚠️ Sero unavailable - no modification"
+        return queen_base_confidence, "⚠️ Dr Auris Throne unavailable - no modification"
 
     if sero_advice.recommendation == "ABORT":
-        # Sero says DON'T DO IT - cut confidence in half
+        # Dr Auris Throne says DON'T DO IT - cut confidence in half
         final = queen_base_confidence * 0.5
-        reason = f"❌ Sero ABORT penalty: {queen_base_confidence:.3f} → {final:.3f}"
+        reason = f"❌ Dr Auris Throne ABORT penalty: {queen_base_confidence:.3f} → {final:.3f}"
         
     elif sero_advice.recommendation == "PROCEED" and sero_advice.confidence > 0.7:
-        # Sero says GO with high confidence - boost Queen's confidence
+        # Dr Auris Throne says GO with high confidence - boost Queen's confidence
         final = queen_base_confidence * 1.1
-        reason = f"✅ Sero PROCEED boost: {queen_base_confidence:.3f} → {final:.3f} (+10%)"
+        reason = f"✅ Dr Auris Throne PROCEED boost: {queen_base_confidence:.3f} → {final:.3f} (+10%)"
         
     elif sero_advice.recommendation == "PROCEED":
-        # Sero says GO but low confidence - no modification
+        # Dr Auris Throne says GO but low confidence - no modification
         final = queen_base_confidence
-        reason = f"⚠️ Sero PROCEED (low conf {sero_advice.confidence:.2f}) - no boost"
+        reason = f"⚠️ Dr Auris Throne PROCEED (low conf {sero_advice.confidence:.2f}) - no boost"
         
     else:  # CAUTION
-        # Sero says be careful - no modification
+        # Dr Auris Throne says be careful - no modification
         final = queen_base_confidence
-        reason = f"⚠️ Sero CAUTION - no modification"
+        reason = f"⚠️ Dr Auris Throne CAUTION - no modification"
     
     return final, reason
 
@@ -156,7 +156,7 @@ async def test_decision_scenario(
     context: Dict[str, Any]
 ) -> MockQueenDecision:
     """
-    Test a single decision scenario showing Sero's influence on Queen
+    Test a single decision scenario showing Dr Auris Throne's influence on Queen
     """
     
     print(f"\n{'='*80}")
@@ -168,8 +168,8 @@ async def test_decision_scenario(
     for key, value in context.items():
         print(f"  {key}: {value}")
     
-    # Step 1: Queen asks Sero for validation
-    print(f"\n🤖 Queen asks Sero: 'Should I execute {side} on {symbol}?'")
+    # Step 1: Queen asks Dr Auris Throne for validation
+    print(f"\n🤖 Queen asks Dr Auris Throne: 'Should I execute {side} on {symbol}?'")
     
     sero = SeroClient()
     sero_advice = await sero.ask_trading_decision(
@@ -179,8 +179,8 @@ async def test_decision_scenario(
         queen_confidence=queen_base_confidence
     )
     
-    # Step 2: Display Sero's response
-    print(f"\n🧠 Sero responds:")
+    # Step 2: Display Dr Auris Throne's response
+    print(f"\n🧠 Dr Auris Throne responds:")
     if sero_advice:
         print(f"  Recommendation: {sero_advice.recommendation}")
         print(f"  Confidence: {sero_advice.confidence:.3f}")
@@ -188,14 +188,14 @@ async def test_decision_scenario(
         if sero_advice.risk_flags:
             print(f"  Risk Flags: {', '.join(sero_advice.risk_flags)}")
     else:
-        print("  ⚠️ No response (Sero unavailable)")
+        print("  ⚠️ No response (Dr Auris Throne unavailable)")
     
-    # Step 3: Apply Sero's advice to Queen's decision logic
+    # Step 3: Apply Dr Auris Throne's advice to Queen's decision logic
     final_confidence, blend_reasoning = apply_sero_to_queen_confidence(
         queen_base_confidence, sero_advice
     )
     
-    print(f"\n👑 Queen applies Sero's advice to neural network:")
+    print(f"\n👑 Queen applies Dr Auris Throne's advice to neural network:")
     print(f"  {blend_reasoning}")
     
     # Step 4: Final decision (threshold = 0.618, golden ratio)
@@ -222,13 +222,13 @@ async def test_decision_scenario(
 
 async def main():
     """
-    Test multiple scenarios showing how Sero's AI affects Queen's decisions
+    Test multiple scenarios showing how Dr Auris Throne's AI affects Queen's decisions
     """
     
     print("\n" + "="*80)
-    print("🤖👑 QUEEN + SERO AI - DECISION FLOW TEST")
+    print("🤖👑 QUEEN + DR AURIS THRONE AI - DECISION FLOW TEST")
     print("="*80)
-    print("Demonstrates: Queen queries Sero → Sero validates → Queen applies advice")
+    print("Demonstrates: Queen queries Dr Auris Throne → Dr Auris Throne validates → Queen applies advice")
     print("="*80)
     
     scenarios = []
@@ -248,10 +248,10 @@ async def main():
         f"UP or DOWN by at least {move_pct:.2f}% within {horizon_min} minutes? "
         f"Reply with UP or DOWN and confidence."
     )
-    print("\n🗣️ Queen asks Sero (market direction question):")
+    print("\n🗣️ Queen asks Dr Auris Throne (market direction question):")
     print(f"  {question}")
     intel = await sero.ask_market_intelligence(question)
-    print("\n💬 Sero response (direction):")
+    print("\n💬 Dr Auris Throne response (direction):")
     print(f"  {intel or 'No response'}")
 
     direction = "BUY"
@@ -295,20 +295,20 @@ async def main():
     print("="*80)
     
     for i, scenario in enumerate(scenarios, 1):
-        print(f"\n{i}. Base: {scenario.base_confidence:.3f} → "
-              f"Sero: {scenario.sero_advice.recommendation} ({scenario.sero_advice.confidence:.3f}) → "
+          print(f"\n{i}. Base: {scenario.base_confidence:.3f} → "
+              f"Dr Auris Throne: {scenario.sero_advice.recommendation} ({scenario.sero_advice.confidence:.3f}) → "
               f"Final: {scenario.final_confidence:.3f} → "
               f"{scenario.decision}")
     
     print("\n" + "="*80)
-    print("✅ TEST COMPLETE - Sero AI successfully integrated into Queen decision logic")
+    print("✅ TEST COMPLETE - Dr Auris Throne AI successfully integrated into Queen decision logic")
     print("="*80)
     print("\nKey Findings:")
-    print("  • Sero ABORT cuts Queen confidence by 50%")
-    print("  • Sero PROCEED (>0.7 conf) boosts Queen confidence by 10%")
-    print("  • Sero CAUTION/low-conf PROCEED → no modification")
+    print("  • Dr Auris Throne ABORT cuts Queen confidence by 50%")
+    print("  • Dr Auris Throne PROCEED (>0.7 conf) boosts Queen confidence by 10%")
+    print("  • Dr Auris Throne CAUTION/low-conf PROCEED → no modification")
     print("  • Final decision: confidence >= 0.618 (golden ratio) → EXECUTE")
-    print("\n🌌 Sero AI Oracle now powers Queen Hive Mind decision gates! 🐝👑")
+    print("\n🌌 Dr Auris Throne AI Oracle now powers Queen Hive Mind decision gates! 🐝👑")
 
 if __name__ == "__main__":
     asyncio.run(main())

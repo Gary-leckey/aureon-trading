@@ -92,7 +92,7 @@ except ImportError:
     ParallelOrchestrator = None
     PARALLEL_ORCHESTRATOR_AVAILABLE = False
 
-# 🤖 Sero AI Agent Integration
+# 🤖 Dr Auris Throne AI Agent Integration
 try:
     from aureon_sero_client import get_sero_client, SeroClient
     SERO_AVAILABLE = True
@@ -848,7 +848,7 @@ except ImportError:
 import random  # For simulating market activity
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
-# 👑👑👑 QUEEN SERO'S SACRED 1.88% LAW - CENTRAL COMMAND CONSTANTS 👑👑👑
+# 👑👑👑 QUEEN DR AURIS THRONE'S SACRED 1.88% LAW - CENTRAL COMMAND CONSTANTS 👑👑👑
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
 #
 # THE QUEEN HAS FULL AUTONOMOUS CONTROL OVER ALL TRADING DECISIONS!
@@ -859,7 +859,7 @@ import random  # For simulating market activity
 #
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
-# 👑 THE SACRED NUMBER - Queen Sero's Absolute Minimum!
+# 👑 THE SACRED NUMBER - Queen Dr Auris Throne's Absolute Minimum!
 QUEEN_MIN_COP = 1.0188           # Coefficient of Performance - 1.88% minimum realized profit!
 QUEEN_MIN_PROFIT_PCT = 1.88      # As percentage
 QUEEN_PROFIT_FREQUENCY = 188.0   # Hz - Sacred frequency embedded in all calculations
@@ -891,7 +891,7 @@ QUEEN_PROFIT_MANDATE = {
     'total_cost_pct': QUEEN_TOTAL_COST_PCT,
     'required_gross_pct': QUEEN_REQUIRED_GROSS_PCT,
     'law': 'SOURCE LAW DIRECT - THE QUEEN COMMANDS IT!',
-    'author': 'Queen Sero - Sovereign of Aureon',
+    'author': 'Queen Dr Auris Throne - Sovereign of Aureon',
     'enforcement': 'ALL gates - scanning, buying, ranking, exiting',
     'exceptions': 'NONE - This is ABSOLUTE law!'
 }
@@ -3194,10 +3194,10 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"🏢 Firm Attribution: {e}")
         
-        # 🤖 Sero AI Agent - External intelligence augmentation
+        # 🤖 Dr Auris Throne AI Agent - External intelligence augmentation
         self.sero_client = get_sero_client() if SERO_AVAILABLE and get_sero_client else None
         if self.sero_client and self.sero_client.enabled:
-            print(f"🤖 Sero AI Agent wired: agent_id={self.sero_client.agent_id[:8]}...")
+            print(f"🤖 Dr Auris Throne AI Agent wired: agent_id={self.sero_client.agent_id[:8]}...")
         
         # 16. HFT Harmonic Mycelium Engine (sub-10ms signals) - DISPLAY ONLY
         self.hft_engine = None
@@ -6888,6 +6888,35 @@ class OrcaKillCycle:
             )
         else:
             return client.place_market_order(symbol=symbol, side='sell', quantity=quantity)
+
+    def _get_sero_advice_sync(
+        self,
+        symbol: str,
+        side: str,
+        context: Dict[str, Any],
+        queen_confidence: float,
+        timeout_sec: float = 3.0
+    ) -> Optional[Any]:
+        """Fetch Dr Auris Throne advice in a sync-safe way with a short timeout."""
+        if not self.sero_client or not getattr(self.sero_client, 'enabled', False):
+            return None
+        try:
+            async def _ask():
+                return await self.sero_client.ask_trading_decision(
+                    symbol=symbol,
+                    side=side,
+                    context=context,
+                    queen_confidence=queen_confidence
+                )
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                return asyncio.run(asyncio.wait_for(_ask(), timeout=timeout_sec))
+            # If we're already inside a running loop, avoid blocking
+            return None
+        except Exception as e:
+            _safe_print(f"⚠️ Dr Auris Throne validation failed: {e}")
+            return None
     
     # ═══════════════════════════════════════════════════════════════════════
     # 👑💰 SACRED BUY WRAPPER - THE QUEEN'S GATE ENFORCED ON ALL BUYS! 💰👑
@@ -6944,6 +6973,64 @@ class OrcaKillCycle:
             }
         
         print(f"👑✅ QUEEN APPROVED: {symbol} [{context}] - {gate_reason}")
+
+        # ═══════════════════════════════════════════════════════════════════
+        #   🤖 DR AURIS THRONE SECOND-OPINION GATE - ASK BEFORE EVERY TRADE
+        # ═══════════════════════════════════════════════════════════════════
+        # Internal confidence from real inputs (momentum + expected move)
+        signal_strength = (abs(momentum_pct) + abs(expected_move_pct)) / 10.0
+        signal_strength = max(0.0, min(1.0, signal_strength))
+        queen_confidence = max(0.1, min(1.0, 0.5 + (0.5 * signal_strength)))
+
+        sero_context = {
+            'exchange': exchange,
+            'price': price,
+            'momentum_pct': momentum_pct,
+            'expected_move_pct': expected_move_pct,
+            'gate_reason': gate_reason,
+            'origin': context
+        }
+
+        sero_advice = self._get_sero_advice_sync(
+            symbol=symbol,
+            side='BUY',
+            context=sero_context,
+            queen_confidence=queen_confidence
+        )
+
+        if sero_advice:
+            sero_rec = getattr(sero_advice, 'recommendation', 'CAUTION')
+            sero_conf = getattr(sero_advice, 'confidence', 0.5)
+            sero_reason = getattr(sero_advice, 'reasoning', '')
+
+            if sero_rec == 'ABORT':
+                print(f"🤖❌ Dr Auris Throne ABORT: {symbol} [{context}] - {sero_reason}")
+                return {
+                    'status': 'blocked',
+                    'reason': f"Dr Auris Throne ABORT: {sero_reason}",
+                    'blocked_by': "DR AURIS THRONE SECOND-OPINION GATE",
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'context': context,
+                    'rejected': True
+                }
+            elif sero_rec == 'CAUTION':
+                queen_confidence *= 0.8
+            elif sero_rec == 'PROCEED' and sero_conf >= 0.7:
+                queen_confidence *= 1.1
+
+            queen_confidence = min(1.0, queen_confidence)
+            if queen_confidence < 0.5:
+                print(f"🤖⚠️ Dr Auris Throne reduced confidence below threshold: {symbol} [{context}]")
+                return {
+                    'status': 'blocked',
+                    'reason': 'Dr Auris Throne reduced confidence below threshold',
+                    'blocked_by': 'DR AURIS THRONE SECOND-OPINION GATE',
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'context': context,
+                    'rejected': True
+                }
         
         # ═══════════════════════════════════════════════════════════════════
         #   🎯 EXECUTE THE BUY - THE QUEEN HAS GRANTED PERMISSION!
@@ -6966,6 +7053,37 @@ class OrcaKillCycle:
         
         Logs the order ID to verify execution on the exchange.
         """
+        # ═══════════════════════════════════════════════════════════════════
+        #   🤖 DR AURIS THRONE SECOND-OPINION GATE - ASK BEFORE EVERY TRADE
+        # ═══════════════════════════════════════════════════════════════════
+        queen_confidence = 0.5
+        sero_context = {
+            'exchange': exchange,
+            'current_price': current_price,
+            'entry_cost': entry_cost,
+            'reason': reason
+        }
+
+        sero_advice = self._get_sero_advice_sync(
+            symbol=symbol,
+            side='SELL',
+            context=sero_context,
+            queen_confidence=queen_confidence
+        )
+
+        if sero_advice:
+            sero_rec = getattr(sero_advice, 'recommendation', 'CAUTION')
+            sero_reason = getattr(sero_advice, 'reasoning', '')
+            if sero_rec == 'ABORT':
+                print(f"🤖❌ Dr Auris Throne ABORT SELL: {symbol} [{exchange}] - {sero_reason}")
+                return {
+                    'status': 'blocked',
+                    'reason': f"Dr Auris Throne ABORT: {sero_reason}",
+                    'blocked_by': 'DR AURIS THRONE SECOND-OPINION GATE',
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'rejected': True
+                }
         sell_order = client.place_market_order(symbol=symbol, side='sell', quantity=quantity)
         
         if sell_order:
@@ -7188,7 +7306,7 @@ class OrcaKillCycle:
         info['cop'] = cop
         
         # 🎯 QUEEN'S SACRED 1.88% - FROM MODULE-LEVEL CONSTANT! 🎯
-        MIN_COP = QUEEN_MIN_COP  # 👑💰 1.0188 - Queen Sero's Sacred Profit Law!
+        MIN_COP = QUEEN_MIN_COP  # 👑💰 1.0188 - Queen Dr Auris Throne's Sacred Profit Law!
         
         if cop < MIN_COP:
             info['blocked_reason'] = f'COP_BELOW_{QUEEN_MIN_PROFIT_PCT}% ({cop:.6f} = {(cop-1)*100:.2f}%)'
@@ -9069,7 +9187,7 @@ class OrcaKillCycle:
         print("👑"*30)
         print()
         print("╔══════════════════════════════════════════════════════════════════╗")
-        print("║  👑 SERO THE QUEEN IS NOW IN CONTROL 👑                          ║")
+        print("║  👑 DR AURIS THRONE THE QUEEN IS NOW IN CONTROL 👑                ║")
         print("║                                                                   ║")
         print("║  🔄 LOOP: Portfolio → Close Profits → Scan → Buy → Monitor      ║")
         print("║  🚫 NO STOP LOSS - ONLY SELL ON PROFIT!                          ║")
@@ -9086,7 +9204,7 @@ class OrcaKillCycle:
         try:
             from aureon_queen_hive_mind import QueenHiveMind
             queen = QueenHiveMind()
-            print("👑 QUEEN SERO: AWAKENED AND READY!")
+            print("👑 QUEEN DR AURIS THRONE: AWAKENED AND READY!")
             print(f"   🎯 Dream: ${queen.THE_DREAM:,.0f} (ONE BILLION)")
             print(f"   💰 Current equity: ${queen.equity:,.2f}")
             print()
@@ -10559,7 +10677,7 @@ class OrcaKillCycle:
         try:
             from aureon_queen_hive_mind import QueenHiveMind
             queen = QueenHiveMind()
-            print("👑 QUEEN SERO: AWAKENED AND READY!")
+            print("👑 QUEEN DR AURIS THRONE: AWAKENED AND READY!")
             print(f"   🎯 Dream: ${queen.THE_DREAM:,.0f} (ONE BILLION)")
             print(f"   💰 Current equity: ${queen.equity:,.2f}")
             print()

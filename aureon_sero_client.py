@@ -24,13 +24,13 @@ if sys.platform == 'win32':
         pass
 
 """
-Aureon Sero Chatbot Client - AI Intelligence Augmentation 🧠🤖
+Aureon Dr Auris Throne Chatbot Client - AI Intelligence Augmentation 🧠🤖
 
 Integration with DigitalOcean AI Agents chatbot (Llama 3.3 Instruct 70B)
 for Queen decision validation and market intelligence enhancement.
 
 Architecture:
-- HTTP client to Sero Chatbot API
+- HTTP client to Dr Auris Throne Chatbot API
 - Async query interface for non-blocking integration
 - Structured prompts for trading context
 - Response parsing with confidence scoring
@@ -45,7 +45,7 @@ advice = await sero.ask_trading_decision(
     context={"coherence": 0.85, "queen_confidence": 0.72}
 )
 if advice and advice.confidence > 0.7:
-    # Blend Sero signal into Queen decision
+    # Blend Dr Auris Throne signal into Queen decision
     pass
 ```
 """
@@ -65,7 +65,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SeroAdvice:
-    """Structured response from Sero Chatbot."""
+    """Structured response from Dr Auris Throne Chatbot."""
     recommendation: str  # "PROCEED", "CAUTION", "ABORT"
     confidence: float  # 0.0-1.0
     reasoning: str
@@ -74,7 +74,7 @@ class SeroAdvice:
 
 class SeroClient:
     """
-    Client for Sero Chatbot (Llama 3.3 Instruct 70B) intelligence augmentation.
+    Client for Dr Auris Throne Chatbot (Llama 3.3 Instruct 70B) intelligence augmentation.
     
     Provides async interface to query external AI agent for:
     - Trade decision validation
@@ -94,9 +94,9 @@ class SeroClient:
         self.timeout = aiohttp.ClientTimeout(total=15.0)  # 15s max (outer gate has 3s timeout)
         
         if not self.enabled:
-            logger.warning("Sero Chatbot not configured - AI augmentation disabled")
+            logger.warning("Dr Auris Throne Chatbot not configured - AI augmentation disabled")
         else:
-            logger.info(f"Sero Chatbot enabled: agent_id={self.agent_id[:8]}...")
+            logger.info(f"Dr Auris Throne Chatbot enabled: agent_id={self.agent_id[:8]}...")
     
     async def ask_trading_decision(
         self,
@@ -106,7 +106,7 @@ class SeroClient:
         queen_confidence: float
     ) -> Optional[SeroAdvice]:
         """
-        Ask Sero to validate a trading decision.
+        Ask Dr Auris Throne to validate a trading decision.
         
         Args:
             symbol: Trading pair (e.g., "BTC/USD")
@@ -115,7 +115,7 @@ class SeroClient:
             queen_confidence: Queen neuron's current confidence (0-1)
         
         Returns:
-            SeroAdvice if successful, None if unavailable/error
+            Dr Auris Throne advice if successful, None if unavailable/error
         """
         if not self.enabled:
             return None
@@ -127,7 +127,7 @@ class SeroClient:
             response = await self._query_api(prompt)
             return self._parse_trading_response(response)
         except Exception as e:
-            logger.warning(f"Sero query failed (non-critical): {type(e).__name__} {repr(e)}")
+            logger.warning(f"Dr Auris Throne query failed (non-critical): {type(e).__name__} {repr(e)}")
             return None
     
     async def ask_market_intelligence(self, query: str) -> Optional[str]:
@@ -147,7 +147,7 @@ class SeroClient:
             response = await self._query_api(query)
             return self._extract_message_from_response(response)
         except Exception as e:
-            logger.warning(f"Sero intelligence query failed: {type(e).__name__} {repr(e)}")
+            logger.warning(f"Dr Auris Throne intelligence query failed: {type(e).__name__} {repr(e)}")
             return None
     
     def _build_trading_prompt(
@@ -189,7 +189,7 @@ REASONING: [brief explanation]
     
     async def _query_api(self, prompt: str) -> Optional[Dict[str, Any]]:
         """
-        Send query to Sero Chatbot API using DigitalOcean Agents flow.
+        Send query to Dr Auris Throne Chatbot API using DigitalOcean Agents flow.
         
         Args:
             prompt: Text prompt to send
@@ -231,16 +231,16 @@ REASONING: [brief explanation]
                 async with session.post(url, json=payload, headers=headers) as resp:
                     if resp.status != 200:
                         text = await resp.text()
-                        logger.error(f"Sero API error: {resp.status} at {url} | {text[:200]}")
+                        logger.error(f"Dr Auris Throne API error: {resp.status} at {url} | {text[:200]}")
                         return None
                     try:
                         return await resp.json()
                     except Exception:
                         text = await resp.text()
-                        logger.error(f"Sero API non-JSON response: {text[:200]}")
+                        logger.error(f"Dr Auris Throne API non-JSON response: {text[:200]}")
                         return None
             except aiohttp.ClientError as e:
-                logger.error(f"Sero API request failed: {e}")
+                logger.error(f"Dr Auris Throne API request failed: {e}")
                 return None
 
     async def _get_access_token(self, session: aiohttp.ClientSession) -> Optional[str]:
@@ -272,13 +272,13 @@ REASONING: [brief explanation]
     
     def _parse_trading_response(self, response: Optional[Dict[str, Any]]) -> Optional[SeroAdvice]:
         """
-        Parse structured trading response from Sero.
+        Parse structured trading response from Dr Auris Throne.
         
         Args:
             response: Raw API response dict
         
         Returns:
-            SeroAdvice object or None if parsing failed
+            Dr Auris Throne advice object or None if parsing failed
         """
         if not response:
             return None
@@ -322,7 +322,7 @@ REASONING: [brief explanation]
             )
         
         except Exception as e:
-            logger.error(f"Failed to parse Sero response: {e}")
+            logger.error(f"Failed to parse Dr Auris Throne response: {e}")
             return None
 
     def _extract_message_from_response(self, response: Optional[Dict[str, Any]]) -> Optional[str]:
@@ -349,7 +349,7 @@ REASONING: [brief explanation]
 _sero_client: Optional[SeroClient] = None
 
 def get_sero_client() -> SeroClient:
-    """Get or create global Sero client singleton."""
+    """Get or create global Dr Auris Throne client singleton."""
     global _sero_client
     if _sero_client is None:
         _sero_client = SeroClient()
@@ -358,14 +358,14 @@ def get_sero_client() -> SeroClient:
 
 # --- Testing / CLI ---
 async def test_sero():
-    """Test Sero Chatbot connectivity."""
+    """Test Dr Auris Throne Chatbot connectivity."""
     sero = get_sero_client()
     
     if not sero.enabled:
-        print("❌ Sero Chatbot not configured")
+        print("❌ Dr Auris Throne Chatbot not configured")
         return
     
-    print(f"✅ Sero Chatbot configured: {sero.agent_id[:8]}...")
+    print(f"✅ Dr Auris Throne Chatbot configured: {sero.agent_id[:8]}...")
     
     # Test trading decision query
     print("\n📊 Testing trading decision validation...")
@@ -381,7 +381,7 @@ async def test_sero():
     )
     
     if advice:
-        print(f"✅ Sero Advice:")
+        print(f"✅ Dr Auris Throne Advice:")
         print(f"   Recommendation: {advice.recommendation}")
         print(f"   Confidence: {advice.confidence:.2f}")
         print(f"   Reasoning: {advice.reasoning}")

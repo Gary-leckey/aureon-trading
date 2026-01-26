@@ -50,7 +50,7 @@ import requests
 import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# 🤖 Sero AI Agent Integration (Harmonic/Quantum validation)
+# 🤖 Dr Auris Throne AI Agent Integration (Harmonic/Quantum validation)
 try:
     from aureon_sero_client import get_sero_client
     SERO_AVAILABLE = True
@@ -420,7 +420,7 @@ def _run_coroutine(coro):
         return asyncio.run(coro)
 
 async def _sero_validate_prediction(sero, prediction: Dict) -> Dict:
-    """Ask Sero to validate harmonic nexus prediction (async)."""
+    """Ask Dr Auris Throne to validate harmonic nexus prediction (async)."""
     symbol = prediction.get('symbol')
     signal = prediction.get('signal')
     if signal not in ('BUY', 'SELL'):
@@ -458,7 +458,7 @@ async def _sero_validate_prediction(sero, prediction: Dict) -> Dict:
     }
 
 def _apply_sero_validations(predictions: List[Dict]) -> None:
-    """Apply Sero harmonic validations to top predictions (in-place)."""
+    """Apply Dr Auris Throne harmonic validations to top predictions (in-place)."""
     if not (SERO_AVAILABLE and SERO_NEXUS_VALIDATION):
         return
     sero = get_sero_client() if get_sero_client else None
@@ -523,7 +523,7 @@ def make_predictions():
 
     # Sort by confidence descending
     predictions.sort(key=lambda p: p['confidence'], reverse=True)
-    # Optional Sero harmonic nexus validation (real data only)
+    # Optional Dr Auris Throne harmonic nexus validation (real data only)
     _apply_sero_validations(predictions)
     print(f"🎯 Generated {len(predictions)} predictions.")
     return predictions
