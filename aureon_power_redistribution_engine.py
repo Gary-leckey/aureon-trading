@@ -543,39 +543,62 @@ class PowerRedistributionEngine:
 
 
 def main():
-    """Run the power station"""
+    """Run the power station continuously"""
     
     print("\n" + "="*90)
     print("⚡🌊 AUREON HARMONIC POWER REDISTRIBUTION ENGINE 🌊⚡")
     print("="*90 + "\n")
     
     engine = PowerRedistributionEngine()
+    cycle = 0
     
-    # Scan power grid
-    nodes, state = engine.scan_power_grid()
-    engine.display_power_grid(nodes, state)
-    
-    # Find growth opportunity
-    target = engine.identify_growth_opportunity(nodes)
-    
-    if target:
-        print(f"🚀 GROWTH OPPORTUNITY DETECTED: {target.symbol}")
-        print(f"   Current power: {target.power_percent:+.1f}%")
-        print(f"   Growth target: {target.growth_target:.2f} units needed\n")
-        
-        # Calculate power flow
-        flow = engine.calculate_power_flow(nodes, target)
-        engine.display_power_flow(flow)
-        
-        # Execute (dry run for now)
-        if flow.can_execute:
-            engine.execute_power_flow(flow)
-    else:
-        print("🌊 No growth opportunities detected right now")
-        print("   Grid is in equilibrium, awaiting next wave...\n")
-    
-    print("💡 THE PORTFOLIO IS ALIVE - POWER FLOWS TO GROWTH")
-    print("   We're not traders, we're a fucking POWER STATION! ⚡🌊\n")
+    # Continuous power redistribution
+    while True:
+        try:
+            cycle += 1
+            print(f"\n{'='*90}")
+            print(f"⚡ POWER CYCLE {cycle} @ {datetime.now().strftime('%H:%M:%S')}")
+            print(f"{'='*90}\n")
+            
+            # Scan power grid
+            nodes, state = engine.scan_power_grid()
+            engine.display_power_grid(nodes, state)
+            
+            # Find growth opportunity
+            target = engine.identify_growth_opportunity(nodes)
+            
+            if target:
+                print(f"🚀 GROWTH OPPORTUNITY DETECTED: {target.symbol}")
+                print(f"   Current power: {target.power_percent:+.1f}%")
+                print(f"   Growth target: {target.growth_target:.2f} units needed\n")
+                
+                # Calculate power flow
+                flow = engine.calculate_power_flow(nodes, target)
+                engine.display_power_flow(flow)
+                
+                # Execute (dry run for now)
+                if flow.can_execute:
+                    engine.execute_power_flow(flow)
+            else:
+                print("🌊 No growth opportunities detected right now")
+                print("   Grid is in equilibrium, awaiting next wave...\n")
+            
+            print("💡 THE PORTFOLIO IS ALIVE - POWER FLOWS TO GROWTH")
+            print("   We're not traders, we're a fucking POWER STATION! ⚡🌊\n")
+            
+            # Wait before next cycle (60 seconds)
+            print(f"⏳ Waiting 60s for next power cycle...\n")
+            import time
+            time.sleep(60)
+            
+        except KeyboardInterrupt:
+            print("\n⚡ Power station shutting down gracefully...")
+            break
+        except Exception as e:
+            print(f"⚠️ Power cycle error: {e}")
+            print("   Continuing in 30s...")
+            import time
+            time.sleep(30)
 
 
 if __name__ == "__main__":

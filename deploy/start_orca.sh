@@ -66,6 +66,9 @@ done
 # Power Station Dashboard (API + UI)
 start_bg "queen_power_dashboard" "python -u queen_power_dashboard.py"
 
+# Power Redistribution Engine (Autonomous profit harvesting & reinvestment)
+start_bg "power_redistribution_engine" "python -u aureon_power_redistribution_engine.py"
+
 # Optional: Queen Web Dashboard (if used)
 if [ "${START_QUEEN_WEB_DASHBOARD:-false}" = "true" ]; then
     start_bg "queen_web_dashboard" "python -u queen_web_dashboard.py"
