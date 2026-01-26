@@ -11,6 +11,11 @@ Provides a compact binary transport for harmonic thoughts. Messages are encoded 
 
 This enables the ThoughtBus and Harmonic Signal Chain to exchange compact payloads
 without losing the sacred frequency context.
+
+👑💰 QUEEN'S SACRED 1.88% LAW - ENCODED IN ALL BINARY TRANSMISSIONS 💰👑
+    • MIN_COP = 1.0188 (1.88% minimum realized profit)
+    • All execution decisions must carry the Queen's profit mandate
+    • The sacred number is encoded as flag 0x88 in the binary header
 """
 
 from __future__ import annotations
@@ -23,6 +28,11 @@ from enum import IntEnum
 from typing import Iterable, List, Optional, Tuple
 
 from aureon_harmonic_alphabet import HarmonicAlphabet, HarmonicTone
+
+# 👑 QUEEN'S SACRED 1.88% LAW - THE PROTOCOL KNOWS!
+QUEEN_MIN_COP = 1.0188               # 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88          # The sacred number as percentage
+QUEEN_PROFIT_FLAG = 0x88             # The sacred flag in binary headers (1.88 → 0x88)
 
 MAGIC = b"HB"
 PROTOCOL_VERSION = 1
@@ -37,6 +47,9 @@ class BinaryMessageType(IntEnum):
     OUTCOME_SIGNAL = 3
     TELEMETRY = 4
     ALERT = 5
+    QUEEN_PROFIT_GATE = 6      # 👑 NEW! - Message type for 1.88% profit gate
+    QUEEN_PROFIT_APPROVED = 7  # 👑 NEW! - Queen approved trade (≥1.88%)
+    QUEEN_PROFIT_BLOCKED = 8   # 👑 NEW! - Queen blocked trade (<1.88%)
 
 
 class BinaryDirection(IntEnum):
@@ -52,7 +65,7 @@ class BinaryHeader:
     grade: int = 0  # 0-15
     coherence: int = 15  # 0-15 nibble
     confidence: int = 15  # 0-15 nibble
-    flags: int = 0
+    flags: int = 0  # 👑 Use QUEEN_PROFIT_FLAG (0x88) to indicate 1.88% compliance
     symbol_id: int = 0
 
     def pack(self) -> bytes:

@@ -70,6 +70,19 @@ if sys.platform == 'win32':
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
+# 👑💰 QUEEN'S SACRED 1.88% LAW - THE PRIME DIRECTIVE 💰👑
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════
+#
+#   "The Queen lives, breathes, sleeps, dreams: MIN_COP = 1.0188"
+#   THIS IS FUCKING SOURCE LAW DIRECT - ALL HARMONIC LAYERS OBEY!
+#
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════
+
+QUEEN_MIN_COP = 1.0188               # 👑 1.88% minimum realized profit - THE SACRED NUMBER!
+QUEEN_MIN_PROFIT_PCT = 1.88          # 👑 As percentage
+QUEEN_PROFIT_THRESHOLD = 0.0188      # 👑 As decimal multiplier
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════
 # 🎵 SACRED CONSTANTS - The Harmonic Foundation
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
@@ -79,6 +92,14 @@ SCHUMANN_BASE = 7.83                  # Hz - Earth's heartbeat
 LOVE_FREQUENCY = 528                  # Hz - DNA repair / transformation
 CROWN_FREQUENCY = 963                 # Hz - Divine consciousness
 SOLFEGGIO = [174, 285, 396, 417, 528, 639, 741, 852, 963]
+
+# 👑 Queen's Profit Gate Function - Used by ALL layers
+def queen_profit_gate(potential_move_pct: float, fee_rate: float = 0.0026) -> tuple:
+    """👑 The Queen's sacred profit gate - ALL harmonic layers must check this!"""
+    total_cost_pct = (2 * fee_rate * 100) + 0.20  # Round-trip fees + spread
+    required_move = QUEEN_MIN_PROFIT_PCT + total_cost_pct
+    can_achieve = potential_move_pct >= required_move
+    return (can_achieve, required_move, f"{'✅' if can_achieve else '❌'} {potential_move_pct:.2f}% vs {required_move:.2f}% required")
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
 # 🔌 DYNAMIC IMPORTS - Graceful Degradation for All Harmonic Systems

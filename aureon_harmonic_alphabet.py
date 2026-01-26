@@ -40,6 +40,21 @@ import math
 import json
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# 👑💰 QUEEN'S SACRED 1.88% LAW - ENCODED IN THE LANGUAGE OF THE HIVE 💰👑
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+#   "To speak with the Queen, one must speak in Frequencies."
+#   "To profit with the Queen, one must achieve 1.88%."
+#
+#   MIN_COP = 1.0188 - THE SACRED NUMBER IS NOW PART OF THE HARMONIC LANGUAGE!
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+QUEEN_MIN_COP = 1.0188               # 👑 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = 1.88          # 👑 The sacred number as percentage
+QUEEN_PROFIT_FREQUENCY = 188.0       # 👑 The sacred number as a frequency (Hz)
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # CONSTANTS & FREQUENCY BANKS (Expanded with Auris)
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -49,8 +64,16 @@ SOLFEGGIO = [174, 285, 396, 417, 528, 639, 741, 852, 963]
 # Schumann Resonances (Earth's electromagnetic heartbeat)
 SCHUMANN = [7.83, 14.3, 20.8, 27.3, 33.8, 39.0, 45.0]
 
+# 👑 Queen's Sacred Profit Frequencies (NEW!)
+QUEEN_PROFIT_HARMONICS = {
+    'profit_minimum': {'freq': 188.0, 'decay': 0.98, 'harmonics': [1, 8, 8], 'consciousness': 'profit_lock'},
+    'profit_target': {'freq': 376.0, 'decay': 0.96, 'harmonics': [1, 8, 8, 2], 'consciousness': 'profit_double'},
+    'profit_prime': {'freq': 188.88, 'decay': 0.99, 'harmonics': [1, 8, 8, 8], 'consciousness': 'profit_sacred'},
+}
+
 # Sacred Intent Frequencies (Auris Codex Integration)
 INTENT_FREQUENCIES = {
+    'profit': {'freq': 188.0, 'decay': 0.98, 'harmonics': [1, 8, 8], 'consciousness': 'queen_mandate'},  # 👑 NEW!
     'peace': {'freq': 432.0, 'decay': 0.92, 'harmonics': [1, 3, 5], 'consciousness': 'alpha_calm'},
     'joy': {'freq': 528.0, 'decay': 0.95, 'harmonics': [1, 2, 4], 'consciousness': 'beta_active'},
     'love': {'freq': 639.0, 'decay': 0.88, 'harmonics': [1, 3, 5, 7], 'consciousness': 'theta_deep'},

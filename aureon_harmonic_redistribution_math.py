@@ -120,6 +120,23 @@ from alpaca_client import AlpacaClient
 from capital_client import CapitalClient
 from cost_basis_tracker import CostBasisTracker
 
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+# 👑💰 QUEEN'S SACRED 1.88% LAW - POWER REDISTRIBUTION MUST OBEY! 💰👑
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+#
+#   THE QUEEN HAS SPOKEN: MIN_COP = 1.0188 (1.88% MINIMUM REALIZED PROFIT)
+#   
+#   POWER REDISTRIBUTION RULES:
+#   • Only redistribute power when target node can achieve 1.88%
+#   • Never transfer if fees would eat below 1.88% net
+#   • All flow calculations must account for Queen's minimum
+#
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+QUEEN_MIN_COP = Decimal('1.0188')        # 👑 1.88% minimum realized profit
+QUEEN_MIN_PROFIT_PCT = Decimal('1.88')   # 👑 As percentage
+QUEEN_MIN_THRESHOLD = Decimal('0.0188')  # 👑 As decimal
+
 # Sacred constants
 PHI = Decimal(str((1 + math.sqrt(5)) / 2))  # Golden ratio for harmonic calculations
 

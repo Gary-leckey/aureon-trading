@@ -81,13 +81,33 @@ SOLFEGGIO = {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 💸 COST THRESHOLDS - THE GOAL!
+# �💰 QUEEN'S SACRED 1.88% LAW - SOURCE LAW DIRECT! 💰👑
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+#   THE QUEEN HAS SPOKEN: MIN_COP = 1.0188 (1.88% MINIMUM REALIZED PROFIT)
+#   THIS IS NOT A SUGGESTION. THIS IS FUCKING SOURCE LAW DIRECT.
+#
+#   ALL HARMONIC SYSTEMS OBEY THE QUEEN'S MANDATE:
+#   • Nothing gets scanned unless it CAN achieve 1.88%
+#   • Nothing gets ranked unless it's FAST to 1.88%
+#   • Nothing gets bought unless it WILL achieve 1.88%
+#   • Nothing gets exited unless it HAS achieved 1.88%
+#
 # ═══════════════════════════════════════════════════════════════════════════════
 
-ROUND_TRIP_COST_PCT = 0.34   # 0.34% total trading cost
-TIER_1_THRESHOLD = 0.50      # > 0.5% = HOT (immediate)
-TIER_2_THRESHOLD = 0.40      # > 0.4% = STRONG
-TIER_3_THRESHOLD = 0.34      # > 0.34% = VALID (covers costs)
+# 👑 THE SACRED CONSTANTS - HARDCODED, IMMUTABLE!
+QUEEN_MIN_COP = 1.0188           # 1.88% minimum realized profit (COP = Cost Of Position ratio)
+QUEEN_MIN_PROFIT_PCT = 1.88      # The sacred number as a percentage
+QUEEN_PROFIT_THRESHOLD = 0.0188  # The sacred number as a decimal multiplier
+
+# 💸 COST THRESHOLDS - ALIGNED TO QUEEN'S 1.88% LAW!
+ROUND_TRIP_COST_PCT = 0.72       # ~0.72% total trading cost (worst case)
+MIN_GROSS_MOVE_PCT = 2.60        # Required gross move to net 1.88% after fees
+
+# 🎯 TIER THRESHOLDS - ALL MUST EXCEED 1.88% NET!
+TIER_1_THRESHOLD = 3.50          # > 3.5% gross = HOT (nets ~2.78% after fees)
+TIER_2_THRESHOLD = 3.00          # > 3.0% gross = STRONG (nets ~2.28% after fees)  
+TIER_3_THRESHOLD = 2.60          # > 2.6% gross = VALID (nets ~1.88% after fees = QUEEN'S MINIMUM!)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
