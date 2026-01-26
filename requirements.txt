@@ -19,6 +19,8 @@ flask
 psutil>=5.9.0
 supervisor
 rich>=13.7.0
- alpaca-py>=0.20.0
+alpaca-py>=0.20.0
 pyttsx3>=2.90
 redis>=4.5.0
+websocket-client>=1.9.0
+prometheus_client>=0.24.0

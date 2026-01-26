@@ -7329,6 +7329,8 @@ class OrcaKillCycle:
                 )
                 if not win_check.get('is_win', False):
                     info['blocked_reason'] = f"PROFIT_GATE_SAYS_NO ({win_check.get('reason', 'unknown')})"
+                    # Debug: Log the calculation
+                    print(f"   👑⚠️ PROFIT GATE DEBUG: {symbol} - Gross: ${win_check.get('gross_pnl', 0):.4f}, Net: ${win_check.get('net_pnl', 0):.4f}, Costs: ${win_check.get('total_costs', 0):.4f}")
                     print(f"   👑❌ EXIT BLOCKED: {symbol} - Profit gate says NO: {win_check.get('reason', 'fees exceed profit')}")
                     return False, info
                 # Update net_pnl with accurate calculation

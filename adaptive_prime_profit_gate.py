@@ -721,8 +721,15 @@ def is_real_win(
     
     is_win = net_pnl >= threshold_pnl
     
+    # Build reason string for debugging
+    if not is_win:
+        reason = f"net_pnl ${net_pnl:.6f} < threshold ${threshold_pnl:.6f} (costs: ${total_costs:.6f})"
+    else:
+        reason = f"net_pnl ${net_pnl:.6f} >= threshold ${threshold_pnl:.6f}"
+    
     return {
         'is_win': is_win,
+        'reason': reason,
         'gate_level': gate_level,
         'gross_pnl': gross_pnl,
         'net_pnl': net_pnl,
