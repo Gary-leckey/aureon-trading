@@ -1560,18 +1560,26 @@ async def main():
     except Exception as e:
         print(f"⚠️ Dashboard initialization failed but web server is up: {e}")
         # keep server running so health checks pass; dashboard handlers will return safe defaults until ready
+        dashboard = None
         _dashboard_instance = None
 
     try:
         if args.no_console:
             # Just keep updating cycle count for health checks
             print("🐝 Queen Power Dashboard running (console disabled)")
+            cycle_count = 0
             while True:
-                dashboard.cycle_count += 1
-                await asyncio.sleep(dashboard.update_interval)
+                cycle_count += 1
+                if _dashboard_instance:
+                    _dashboard_instance.cycle_count = cycle_count
+                await asyncio.sleep(args.interval)
         else:
             # Run console dashboard
-            await dashboard.run()
+            if dashboard:
+                await dashboard.run()
+            else:
+                print("❌ Dashboard not available, cannot run console mode")
+                return
     finally:
         await runner.cleanup()
 
