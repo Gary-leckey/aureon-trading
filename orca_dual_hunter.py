@@ -157,15 +157,33 @@ class OrcaDualHunter:
     
     def _init_exchanges(self):
         """Initialize both exchange clients."""
-        # Load .env file if present
-        from pathlib import Path
-        env_file = Path('.env')
-        if env_file.exists():
-            for line in env_file.read_text().splitlines():
-                line = line.strip()
-                if line and not line.startswith('#') and '=' in line:
-                    key, value = line.split('=', 1)
-                    os.environ.setdefault(key.strip(), value.strip())
+        # Load .env file if present (robust path search)
+        try:
+            from dotenv import load_dotenv
+            from pathlib import Path
+
+            dotenv_candidates = []
+            explicit = os.getenv("DOTENV_PATH")
+            if explicit:
+                dotenv_candidates.append(Path(explicit))
+
+            dotenv_candidates.append(Path.cwd() / ".env")
+            dotenv_candidates.append(Path(__file__).resolve().parent / ".env")
+
+            loaded = False
+            for candidate in dotenv_candidates:
+                try:
+                    if candidate.exists():
+                        load_dotenv(dotenv_path=str(candidate), override=False)
+                        loaded = True
+                        break
+                except Exception:
+                    continue
+
+            if not loaded:
+                load_dotenv(override=False)
+        except ImportError:
+            pass
         
         # Alpaca
         try:
@@ -173,7 +191,12 @@ class OrcaDualHunter:
             from alpaca.data.live import CryptoDataStream
             
             api_key = os.environ.get('ALPACA_API_KEY') or os.environ.get('APCA_API_KEY_ID')
-            api_secret = os.environ.get('ALPACA_SECRET_KEY') or os.environ.get('APCA_API_SECRET_KEY')
+            api_secret = (
+                os.environ.get('ALPACA_SECRET_KEY')
+                or os.environ.get('ALPACA_API_SECRET')
+                or os.environ.get('ALPACA_SECRET')
+                or os.environ.get('APCA_API_SECRET_KEY')
+            )
             
             if api_key and api_secret:
                 # Check if paper trading is configured

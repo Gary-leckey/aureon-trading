@@ -110,14 +110,29 @@ except ImportError:
 # Load environment variables from .env file (CRITICAL for API keys!)
 try:
     from dotenv import load_dotenv
-    # Try loading from current directory first, then parent
-    env_path = os.path.join(os.path.dirname(__file__), '.env')
-    if os.path.exists(env_path):
-        load_dotenv(env_path)
-        print(f"✅ Loaded .env file from {env_path}")
-    else:
-        # Fallback to default search
-        load_dotenv()
+    from pathlib import Path
+
+    dotenv_candidates = []
+    explicit = os.getenv("DOTENV_PATH")
+    if explicit:
+        dotenv_candidates.append(Path(explicit))
+
+    dotenv_candidates.append(Path.cwd() / ".env")
+    dotenv_candidates.append(Path(__file__).resolve().parent / ".env")
+
+    loaded = False
+    for candidate in dotenv_candidates:
+        try:
+            if candidate.exists():
+                load_dotenv(dotenv_path=str(candidate), override=False)
+                print(f"✅ Loaded .env file from {candidate}")
+                loaded = True
+                break
+        except Exception:
+            continue
+
+    if not loaded:
+        load_dotenv(override=False)
         print("✅ Loaded .env file (default search)")
 except ImportError:
     print("⚠️ python-dotenv not installed, using system env vars only")
