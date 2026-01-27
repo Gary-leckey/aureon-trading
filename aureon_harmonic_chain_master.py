@@ -173,7 +173,7 @@ try:
         get_global_field
     )
     GLOBAL_FIELD_AVAILABLE = True
-    print("🌐⚡ Layer 3: Global Harmonic Field (Ω) LOADED!")
+    # print("🌐⚡ Layer 3: Global Harmonic Field (Ω) LOADED!")
 except ImportError:
     GLOBAL_FIELD_AVAILABLE = False
     GlobalHarmonicField = None
@@ -495,7 +495,7 @@ class HarmonicChainMaster:
                 self.state.layers[HarmonicLayer.GLOBAL_FIELD].active = True
                 self.state.layers[HarmonicLayer.GLOBAL_FIELD].instance = self.global_field
                 active_count += 1
-                print("   🌐 Layer 3: Global Harmonic Field (Ω) - ✅ ACTIVE")
+                # print("   🌐 Layer 3: Global Harmonic Field (Ω) - ✅ ACTIVE")
             except Exception as e:
                 print(f"   🌐 Layer 3: Global Harmonic Field - ❌ Error: {e}")
         else:

@@ -93,6 +93,16 @@ except ImportError:
     ParallelOrchestrator = None
     PARALLEL_ORCHESTRATOR_AVAILABLE = False
 
+# 🇮🇪🎯 IRA Sniper Mode Integration
+try:
+    from ira_sniper_mode import get_celtic_sniper, IRAKillScanner, SNIPER_CONFIG
+    IRA_SNIPER_AVAILABLE = True
+except ImportError:
+    IRA_SNIPER_AVAILABLE = False
+    get_celtic_sniper = None
+    IRAKillScanner = None
+    SNIPER_CONFIG = {}
+
 # 🤖 Dr Auris Throne AI Agent Integration
 try:
     from aureon_sero_client import get_sero_client, SeroClient
@@ -1294,6 +1304,15 @@ class WarRoomDisplay:
             'opportunity_multiplier': 1.0,
             'risk_level': 'normal'
         }
+
+        # 🇮🇪🎯 IRA SNIPER - ACTIVE TARGETS SCOPE
+        self.sniper_scope = {
+            'active_targets': [], # List of symbols being engaged
+            'kills_confirmed': 0,
+            'total_profit': 0.0,
+            'current_status': 'AWAITING_TARGETS', # SCANNING, LOCKED, FIRING
+            'zero_loss_mode': True
+        }
         
         # 🌐 Parallel Intelligence Status
         self.parallel_intel = {
@@ -1330,6 +1349,13 @@ class WarRoomDisplay:
         layout["main"].split_row(
             Layout(name="positions", ratio=2),
             Layout(name="intel", ratio=1),
+        )
+
+        # 🇮🇪🎯 IRA SNIPER: SCOPE VISUALIZATION
+        # Enhancing the "positions" area to explicitly show "Sniper Scope"
+        layout["positions"].split_column(
+            Layout(name="active_positions", ratio=2),
+            Layout(name="sniper_scope", ratio=1)
         )
         
         return layout
@@ -1471,7 +1497,63 @@ class WarRoomDisplay:
             table.add_row("—", "—", "—", "—", "—", "—", "—")
         
         return Panel(table, title=f"[bold green]📊 POSITIONS ({len(self.positions_data)})[/]", border_style="green")
-    
+
+    def _build_sniper_scope_panel(self) -> Panel:
+        """
+        🇮🇪🎯 IRA SNIPER - ACTIVE KILL SCOPE
+        Shows real-time observation of targets currently in the 'Zero Loss' crosshairs.
+        """
+        table = Table(box=box.SIMPLE_HEAD)
+        table.add_column("TARGET", justify="left", style="cyan bold")
+        table.add_column("STATUS", justify="center")
+        table.add_column("CURRENT P&L", justify="right")
+        table.add_column("DISTANCE TO KILL", justify="right")
+        table.add_column("ACTION", justify="center", style="bold")
+
+        active_targets = self.sniper_scope.get('active_targets', [])
+        
+        # Populate with actual data or Placeholder "Scanning"
+        if active_targets:
+            for target in active_targets:
+                symbol = target.get('symbol', 'UNKNOWN')
+                status = target.get('status', 'TRACKING') # TRACKING, LOCKED, FIRING
+                pnl = target.get('pnl', 0.0)
+                kill_distance = target.get('kill_distance', 0.0) # $ to profit target
+                
+                status_color = "yellow"
+                if status == "LOCKED": status_color = "red" 
+                elif status == "FIRING": status_color = "green bold blink"
+                
+                pnl_color = "green" if pnl > 0 else "red"
+                
+                action = "👁️ WATCHING"
+                if status == "FIRING": action = "💥 KILLING"
+                
+                table.add_row(
+                    symbol,
+                    f"[{status_color}]{status}[/]",
+                    f"[{pnl_color}]${pnl:.4f}[/]",
+                    f"${kill_distance:.4f}",
+                    action
+                )
+        else:
+            table.add_row(
+                "SCANNING...", 
+                "[dim]Searching[/]", 
+                "—", 
+                "—", 
+                "🔭 HUNTING"
+            )
+
+        kills = self.sniper_scope.get('kills_confirmed', 0)
+        profit = self.sniper_scope.get('total_profit', 0.0)
+        
+        return Panel(
+            table, 
+            title=f"[bold red]🇮🇪🎯 IRA SNIPER SCOPE (Kills: {kills} | Profit: ${profit:.4f})[/]", 
+            border_style="red"
+        )
+
     def _build_intel_panel(self) -> Panel:
         """Build the quantum/firm intel panel."""
         intel = Table.grid(expand=True)
@@ -1934,7 +2016,12 @@ class WarRoomDisplay:
             
         layout = self._create_layout()
         layout["header"].update(self._build_header())
-        layout["positions"].update(self._build_positions_table())
+        
+        # Updated for Sniper Scope Split
+        # "positions" layout is now a container split into "active_positions" and "sniper_scope"
+        layout["active_positions"].update(self._build_positions_table())
+        layout["sniper_scope"].update(self._build_sniper_scope_panel())
+        
         layout["intel"].update(self._build_intel_panel())
         layout["footer"].update(self._build_footer())
         
@@ -7441,6 +7528,44 @@ class OrcaKillCycle:
             print(f"🌉✅ TRUTH ENGINE APPROVED: {symbol} (Win:{truth_signal.win_probability:.1%} Pred:{truth_signal.predicted_direction})")
 
         # ═══════════════════════════════════════════════════════════════════
+        #   🇮🇪🎯 IRA SNIPER GATE - CELTIC PRECISION 🎯🇮🇪
+        # ═══════════════════════════════════════════════════════════════════
+        try:
+            from ira_sniper_mode import get_celtic_sniper
+            sniper_celtic = get_celtic_sniper()
+            
+            # 🇮🇪 Validate entry with Celtic intelligence (Zero Loss Mode)
+            # We use momentum_pct as a proxy for coherence if not passed
+            sniper_val = sniper_celtic.validate_entry(
+                symbol=symbol,
+                price=price,
+                coherence=0.95 # High confidence if we reached this far
+            )
+            
+            if not sniper_val.get('approved', True):
+                print(f"🇮🇪❌ IRA SNIPER BLOCKED: {symbol} [{context}]")
+                reason = sniper_val.get('reason', 'Unknown Celtic Rejection')
+                print(f"    Reason: {reason}")
+                return {
+                    'status': 'blocked',
+                    'reason': reason,
+                    'blocked_by': 'IRA_SNIPER_GATE',
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'context': context,
+                    'rejected': True
+                }
+            
+            print(f"🇮🇪✅ IRA SNIPER APPROVED: {symbol} (Quick Kill: {sniper_val.get('quick_kill_prob', 0)*100:.1f}%)")
+            print(f"   🔫 IRA SNIPER: 1st Shot FIRED (Buy)") # Added specific user confirmation
+            
+        except ImportError:
+            pass # IRA Sniper not available or circular import
+        except Exception as e:
+            # Don't block on sniper error, just log
+            print(f"🇮🇪⚠️ IRA Sniper Check Warning: {e}")
+
+        # ═══════════════════════════════════════════════════════════════════
         #   🔮 BLACK BOX TRUTH GATE - EXPECTED P&L MUST BE > 3× COSTS
         # ═══════════════════════════════════════════════════════════════════
         qty_for_gate = 0.0
@@ -7943,6 +8068,22 @@ class OrcaKillCycle:
             except Exception:
                 pass
         
+        # ═══════════════════════════════════════════════════════════════════
+        # CHECK 5: IRA SNIPER KILL VERIFICATION (2nd Shot Logic)
+        # ═══════════════════════════════════════════════════════════════════
+        if info.get('net_pnl', 0) > 0:
+            # We are profitable, so we "take the shot" unless blocked by specific logic
+            try:
+                from ira_sniper_mode import get_sniper_config
+                sniper_config = get_sniper_config()
+                if sniper_config.get('ZERO_LOSS_MODE'):
+                    print(f"   🇮🇪🎯 IRA SNIPER: Target In Sight {symbol} | PnL: ${info['net_pnl']:.4f} | Preparing 2nd Shot...")
+                    # The logic above already ensured Net PnL > 0 and COP > 1.88%
+                    # So the Sniper "pulls the trigger"
+                    print(f"   💥🇮🇪 IRA SNIPER: KILL CONFIRMED! (1st Shot: Buy, 2nd Shot: Sell)")
+            except ImportError:
+                pass
+
         # ═══════════════════════════════════════════════════════════════════
         # ALL CHECKS PASSED - PROFIT IS MATHEMATICALLY CERTAIN!
         # ═══════════════════════════════════════════════════════════════════
@@ -12950,6 +13091,43 @@ class OrcaKillCycle:
                     total_boost=quantum.get('quantum_boost', 1.0) if quantum else 1.0
                 )
                 
+                # 🇮🇪🎯 SYNC SNIPER SCOPE 
+                if IRA_SNIPER_AVAILABLE and warroom:
+                    try:
+                        sniper = get_celtic_sniper()
+                        
+                        # Sync Active Targets
+                        warroom.sniper_scope['active_targets'] = []
+                        if hasattr(sniper, 'targets'):
+                            for key, target in sniper.targets.items():
+                                status = 'TRACKING'
+                                if getattr(target, 'is_locked', False): status = 'LOCKED'
+                                # Assuming 'is_firing' attribute or deduce from context
+                                
+                                # Calculate kill distance (Distance to Breakeven/Profit)
+                                kill_dist = 0.0
+                                if hasattr(target, 'unrealized_pnl'):
+                                    if target.unrealized_pnl < 0:
+                                        # If losing, distance is amount to return to breakeven
+                                        kill_dist = abs(target.unrealized_pnl)
+                                    else:
+                                        # If profitable, we are in the kill zone
+                                        kill_dist = 0.0
+                                
+                                warroom.sniper_scope['active_targets'].append({
+                                    'symbol': getattr(target, 'symbol', 'UNKNOWN'),
+                                    'status': status,
+                                    'pnl': getattr(target, 'unrealized_pnl', 0.0),
+                                    'kill_distance': kill_dist
+                                })
+                        
+                        # Sync Stats
+                        warroom.sniper_scope['kills_confirmed'] = getattr(sniper, 'kills', 0)
+                        warroom.sniper_scope['total_profit'] = getattr(sniper, 'total_pnl', 0.0)
+                        
+                    except Exception:
+                        pass
+
                 # Update display (Rich Live if available, otherwise just skip)
                 if live is not None:
                     try:

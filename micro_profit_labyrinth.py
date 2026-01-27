@@ -15931,7 +15931,8 @@ if __name__ == "__main__":
                 safe_print(f"      Intel Score: {validation.get('intelligence_score', 0.5):.2f}")
             else:
                 safe_print(f"   ⚠️ Celtic Intel rejects: {validation.get('reason', 'Unknown')}")
-                # Still execute - sniper just provides intel, doesn't block
+                safe_print(f"   🛑 BLOCKED by IRA Sniper Mode")
+                return False
         except ImportError:
             pass  # IRA Sniper not available - continue silently
         except Exception as e:

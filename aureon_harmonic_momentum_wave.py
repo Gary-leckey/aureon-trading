@@ -320,7 +320,7 @@ class HarmonicMomentumWaveScanner:
             try:
                 self.harmonic_field = GlobalHarmonicField()
                 self.systems_active += 1
-                print("   ✅ L5: Global Harmonic Field (Ω)")
+                # print("   ✅ L5: Global Harmonic Field (Ω)")
             except Exception as e:
                 print(f"   ❌ L5: Global Harmonic Field failed: {e}")
         else:

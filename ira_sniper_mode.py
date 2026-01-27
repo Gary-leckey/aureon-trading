@@ -38,7 +38,58 @@ from typing import Dict, Any, Optional, Tuple, List
 from dataclasses import dataclass, field
 
 # =============================================================================
-# 🎯⏱️ ETA VERIFICATION SYSTEM WIRING
+# �🇪 SNIPER MODE CONFIGURATION - ZERO LOSS 🇮🇪
+# =============================================================================
+
+SNIPER_CONFIG = {
+    # ═══════════════════════════════════════════════════════════════════════
+    # TIMING - PATIENT KILLER
+    # ═══════════════════════════════════════════════════════════════════════
+    'CYCLE_INTERVAL': 2.0,           # 2 seconds between cycles
+    'MIN_HOLD_CYCLES': 1,            # Exit IMMEDIATELY when profitable
+    'MAX_HOLD_TIME': float('inf'),   # INFINITE - we wait as long as needed
+    'STAGNATION_CHECK': False,       # NO stagnation exits - we wait for profit
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # EXITS - ZERO LOSS MODE 🎯
+    # ═══════════════════════════════════════════════════════════════════════
+    'INSTANT_PENNY_EXIT': True,      # Exit THE SECOND we hit penny profit
+    'STOP_LOSS_ACTIVE': False,       # ❌ NO STOP LOSSES - WE DON'T LOSE
+    'TRAILING_STOP': False,          # No trailing - just take the penny
+    'ALLOW_LOSS_EXIT': False,        # ❌ NEVER EXIT AT A LOSS
+    'ZERO_LOSS_MODE': True,          # ✅ ABSOLUTE ZERO LOSS MODE
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # POSITION SIZING - SMALL AND PRECISE
+    # ═══════════════════════════════════════════════════════════════════════
+    'POSITION_SIZE_USD': 10.0,       # $10 positions for quick fills
+    'MAX_POSITIONS': 5,              # 5 simultaneous snipers
+    'POSITION_SCALING': False,       # Fixed size - no scaling
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # ENTRIES - SMART AND SELECTIVE
+    # ═══════════════════════════════════════════════════════════════════════
+    'MIN_SCORE_THRESHOLD': 0.60,     # Only good setups - we don't gamble
+    'REQUIRE_CONFLUENCE': True,      # Wait for probability alignment
+    'COOLDOWN_SECONDS': 30,          # 30 second cooldown between trades
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # MENTAL STATE - ABSOLUTE CONFIDENCE
+    # ═══════════════════════════════════════════════════════════════════════
+    'FEAR_MODE': False,              # FEAR IS OFF
+    'HESITATION': False,             # NO HESITATION
+    'CONFIDENCE': 1.0,               # FULL CONFIDENCE
+    'ACCEPT_LOSS': False,            # ❌ NEVER ACCEPT LOSS
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # CELEBRATION - EVERY PENNY COUNTS
+    # ═══════════════════════════════════════════════════════════════════════
+    'CELEBRATE_WINS': True,          # Celebrate every penny kill
+    'SHOW_QUOTES': True,             # Show wisdom quotes on wins
+}
+
+# =============================================================================
+# �🎯⏱️ ETA VERIFICATION SYSTEM WIRING
 # =============================================================================
 
 try:
@@ -858,59 +909,7 @@ def get_exit_leaderboard() -> List[Dict]:
 
 
 # =============================================================================
-# 🇮🇪 SNIPER MODE CONFIGURATION - ZERO LOSS 🇮🇪
-# =============================================================================
-
-SNIPER_CONFIG = {
-    # ═══════════════════════════════════════════════════════════════════════
-    # TIMING - PATIENT KILLER
-    # ═══════════════════════════════════════════════════════════════════════
-    'CYCLE_INTERVAL': 2.0,           # 2 seconds between cycles
-    'MIN_HOLD_CYCLES': 1,            # Exit IMMEDIATELY when profitable
-    'MAX_HOLD_TIME': float('inf'),   # INFINITE - we wait as long as needed
-    'STAGNATION_CHECK': False,       # NO stagnation exits - we wait for profit
-    
-    # ═══════════════════════════════════════════════════════════════════════
-    # EXITS - ZERO LOSS MODE 🎯
-    # ═══════════════════════════════════════════════════════════════════════
-    'INSTANT_PENNY_EXIT': True,      # Exit THE SECOND we hit penny profit
-    'STOP_LOSS_ACTIVE': False,       # ❌ NO STOP LOSSES - WE DON'T LOSE
-    'TRAILING_STOP': False,          # No trailing - just take the penny
-    'ALLOW_LOSS_EXIT': False,        # ❌ NEVER EXIT AT A LOSS
-    'ZERO_LOSS_MODE': True,          # ✅ ABSOLUTE ZERO LOSS MODE
-    
-    # ═══════════════════════════════════════════════════════════════════════
-    # POSITION SIZING - SMALL AND PRECISE
-    # ═══════════════════════════════════════════════════════════════════════
-    'POSITION_SIZE_USD': 10.0,       # $10 positions for quick fills
-    'MAX_POSITIONS': 5,              # 5 simultaneous snipers
-    'POSITION_SCALING': False,       # Fixed size - no scaling
-    
-    # ═══════════════════════════════════════════════════════════════════════
-    # ENTRIES - SMART AND SELECTIVE
-    # ═══════════════════════════════════════════════════════════════════════
-    'MIN_SCORE_THRESHOLD': 0.60,     # Only good setups - we don't gamble
-    'REQUIRE_CONFLUENCE': True,      # Wait for probability alignment
-    'COOLDOWN_SECONDS': 30,          # 30 second cooldown between trades
-    
-    # ═══════════════════════════════════════════════════════════════════════
-    # MENTAL STATE - ABSOLUTE CONFIDENCE
-    # ═══════════════════════════════════════════════════════════════════════
-    'FEAR_MODE': False,              # FEAR IS OFF
-    'HESITATION': False,             # NO HESITATION
-    'CONFIDENCE': 1.0,               # FULL CONFIDENCE
-    'ACCEPT_LOSS': False,            # ❌ NEVER ACCEPT LOSS
-    
-    # ═══════════════════════════════════════════════════════════════════════
-    # CELEBRATION - EVERY PENNY COUNTS
-    # ═══════════════════════════════════════════════════════════════════════
-    'CELEBRATE_WINS': True,          # Celebrate every penny kill
-    'SHOW_QUOTES': True,             # Show wisdom quotes on wins
-}
-
-
-# =============================================================================
-# ENVIRONMENT VARIABLE OVERRIDE
+# environment variable override
 # =============================================================================
 
 def get_sniper_config() -> Dict[str, Any]:
