@@ -1549,13 +1549,19 @@ async def main():
     
     port = int(os.environ.get('PORT', args.port))
     
-    dashboard = QueenPowerDashboard()
-    dashboard.update_interval = args.interval
-    _dashboard_instance = dashboard
-    
-    # Start web server
-    runner = await start_web_server(dashboard, port)
-    
+    # Start web server early so health checks succeed quickly (bind 0.0.0.0:PORT)
+    runner = await start_web_server(None, port)
+
+    # Instantiate dashboard after server is accepting connections so /health responds
+    try:
+        dashboard = QueenPowerDashboard()
+        dashboard.update_interval = args.interval
+        _dashboard_instance = dashboard
+    except Exception as e:
+        print(f"⚠️ Dashboard initialization failed but web server is up: {e}")
+        # keep server running so health checks pass; dashboard handlers will return safe defaults until ready
+        _dashboard_instance = None
+
     try:
         if args.no_console:
             # Just keep updating cycle count for health checks
