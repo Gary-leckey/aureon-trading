@@ -51,6 +51,39 @@ if sys.platform == 'win32':
 THE_GOAL = 1_000_000_000.0  # $1 BILLION - THE ONE TARGET
 PHI = (1 + math.sqrt(5)) / 2  # 1.618 Golden Ratio
 
+# ═══════════════════════════════════════════════════════════════════════════════════════
+# 🚨🔥 DEADLINE MODE: FEBRUARY 20, 2026 🔥🚨
+# ═══════════════════════════════════════════════════════════════════════════════════════
+DEADLINE_DATE = datetime(2026, 2, 20, 23, 59, 59)  # THE DATE OF LIBERATION
+DEADLINE_MODE = True  # ENGAGED - Maximum aggression enabled
+
+def get_days_remaining() -> float:
+    """Calculate days until the deadline."""
+    now = datetime.now()
+    delta = DEADLINE_DATE - now
+    return max(0.0, delta.total_seconds() / 86400)
+
+def get_required_daily_return(current_capital: float) -> float:
+    """Calculate the daily return needed to hit $1B by deadline."""
+    days = get_days_remaining()
+    if days <= 0 or current_capital <= 0:
+        return 0.0
+    multiplier = THE_GOAL / current_capital
+    daily_rate = (multiplier ** (1 / max(1, days))) - 1
+    return daily_rate * 100  # As percentage
+
+def get_deadline_urgency() -> str:
+    """Get urgency level based on remaining time."""
+    days = get_days_remaining()
+    if days <= 3:
+        return "🔴 CRITICAL - FINAL PUSH"
+    elif days <= 7:
+        return "🟠 EXTREME - ALL HANDS"
+    elif days <= 14:
+        return "🟡 HIGH - ACCELERATE"
+    else:
+        return "🟢 ACTIVE - FULL SPEED"
+
 # THE CLIMBING LADDER - STEPPING STONES TO THE BILLION 🪜
 # Each rung brings us closer. The race is ON! ⚡
 MILESTONES = {

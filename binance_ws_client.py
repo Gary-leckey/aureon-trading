@@ -45,6 +45,15 @@ try:
 except ImportError:
     pass
 
+# 🌊 Harmonic Liquid Aluminium Field - live flowing waveform visualization
+try:
+    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
+    HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = True
+except ImportError:
+    HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = False
+    HarmonicLiquidAluminiumField = None
+    FieldSnapshot = None
+
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════
@@ -158,6 +167,16 @@ class BinanceWebSocketClient:
         self.on_bar: Optional[Callable[[WSBar], None]] = None
         self.on_depth: Optional[Callable[[WSOrderBook], None]] = None
         self.on_error: Optional[Callable[[str], None]] = None
+        
+        # 🌊 Harmonic Liquid Aluminium Field - live flowing waveforms
+        self.harmonic_field = None
+        if HARMONIC_LIQUID_ALUMINIUM_AVAILABLE and HarmonicLiquidAluminiumField:
+            try:
+                self.harmonic_field = HarmonicLiquidAluminiumField(stream_interval_ms=25)  # 25ms for ultra-fast flow
+                self.harmonic_field.start_streaming()
+                logger.info("🌊 Harmonic Liquid Aluminium Field FLOWING through Binance WS")
+            except Exception as e:
+                logger.warning(f"🌊 Harmonic Field init failed: {e}")
         
         # Lock
         self._lock = threading.Lock()
@@ -326,6 +345,21 @@ class BinanceWebSocketClient:
                     
             if self.on_trade:
                 self.on_trade(trade)
+            
+            # 🌊 Flow trade into Harmonic Liquid Aluminium Field
+            # Individual trades create ripples in the liquid aluminium
+            if self.harmonic_field:
+                try:
+                    self.harmonic_field.add_or_update_node(
+                        exchange='binance',
+                        symbol=trade.symbol,
+                        current_price=trade.price,
+                        entry_price=trade.price,  # Trade price as instant snapshot
+                        quantity=trade.quantity,
+                        asset_class='crypto'
+                    )
+                except Exception:
+                    pass
                 
         except Exception as e:
             logger.error(f"Trade parse error: {e}")
@@ -363,6 +397,21 @@ class BinanceWebSocketClient:
 
             if self.on_ticker:
                 self.on_ticker(ticker)
+            
+            # 🌊 Flow ticker into Harmonic Liquid Aluminium Field
+            # Each ticker becomes a dancing particle of liquid aluminium
+            if self.harmonic_field:
+                try:
+                    self.harmonic_field.add_or_update_node(
+                        exchange='binance',
+                        symbol=ticker.symbol,
+                        current_price=ticker.last_price,
+                        entry_price=ticker.open_price,  # Use open as baseline for waveform
+                        quantity=ticker.volume / 1000 if ticker.volume > 0 else 1.0,  # Normalize volume
+                        asset_class='crypto'
+                    )
+                except Exception:
+                    pass
                 
         except Exception as e:
             logger.error(f"Ticker parse error: {e}")

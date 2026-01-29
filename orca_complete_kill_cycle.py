@@ -601,6 +601,15 @@ except ImportError:
     PHANTOM_FILTER_AVAILABLE = False
     PhantomSignalFilter = None
 
+# 🔩🌊 Harmonic Liquid Aluminium Field - Global market as dancing waveform sandbox
+try:
+    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
+    HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = True
+except ImportError:
+    HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = False
+    HarmonicLiquidAluminiumField = None
+    FieldSnapshot = None
+
 # 🦅 Alpaca Momentum Ecosystem
 try:
     from aureon_animal_momentum_scanners import AlpacaSwarmOrchestrator
@@ -1018,9 +1027,157 @@ import random  # For simulating market activity
 
 # 👑 THE SACRED NUMBER - Queen Dr Auris Throne's Absolute Minimum!
 # ⚡ IRA GROWTH MODE: 0.40% - 1.88%
-QUEEN_MIN_COP = 1.0040           # Coefficient of Performance - 0.40% minimum realized profit!
-QUEEN_MIN_PROFIT_PCT = 0.40      # As percentage (Growth Mode)
+# ═══════════════════════════════════════════════════════════════════════════════════════
+# 🚨🔥 DEADLINE MODE: FEBRUARY 20, 2026 - MAXIMUM AGGRESSION 🔥🚨
+# ═══════════════════════════════════════════════════════════════════════════════════════
+DEADLINE_MODE = True  # ENGAGED
+DEADLINE_DATE = "2026-02-20"
+
+# In DEADLINE MODE: We accept more risk for higher returns
+# Standard mode: 0.40% MIN_COP (conservative)
+# Deadline mode: 5.00% MIN_COP (aggressive) + leverage + multiple positions
+QUEEN_MIN_COP = 1.0500 if DEADLINE_MODE else 1.0040  # 5.0% or 0.40%
+QUEEN_MIN_PROFIT_PCT = 5.00 if DEADLINE_MODE else 0.40  # As percentage
+
+# DEADLINE MODE MULTIPLIERS
+DEADLINE_POSITION_MULTIPLIER = 3.0  # 3x position sizes
+DEADLINE_MAX_SIMULTANEOUS = 10  # Allow 10 positions at once
+DEADLINE_LEVERAGE_TARGET = 5.0  # Target 5x leverage where available
 QUEEN_PROFIT_FREQUENCY = 188.0   # Hz - Sacred frequency embedded in all calculations
+
+# ═══════════════════════════════════════════════════════════════════════════════════════
+# 👑 QUEEN'S 4-PHASE MASTER PLAN: $248 → $1,000,000,000 in 22 DAYS 🐝
+# ═══════════════════════════════════════════════════════════════════════════════════════
+"""
+PHASE 1: THE SEED (Days 1-3)
+   Target: $248 → $2,500 (10x)
+   Strategy: Moonshot hunting, leverage trades, new listings
+   
+PHASE 2: THE GROWTH (Days 4-10)  
+   Target: $2,500 → $250,000 (100x)
+   Strategy: Compound momentum stacking, multiple positions
+   
+PHASE 3: THE EXPLOSION (Days 11-17)
+   Target: $250,000 → $50,000,000 (200x)
+   Strategy: Options leverage, catalyst plays, arbitrage at scale
+   
+PHASE 4: THE BILLION (Days 18-22)
+   Target: $50,000,000 → $1,000,000,000 (20x)
+   Strategy: Market maker mode, mega leverage, priority allocations
+"""
+
+def get_queen_phase(current_capital: float) -> dict:
+    """
+    👑 Determine which phase of the Master Plan we're in based on capital.
+    
+    Returns:
+        dict with phase number, name, strategy, and parameters
+    """
+    if current_capital < 2500:
+        return {
+            'phase': 1,
+            'name': 'THE SEED',
+            'target': 2500,
+            'strategy': 'MOONSHOT_HUNTING',
+            'min_cop': 1.10,  # Accept 10%+ gains for quick compounding
+            'max_positions': 3,
+            'prefer_volatile': True,
+            'new_listings': True,
+            'leverage_ok': True,
+            'focus': ['volume_spikes', 'new_launches', 'meme_momentum']
+        }
+    elif current_capital < 250_000:
+        return {
+            'phase': 2,
+            'name': 'THE GROWTH',
+            'target': 250_000,
+            'strategy': 'COMPOUND_MOMENTUM',
+            'min_cop': 1.05,  # Accept 5%+ gains, compound rapidly
+            'max_positions': 5,
+            'prefer_volatile': True,
+            'leverage_ok': True,
+            'split_positions': True,
+            'focus': ['momentum_stacking', 'btc_eth_leverage', 'mid_caps']
+        }
+    elif current_capital < 50_000_000:
+        return {
+            'phase': 3,
+            'name': 'THE EXPLOSION',
+            'target': 50_000_000,
+            'strategy': 'WHALE_TACTICS',
+            'min_cop': 1.03,  # Accept 3%+ gains with large size
+            'max_positions': 8,
+            'options_preferred': True,
+            'arbitrage_active': True,
+            'catalyst_hunting': True,
+            'focus': ['options', 'catalysts', 'arbitrage', 'whale_signals']
+        }
+    else:
+        return {
+            'phase': 4,
+            'name': 'THE BILLION',
+            'target': 1_000_000_000,
+            'strategy': 'MARKET_MAKER',
+            'min_cop': 1.02,  # Accept 2%+ gains with massive size
+            'max_positions': 10,
+            'market_making': True,
+            'mega_leverage': True,
+            'priority_access': True,
+            'focus': ['market_making', 'launchpad_priority', 'mega_leverage']
+        }
+
+def queen_phase_strategy(phase_info: dict, opportunity: dict) -> float:
+    """
+    👑 Calculate opportunity score based on current phase strategy.
+    
+    Returns:
+        Score multiplier (1.0 = normal, 2.0 = perfect for phase, 0.5 = not aligned)
+    """
+    score = 1.0
+    phase = phase_info['phase']
+    strategy = phase_info['strategy']
+    
+    # Phase 1: Favor high volatility and moonshot potential
+    if phase == 1:
+        if opportunity.get('volume_spike', 0) > 3.0:  # 3x volume
+            score *= 2.0
+        if opportunity.get('momentum_24h', 0) > 50:  # 50%+ move
+            score *= 1.8
+        if opportunity.get('new_listing', False):
+            score *= 2.5
+        if opportunity.get('market_cap_usd', float('inf')) < 50_000_000:  # Sub-$50M
+            score *= 1.5
+            
+    # Phase 2: Favor momentum and leverage opportunities
+    elif phase == 2:
+        if opportunity.get('momentum_7d', 0) > 20:  # Strong weekly trend
+            score *= 1.7
+        if opportunity.get('symbol') in ['BTC/USD', 'ETH/USD']:  # Major pairs for leverage
+            score *= 1.8
+        if 10_000_000 < opportunity.get('market_cap_usd', 0) < 500_000_000:  # Mid-caps
+            score *= 1.4
+            
+    # Phase 3: Favor high liquidity and catalyst events
+    elif phase == 3:
+        if opportunity.get('daily_volume_usd', 0) > 10_000_000:  # $10M+ daily volume
+            score *= 1.6
+        if opportunity.get('options_available', False):
+            score *= 2.0
+        if opportunity.get('upcoming_catalyst', False):
+            score *= 2.2
+        if opportunity.get('whale_accumulation', False):
+            score *= 1.7
+            
+    # Phase 4: Favor market maker opportunities and mega caps
+    elif phase == 4:
+        if opportunity.get('daily_volume_usd', 0) > 100_000_000:  # $100M+ volume
+            score *= 1.8
+        if opportunity.get('spread_pct', 1.0) < 0.1:  # Tight spread = good for MM
+            score *= 1.9
+        if opportunity.get('market_cap_usd', 0) > 1_000_000_000:  # $1B+ cap
+            score *= 1.5
+    
+    return score
 
 # 👑 Fee Structure (worst-case scenario):
 #   Entry fee:   ~0.26% (Kraken taker)
@@ -1030,16 +1187,18 @@ QUEEN_PROFIT_FREQUENCY = 188.0   # Hz - Sacred frequency embedded in all calcula
 #   ----------------------------
 #   TOTAL COST:  ~0.72%
 #
-# Required GROSS move to net 0.40%:
-#   Gross = 0.40% + 0.72% = ~1.12%
+# Required GROSS move calculation:
+#   DEADLINE MODE: 5.00% + 0.72% = ~5.72% gross required
+#   STANDARD MODE: 0.40% + 0.72% = ~1.12% gross required
 #
-# Why 0.40%? (IRA Growth Mode)
-#   - Faster compounding
-#   - More frequent kills
-#   - Still covers ALL fees (entry + exit)
-#   - Targets range 0.40% - 1.88%
+# 🚨 DEADLINE MODE: February 20, 2026 - MAXIMUM AGGRESSION
+#   - Higher risk tolerance
+#   - 3x position sizes
+#   - Multiple simultaneous trades
+#   - Targeting volatile assets
+#   - Using leverage where available
 QUEEN_TOTAL_COST_PCT = 0.72      # Total round-trip costs (worst-case)
-QUEEN_REQUIRED_GROSS_PCT = 1.12  # Required gross move to net 0.40%
+QUEEN_REQUIRED_GROSS_PCT = (QUEEN_MIN_PROFIT_PCT + QUEEN_TOTAL_COST_PCT)  # Dynamic based on mode
 
 # 👑 QUEEN'S PROFIT MANDATE - Immutable Law Dictionary
 QUEEN_PROFIT_MANDATE = {
@@ -3697,6 +3856,16 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"🔮 Quantum Mirror: {e}")
         
+        # 26. 🔩🌊 Harmonic Liquid Aluminium Field - Global market as dancing waveform sandbox
+        self.harmonic_field = None
+        if HARMONIC_LIQUID_ALUMINIUM_AVAILABLE and HarmonicLiquidAluminiumField:
+            try:
+                self.harmonic_field = HarmonicLiquidAluminiumField(stream_interval_ms=100)
+                self.harmonic_field.start_streaming()
+                print("🔩🌊 Harmonic Liquid Aluminium Field: WIRED! (Market as dancing frequencies)")
+            except Exception as e:
+                print(f"🔩 Harmonic Liquid Aluminium: {e}")
+        
         # ═══════════════════════════════════════════════════════════════════
         # 🎯 OPTIONS TRADING SYSTEMS - APPROVED FOR LEVEL 1!
         # ═══════════════════════════════════════════════════════════════════
@@ -6033,20 +6202,76 @@ class OrcaKillCycle:
             print(f"      📜 BOOSTED by history: {historical_boosted} (Opportunity patterns!)")
         
         # ═══════════════════════════════════════════════════════════════════
+        # 👑� QUEEN'S 4-PHASE MASTER PLAN SCORING 🐝👑
+        # ═══════════════════════════════════════════════════════════════════
+        # Apply phase-based strategy multipliers to opportunities
+        # ═══════════════════════════════════════════════════════════════════
+        try:
+            # Get current portfolio value to determine phase
+            total_capital = 248.37  # Default starting capital
+            try:
+                for exchange, client in self.clients.items():
+                    if hasattr(client, 'get_account'):
+                        acc = client.get_account()
+                        if acc and 'equity' in acc:
+                            total_capital = max(total_capital, float(acc.get('equity', 0)))
+            except:
+                pass
+            
+            current_phase = get_queen_phase(total_capital)
+            print(f"\n   👑 QUEEN'S PHASE: {current_phase['phase']} - {current_phase['name']}")
+            print(f"      Capital: ${total_capital:,.2f} → Target: ${current_phase['target']:,.2f}")
+            print(f"      Strategy: {current_phase['strategy']}")
+            
+            # Apply phase strategy scoring to each opportunity
+            for opp in opportunities:
+                opp_dict = {
+                    'symbol': opp.symbol,
+                    'volume_spike': getattr(opp, '_volume_spike', 0),
+                    'momentum_24h': abs(opp.change_pct) if hasattr(opp, 'change_pct') else 0,
+                    'momentum_7d': getattr(opp, '_momentum_7d', 0),
+                    'new_listing': getattr(opp, '_new_listing', False),
+                    'market_cap_usd': getattr(opp, '_market_cap_usd', 0),
+                    'daily_volume_usd': opp.volume if hasattr(opp, 'volume') else 0,
+                    'options_available': getattr(opp, '_options_available', False),
+                    'upcoming_catalyst': getattr(opp, '_catalyst', False),
+                    'whale_accumulation': getattr(opp, '_whale_accumulation', False),
+                    'spread_pct': getattr(opp, '_spread_pct', 0.5),
+                }
+                
+                phase_multiplier = queen_phase_strategy(current_phase, opp_dict)
+                opp._phase_multiplier = phase_multiplier
+                
+                # Log high-value phase alignments
+                if phase_multiplier > 1.5:
+                    phase_name = current_phase['name']
+                    print(f"      🎯 {opp.symbol}: {phase_multiplier:.2f}x multiplier ({phase_name} strategy)")
+                    
+        except Exception as e:
+            print(f"   ⚠️ Phase scoring error: {e}")
+            # Continue without phase scoring
+            for opp in opportunities:
+                opp._phase_multiplier = 1.0
+        
+        # ═══════════════════════════════════════════════════════════════════
         # 👑💰 SACRED PRIORITY SORT - FASTEST TO Target WINS! 💰👑
         # ═══════════════════════════════════════════════════════════════════
         # The Queen wants the QUICKEST path to Target profit!
-        # Ranking: (1) HNC Surge, (2) Fastest to Target, (3) Highest profit potential
+        # Ranking: (1) Phase alignment, (2) HNC Surge, (3) Fastest to Target, (4) Profit potential
         # ═══════════════════════════════════════════════════════════════════
         def sacred_priority_sort_key(opp):
             """
-            👑 SACRED SORT: Fastest to Target = HIGHEST PRIORITY!
+            👑 SACRED SORT: Phase-aligned + Fastest to Target = HIGHEST PRIORITY!
             
+            Phase alignment = score × multiplier (favors current strategy)
             HNC surge = 10000 bonus (immediate priority)
             Historical pattern = 1000 bonus
             Speed to Target = 500 / time_estimate (faster = higher)
             Profit potential above Target = bonus points
             """
+            # 👑🐝 PHASE MULTIPLIER - Queen's Master Plan alignment
+            phase_multiplier = getattr(opp, '_phase_multiplier', 1.0)
+            
             hnc_bonus = 10000 if getattr(opp, '_hnc_surge', False) else 0
             historical_bonus = 1000 if getattr(opp, '_historical_pattern', None) else 0
             
@@ -6061,7 +6286,11 @@ class OrcaKillCycle:
             # Base momentum score
             base_score = opp.momentum_score if hasattr(opp, 'momentum_score') else 0
             
-            return hnc_bonus + historical_bonus + speed_bonus + potential_bonus + base_score
+            # Apply phase multiplier to total score
+            score_before_phase = hnc_bonus + historical_bonus + speed_bonus + potential_bonus + base_score
+            final_score = score_before_phase * phase_multiplier
+            
+            return final_score
         
         opportunities.sort(key=sacred_priority_sort_key, reverse=True)
         
@@ -7563,6 +7792,27 @@ class OrcaKillCycle:
         
         self.tracked_positions[symbol] = tracking_data
         self._save_tracked_positions()
+        
+        # 🔩🌊 Feed position to Harmonic Liquid Aluminium Field (market as dancing waveform)
+        if self.harmonic_field:
+            try:
+                # Determine asset class from symbol
+                asset_class = 'crypto'
+                if any(fiat in symbol.upper() for fiat in ['EUR', 'GBP', 'JPY', 'CHF']):
+                    asset_class = 'forex' if 'USD' in symbol.upper() else 'crypto'
+                
+                node = self.harmonic_field.add_or_update_node(
+                    exchange=exchange,
+                    symbol=symbol,
+                    current_price=fill_price,
+                    entry_price=fill_price,
+                    quantity=fill_qty,
+                    asset_class=asset_class
+                )
+                if node:
+                    print(f"🔩🌊 Harmonic Field: {symbol} → {node.frequency:.1f}Hz | Amp: {node.amplitude:.3f}")
+            except Exception as e:
+                print(f"🔩 Harmonic Field update: {e}")
         
         # Also record in cost basis tracker if available
         if self.cost_basis_tracker:
@@ -9181,6 +9431,44 @@ class OrcaKillCycle:
             'net_pnl_pct': net_pnl_pct,
             'is_real_win': net_pnl > 0
         }
+
+    def _print_harmonic_field_summary(self) -> None:
+        """
+        Print a summary of the Harmonic Liquid Aluminium Field state.
+        
+        Shows market visualization as dancing waveforms on frequencies -
+        like liquid aluminium illumination in a measured sandbox.
+        """
+        if not HARMONIC_LIQUID_ALUMINIUM_AVAILABLE or not self.harmonic_field:
+            return
+        
+        try:
+            snapshot = self.harmonic_field.capture_snapshot()
+            if not snapshot:
+                return
+            
+            print("═" * 60)
+            print("🌊 HARMONIC LIQUID ALUMINIUM FIELD 🌊")
+            print(f"   ⏱️  Timestamp: {snapshot.timestamp_utc}")
+            print(f"   🎵 Nodes Active: {snapshot.node_count}")
+            print(f"   🔮 Dominant Frequency: {snapshot.dominant_frequency_hz:.2f} Hz")
+            print(f"   ⚡ Field Energy: {snapshot.total_field_energy:.4f}")
+            print(f"   🌀 Coherence Index: {snapshot.coherence_index:.4f}")
+            
+            # Show top harmonic nodes by energy (if any)
+            if snapshot.nodes:
+                top_nodes = sorted(snapshot.nodes, key=lambda n: n.energy, reverse=True)[:3]
+                if top_nodes:
+                    print("   📊 Top Harmonic Nodes:")
+                    for node in top_nodes:
+                        freq_str = f"{node.frequency_hz:.1f}Hz"
+                        energy_bar = "█" * int(node.energy * 10)
+                        print(f"      {node.symbol[:10]:<10} | {freq_str:>8} | {energy_bar}")
+            
+            print("═" * 60)
+        except Exception as e:
+            # Silent fail - harmonic display is supplementary
+            pass
 
     def _get_real_market_data(self, symbol: str, all_prices: dict) -> dict:
         """Fetch REAL market data (price, change, volume) for quantum scoring."""
@@ -11638,6 +11926,10 @@ class OrcaKillCycle:
                     print(f"   💰 Session P&L: ${session_stats['total_pnl']:+.4f}")
                     print(f"   🏆 Best: ${session_stats['best_trade']:+.4f} | 💔 Worst: ${session_stats['worst_trade']:+.4f}")
                     print("="*80)
+                    
+                    # 🌊 Harmonic Liquid Aluminium Field visualization
+                    self._print_harmonic_field_summary()
+                    
                     print(f"   📊 {len(positions)}/{max_positions} ACTIVE POSITIONS | Next scan: {max(0, scan_interval - (current_time - last_scan_time)):.0f}s")
                     print("="*80)
                     
@@ -12989,6 +13281,8 @@ class OrcaKillCycle:
                     if session_stats['total_trades'] > 0:
                         success_rate = (session_stats['winning_trades'] / session_stats['total_trades']) * 100
                         print(f"📊 Success rate: {success_rate:.1f}%")
+                    # 🌊 Harmonic field visualization (console fallback)
+                    self._print_harmonic_field_summary()
                 
                 # ═══════════════════════════════════════════════════════
                 # BATCH PRICE UPDATE
@@ -14154,6 +14448,40 @@ if __name__ == "__main__":
         print(f"   STATE_DIR: {os.environ.get('AUREON_STATE_DIR', 'state')}")
         print("=" * 70)
         print("")
+        
+        # 👑🐝 QUEEN'S 4-PHASE MASTER PLAN ANNOUNCEMENT 🐝👑
+        if DEADLINE_MODE:
+            print("")
+            print("🔥" * 35)
+            print()
+            print("     👑 QUEEN'S 4-PHASE MASTER PLAN: ACTIVATED 👑")
+            print()
+            print("🔥" * 35)
+            print()
+            print("   Target: $248 → $1,000,000,000")
+            print(f"   Deadline: {DEADLINE_DATE}")
+            
+            from datetime import datetime
+            deadline = datetime(2026, 2, 20, 23, 59, 59)
+            days_left = (deadline - datetime.now()).total_seconds() / 86400
+            print(f"   Days Remaining: {days_left:.1f}")
+            print()
+            print("   PHASE 1: THE SEED (10x in 3 days)")
+            print("      Strategy: Moonshot hunting + leverage")
+            print()
+            print("   PHASE 2: THE GROWTH (100x in 7 days)")
+            print("      Strategy: Compound momentum stacking")
+            print()
+            print("   PHASE 3: THE EXPLOSION (200x in 7 days)")
+            print("      Strategy: Options + whale tactics")
+            print()
+            print("   PHASE 4: THE BILLION (20x in 5 days)")
+            print("      Strategy: Market maker mode")
+            print()
+            print("   🐝 THE SWARM IS READY. LET'S BEGIN. 🐝")
+            print()
+            print("🔥" * 35)
+            print("")
         
         # Monitor mode - stream existing positions until targets hit
         if len(sys.argv) >= 2 and sys.argv[1] == '--monitor':

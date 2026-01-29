@@ -5,3 +5,4 @@
 {"type": "handoff", "from_system": "orca", "to_system": "mycelium", "elapsed": 0.0, "ts": 1769513512.724877, "topic": "mycelium.execute"}
 {"type": "stage", "system": "execution", "stage": "confirm", "ts": 1769513512.7249968, "topic": "execution.confirm"}
 {"type": "handoff", "from_system": "mycelium", "to_system": "execution", "elapsed": 0.0, "ts": 1769513512.7249968, "topic": "execution.confirm"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1769719458.298783, "topic": "orca.autonomous.intent"}

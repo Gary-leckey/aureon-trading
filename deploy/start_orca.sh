@@ -251,12 +251,15 @@ mkdir -p ${AUREON_STATE_DIR:-/app/state}
 # Write initial state so dashboard shows something
 echo '{"timestamp": 0, "session_stats": {"cycles": 0}, "positions": [], "queen_message": "Orca starting..."}' > ${AUREON_STATE_DIR:-/app/state}/dashboard_snapshot.json
 
-# Start the Orca Kill Cycle with trading parameters
-# Args: max_positions=3, amount_per_position=$1.00, target_pct=1.0%
-echo "🦈🔪 LAUNCHING ORCA AUTONOMOUS TRADING 🔪🦈"
+# Start the Orca Kill Cycle with Queen's 4-Phase Master Plan parameters
+# Args: max_positions=3, amount_per_position=$5.00, target_pct=1.0%
+# 👑 DEADLINE MODE: February 20, 2026 - Phase 1 aggressive moonshot hunting
+echo "🦈🔪 LAUNCHING ORCA AUTONOMOUS TRADING - QUEEN'S 4-PHASE PLAN 🔪🦈"
+echo "   👑 Phase 1: THE SEED - Moonshot Hunting"
 echo "   Max positions: 3"
-echo "   Amount per position: \$1.00"
-echo "   Target profit: 1.0%"
+echo "   Amount per position: \$5.00"
+echo "   Target profit: 1.0% (minimum - will take 5%+ when available)"
+echo "   Deadline: February 20, 2026"
 echo ""
 
 # Run with error handling - restart on crash
@@ -276,7 +279,8 @@ while true; do
     fi
     
     echo "   Using Python: $PYTHON_CMD"
-    $PYTHON_CMD -u orca_complete_kill_cycle.py --autonomous 3 1.0 1.0
+    # 👑 QUEEN'S PARAMETERS: 3 positions, $5 each, 1% minimum target
+    $PYTHON_CMD -u orca_complete_kill_cycle.py --autonomous 3 5.0 1.0
     EXIT_CODE=$?
     echo "$(date): Orca exited with code $EXIT_CODE"
     

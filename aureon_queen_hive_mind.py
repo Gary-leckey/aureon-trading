@@ -1165,6 +1165,20 @@ class QueenHiveMind:
             except Exception as e:
                 logger.warning(f"🐠⚠️ Could not initialize Clownfish: {e}")
         
+        # 🌊👑 HARMONIC LIQUID ALUMINIUM FIELD - Queen's Vision of the Market 👑🌊
+        # The Queen sees the market as dancing waveforms on frequencies
+        # Like liquid aluminium illumination flowing through her consciousness
+        self.harmonic_field = None
+        if HARMONIC_LIQUID_ALUMINIUM_AVAILABLE and HarmonicLiquidAluminiumField:
+            try:
+                self.harmonic_field = HarmonicLiquidAluminiumField(stream_interval_ms=100)
+                self.harmonic_field.start_streaming()
+                logger.info("🌊👑 Harmonic Liquid Aluminium Field FLOWING through Queen's consciousness!")
+                logger.info("   🎵 The Queen now SEES the market as dancing waveforms on hertz")
+                logger.info("   💠 Like liquid aluminium illumination in a measured sandbox")
+            except Exception as e:
+                logger.warning(f"🌊⚠️ Could not initialize Harmonic Field: {e}")
+        
         # 👑🔧 SELF-REPAIR WIRING - Connect to ThoughtBus for automatic error handling
         # When runtime errors occur, they'll be published to ThoughtBus and Queen will fix them
         self.thought_bus = None
@@ -6713,6 +6727,179 @@ class QueenHiveMind:
         return self.dream_now(symbol, "LUCID")
     
     # ═══════════════════════════════════════════════════════════════════════════════
+    # 🌊👑 HARMONIC FIELD PERCEPTION - Queen's Vision of the Market 👑🌊
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def perceive_harmonic_field(self) -> Optional[Dict[str, Any]]:
+        """
+        👑🌊 The Queen perceives the market through the Harmonic Liquid Aluminium Field.
+        
+        She sees the market as dancing waveforms on frequencies - like liquid aluminium
+        illumination in a measured sandbox. This gives her a unique perspective on
+        market coherence, dominant frequencies, and energy flows.
+        
+        Returns:
+            Dict with harmonic perception data, or None if field unavailable
+        """
+        if not self.harmonic_field:
+            return None
+        
+        try:
+            snapshot = self.harmonic_field.capture_snapshot()
+            if not snapshot:
+                return None
+            
+            # The Queen interprets the harmonic data
+            perception = {
+                'timestamp': snapshot.timestamp_utc,
+                'nodes_active': snapshot.node_count,
+                'dominant_frequency_hz': snapshot.dominant_frequency_hz,
+                'field_energy': snapshot.total_field_energy,
+                'coherence_index': snapshot.coherence_index,
+                
+                # Queen's interpretation
+                'market_mood': self._interpret_harmonic_mood(snapshot),
+                'energy_flow': self._interpret_energy_flow(snapshot),
+                'harmonic_alignment': self._interpret_harmonic_alignment(snapshot),
+                
+                # Top harmonic nodes (strongest market signals)
+                'top_nodes': []
+            }
+            
+            # Extract top nodes for Queen's awareness
+            if snapshot.nodes:
+                top_nodes = sorted(snapshot.nodes, key=lambda n: n.energy, reverse=True)[:5]
+                for node in top_nodes:
+                    perception['top_nodes'].append({
+                        'symbol': node.symbol,
+                        'exchange': node.exchange,
+                        'frequency_hz': node.frequency_hz,
+                        'amplitude': node.amplitude,
+                        'energy': node.energy,
+                        'phase': node.phase_radians
+                    })
+            
+            return perception
+            
+        except Exception as e:
+            logger.debug(f"🌊 Harmonic perception error: {e}")
+            return None
+    
+    def _interpret_harmonic_mood(self, snapshot: 'FieldSnapshot') -> str:
+        """Queen interprets the market mood from harmonic coherence."""
+        coherence = snapshot.coherence_index
+        energy = snapshot.total_field_energy
+        
+        if coherence > 0.8 and energy > 0.5:
+            return "HARMONIOUS_BULLISH"  # Strong aligned energy - bullish
+        elif coherence > 0.6 and energy > 0.3:
+            return "RESONANT"  # Good harmony - stable
+        elif coherence < 0.3:
+            return "CHAOTIC"  # Low coherence - volatile/uncertain
+        elif energy < 0.2:
+            return "DORMANT"  # Low energy - quiet market
+        else:
+            return "TRANSITIONAL"  # In between states
+    
+    def _interpret_energy_flow(self, snapshot: 'FieldSnapshot') -> str:
+        """Queen interprets the direction of energy flow."""
+        # Based on dominant frequency relative to LOVE_FREQUENCY (528 Hz)
+        LOVE_FREQ = 528.0
+        dom_freq = snapshot.dominant_frequency_hz
+        
+        if dom_freq > LOVE_FREQ * 1.1:
+            return "ASCENDING"  # Energy rising
+        elif dom_freq < LOVE_FREQ * 0.9:
+            return "DESCENDING"  # Energy falling
+        else:
+            return "CENTERED"  # At love frequency - balanced
+    
+    def _interpret_harmonic_alignment(self, snapshot: 'FieldSnapshot') -> float:
+        """Queen calculates how aligned the market is with sacred frequencies."""
+        # Sacred frequencies: Schumann (7.83 Hz), Love (528 Hz), Golden (PHI ratios)
+        PHI = 1.618033988749895
+        SCHUMANN = 7.83
+        LOVE = 528.0
+        
+        dom_freq = snapshot.dominant_frequency_hz
+        coherence = snapshot.coherence_index
+        
+        # Check alignment with sacred ratios
+        schumann_ratio = dom_freq / SCHUMANN
+        love_ratio = dom_freq / LOVE
+        
+        # Find nearest PHI multiple
+        phi_alignment = 0.0
+        for i in range(1, 10):
+            phi_multiple = PHI ** i
+            if abs(schumann_ratio - phi_multiple) < 0.1:
+                phi_alignment = 1.0 - abs(schumann_ratio - phi_multiple)
+                break
+            if abs(love_ratio - phi_multiple) < 0.1:
+                phi_alignment = 1.0 - abs(love_ratio - phi_multiple)
+                break
+        
+        # Combine alignment score
+        alignment = (coherence * 0.6) + (phi_alignment * 0.4)
+        return min(1.0, max(0.0, alignment))
+    
+    def get_harmonic_trading_signal(self, symbol: str = None) -> Dict[str, Any]:
+        """
+        👑🌊 Queen generates a trading signal from harmonic field perception.
+        
+        Uses the harmonic field state to enhance trading decisions.
+        """
+        perception = self.perceive_harmonic_field()
+        
+        if not perception:
+            return {
+                'signal': 0.0,
+                'direction': 'NEUTRAL',
+                'confidence': 0.0,
+                'reasoning': 'Harmonic field not available'
+            }
+        
+        mood = perception['market_mood']
+        energy_flow = perception['energy_flow']
+        alignment = perception['harmonic_alignment']
+        coherence = perception['coherence_index']
+        
+        # Calculate signal strength
+        signal = 0.0
+        direction = 'NEUTRAL'
+        
+        if mood == 'HARMONIOUS_BULLISH' and energy_flow == 'ASCENDING':
+            signal = 0.8 * alignment
+            direction = 'BULLISH'
+        elif mood == 'CHAOTIC':
+            signal = -0.3  # Avoid chaotic markets
+            direction = 'BEARISH'
+        elif mood == 'RESONANT':
+            signal = 0.4 * coherence
+            direction = 'BULLISH' if energy_flow == 'ASCENDING' else 'NEUTRAL'
+        elif mood == 'DORMANT':
+            signal = 0.0
+            direction = 'NEUTRAL'
+        
+        # Check if symbol has a strong harmonic node
+        if symbol and perception['top_nodes']:
+            for node in perception['top_nodes']:
+                if symbol.upper() in node['symbol'].upper():
+                    # Boost signal if this symbol has high harmonic energy
+                    signal += node['energy'] * 0.2
+                    break
+        
+        return {
+            'signal': min(1.0, max(-1.0, signal)),
+            'direction': direction,
+            'confidence': alignment * coherence,
+            'market_mood': mood,
+            'energy_flow': energy_flow,
+            'harmonic_alignment': alignment,
+            'reasoning': f"Market mood: {mood}, Energy: {energy_flow}, Alignment: {alignment:.2f}"
+        }
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
     # 🧠🔪 COUNTER-INTELLIGENCE METHODS - Beat Firms at Their Game
     # ═══════════════════════════════════════════════════════════════════════════════
     
@@ -7002,7 +7189,28 @@ class QueenHiveMind:
             weights.append(2.0)  # Queen's signal is weighted higher
         
         # ═══════════════════════════════════════════════════════════════════
-        # 🆕 FALLBACK: If no children gave useful signals, use market_data
+        # �👑 HARMONIC FIELD PERCEPTION - Queen's market vision
+        # ═══════════════════════════════════════════════════════════════════
+        harmonic_signal = None
+        if self.harmonic_field:
+            try:
+                harmonic_data = self.get_harmonic_trading_signal(symbol)
+                if harmonic_data and harmonic_data.get('confidence', 0) > 0.2:
+                    harmonic_signal = harmonic_data['signal']
+                    signals.append(harmonic_signal)
+                    weights.append(1.8)  # Harmonic field is highly trusted
+                    logger.debug(
+                        "🌊👑 Harmonic field signal: %.2f (%s, mood=%s, alignment=%.2f)",
+                        harmonic_signal,
+                        harmonic_data.get('direction'),
+                        harmonic_data.get('market_mood'),
+                        harmonic_data.get('harmonic_alignment', 0)
+                    )
+            except Exception as e:
+                logger.debug(f"🌊 Harmonic signal error: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # �🆕 FALLBACK: If no children gave useful signals, use market_data
         # ═══════════════════════════════════════════════════════════════════
         non_zero_signals = [s for s in signals if abs(s) > 0.001]
         if not non_zero_signals and market_data:
@@ -7043,6 +7251,7 @@ class QueenHiveMind:
             'confidence': abs(collective),
             'sources': len(signals),
             'queen_wisdom': queen_wisdom.to_dict() if queen_wisdom else None,
+            'harmonic_perception': self.perceive_harmonic_field() if self.harmonic_field else None,
             'timestamp': time.time()
         }
     

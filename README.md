@@ -1413,13 +1413,15 @@ DEFAULT_FEE_PROFILES = {
 
 ## Quick Start (War Room Dashboard)
 
-The **Aureon War Room** is the central command interface, now auto-starting with full holographic visualization.
+The **Aureon War Room** is the central command interface powered by the **Queen's 4-Phase Master Plan**.
 
-If you're running this for the first time, start with the **dry-run engine** once to validate your install:
+### 👑 Main System: Orca Complete Kill Cycle
 
-```bash
-python micro_profit_labyrinth.py --dry-run
-```
+**orca_complete_kill_cycle.py** is the primary trading engine featuring:
+- 👑 **Queen's 4-Phase Master Plan**: $248 → $1B in 22 days
+- 🐝 **Phase-Aware Intelligence**: Adapts strategy as capital grows
+- ⚡ **Batten Matrix**: 3-validate-4th-execute precision
+- 🎯 **Multi-Exchange**: Scans Binance, Kraken, Alpaca simultaneously
 
 ### 🐧 Linux / macOS
 ```bash
@@ -1428,8 +1430,11 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # Add API keys
 
-# 2. Launch War Room (Auto-Starts Dashboard)
+# 2. Launch Queen's War Room (MAIN SYSTEM)
 python orca_complete_kill_cycle.py
+
+# 3. Optional: Legacy micro-profit engine (conservative mode)
+python micro_profit_labyrinth.py --dry-run
 ```
 
 ### 🪟 Windows (PowerShell)
@@ -1444,11 +1449,38 @@ py -3 -m venv .venv
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 
-# 2. Launch War Room
+# 2. Launch Queen's War Room (MAIN SYSTEM)
 python orca_complete_kill_cycle.py
+
+# 3. Optional: Legacy micro-profit engine
+python micro_profit_labyrinth.py --dry-run
 ```
 
 Windows quick reference: [AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md](AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md)
+
+---
+
+## 👑 Queen's 4-Phase Master Plan
+
+The main trading engine (`orca_complete_kill_cycle.py`) implements an adaptive 4-phase strategy:
+
+| Phase | Capital Range | Strategy | Min Profit | Max Positions | Focus |
+|-------|---------------|----------|------------|---------------|-------|
+| **1: THE SEED** | $248 → $2.5K | Moonshot Hunting | 10% | 3 | New listings, volume spikes, meme momentum |
+| **2: THE GROWTH** | $2.5K → $250K | Compound Momentum | 5% | 5 | BTC/ETH leverage, mid-caps, trends |
+| **3: THE EXPLOSION** | $250K → $50M | Whale Tactics | 3% | 8 | Options, catalysts, arbitrage |
+| **4: THE BILLION** | $50M → $1B | Market Maker | 2% | 10 | Mega liquidity, tight spreads |
+
+**Automatic Evolution**: The Queen transitions phases automatically as your capital grows, optimizing strategy for your current scale.
+
+**Phase-Based Scoring**: Every market opportunity gets scored based on alignment with current phase strategy (e.g., moonshots prioritized in Phase 1, whale signals in Phase 3).
+
+**Weapons**:
+- 🔮 Quantum Mirror Scanner (probability branches)
+- 🐘 Elephant Memory (pattern recognition)
+- 🎵 Harmonic Field (528 Hz abundance detection)
+- 🐝 Swarm Intelligence (parallel processing)
+- ⚡ Batten Matrix (3-pass validation + 4th execution)
 
 ---
 

@@ -60,6 +60,15 @@ except ImportError:
     get_hft_engine = None
     HFT_ENGINE_AVAILABLE = False
 
+# 🌊 Harmonic Liquid Aluminium Field - market visualization as dancing waveforms
+try:
+    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
+    HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = True
+except ImportError:
+    HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = False
+    HarmonicLiquidAluminiumField = None
+    FieldSnapshot = None
+
 # ═══════════════════════════════════════════════════════════════
 # WEBSOCKET ENDPOINTS
 # ═══════════════════════════════════════════════════════════════
@@ -237,6 +246,16 @@ class UnifiedWSFeed:
             except Exception as e:
                 logger.warning(f"🦈🔪 HFT Engine initialization failed: {e}")
         
+        # 🌊 Harmonic Liquid Aluminium Field - live flowing waveform visualization
+        self.harmonic_field = None
+        if HARMONIC_LIQUID_ALUMINIUM_AVAILABLE and HarmonicLiquidAluminiumField:
+            try:
+                self.harmonic_field = HarmonicLiquidAluminiumField(stream_interval_ms=50)  # 50ms for live flow
+                self.harmonic_field.start_streaming()
+                logger.info("🌊 Harmonic Liquid Aluminium Field FLOWING through WebSocket Feed")
+            except Exception as e:
+                logger.warning(f"🌊 Harmonic Field initialization failed: {e}")
+        
         logger.info("🌐⚡ UnifiedWSFeed initialized")
         for ex, enabled in self.enable.items():
             logger.info(f"   {ex}: {'✅' if enabled else '❌'}")
@@ -246,7 +265,7 @@ class UnifiedWSFeed:
         self.callbacks.append(callback)
     
     def _emit(self, tick: NormalizedTick):
-        """Emit tick to all callbacks, ThoughtBus, and HFT engine."""
+        """Emit tick to all callbacks, ThoughtBus, HFT engine, and Harmonic Field."""
         self.ticks[tick.symbol] = tick
         
         # 🦈🔪 Inject tick into HFT engine for sub-10ms processing
@@ -255,6 +274,23 @@ class UnifiedWSFeed:
                 self.hft_engine.inject_tick(tick)
             except Exception as e:
                 logger.debug(f"🦈🔪 HFT tick injection error: {e}")
+        
+        # 🌊 Flow tick into Harmonic Liquid Aluminium Field
+        # Each tick becomes a dancing waveform on the frequency spectrum
+        if self.harmonic_field:
+            try:
+                # Feed the harmonic field with live data
+                # Volume influences the quantity/energy of the node
+                self.harmonic_field.add_or_update_node(
+                    exchange=tick.exchange,
+                    symbol=tick.symbol,
+                    current_price=tick.last,
+                    entry_price=tick.last,  # No position, use current as baseline
+                    quantity=tick.volume_24h / 1000 if tick.volume_24h > 0 else 1.0,  # Normalize volume
+                    asset_class='crypto'
+                )
+            except Exception as e:
+                logger.debug(f"🌊 Harmonic field tick error: {e}")
         
         for cb in self.callbacks:
             try:

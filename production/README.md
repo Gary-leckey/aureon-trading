@@ -2,7 +2,13 @@
 
 ## Overview
 
-AUREON is a quantum trading system packaged for production deployment. It runs in a secure, sandboxed Docker container with a game-like launcher experience.
+AUREON is a quantum trading system powered by the **Queen's 4-Phase Master Plan**. The primary engine (`orca_complete_kill_cycle.py`) runs in a secure, sandboxed Docker container with a game-like launcher experience.
+
+**Main Features:**
+- 👑 **Queen's 4-Phase Strategy**: Adapts from $248 → $1B (Seed → Growth → Explosion → Billion)
+- 🐝 **Phase-Aware Scoring**: Prioritizes opportunities aligned with current capital phase
+- ⚡ **Batten Matrix**: 3-pass validation, 4th-pass execution (precision trading)
+- 🌊 **Multi-Exchange**: Simultaneous scanning across Binance, Kraken, Alpaca
 
 ## Quick Start
 
@@ -78,11 +84,13 @@ For containerized deployments or servers, use Docker with [install-windows.bat](
 
 | Mode | Command | Description |
 |------|---------|-------------|
-| **Game** (default) | `--mode game` | Full UI + Trading Engine |
-| **Trading** | `--mode trading` | Headless trading only |
-| **Orca** | `--mode orca` | Orca kill cycle system |
+| **Game** (default) | `--mode game` | Full UI + Queen's Trading Engine |
+| **Trading** | `--mode trading` | Headless Orca engine (autonomous) |
+| **Orca** | `--mode orca` | Direct orca_complete_kill_cycle.py (**Main System**) |
 | **Queen** | `--mode queen` | Queen dashboard only |
 | **Shell** | `--mode shell` | Interactive bash shell |
+
+**Recommended for Autonomous Trading**: Use `--mode orca` or `--mode trading` with the Orca system as the primary engine.
 
 ## Ports
 

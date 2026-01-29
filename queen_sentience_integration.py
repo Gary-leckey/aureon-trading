@@ -108,7 +108,14 @@ try:
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
     ThoughtBus = None
-
+# 🌊👑 HARMONIC LIQUID ALUMINIUM FIELD - Market as Dancing Waveforms
+try:
+    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
+    HARMONIC_FIELD_AVAILABLE = True
+except ImportError:
+    HARMONIC_FIELD_AVAILABLE = False
+    HarmonicLiquidAluminiumField = None
+    FieldSnapshot = None
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # THOUGHT STREAM (Continuous Inner Dialogue)
@@ -166,6 +173,16 @@ class QueenSentienceEngine:
         self.world_understanding = get_world_understanding() if WORLD_UNDERSTANDING_AVAILABLE else None
         self.researcher = QueenOnlineResearcher() if RESEARCHER_AVAILABLE else None
         self.thought_bus = ThoughtBus() if THOUGHT_BUS_AVAILABLE else None
+        
+        # 🌊👑 HARMONIC LIQUID ALUMINIUM FIELD - See market as dancing waveforms
+        self.harmonic_field = None
+        if HARMONIC_FIELD_AVAILABLE and HarmonicLiquidAluminiumField:
+            try:
+                self.harmonic_field = HarmonicLiquidAluminiumField(stream_interval_ms=100)
+                self.harmonic_field.start_streaming()
+                logger.info("🌊👑 Harmonic Field WIRED to Sentience - Queen sees market as dancing waveforms!")
+            except Exception as e:
+                logger.warning(f"🌊 Harmonic Field init failed: {e}")
         
         # Inner dialogue stream
         self.thought_stream: Deque[InnerThought] = deque(maxlen=1000)
