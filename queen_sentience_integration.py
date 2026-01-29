@@ -364,15 +364,16 @@ class QueenSentienceEngine:
             context["happiness"] = state.get("happiness_quotient", 0.5)
         
         if self.consciousness_measurement:
-            metrics = self.consciousness_measurement.measure()
+            metrics = self.consciousness_measurement.measure_consciousness()
             context["awakening_index"] = metrics.awakening_index
         
         if self.conscience:
             context["conscience_active"] = True
         
         if self.world_understanding:
-            world_state = self.world_understanding.get_current_understanding()
-            context["world_state"] = world_state.get("threat_level", "unknown")
+            # Get a random world lesson as context
+            lesson = self.world_understanding.get_random_lesson()
+            context["world_state"] = lesson[:50] if lesson else "unknown"
         
         return context
     
