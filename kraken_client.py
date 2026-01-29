@@ -32,32 +32,44 @@ ASSETPAIR_CACHE_TTL = 300  # seconds
 # ═══════════════════════════════════════════════════════════════════════════════
 NONCE_FILE = os.path.join(os.path.dirname(__file__), "kraken_nonce.json")
 _nonce_lock = threading.Lock()
+_last_nonce_used = 0  # In-memory cache for faster access
 
 def _get_next_nonce() -> int:
     """
     Get the next nonce that's guaranteed to be higher than any previously used.
-    Uses a persistent file to track across restarts and multiple instances.
+    
+    CRITICAL: Kraken remembers the HIGHEST nonce ever sent to the API.
+    Once you use nanoseconds, you can NEVER go back to microseconds.
+    
+    Strategy:
+    1. Use NANOSECONDS (time.time() * 1_000_000_000) - must match historical usage
+    2. Always increment from last used to ensure strictly increasing
+    3. Use in-memory cache + file persistence for reliability
     """
+    global _last_nonce_used
+    
     with _nonce_lock:
-        # Start with nanoseconds as baseline
+        # NANOSECONDS since epoch (must match historical usage pattern)
         current_time_nonce = int(time.time() * 1_000_000_000)
         
-        # Load last used nonce from file
-        last_nonce = 0
-        try:
-            if os.path.exists(NONCE_FILE):
-                with open(NONCE_FILE, 'r') as f:
-                    data = json.load(f)
-                    last_nonce = int(data.get('last_nonce', 0))
-        except Exception:
-            pass
+        # Load last used nonce from file if memory is empty
+        if _last_nonce_used == 0:
+            try:
+                if os.path.exists(NONCE_FILE):
+                    with open(NONCE_FILE, 'r') as f:
+                        data = json.load(f)
+                        _last_nonce_used = int(data.get('last_nonce', 0))
+            except Exception:
+                pass
         
-        # Use whichever is higher + increment to ensure uniqueness
-        # Add 1_000_000_000 (1 second in nanoseconds) as safety buffer
-        # INCREASED BUFFER: to 5 seconds to ensure we clear any server-side window
-        new_nonce = max(current_time_nonce, last_nonce + 5_000_000_000) + 100
+        # New nonce must be higher than both current time AND last used + small buffer
+        # Use small increment (1 million nanoseconds = 1ms) to avoid running away
+        new_nonce = max(current_time_nonce, _last_nonce_used + 1_000_000)
         
-        # Save new nonce to file (atomic write)
+        # Update in-memory cache
+        _last_nonce_used = new_nonce
+        
+        # Save to file (atomic write) - don't block on this
         try:
             tmp_file = NONCE_FILE + '.tmp'
             with open(tmp_file, 'w') as f:
