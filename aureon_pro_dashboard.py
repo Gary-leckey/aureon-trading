@@ -1295,8 +1295,9 @@ PRO_DASHBOARD_HTML = """
 class AureonProDashboard:
     """Professional trading dashboard with real-time data."""
     
-    def __init__(self, port: int = 14000):
-        self.port = port
+    def __init__(self, port: int = None):
+        # Use PORT env var (DigitalOcean sets this) or default to 14000 for local dev
+        self.port = port or int(os.getenv('PORT', '14000'))
         self.logger = logger
         self.clients: Set = set()
         
@@ -1748,7 +1749,8 @@ class AureonProDashboard:
 
 
 async def main():
-    dashboard = AureonProDashboard(port=14000)
+    # Port auto-configured: ENV['PORT'] for production, 14000 for local dev
+    dashboard = AureonProDashboard()
     await dashboard.start()
 
 
