@@ -63,8 +63,9 @@ for i in {1..10}; do
     sleep 2
 done
 
-# Power Station Dashboard (API + UI)
-start_bg "queen_power_dashboard" "python -u queen_power_dashboard.py"
+# NOTE: Queen Power Dashboard is DISABLED - using aureon_pro_dashboard.py instead (priority=1 in supervisord)
+# Power dashboard was conflicting with Pro Dashboard for port 8080
+# start_bg "queen_power_dashboard" "python -u queen_power_dashboard.py"
 
 # Ensure critical Python deps are installed (websocket-client, prometheus_client)
 python - <<'PY'
