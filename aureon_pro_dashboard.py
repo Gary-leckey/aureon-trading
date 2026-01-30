@@ -1686,100 +1686,96 @@ class AureonProDashboard:
         try:
             self.logger.info("🔄 Starting portfolio refresh...")
             
-            # Use timeout to prevent hanging
-            async with asyncio.timeout(5.0):  # 5 second total timeout
+            # Try to use live_position_viewer for real data
+            try:
+                from live_position_viewer import get_binance_positions, get_alpaca_positions
+                
+                positions = []
+                total_value = 0
+                total_cost = 0
+                
+                # Get Binance positions (with timeout)
                 try:
-                    # Try to use live_position_viewer for real data
-                    from live_position_viewer import get_binance_positions, get_alpaca_positions
-                    
-                    positions = []
-                    total_value = 0
-                    total_cost = 0
-                    
-                    # Get Binance positions (with timeout)
-                    try:
-                        binance_pos = await asyncio.wait_for(
-                            asyncio.to_thread(get_binance_positions),
-                            timeout=3.0
-                        )
-                        self.logger.info(f"📊 Binance: Fetched {len(binance_pos)} positions")
-                        for pos in binance_pos:
-                            if pos.get('current_value', 0) > 0:
-                                positions.append({
-                                    'symbol': pos['symbol'],
-                                    'quantity': pos['quantity'],
-                                    'avgCost': pos.get('avg_cost', 0),
-                                    'currentPrice': pos.get('current_price', 0),
-                                    'currentValue': pos.get('current_value', 0),
-                                    'unrealizedPnl': pos.get('unrealized_pnl', 0),
-                                    'pnlPercent': pos.get('pnl_percent', 0),
-                                    'exchange': 'binance'
-                                })
-                                total_value += pos.get('current_value', 0)
-                                total_cost += pos.get('cost_basis', 0)
-                    except asyncio.TimeoutError:
-                        self.logger.warning("⏱️  Binance portfolio fetch timed out (3s)")
-                    except Exception as e:
-                        self.logger.warning(f"⚠️  Binance portfolio fetch failed: {e}")
-                    
-                    # Get Alpaca positions (with timeout)
-                    try:
-                        alpaca_pos = await asyncio.wait_for(
-                            asyncio.to_thread(get_alpaca_positions),
-                            timeout=3.0
-                        )
-                        self.logger.info(f"📊 Alpaca: Fetched {len(alpaca_pos)} positions")
-                        for pos in alpaca_pos:
-                            if pos.get('current_value', 0) > 0:
-                                positions.append({
-                                    'symbol': pos['symbol'],
-                                    'quantity': pos['quantity'],
-                                    'avgCost': pos.get('avg_cost', 0),
-                                    'currentPrice': pos.get('current_price', 0),
-                                    'currentValue': pos.get('current_value', 0),
-                                    'unrealizedPnl': pos.get('unrealized_pnl', 0),
-                                    'pnlPercent': pos.get('pnl_percent', 0),
-                                    'exchange': 'alpaca'
-                                })
-                                total_value += pos.get('current_value', 0)
-                                total_cost += pos.get('cost_basis', 0)
-                    except asyncio.TimeoutError:
-                        self.logger.warning("⏱️  Alpaca portfolio fetch timed out (3s)")
-                    except Exception as e:
-                        self.logger.warning(f"⚠️  Alpaca portfolio fetch failed: {e}")
-                    
-                    # Sort by value descending
-                    positions.sort(key=lambda x: x.get('currentValue', 0), reverse=True)
-                    
-                    self.portfolio = {
-                        'totalValue': total_value,
-                        'costBasis': total_cost,
-                        'unrealizedPnl': total_value - total_cost,
-                        'todayPnl': 0,  # Would need historical data
-                        'positions': positions[:20]  # Top 20
-                    }
-                    
-                    # Update harmonic field with positions
-                    if self.harmonic_field:
-                        for pos in positions:
-                            try:
-                                self.harmonic_field.add_or_update_node(
-                                    exchange=pos.get('exchange', 'unknown'),
-                                    symbol=pos.get('symbol', 'UNKNOWN'),
-                                    current_price=pos.get('currentPrice', 0),
-                                    entry_price=pos.get('avgCost', 0),
-                                    quantity=pos.get('quantity', 0)
-                                )
-                            except Exception as e:
-                                self.logger.debug(f"Harmonic field update error for {pos.get('symbol')}: {e}")
-                    
-                    self.logger.info(f"✅ Portfolio: {len(positions)} positions, ${total_value:,.2f} value")
-                    
-                except ImportError:
-                    self.logger.warning("⚠️  live_position_viewer not available - using empty portfolio")
-                    
-        except asyncio.TimeoutError:
-            self.logger.error("❌ Portfolio refresh timed out after 5 seconds - using cached data")
+                    binance_pos = await asyncio.wait_for(
+                        asyncio.to_thread(get_binance_positions),
+                        timeout=3.0
+                    )
+                    self.logger.info(f"📊 Binance: Fetched {len(binance_pos)} positions")
+                    for pos in binance_pos:
+                        if pos.get('current_value', 0) > 0:
+                            positions.append({
+                                'symbol': pos['symbol'],
+                                'quantity': pos['quantity'],
+                                'avgCost': pos.get('avg_cost', 0),
+                                'currentPrice': pos.get('current_price', 0),
+                                'currentValue': pos.get('current_value', 0),
+                                'unrealizedPnl': pos.get('unrealized_pnl', 0),
+                                'pnlPercent': pos.get('pnl_percent', 0),
+                                'exchange': 'binance'
+                            })
+                            total_value += pos.get('current_value', 0)
+                            total_cost += pos.get('cost_basis', 0)
+                except asyncio.TimeoutError:
+                    self.logger.warning("⏱️  Binance portfolio fetch timed out (3s)")
+                except Exception as e:
+                    self.logger.warning(f"⚠️  Binance portfolio fetch failed: {e}")
+                
+                # Get Alpaca positions (with timeout)
+                try:
+                    alpaca_pos = await asyncio.wait_for(
+                        asyncio.to_thread(get_alpaca_positions),
+                        timeout=3.0
+                    )
+                    self.logger.info(f"📊 Alpaca: Fetched {len(alpaca_pos)} positions")
+                    for pos in alpaca_pos:
+                        if pos.get('current_value', 0) > 0:
+                            positions.append({
+                                'symbol': pos['symbol'],
+                                'quantity': pos['quantity'],
+                                'avgCost': pos.get('avg_cost', 0),
+                                'currentPrice': pos.get('current_price', 0),
+                                'currentValue': pos.get('current_value', 0),
+                                'unrealizedPnl': pos.get('unrealized_pnl', 0),
+                                'pnlPercent': pos.get('pnl_percent', 0),
+                                'exchange': 'alpaca'
+                            })
+                            total_value += pos.get('current_value', 0)
+                            total_cost += pos.get('cost_basis', 0)
+                except asyncio.TimeoutError:
+                    self.logger.warning("⏱️  Alpaca portfolio fetch timed out (3s)")
+                except Exception as e:
+                    self.logger.warning(f"⚠️  Alpaca portfolio fetch failed: {e}")
+                
+                # Sort by value descending
+                positions.sort(key=lambda x: x.get('currentValue', 0), reverse=True)
+                
+                self.portfolio = {
+                    'totalValue': total_value,
+                    'costBasis': total_cost,
+                    'unrealizedPnl': total_value - total_cost,
+                    'todayPnl': 0,  # Would need historical data
+                    'positions': positions[:20]  # Top 20
+                }
+                
+                # Update harmonic field with positions
+                if self.harmonic_field:
+                    for pos in positions:
+                        try:
+                            self.harmonic_field.add_or_update_node(
+                                exchange=pos.get('exchange', 'unknown'),
+                                symbol=pos.get('symbol', 'UNKNOWN'),
+                                current_price=pos.get('currentPrice', 0),
+                                entry_price=pos.get('avgCost', 0),
+                                quantity=pos.get('quantity', 0)
+                            )
+                        except Exception as e:
+                            self.logger.debug(f"Harmonic field update error for {pos.get('symbol')}: {e}")
+                
+                self.logger.info(f"✅ Portfolio: {len(positions)} positions, ${total_value:,.2f} value")
+                
+            except ImportError:
+                self.logger.warning("⚠️  live_position_viewer not available - using empty portfolio")
+                
         except Exception as e:
             self.logger.error(f"❌ Portfolio refresh error: {e}", exc_info=True)
     
@@ -1787,37 +1783,36 @@ class AureonProDashboard:
         """Fetch real crypto prices with timeout protection."""
         try:
             self.logger.info("🔄 Fetching prices...")
-            async with asyncio.timeout(3.0):  # 3 second timeout
-                async with aiohttp.ClientSession() as session:
-                    # CoinGecko API (free, no key needed)
-                    url = 'https://api.coingecko.com/api/v3/simple/price'
-                    params = {
-                        'ids': 'bitcoin,ethereum,solana',
-                        'vs_currencies': 'usd',
-                        'include_24hr_change': 'true'
-                    }
-                    
-                    async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=3)) as resp:
-                        if resp.status == 200:
-                            data = await resp.json()
-                            
-                            self.prices = {
-                                'BTC': {
-                                    'price': data.get('bitcoin', {}).get('usd', 0),
-                                    'change24h': data.get('bitcoin', {}).get('usd_24h_change', 0)
-                                },
-                                'ETH': {
-                                    'price': data.get('ethereum', {}).get('usd', 0),
-                                    'change24h': data.get('ethereum', {}).get('usd_24h_change', 0)
-                                },
-                                'SOL': {
-                                    'price': data.get('solana', {}).get('usd', 0),
-                                    'change24h': data.get('solana', {}).get('usd_24h_change', 0)
-                                }
+            async with aiohttp.ClientSession() as session:
+                # CoinGecko API (free, no key needed)
+                url = 'https://api.coingecko.com/api/v3/simple/price'
+                params = {
+                    'ids': 'bitcoin,ethereum,solana',
+                    'vs_currencies': 'usd',
+                    'include_24hr_change': 'true'
+                }
+                
+                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=3)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        
+                        self.prices = {
+                            'BTC': {
+                                'price': data.get('bitcoin', {}).get('usd', 0),
+                                'change24h': data.get('bitcoin', {}).get('usd_24h_change', 0)
+                            },
+                            'ETH': {
+                                'price': data.get('ethereum', {}).get('usd', 0),
+                                'change24h': data.get('ethereum', {}).get('usd_24h_change', 0)
+                            },
+                            'SOL': {
+                                'price': data.get('solana', {}).get('usd', 0),
+                                'change24h': data.get('solana', {}).get('usd_24h_change', 0)
                             }
-                            self.logger.info(f"✅ Prices: BTC ${self.prices['BTC']['price']:,.0f}, ETH ${self.prices['ETH']['price']:,.0f}, SOL ${self.prices['SOL']['price']:,.0f}")
-                        else:
-                            self.logger.warning(f"⚠️  CoinGecko API returned {resp.status}")
+                        }
+                        self.logger.info(f"✅ Prices: BTC ${self.prices['BTC']['price']:,.0f}, ETH ${self.prices['ETH']['price']:,.0f}, SOL ${self.prices['SOL']['price']:,.0f}")
+                    else:
+                        self.logger.warning(f"⚠️  CoinGecko API returned {resp.status}")
         except asyncio.TimeoutError:
             self.logger.warning("⏱️  Price fetch timed out (3s) - using cached prices")
         except Exception as e:
