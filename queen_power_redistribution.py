@@ -145,6 +145,7 @@ class QueenPowerRedistribution:
     
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
+        self.state_dir = os.getenv("AUREON_STATE_DIR", ".")
         
         # Initialize Queen consciousness
         logger.info("🐝 Initializing Queen's consciousness...")
@@ -287,6 +288,11 @@ class QueenPowerRedistribution:
     def load_state_file(self, filepath: str, default: Optional[Dict] = None) -> Dict:
         """Load JSON state file with fallback."""
         try:
+            if not os.path.isabs(filepath):
+                state_path = os.path.join(self.state_dir, filepath)
+                if os.path.exists(state_path):
+                    with open(state_path, 'r') as f:
+                        return json.load(f)
             if os.path.exists(filepath):
                 with open(filepath, 'r') as f:
                     return json.load(f)
@@ -329,8 +335,8 @@ class QueenPowerRedistribution:
             if self.kraken:
                 try:
                     balances = self.kraken.get_balance()
-                    usd = balances.get('ZUSD', 0.0)
-                    return (usd, 'ZUSD')
+                    usd = balances.get('USD', balances.get('ZUSD', 0.0))
+                    return (usd, 'USD')
                 except Exception as e:
                     logger.warning(f"KRK balance fetch failed: {e}")
             # Fallback to state file (with TTL check)
@@ -339,10 +345,10 @@ class QueenPowerRedistribution:
             age = time.time() - last_update
             if age > STATE_FILE_MAX_AGE_SECONDS:
                 logger.error(f"❌ KRK state file is stale ({age:.0f}s old, max {STATE_FILE_MAX_AGE_SECONDS}s) - returning 0")
-                return (0.0, 'ZUSD')  # Don't use stale data
-            usd = state.get('balances', {}).get('ZUSD', 0.0)
+                return (0.0, 'USD')  # Don't use stale data
+            usd = state.get('balances', {}).get('USD', state.get('balances', {}).get('ZUSD', 0.0))
             logger.warning(f"⚠️ Using cached KRK balance: ${usd:.2f} (age: {age:.0f}s)")
-            return (usd, 'ZUSD')
+            return (usd, 'USD')
         
         elif relay == 'ALP':
             # Alpaca: Check USD cash
