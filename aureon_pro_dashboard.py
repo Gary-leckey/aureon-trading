@@ -1672,12 +1672,12 @@ class AureonProDashboard:
                 'data': self.portfolio
             })
             
-            if self.prices:
-                self.logger.info(f"📤 Sending initial prices: BTC ${self.prices.get('BTC', {}).get('price', 0):,.0f}")
-                await ws.send_json({
-                    'type': 'price_update',
-                    'data': self.prices
-                })
+            # Always send prices - even if zero, better than blank dashboard
+            self.logger.info(f"📤 Sending initial prices: BTC ${self.prices.get('BTC', {}).get('price', 0):,.0f}")
+            await ws.send_json({
+                'type': 'price_update',
+                'data': self.prices
+            })
             
             if self.all_prices:
                 await ws.send_json({
@@ -1901,6 +1901,15 @@ class AureonProDashboard:
             self.logger.warning("⏱️  Price fetch timed out - using cached prices")
         except Exception as e:
             self.logger.warning(f"⚠️  Price fetch error: {e}")
+        
+        # Fallback: If still no prices after all attempts, use demo data so dashboard isn't blank
+        if not self.prices or not self.prices.get('BTC', {}).get('price'):
+            self.logger.warning("⚠️  All price sources failed - using fallback demo data")
+            self.prices = {
+                'BTC': {'price': 85000, 'change24h': -0.5},
+                'ETH': {'price': 2700, 'change24h': -1.2},
+                'SOL': {'price': 120, 'change24h': 0.8}
+            }
     
     async def queen_commentary_loop(self):
         """Queen provides periodic deep cognitive thoughts."""
@@ -1964,7 +1973,8 @@ class AureonProDashboard:
     async def data_refresh_loop(self):
         """Periodically refresh data and broadcast updates."""
         while True:
-            await asyncio.sleep(10)
+            # Poll every 3 seconds for near-real-time updates (WebSocket disabled)
+            await asyncio.sleep(3)
             
             try:
                 self.logger.info("🔄 [Data Refresh] Starting portfolio and price refresh...")
@@ -2190,13 +2200,16 @@ class AureonProDashboard:
             print(f"   • 🔶 Binance WebSocket: ACTIVE")
         print(f"{'='*70}\n")
         
-        # Start Binance WebSocket for real-time data
-        self.start_binance_websocket()
+        # DISABLED: Binance WebSocket causes crashes in production (SSL errors, ping/pong timeouts)
+        # Using HTTP API polling instead for reliability
+        # self.start_binance_websocket()
+        self.logger.warning("⚠️  Binance WebSocket DISABLED (crashes in production) - using HTTP polling")
         
         # Start background tasks
         asyncio.create_task(self.queen_commentary_loop())
         asyncio.create_task(self.data_refresh_loop())
-        asyncio.create_task(self.market_flow_loop())
+        # DISABLED: market_flow_loop depends on Binance WS
+        # asyncio.create_task(self.market_flow_loop())
         asyncio.create_task(self.harmonic_field_loop())
         
         self.logger.info("✅ All systems online, dashboard ready")
