@@ -64,6 +64,12 @@ services:
       - key: AUREON_ENABLE_AUTONOMOUS_CONTROL
         scope: RUN_TIME
         value: "1"
+      - key: AUREON_DEADLINE_MODE
+        scope: RUN_TIME
+        value: "false"
+      - key: AUREON_MIN_PROFIT_PCT
+        scope: RUN_TIME
+        value: "0.4"
       
       # 🔥 LIVE TRADING MODE
       - key: LIVE

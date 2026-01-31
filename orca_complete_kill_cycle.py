@@ -1031,14 +1031,25 @@ import random  # For simulating market activity
 # ═══════════════════════════════════════════════════════════════════════════════════════
 # 🚨🔥 DEADLINE MODE: FEBRUARY 20, 2026 - MAXIMUM AGGRESSION 🔥🚨
 # ═══════════════════════════════════════════════════════════════════════════════════════
-DEADLINE_MODE = True  # ENGAGED
+_deadline_env = os.getenv("AUREON_DEADLINE_MODE")
+if _deadline_env is None:
+    DEADLINE_MODE = True  # ENGAGED by default
+else:
+    DEADLINE_MODE = _deadline_env.lower() == "true"
 DEADLINE_DATE = "2026-02-20"
 
 # In DEADLINE MODE: We accept more risk for higher returns
 # Standard mode: 0.40% MIN_COP (conservative)
 # Deadline mode: 5.00% MIN_COP (aggressive) + leverage + multiple positions
-QUEEN_MIN_COP = 1.0500 if DEADLINE_MODE else 1.0040  # 5.0% or 0.40%
-QUEEN_MIN_PROFIT_PCT = 5.00 if DEADLINE_MODE else 0.40  # As percentage
+_min_profit_env = os.getenv("AUREON_MIN_PROFIT_PCT")
+if _min_profit_env is None:
+    QUEEN_MIN_PROFIT_PCT = 5.00 if DEADLINE_MODE else 0.40
+else:
+    try:
+        QUEEN_MIN_PROFIT_PCT = float(_min_profit_env)
+    except Exception:
+        QUEEN_MIN_PROFIT_PCT = 5.00 if DEADLINE_MODE else 0.40
+QUEEN_MIN_COP = 1.0 + (QUEEN_MIN_PROFIT_PCT / 100.0)
 
 # DEADLINE MODE MULTIPLIERS
 DEADLINE_POSITION_MULTIPLIER = 3.0  # 3x position sizes
