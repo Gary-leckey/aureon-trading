@@ -973,8 +973,10 @@ PRO_DASHBOARD_HTML = """
         let reconnectAttempts = 0;
         
         function connectWebSocket() {
-            console.log('🔌 Attempting WebSocket connection to:', `ws://${window.location.host}/ws`);
-            ws = new WebSocket(`ws://${window.location.host}/ws`);
+            const wsScheme = (window.location.protocol === 'https:') ? 'wss' : 'ws';
+            const wsUrl = `${wsScheme}://${window.location.host}/ws`;
+            console.log('🔌 Attempting WebSocket connection to:', wsUrl);
+            ws = new WebSocket(wsUrl);
             
             ws.onopen = () => {
                 console.log('✅ WebSocket connected');
