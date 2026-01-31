@@ -55,6 +55,9 @@ services:
       - key: AUREON_STATE_DIR
         scope: RUN_TIME
         value: /app/state
+      - key: KRAKEN_NONCE_PATH
+        scope: RUN_TIME
+        value: /app/state/kraken_nonce.json
       - key: AUREON_ENABLE_AUTONOMOUS_CONTROL
         scope: RUN_TIME
         value: "1"
