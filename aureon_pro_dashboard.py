@@ -2235,26 +2235,40 @@ class AureonProDashboard:
         if OCEAN_SCANNER_AVAILABLE and OceanScanner:
             try:
                 self.logger.info("🌊 Initializing Ocean Scanner...")
-                # Load exchange clients
+                # Load ALL exchange clients (Kraken, Alpaca, Binance)
                 exchanges = {}
+                
+                # Kraken (1,434 pairs)
                 try:
                     from kraken_client import KrakenClient
                     exchanges['kraken'] = KrakenClient()
                     self.logger.info("✅ Ocean Scanner: Kraken loaded")
-                except:
-                    pass
+                except Exception as e:
+                    self.logger.warning(f"⚠️ Kraken not available: {e}")
+                
+                # Alpaca (62 crypto + 10,000 stocks)
                 try:
                     from alpaca_client import AlpacaClient
                     exchanges['alpaca'] = AlpacaClient()
                     self.logger.info("✅ Ocean Scanner: Alpaca loaded")
-                except:
-                    pass
+                except Exception as e:
+                    self.logger.warning(f"⚠️ Alpaca not available: {e}")
+                
+                # Binance (2,000+ pairs)
+                try:
+                    from binance_client import BinanceClient
+                    exchanges['binance'] = BinanceClient()
+                    self.logger.info("✅ Ocean Scanner: Binance loaded")
+                except Exception as e:
+                    self.logger.warning(f"⚠️ Binance not available: {e}")
                 
                 if exchanges:
                     self.ocean_scanner = OceanScanner(exchanges)
                     # Discover universe in background
                     asyncio.create_task(self._init_ocean_scanner())
-                    self.logger.info("✅ Ocean Scanner initialized")
+                    self.logger.info(f"✅ Ocean Scanner initialized with {len(exchanges)} exchange(s)")
+                else:
+                    self.logger.error("❌ Ocean Scanner: No exchanges available!")
             except Exception as e:
                 self.logger.error(f"❌ Ocean Scanner init error: {e}")
         
