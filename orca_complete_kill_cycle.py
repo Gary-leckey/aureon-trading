@@ -6968,6 +6968,56 @@ class OrcaKillCycle:
         
         return cash
 
+    def _force_trade_once(self, cash: Dict[str, float]) -> None:
+        """Force a single market buy to validate execution path."""
+        if getattr(self, "_force_trade_done", False):
+            return
+        if os.getenv("AUREON_FORCE_TRADE", "").lower() != "true":
+            return
+
+        self._force_trade_done = True
+        amt = float(os.getenv("AUREON_FORCE_TRADE_USD", "5") or 5)
+        preferred = os.getenv("AUREON_FORCE_TRADE_EXCHANGE", "").lower()
+        symbol_override = os.getenv("AUREON_FORCE_TRADE_SYMBOL", "").strip()
+
+        def _symbol_for(ex: str) -> str:
+            if symbol_override:
+                return symbol_override
+            if ex == "binance":
+                return "BTCUSDT"
+            if ex == "kraken":
+                return "BTCUSD"
+            if ex == "alpaca":
+                return "BTCUSD"
+            return "BTCUSD"
+
+        exchange_order = [preferred] if preferred else ["kraken", "alpaca", "binance"]
+        exchange_order = [e for e in exchange_order if e]
+
+        result = {"status": "skipped", "reason": "no_cash_or_client"}
+        for ex in exchange_order:
+            if ex not in self.clients:
+                continue
+            if cash.get(ex, 0.0) < amt:
+                continue
+            client = self.clients[ex]
+            symbol = _symbol_for(ex)
+            try:
+                result = client.place_market_order(symbol, "buy", quote_qty=amt)
+                result = result or {"status": "empty_result"}
+                result["exchange"] = ex
+                result["symbol"] = symbol
+                result["quote_qty"] = amt
+                break
+            except Exception as e:
+                result = {"status": "error", "exchange": ex, "symbol": symbol, "error": str(e)}
+                continue
+
+        try:
+            self._last_force_trade_result = result
+        except Exception:
+            pass
+
     def get_all_positions(self) -> Dict[str, list]:
         """Get all existing positions across ALL exchanges that could be sold."""
         all_positions = {'alpaca': [], 'kraken': [], 'binance': [], 'capital': []}
@@ -11453,6 +11503,9 @@ class OrcaKillCycle:
         for exchange, amount in cash.items():
             print(f"   {exchange.upper()}: ${amount:.2f}")
         print()
+
+        # Force a single test trade if requested (validates execution path)
+        self._force_trade_once(cash)
         
         # Avalanche timing
         last_avalanche_time = 0
@@ -12548,6 +12601,7 @@ class OrcaKillCycle:
                 "active_count": len(positions),
                 "exchange_status": exchange_status,
                 "exchange_balances": getattr(self, "_last_cash_snapshot", {}),
+                "force_trade": getattr(self, "_last_force_trade_result", {}),
                 "flight_check": flight_check,
                 "queen_message": "War Room Active",
                 "queen_equity": queen.equity if queen else 0.0,
