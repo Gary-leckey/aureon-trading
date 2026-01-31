@@ -1,4 +1,3 @@
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, time, hmac, hashlib, requests, json
 from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_UP
 try:
@@ -69,10 +68,6 @@ class BinanceClient:
         # 🇬🇧 Cache UK restricted symbols to skip known-bad symbols proactively
         self._uk_restricted_symbols_cache: Set[str] = set()
         self._uk_restriction_cache_timestamp: float = 0
-        
-        # Cache for Convert History (to support cost basis from conversions)
-        self._convert_history_cache = None
-        self._convert_history_timestamp = 0
         
         # Server time offset for clock sync (fixes Windows clock drift)
         self._time_offset_ms: int = 0
@@ -302,66 +297,6 @@ class BinanceClient:
                 return float(bal["free"])
         return 0.0
 
-    def get_convert_history(self, start_time: int = None, end_time: int = None, limit: int = 500) -> List[Dict[str, Any]]:
-        """Fetch Convert Trade History (SAPI).
-        
-        Args:
-            start_time: Start timestamp in ms (optional, defaults to 30 days ago)
-            end_time: End timestamp in ms (optional, defaults to now)
-            limit: Max records (default 500)
-        """
-        if not end_time:
-            end_time = int(time.time() * 1000)
-        if not start_time:
-            # Default to 30 days ago (max range per call usually 30d)
-            start_time = end_time - (30 * 24 * 3600 * 1000)
-            
-        params = {
-            "startTime": start_time,
-            "endTime": end_time,
-            "limit": limit
-        }
-        
-        try:
-            res = self._signed_request("GET", "/sapi/v1/convert/tradeFlow", params)
-            return res.get('list', [])
-        except Exception as e:
-            print(f"⚠️  Binance Convert History Error: {e}")
-            return []
-
-    def _fetch_all_convert_history(self, days: int = 90) -> List[Dict[str, Any]]:
-        """Fetch extensive convert history (chunked) for cost basis analysis.
-        
-        Caches results for 10 minutes to avoid API spam.
-        """
-        # Check cache (10 min TTL)
-        if self._convert_history_cache is not None and (time.time() - self._convert_history_timestamp < 600):
-            return self._convert_history_cache
-
-        all_conversions = []
-        end_ts = int(time.time() * 1000)
-        thirty_days_ms = 30 * 24 * 3600 * 1000
-        
-        # Fetch up to 'days' back
-        start_limit = end_ts - (days * 24 * 3600 * 1000)
-        
-        current_end = end_ts
-        # Loop backwards in 30-day chunks
-        while current_end > start_limit:
-            current_start = max(start_limit, current_end - thirty_days_ms)
-            try:
-                batch = self.get_convert_history(start_time=current_start, end_time=current_end, limit=500)
-                if batch:
-                    all_conversions.extend(batch)
-            except Exception:
-                pass
-            current_end = current_start - 1  # Move back
-            time.sleep(0.1)  # Be nice to API
-
-        self._convert_history_cache = all_conversions
-        self._convert_history_timestamp = time.time()
-        return all_conversions
-
     def get_balance(self) -> Dict[str, float]:
         """Compatibility: return free balances as {asset: amount}."""
         balances: Dict[str, float] = {}
@@ -427,33 +362,28 @@ class BinanceClient:
                     }
         
         # 🚨 CRITICAL: Verify balance before SELL orders to prevent insufficient funds errors
-        # 🔧 MODIFIED: Changed to WARNING ONLY. Do not block kills due to parsing/cache errors. Valid kills must proceed.
         if side.upper() == 'SELL' and quantity:
             try:
-                symbol_upper = symbol.upper()
-                base_asset = None
-                # Standard Binance quote assets (longest first)
-                quotes = ['USDT', 'USDC', 'BUSD', 'TUSD', 'USDP', 'FDUSD', 'BTC', 'ETH', 'BNB', 'DAI', 'EUR', 'GBP', 'AUD', 'BRL', 'TRY', 'RUB', 'UAH', 'ZAR', 'IDR', 'NGN', 'PLN', 'RON', 'ARS', 'BIDR', 'USD']
-                
-                for q in quotes:
-                    if symbol_upper.endswith(q):
-                        candidate = symbol_upper[:-len(q)]
-                        if len(candidate) > 0:
-                            base_asset = candidate
-                            break
-                            
+                # Extract base asset from symbol (e.g., "BTC" from "BTCUSDT")
+                base_asset = symbol.replace('USDT', '').replace('USDC', '').replace('BUSD', '').replace('BTC', '').replace('BNB', '').replace('ETH', '')
                 if not base_asset:
-                    # Fallback
-                    base_asset = symbol[:3]
+                    # Fallback: guess base asset is the first 3-4 chars
+                    base_asset = symbol[:4] if len(symbol) > 4 else symbol[:3]
                 
-                # Get actual balance from account (triggers API call)
+                # Get actual balance from account
                 actual_balance = self.get_free_balance(base_asset)
                 requested_qty = float(quantity)
                 
                 if actual_balance < requested_qty:
-                    # Log warning but PROCEED (don't block)
-                    print(f"   ⚠️ Binance Balance Warning: Need {requested_qty:.8f} {base_asset}, Have {actual_balance:.8f}. Proceeding with SELL anyway.")
-                    # return { ... }  <-- REMOVED BLOCKING RETURN
+                    return {
+                        "rejected": True,
+                        "symbol": symbol,
+                        "side": side,
+                        "reason": f"Insufficient funds to sell {requested_qty:.8f} {base_asset}. Have {actual_balance:.8f}",
+                        "balance_check": True,
+                        "actual_balance": actual_balance,
+                        "requested_qty": requested_qty
+                    }
             except Exception as e:
                 # Don't block order on balance check failure, but log it
                 print(f"   ⚠️ Balance check warning: {e}")
@@ -1013,30 +943,6 @@ class BinanceClient:
                 print(f"⚠️ Failed to get trade history for {symbol}: {e}")
             return []
     
-    def get_all_orders(self, symbol: str, limit: int = 500, silent: bool = False) -> list:
-        """Get all account orders; active, canceled, or filled.
-        
-        This can be deeper than myTrades and includes orderId which is useful for linking.
-        
-        Args:
-            symbol: Trading pair symbol (Required)
-            limit: Default 500; max 1000.
-        """
-        params = {"symbol": symbol, "limit": limit}
-        try:
-            return self._signed_request("GET", "/api/v3/allOrders", params)
-        except Exception as e:
-            if not silent:
-                print(f"⚠️ Failed to get all orders for {symbol}: {e}")
-            return []
-            
-    def get_open_orders(self, symbol: str = None) -> list:
-        """Get open orders (active)."""
-        params = {}
-        if symbol:
-            params["symbol"] = symbol
-        return self._signed_request("GET", "/api/v3/openOrders", params)
-
     def get_all_my_trades(self, symbols: list = None, limit_per_symbol: int = 100) -> Dict[str, list]:
         """Get trade history for multiple symbols.
         
@@ -1091,7 +997,7 @@ class BinanceClient:
         return all_trades
     
     def calculate_cost_basis(self, symbol: str) -> Dict[str, Any]:
-        """Calculate average cost basis for a symbol from trade history (Spot + Convert).
+        """Calculate average cost basis for a symbol from trade history.
         
         Returns:
             {
@@ -1105,80 +1011,9 @@ class BinanceClient:
                 'last_trade': timestamp
             }
         """
-        # 1. Fetch Spot Trades
-        spot_trades = self.get_my_trades(symbol)
-        
-        # 2. Fetch Convert Trades (Cached)
-        converts = self._fetch_all_convert_history()
-        
-        # 3. Identify Base Asset for Convert Filtering
-        # (Naive inference: remove known quotes from suffix)
-        known_quotes = ['USDT', 'BUSD', 'USDC', 'BTC', 'ETH', 'BNB', 'EUR', 'DAI', 'TUSD', 'FDUSD', 'GBP']
-        base_asset = None
-        for q in known_quotes:
-            if symbol.endswith(q):
-                 base_asset = symbol[:-len(q)]
-                 break
-        
-        relevant_events = []
-        
-        # Add Spot Trades
-        if spot_trades:
-            for t in spot_trades:
-                relevant_events.append({
-                    'type': 'spot',
-                    'time': t.get('time', 0),
-                    'qty': float(t.get('qty', 0)),
-                    'price': float(t.get('price', 0)),
-                    'is_buy': t.get('isBuyer', False),
-                    'commission': float(t.get('commission', 0)),
-                    'raw': t
-                })
-
-        # Add Convert Trades
-        if base_asset and converts:
-            for c in converts:
-                # Convert logic:
-                # If toAsset == base_asset -> BUY
-                # If fromAsset == base_asset -> SELL
-                c_time = c.get('createTime', 0)
-                from_asset = c.get('fromAsset')
-                to_asset = c.get('toAsset')
-                from_amt = float(c.get('fromAmount', 0))
-                to_amt = float(c.get('toAmount', 0))
-                
-                if to_asset == base_asset:
-                    # BUY
-                    # Effective price = Cost (fromAmount) / Quantity (toAmount)
-                    price = from_amt / to_amt if to_amt > 0 else 0
-                    relevant_events.append({
-                        'type': 'convert_buy',
-                        'time': c_time,
-                        'qty': to_amt,
-                        'price': price,
-                        'is_buy': True,
-                        'commission': 0.0,
-                        'raw': c
-                    })
-                elif from_asset == base_asset:
-                    # SELL
-                    # Price = Proceeds (toAmount) / Quantity (fromAmount)
-                    price = to_amt / from_amt if from_amt > 0 else 0
-                    relevant_events.append({
-                        'type': 'convert_sell',
-                        'time': c_time,
-                        'qty': from_amt,
-                        'price': price,
-                        'is_buy': False,
-                        'commission': 0.0,
-                        'raw': c
-                    })
-
-        if not relevant_events:
+        trades = self.get_my_trades(symbol)
+        if not trades:
             return None
-        
-        # Sort by time asc
-        relevant_events.sort(key=lambda x: x['time'])
         
         total_qty = 0.0
         total_cost = 0.0
@@ -1187,29 +1022,30 @@ class BinanceClient:
         first_trade = None
         last_trade = None
         
-        for event in relevant_events:
-            qty = event['qty']
-            price = event['price']
-            is_buy = event['is_buy']
-            time_ev = event['time']
+        for trade in trades:
+            is_buyer = trade.get('isBuyer', False)
+            qty = float(trade.get('qty', 0))
+            price = float(trade.get('price', 0))
+            commission = float(trade.get('commission', 0))
+            timestamp = trade.get('time', 0)
             
-            if is_buy:
+            if is_buyer:
                 total_qty += qty
                 total_cost += qty * price
-                total_fees += event['commission']
+                total_fees += commission
                 buy_trades += 1
             else:
                 # Sell reduces position
                 total_qty -= qty
-                # Proportionally reduce cost basis (Weighted Average)
+                # Proportionally reduce cost basis
                 if total_qty > 0:
                     avg_price = total_cost / (total_qty + qty) if (total_qty + qty) > 0 else 0
                     total_cost = total_qty * avg_price
-                else:
-                    total_cost = 0.0
             
-            if first_trade is None: first_trade = time_ev
-            last_trade = time_ev
+            if first_trade is None or timestamp < first_trade:
+                first_trade = timestamp
+            if last_trade is None or timestamp > last_trade:
+                last_trade = timestamp
         
         avg_entry = total_cost / total_qty if total_qty > 0 else 0
         
