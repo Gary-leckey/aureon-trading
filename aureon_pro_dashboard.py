@@ -1983,13 +1983,34 @@ class AureonProDashboard:
                             return json.load(f)
                     return {}
 
+                snapshot_balances = {}
+                if os.path.exists(snapshot_path):
+                    try:
+                        with open(snapshot_path, "r") as f:
+                            snapshot = json.load(f)
+                        snapshot_balances = snapshot.get("exchange_balances", {}) or {}
+                    except Exception:
+                        snapshot_balances = {}
+
                 bin_state = _read_state(os.path.join(state_dir, "binance_truth_tracker_state.json"))
                 krk_state = _read_state(os.path.join(state_dir, "aureon_kraken_state.json"))
                 alp_state = _read_state(os.path.join(state_dir, "alpaca_truth_tracker_state.json"))
 
-                bin_usdt = float(bin_state.get("balances", {}).get("USDT", {}).get("free", 0.0) or 0.0)
-                krk_usd = float(krk_state.get("balances", {}).get("USD", krk_state.get("balances", {}).get("ZUSD", 0.0)) or 0.0)
-                alp_cash = float(alp_state.get("cash", 0.0) or 0.0)
+                bin_usdt = float(
+                    bin_state.get("balances", {}).get("USDT", {}).get("free", 0.0)
+                    or snapshot_balances.get("binance", 0.0)
+                    or 0.0
+                )
+                krk_usd = float(
+                    krk_state.get("balances", {}).get("USD", krk_state.get("balances", {}).get("ZUSD", 0.0))
+                    or snapshot_balances.get("kraken", 0.0)
+                    or 0.0
+                )
+                alp_cash = float(
+                    alp_state.get("cash", 0.0)
+                    or snapshot_balances.get("alpaca", 0.0)
+                    or 0.0
+                )
 
                 self.exchange_balances = {
                     "binance": bin_usdt,

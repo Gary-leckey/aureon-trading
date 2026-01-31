@@ -6958,6 +6958,13 @@ class OrcaKillCycle:
                 print(f"   ⚠️ Capital.com cash error: {e}")
                 self.last_cash_status['capital'] = 'error'
                 cash['capital'] = 5.0 if test_mode else 0.0
+
+        # Cache latest cash snapshot for dashboards (avoid extra API calls elsewhere)
+        try:
+            self._last_cash_snapshot = dict(cash)
+            self._last_cash_snapshot_ts = time.time()
+        except Exception:
+            pass
         
         return cash
 
@@ -12540,6 +12547,7 @@ class OrcaKillCycle:
                 "positions": serializable_positions,
                 "active_count": len(positions),
                 "exchange_status": exchange_status,
+                "exchange_balances": getattr(self, "_last_cash_snapshot", {}),
                 "flight_check": flight_check,
                 "queen_message": "War Room Active",
                 "queen_equity": queen.equity if queen else 0.0,
