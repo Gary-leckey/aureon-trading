@@ -1641,13 +1641,30 @@ class AureonProDashboard:
         await ws.prepare(request)
         self.clients.add(ws)
         
-        self.logger.info(f"Client connected (total: {len(self.clients)})")
+        self.logger.info(f"✅ Client connected (total: {len(self.clients)})")
         
-        # Send initial state
-        await ws.send_json({
-            'type': 'portfolio_update',
-            'data': self.portfolio
-        })
+        # Send initial state immediately
+        try:
+            self.logger.info(f"📤 Sending initial portfolio: {len(self.portfolio.get('positions', []))} positions, ${self.portfolio.get('totalValue', 0):.2f}")
+            await ws.send_json({
+                'type': 'portfolio_update',
+                'data': self.portfolio
+            })
+            
+            if self.prices:
+                self.logger.info(f"📤 Sending initial prices: BTC ${self.prices.get('BTC', {}).get('price', 0):,.0f}")
+                await ws.send_json({
+                    'type': 'price_update',
+                    'data': self.prices
+                })
+            
+            if self.all_prices:
+                await ws.send_json({
+                    'type': 'all_prices_update',
+                    'data': self.all_prices
+                })
+        except Exception as e:
+            self.logger.error(f"❌ Error sending initial state: {e}")
         
         try:
             async for msg in ws:
@@ -1655,6 +1672,7 @@ class AureonProDashboard:
                     self.logger.error(f"WS error: {ws.exception()}")
         finally:
             self.clients.discard(ws)
+            self.logger.info(f"❌ Client disconnected (remaining: {len(self.clients)})")
         
         return ws
     
@@ -1783,6 +1801,51 @@ class AureonProDashboard:
         """Fetch real crypto prices with timeout protection."""
         try:
             self.logger.info("🔄 Fetching prices...")
+            
+            # Try Binance public API first (no key needed, faster)
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(
+                        'https://api.binance.com/api/v3/ticker/price',
+                        params={'symbols': '["BTCUSDT","ETHUSDT","SOLUSDT"]'},
+                        timeout=aiohttp.ClientTimeout(total=2)
+                    ) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            price_map = {item['symbol']: float(item['price']) for item in data}
+                            
+                            # Get 24h changes
+                            async with session.get(
+                                'https://api.binance.com/api/v3/ticker/24hr',
+                                params={'symbols': '["BTCUSDT","ETHUSDT","SOLUSDT"]'},
+                                timeout=aiohttp.ClientTimeout(total=2)
+                            ) as resp2:
+                                if resp2.status == 200:
+                                    change_data = await resp2.json()
+                                    change_map = {item['symbol']: float(item['priceChangePercent']) for item in change_data}
+                                else:
+                                    change_map = {}
+                            
+                            self.prices = {
+                                'BTC': {
+                                    'price': price_map.get('BTCUSDT', 0),
+                                    'change24h': change_map.get('BTCUSDT', 0)
+                                },
+                                'ETH': {
+                                    'price': price_map.get('ETHUSDT', 0),
+                                    'change24h': change_map.get('ETHUSDT', 0)
+                                },
+                                'SOL': {
+                                    'price': price_map.get('SOLUSDT', 0),
+                                    'change24h': change_map.get('SOLUSDT', 0)
+                                }
+                            }
+                            self.logger.info(f"✅ Prices (Binance): BTC ${self.prices['BTC']['price']:,.0f}, ETH ${self.prices['ETH']['price']:,.0f}, SOL ${self.prices['SOL']['price']:,.0f}")
+                            return  # Success, no need for fallback
+            except Exception as e:
+                self.logger.warning(f"Binance public API failed: {e}, trying CoinGecko...")
+            
+            # Fallback to CoinGecko
             async with aiohttp.ClientSession() as session:
                 # CoinGecko API (free, no key needed)
                 url = 'https://api.coingecko.com/api/v3/simple/price'
@@ -1810,11 +1873,11 @@ class AureonProDashboard:
                                 'change24h': data.get('solana', {}).get('usd_24h_change', 0)
                             }
                         }
-                        self.logger.info(f"✅ Prices: BTC ${self.prices['BTC']['price']:,.0f}, ETH ${self.prices['ETH']['price']:,.0f}, SOL ${self.prices['SOL']['price']:,.0f}")
+                        self.logger.info(f"✅ Prices (CoinGecko): BTC ${self.prices['BTC']['price']:,.0f}, ETH ${self.prices['ETH']['price']:,.0f}, SOL ${self.prices['SOL']['price']:,.0f}")
                     else:
                         self.logger.warning(f"⚠️  CoinGecko API returned {resp.status}")
         except asyncio.TimeoutError:
-            self.logger.warning("⏱️  Price fetch timed out (3s) - using cached prices")
+            self.logger.warning("⏱️  Price fetch timed out - using cached prices")
         except Exception as e:
             self.logger.warning(f"⚠️  Price fetch error: {e}")
     
@@ -2068,6 +2131,12 @@ class AureonProDashboard:
         # Pre-flight check: verify API keys
         self._check_api_keys()
         
+        # Fetch initial data BEFORE starting server (so data is ready immediately)
+        self.logger.info("🚀 Pre-loading market data before server start...")
+        await self.refresh_prices()
+        await self.refresh_portfolio()
+        self.logger.info(f"📊 Initial data loaded: {len(self.prices)} prices, {len(self.portfolio.get('positions', []))} positions")
+        
         runner = web.AppRunner(self.app)
         await runner.setup()
         site = web.TCPSite(runner, '0.0.0.0', self.port)
@@ -2078,6 +2147,15 @@ class AureonProDashboard:
         print(f"{'='*70}")
         print(f"🌐 Dashboard: http://localhost:{self.port}")
         print(f"🩺 Status: http://localhost:{self.port}/api/status")
+        print(f"📊 Initial State:")
+        print(f"   • Prices loaded: {len(self.prices)} symbols")
+        if self.prices.get('BTC'):
+            print(f"   • BTC: ${self.prices['BTC']['price']:,.0f} ({self.prices['BTC']['change24h']:+.2f}%)")
+        if self.prices.get('ETH'):
+            print(f"   • ETH: ${self.prices['ETH']['price']:,.0f} ({self.prices['ETH']['change24h']:+.2f}%)")
+        if self.prices.get('SOL'):
+            print(f"   • SOL: ${self.prices['SOL']['price']:,.0f} ({self.prices['SOL']['change24h']:+.2f}%)")
+        print(f"   • Portfolio: {len(self.portfolio.get('positions', []))} positions, ${self.portfolio.get('totalValue', 0):,.2f}")
         print(f"📊 Features:")
         print(f"   • Real-time portfolio P&L with live prices")
         print(f"   • Multi-exchange balance tracking")
@@ -2086,13 +2164,9 @@ class AureonProDashboard:
         print(f"   • Queen's AI commentary with voice")
         print(f"   • WebSocket real-time updates")
         if self.narrator:
-            print(f"   • 🧠 Cognitive Narrator: ACTIVE (rich multi-paragraph thoughts)")
-        else:
-            print(f"   • ⚠️  Cognitive Narrator: UNAVAILABLE")
+            print(f"   • 🧠 Cognitive Narrator: ACTIVE")
         if BINANCE_WS_AVAILABLE:
-            print(f"   • 🔶 Binance WebSocket: ACTIVE ({len(DEFAULT_SYMBOLS)} symbols live)")
-        else:
-            print(f"   • ⚠️  Binance WebSocket: UNAVAILABLE")
+            print(f"   • 🔶 Binance WebSocket: ACTIVE")
         print(f"{'='*70}\n")
         
         # Start Binance WebSocket for real-time data
@@ -2104,9 +2178,7 @@ class AureonProDashboard:
         asyncio.create_task(self.market_flow_loop())
         asyncio.create_task(self.harmonic_field_loop())
         
-        # Initial data fetch
-        await self.refresh_portfolio()
-        await self.refresh_prices()
+        self.logger.info("✅ All systems online, dashboard ready")
         
         # Keep running
         while True:
