@@ -1790,6 +1790,8 @@ class AureonProDashboard:
         """Fetch real portfolio data from exchanges with timeout protection."""
         try:
             self.logger.info("🔄 Starting portfolio refresh...")
+            state_dir = os.getenv("AUREON_STATE_DIR", ".")
+            snapshot_path = os.path.join(state_dir, "dashboard_snapshot.json")
             
             # Try to use live_position_viewer for real data
             try:
@@ -1879,7 +1881,79 @@ class AureonProDashboard:
                 self.logger.info(f"✅ Portfolio: {len(positions)} positions, ${total_value:,.2f} value")
                 
             except ImportError:
-                self.logger.warning("⚠️  live_position_viewer not available - using empty portfolio")
+                self.logger.warning("⚠️  live_position_viewer not available - using state snapshot")
+                positions = []
+                total_value = 0.0
+                total_cost = 0.0
+                try:
+                    if os.path.exists(snapshot_path):
+                        with open(snapshot_path, "r") as f:
+                            snapshot = json.load(f)
+                        for pos in snapshot.get("positions", []):
+                            qty = float(pos.get("entry_qty", 0) or 0)
+                            entry = float(pos.get("entry_price", 0) or 0)
+                            current = float(pos.get("current_price", entry) or entry)
+                            current_value = current * qty
+                            total_value += current_value
+                            total_cost += entry * qty
+                            positions.append({
+                                "symbol": pos.get("symbol", "UNKNOWN"),
+                                "quantity": qty,
+                                "avgCost": entry,
+                                "currentPrice": current,
+                                "currentValue": current_value,
+                                "unrealizedPnl": float(pos.get("current_pnl", 0) or 0),
+                                "pnlPercent": float(pos.get("current_pnl_pct", 0) or 0),
+                                "exchange": pos.get("exchange", "unknown"),
+                            })
+                        positions.sort(key=lambda x: x.get("currentValue", 0), reverse=True)
+                except Exception as e:
+                    self.logger.warning(f"⚠️  State snapshot load failed: {e}")
+                
+                self.portfolio = {
+                    "totalValue": total_value,
+                    "costBasis": total_cost,
+                    "unrealizedPnl": total_value - total_cost,
+                    "todayPnl": 0,
+                    "positions": positions[:20],
+                }
+                if self.harmonic_field:
+                    for pos in positions:
+                        try:
+                            self.harmonic_field.add_or_update_node(
+                                exchange=pos.get("exchange", "unknown"),
+                                symbol=pos.get("symbol", "UNKNOWN"),
+                                current_price=pos.get("currentPrice", 0),
+                                entry_price=pos.get("avgCost", 0),
+                                quantity=pos.get("quantity", 0)
+                            )
+                        except Exception as e:
+                            self.logger.debug(f"Harmonic field update error for {pos.get('symbol')}: {e}")
+                self.logger.info(f"✅ Portfolio (snapshot): {len(positions)} positions, ${total_value:,.2f} value")
+
+            # Update exchange balances from state files (best-effort, no API calls)
+            try:
+                def _read_state(path: str) -> Dict:
+                    if os.path.exists(path):
+                        with open(path, "r") as f:
+                            return json.load(f)
+                    return {}
+
+                bin_state = _read_state(os.path.join(state_dir, "binance_truth_tracker_state.json"))
+                krk_state = _read_state(os.path.join(state_dir, "aureon_kraken_state.json"))
+                alp_state = _read_state(os.path.join(state_dir, "alpaca_truth_tracker_state.json"))
+
+                bin_usdt = float(bin_state.get("balances", {}).get("USDT", {}).get("free", 0.0) or 0.0)
+                krk_usd = float(krk_state.get("balances", {}).get("USD", krk_state.get("balances", {}).get("ZUSD", 0.0)) or 0.0)
+                alp_cash = float(alp_state.get("cash", 0.0) or 0.0)
+
+                self.exchange_balances = {
+                    "binance": bin_usdt,
+                    "kraken": krk_usd,
+                    "alpaca": alp_cash,
+                }
+            except Exception as e:
+                self.logger.debug(f"Exchange balance state load error: {e}")
                 
         except Exception as e:
             self.logger.error(f"❌ Portfolio refresh error: {e}", exc_info=True)
