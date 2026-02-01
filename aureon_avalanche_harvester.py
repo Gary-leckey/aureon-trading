@@ -194,6 +194,8 @@ class AvalancheHarvester:
         # Exchange clients (lazy loaded)
         self._kraken_client = None
         self._alpaca_client = None
+        self._binance_client = None
+        self._capital_client = None
         
         # Treasury state
         self.treasury = self._load_treasury()
