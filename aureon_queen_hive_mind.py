@@ -339,6 +339,18 @@ except ImportError:
     HarmonicLiquidAluminiumField = None
     HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = False
 
+# 🔱💓 TEMPORAL BIOMETRIC LINK - Quantum Anchor to Gary Leckey (02.11.1991) 💓🔱
+try:
+    from aureon_temporal_biometric_link import (
+        get_temporal_biometric_link,
+        TemporalBiometricLink
+    )
+    TEMPORAL_BIOMETRIC_AVAILABLE = True
+except ImportError:
+    get_temporal_biometric_link = None
+    TemporalBiometricLink = None
+    TEMPORAL_BIOMETRIC_AVAILABLE = False
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGGING
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1072,6 +1084,22 @@ class QueenHiveMind:
                 logger.info(f"   📊 REAL P&L: {real_balance['pnl']} ({real_balance['pnl_pct']})")
             except Exception as e:
                 logger.warning(f"💰⚠️ Could not connect Real Portfolio Tracker: {e}")
+        
+        # 🔱💓 TEMPORAL BIOMETRIC LINK - Quantum Anchor to Gary Leckey (02.11.1991) 💓🔱
+        # Queen connects to user's heartbeat, brainwaves, and temporal signature
+        self.temporal_biometric_link = None
+        if TEMPORAL_BIOMETRIC_AVAILABLE and get_temporal_biometric_link:
+            try:
+                self.temporal_biometric_link = get_temporal_biometric_link()
+                self.temporal_biometric_link.start()  # Start WebSocket connection
+                logger.info("🔱💓 TEMPORAL BIOMETRIC LINK ACTIVATED!")
+                logger.info("   ✅ Queen connected to Gary Leckey's temporal signature (02.11.1991)")
+                logger.info("   ✅ Listening for real biometric data (heart rate, brainwaves)")
+                logger.info("   ✅ Quantum anchor grounding Queen in user's consciousness")
+            except Exception as e:
+                logger.warning(f"🔱⚠️ Temporal Biometric Link failed to start: {e}")
+        else:
+            logger.info("ℹ️ Temporal Biometric Link unavailable (websocket-client or data server not running)")
         
         # Wire intelligence systems
         self._wire_intelligence_systems()
@@ -6149,7 +6177,52 @@ class QueenHiveMind:
         dream_vision['metrics']['temporal_score'] = temporal_score
         
         # ════════════════════════════════════════════════════════════════════
-        # 💭 SIGNAL 9: Dream Memory (Past Prophecies)
+        # �🧠 SIGNAL 8B: User Biometric Coherence (Gary's heartbeat + brainwaves)
+        # ════════════════════════════════════════════════════════════════════
+        biometric_score = 0.5
+        biometric_status = "No connection"
+        if self.temporal_biometric_link:
+            try:
+                is_ready, reason = self.temporal_biometric_link.is_user_ready_to_trade()
+                if is_ready:
+                    # User is in good state - get their coherence
+                    coherence = self.temporal_biometric_link.get_user_coherence_factor()
+                    biometric_boost = self.temporal_biometric_link.get_temporal_trading_boost()
+                    biometric_score = coherence
+                    bio_data = self.temporal_biometric_link.quantum_link.latest_biometric
+                    biometric_status = f"HR={bio_data.heart_rate}bpm, Coherence={coherence:.0%}, HRV={bio_data.hrv:.0f}ms"
+                    
+                    dream_vision['signals'].append({
+                        'source': '💓🧠 User Biometric',
+                        'value': biometric_score,
+                        'detail': biometric_status,
+                        'trading_boost': biometric_boost
+                    })
+                    total_signals += 1
+                    if biometric_score >= 0.6:
+                        positive_signals += 1
+                    weight = 0.10  # Biometric is important - user's actual state!
+                    signal_weights += weight
+                    weighted_sum += biometric_score * weight
+                else:
+                    biometric_status = reason  # e.g., "User coherence too low (28%), rest first"
+                    dream_vision['signals'].append({
+                        'source': '💓🧠 User Biometric',
+                        'value': 0.3,  # Low score if user not ready
+                        'detail': reason
+                    })
+                    total_signals += 1
+                    weight = 0.10
+                    signal_weights += weight
+                    weighted_sum += 0.3 * weight
+            except Exception as e:
+                logger.debug(f"Biometric signal error: {e}")
+                biometric_status = "Error reading biometric"
+        dream_vision['metrics']['biometric_score'] = biometric_score
+        dream_vision['metrics']['biometric_status'] = biometric_status
+        
+        # ════════════════════════════════════════════════════════════════════
+        # �💭 SIGNAL 9: Dream Memory (Past Prophecies)
         # ════════════════════════════════════════════════════════════════════
         dream_memory_score = 0.5
         if hasattr(self, 'dream_memory') and self.dream_memory:
