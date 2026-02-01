@@ -8375,6 +8375,8 @@ class MicroProfitLabyrinth:
         # ════════════════════════════════════════════════════════════════════════
         conversions = 0
         executed_opportunity = None
+        rejected_count = 0
+        queen_rejections = {}  # Track rejection reasons
         
         for idx, opp in enumerate(all_opportunities):
             icon = {'kraken': '🐙', 'alpaca': '🦙', 'binance': '🟡'}.get(opp.source_exchange, '📊')
@@ -8396,8 +8398,12 @@ class MicroProfitLabyrinth:
             queen_says_win, queen_confidence, queen_reason = await self.ask_queen_will_we_win(opp)
             
             if not queen_says_win:
-                if idx < 5:
-                    safe_print(f"   👑❌ SERO SAYS NO: {queen_reason}")
+                # 👑 ALWAYS LOG QUEEN REJECTIONS - This is critical decision-making!
+                safe_print(f"   👑❌ SERO REJECTS {opp.from_asset}→{opp.to_asset}: {queen_reason}")
+                logger.info(f"   👑❌ OPPORTUNITY REJECTED: {opp.from_asset}→{opp.to_asset} | Reason: {queen_reason} | Score: {opp.combined_score:.2f}")
+                rejected_count += 1
+                rejection_key = queen_reason[:50]  # First 50 chars of reason
+                queen_rejections[rejection_key] = queen_rejections.get(rejection_key, 0) + 1
                 continue  # Try next opportunity
 
             # 🔗⛓️ Chain-sniper also enforces conservative cost gating in DRY RUN
@@ -8420,6 +8426,10 @@ class MicroProfitLabyrinth:
             if idx < 5:
                 safe_print(f"   👑✅ SERO SAYS WIN: {queen_reason}")
                 safe_print(f"   🎯🔫 SNIPER TAKING THE SHOT!")
+            else:
+                safe_print(f"   👑✅ SERO APPROVES (opportunity #{idx+1}): {opp.from_asset}→{opp.to_asset} | {queen_reason}")
+            
+            logger.info(f"   👑✅ QUEEN APPROVED: {opp.from_asset}→{opp.to_asset} | Confidence: {queen_confidence:.0%} | Score: {opp.combined_score:.2f} | Expected PnL: ${opp.expected_pnl_usd:+.4f}")
             
             success = await self.execute_conversion(opp)
             
@@ -8476,6 +8486,15 @@ class MicroProfitLabyrinth:
         if conversions == 0:
             safe_print(f"\n   🎯😤 SNIPER: No valid targets from {len(all_opportunities)} opportunities")
             safe_print(f"      → All blocked by costs, spreads, or Queen veto")
+            
+            # 👑 SHOW WHY QUEEN REJECTED - This is the KEY INFO!
+            if queen_rejections:
+                safe_print(f"\n   👑 QUEEN REJECTION SUMMARY ({rejected_count} total rejected):")
+                for reason, count in sorted(queen_rejections.items(), key=lambda x: x[1], reverse=True):
+                    safe_print(f"      • {count}x: {reason}...")
+                logger.info(f"👑 Queen rejected {rejected_count} opportunities: {queen_rejections}")
+            else:
+                safe_print(f"      → {len(all_opportunities)} opportunities had quality/cost issues")
         
         self.turns_completed += 1
         if hasattr(self, 'barter_matrix') and self.barter_matrix:
