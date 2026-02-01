@@ -118,11 +118,14 @@ def get_binance_positions():
                             'asset': asset,
                             'quantity': qty,
                             'avg_entry': avg_entry,
+                            'avg_cost': avg_entry,
                             'cost_basis': cost_basis,
                             'current_price': current_price,
                             'current_value': current_value,
                             'pnl': pnl,
+                            'unrealized_pnl': pnl,
                             'pnl_pct': pnl_pct,
+                            'pnl_percent': pnl_pct,
                             'trades': len(trades)
                         })
                         break  # Found trades, don't check other quote
@@ -154,11 +157,14 @@ def get_alpaca_positions():
                 'asset': symbol.replace('USD', ''),
                 'quantity': qty,
                 'avg_entry': entry,
+                'avg_cost': entry,
                 'cost_basis': cost_basis,
                 'current_price': current,
                 'current_value': qty * current,
                 'pnl': pnl,
+                'unrealized_pnl': pnl,
                 'pnl_pct': pnl_pct,
+                'pnl_percent': pnl_pct,
                 'trades': 0
             })
     except Exception as e:
