@@ -58,7 +58,7 @@ RUN touch /app/queen_redistribution_state.json \
     echo '{"last_update":0,"total_energy_in":0.0,"total_energy_out":0.0,"net_balance":0.0}' > /app/queen_energy_balance.json
 
 # Expose ports
-EXPOSE 8080 8800
+EXPOSE 8080 8800 8765
 
 # Health check - works for both parallel (HTTP) and autonomous (file) modes
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \

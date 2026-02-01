@@ -299,6 +299,17 @@ def load_all_systems():
     except ImportError:
         SYSTEMS_STATUS['Probability Nexus'] = False
     
+    # 🛡️ SOUL SHIELD - Active Protection
+    try:
+        from queen_soul_shield import QueenSoulShield
+        SYSTEMS_STATUS['Soul Shield'] = True
+        # Initialize shield but don't start monitoring (dashboard will trigger)
+        queen_shield_instance = QueenSoulShield(gary_frequency=528.422, verbose=False)
+        SYSTEMS_STATUS['Soul Shield Status'] = 'Ready'
+    except ImportError:
+        SYSTEMS_STATUS['Soul Shield'] = False
+        SYSTEMS_STATUS['Soul Shield Status'] = 'Unavailable'
+    
     try:
         from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
         SYSTEMS_STATUS['Ultimate Intelligence'] = True

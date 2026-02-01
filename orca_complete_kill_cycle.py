@@ -9671,7 +9671,7 @@ class OrcaKillCycle:
         }
     
     def hunt_and_kill(self, symbol: str, amount_usd: float, target_pct: float = 1.0,
-                       stop_pct: float = -1.0, max_wait: int = 300):
+                       stop_pct: float = -1.0, max_wait: int = 300, exchange: str = None):
         """
         Complete kill cycle with LIVE STREAMING + 100% QUEEN VALIDATION:
         0. 👑 VALIDATE with Queen (100% accuracy check)
@@ -9684,7 +9684,21 @@ class OrcaKillCycle:
         print("="*60)
         print(f"🦈 ORCA HUNT & KILL CYCLE - {symbol}")
         print("="*60)
-        
+        # ═══════════════════════════════════════════════════════════════════
+        # SELECT EXCHANGE CLIENT
+        # ═══════════════════════════════════════════════════════════════════
+        if exchange:
+            exchange = exchange.lower()
+            print(f"🔗 Using {exchange.upper()} client (specified)")
+            client = self.clients.get(exchange)
+            if not client:
+                print(f"❌ No client available for {exchange}. Using default client.")
+                client = self.client
+        else:
+            # Auto-detect exchange from symbol or default to Alpaca
+            print(f"🔍 Auto-detecting exchange for {symbol}")
+            client = self.clients.get('alpaca') or self.client
+            exchange = 'alpaca'
         # ═══════════════════════════════════════════════════════════════════
         # 👑 STEP 0: QUEEN VALIDATION - 100% ACCURACY CHECK
         # ═══════════════════════════════════════════════════════════════════

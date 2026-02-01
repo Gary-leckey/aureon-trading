@@ -6,3 +6,15 @@
 {"type": "stage", "system": "execution", "stage": "confirm", "ts": 1769513512.7249968, "topic": "execution.confirm"}
 {"type": "handoff", "from_system": "mycelium", "to_system": "execution", "elapsed": 0.0, "ts": 1769513512.7249968, "topic": "execution.confirm"}
 {"type": "stage", "system": "orca", "stage": "intent", "ts": 1769719458.298783, "topic": "orca.autonomous.intent"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1769963805.5561874, "topic": "orca.autonomous.intent"}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.002, "ts": 1769963805.5564678, "topic": "harmonic.field.snapshot"}
+{"type": "stale", "system": "queen", "last_seen": 1769963805.5543008, "timeout_seconds": 15.0, "ts": 1769963821.5626395}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1769963930.672056, "topic": "orca.autonomous.intent"}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.003, "ts": 1769963930.6744046, "topic": "harmonic.field.snapshot"}
+{"type": "stale", "system": "queen", "last_seen": 1769963930.6711068, "timeout_seconds": 15.0, "ts": 1769963946.672835}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1769964133.6686265, "topic": "orca.autonomous.intent"}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.003, "ts": 1769964133.6707525, "topic": "harmonic.field.snapshot"}
+{"type": "stale", "system": "queen", "last_seen": 1769964133.6673684, "timeout_seconds": 15.0, "ts": 1769964149.669297}
+{"type": "handoff", "from_system": "queen", "to_system": "unknown", "elapsed": 0.003, "ts": 1769964346.4328916, "topic": "harmonic.field.snapshot"}
+{"type": "stage", "system": "orca", "stage": "intent", "ts": 1769964346.432529, "topic": "orca.autonomous.intent"}
+{"type": "stale", "system": "queen", "last_seen": 1769964346.4300835, "timeout_seconds": 15.0, "ts": 1769964362.432414}

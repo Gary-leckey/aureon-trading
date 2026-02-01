@@ -212,6 +212,27 @@ class LiveAuraLocationTracker:
         try:
             self.is_active = True
             
+            # Initialize with default snapshot at Belfast
+            if not self.current_snapshot:
+                self.current_snapshot = LiveLocationSnapshot(
+                    timestamp=time.time(),
+                    consciousness_state="AWAKE",
+                    calm_index=0.6,
+                    eeg_coherence=0.7,
+                    hrv_rmssd=45.0,
+                    gsr_uS=4.0,
+                    respiration_bpm=12,
+                    gps_latitude=STARGATE_FREQUENCIES['belfast']['lat'],
+                    gps_longitude=STARGATE_FREQUENCIES['belfast']['lng'],
+                    gps_accuracy_m=5.0,
+                    primary_anchor="Belfast",
+                    consciousness_lock_strength=0.5,
+                    best_match_stargate="Belfast",
+                    distance_from_belfast_km=0.0,
+                    trading_multiplier=1.5
+                )
+                self.real_heart_rate = 72  # Set as instance variable
+            
             # 🌌 REALITY DETECTION - Lock onto THIS Gary
             if REALITY_DETECTOR_AVAILABLE:
                 try:
