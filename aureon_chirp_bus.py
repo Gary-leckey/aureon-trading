@@ -109,9 +109,23 @@ class ChirpRingBuffer:
 
     def __post_init__(self) -> None:
         size = HEADER_SIZE + (self.slots * CHIRP_SIZE)
-        self.shm = shared_memory.SharedMemory(name=self.name, create=self.create, size=size)
-        self.buf = self.shm.buf
-        if self.create:
+        try:
+            self.shm = shared_memory.SharedMemory(name=self.name, create=self.create, size=size)
+            self.buf = self.shm.buf
+            if self.create:
+                self.buf[:HEADER_SIZE] = b"\x00" * HEADER_SIZE
+        except (FileExistsError, FileNotFoundError) as e:
+            # Shared memory segment doesn't exist or is corrupted
+            # Try to cleanup and recreate
+            try:
+                existing = shared_memory.SharedMemory(name=self.name)
+                existing.close()
+                existing.unlink()
+            except (FileNotFoundError, ValueError):
+                pass
+            # Try again with create=True
+            self.shm = shared_memory.SharedMemory(name=self.name, create=True, size=size)
+            self.buf = self.shm.buf
             self.buf[:HEADER_SIZE] = b"\x00" * HEADER_SIZE
     
     def close(self) -> None:
