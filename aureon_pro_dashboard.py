@@ -1759,7 +1759,11 @@ class AureonProDashboard:
                 binance = BinanceClient()
                 bin_balance = binance.get_balance()
                 if isinstance(bin_balance, dict):
-                    self.exchange_balances['binance'] = float(bin_balance.get('USDT', {}).get('free', 0) or 0)
+                    # Sum all stablecoins (USDT, USDC, BUSD, etc.)
+                    binance_total = 0.0
+                    for stable in ['USDT', 'USDC', 'BUSD', 'FDUSD', 'TUSD', 'DAI']:
+                        binance_total += float(bin_balance.get(stable, 0) or 0)
+                    self.exchange_balances['binance'] = binance_total
                     self.logger.info(f"✅ Binance balance: ${self.exchange_balances['binance']:,.2f}")
             except Exception as e:
                 self.logger.debug(f"Binance balance fetch: {e}")
@@ -1770,8 +1774,11 @@ class AureonProDashboard:
                 kraken = KrakenClient()
                 krk_balance = kraken.get_balance()
                 if isinstance(krk_balance, dict):
-                    usd_bal = krk_balance.get('USD', krk_balance.get('ZUSD', 0))
-                    self.exchange_balances['kraken'] = float(usd_bal or 0)
+                    # Sum USD and stablecoins
+                    kraken_total = 0.0
+                    for stable in ['USD', 'ZUSD', 'USDT', 'USDC']:
+                        kraken_total += float(krk_balance.get(stable, 0) or 0)
+                    self.exchange_balances['kraken'] = kraken_total
                     self.logger.info(f"✅ Kraken balance: ${self.exchange_balances['kraken']:,.2f}")
             except Exception as e:
                 self.logger.debug(f"Kraken balance fetch: {e}")
@@ -1782,7 +1789,8 @@ class AureonProDashboard:
                 alpaca = AlpacaClient()
                 alp_balance = alpaca.get_balance()
                 if isinstance(alp_balance, dict):
-                    cash = alp_balance.get('cash', 0)
+                    # get_balance returns {'USD': amount} not {'cash': amount}
+                    cash = alp_balance.get('USD', alp_balance.get('cash', 0))
                     self.exchange_balances['alpaca'] = float(cash or 0)
                     self.logger.info(f"✅ Alpaca balance: ${self.exchange_balances['alpaca']:,.2f}")
             except Exception as e:

@@ -34,6 +34,11 @@ from threading import Lock
 
 logger = logging.getLogger(__name__)
 
+# ═════════════════════════════════════════════════════════════════════════════
+# 🔇 SILENCE WEBSOCKET LIBRARY SPAM (it logs at ERROR for connection refused)
+# ═════════════════════════════════════════════════════════════════════════════
+logging.getLogger('websocket').setLevel(logging.CRITICAL)
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # 🔱 CONSTANTS - Sacred Numbers
@@ -54,7 +59,7 @@ EARTH_FREQUENCY = 7.83 * 8   # 62.64 Hz (8th harmonic of Earth)
 # WebSocket endpoints
 BIOMETRIC_WS_URL = "ws://localhost:8788/biometrics"
 BIOMETRIC_TIMEOUT = 5.0      # seconds
-BIOMETRIC_RECONNECT_DELAY = 3.0
+BIOMETRIC_RECONNECT_DELAY = 60.0  # Retry every 60 seconds if server not available (was 3s)
 
 # Coherence thresholds
 MIN_COHERENCE_FOR_TRADING = 0.5      # Must have >50% coherence to trade
