@@ -4848,7 +4848,7 @@ class QueenHiveMind:
         # Log the result
         logger.info(f"👑🧠 DEEP THINK COMPLETE:")
         logger.info(f"   📊 Portfolio: ${result.total_value:.2f} ({len(result.portfolio_positions)} positions)")
-        logger.info(f"   🌍 Cosmic Score: Ω={result.global_harmonic_omega:.2f}, λ={result.luck_field:.2f}")
+        logger.info(f"   🌍 COSMIC ALIGNMENT: Gaia={result.schumann_alignment:.0%}, Stargate={result.stargate_coherence:.0%}, Ω={result.global_harmonic_omega:.0%}, λ={result.luck_field:.0%}")
         logger.info(f"   📈 Market: {result.timeline_oracle_branch}, P={result.probability_nexus_score:.2f}")
         logger.info(f"   🦅 Strategy: {result.selected_strategy} ({', '.join(result.selected_animals[:3])})")
         logger.info(f"   👑 Decision: {result.action} @ {result.confidence:.0%} confidence")
@@ -4885,8 +4885,9 @@ class QueenHiveMind:
             signals['gaia_blessing'] = gaia_alignment
             signals['schumann_alignment'] = gaia_alignment
             signals['active_sources'].append('gaia')
+            logger.debug(f"🌍 Gaia: {gaia_alignment:.0%} - {gaia_message[:30]}...")
         except Exception as e:
-            logger.debug(f"Gaia blessing error: {e}")
+            logger.warning(f"❌ Gaia blessing ERROR: {e}")
         
         # 🪐 Stargate Protocol (12 Planetary Nodes)
         if hasattr(self, 'stargate_engine') and self.stargate_engine:
@@ -4894,8 +4895,11 @@ class QueenHiveMind:
                 sg_status = self.stargate_engine.get_status()
                 signals['stargate_coherence'] = sg_status.get('global_coherence', 0.5)
                 signals['active_sources'].append('stargate')
+                logger.debug(f"🪐 Stargate: {signals['stargate_coherence']:.0%}")
             except Exception as e:
-                logger.debug(f"Stargate error: {e}")
+                logger.warning(f"❌ Stargate ERROR: {e}")
+        else:
+            logger.warning(f"❌ Stargate Engine NOT AVAILABLE (None or missing)")
         
         # 🌊 Global Harmonic Field (Omega Ω)
         if hasattr(self, 'harmonic_fusion') and self.harmonic_fusion:
@@ -4905,8 +4909,13 @@ class QueenHiveMind:
                     signals['market_regime'] = self.harmonic_fusion.state.market_regime
                     signals['dominant_frequency'] = self.harmonic_fusion.state.dominant_frequency
                     signals['active_sources'].append('harmonic_fusion')
+                    logger.debug(f"🌊 Harmonic Omega: {signals['omega']:.0%}")
+                else:
+                    logger.warning(f"❌ Harmonic state is None")
             except Exception as e:
-                logger.debug(f"Harmonic fusion error: {e}")
+                logger.warning(f"❌ Harmonic fusion ERROR: {e}")
+        else:
+            logger.warning(f"❌ Harmonic Fusion NOT AVAILABLE (None or missing)")
         
         # 🍀 Luck Field Mapper
         if hasattr(self, 'luck_field_mapper') and self.luck_field_mapper:
@@ -4916,6 +4925,7 @@ class QueenHiveMind:
                 signals['luck_state'] = reading.luck_state.value
                 signals['planetary_torque'] = reading.pi_planetary
                 signals['active_sources'].append('luck_mapper')
+                logger.debug(f"🍀 Luck Field: {signals['luck_field']:.0%}, Torque: {signals['planetary_torque']:.2f}")
                 
                 # Lunar phase
                 if hasattr(self.luck_field_mapper, 'planetary') and self.luck_field_mapper.planetary:
@@ -4923,15 +4933,20 @@ class QueenHiveMind:
                     signals['lunar_phase'] = lunar.get('name', 'Unknown')
                     signals['lunar_power'] = lunar.get('phase', 0.5)
             except Exception as e:
-                logger.debug(f"Luck field error: {e}")
+                logger.warning(f"❌ Luck field ERROR: {e}")
+        else:
+            logger.warning(f"❌ Luck Field Mapper NOT AVAILABLE (None or missing)")
         
         # 🔭 Quantum Telescope (Geometric Vision)
         if hasattr(self, 'quantum_telescope') and self.quantum_telescope:
             try:
                 signals['quantum_alignment'] = 0.6  # Base quantum alignment
                 signals['active_sources'].append('quantum_telescope')
+                logger.debug(f"🔭 Quantum Telescope: Active")
             except Exception as e:
-                logger.debug(f"Quantum telescope error: {e}")
+                logger.warning(f"❌ Quantum telescope ERROR: {e}")
+        else:
+            logger.warning(f"❌ Quantum Telescope NOT AVAILABLE (None or missing)")
         
         # Calculate composite planetary score
         active_values = [
@@ -4941,6 +4956,10 @@ class QueenHiveMind:
             signals['luck_field']
         ]
         signals['composite_planetary'] = sum(active_values) / len(active_values)
+        
+        # 👑 LOG COSMIC SYSTEMS STATUS
+        logger.info(f"👑 COSMIC SYSTEMS AVAILABLE: {', '.join(signals['active_sources']) if signals['active_sources'] else 'NONE - ALL DEFAULTING TO 50%'}")
+        logger.info(f"👑 COMPOSITE PLANETARY SCORE: {signals['composite_planetary']:.0%}")
         
         return signals
 
