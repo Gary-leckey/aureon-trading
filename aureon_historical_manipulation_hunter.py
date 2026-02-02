@@ -730,3 +730,12 @@ if __name__ == "__main__":
         format='%(asctime)s | %(levelname)s | %(message)s'
     )
     main()
+
+# Integration getter for EventType
+_GLOBAL_INSTANCE = None
+
+def get_manipulation_hunter():
+    global _GLOBAL_INSTANCE
+    if _GLOBAL_INSTANCE is None:
+        _GLOBAL_INSTANCE = HistoricalManipulationHunter()
+    return _GLOBAL_INSTANCE

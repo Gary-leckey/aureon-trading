@@ -741,3 +741,12 @@ class StrategicWarfareScanner:
 if __name__ == "__main__":
     scanner = StrategicWarfareScanner()
     scanner.run_full_intelligence_sweep(max_entities=25)
+
+# Integration getter for IntelligenceReport
+_GLOBAL_INSTANCE = None
+
+def get_warfare_scanner():
+    global _GLOBAL_INSTANCE
+    if _GLOBAL_INSTANCE is None:
+        _GLOBAL_INSTANCE = StrategicWarfareScanner()
+    return _GLOBAL_INSTANCE

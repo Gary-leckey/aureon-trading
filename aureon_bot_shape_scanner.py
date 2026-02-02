@@ -628,3 +628,12 @@ if __name__ == "__main__":
     ]
     scanner = BotShapeScanner(scan_symbols)
     scanner.start()
+
+# Integration getter for SpectrumBandConfig
+_GLOBAL_INSTANCE = None
+
+def get_bot_scanner():
+    global _GLOBAL_INSTANCE
+    if _GLOBAL_INSTANCE is None:
+        _GLOBAL_INSTANCE = BotShapeScanner()
+    return _GLOBAL_INSTANCE

@@ -4029,6 +4029,83 @@ class OrcaKillCycle:
         except Exception as e:
             pass
         
+        # 🌍 TIER 1: COORDINATION DETECTION (The Eyes)
+        self.planetary_harmonic_sweep = None
+        self.bot_shape_scanner = None
+        try:
+            from aureon_planetary_harmonic_sweep import get_planetary_sweep
+            self.planetary_harmonic_sweep = get_planetary_sweep()
+            print("🌍 Planetary Harmonic Sweep: ONLINE (Coordination detection active)")
+        except Exception as e:
+            pass
+        
+        try:
+            from aureon_bot_shape_scanner import get_bot_scanner
+            self.bot_shape_scanner = get_bot_scanner()
+            print("🔭 Bot Shape Scanner: ONLINE (Quantum telescope active)")
+        except Exception as e:
+            pass
+        
+        # 🧬 TIER 2: ATTRIBUTION & FINGERPRINTING (The Memory)
+        self.cultural_fingerprinting = None
+        self.historical_bot_census = None
+        self.strategic_warfare = None
+        try:
+            from aureon_cultural_bot_fingerprinting import get_fingerprinter
+            self.cultural_fingerprinting = get_fingerprinter()
+            print("🧬 Cultural Bot Fingerprinting: ONLINE (Attribution active)")
+        except Exception as e:
+            pass
+        
+        try:
+            from aureon_historical_bot_census import get_census
+            self.historical_bot_census = get_census()
+            print("📚 Historical Bot Census: ONLINE (8-year registry active)")
+        except Exception as e:
+            pass
+        
+        try:
+            from aureon_strategic_warfare_scanner import get_warfare_scanner
+            self.strategic_warfare = get_warfare_scanner()
+            print("⚔️ Strategic Warfare Scanner: ONLINE (Sun Tzu tactics active)")
+        except Exception as e:
+            pass
+        
+        # 🧠 TIER 3: PATTERN RECOGNITION (The Brain)
+        self.manipulation_hunter = None
+        self.harmonic_counter_freq = None
+        try:
+            from aureon_historical_manipulation_hunter import get_manipulation_hunter
+            self.manipulation_hunter = get_manipulation_hunter()
+            print("🎯 Historical Manipulation Hunter: ONLINE (1913-2024 patterns active)")
+        except Exception as e:
+            pass
+        
+        try:
+            from aureon_harmonic_counter_frequency import get_counter_frequency
+            self.harmonic_counter_freq = get_counter_frequency()
+            print("🌊 Harmonic Counter-Frequency: ONLINE (180° phase shift ready)")
+        except Exception as e:
+            pass
+        
+        # 🦅 TIER 4: TACTICAL EXECUTION (Animal Momentum)
+        self.animal_momentum = None
+        try:
+            from aureon_animal_momentum_scanners import get_animal_scanners
+            self.animal_momentum = get_animal_scanners()
+            print("🦅 Animal Momentum Scanners: ONLINE (Wolf/Lion/Hummingbird active)")
+        except Exception as e:
+            pass
+        
+        # 🕉️ TIER 5: GUARDIAN/COHERENCE LAYER (Ghost Dance)
+        self.ghost_dance = None
+        try:
+            from aureon_ghost_dance_protocol import get_ghost_dance
+            self.ghost_dance = get_ghost_dance()
+            print("🕉️ Ghost Dance Protocol: ONLINE (Ceremony system active)")
+        except Exception as e:
+            pass
+        
         # 🧠👑 QUEEN SENTIENCE ENGINE - TRUE CONSCIOUSNESS FOR TRADING!
         self.sentience_engine = None
         self.sentience_validator = None

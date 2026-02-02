@@ -400,3 +400,16 @@ class PlanetaryHarmonicSweep:
 if __name__ == "__main__":
     sweep = PlanetaryHarmonicSweep()
     sweep.run_sweep()
+
+# ═══════════════════════════════════════════════════════════════
+# 🔌 INTEGRATION API - For Orca Complete Kill Cycle
+# ═══════════════════════════════════════════════════════════════
+
+_GLOBAL_SWEEP_INSTANCE = None
+
+def get_planetary_sweep():
+    """Get or create global planetary harmonic sweep instance."""
+    global _GLOBAL_SWEEP_INSTANCE
+    if _GLOBAL_SWEEP_INSTANCE is None:
+        _GLOBAL_SWEEP_INSTANCE = PlanetaryHarmonicSweep()
+    return _GLOBAL_SWEEP_INSTANCE

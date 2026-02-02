@@ -822,3 +822,12 @@ def main(dry_run: bool = True):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
     main(dry_run=True)
+
+# Integration getter for AnimalOpportunity
+_GLOBAL_INSTANCE = None
+
+def get_animal_scanners():
+    global _GLOBAL_INSTANCE
+    if _GLOBAL_INSTANCE is None:
+        _GLOBAL_INSTANCE = AnimalMomentumScanners()
+    return _GLOBAL_INSTANCE

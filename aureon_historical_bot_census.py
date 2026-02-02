@@ -335,3 +335,12 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Integration getter for HistoricalBot
+_GLOBAL_INSTANCE = None
+
+def get_census():
+    global _GLOBAL_INSTANCE
+    if _GLOBAL_INSTANCE is None:
+        _GLOBAL_INSTANCE = HistoricalBot()
+    return _GLOBAL_INSTANCE
