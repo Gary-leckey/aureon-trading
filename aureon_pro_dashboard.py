@@ -1757,7 +1757,7 @@ class AureonProDashboard:
             try:
                 from binance_client import BinanceClient
                 binance = BinanceClient()
-                bin_balance = binance.get_balance()
+                bin_balance = await asyncio.to_thread(binance.get_balance)
                 if isinstance(bin_balance, dict):
                     # Sum all stablecoins (USDT, USDC, BUSD, etc.)
                     binance_total = 0.0
@@ -1765,14 +1765,16 @@ class AureonProDashboard:
                         binance_total += float(bin_balance.get(stable, 0) or 0)
                     self.exchange_balances['binance'] = binance_total
                     self.logger.info(f"✅ Binance balance: ${self.exchange_balances['binance']:,.2f}")
+                else:
+                    self.logger.warning(f"⚠️ Binance balance returned non-dict: {type(bin_balance)}")
             except Exception as e:
-                self.logger.debug(f"Binance balance fetch: {e}")
+                self.logger.warning(f"⚠️ Binance balance fetch failed: {str(e)[:100]}")
             
             # Try Kraken
             try:
                 from kraken_client import KrakenClient
                 kraken = KrakenClient()
-                krk_balance = kraken.get_balance()
+                krk_balance = await asyncio.to_thread(kraken.get_balance)
                 if isinstance(krk_balance, dict):
                     # Sum USD and stablecoins
                     kraken_total = 0.0
@@ -1780,21 +1782,25 @@ class AureonProDashboard:
                         kraken_total += float(krk_balance.get(stable, 0) or 0)
                     self.exchange_balances['kraken'] = kraken_total
                     self.logger.info(f"✅ Kraken balance: ${self.exchange_balances['kraken']:,.2f}")
+                else:
+                    self.logger.warning(f"⚠️ Kraken balance returned non-dict: {type(krk_balance)}")
             except Exception as e:
-                self.logger.debug(f"Kraken balance fetch: {e}")
+                self.logger.warning(f"⚠️ Kraken balance fetch failed: {str(e)[:100]}")
             
             # Try Alpaca
             try:
                 from alpaca_client import AlpacaClient
                 alpaca = AlpacaClient()
-                alp_balance = alpaca.get_balance()
+                alp_balance = await asyncio.to_thread(alpaca.get_balance)
                 if isinstance(alp_balance, dict):
                     # get_balance returns {'USD': amount} not {'cash': amount}
                     cash = alp_balance.get('USD', alp_balance.get('cash', 0))
                     self.exchange_balances['alpaca'] = float(cash or 0)
                     self.logger.info(f"✅ Alpaca balance: ${self.exchange_balances['alpaca']:,.2f}")
+                else:
+                    self.logger.warning(f"⚠️ Alpaca balance returned non-dict: {type(alp_balance)}")
             except Exception as e:
-                self.logger.debug(f"Alpaca balance fetch: {e}")
+                self.logger.warning(f"⚠️ Alpaca balance fetch failed: {str(e)[:100]}")
             
             # Broadcast all balances to connected clients
             await self.broadcast({
@@ -2099,34 +2105,51 @@ class AureonProDashboard:
             self.logger.error(f"❌ Portfolio refresh error: {e}", exc_info=True)
     
     async def refresh_prices(self):
-        """Fetch real crypto prices with timeout protection."""
+        """Fetch real crypto prices with timeout protection - NOW INCLUDES POSITION PRICES!"""
         try:
             self.logger.info("🔄 Fetching prices...")
+            
+            # Build list of symbols to fetch (BTC/ETH/SOL + all position symbols)
+            symbols_to_fetch = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']
+            
+            # Add all position symbols
+            for pos in self.portfolio.get('positions', []):
+                symbol = pos.get('symbol', '').upper()
+                if symbol and symbol != 'USD':
+                    # Convert to Binance format (e.g., SHIB -> SHIBUSDT, TRX -> TRXUSDT)
+                    if 'USD' in symbol:
+                        binance_symbol = symbol.replace('USD', 'USDT')
+                    else:
+                        binance_symbol = f"{symbol}USDT"
+                    if binance_symbol not in symbols_to_fetch:
+                        symbols_to_fetch.append(binance_symbol)
+            
+            self.logger.info(f"🔄 Fetching prices for {len(symbols_to_fetch)} symbols...")
             
             # Try Binance public API first (no key needed, faster)
             try:
                 async with aiohttp.ClientSession() as session:
+                    # Fetch all symbols at once
                     async with session.get(
                         'https://api.binance.com/api/v3/ticker/price',
-                        params={'symbols': '["BTCUSDT","ETHUSDT","SOLUSDT"]'},
-                        timeout=aiohttp.ClientTimeout(total=2)
+                        timeout=aiohttp.ClientTimeout(total=3)
                     ) as resp:
                         if resp.status == 200:
-                            data = await resp.json()
-                            price_map = {item['symbol']: float(item['price']) for item in data}
+                            all_prices = await resp.json()
+                            price_map = {item['symbol']: float(item['price']) for item in all_prices if item['symbol'] in symbols_to_fetch}
                             
-                            # Get 24h changes
+                            # Get 24h changes for all symbols
                             async with session.get(
                                 'https://api.binance.com/api/v3/ticker/24hr',
-                                params={'symbols': '["BTCUSDT","ETHUSDT","SOLUSDT"]'},
-                                timeout=aiohttp.ClientTimeout(total=2)
+                                timeout=aiohttp.ClientTimeout(total=3)
                             ) as resp2:
                                 if resp2.status == 200:
                                     change_data = await resp2.json()
-                                    change_map = {item['symbol']: float(item['priceChangePercent']) for item in change_data}
+                                    change_map = {item['symbol']: float(item['priceChangePercent']) for item in change_data if item['symbol'] in symbols_to_fetch}
                                 else:
                                     change_map = {}
                             
+                            # Update main ticker prices
                             self.prices = {
                                 'BTC': {
                                     'price': price_map.get('BTCUSDT', 0),
@@ -2141,7 +2164,35 @@ class AureonProDashboard:
                                     'change24h': change_map.get('SOLUSDT', 0)
                                 }
                             }
-                            self.logger.info(f"✅ Prices (Binance): BTC ${self.prices['BTC']['price']:,.0f}, ETH ${self.prices['ETH']['price']:,.0f}, SOL ${self.prices['SOL']['price']:,.0f}")
+                            
+                            # Update position prices and recalculate values
+                            total_value = 0
+                            total_cost = 0
+                            for pos in self.portfolio.get('positions', []):
+                                symbol = pos.get('symbol', '').upper()
+                                if symbol and symbol != 'USD':
+                                    if 'USD' in symbol:
+                                        binance_symbol = symbol.replace('USD', 'USDT')
+                                    else:
+                                        binance_symbol = f"{symbol}USDT"
+                                    
+                                    price = price_map.get(binance_symbol, pos.get('currentPrice', 0))
+                                    if price > 0:
+                                        pos['currentPrice'] = price
+                                        pos['currentValue'] = pos['quantity'] * price
+                                        pos['unrealizedPnl'] = pos['currentValue'] - (pos['avgCost'] * pos['quantity'])
+                                        pos['pnlPercent'] = (pos['unrealizedPnl'] / (pos['avgCost'] * pos['quantity']) * 100) if pos['avgCost'] > 0 else 0
+                                        
+                                        total_value += pos['currentValue']
+                                        total_cost += pos['avgCost'] * pos['quantity']
+                            
+                            # Update portfolio totals
+                            if total_value > 0:
+                                self.portfolio['totalValue'] = total_value
+                                self.portfolio['costBasis'] = total_cost
+                                self.portfolio['unrealizedPnl'] = total_value - total_cost
+                            
+                            self.logger.info(f"✅ Prices (Binance): Fetched {len(price_map)} symbols | Portfolio: ${total_value:,.2f}")
                             return  # Success, no need for fallback
             except Exception as e:
                 self.logger.warning(f"Binance public API failed: {e}, trying CoinGecko...")
