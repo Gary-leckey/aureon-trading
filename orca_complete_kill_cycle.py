@@ -9320,17 +9320,17 @@ class OrcaKillCycle:
         Regulate order size based on exchange specifics and user Minimums.
         Returns: (adjusted_amount, reason)
         
-        CRITICAL: Minimum must be high enough that fees (0.26% Kraken taker = $0.052 on $20)
-                  don't consume all profit. Historical loss at $8.37 position size.
+        CRITICAL: Minimum must be high enough that fees don't consume all profit.
+                  $3.33 minimum enables trading with smaller capital while staying above exchange floors.
         """
-        # 1. Base thresholds (hard floor) - RAISED to prevent fee-dominated losses
-        min_required = 15.0  # Was 1.0 - default safe minimum
+        # 1. Base thresholds (hard floor) - Set to $3.33 for incremental position sizing
+        min_required = 3.33  # Base minimum for all exchanges
         if exchange == 'binance': 
-            min_required = 20.0  # Was 6.0 - prevent micro-trade losses
+            min_required = 3.33  # Allow smaller orders for incremental accumulation
         elif exchange == 'kraken': 
-            min_required = 20.0  # Was 6.0 - prevent fee domination (0.26% taker on tiny positions)
+            min_required = 3.33  # Allow smaller orders for incremental accumulation
         elif exchange == 'capital': 
-            min_required = 100.0 # User specified "capitual min amount is 100"
+            min_required = 3.33 # Consistent across all exchanges
 
         # 2. Exchange specific filters (if client provided)
         if client and hasattr(client, 'get_symbol_filters'):
