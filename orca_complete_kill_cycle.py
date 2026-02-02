@@ -1051,10 +1051,11 @@ else:
         QUEEN_MIN_PROFIT_PCT = 5.00 if DEADLINE_MODE else 0.40
 QUEEN_MIN_COP = 1.0 + (QUEEN_MIN_PROFIT_PCT / 100.0)
 
-# DEADLINE MODE MULTIPLIERS
+# DEADLINE MODE MULTIPLIERS - Phase 2 Adjusted for Small Capital
 DEADLINE_POSITION_MULTIPLIER = 3.0  # 3x position sizes
 DEADLINE_MAX_SIMULTANEOUS = 10  # Allow 10 positions at once
-DEADLINE_LEVERAGE_TARGET = 5.0  # Target 5x leverage where available
+DEADLINE_LEVERAGE_TARGET = 1.0  # NO LEVERAGE for capital < $500 (Phase 2: safety first with small capital)
+DEADLINE_MIN_COP = 0.025  # 2.5% min profit (Phase 2 cascade: tighter targets for volatility)
 QUEEN_PROFIT_FREQUENCY = 188.0   # Hz - Sacred frequency embedded in all calculations
 
 # ═══════════════════════════════════════════════════════════════════════════════════════

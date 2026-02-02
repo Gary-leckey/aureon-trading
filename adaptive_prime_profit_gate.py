@@ -196,8 +196,9 @@ class AdaptivePrimeProfitGate:
     "Adapt or die. The market never sleeps, and neither do we."
     """
     
-    # Prime profit targets (smallest primes × $0.01)
-    PRIME_TARGETS = [0.02, 0.03, 0.05, 0.07, 0.11, 0.13, 0.17, 0.19, 0.23]
+    # Prime profit targets - Phase 2: tighter for cascade volatility
+    # Small capital: 1-3% targets | Mid capital: 2-5% | Large capital: 3-7%
+    PRIME_TARGETS = [0.01, 0.015, 0.02, 0.025, 0.03, 0.05, 0.07, 0.11, 0.13]
     
     def __init__(
         self,

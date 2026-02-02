@@ -4782,8 +4782,8 @@ class QueenHiveMind:
             consensus_signal = sum(s * w for s, w in zip(signal_values, signal_weights)) / total_weight
             consensus_confidence = abs(consensus_signal)
             
-            # Apply adaptive thresholds
-            min_confidence = adaptive_thresholds.get('min_probability', 0.20)  # TEMPORARILY LOWERED from 0.35 to 0.20 to allow trades
+            # Apply adaptive thresholds - Phase 2 cascade adjusted for small capital
+            min_confidence = adaptive_thresholds.get('min_probability', 0.18)  # Phase 2: lowered to 0.18 for institutional phase drift opportunities
             
             # Determine action
             if consensus_signal > 0.3 and consensus_confidence >= min_confidence:
