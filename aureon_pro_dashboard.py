@@ -1904,12 +1904,32 @@ class AureonProDashboard:
                 total_value = 0
                 total_cost = 0
                 
-                # Get Binance positions (with timeout)
-                try:
-                    binance_pos = await asyncio.wait_for(
-                        asyncio.to_thread(get_binance_positions),
-                        timeout=3.0
-                    )
+                # Fetch all positions in parallel using gather
+                async def get_bin_pos():
+                    try:
+                        return await asyncio.wait_for(
+                            asyncio.to_thread(get_binance_positions),
+                            timeout=3.0
+                        )
+                    except (asyncio.TimeoutError, Exception) as e:
+                        self.logger.warning(f"⚠️  Binance fetch failed: {e}")
+                        return []
+                
+                async def get_alp_pos():
+                    try:
+                        return await asyncio.wait_for(
+                            asyncio.to_thread(get_alpaca_positions),
+                            timeout=3.0
+                        )
+                    except (asyncio.TimeoutError, Exception) as e:
+                        self.logger.warning(f"⚠️  Alpaca fetch failed: {e}")
+                        return []
+                
+                # Gather both in parallel (not sequentially)
+                binance_pos, alpaca_pos = await asyncio.gather(get_bin_pos(), get_alp_pos())
+                
+                # Process Binance positions
+                if binance_pos:
                     self.logger.info(f"📊 Binance: Fetched {len(binance_pos)} positions")
                     for pos in binance_pos:
                         if pos.get('current_value', 0) > 0:
@@ -1925,17 +1945,9 @@ class AureonProDashboard:
                             })
                             total_value += pos.get('current_value', 0)
                             total_cost += pos.get('cost_basis', 0)
-                except asyncio.TimeoutError:
-                    self.logger.warning("⏱️  Binance portfolio fetch timed out (3s)")
-                except Exception as e:
-                    self.logger.warning(f"⚠️  Binance portfolio fetch failed: {e}")
                 
-                # Get Alpaca positions (with timeout)
-                try:
-                    alpaca_pos = await asyncio.wait_for(
-                        asyncio.to_thread(get_alpaca_positions),
-                        timeout=3.0
-                    )
+                # Process Alpaca positions
+                if alpaca_pos:
                     self.logger.info(f"📊 Alpaca: Fetched {len(alpaca_pos)} positions")
                     for pos in alpaca_pos:
                         if pos.get('current_value', 0) > 0:
@@ -1951,14 +1963,50 @@ class AureonProDashboard:
                             })
                             total_value += pos.get('current_value', 0)
                             total_cost += pos.get('cost_basis', 0)
-                except asyncio.TimeoutError:
-                    self.logger.warning("⏱️  Alpaca portfolio fetch timed out (3s)")
-                except Exception as e:
-                    self.logger.warning(f"⚠️  Alpaca portfolio fetch failed: {e}")
                 
                 # Sort by value descending
                 positions.sort(key=lambda x: x.get('currentValue', 0), reverse=True)
                 
+                # Fetch balances from state files (in parallel with positions fetch above)
+                try:
+                    def _read_state(path: str) -> Dict:
+                        if os.path.exists(path):
+                            with open(path, "r") as f:
+                                return json.load(f)
+                        return {}
+
+                    bin_state = _read_state(os.path.join(state_dir, "binance_truth_tracker_state.json"))
+                    krk_state = _read_state(os.path.join(state_dir, "aureon_kraken_state.json"))
+                    alp_state = _read_state(os.path.join(state_dir, "alpaca_truth_tracker_state.json"))
+                    snapshot_data = _read_state(snapshot_path)
+                    snapshot_balances = snapshot_data.get("exchange_balances", {}) or {}
+
+                    bin_usdt = float(
+                        bin_state.get("balances", {}).get("USDT", {}).get("free", 0.0)
+                        or snapshot_balances.get("binance", 0.0)
+                        or 0.0
+                    )
+                    krk_usd = float(
+                        krk_state.get("balances", {}).get("USD", krk_state.get("balances", {}).get("ZUSD", 0.0))
+                        or snapshot_balances.get("kraken", 0.0)
+                        or 0.0
+                    )
+                    alp_cash = float(
+                        alp_state.get("cash", 0.0)
+                        or snapshot_balances.get("alpaca", 0.0)
+                        or 0.0
+                    )
+
+                    new_balances = {
+                        "binance": bin_usdt,
+                        "kraken": krk_usd,
+                        "alpaca": alp_cash,
+                    }
+                except Exception as e:
+                    self.logger.debug(f"Balance load error: {e}")
+                    new_balances = self.exchange_balances
+                
+                # ATOMIC UPDATE: Set everything at once
                 self.portfolio = {
                     'totalValue': total_value,
                     'costBasis': total_cost,
@@ -1966,6 +2014,7 @@ class AureonProDashboard:
                     'todayPnl': 0,  # Would need historical data
                     'positions': positions[:20]  # Top 20
                 }
+                self.exchange_balances = new_balances
                 
                 # Update harmonic field with positions
                 if self.harmonic_field:
@@ -2028,7 +2077,8 @@ class AureonProDashboard:
                     except Exception as e:
                         self.logger.warning(f"⚠️  Snapshot fallback failed: {e}")
                 else:
-                    self.logger.info(f"✅ Portfolio: {len(positions)} positions, ${total_value:,.2f} value")
+                    self.logger.info(f"✅ Portfolio: {len(positions)} positions, ${total_value:,.2f} value | Balances: Binance ${new_balances['binance']:,.2f}, Kraken ${new_balances['kraken']:,.2f}, Alpaca ${new_balances['alpaca']:,.2f}")
+                
                 
             except ImportError:
                 self.logger.warning("⚠️  live_position_viewer not available - using state snapshot")
@@ -2060,6 +2110,30 @@ class AureonProDashboard:
                 except Exception as e:
                     self.logger.warning(f"⚠️  State snapshot load failed: {e}")
                 
+                # Load balances from state files
+                try:
+                    def _read_state(path: str) -> Dict:
+                        if os.path.exists(path):
+                            with open(path, "r") as f:
+                                return json.load(f)
+                        return {}
+
+                    bin_state = _read_state(os.path.join(state_dir, "binance_truth_tracker_state.json"))
+                    krk_state = _read_state(os.path.join(state_dir, "aureon_kraken_state.json"))
+                    alp_state = _read_state(os.path.join(state_dir, "alpaca_truth_tracker_state.json"))
+                    snapshot_data = _read_state(snapshot_path)
+                    snapshot_balances = snapshot_data.get("exchange_balances", {}) or {}
+
+                    new_balances = {
+                        "binance": float(bin_state.get("balances", {}).get("USDT", {}).get("free", 0.0) or snapshot_balances.get("binance", 0.0) or 0.0),
+                        "kraken": float(krk_state.get("balances", {}).get("USD", krk_state.get("balances", {}).get("ZUSD", 0.0)) or snapshot_balances.get("kraken", 0.0) or 0.0),
+                        "alpaca": float(alp_state.get("cash", 0.0) or snapshot_balances.get("alpaca", 0.0) or 0.0),
+                    }
+                except Exception as e:
+                    self.logger.debug(f"Balance load error: {e}")
+                    new_balances = self.exchange_balances
+                
+                # ATOMIC UPDATE: Set everything at once
                 self.portfolio = {
                     "totalValue": total_value,
                     "costBasis": total_cost,
@@ -2067,6 +2141,8 @@ class AureonProDashboard:
                     "todayPnl": 0,
                     "positions": positions[:20],
                 }
+                self.exchange_balances = new_balances
+                
                 if self.harmonic_field:
                     nodes_added = 0
                     for pos in positions:
@@ -2082,53 +2158,10 @@ class AureonProDashboard:
                         except Exception as e:
                             self.logger.warning(f"⚠️ Harmonic field update error for {pos.get('symbol')}: {e}")
                     self.logger.info(f"🔩 Harmonic field: {nodes_added} nodes updated (snapshot fallback)")
-                self.logger.info(f"✅ Portfolio (snapshot): {len(positions)} positions, ${total_value:,.2f} value")
+                self.logger.info(f"✅ Portfolio (snapshot): {len(positions)} positions, ${total_value:,.2f} value | Balances: Binance ${new_balances['binance']:,.2f}, Kraken ${new_balances['kraken']:,.2f}, Alpaca ${new_balances['alpaca']:,.2f}")
 
-            # Update exchange balances from state files (best-effort, no API calls)
-            try:
-                def _read_state(path: str) -> Dict:
-                    if os.path.exists(path):
-                        with open(path, "r") as f:
-                            return json.load(f)
-                    return {}
-
-                snapshot_balances = {}
-                if os.path.exists(snapshot_path):
-                    try:
-                        with open(snapshot_path, "r") as f:
-                            snapshot = json.load(f)
-                        snapshot_balances = snapshot.get("exchange_balances", {}) or {}
-                    except Exception:
-                        snapshot_balances = {}
-
-                bin_state = _read_state(os.path.join(state_dir, "binance_truth_tracker_state.json"))
-                krk_state = _read_state(os.path.join(state_dir, "aureon_kraken_state.json"))
-                alp_state = _read_state(os.path.join(state_dir, "alpaca_truth_tracker_state.json"))
-
-                bin_usdt = float(
-                    bin_state.get("balances", {}).get("USDT", {}).get("free", 0.0)
-                    or snapshot_balances.get("binance", 0.0)
-                    or 0.0
-                )
-                krk_usd = float(
-                    krk_state.get("balances", {}).get("USD", krk_state.get("balances", {}).get("ZUSD", 0.0))
-                    or snapshot_balances.get("kraken", 0.0)
-                    or 0.0
-                )
-                alp_cash = float(
-                    alp_state.get("cash", 0.0)
-                    or snapshot_balances.get("alpaca", 0.0)
-                    or 0.0
-                )
-
-                self.exchange_balances = {
-                    "binance": bin_usdt,
-                    "kraken": krk_usd,
-                    "alpaca": alp_cash,
-                }
-            except Exception as e:
-                self.logger.debug(f"Exchange balance state load error: {e}")
-                
+            # No more duplicate balance refresh code here - it's all done above atomically
+            
         except Exception as e:
             self.logger.error(f"❌ Portfolio refresh error: {e}", exc_info=True)
     
@@ -2341,8 +2374,6 @@ class AureonProDashboard:
                 self.logger.info("✅ [Data Refresh] Portfolio refresh complete.")
                 await self.refresh_prices()
                 self.logger.info("✅ [Data Refresh] Price refresh complete.")
-                await self.refresh_exchange_balances()
-                self.logger.info("✅ [Data Refresh] Exchange balances refresh complete.")
                 
                 await self.broadcast({
                     'type': 'portfolio_update',
