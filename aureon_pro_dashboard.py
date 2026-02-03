@@ -1163,17 +1163,18 @@ PRO_DASHBOARD_HTML = """
             
             container.innerHTML = positions.map(pos => {
                 const pnlClass = pos.unrealizedPnl >= 0 ? 'positive' : 'negative';
+                const currentValue = pos.currentValue || (pos.quantity * pos.currentPrice);
                 return `
                     <div class="position-item">
                         <div>
                             <div class="position-symbol">${pos.symbol}</div>
                             <div class="position-details">
-                                ${pos.quantity.toFixed(4)} @ $${pos.avgCost.toFixed(4)}
+                                ${pos.quantity.toFixed(4)} @ $${pos.currentPrice.toFixed(4)}
                             </div>
                         </div>
                         <div class="position-pnl">
-                            <div class="position-value ${pnlClass}">
-                                ${formatCurrency(pos.unrealizedPnl, true)}
+                            <div class="position-value">
+                                ${formatCurrency(currentValue)}
                             </div>
                             <div class="position-percent ${pnlClass}">
                                 ${(pos.pnlPercent >= 0 ? '+' : '') + pos.pnlPercent.toFixed(2)}%
