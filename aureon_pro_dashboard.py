@@ -1874,52 +1874,127 @@ class AureonProDashboard:
     async def refresh_exchange_balances(self):
         """Fetch real-time balances from all exchange clients."""
         try:
-            # Try Binance
+            # Try Binance - calculate TOTAL portfolio value (not just stablecoins!)
             try:
-                from binance_client import BinanceClient
+                from binance_client import BinanceClient, get_binance_client
                 binance = get_binance_client()
                 bin_balance = await asyncio.to_thread(binance.get_balance)
                 if isinstance(bin_balance, dict):
-                    # Sum all stablecoins (USDT, USDC, BUSD, etc.)
+                    # Calculate TOTAL portfolio value including all crypto assets
                     binance_total = 0.0
-                    for stable in ['USDT', 'USDC', 'BUSD', 'FDUSD', 'TUSD', 'DAI']:
-                        binance_total += float(bin_balance.get(stable, 0) or 0)
+                    stablecoins = ['USDT', 'USDC', 'BUSD', 'FDUSD', 'TUSD', 'DAI', 'USD']
+                    
+                    for asset, qty in bin_balance.items():
+                        qty = float(qty or 0)
+                        if qty < 0.0001:
+                            continue
+                        
+                        if asset in stablecoins:
+                            # Stablecoins = $1
+                            binance_total += qty
+                        else:
+                            # Get price for crypto assets
+                            try:
+                                ticker = await asyncio.to_thread(binance.get_ticker, f"{asset}USDT")
+                                if ticker and 'price' in ticker:
+                                    price = float(ticker['price'])
+                                    binance_total += qty * price
+                            except:
+                                pass  # Skip assets without USDT pair
+                    
                     self.exchange_balances['binance'] = binance_total
-                    self.logger.info(f"✅ Binance balance: ${self.exchange_balances['binance']:,.2f}")
+                    self.logger.info(f"✅ Binance TOTAL portfolio: ${self.exchange_balances['binance']:,.2f}")
                 else:
                     self.logger.warning(f"⚠️ Binance balance returned non-dict: {type(bin_balance)}")
             except Exception as e:
                 self.logger.warning(f"⚠️ Binance balance fetch failed: {str(e)[:100]}")
             
-            # Try Kraken
+            # Try Kraken - calculate TOTAL portfolio value
             try:
                 from kraken_client import KrakenClient, get_kraken_client
                 kraken = get_kraken_client()
                 krk_balance = await asyncio.to_thread(kraken.get_balance)
-                if isinstance(krk_balance, dict):
-                    # Sum USD and stablecoins
+                if isinstance(krk_balance, dict) and krk_balance:
+                    # Calculate TOTAL portfolio value including all crypto
                     kraken_total = 0.0
-                    for stable in ['USD', 'ZUSD', 'USDT', 'USDC']:
-                        kraken_total += float(krk_balance.get(stable, 0) or 0)
+                    stablecoins = ['USD', 'ZUSD', 'USDT', 'USDC', 'TUSD', 'DAI']
+                    
+                    for asset, qty in krk_balance.items():
+                        qty = float(qty or 0)
+                        if qty < 0.0001:
+                            continue
+                        
+                        # Normalize Kraken asset names (XXBT -> BTC, XETH -> ETH)
+                        clean_asset = asset
+                        if len(asset) == 4 and asset[0] in ('X', 'Z'):
+                            clean_asset = asset[1:]
+                        if clean_asset == 'XBT':
+                            clean_asset = 'BTC'
+                        
+                        if asset in stablecoins or clean_asset in stablecoins:
+                            kraken_total += qty
+                        elif asset == 'ZGBP':
+                            kraken_total += qty * 1.27  # GBP to USD
+                        elif asset == 'ZEUR':
+                            kraken_total += qty * 1.08  # EUR to USD
+                        else:
+                            # Try to get price
+                            try:
+                                ticker = await asyncio.to_thread(kraken.get_ticker, f"{asset}USD")
+                                if ticker and 'last' in ticker:
+                                    price = float(ticker['last'])
+                                    kraken_total += qty * price
+                            except:
+                                pass  # Skip assets without USD pair
+                    
                     self.exchange_balances['kraken'] = kraken_total
-                    self.logger.info(f"✅ Kraken balance: ${self.exchange_balances['kraken']:,.2f}")
-                else:
-                    self.logger.warning(f"⚠️ Kraken balance returned non-dict: {type(krk_balance)}")
+                    self.logger.info(f"✅ Kraken TOTAL portfolio: ${self.exchange_balances['kraken']:,.2f}")
+                elif not krk_balance:
+                    # Empty balance or API issue - try snapshot file
+                    try:
+                        import json
+                        with open('kraken_balance_snapshot_2026-02-03.json') as f:
+                            snapshot = json.load(f)
+                        if snapshot.get('balances'):
+                            self.exchange_balances['kraken'] = sum(snapshot['balances'].values())
+                            self.logger.info(f"📸 Kraken from snapshot: ${self.exchange_balances['kraken']:,.2f}")
+                    except:
+                        pass
             except Exception as e:
-                self.logger.warning(f"⚠️ Kraken balance fetch failed: {str(e)[:100]}")
+                err_msg = str(e)[:100]
+                if 'nonce' in err_msg.lower():
+                    self.logger.warning(f"⚠️ Kraken: API key nonce issue - need new key")
+                else:
+                    self.logger.warning(f"⚠️ Kraken balance fetch failed: {err_msg}")
             
-            # Try Alpaca
+            # Try Alpaca - get TOTAL portfolio value (cash + positions)
             try:
                 from alpaca_client import AlpacaClient
                 alpaca = AlpacaClient()
+                
+                # Get cash balance
                 alp_balance = await asyncio.to_thread(alpaca.get_balance)
+                cash = 0.0
                 if isinstance(alp_balance, dict):
-                    # get_balance returns {'USD': amount} not {'cash': amount}
-                    cash = alp_balance.get('USD', alp_balance.get('cash', 0))
-                    self.exchange_balances['alpaca'] = float(cash or 0)
-                    self.logger.info(f"✅ Alpaca balance: ${self.exchange_balances['alpaca']:,.2f}")
-                else:
-                    self.logger.warning(f"⚠️ Alpaca balance returned non-dict: {type(alp_balance)}")
+                    cash = float(alp_balance.get('USD', alp_balance.get('cash', 0)) or 0)
+                
+                # Get positions value
+                positions_value = 0.0
+                try:
+                    positions = await asyncio.to_thread(alpaca.get_positions)
+                    if positions:
+                        for pos in positions:
+                            if isinstance(pos, dict):
+                                positions_value += float(pos.get('market_value', 0) or 0)
+                            elif hasattr(pos, 'market_value'):
+                                positions_value += float(pos.market_value or 0)
+                except:
+                    pass
+                
+                # TOTAL = cash + positions
+                self.exchange_balances['alpaca'] = cash + positions_value
+                self.logger.info(f"✅ Alpaca TOTAL: ${self.exchange_balances['alpaca']:,.2f} (cash: ${cash:.2f} + positions: ${positions_value:.2f})")
+                
             except Exception as e:
                 self.logger.warning(f"⚠️ Alpaca balance fetch failed: {str(e)[:100]}")
             
