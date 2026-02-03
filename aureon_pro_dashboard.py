@@ -1165,6 +1165,11 @@ PRO_DASHBOARD_HTML = """
             if (data.positions) {
                 renderPositions(data.positions);
             }
+
+            // Push latest equity point into chart
+            if (typeof data.totalValue === 'number') {
+                updateChart(data.totalValue);
+            }
         }
         
         function renderPositions(positions) {
