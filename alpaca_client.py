@@ -2163,10 +2163,43 @@ class AlpacaClient:
                     # Buying crypto with USD
                     result = self.place_market_order(pair, "buy", quote_qty=remaining_amount)
                 
+                # 🔧 FIX: Check if order was actually placed (has an ID)
+                if not result or not result.get("id"):
+                    logger.warning(f"   ⚠️ Order for {pair} returned empty - no order placed!")
+                    results.append({
+                        "trade": trade,
+                        "result": result,
+                        "status": "failed",
+                        "error": "No order ID returned - order not placed"
+                    })
+                    return {
+                        "error": f"Order not placed for {pair} - empty response",
+                        "from_asset": from_asset,
+                        "to_asset": to_asset,
+                        "partial_results": results
+                    }
+                
                 # 🔧 FIX: Extract ACTUAL execution data from the filled order
                 exec_qty_raw = result.get("filled_qty", result.get("qty", result.get("executedQty", 0)))
                 exec_qty = float(exec_qty_raw) if exec_qty_raw is not None else 0.0
                 filled_price = float(result.get("filled_avg_price", 0) or 0)
+                
+                # 🔧 FIX: Check if order actually filled
+                order_status = result.get("status", "")
+                if order_status in ("rejected", "canceled", "expired"):
+                    logger.warning(f"   ⚠️ Order {result.get('id')} was {order_status}")
+                    results.append({
+                        "trade": trade,
+                        "result": result,
+                        "status": "failed",
+                        "error": f"Order {order_status}"
+                    })
+                    return {
+                        "error": f"Order {order_status} for {pair}",
+                        "from_asset": from_asset,
+                        "to_asset": to_asset,
+                        "partial_results": results
+                    }
                 
                 # Calculate actual received amount
                 received_amount = 0.0

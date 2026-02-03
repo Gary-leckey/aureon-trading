@@ -17938,12 +17938,42 @@ if __name__ == "__main__":
         
         👑🎓 QUEEN LOSS LEARNING INTEGRATION:
         When we fail, we learn. We pull data, research tactics, and never forget.
+        
+        🔧 FIX: After failure, refresh balances immediately and block asset!
+        This prevents the "265 blanks" loop bug where system keeps trying
+        to trade the same cached balance that no longer exists.
         """
         # Attach failure metadata for downstream audit
         opp.execution_failure = {
             'error': error_msg,
             'validation': validation or {},
         }
+        
+        # 🔧 CRITICAL FIX: Refresh exchange balances IMMEDIATELY after failure!
+        # This prevents the loop bug where we keep trying to trade stale cached balance
+        exchange = opp.source_exchange or 'unknown'
+        try:
+            import asyncio
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Create task for background refresh
+                asyncio.create_task(self.refresh_exchange_balances(exchange))
+            else:
+                loop.run_until_complete(self.refresh_exchange_balances(exchange))
+            safe_print(f"   🔄 Refreshed {exchange} balances after failure")
+        except Exception as e:
+            logger.debug(f"Balance refresh after failure error: {e}")
+        
+        # 🔧 CRITICAL FIX: Block this from_asset for the rest of this turn!
+        # Prevents repeated attempts to trade the same depleted asset
+        from_upper = opp.from_asset.upper()
+        if hasattr(self, 'barter_matrix') and hasattr(self.barter_matrix, 'high_spread_sources'):
+            self.barter_matrix.high_spread_sources[(from_upper, exchange.lower())] = {
+                'spread': 99.0,  # Block with high spread marker
+                'blocked_turn': getattr(self.barter_matrix, 'current_turn', 0),
+                'reason': f'execution_failed: {error_msg[:50] if error_msg else "unknown"}'
+            }
+            safe_print(f"   🚫 Blocked {from_upper} on {exchange} for this turn (execution failed)")
 
         # Audit failure (anti-phantom)
         try:
