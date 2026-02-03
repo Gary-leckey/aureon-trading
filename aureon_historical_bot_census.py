@@ -336,11 +336,125 @@ def main():
 if __name__ == "__main__":
     main()
 
-# Integration getter for HistoricalBot
+
+# ═══════════════════════════════════════════════════════════════
+# 🔌 INTEGRATION API - Wrapper for Orca Complete Kill Cycle
+# ═══════════════════════════════════════════════════════════════
+
+class HistoricalBotCensus:
+    """Wrapper class for 8-year historical bot census."""
+    
+    def __init__(self, registry_path: str = "bot_census_registry.json"):
+        self.registry_path = registry_path
+        self.bots = []
+        self._load_registry()
+        print("📚 Historical Bot Census: Initialized")
+        print(f"   🤖 Loaded {len(self.bots)} historical bot records")
+    
+    def _load_registry(self):
+        """Load bot census from JSON file."""
+        import json
+        import os
+        if os.path.exists(self.registry_path):
+            try:
+                with open(self.registry_path, 'r') as f:
+                    data = json.load(f)
+                    self.bots = data if isinstance(data, list) else data.get('bots', [])
+            except:
+                self.bots = []
+    
+    def get_bot_by_cycle(self, cycle_hours: float, tolerance: float = 0.5) -> list:
+        """Find bots with similar cycle periods."""
+        matches = []
+        for bot in self.bots:
+            bot_cycle = bot.get('cycle_period_hours', 0)
+            if abs(bot_cycle - cycle_hours) <= tolerance:
+                matches.append(bot)
+        return matches
+    
+    def get_ghost_patterns(self) -> list:
+        """Find ghost patterns from dead entities (Alameda, 3AC, etc.)"""
+        ghost_entities = ['Alameda Research', '3AC', 'FTX', 'Luna', 'Celsius']
+        ghosts = []
+        for bot in self.bots:
+            if any(ghost in bot.get('name', '') for ghost in ghost_entities):
+                ghosts.append(bot)
+        return ghosts
+    
+    def get_birth_date(self, bot_name: str) -> str:
+        """Get the birth date of a specific bot."""
+        for bot in self.bots:
+            if bot.get('name') == bot_name:
+                return bot.get('birth_date', 'Unknown')
+        return 'Unknown'
+
 _GLOBAL_INSTANCE = None
 
 def get_census():
+    """Get or create global census instance."""
     global _GLOBAL_INSTANCE
     if _GLOBAL_INSTANCE is None:
-        _GLOBAL_INSTANCE = HistoricalBot()
+        _GLOBAL_INSTANCE = HistoricalBotCensus()
+    return _GLOBAL_INSTANCE
+
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🔌 INTEGRATION API - Wrapper for Orca Complete Kill Cycle
+# ═══════════════════════════════════════════════════════════════
+
+class HistoricalBotCensus:
+    """Wrapper class for 8-year historical bot census."""
+    
+    def __init__(self, registry_path: str = "bot_census_registry.json"):
+        self.registry_path = registry_path
+        self.bots = []
+        self._load_registry()
+        print("📚 Historical Bot Census: Initialized")
+        print(f"   🤖 Loaded {len(self.bots)} historical bot records")
+    
+    def _load_registry(self):
+        """Load bot census from JSON file."""
+        import json
+        import os
+        if os.path.exists(self.registry_path):
+            try:
+                with open(self.registry_path, 'r') as f:
+                    data = json.load(f)
+                    self.bots = data if isinstance(data, list) else data.get('bots', [])
+            except:
+                self.bots = []
+    
+    def get_bot_by_cycle(self, cycle_hours: float, tolerance: float = 0.5) -> list:
+        """Find bots with similar cycle periods."""
+        matches = []
+        for bot in self.bots:
+            bot_cycle = bot.get('cycle_period_hours', 0)
+            if abs(bot_cycle - cycle_hours) <= tolerance:
+                matches.append(bot)
+        return matches
+    
+    def get_ghost_patterns(self) -> list:
+        """Find ghost patterns from dead entities (Alameda, 3AC, etc.)"""
+        ghost_entities = ['Alameda Research', '3AC', 'FTX', 'Luna', 'Celsius']
+        ghosts = []
+        for bot in self.bots:
+            if any(ghost in bot.get('name', '') for ghost in ghost_entities):
+                ghosts.append(bot)
+        return ghosts
+    
+    def get_birth_date(self, bot_name: str) -> str:
+        """Get the birth date of a specific bot."""
+        for bot in self.bots:
+            if bot.get('name') == bot_name:
+                return bot.get('birth_date', 'Unknown')
+        return 'Unknown'
+
+_GLOBAL_INSTANCE = None
+
+def get_census():
+    """Get or create global census instance."""
+    global _GLOBAL_INSTANCE
+    if _GLOBAL_INSTANCE is None:
+        _GLOBAL_INSTANCE = HistoricalBotCensus()
     return _GLOBAL_INSTANCE

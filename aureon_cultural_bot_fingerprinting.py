@@ -555,11 +555,65 @@ def main():
 if __name__ == "__main__":
     main()
 
-# Integration getter for CulturalAttribution
+
+# ═══════════════════════════════════════════════════════════════
+# 🔌 INTEGRATION API - Wrapper for Orca Complete Kill Cycle
+# ═══════════════════════════════════════════════════════════════
+
+class CulturalBotFingerprinting:
+    """Wrapper class for cultural bot fingerprinting analysis."""
+    
+    def __init__(self):
+        self.registry = CULTURAL_ENTITIES  # Use the correct constant
+        self.attribution_cache = {}
+        print("🧬 Cultural Bot Fingerprinting: Initialized")
+        print(f"   📚 Loaded {len(self.registry)} cultural profiles")
+    
+    def analyze(self, symbol: str, candles: list = None):
+        """Analyze a symbol for cultural bot patterns."""
+        if symbol in self.attribution_cache:
+            return self.attribution_cache[symbol]
+        
+        # Return registry data for known entities
+        attributions = []
+        for entity_name, data in self.registry.items():
+            patterns = data.get('known_patterns', {})
+            attributions.append({
+                'entity': entity_name,
+                'country': data.get('country', 'Unknown'),
+                'type': data.get('type', 'Unknown'),
+                'spectrum': data.get('spectrum_preference', 'Unknown'),
+                'risk_profile': patterns.get('risk_profile', 'Unknown'),
+                'trading_hours': patterns.get('trading_hours_utc', [])
+            })
+        return attributions
+    
+    def get_us_holiday_gaps(self):
+        """Get US holidays for gap detection."""
+        return US_HOLIDAYS
+    
+    def identify_operator(self, timezone_pattern: str) -> list:
+        """Identify potential operators by timezone activity."""
+        matches = []
+        for entity, data in self.registry.items():
+            patterns = data.get('known_patterns', {})
+            if timezone_pattern in str(patterns.get('trading_hours_utc', [])):
+                matches.append(entity)
+        return matches
+    
+    def get_spectrum_entities(self, spectrum: str) -> list:
+        """Get entities by spectrum preference (HIGH_FREQ, MID_RANGE, etc.)"""
+        matches = []
+        for entity, data in self.registry.items():
+            if data.get('spectrum_preference') == spectrum:
+                matches.append(entity)
+        return matches
+
 _GLOBAL_INSTANCE = None
 
 def get_fingerprinter():
+    """Get or create global fingerprinting instance."""
     global _GLOBAL_INSTANCE
     if _GLOBAL_INSTANCE is None:
-        _GLOBAL_INSTANCE = CulturalAttribution()
+        _GLOBAL_INSTANCE = CulturalBotFingerprinting()
     return _GLOBAL_INSTANCE

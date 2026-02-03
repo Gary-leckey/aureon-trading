@@ -449,9 +449,8 @@ class OceanScanner:
             if self.thought_bus:
                 self.thought_bus.publish(Thought(
                     source="OCEAN_SCANNER",
-                    thought_type="MARKET_OPPORTUNITY",
-                    priority=2,
-                    content=opp.to_dict()
+                    topic="market.opportunity",
+                    payload=opp.to_dict()
                 ))
 
             # 2. ChirpBus

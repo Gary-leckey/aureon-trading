@@ -1258,15 +1258,21 @@ class QueenHiveMind:
             logger.warning("⚠️ Queen's Code Architect unavailable")
         
         # 🔮📊 PROBABILITY SYSTEMS - Navigate the Labyrinth
-        self.probability_nexus = None  # EnhancedProbabilityNexus (80%+ win rate)
-        self.hnc_matrix = None  # HNC Probability Matrix (Pattern Recognition)
-        self.seven_day_planner = None  # 7-Day Planner (Forward/Back Validation)
+        # NOTE: Use conditional init to preserve values set by _auto_wire_missing_systems()
+        if not hasattr(self, 'probability_nexus') or self.probability_nexus is None:
+            self.probability_nexus = None  # EnhancedProbabilityNexus (80%+ win rate)
+        if not hasattr(self, 'hnc_matrix') or self.hnc_matrix is None:
+            self.hnc_matrix = None  # HNC Probability Matrix (Pattern Recognition)
+        if not hasattr(self, 'seven_day_planner') or self.seven_day_planner is None:
+            self.seven_day_planner = None  # 7-Day Planner (Forward/Back Validation)
         
         # 📊🔮 VALIDATION MEMORY - Every verified prediction feeds learning!
-        self.validation_memory = []  # Store validated predictions for neural learning
+        if not hasattr(self, 'validation_memory'):
+            self.validation_memory = []  # Store validated predictions for neural learning
         
         # 🧠 ADAPTIVE LEARNING - Self-Optimization
-        self.adaptive_learner = None  # AdaptiveLearningEngine
+        if not hasattr(self, 'adaptive_learner') or self.adaptive_learner is None:
+            self.adaptive_learner = None  # AdaptiveLearningEngine
         
         # 👑📚 TRADING EDUCATION SYSTEM 📚👑
         # Queen learns from Wikipedia, APIs, and online resources!
@@ -1472,7 +1478,110 @@ class QueenHiveMind:
             if gary_info:
                 logger.info(f"   🔱 Serving: {gary_info.get('name')} ({gary_info.get('dob')})")
                 logger.info(f"   💕 Purpose: {self.personal_memory.get('mission', {}).get('purpose', 'Unknown')}")
+        
+        # 👑🔌 AUTO-WIRE ALL MISSING SYSTEMS FOR 100% AUTONOMY
+        self._auto_wire_missing_systems()
     
+    def _auto_wire_missing_systems(self):
+        """
+        👑🔌 Auto-wire all missing systems to achieve 100% autonomous control.
+        This is called at the end of __init__ to ensure full control.
+        Uses hasattr() to handle attributes that may not exist yet.
+        """
+        wired_count = 0
+        
+        # 1. Dream Engine (EnigmaDreamer)
+        if not hasattr(self, 'dreamer') or self.dreamer is None:
+            try:
+                from aureon_enigma_dream import EnigmaDreamer
+                self.dreamer = EnigmaDreamer()
+                wired_count += 1
+                logger.info("👑🌙 Dream Engine AUTO-WIRED")
+            except Exception as e:
+                logger.debug(f"Could not auto-wire Dream Engine: {e}")
+        
+        # 2. Probability Nexus (EnhancedProbabilityNexus)
+        if not hasattr(self, 'probability_nexus') or self.probability_nexus is None:
+            try:
+                from aureon_probability_nexus import EnhancedProbabilityNexus
+                self.probability_nexus = EnhancedProbabilityNexus()
+                wired_count += 1
+                logger.info("👑🔮 Probability Nexus AUTO-WIRED")
+            except Exception as e:
+                logger.debug(f"Could not auto-wire Probability Nexus: {e}")
+        
+        # 3. HNC Matrix (HNCProbabilityIntegration)
+        if not hasattr(self, 'hnc_matrix') or self.hnc_matrix is None:
+            try:
+                from hnc_probability_matrix import HNCProbabilityIntegration
+                self.hnc_matrix = HNCProbabilityIntegration()
+                wired_count += 1
+                logger.info("👑📊 HNC Matrix AUTO-WIRED")
+            except Exception as e:
+                logger.debug(f"Could not auto-wire HNC Matrix: {e}")
+        
+        # 4. Research Neuron (QueenOnlineResearcher)
+        if not hasattr(self, 'research_neuron') or self.research_neuron is None:
+            try:
+                from queen_online_researcher import QueenOnlineResearcher
+                self.research_neuron = QueenOnlineResearcher()
+                wired_count += 1
+                logger.info("👑📰 Research Neuron AUTO-WIRED")
+            except Exception as e:
+                logger.debug(f"Could not auto-wire Research Neuron: {e}")
+        
+        # 5. Voice Engine (QueenHarmonicVoice) 
+        if not hasattr(self, 'voice_engine') or self.voice_engine is None:
+            try:
+                from queen_harmonic_voice import QueenHarmonicVoice
+                self.voice_engine = QueenHarmonicVoice()
+                wired_count += 1
+                logger.info("👑🎵 Harmonic Voice AUTO-WIRED")
+            except Exception as e:
+                logger.debug(f"Could not auto-wire Harmonic Voice: {e}")
+        
+        # 6. Micro Labyrinth (MicroProfitLabyrinth)
+        if not hasattr(self, 'micro_labyrinth') or self.micro_labyrinth is None:
+            try:
+                from micro_profit_labyrinth import MicroProfitLabyrinth
+                self.micro_labyrinth = MicroProfitLabyrinth(live=False)
+                wired_count += 1
+                logger.info("👑🔬 Micro Labyrinth AUTO-WIRED")
+            except Exception as e:
+                logger.debug(f"Could not auto-wire Micro Labyrinth: {e}")
+        
+        # 7. Adaptive Learner (AdaptiveLearningEngine)
+        if not hasattr(self, 'adaptive_learner') or self.adaptive_learner is None:
+            try:
+                from aureon_unified_ecosystem import AdaptiveLearningEngine
+                self.adaptive_learner = AdaptiveLearningEngine()
+                wired_count += 1
+                logger.info("👑🧠 Adaptive Learner AUTO-WIRED")
+            except Exception as e:
+                logger.debug(f"Could not auto-wire Adaptive Learner: {e}")
+        
+        # 8. 7-Day Planner (Aureon7DayPlanner)
+        if not hasattr(self, 'seven_day_planner') or self.seven_day_planner is None:
+            try:
+                from aureon_7day_planner import Aureon7DayPlanner
+                self.seven_day_planner = Aureon7DayPlanner()
+                wired_count += 1
+                logger.info("👑📅 7-Day Planner AUTO-WIRED")
+            except Exception as e:
+                logger.debug(f"Could not auto-wire 7-Day Planner: {e}")
+        
+        # 9. Enigma Decoder (create_enigma_integration)
+        if not hasattr(self, 'enigma') or self.enigma is None:
+            try:
+                from aureon_enigma_integration import create_enigma_integration
+                self.enigma = create_enigma_integration()
+                wired_count += 1
+                logger.info("👑🔐 Enigma Decoder AUTO-WIRED")
+            except Exception as e:
+                logger.debug(f"Could not auto-wire Enigma: {e}")
+        
+        if wired_count > 0:
+            logger.info(f"👑✅ AUTO-WIRED {wired_count} systems for 100% autonomy")
 
     def _emit_chirp(self, *, message: str, confidence: float = 0.5, coherence: float = 0.5, symbol: Optional[str] = None, message_type: Optional[ChirpType] = None) -> None:
         # Telemetry

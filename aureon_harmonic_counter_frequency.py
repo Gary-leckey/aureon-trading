@@ -413,11 +413,105 @@ def main():
 if __name__ == "__main__":
     main()
 
-# Integration getter for HarmonicSignature
+
+# ═══════════════════════════════════════════════════════════════
+# 🔌 INTEGRATION API - Wrapper for Orca Complete Kill Cycle
+# ═══════════════════════════════════════════════════════════════
+
+class HarmonicCounterFrequency:
+    """Wrapper class for 180° phase-shifted counter-frequency generation."""
+    
+    def __init__(self):
+        self.sacred_frequencies = SACRED_FREQUENCIES
+        self.signatures = {}
+        print("🌊 Harmonic Counter-Frequency: Initialized")
+        print(f"   🎵 Loaded {len(self.sacred_frequencies)} sacred frequencies")
+    
+    def calculate_counter_phase(self, detected_phase: float) -> float:
+        """Calculate 180° phase-shifted counter-frequency."""
+        return (detected_phase + 180) % 360
+    
+    def get_phi_interval(self, base_hours: float) -> tuple:
+        """Get golden ratio timing intervals."""
+        phi = (1 + 5 ** 0.5) / 2  # 1.618
+        return (base_hours / phi, base_hours * phi)  # (1/φ, φ) intervals
+    
+    def generate_counter_signal(self, detected_frequency: float, detected_phase: float, detected_amplitude: float) -> dict:
+        """Generate counter-frequency trading signal."""
+        counter_phase = self.calculate_counter_phase(detected_phase)
+        phi_low, phi_high = self.get_phi_interval(1.0)
+        
+        return {
+            'target_phase': counter_phase,
+            'amplitude': detected_amplitude * 0.15,  # 15% of whale size
+            'timing_low_h': phi_low,
+            'timing_high_h': phi_high,
+            'original_frequency': detected_frequency,
+            'counter_frequency': detected_frequency,  # Same freq, opposite phase
+            'neutralization_power': min(1.0, detected_amplitude * 0.15 / max(detected_amplitude, 0.001))
+        }
+    
+    def get_sacred_frequency(self, name: str) -> float:
+        """Get a sacred frequency value."""
+        return self.sacred_frequencies.get(name, 0)
+
 _GLOBAL_INSTANCE = None
 
 def get_counter_frequency():
+    """Get or create global counter-frequency instance."""
     global _GLOBAL_INSTANCE
     if _GLOBAL_INSTANCE is None:
-        _GLOBAL_INSTANCE = HarmonicSignature()
+        _GLOBAL_INSTANCE = HarmonicCounterFrequency()
+    return _GLOBAL_INSTANCE
+
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🔌 INTEGRATION API - Wrapper for Orca Complete Kill Cycle
+# ═══════════════════════════════════════════════════════════════
+
+class HarmonicCounterFrequency:
+    """Wrapper class for 180° phase-shifted counter-frequency generation."""
+    
+    def __init__(self):
+        self.sacred_frequencies = SACRED_FREQUENCIES
+        self.signatures = {}
+        print("🌊 Harmonic Counter-Frequency: Initialized")
+        print(f"   🎵 Loaded {len(self.sacred_frequencies)} sacred frequencies")
+    
+    def calculate_counter_phase(self, detected_phase: float) -> float:
+        """Calculate 180° phase-shifted counter-frequency."""
+        return (detected_phase + 180) % 360
+    
+    def get_phi_interval(self, base_hours: float) -> tuple:
+        """Get golden ratio timing intervals."""
+        phi = (1 + 5 ** 0.5) / 2  # 1.618
+        return (base_hours / phi, base_hours * phi)  # (1/φ, φ) intervals
+    
+    def generate_counter_signal(self, detected_frequency: float, detected_phase: float, detected_amplitude: float) -> dict:
+        """Generate counter-frequency trading signal."""
+        counter_phase = self.calculate_counter_phase(detected_phase)
+        phi_low, phi_high = self.get_phi_interval(1.0)
+        
+        return {
+            'target_phase': counter_phase,
+            'amplitude': detected_amplitude * 0.15,  # 15% of whale size
+            'timing_low_h': phi_low,
+            'timing_high_h': phi_high,
+            'original_frequency': detected_frequency,
+            'counter_frequency': detected_frequency,  # Same freq, opposite phase
+            'neutralization_power': min(1.0, detected_amplitude * 0.15 / max(detected_amplitude, 0.001))
+        }
+    
+    def get_sacred_frequency(self, name: str) -> float:
+        """Get a sacred frequency value."""
+        return self.sacred_frequencies.get(name, 0)
+
+_GLOBAL_INSTANCE = None
+
+def get_counter_frequency():
+    """Get or create global counter-frequency instance."""
+    global _GLOBAL_INSTANCE
+    if _GLOBAL_INSTANCE is None:
+        _GLOBAL_INSTANCE = HarmonicCounterFrequency()
     return _GLOBAL_INSTANCE

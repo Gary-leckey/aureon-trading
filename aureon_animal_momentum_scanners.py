@@ -823,47 +823,168 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
     main(dry_run=True)
 
-# Integration getter for AnimalOpportunity
+
+# ═══════════════════════════════════════════════════════════════
+# 🔌 INTEGRATION API - Wrapper for Orca Complete Kill Cycle
+# ═══════════════════════════════════════════════════════════════
+
+class AnimalMomentumScanners:
+    """Unified interface for all animal momentum scanners (no client deps)."""
+    
+    def __init__(self):
+        self.wolf = None
+        self.lion = None
+        self.ants = None
+        self.hummingbird = None
+        self.orchestrator = None
+        
+        # Try to initialize with clients if available
+        try:
+            from alpaca_client import AlpacaClient
+            from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
+            
+            alpaca = AlpacaClient()
+            bridge = AlpacaScannerBridge(alpaca)
+            
+            self.wolf = AlpacaLoneWolf(alpaca, bridge)
+            self.lion = AlpacaLionHunt(alpaca, bridge)
+            self.ants = AlpacaArmyAnts(alpaca, bridge)
+            self.hummingbird = AlpacaHummingbird(alpaca, bridge)
+            self.orchestrator = AlpacaSwarmOrchestrator(alpaca, bridge)
+            
+            print("🦅 Animal Momentum Scanners: FULLY INITIALIZED")
+            print("   🐺 Wolf (24h breakout)")
+            print("   🦁 Lion (composite scorer)")
+            print("   🐜 Ants (high-frequency)")
+            print("   🐦 Hummingbird (micro-scalp)")
+        except Exception as e:
+            print(f"🦅 Animal Momentum Scanners: LITE MODE (no exchange client)")
+            print(f"   ⚠️ {str(e)[:50]}")
+    
+    def get_all_signals(self) -> dict:
+        """Get signals from all animal scanners."""
+        signals = {}
+        
+        if self.wolf:
+            try:
+                signals['wolf'] = self.wolf.scan()
+            except Exception as e:
+                signals['wolf'] = {'error': str(e)}
+        
+        if self.lion:
+            try:
+                signals['lion'] = self.lion.scan()
+            except Exception as e:
+                signals['lion'] = {'error': str(e)}
+        
+        if self.ants:
+            try:
+                signals['ants'] = self.ants.scan()
+            except Exception as e:
+                signals['ants'] = {'error': str(e)}
+        
+        if self.hummingbird:
+            try:
+                signals['hummingbird'] = self.hummingbird.scan()
+            except Exception as e:
+                signals['hummingbird'] = {'error': str(e)}
+        
+        return signals
+    
+    def run_swarm(self, max_positions: int = 3, capital: float = 100.0):
+        """Run the full swarm orchestrator."""
+        if self.orchestrator:
+            return self.orchestrator.run_swarm_cycle(max_positions, capital)
+        return {'error': 'Orchestrator not available'}
+
 _GLOBAL_INSTANCE = None
 
 def get_animal_scanners():
+    """Get or create global animal scanners instance."""
     global _GLOBAL_INSTANCE
     if _GLOBAL_INSTANCE is None:
         _GLOBAL_INSTANCE = AnimalMomentumScanners()
     return _GLOBAL_INSTANCE
 
-# Create wrapper class for all animal scanners
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🔌 INTEGRATION API - Wrapper for Orca Complete Kill Cycle
+# ═══════════════════════════════════════════════════════════════
+
 class AnimalMomentumScanners:
-    """Unified interface for all animal momentum scanners."""
-    def __init__(self):
-        self.wolf = AlpacaLoneWolf()
-        self.lion = AlpacaLionHunt()
-        self.ants = AlpacaArmyAnts()
-        self.hummingbird = AlpacaHummingbird()
+    """Unified interface for all animal momentum scanners (no client deps)."""
     
-    def get_all_signals(self):
+    def __init__(self):
+        self.wolf = None
+        self.lion = None
+        self.ants = None
+        self.hummingbird = None
+        self.orchestrator = None
+        
+        # Try to initialize with clients if available
+        try:
+            from alpaca_client import AlpacaClient
+            from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
+            
+            alpaca = AlpacaClient()
+            bridge = AlpacaScannerBridge(alpaca)
+            
+            self.wolf = AlpacaLoneWolf(alpaca, bridge)
+            self.lion = AlpacaLionHunt(alpaca, bridge)
+            self.ants = AlpacaArmyAnts(alpaca, bridge)
+            self.hummingbird = AlpacaHummingbird(alpaca, bridge)
+            self.orchestrator = AlpacaSwarmOrchestrator(alpaca, bridge)
+            
+            print("🦅 Animal Momentum Scanners: FULLY INITIALIZED")
+            print("   🐺 Wolf (24h breakout)")
+            print("   🦁 Lion (composite scorer)")
+            print("   🐜 Ants (high-frequency)")
+            print("   🐦 Hummingbird (micro-scalp)")
+        except Exception as e:
+            print(f"🦅 Animal Momentum Scanners: LITE MODE (no exchange client)")
+            print(f"   ⚠️ {str(e)[:50]}")
+    
+    def get_all_signals(self) -> dict:
         """Get signals from all animal scanners."""
         signals = {}
-        try:
-            signals['wolf'] = self.wolf.scan()
-        except:
-            pass
-        try:
-            signals['lion'] = self.lion.scan()
-        except:
-            pass
-        try:
-            signals['ants'] = self.ants.scan()
-        except:
-            pass
-        try:
-            signals['hummingbird'] = self.hummingbird.scan()
-        except:
-            pass
+        
+        if self.wolf:
+            try:
+                signals['wolf'] = self.wolf.scan()
+            except Exception as e:
+                signals['wolf'] = {'error': str(e)}
+        
+        if self.lion:
+            try:
+                signals['lion'] = self.lion.scan()
+            except Exception as e:
+                signals['lion'] = {'error': str(e)}
+        
+        if self.ants:
+            try:
+                signals['ants'] = self.ants.scan()
+            except Exception as e:
+                signals['ants'] = {'error': str(e)}
+        
+        if self.hummingbird:
+            try:
+                signals['hummingbird'] = self.hummingbird.scan()
+            except Exception as e:
+                signals['hummingbird'] = {'error': str(e)}
+        
         return signals
+    
+    def run_swarm(self, max_positions: int = 3, capital: float = 100.0):
+        """Run the full swarm orchestrator."""
+        if self.orchestrator:
+            return self.orchestrator.run_swarm_cycle(max_positions, capital)
+        return {'error': 'Orchestrator not available'}
 
-# Fix getter
+_GLOBAL_INSTANCE = None
+
 def get_animal_scanners():
+    """Get or create global animal scanners instance."""
     global _GLOBAL_INSTANCE
     if _GLOBAL_INSTANCE is None:
         _GLOBAL_INSTANCE = AnimalMomentumScanners()
