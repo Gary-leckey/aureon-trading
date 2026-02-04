@@ -397,7 +397,7 @@ PRO_DASHBOARD_HTML = """
             font-weight: 600;
         }
         
-        /* Queen's Voice Panel - Full width BOTTOM */
+        /* Queen's Voice Panel - Full width BOTTOM - FIXED HEIGHT */
         .queen-panel {
             grid-column: 1 / -1;
             grid-row: 3;
@@ -405,13 +405,18 @@ PRO_DASHBOARD_HTML = """
             border-top: 2px solid var(--accent-gold);
             padding: 12px 20px;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 20px;
+            height: 220px;
+            min-height: 220px;
+            max-height: 220px;
+            overflow: hidden;
         }
         
         .queen-avatar {
             font-size: 48px;
             animation: queenFloat 3s ease-in-out infinite;
+            flex-shrink: 0;
         }
         
         @keyframes queenFloat {
@@ -419,7 +424,14 @@ PRO_DASHBOARD_HTML = """
             50% { transform: translateY(-5px); }
         }
         
-        .queen-content { flex: 1; width: 100%; }
+        .queen-content { 
+            flex: 1; 
+            width: 100%; 
+            height: 100%;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
         
         .queen-message {
             font-size: 15px;
@@ -427,20 +439,22 @@ PRO_DASHBOARD_HTML = """
             font-weight: 500;
             margin-bottom: 8px;
             line-height: 1.5;
+            flex-shrink: 0;
         }
         
         .queen-thought {
             font-size: 14px;
             color: var(--text-primary);
             line-height: 1.7;
-            margin-bottom: 12px;
-            padding: 16px 20px;
+            margin-bottom: 8px;
+            padding: 12px 16px;
             background: rgba(255,215,0,0.08);
             border-radius: 8px;
             border-left: 4px solid var(--accent-gold);
-            max-height: 400px;
+            max-height: 140px;
             overflow-y: auto;
             width: 100%;
+            flex: 1;
         }
         
         .queen-thought p {
