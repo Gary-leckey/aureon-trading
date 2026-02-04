@@ -166,6 +166,30 @@ class MarketContext:
     ocean_opportunities: int = 0
     ocean_universe: int = 0
     
+    # 📊 POSITIONS BREAKDOWN (NEW!)
+    top_positions: List[Dict] = field(default_factory=list)  # [{symbol, value, pnl, pnl_pct, exchange}]
+    top_winners: List[Dict] = field(default_factory=list)    # Best performing
+    top_losers: List[Dict] = field(default_factory=list)     # Worst performing
+    
+    # 🏦 EXCHANGE STATUS (NEW!)
+    exchange_status: Dict[str, str] = field(default_factory=dict)  # {exchange: 'online'/'offline'/'rate_limited'}
+    
+    # 💵 CASH & BUYING POWER (NEW!)
+    cash_available: float = 0.0
+    buying_power: float = 0.0
+    
+    # 📜 RECENT TRADES (NEW!)
+    last_trade_time: str = ""
+    last_trade_symbol: str = ""
+    last_trade_action: str = ""  # BUY/SELL
+    trades_today: int = 0
+    
+    # 🎯 DEADLINE MODE (NEW!)
+    deadline_mode: bool = False
+    deadline_date: str = ""
+    deadline_target_pct: float = 5.0
+    deadline_progress_pct: float = 0.0
+    
 @dataclass 
 class CognitiveThought:
     """A structured thought from the Queen."""
@@ -785,7 +809,7 @@ class QueenCognitiveNarrator:
             p4 = " ".join(p4_parts)
             paragraphs.append(p4)
         
-        # Paragraph 5: Portfolio LIVE REPORT
+        # Paragraph 5: Portfolio LIVE REPORT WITH POSITIONS BREAKDOWN
         pnl_status = "profit" if ctx.unrealized_pnl >= 0 else "loss"
         pnl_pct = (ctx.unrealized_pnl / ctx.portfolio_value * 100) if ctx.portfolio_value > 0 else 0
         
@@ -804,6 +828,77 @@ class QueenCognitiveNarrator:
         else:
             p5 += f"We're within normal variance, {self.user_name}. The strategy is intact and I'm scanning for the next high-probability entry."
         paragraphs.append(p5)
+        
+        # Paragraph 5b: TOP POSITIONS - WINNERS & LOSERS (NEW!)
+        p5b_parts = []
+        
+        # Show top winners
+        if ctx.top_winners:
+            winners_text = []
+            for w in ctx.top_winners[:3]:
+                sym = w.get('symbol', 'UNKNOWN')
+                pnl_val = w.get('pnl', 0)
+                pnl_p = w.get('pnl_pct', 0)
+                winners_text.append(f"{sym} (+{pnl_p:.1f}%)")
+            if winners_text:
+                p5b_parts.append(f"Your best performers right now: {', '.join(winners_text)}.")
+        
+        # Show top losers
+        if ctx.top_losers:
+            losers_text = []
+            for l in ctx.top_losers[:3]:
+                sym = l.get('symbol', 'UNKNOWN')
+                pnl_p = l.get('pnl_pct', 0)
+                losers_text.append(f"{sym} ({pnl_p:.1f}%)")
+            if losers_text:
+                p5b_parts.append(f"Positions needing attention: {', '.join(losers_text)}.")
+        
+        # Cash available
+        if ctx.cash_available > 0:
+            p5b_parts.append(f"You have ${ctx.cash_available:,.2f} in dry powder ready to deploy.")
+        
+        if p5b_parts:
+            paragraphs.append(" ".join(p5b_parts))
+        
+        # Paragraph 5c: EXCHANGE STATUS (NEW!)
+        if ctx.exchange_status:
+            online = [ex for ex, status in ctx.exchange_status.items() if status == 'online']
+            offline = [ex for ex, status in ctx.exchange_status.items() if status in ('offline', 'error')]
+            limited = [ex for ex, status in ctx.exchange_status.items() if status == 'rate_limited']
+            
+            ex_parts = []
+            if online:
+                ex_parts.append(f"Engines online: {', '.join(online)}")
+            if offline:
+                ex_parts.append(f"⚠️ OFFLINE: {', '.join(offline)}")
+            if limited:
+                ex_parts.append(f"⏳ Rate limited: {', '.join(limited)}")
+            
+            if ex_parts:
+                paragraphs.append(f"Exchange status: {'. '.join(ex_parts)}.")
+        
+        # Paragraph 5d: RECENT TRADE ACTIVITY (NEW!)
+        if ctx.last_trade_time and ctx.last_trade_symbol:
+            trade_text = f"Last trade: {ctx.last_trade_action} {ctx.last_trade_symbol} at {ctx.last_trade_time}."
+            if ctx.trades_today > 0:
+                trade_text += f" Executed {ctx.trades_today} trades today."
+            paragraphs.append(trade_text)
+        
+        # Paragraph 5e: DEADLINE MODE PROGRESS (NEW!)
+        if ctx.deadline_mode:
+            progress = ctx.deadline_progress_pct
+            target = ctx.deadline_target_pct
+            remaining = target - progress
+            
+            if progress >= target:
+                deadline_text = f"🎯 DEADLINE TARGET HIT! We're at {progress:.1f}% - exceeding our {target:.0f}% goal!"
+            elif progress >= target * 0.8:
+                deadline_text = f"🎯 Deadline Mode: {progress:.1f}% of {target:.0f}% target. Almost there, {self.user_name}!"
+            elif progress >= 0:
+                deadline_text = f"🎯 Deadline Mode active: {progress:.1f}% progress toward {target:.0f}% target by {ctx.deadline_date}."
+            else:
+                deadline_text = f"🎯 Deadline Mode: Currently at {progress:.1f}%. Need to recover {abs(progress):.1f}% plus gain {target:.0f}% by {ctx.deadline_date}."
+            paragraphs.append(deadline_text)
         
         # Paragraph 6: ANCHOR SIGN-OFF with decision framework
         p6 = f"Here's what I need you to understand, {self.user_name}. "

@@ -4106,6 +4106,26 @@ class AureonProDashboard:
                     # ═══════════════════════════════════════════════════════════════════
                     v11_data = self.v11_data if hasattr(self, 'v11_data') else {}
                     
+                    # ═══════════════════════════════════════════════════════════════════
+                    # 📊 POSITIONS BREAKDOWN - Calculate winners/losers
+                    # ═══════════════════════════════════════════════════════════════════
+                    positions_data = self._calculate_positions_breakdown()
+                    
+                    # ═══════════════════════════════════════════════════════════════════
+                    # 🏦 EXCHANGE STATUS - Check all exchange connections
+                    # ═══════════════════════════════════════════════════════════════════
+                    exchange_status = self._get_exchange_status()
+                    
+                    # ═══════════════════════════════════════════════════════════════════
+                    # 📜 RECENT TRADES - Load last trade info
+                    # ═══════════════════════════════════════════════════════════════════
+                    trades_data = self._load_recent_trades()
+                    
+                    # ═══════════════════════════════════════════════════════════════════
+                    # 🎯 DEADLINE MODE - Progress tracking
+                    # ═══════════════════════════════════════════════════════════════════
+                    deadline_data = self._load_deadline_progress()
+                    
                     self.narrator.update_context(
                         btc_price=btc_price,
                         btc_change_24h=btc_change,
@@ -4135,6 +4155,24 @@ class AureonProDashboard:
                         # 🌊 Ocean Scanner
                         ocean_opportunities=self.ocean_data.get('hot_opportunities', 0),
                         ocean_universe=self.ocean_data.get('universe_size', 0),
+                        # 📊 POSITIONS BREAKDOWN (NEW!)
+                        top_positions=positions_data.get('top_positions', []),
+                        top_winners=positions_data.get('top_winners', []),
+                        top_losers=positions_data.get('top_losers', []),
+                        cash_available=positions_data.get('cash_available', 0),
+                        buying_power=positions_data.get('buying_power', 0),
+                        # 🏦 EXCHANGE STATUS (NEW!)
+                        exchange_status=exchange_status,
+                        # 📜 RECENT TRADES (NEW!)
+                        last_trade_time=trades_data.get('last_trade_time', ''),
+                        last_trade_symbol=trades_data.get('last_trade_symbol', ''),
+                        last_trade_action=trades_data.get('last_trade_action', ''),
+                        trades_today=trades_data.get('trades_today', 0),
+                        # 🎯 DEADLINE MODE (NEW!)
+                        deadline_mode=deadline_data.get('active', False),
+                        deadline_date=deadline_data.get('date', ''),
+                        deadline_target_pct=deadline_data.get('target_pct', 5.0),
+                        deadline_progress_pct=deadline_data.get('progress_pct', 0.0),
                     )
                     
                     # Generate rich cognitive thought
@@ -4252,6 +4290,212 @@ class AureonProDashboard:
         except Exception as e:
             self.logger.debug(f"Orca data load: {e}")
             return {'mode': 'HUNTING', 'completed_hunts': 0, 'win_rate': 0.5, 'hot_symbols': []}
+    
+    def _calculate_positions_breakdown(self) -> dict:
+        """Calculate top winners, losers, and positions breakdown from portfolio."""
+        try:
+            positions = self.portfolio.get('positions', [])
+            
+            # Sort by P&L percentage
+            sorted_by_pnl = sorted(positions, key=lambda p: p.get('pnlPercent', 0), reverse=True)
+            
+            # Top 5 winners (positive P&L)
+            top_winners = [
+                {
+                    'symbol': p.get('symbol', 'UNKNOWN'),
+                    'value': p.get('currentValue', 0),
+                    'pnl': p.get('unrealizedPnl', 0),
+                    'pnl_pct': p.get('pnlPercent', 0),
+                    'exchange': p.get('exchange', 'unknown')
+                }
+                for p in sorted_by_pnl if p.get('pnlPercent', 0) > 0
+            ][:5]
+            
+            # Top 5 losers (negative P&L)
+            top_losers = [
+                {
+                    'symbol': p.get('symbol', 'UNKNOWN'),
+                    'value': p.get('currentValue', 0),
+                    'pnl': p.get('unrealizedPnl', 0),
+                    'pnl_pct': p.get('pnlPercent', 0),
+                    'exchange': p.get('exchange', 'unknown')
+                }
+                for p in reversed(sorted_by_pnl) if p.get('pnlPercent', 0) < 0
+            ][:5]
+            
+            # Top positions by value
+            sorted_by_value = sorted(positions, key=lambda p: p.get('currentValue', 0), reverse=True)
+            top_positions = [
+                {
+                    'symbol': p.get('symbol', 'UNKNOWN'),
+                    'value': p.get('currentValue', 0),
+                    'pnl': p.get('unrealizedPnl', 0),
+                    'pnl_pct': p.get('pnlPercent', 0),
+                    'exchange': p.get('exchange', 'unknown')
+                }
+                for p in sorted_by_value
+            ][:10]
+            
+            # Get cash available from exchange balances
+            cash_available = 0
+            buying_power = 0
+            
+            if hasattr(self, 'exchange_balances'):
+                # Alpaca cash
+                alpaca_bal = self.exchange_balances.get('alpaca', {})
+                cash_available += alpaca_bal.get('usd', 0)
+                buying_power += alpaca_bal.get('buying_power', alpaca_bal.get('usd', 0))
+                
+                # Binance USDC/USDT
+                binance_bal = self.exchange_balances.get('binance', {})
+                cash_available += binance_bal.get('USDC', 0) + binance_bal.get('USDT', 0)
+                
+                # Kraken USD
+                kraken_bal = self.exchange_balances.get('kraken', {})
+                cash_available += kraken_bal.get('USD', 0) + kraken_bal.get('ZUSD', 0)
+            
+            return {
+                'top_positions': top_positions,
+                'top_winners': top_winners,
+                'top_losers': top_losers,
+                'cash_available': cash_available,
+                'buying_power': buying_power
+            }
+        except Exception as e:
+            self.logger.debug(f"Positions breakdown: {e}")
+            return {'top_positions': [], 'top_winners': [], 'top_losers': [], 'cash_available': 0, 'buying_power': 0}
+    
+    def _get_exchange_status(self) -> dict:
+        """Get current status of all exchange connections."""
+        status = {}
+        
+        try:
+            # Check each exchange based on recent activity
+            if hasattr(self, 'exchange_balances'):
+                # Binance
+                if 'binance' in self.exchange_balances and self.exchange_balances['binance']:
+                    status['Binance'] = 'online'
+                else:
+                    status['Binance'] = 'offline'
+                
+                # Alpaca
+                if 'alpaca' in self.exchange_balances and self.exchange_balances['alpaca']:
+                    status['Alpaca'] = 'online'
+                else:
+                    status['Alpaca'] = 'offline'
+                
+                # Kraken
+                if 'kraken' in self.exchange_balances and self.exchange_balances['kraken']:
+                    status['Kraken'] = 'online'
+                else:
+                    status['Kraken'] = 'offline'
+            
+            # Check Capital.com from rate limit state
+            try:
+                from capital_client import CapitalClient
+                import time
+                if CapitalClient._shared_rate_limit_until > time.time():
+                    status['Capital.com'] = 'rate_limited'
+                elif CapitalClient._shared_cst:
+                    status['Capital.com'] = 'online'
+                else:
+                    status['Capital.com'] = 'offline'
+            except:
+                status['Capital.com'] = 'unknown'
+            
+        except Exception as e:
+            self.logger.debug(f"Exchange status check: {e}")
+        
+        return status
+    
+    def _load_recent_trades(self) -> dict:
+        """Load recent trade activity from state files."""
+        try:
+            import json
+            from pathlib import Path
+            from datetime import datetime
+            
+            # Check trade log files
+            for filename in ['trade_log.json', 'aureon_trade_history.json', 'executed_trades.json']:
+                path = Path(filename)
+                if path.exists():
+                    with open(path) as f:
+                        data = json.load(f)
+                        if isinstance(data, list) and data:
+                            # Get most recent trade
+                            last_trade = data[-1]
+                            trade_time = last_trade.get('timestamp', last_trade.get('time', ''))
+                            if isinstance(trade_time, (int, float)):
+                                trade_time = datetime.fromtimestamp(trade_time).strftime('%H:%M:%S')
+                            
+                            # Count trades today
+                            today = datetime.now().strftime('%Y-%m-%d')
+                            trades_today = sum(1 for t in data if today in str(t.get('timestamp', t.get('time', ''))))
+                            
+                            return {
+                                'last_trade_time': trade_time,
+                                'last_trade_symbol': last_trade.get('symbol', ''),
+                                'last_trade_action': last_trade.get('side', last_trade.get('action', 'BUY')).upper(),
+                                'trades_today': trades_today
+                            }
+            
+            # Check active position file for last entry
+            active_path = Path('active_position.json')
+            if active_path.exists():
+                with open(active_path) as f:
+                    data = json.load(f)
+                    if data.get('symbol'):
+                        return {
+                            'last_trade_time': data.get('entry_time', ''),
+                            'last_trade_symbol': data.get('symbol', ''),
+                            'last_trade_action': 'BUY',
+                            'trades_today': 0
+                        }
+            
+            return {'last_trade_time': '', 'last_trade_symbol': '', 'last_trade_action': '', 'trades_today': 0}
+        except Exception as e:
+            self.logger.debug(f"Recent trades load: {e}")
+            return {'last_trade_time': '', 'last_trade_symbol': '', 'last_trade_action': '', 'trades_today': 0}
+    
+    def _load_deadline_progress(self) -> dict:
+        """Load DEADLINE_MODE progress tracking."""
+        try:
+            import json
+            from pathlib import Path
+            
+            # Check if DEADLINE_MODE is active from environment or state
+            deadline_active = False
+            deadline_date = "2026-02-20"  # Default deadline
+            target_pct = 5.0  # Default 5% target
+            progress_pct = 0.0
+            
+            # Check orca state for DEADLINE_MODE
+            for filename in ['orca_complete_kill_cycle_state.json', 'deadline_state.json']:
+                path = Path(filename)
+                if path.exists():
+                    with open(path) as f:
+                        data = json.load(f)
+                        deadline_active = data.get('DEADLINE_MODE', data.get('deadline_mode', False))
+                        deadline_date = data.get('deadline_date', deadline_date)
+                        target_pct = data.get('target_pct', data.get('min_profit_target', target_pct))
+                        break
+            
+            # Calculate progress from portfolio P&L
+            total_cost = self.portfolio.get('totalCost', 0)
+            unrealized_pnl = self.portfolio.get('unrealizedPnl', 0)
+            
+            if total_cost > 0:
+                progress_pct = (unrealized_pnl / total_cost) * 100
+            
+            return {
+                'active': deadline_active or True,  # Assume active since you mentioned it
+                'date': deadline_date,
+                'target_pct': target_pct,
+                'progress_pct': progress_pct
+            }
+        except Exception as e:
+            self.logger.debug(f"Deadline progress load: {e}")
+            return {'active': False, 'date': '', 'target_pct': 5.0, 'progress_pct': 0.0}
     
     async def data_refresh_loop(self):
         """Periodically refresh data and broadcast updates."""
