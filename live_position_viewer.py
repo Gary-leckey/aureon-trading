@@ -150,76 +150,102 @@ def get_alpaca_positions():
     return positions
 
 def get_kraken_positions():
-    """Get Kraken positions - REAL positions from Kraken API"""
+    """Get Kraken positions - REAL positions from Kraken API using get_balance()"""
     positions = []
     
     try:
-        from kraken_client import KrakenClient, get_kraken_client
+        from kraken_client import get_kraken_client
         kraken = get_kraken_client()
         
-        # Get account balances
-        account_data = kraken.account()
-        balances = account_data.get('balances', [])
+        # Get account balances using get_balance() - returns {asset: qty}
+        balances = kraken.get_balance()
         
-        print(f"✅ Kraken: Found {len([b for b in balances if float(b.get('free', 0)) > 0.0001])} REAL balances")
+        # Stablecoins are cash, not positions
+        stablecoins = ['USD', 'ZUSD', 'EUR', 'ZEUR', 'GBP', 'ZGBP', 'DAI', 'USDC', 'USDT', 'TUSD']
+        
+        non_zero_count = 0
+        for asset, qty in balances.items():
+            qty_float = float(qty)
+            if qty_float > 0.000001:
+                non_zero_count += 1
+        
+        print(f"✅ Kraken: Found {non_zero_count} non-zero balances via get_balance()")
         
         # Get current prices from Kraken public API
         prices = {}
         try:
+            import requests
             # Get ticker data for common pairs
-            pairs = ['BTCUSD', 'ETHUSD', 'ADAUSD', 'SOLUSD', 'DOTUSD', 'LINKUSD', 'USDCUSD', 'USDTUSD']
-            for pair in pairs:
-                try:
-                    ticker = kraken.get_ticker(pair)
-                    if ticker and 'price' in ticker:
-                        prices[pair] = float(ticker['price'])
-                except:
-                    pass
-        except:
-            pass
+            pairs_to_check = []
+            for asset in balances.keys():
+                if asset not in stablecoins:
+                    # Build possible trading pairs
+                    for quote in ['USD', 'USDT', 'USDC']:
+                        pairs_to_check.append(f"{asset}{quote}")
+            
+            # Fetch tickers in batch
+            if pairs_to_check:
+                pairs_str = ','.join(pairs_to_check[:50])  # Limit to 50 at once
+                resp = requests.get(
+                    f'https://api.kraken.com/0/public/Ticker?pair={pairs_str}',
+                    timeout=5
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    result = data.get('result', {})
+                    for kraken_pair, info in result.items():
+                        price = float(info.get('c', [0])[0])  # Last trade price
+                        if price > 0:
+                            prices[kraken_pair] = price
+        except Exception as e:
+            print(f"⚠️ Kraken ticker fetch error: {e}")
         
         # Process balances into positions
-        for bal in balances:
-            asset = bal.get('asset', '')
-            free = float(bal.get('free', 0))
-            locked = float(bal.get('locked', 0))
-            total = free + locked
+        for asset, qty in balances.items():
+            qty_float = float(qty)
             
-            if total > 0.0001 and asset not in ['USD', 'USDT', 'USDC', 'EUR', 'GBP']:
-                # Find appropriate trading pair
-                symbol = None
-                current_price = 0
-                
-                # Try different quote currencies
-                for quote in ['USD', 'USDT', 'USDC']:
-                    pair = asset + quote
-                    if pair in prices:
-                        symbol = pair
-                        current_price = prices[pair]
+            # Skip dust and stablecoins
+            if qty_float <= 0.000001 or asset in stablecoins:
+                continue
+            
+            # Find appropriate trading pair and price
+            symbol = None
+            current_price = 0
+            
+            # Try different quote currencies
+            for quote in ['USD', 'USDT', 'USDC']:
+                test_pair = asset + quote
+                # Check if we have price data for this pair
+                for kraken_pair, price in prices.items():
+                    if test_pair in kraken_pair or kraken_pair.startswith(asset):
+                        symbol = test_pair
+                        current_price = price
                         break
-                
-                # If no price found, skip this position
-                if not symbol or current_price <= 0:
-                    continue
-                
-                current_value = total * current_price
-                
-                positions.append({
-                    'exchange': 'kraken',
-                    'symbol': symbol,
-                    'quantity': total,
-                    'avg_cost': current_price,  # Use current price as cost basis
-                    'current_price': current_price,
-                    'current_value': current_value,
-                    'unrealized_pnl': 0,
-                    'pnl_percent': 0,
-                    'cost_basis': current_value
-                })
+                if current_price > 0:
+                    break
+            
+            # If we don't have price, still include position with price=0
+            if not symbol:
+                symbol = f"{asset}USD"  # Default to USD pair
+            
+            current_value = qty_float * current_price if current_price > 0 else 0
+            
+            positions.append({
+                'exchange': 'kraken',
+                'symbol': symbol,
+                'quantity': qty_float,
+                'avg_cost': current_price,  # Use current price as cost basis
+                'current_price': current_price,
+                'current_value': current_value,
+                'unrealized_pnl': 0,
+                'pnl_percent': 0,
+                'cost_basis': current_value
+            })
         
         print(f"✅ Kraken: Processed {len(positions)} REAL positions")
         
     except Exception as e:
-        print(f"⚠️ Kraken error: {e}")
+        print(f"⚠️ Kraken get_kraken_positions error: {e}")
     
     return positions
 

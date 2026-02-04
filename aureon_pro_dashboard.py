@@ -3680,7 +3680,7 @@ class AureonProDashboard:
             # Try to use live_position_viewer for real data
             try:
                 self.logger.info("📦 Importing live_position_viewer...")
-                from live_position_viewer import get_binance_positions, get_alpaca_positions
+                from live_position_viewer import get_binance_positions, get_alpaca_positions, get_kraken_positions
                 self.logger.info("✅ live_position_viewer imported successfully")
                 
                 positions = []
@@ -3715,18 +3715,16 @@ class AureonProDashboard:
                         return self._cached_positions.get('alpaca', [])
                 
                 async def get_kraken_pos():
-                    """Fetch Kraken positions from state file."""
+                    """Fetch Kraken positions from LIVE API - includes ALL meme coins and alt coins."""
                     try:
-                        kraken_state_path = os.path.join(state_dir, "aureon_kraken_state.json")
-                        if os.path.exists(kraken_state_path):
-                            with open(kraken_state_path, "r") as f:
-                                kraken_data = json.load(f)
-                            positions = kraken_data.get("positions", [])
-                            if positions:
-                                self._cached_positions['kraken'] = positions
-                            return positions or self._cached_positions.get('kraken', [])
-                        return self._cached_positions.get('kraken', [])
-                    except Exception as e:
+                        result = await asyncio.wait_for(
+                            asyncio.to_thread(get_kraken_positions),
+                            timeout=5.0
+                        )
+                        if result:
+                            self._cached_positions['kraken'] = result
+                        return result or self._cached_positions.get('kraken', [])
+                    except (asyncio.TimeoutError, Exception) as e:
                         self.logger.warning(f"⚠️  Kraken fetch failed (using cache): {e}")
                         return self._cached_positions.get('kraken', [])
                 
