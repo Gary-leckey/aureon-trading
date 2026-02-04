@@ -11505,7 +11505,7 @@ class OrcaKillCycle:
         # Timing - SLOWER to avoid rate limits!
         base_scan_interval = 10  # Every 10 seconds (was 5)
         scan_interval = base_scan_interval
-        monitor_interval = 1.0  # 1 second updates (was 0.1) - PREVENTS RATE LIMITS!
+        monitor_interval = 3.0  # 3 second updates (was 1.0) - PREVENTS KRAKEN RATE LIMITS!
         whale_update_interval = 5.0  # Every 5 seconds (was 2)
         last_scan_time = 0
         last_whale_update = 0
@@ -13472,7 +13472,7 @@ class OrcaKillCycle:
         # Timing
         base_scan_interval = 10
         scan_interval = base_scan_interval
-        monitor_interval = 1.0
+        monitor_interval = 3.0  # 3 second updates - PREVENTS KRAKEN RATE LIMITS!
         last_scan_time = 0
         last_portfolio_scan = 0
         portfolio_scan_interval = 30

@@ -3371,27 +3371,48 @@ class AureonProDashboard:
             try:
                 if self.ocean_scanner:
                     # 🌊 ACTUALLY SCAN THE OCEAN (not just read empty summary)
-                    opportunities = await self.ocean_scanner.scan_ocean(limit=100)
+                    try:
+                        opportunities = await asyncio.wait_for(
+                            self.ocean_scanner.scan_ocean(limit=100),
+                            timeout=10.0
+                        )
+                        self.logger.info(f"✅ Ocean scan complete: {len(opportunities) if opportunities else 0} opportunities")
+                    except asyncio.TimeoutError:
+                        self.logger.warning("⚠️ Ocean scan timeout (>10s) - using cached data")
+                        opportunities = []
+                    except Exception as e:
+                        self.logger.error(f"❌ Ocean scan failed: {e}")
+                        opportunities = []
                     
                     # Get updated summary after scan
                     summary = self.ocean_scanner.get_ocean_summary()
                     self.ocean_data = {
-                        'universe_size': summary.get('universe_size', {}).get('total', 0),
-                        'hot_opportunities': summary.get('hot_opportunities', 0),
+                        'universe_size': summary.get('universe_size', {}).get('total', 0) or 0,
+                        'hot_opportunities': summary.get('hot_opportunities', 0) or len(opportunities),
                         'top_opportunities': summary.get('top_5', []),
                         'scan_count': summary.get('scan_count', 0),
                         'last_scan_time': summary.get('last_scan_time', 0)
                     }
                     
-                    # Broadcast to clients
-                    await self.broadcast({
-                        'type': 'ocean_scanner_update',
-                        'data': self.ocean_data
-                    })
-                    
                     self.logger.info(f"🌊 Ocean: {self.ocean_data['universe_size']:,} symbols, {self.ocean_data['hot_opportunities']} hot, scan #{self.ocean_data['scan_count']}")
+                else:
+                    # No scanner - use fallback data
+                    self.logger.warning("⚠️ Ocean scanner not initialized - using fallback data")
+                    self.ocean_data = {
+                        'universe_size': len(self.all_prices) or 0,
+                        'hot_opportunities': 0,
+                        'top_opportunities': [],
+                        'scan_count': 0,
+                        'last_scan_time': 0
+                    }
+                
+                # Broadcast to clients
+                await self.broadcast({
+                    'type': 'ocean_scanner_update',
+                    'data': self.ocean_data
+                })
             except Exception as e:
-                self.logger.error(f"❌ Ocean data loop error: {e}")
+                self.logger.error(f"❌ Ocean data loop error: {e}", exc_info=True)
             
             await asyncio.sleep(30)  # Scan every 30 seconds
     

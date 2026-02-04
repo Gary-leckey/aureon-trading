@@ -1,10 +1,10 @@
 {
-  "hunt_count": 2882,
+  "hunt_count": 2950,
   "total_profit_usd": 0.0,
   "win_rate": 0.5,
-  "queen_consultations": 5,
-  "queen_approvals": 5,
+  "queen_consultations": 10,
+  "queen_approvals": 10,
   "queen_vetoes": 0,
-  "execution_orders": 1,
-  "last_update": 1769553599.3156493
+  "execution_orders": 2,
+  "last_update": 1770220083.184682
 }

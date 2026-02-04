@@ -4,36 +4,36 @@
       "topic": "trending_coins",
       "source": "coingecko",
       "title": "Trending Coins Pattern",
-      "content": "Currently trending: BTC, ZK, HYPE, ETH, SOL",
+      "content": "Currently trending: BTC, SOL, HYPE, ZAMA, TRIA",
       "relevance_score": 0.7,
-      "discovered_at": "2026-02-01T18:25:51.035220",
+      "discovered_at": "2026-02-04T15:46:47.780919",
       "applied": true
     },
     {
       "topic": "market_sentiment",
       "source": "coingecko",
       "title": "Global Market Sentiment",
-      "content": "BTC Dominance: 57.6%, 24h Change: 0.45%",
+      "content": "BTC Dominance: 57.4%, 24h Change: -4.68%",
       "relevance_score": 0.8,
-      "discovered_at": "2026-02-01T18:25:51.167426",
+      "discovered_at": "2026-02-04T15:46:47.906527",
       "applied": true
     },
     {
       "topic": "momentum_leaders",
       "source": "binance",
       "title": "Top Momentum Leaders",
-      "content": "Top gainers: {'ARDR': 76.231, 'CREAM': 65.354, 'PNT': 45.228, 'ZK': 37.554, 'LUNC': 20.036}",
+      "content": "Top gainers: {'CREAM': 65.354, 'PNT': 45.228, 'SYN': 21.721, 'KDA': 17.647, 'ZKP': 17.429}",
       "relevance_score": 0.85,
-      "discovered_at": "2026-02-01T18:25:51.703333",
+      "discovered_at": "2026-02-04T15:46:48.430185",
       "applied": true
     },
     {
       "topic": "volatility_analysis",
       "source": "kraken",
       "title": "Volatility Patterns",
-      "content": "24h volatility: XETHZUSD: 10.91%, SOLUSD: 10.51%, XXBTZUSD: 4.91%",
+      "content": "24h volatility: XETHZUSD: 11.12%, SOLUSD: 12.51%, XXBTZUSD: 7.20%",
       "relevance_score": 0.75,
-      "discovered_at": "2026-02-01T18:25:51.913990",
+      "discovered_at": "2026-02-04T15:46:48.497107",
       "applied": true
     }
   ],
@@ -47,11 +47,11 @@
         "Volatility Patterns",
         "Trending Coins Pattern"
       ],
-      "generated_at": "2026-02-01T18:25:51.935838",
+      "generated_at": "2026-02-04T15:46:48.498948",
       "applied": true,
       "measured_revenue": 0.0
     }
   ],
   "total_revenue": 0.0,
-  "last_updated": "2026-02-01T18:25:51.980175"
+  "last_updated": "2026-02-04T15:46:48.500971"
 }
