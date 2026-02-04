@@ -94,7 +94,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # Exchange clients
-from binance_client import BinanceClient
+from binance_client import BinanceClient, get_binance_client
 from kraken_client import KrakenClient, get_kraken_client
 from alpaca_client import AlpacaClient
 from cost_basis_tracker import CostBasisTracker
