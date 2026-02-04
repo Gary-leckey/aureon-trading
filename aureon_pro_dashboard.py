@@ -4562,29 +4562,40 @@ class AureonProDashboard:
             return {'top_positions': [], 'top_winners': [], 'top_losers': [], 'cash_available': 0, 'buying_power': 0}
     
     def _get_exchange_status(self) -> dict:
-        """Get current status of all exchange connections."""
+        """Get current status of all exchange connections based on positions and balances."""
         status = {}
         
         try:
-            # Check each exchange based on recent activity
-            if hasattr(self, 'exchange_balances'):
-                # Binance
-                if 'binance' in self.exchange_balances and self.exchange_balances['binance']:
-                    status['Binance'] = 'online'
-                else:
-                    status['Binance'] = 'offline'
-                
-                # Alpaca
-                if 'alpaca' in self.exchange_balances and self.exchange_balances['alpaca']:
-                    status['Alpaca'] = 'online'
-                else:
-                    status['Alpaca'] = 'offline'
-                
-                # Kraken
-                if 'kraken' in self.exchange_balances and self.exchange_balances['kraken']:
-                    status['Kraken'] = 'online'
-                else:
-                    status['Kraken'] = 'offline'
+            # Method 1: Check which exchanges have positions (most reliable!)
+            positions = self.portfolio.get('positions', [])
+            exchanges_with_positions = set()
+            for pos in positions:
+                ex = pos.get('exchange', '').lower()
+                if ex:
+                    exchanges_with_positions.add(ex)
+            
+            # Method 2: Check exchange_balances (balance >= 0 means we got a response)
+            # Note: balance of 0 is valid, only unset/error would be different
+            balances_received = set()
+            if hasattr(self, 'exchange_balances') and self.exchange_balances:
+                for ex, bal in self.exchange_balances.items():
+                    if isinstance(bal, (int, float)) and bal >= 0:
+                        balances_received.add(ex.lower())
+            
+            # Method 3: Check cached positions
+            cached_exchanges = set()
+            if hasattr(self, '_cached_positions'):
+                for ex, pos_list in self._cached_positions.items():
+                    if pos_list:  # Has positions cached
+                        cached_exchanges.add(ex.lower())
+            
+            # Combine all evidence
+            all_online = exchanges_with_positions | balances_received | cached_exchanges
+            
+            # Set status for each exchange
+            status['Binance'] = 'online' if 'binance' in all_online else 'offline'
+            status['Alpaca'] = 'online' if 'alpaca' in all_online else 'offline'
+            status['Kraken'] = 'online' if 'kraken' in all_online else 'offline'
             
             # Check Capital.com from rate limit state
             try:
