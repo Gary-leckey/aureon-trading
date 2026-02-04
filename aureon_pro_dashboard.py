@@ -319,7 +319,7 @@ PRO_DASHBOARD_HTML = """
             50% { transform: translateY(-5px); }
         }
         
-        .queen-content { flex: 1; max-width: 900px; }
+        .queen-content { flex: 1; width: 100%; }
         
         .queen-message {
             font-size: 15px;
@@ -330,24 +330,30 @@ PRO_DASHBOARD_HTML = """
         }
         
         .queen-thought {
-            font-size: 13px;
+            font-size: 14px;
             color: var(--text-primary);
-            line-height: 1.6;
+            line-height: 1.7;
             margin-bottom: 12px;
-            padding: 12px;
+            padding: 16px 20px;
             background: rgba(255,215,0,0.08);
             border-radius: 8px;
-            border-left: 3px solid var(--accent-gold);
-            max-height: 200px;
+            border-left: 4px solid var(--accent-gold);
+            max-height: 400px;
             overflow-y: auto;
+            width: 100%;
         }
         
         .queen-thought p {
-            margin-bottom: 10px;
+            margin-bottom: 14px;
+            text-align: left;
         }
         
         .queen-thought p:last-child {
             margin-bottom: 0;
+        }
+        
+        .queen-thought strong {
+            color: var(--accent-gold);
         }
         
         .queen-thought .timestamp {
