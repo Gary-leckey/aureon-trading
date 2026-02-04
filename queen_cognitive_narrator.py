@@ -154,6 +154,18 @@ class MarketContext:
     timeline_drifting_count: int = 0
     timeline_next_validation: str = ""
     
+    # 🐘 Extra Elephant data
+    elephant_asset_scores: int = 0
+    
+    # ⚡ V11 Power Station data
+    v11_nodes: int = 0
+    v11_siphons: int = 0
+    v11_energy: float = 0.0
+    
+    # 🌊 Ocean Scanner data
+    ocean_opportunities: int = 0
+    ocean_universe: int = 0
+    
 @dataclass 
 class CognitiveThought:
     """A structured thought from the Queen."""
