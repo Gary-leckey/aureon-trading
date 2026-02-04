@@ -93,8 +93,8 @@ class CapitalClient:
                 self._session_error_logged = False  # Reset on success
                 logger.info("Capital.com session established.")
             elif response.status_code == 429 or 'too-many.requests' in response.text.lower():
-                # Rate limited - back off for 5 minutes
-                self._rate_limit_until = time.time() + 300
+                # Rate limited - back off for 10 minutes (Capital.com has aggressive limits)
+                self._rate_limit_until = time.time() + 600
                 if not self._session_error_logged:
                     logger.warning("Capital.com rate limited - backing off for 5 minutes")
                     self._session_error_logged = True
@@ -146,7 +146,7 @@ class CapitalClient:
         # Rate limit handling
         rate_limit_hit = resp.status_code == 429 or ('too-many.requests' in (resp.text or '').lower())
         if rate_limit_hit:
-            self._rate_limit_until = time.time() + 300
+            self._rate_limit_until = time.time() + 600
             if not self._rate_limit_logged:
                 logger.warning("Capital.com rate limited - backing off for 5 minutes")
                 self._rate_limit_logged = True
