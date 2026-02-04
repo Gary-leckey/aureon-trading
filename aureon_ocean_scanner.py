@@ -453,15 +453,17 @@ class OceanScanner:
                     payload=opp.to_dict()
                 ))
 
-            # 2. ChirpBus
+            # 2. ChirpBus - use emit_message (ChirpBus doesnt have publish)
             if self.chirp_bus:
-                self.chirp_bus.publish("market.opportunity", {
-                    "sym": opp.symbol,
-                    "exch": opp.exchange,
-                    "type": opp.opportunity_type,
-                    "score": opp.ocean_score,
-                    "conf": opp.confidence
-                })
+                try:
+                    self.chirp_bus.emit_message(
+                        f"OCEAN:{opp.symbol}:{opp.opportunity_type}:{opp.ocean_score:.2f}",
+                        symbol=opp.symbol,
+                        confidence=opp.confidence,
+                        coherence=opp.ocean_score
+                    )
+                except Exception as chirp_err:
+                    logger.debug(f"ChirpBus emit failed: {chirp_err}")
         except Exception as e:
             logger.error(f"Failed to publish ocean opportunity: {e}")
 
