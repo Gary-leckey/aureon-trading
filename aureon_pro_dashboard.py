@@ -264,7 +264,7 @@ PRO_DASHBOARD_HTML = """
         /* Main Layout */
         .main-container {
             display: grid;
-            grid-template-columns: 320px 1fr 280px;
+            grid-template-columns: 1fr 320px;
             grid-template-rows: auto 1fr auto;
             gap: 1px;
             background: var(--border-color);
@@ -848,7 +848,7 @@ PRO_DASHBOARD_HTML = """
         /* Responsive */
         @media (max-width: 1400px) {
             .main-container {
-                grid-template-columns: 260px 1fr 260px;
+                grid-template-columns: 1fr 280px;
             }
         }
         
@@ -968,8 +968,8 @@ PRO_DASHBOARD_HTML = """
         .right-sidebar {
             display: flex;
             flex-direction: column;
-            padding: 6px !important;
-            gap: 4px;
+            padding: 10px !important;
+            gap: 6px;
             overflow: hidden;
         }
         
@@ -985,7 +985,7 @@ PRO_DASHBOARD_HTML = """
         .sb-row.full { flex-direction: column; }
         
         .sb-label {
-            font-size: 9px;
+            font-size: 12px;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.3px;
@@ -1008,7 +1008,7 @@ PRO_DASHBOARD_HTML = """
         
         .sb-val {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
+            font-size: 14px;
             font-weight: 700;
             color: var(--text-primary);
             display: block;
@@ -1020,7 +1020,7 @@ PRO_DASHBOARD_HTML = """
         .sb-val.r { color: var(--accent-red); }
         
         .sb-sub {
-            font-size: 7px;
+            font-size: 10px;
             color: var(--text-secondary);
             text-transform: uppercase;
         }
@@ -1037,14 +1037,14 @@ PRO_DASHBOARD_HTML = """
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 3px;
+            gap: 4px;
             background: var(--bg-secondary);
-            padding: 3px 4px;
+            padding: 5px 6px;
             border-radius: 3px;
-            font-size: 10px;
+            font-size: 12px;
         }
         
-        .ex-pill span:first-child { font-size: 10px; }
+        .ex-pill span:first-child { font-size: 12px; }
         .ex-pill .ex-v {
             font-family: 'JetBrains Mono', monospace;
             font-weight: 600;
@@ -1103,15 +1103,15 @@ PRO_DASHBOARD_HTML = """
             flex: 1;
             background: var(--bg-secondary);
             border-radius: 4px;
-            padding: 4px 6px;
+            padding: 6px 8px;
         }
         
         .section-title {
-            font-size: 8px;
+            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.3px;
             display: block;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
         }
         
         .section-title.green { color: var(--accent-green); }
@@ -1119,8 +1119,8 @@ PRO_DASHBOARD_HTML = """
         
         .leader-list {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 9px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.6;
         }
         
         .leader-item {
@@ -1182,9 +1182,10 @@ PRO_DASHBOARD_HTML = """
         
         @media (max-width: 1100px) {
             .main-container {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1fr;
             }
-            .chart-panel { grid-column: span 2; }
+            .chart-panel { grid-column: span 1; }
+            .right-sidebar { display: none; }
         }
     </style>
 </head>
@@ -1263,44 +1264,7 @@ PRO_DASHBOARD_HTML = """
             </div>
         </div>
         
-        <!-- Left Panel: Portfolio -->
-        <div class="panel">
-            <div class="panel-header">
-                <span class="panel-title">💼 Portfolio</span>
-            </div>
-            
-            <div class="portfolio-summary">
-                <div class="summary-card">
-                    <div class="summary-label">Total Value</div>
-                    <div class="summary-value" id="total-value">$0.00</div>
-                </div>
-                <div class="summary-card">
-                    <div class="summary-label">Cost Basis</div>
-                    <div class="summary-value" id="cost-basis">$0.00</div>
-                </div>
-                <div class="summary-card">
-                    <div class="summary-label">Unrealized P&L</div>
-                    <div class="summary-value" id="unrealized-pnl">$0.00</div>
-                    <div class="summary-change" id="pnl-percent">0.00%</div>
-                </div>
-                <div class="summary-card">
-                    <div class="summary-label">Today's P&L</div>
-                    <div class="summary-value" id="today-pnl">$0.00</div>
-                </div>
-            </div>
-            
-            <div class="panel-header" style="margin-top: 16px;">
-                <span class="panel-title">📊 Positions</span>
-            </div>
-            
-            <div class="position-list" id="position-list">
-                <div style="color: var(--text-secondary); text-align: center; padding: 20px;">
-                    Loading positions...
-                </div>
-            </div>
-        </div>
-        
-        <!-- Center Panel: Living Cells + Portfolio Chart -->
+        <!-- Main Panel: Living Cells + Portfolio Chart -->
         <div class="panel chart-panel">
             <div class="panel-header">
                 <span class="panel-title">🧬 Living Position Cells</span>
