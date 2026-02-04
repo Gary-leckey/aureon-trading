@@ -309,11 +309,8 @@ from threading import Thread, Lock
 # Set up logger for this module
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-if not logger.handlers:
-    # Use SafeStreamHandler instead of standard StreamHandler
-    handler = SafeStreamHandler(sys.stdout)
-    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-    logger.addHandler(handler)
+# Don't add handlers here - root logger already has one, and propagate=True by default
+# Adding another handler causes duplicate log lines
 
     # 🔧 Miner Blueprint Constants (enhancements)
     CASCADE_FACTOR = 10.0       # Amplify weak signals
