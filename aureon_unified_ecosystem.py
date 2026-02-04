@@ -312,12 +312,12 @@ logger.setLevel(logging.INFO)
 # Don't add handlers here - root logger already has one, and propagate=True by default
 # Adding another handler causes duplicate log lines
 
-    # 🔧 Miner Blueprint Constants (enhancements)
-    CASCADE_FACTOR = 10.0       # Amplify weak signals
-    KT_EFFICIENCY = 4.24        # Capital efficiency multiplier
-    MIN_GAMMA_THRESHOLD = 0.20  # Independent entry threshold
-    MIN_HOLD_MINUTES = 50       # Resonance holding minimum
-    PSI_FILTER = 0.037          # Top 3.7% opportunities only
+# 🔧 Miner Blueprint Constants (enhancements)
+CASCADE_FACTOR = 10.0       # Amplify weak signals
+KT_EFFICIENCY = 4.24        # Capital efficiency multiplier
+MIN_GAMMA_THRESHOLD = 0.20  # Independent entry threshold
+MIN_HOLD_MINUTES = 50       # Resonance holding minimum
+PSI_FILTER = 0.037          # Top 3.7% opportunities only
 
 # Add current directory to path
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
