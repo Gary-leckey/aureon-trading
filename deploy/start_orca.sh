@@ -253,12 +253,14 @@ mkdir -p ${AUREON_STATE_DIR:-/app/state}
 echo '{"timestamp": 0, "session_stats": {"cycles": 0}, "positions": [], "queen_message": "Orca starting..."}' > ${AUREON_STATE_DIR:-/app/state}/dashboard_snapshot.json
 
 # Start the Orca Kill Cycle with Queen's 4-Phase Master Plan parameters
-# Args: max_positions=3, amount_per_position=$5.00, target_pct=1.0%
-# 👑 DEADLINE MODE: February 20, 2026 - Phase 1 aggressive moonshot hunting
+# Args: max_positions=25, amount_per_position=$10.00, target_pct=1.0%
+# 👑 DEADLINE MODE: February 20, 2026 - Phase 1 FULL POWER with IRA Sniper
+# 🇮🇪🎯 IRA SNIPER ENABLED - One shot, one kill, zero loss
 echo "🦈🔪 LAUNCHING ORCA AUTONOMOUS TRADING - QUEEN'S 4-PHASE PLAN 🔪🦈"
 echo "   👑 Phase 1: THE SEED - Moonshot Hunting"
-echo "   Max positions: 3"
-echo "   Amount per position: \$5.00"
+echo "   🇮🇪🎯 IRA SNIPER: ARMED AND READY"
+echo "   Max positions: 25 (increased for portfolio coverage)"
+echo "   Amount per position: \$10.00 (increased for profitability)"
 echo "   Target profit: 1.0% (minimum - will take 5%+ when available)"
 echo "   Deadline: February 20, 2026"
 echo ""
@@ -280,8 +282,8 @@ while true; do
     fi
     
     echo "   Using Python: $PYTHON_CMD"
-    # 👑 QUEEN'S PARAMETERS: 3 positions, $5 each, 1% minimum target
-    $PYTHON_CMD -u orca_complete_kill_cycle.py --autonomous 3 5.0 1.0
+    # 👑 QUEEN'S PARAMETERS: 25 positions, $10 each, 1% minimum target, IRA Sniper armed
+    $PYTHON_CMD -u orca_complete_kill_cycle.py --autonomous 25 10.0 1.0
     EXIT_CODE=$?
     echo "$(date): Orca exited with code $EXIT_CODE"
     

@@ -610,19 +610,22 @@ except ImportError:
 # 🇮🇪🎯 IRA SNIPER MODE - Zero Loss Configuration
 # ═══════════════════════════════════════════════════════════════════════════════
 
-IRA_SNIPER_AVAILABLE = False
+IRA_SNIPER_AVAILABLE = True  # 🎯 ENABLED - Queen has full autonomous control
 try:
     from ira_sniper_mode import (
         SNIPER_CONFIG, apply_sniper_mode, IRA_SNIPER_MODE,
         MyceliumStateAggregator, ActiveKillScanner
     )
     IRA_SNIPER_AVAILABLE = True
-except ImportError:
+    print("🇮🇪🎯 IRA SNIPER MODE: LOADED AND ARMED - One shot, one kill!")
+except ImportError as e:
+    print(f"⚠️ IRA Sniper import failed: {e} - Sniper mode disabled")
     SNIPER_CONFIG = None
     apply_sniper_mode = None
     IRA_SNIPER_MODE = False
     MyceliumStateAggregator = None
     ActiveKillScanner = None
+    IRA_SNIPER_AVAILABLE = False
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ⚡ RAPID CONVERSION STREAM - 10x Speed Enhancement  

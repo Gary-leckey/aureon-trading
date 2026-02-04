@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+🇮🇪🎯 IRA SNIPER MODE - QUEEN AUTONOMOUS CONTROL ENABLED
+═══════════════════════════════════════════════════════════════
+One bullet. One kill. NO MISSES. EVER.
+═══════════════════════════════════════════════════════════════
+"""
 🇮🇪🎯 IRA SNIPER MODE - ZERO LOSS CONFIGURATION 🎯🇮🇪
 =====================================================
 One bullet. One kill. NO MISSES. EVER.
