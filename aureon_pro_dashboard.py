@@ -1187,6 +1187,48 @@ PRO_DASHBOARD_HTML = """
             .chart-panel { grid-column: span 1; }
             .right-sidebar { display: none; }
         }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+
+            .main-container {
+                display: flex;
+                flex-direction: column;
+                height: auto;
+            }
+
+            .panel {
+                padding: 12px;
+            }
+
+            .right-sidebar {
+                display: flex; /* Re-enable for mobile */
+                order: 2; /* Show after main content */
+            }
+
+            .chart-panel {
+                order: 1;
+            }
+
+            .queen-panel {
+                order: 3;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 12px;
+            }
+
+            .market-ticker {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -2681,7 +2723,7 @@ PRO_DASHBOARD_HTML = """
         }
         
         // ════════════════════════════════════════════════════════════════════════════════
-        // 🌐 MARKET SENTIMENT UPDATE (Fear & Greed)
+        // 🌐 MARKET SENTIMENT UPDATE (Fear & Greed, Open Source Data)
         // ════════════════════════════════════════════════════════════════════════════════
         function updateMarketSentiment(data) {
             if (!data) return;
@@ -2925,7 +2967,7 @@ class AureonProDashboard:
                 logger.warning(f"⚡ V11 Power Station init failed: {e}")
         
         # ═══════════════════════════════════════════════════════════════════════════════
-        # 🌐 OPEN SOURCE DATA - Fear & Greed, Market Sentiment
+        # 🌐 MARKET SENTIMENT - Fear & Greed, Open Source Data
         # ═══════════════════════════════════════════════════════════════════════════════
         self.open_data_engine = None
         self.market_sentiment = {
@@ -3963,92 +4005,9 @@ class AureonProDashboard:
                 }
                 self.exchange_balances = new_balances
                 
-                # Update harmonic field with positions
                 if self.harmonic_field:
                     nodes_added = 0
                     for pos in positions[:20]:
-                        try:
-                            self.harmonic_field.add_or_update_node(
-                                exchange=pos.get('exchange', 'unknown'),
-                                symbol=pos.get('symbol', 'UNKNOWN'),
-                                current_price=pos.get('currentPrice', 0),
-                                entry_price=pos.get('avgCost', 0),
-                                quantity=pos.get('quantity', 0)
-                            )
-                            nodes_added += 1
-                        except Exception as e:
-                            self.logger.warning(f"⚠️ Harmonic field update error for {pos.get('symbol')}: {e}")
-                    self.logger.info(f"🔩 Harmonic field: {nodes_added} nodes updated")
-                
-                self.logger.info(f"✅ Portfolio FINAL: {len(positions)} positions, ${total_value:,.2f} value | Balances: Binance ${new_balances['binance']:,.2f}, Kraken ${new_balances['kraken']:,.2f}, Alpaca ${new_balances['alpaca']:,.2f}")
-                
-                
-            except ImportError:
-                self.logger.warning("⚠️  live_position_viewer not available - using state snapshot")
-                positions = []
-                total_value = 0.0
-                total_cost = 0.0
-                try:
-                    if os.path.exists(snapshot_path):
-                        with open(snapshot_path, "r") as f:
-                            snapshot = json.load(f)
-                        for pos in snapshot.get("positions", []):
-                            qty = float(pos.get("entry_qty", 0) or 0)
-                            entry = float(pos.get("entry_price", 0) or 0)
-                            current = float(pos.get("current_price", entry) or entry)
-                            current_value = current * qty
-                            total_value += current_value
-                            total_cost += entry * qty
-                            positions.append({
-                                "symbol": pos.get("symbol", "UNKNOWN"),
-                                "quantity": qty,
-                                "avgCost": entry,
-                                "currentPrice": current,
-                                "currentValue": current_value,
-                                "unrealizedPnl": float(pos.get("current_pnl", 0) or 0),
-                                "pnlPercent": float(pos.get("current_pnl_pct", 0) or 0),
-                                "exchange": pos.get("exchange", "unknown"),
-                            })
-                        positions.sort(key=lambda x: x.get("currentValue", 0), reverse=True)
-                except Exception as e:
-                    self.logger.warning(f"⚠️  State snapshot load failed: {e}")
-                
-                # Load balances from state files
-                try:
-                    def _read_state(path: str) -> Dict:
-                        if os.path.exists(path):
-                            with open(path, "r") as f:
-                                return json.load(f)
-                        return {}
-
-                    bin_state = _read_state(os.path.join(state_dir, "binance_truth_tracker_state.json"))
-                    krk_state = _read_state(os.path.join(state_dir, "aureon_kraken_state.json"))
-                    alp_state = _read_state(os.path.join(state_dir, "alpaca_truth_tracker_state.json"))
-                    snapshot_data = _read_state(snapshot_path)
-                    snapshot_balances = snapshot_data.get("exchange_balances", {}) or {}
-
-                    new_balances = {
-                        "binance": float(bin_state.get("balances", {}).get("USDT", {}).get("free", 0.0) or snapshot_balances.get("binance", 0.0) or 0.0),
-                        "kraken": float(krk_state.get("balances", {}).get("USD", krk_state.get("balances", {}).get("ZUSD", 0.0)) or snapshot_balances.get("kraken", 0.0) or 0.0),
-                        "alpaca": float(alp_state.get("cash", 0.0) or snapshot_balances.get("alpaca", 0.0) or 0.0),
-                    }
-                except Exception as e:
-                    self.logger.debug(f"Balance load error: {e}")
-                    new_balances = self.exchange_balances
-                
-                # ATOMIC UPDATE: Set everything at once
-                self.portfolio = {
-                    "totalValue": total_value,
-                    "costBasis": total_cost,
-                    "unrealizedPnl": total_value - total_cost,
-                    "todayPnl": 0,
-                    "positions": positions[:20],
-                }
-                self.exchange_balances = new_balances
-                
-                if self.harmonic_field:
-                    nodes_added = 0
-                    for pos in positions:
                         try:
                             self.harmonic_field.add_or_update_node(
                                 exchange=pos.get("exchange", "unknown"),
@@ -4062,6 +4021,90 @@ class AureonProDashboard:
                             self.logger.warning(f"⚠️ Harmonic field update error for {pos.get('symbol')}: {e}")
                     self.logger.info(f"🔩 Harmonic field: {nodes_added} nodes updated (snapshot fallback)")
                 self.logger.info(f"✅ Portfolio (snapshot): {len(positions)} positions, ${total_value:,.2f} value | Balances: Binance ${new_balances['binance']:,.2f}, Kraken ${new_balances['kraken']:,.2f}, Alpaca ${new_balances['alpaca']:,.2f}")
+
+            # No more duplicate balance refresh code here - it's all done above atomically
+            
+        except ImportError:
+            self.logger.warning("⚠️  live_position_viewer not available - using state snapshot")
+            positions = []
+            total_value = 0.0
+            total_cost = 0.0
+            try:
+                if os.path.exists(snapshot_path):
+                    with open(snapshot_path, "r") as f:
+                        snapshot = json.load(f)
+                    for pos in snapshot.get("positions", []):
+                        qty = float(pos.get("entry_qty", 0) or 0)
+                        entry = float(pos.get("entry_price", 0) or 0)
+                        current = float(pos.get("current_price", entry) or entry)
+                        current_value = current * qty
+                        total_value += current_value
+                        total_cost += entry * qty
+                        positions.append({
+                            "symbol": pos.get("symbol", "UNKNOWN"),
+                            "quantity": qty,
+                            "avgCost": entry,
+                            "currentPrice": current,
+                            "currentValue": current_value,
+                            "unrealizedPnl": float(pos.get("current_pnl", 0) or 0),
+                            "pnlPercent": float(pos.get("current_pnl_pct", 0) or 0),
+                            "exchange": pos.get("exchange", "unknown"),
+                        })
+                    positions.sort(key=lambda x: x.get("currentValue", 0), reverse=True)
+                else:
+                    self.logger.info("✅ Portfolio: 0 positions (no snapshot)")
+            except Exception as e:
+                self.logger.warning(f"⚠️  State snapshot load failed: {e}")
+                
+            # Load balances from state files
+            try:
+                def _read_state(path: str) -> Dict:
+                    if os.path.exists(path):
+                        with open(path, "r") as f:
+                            return json.load(f)
+                    return {}
+
+                bin_state = _read_state(os.path.join(state_dir, "binance_truth_tracker_state.json"))
+                krk_state = _read_state(os.path.join(state_dir, "aureon_kraken_state.json"))
+                alp_state = _read_state(os.path.join(state_dir, "alpaca_truth_tracker_state.json"))
+                snapshot_data = _read_state(snapshot_path)
+                snapshot_balances = snapshot_data.get("exchange_balances", {}) or {}
+
+                new_balances = {
+                    "binance": float(bin_state.get("balances", {}).get("USDT", {}).get("free", 0.0) or snapshot_balances.get("binance", 0.0) or 0.0),
+                    "kraken": float(krk_state.get("balances", {}).get("USD", krk_state.get("balances", {}).get("ZUSD", 0.0)) or snapshot_balances.get("kraken", 0.0) or 0.0),
+                    "alpaca": float(alp_state.get("cash", 0.0) or snapshot_balances.get("alpaca", 0.0) or 0.0),
+                }
+            except Exception as e:
+                self.logger.debug(f"Balance load error: {e}")
+                new_balances = self.exchange_balances
+                
+            # ATOMIC UPDATE: Set everything at once
+            self.portfolio = {
+                "totalValue": total_value,
+                "costBasis": total_cost,
+                "unrealizedPnl": total_value - total_cost,
+                "todayPnl": 0,
+                "positions": positions[:20],
+            }
+            self.exchange_balances = new_balances
+            
+            if self.harmonic_field:
+                nodes_added = 0
+                for pos in positions:
+                    try:
+                        self.harmonic_field.add_or_update_node(
+                            exchange=pos.get("exchange", "unknown"),
+                            symbol=pos.get("symbol", "UNKNOWN"),
+                            current_price=pos.get("currentPrice", 0),
+                            entry_price=pos.get("avgCost", 0),
+                            quantity=pos.get("quantity", 0)
+                        )
+                        nodes_added += 1
+                    except Exception as e:
+                        self.logger.warning(f"⚠️ Harmonic field update error for {pos.get('symbol')}: {e}")
+                self.logger.info(f"🔩 Harmonic field: {nodes_added} nodes updated (snapshot fallback)")
+            self.logger.info(f"✅ Portfolio (snapshot): {len(positions)} positions, ${total_value:,.2f} value | Balances: Binance ${new_balances['binance']:,.2f}, Kraken ${new_balances['kraken']:,.2f}, Alpaca ${new_balances['alpaca']:,.2f}")
 
             # No more duplicate balance refresh code here - it's all done above atomically
             
