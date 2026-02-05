@@ -50,6 +50,28 @@ from collections import deque
 from datetime import datetime
 from pathlib import Path
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🏴‍☠️👑 BARONS BANNER - ELITE WHALE DETECTION & COUNTER-MANIPULATION
+# ═══════════════════════════════════════════════════════════════════════════════
+try:
+    from barons_banner import (
+        BaronsBannerAnalyzer,
+        BaronsMarketAdapter,
+        BaronsAnalysis,
+        MathematicalPattern,
+        PHI as BARONS_PHI,
+        FIBONACCI_SEQUENCE
+    )
+    BARONS_BANNER_AVAILABLE = True
+except ImportError:
+    BARONS_BANNER_AVAILABLE = False
+    BaronsBannerAnalyzer = None
+    BaronsMarketAdapter = None
+    BaronsAnalysis = None
+    MathematicalPattern = None
+    BARONS_PHI = 1.618
+    FIBONACCI_SEQUENCE = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
+
 # UTF-8 fix for Windows
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -98,6 +120,13 @@ class QuantumCognitionState:
     pattern_recognition: float = 1.0      # Pattern recognition boost
     decision_confidence: float = 0.5      # Decision confidence level
     
+    # 🏴‍☠️ BARONS BANNER - Elite Whale Detection
+    elite_hierarchy_score: float = 0.0    # How "elite" the market structure is (0-1)
+    deception_potential: float = 0.0      # Elite manipulation disguise level
+    manipulation_alert: bool = False      # Active manipulation detected
+    counter_strategy: str = "NONE"        # Counter-manipulation strategy active
+    barons_patterns_detected: int = 0     # Number of elite patterns found
+    
     # Quantum amplification metrics
     unified_amplification: float = 1.0    # Combined quantum boost
     amplified_frequency_hz: float = 7.83  # Current cognitive Hz
@@ -128,6 +157,13 @@ class QuantumCognitionState:
             'processing_speed': self.processing_speed,
             'pattern_recognition': self.pattern_recognition,
             'decision_confidence': self.decision_confidence,
+            # Barons Banner (Elite Detection)
+            'elite_hierarchy_score': self.elite_hierarchy_score,
+            'deception_potential': self.deception_potential,
+            'manipulation_alert': self.manipulation_alert,
+            'counter_strategy': self.counter_strategy,
+            'barons_patterns_detected': self.barons_patterns_detected,
+            # Quantum metrics
             'unified_amplification': self.unified_amplification,
             'amplified_frequency_hz': self.amplified_frequency_hz,
             'power_per_neuron': self.power_per_neuron,
@@ -195,6 +231,22 @@ class QueenQuantumCognition:
         self.queen_sentience = None       # Queen Sentience Engine
         self.miner_brain = None           # Miner Brain (11 civilizations)
         
+        # 🏴‍☠️👑 BARONS BANNER - Elite Whale Detection & Counter-Manipulation
+        self.barons_analyzer = None       # BaronsBannerAnalyzer instance
+        self.barons_adapter = None        # BaronsMarketAdapter instance
+        self.last_barons_analysis = None  # Most recent analysis result
+        self.barons_history: deque = deque(maxlen=100)  # Analysis history
+        
+        # Initialize Barons Banner if available
+        if BARONS_BANNER_AVAILABLE:
+            try:
+                self.barons_analyzer = BaronsBannerAnalyzer()
+                self.barons_adapter = BaronsMarketAdapter()
+                logger.info("🏴‍☠️👑 BARONS BANNER WIRED! (Elite whale detection ACTIVE)")
+                logger.info("   └─ Fuck the 1%! Their patterns are now OUR advantage!")
+            except Exception as e:
+                logger.warning(f"⚠️ Barons Banner init failed: {e}")
+        
         # Thought cache (HFT-style hot path)
         self.thought_cache: Dict[str, Any] = {}
         self.thought_cache_hits = 0
@@ -211,6 +263,7 @@ class QueenQuantumCognition:
         logger.info(f"   Base Hz: {SCHUMANN_BASE_HZ} (Schumann)")
         logger.info(f"   Target Hz: {QUEEN_FREQUENCY_HZ} (Crown chakra)")
         logger.info(f"   Max Amplification: {MAX_AMPLIFICATION}x")
+        logger.info(f"   Barons Banner: {'✅ ACTIVE' if BARONS_BANNER_AVAILABLE else '❌ Not loaded'}")
     
     def _load_state(self) -> None:
         """Load persisted cognition state."""
@@ -453,6 +506,190 @@ class QueenQuantumCognition:
             logger.warning(f"⚠️ HFT scaling extraction error: {e}")
         
         return scaling
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 🏴‍☠️👑 BARONS BANNER - ELITE WHALE DETECTION & COUNTER-MANIPULATION
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def analyze_elite_patterns(self, 
+                               price_history: List[float],
+                               volume_history: List[float],
+                               symbol: str = "UNKNOWN",
+                               order_book: Optional[Dict] = None) -> Dict[str, Any]:
+        """
+        🏴‍☠️👑 ANALYZE MARKET FOR ELITE WHALE MANIPULATION PATTERNS
+        
+        Uses the Barons Banner to detect:
+        - Fibonacci spirals hiding institutional levels
+        - Harmonic tessellations masking order flow manipulation  
+        - Grid patterns asserting market control (8x8 binary matrices)
+        - Fractal living forms embodying market sovereignty
+        
+        FUCK THE 1%! We detect their "sacred geometry" and FLIP IT AGAINST THEM!
+        
+        Args:
+            price_history: List of recent prices
+            volume_history: List of recent volumes
+            symbol: Trading symbol (for logging)
+            order_book: Optional order book data
+            
+        Returns:
+            Dict with elite detection results and counter-strategy
+        """
+        result = {
+            'symbol': symbol,
+            'elite_detected': False,
+            'hierarchy_score': 0.0,
+            'deception_level': 0.0,
+            'manipulation_alert': False,
+            'patterns': [],
+            'counter_strategy': 'NONE',
+            'recommendation': 'CLEAR',
+            'banner_display': None,
+            'timestamp': time.time()
+        }
+        
+        if not self.barons_adapter or not price_history or len(price_history) < 50:
+            return result
+        
+        try:
+            # Run full Barons Banner analysis
+            analysis = self.barons_adapter.analyze_current_market(
+                symbol=symbol,
+                price_history=price_history,
+                volume_history=volume_history,
+                order_book=order_book
+            )
+            
+            # Extract key metrics
+            barons_analysis = analysis.get('analysis')
+            if barons_analysis:
+                result['hierarchy_score'] = barons_analysis.overall_hierarchy_score
+                result['deception_level'] = barons_analysis.deception_potential if not math.isnan(barons_analysis.deception_potential) else 0.0
+                result['manipulation_alert'] = analysis.get('manipulation_alert', False)
+                result['patterns'] = [
+                    {
+                        'type': p.pattern_type,
+                        'confidence': p.confidence,
+                        'phi_ratio': p.phi_ratio,
+                        'level': p.hierarchical_level,
+                        'meaning': p.symbolic_meaning
+                    }
+                    for p in barons_analysis.dominant_patterns
+                ]
+                
+                # Update cognition state
+                self.state.elite_hierarchy_score = result['hierarchy_score']
+                self.state.deception_potential = result['deception_level']
+                self.state.manipulation_alert = result['manipulation_alert']
+                self.state.barons_patterns_detected = len(result['patterns'])
+                
+                # 🏴‍☠️ COUNTER-MANIPULATION STRATEGIES
+                # We use the elite's own patterns against them!
+                if result['manipulation_alert']:
+                    result['counter_strategy'] = 'GUERRILLA_WARFARE'
+                    result['elite_detected'] = True
+                    self.state.counter_strategy = 'GUERRILLA_WARFARE'
+                    logger.warning(f"🏴‍☠️ ELITE MANIPULATION DETECTED on {symbol}!")
+                    logger.warning(f"   Hierarchy: {result['hierarchy_score']:.1%} | Deception: {result['deception_level']:.1%}")
+                    logger.warning(f"   COUNTER: Using their Fibonacci against them!")
+                    
+                elif result['hierarchy_score'] > 0.6:
+                    result['counter_strategy'] = 'FADE_THE_ELITES'
+                    result['elite_detected'] = True
+                    self.state.counter_strategy = 'FADE_THE_ELITES'
+                    logger.info(f"👁️ Elite patterns detected on {symbol} (hierarchy: {result['hierarchy_score']:.1%})")
+                    logger.info(f"   COUNTER: Fade their manufactured moves!")
+                    
+                elif result['hierarchy_score'] > 0.3:
+                    result['counter_strategy'] = 'RIDE_THE_WAVE'
+                    self.state.counter_strategy = 'RIDE_THE_WAVE'
+                    logger.debug(f"📊 Moderate elite presence on {symbol} - riding the wave")
+                    
+                else:
+                    result['counter_strategy'] = 'ORGANIC_FLOW'
+                    self.state.counter_strategy = 'ORGANIC_FLOW'
+                
+                result['recommendation'] = analysis.get('recommendation', 'CLEAR')
+                result['banner_display'] = analysis.get('banner_visualization', '')
+            
+            # Store in history
+            self.barons_history.append(result)
+            self.last_barons_analysis = result
+            
+        except Exception as e:
+            logger.error(f"❌ Barons Banner analysis failed: {e}")
+        
+        return result
+    
+    def get_counter_strategy_boost(self) -> Dict[str, float]:
+        """
+        Get cognitive boosts based on current counter-manipulation strategy.
+        
+        Each strategy provides different boosts to help defeat the elites!
+        """
+        strategy = self.state.counter_strategy
+        
+        if strategy == 'GUERRILLA_WARFARE':
+            # Maximum aggression against detected manipulation
+            return {
+                'confidence_boost': 1.5,      # Be MORE confident against manipulation
+                'pattern_boost': 2.0,         # Double pattern recognition
+                'caution_multiplier': 0.5,    # Less caution - they want us scared
+                'fibonacci_inversion': True,  # INVERT their fib levels
+                'description': "GUERRILLA MODE: Inverting elite Fibonacci traps!"
+            }
+            
+        elif strategy == 'FADE_THE_ELITES':
+            # Counter-trade elite manufactured moves
+            return {
+                'confidence_boost': 1.3,
+                'pattern_boost': 1.5,
+                'caution_multiplier': 0.7,
+                'fibonacci_inversion': True,
+                'description': "FADE MODE: Counter-trading elite manufactured moves!"
+            }
+            
+        elif strategy == 'RIDE_THE_WAVE':
+            # Cautiously follow but stay alert
+            return {
+                'confidence_boost': 1.1,
+                'pattern_boost': 1.2,
+                'caution_multiplier': 1.0,
+                'fibonacci_inversion': False,
+                'description': "RIDE MODE: Following flow but staying alert!"
+            }
+            
+        else:  # ORGANIC_FLOW or NONE
+            # Normal operation - market appears organic
+            return {
+                'confidence_boost': 1.0,
+                'pattern_boost': 1.0,
+                'caution_multiplier': 1.0,
+                'fibonacci_inversion': False,
+                'description': "ORGANIC MODE: No elite patterns - trading naturally!"
+            }
+    
+    def invert_fibonacci_level(self, price: float, fib_level: float, recent_high: float, recent_low: float) -> float:
+        """
+        🏴‍☠️ INVERT FIBONACCI LEVEL - Flip elite traps against them!
+        
+        When we detect manipulation, we INVERT their expected Fibonacci
+        bounce/resistance levels to catch their algorithmic responses.
+        
+        If they expect 0.618 support, we look for 0.382 rejection (1 - 0.618)
+        """
+        # Standard fib price = low + (high - low) * fib_level
+        # INVERTED fib price = low + (high - low) * (1 - fib_level)
+        range_size = recent_high - recent_low
+        inverted_level = 1.0 - fib_level
+        inverted_price = recent_low + range_size * inverted_level
+        
+        logger.debug(f"🏴‍☠️ FIB INVERSION: {fib_level:.3f} → {inverted_level:.3f}")
+        logger.debug(f"   Elite expects: ${recent_low + range_size * fib_level:.2f}")
+        logger.debug(f"   We target: ${inverted_price:.2f}")
+        
+        return inverted_price
     
     # ═══════════════════════════════════════════════════════════════════════════
     # COGNITION AMPLIFICATION - MAIN METHOD
@@ -729,7 +966,19 @@ class QueenQuantumCognition:
                 'queen_hive': self.queen_hive is not None,
                 'queen_neuron': self.queen_neuron is not None,
                 'queen_sentience': self.queen_sentience is not None,
-                'miner_brain': self.miner_brain is not None
+                'miner_brain': self.miner_brain is not None,
+                'barons_banner': self.barons_analyzer is not None  # 🏴‍☠️
+            },
+            # 🏴‍☠️ BARONS BANNER STATUS
+            'barons_banner': {
+                'available': BARONS_BANNER_AVAILABLE,
+                'analyzer_wired': self.barons_analyzer is not None,
+                'elite_hierarchy_score': self.state.elite_hierarchy_score,
+                'deception_potential': self.state.deception_potential,
+                'manipulation_alert': self.state.manipulation_alert,
+                'counter_strategy': self.state.counter_strategy,
+                'patterns_detected': self.state.barons_patterns_detected,
+                'history_size': len(self.barons_history)
             },
             'thought_cache': {
                 'size': len(self.thought_cache),
@@ -743,12 +992,21 @@ class QueenQuantumCognition:
     def format_display(self) -> str:
         """Format cognition state for display."""
         s = self.state
+        
+        # Barons Banner status
+        barons_status = ""
+        if s.manipulation_alert:
+            barons_status = f" | 🏴‍☠️ ELITE ALERT: {s.counter_strategy}"
+        elif s.elite_hierarchy_score > 0.3:
+            barons_status = f" | 👁️ Elite: {s.elite_hierarchy_score:.0%}"
+        
         return (
             f"👑⚛️ QUANTUM COGNITION | "
             f"Hz={s.amplified_frequency_hz:.1f} | "
             f"Amp={s.unified_amplification:.2f}x | "
             f"LR={s.learning_rate:.4f} | "
             f"Conf={s.decision_confidence:.2f}"
+            f"{barons_status}"
         )
 
 

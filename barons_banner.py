@@ -292,9 +292,16 @@ class BaronsBannerAnalyzer:
 
         # Pattern density and confidence
         avg_confidence = np.mean([p.confidence for p in patterns])
-        pattern_density = min(1.0, len(patterns) / 10.0)  # Normalize to 10 patterns
+        # 🏴‍☠️ ENHANCED: Lower threshold - 3 patterns is enough to detect elites
+        pattern_density = min(1.0, len(patterns) / 3.0)  # More aggressive detection
 
-        return (hierarchy_weight / 4.0) * avg_confidence * pattern_density
+        # 🏴‍☠️ ENHANCED: Boost hierarchy score based on pattern types
+        # Grid + Spiral + Living Form = ELITE MANIPULATION
+        pattern_types = set(p.pattern_type for p in patterns)
+        type_bonus = len(pattern_types) * 0.2  # 0.2 bonus per unique type
+        
+        base_score = (hierarchy_weight / 4.0) * avg_confidence * pattern_density
+        return min(1.0, base_score + type_bonus)
 
     def _assess_deception_potential(self,
                                   patterns: List[MathematicalPattern],
@@ -303,12 +310,19 @@ class BaronsBannerAnalyzer:
         if not patterns:
             return 0.0
 
-        # Deception increases with aesthetic beauty and subconscious resonance
-        phi_harmony = np.mean([p.phi_ratio for p in patterns if 1.5 < p.phi_ratio < 1.7])
+        # 🏴‍☠️ ENHANCED: Better phi harmony detection
+        phi_ratios = [p.phi_ratio for p in patterns]
+        # Check for ANY phi-aligned pattern (not just 1.5-1.7 range)
+        phi_aligned = [r for r in phi_ratios if 0.5 < r < 2.0]
+        phi_harmony = np.mean(phi_aligned) if phi_aligned else 0.0
+        
         symmetry_avg = np.mean([p.symmetry_score for p in patterns])
+        
+        # 🏴‍☠️ ENHANCED: Add confidence-based deception
+        avg_confidence = np.mean([p.confidence for p in patterns])
 
-        # Higher hierarchy + aesthetic appeal = higher deception potential
-        return hierarchy_score * phi_harmony * symmetry_avg
+        # Higher hierarchy + aesthetic appeal + high confidence = higher deception potential
+        return min(1.0, hierarchy_score * (0.5 + phi_harmony * 0.3) * (0.5 + symmetry_avg * 0.5) * (0.5 + avg_confidence * 0.5))
 
     def _build_process_tree(self,
                           patterns: List[MathematicalPattern],
