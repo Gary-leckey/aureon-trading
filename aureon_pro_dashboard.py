@@ -4022,6 +4022,118 @@ class AureonProDashboard:
         
         return prices
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 👑📊 QUEEN SYSTEMS DATA RECORDING
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def _record_to_queen_systems(self, positions: list, total_value: float, total_cost: float, balances: dict):
+        """
+        Feed REAL portfolio data to all Queen systems for persistence and learning.
+        
+        This ensures Queen systems have accurate data for:
+        - 👑💰 Queen Asset Monitor (portfolio tracking)
+        - 👑🧠 Queen Quantum Cognition (learning from real positions)
+        - 👑🐝 Queen Hive Mind (central consciousness awareness)
+        """
+        try:
+            # 1. Update Queen Asset Monitor (primary portfolio tracker)
+            if self.asset_monitor:
+                try:
+                    # Build positions dict in the format Asset Monitor expects
+                    positions_dict = {}
+                    for pos in positions:
+                        exchange = pos.get('exchange', 'unknown')
+                        symbol = pos.get('symbol', 'UNKNOWN')
+                        key = f"{exchange}:{symbol}"
+                        positions_dict[key] = {
+                            'symbol': symbol,
+                            'exchange': exchange,
+                            'quantity': pos.get('quantity', 0),
+                            'entry_price': pos.get('avgCost', 0),
+                            'cost_basis': pos.get('costBasis', pos.get('avgCost', 0) * pos.get('quantity', 0)),
+                        }
+                    
+                    # Update cached positions
+                    self.asset_monitor.cached_positions = positions_dict
+                    self.asset_monitor.positions_last_updated = time.time()
+                    
+                    # Persist to disk
+                    self.asset_monitor._save_state()
+                    
+                    self.logger.info(f"👑💰 Queen Asset Monitor: Recorded {len(positions_dict)} positions (${total_value:,.2f})")
+                except Exception as e:
+                    self.logger.warning(f"⚠️ Asset Monitor recording failed: {e}")
+            
+            # 2. Feed data to Queen Quantum Cognition (for learning)
+            if self.quantum_cognition:
+                try:
+                    # Update cognition state with portfolio metrics
+                    if hasattr(self.quantum_cognition, 'state'):
+                        # Track portfolio performance for decision confidence
+                        pnl_pct = ((total_value - total_cost) / total_cost * 100) if total_cost > 0 else 0
+                        
+                        # Boost confidence based on profitable positions
+                        profitable_count = sum(1 for p in positions if p.get('unrealizedPnl', 0) > 0)
+                        profit_ratio = profitable_count / len(positions) if positions else 0
+                        
+                        # Update quantum state (this feeds the Queen's neural network)
+                        self.quantum_cognition.state.decision_confidence = min(0.95, 0.5 + profit_ratio * 0.3)
+                        self.quantum_cognition.state.total_updates += 1
+                        self.quantum_cognition.state.last_update = time.time()
+                        
+                        # Save quantum cognition state periodically
+                        if self.quantum_cognition.state.total_updates % 10 == 0:
+                            self.quantum_cognition._save_state()
+                            self.logger.debug("👑⚛️ Queen Cognition state saved")
+                    
+                    self.logger.info(f"👑⚛️ Queen Quantum Cognition: Updated with portfolio metrics (P&L: {((total_value - total_cost) / total_cost * 100) if total_cost > 0 else 0:+.2f}%)")
+                except Exception as e:
+                    self.logger.warning(f"⚠️ Quantum Cognition recording failed: {e}")
+            
+            # 3. Inform Queen Hive Mind (central consciousness)
+            if self.queen_hive:
+                try:
+                    # Push portfolio summary to Queen Hive for overall awareness
+                    if hasattr(self.queen_hive, 'portfolio_summary'):
+                        self.queen_hive.portfolio_summary = {
+                            'total_value': total_value,
+                            'total_cost': total_cost,
+                            'unrealized_pnl': total_value - total_cost,
+                            'pnl_percent': ((total_value - total_cost) / total_cost * 100) if total_cost > 0 else 0,
+                            'total_positions': len(positions),
+                            'exchange_balances': balances,
+                            'last_update': time.time()
+                        }
+                    
+                    self.logger.info(f"👑🧠 Queen Hive Mind: Aware of portfolio (${total_value:,.2f}, {len(positions)} positions)")
+                except Exception as e:
+                    self.logger.warning(f"⚠️ Queen Hive recording failed: {e}")
+            
+            # 4. Emit to ThoughtBus for cross-system awareness
+            if THOUGHTBUS_AVAILABLE:
+                try:
+                    from aureon_thought_bus import get_thought_bus, Thought
+                    bus = get_thought_bus()
+                    if bus:
+                        thought = Thought(
+                            topic='queen.portfolio.updated',
+                            source='dashboard',
+                            payload={
+                                'total_value': total_value,
+                                'positions_count': len(positions),
+                                'exchanges': list(set(p.get('exchange', 'unknown') for p in positions)),
+                                'pnl_percent': ((total_value - total_cost) / total_cost * 100) if total_cost > 0 else 0
+                            }
+                        )
+                        bus.emit(thought)
+                        self.logger.debug("💭 ThoughtBus: Emitted portfolio update")
+                except Exception:
+                    pass  # ThoughtBus is optional
+            
+            self.logger.info(f"👑📊 Queen Systems Recording Complete: ${total_value:,.2f} | {len(positions)} positions")
+            
+        except Exception as e:
+            self.logger.error(f"❌ Queen systems recording failed: {e}")
+    
     async def refresh_portfolio(self):
         """Fetch real portfolio data from ALL exchanges with caching."""
         self.logger.info("🔄 REFRESH_PORTFOLIO: Starting portfolio refresh")
@@ -4413,6 +4525,10 @@ class AureonProDashboard:
                             self.logger.warning(f"⚠️ Harmonic field update error for {pos.get('symbol')}: {e}")
                     self.logger.info(f"🔩 Harmonic field: {nodes_added} nodes updated (snapshot fallback)")
                 self.logger.info(f"✅ Portfolio (snapshot): {len(positions)} positions, ${total_value:,.2f} value | Balances: Binance ${new_balances['binance']:,.2f}, Kraken ${new_balances['kraken']:,.2f}, Alpaca ${new_balances['alpaca']:,.2f}")
+                
+                # 👑📊 QUEEN SYSTEMS DATA RECORDING
+                # Feed REAL portfolio data to Queen Asset Monitor for persistence
+                await self._record_to_queen_systems(positions, total_value, total_cost, new_balances)
 
             # No more duplicate balance refresh code here - it's all done above atomically
             
@@ -4498,6 +4614,9 @@ class AureonProDashboard:
                             self.logger.warning(f"⚠️ Harmonic field update error for {pos.get('symbol')}: {e}")
                     self.logger.info(f"🔩 Harmonic field: {nodes_added} nodes updated (snapshot fallback)")
                 self.logger.info(f"✅ Portfolio (snapshot): {len(positions)} positions, ${total_value:,.2f} value | Balances: Binance ${new_balances['binance']:,.2f}, Kraken ${new_balances['kraken']:,.2f}, Alpaca ${new_balances['alpaca']:,.2f}")
+                
+                # 👑📊 QUEEN SYSTEMS DATA RECORDING (fallback path)
+                await self._record_to_queen_systems(positions, total_value, total_cost, new_balances)
 
             # No more duplicate balance refresh code here - it's all done above atomically
             

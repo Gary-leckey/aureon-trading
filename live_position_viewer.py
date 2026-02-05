@@ -173,31 +173,53 @@ def get_kraken_positions():
     # Get current prices from Kraken public API
     prices = {}
     
-    # Known trading pairs on Kraken (major ones + common alts)
-    known_pairs = {
-        'ADA': 'ADAUSD', 'ATOM': 'ATOMUSD', 'BABY': 'BABYUSD', 'BTC': 'BTCUSD',
-        'ETH': 'ETHUSD', 'SOL': 'SOLUSD', 'DOGE': 'DOGEUSD', 'XRP': 'XRPUSD',
-        'DOT': 'DOTUSD', 'AVAX': 'AVAXUSD', 'MATIC': 'MATICUSD', 'ARB': 'ARBUSD',
-        'OP': 'OPUSD', 'LINK': 'LINKUSD', 'AAVE': 'AAVEUSD', 'UNI': 'UNIUSD',
-        # Meme/community coins (try multiple quote currencies)
-        'BSX': 'BSXUSD', 'EUL': 'EULUSD', 'FIGHT': 'FIGHTUSD', 'FIS': 'FISUSD',
-        'GHIBLI': 'GHIBLIUSD', 'ICNT': 'ICNTUSD', 'IN': 'INUSD', 'KTA': 'KTAUSD',
-        'MXC': 'MXCUSD', 'OPEN': 'OPENUSD', 'SAHARA': 'SAHARAUSD', 'SCRT': 'SCRTUSD',
-        'SKR': 'SKRUSD', 'TRX': 'TRXUSD', 'TRX.B': 'TRXUSD'  # TRX.B is tokenized version
-    }
-    
+    # Build pairs dynamically from actual balances (not just known pairs)
+    # Kraken uses various suffixes: USD, USDT, EUR
     try:
         import requests
-        # Build trading pairs - only use KNOWN pairs on Kraken
+        
+        # First, get ALL available pairs from Kraken
+        available_pairs = {}
+        try:
+            pairs_resp = requests.get('https://api.kraken.com/0/public/AssetPairs', timeout=10)
+            if pairs_resp.status_code == 200:
+                pairs_data = pairs_resp.json()
+                for pair_name, pair_info in pairs_data.get('result', {}).items():
+                    base = pair_info.get('base', '')
+                    quote = pair_info.get('quote', '')
+                    # Normalize: XBT -> BTC, XXBT -> BTC, ZUSD -> USD
+                    base_norm = base.replace('XXBT', 'BTC').replace('XBT', 'BTC').replace('XETH', 'ETH').lstrip('X').lstrip('Z')
+                    if quote in ['USD', 'ZUSD', 'USDT', 'USDC']:
+                        available_pairs[base_norm] = pair_name
+                        available_pairs[base] = pair_name  # Also map original
+        except Exception as e:
+            print(f"⚠️ Could not fetch Kraken pairs list: {e}")
+        
+        # Build pairs to fetch based on what we hold
         pairs_to_fetch = []
+        asset_to_pair = {}
         for asset in balances.keys():
             # Skip stablecoins
             if asset in stablecoins:
                 continue
             
-            # Use known pair if available, otherwise skip
-            if asset in known_pairs:
-                pairs_to_fetch.append(known_pairs[asset])
+            # Normalize asset name
+            asset_norm = asset.replace('XXBT', 'BTC').replace('XBT', 'BTC').replace('XETH', 'ETH').replace('XXRP', 'XRP').lstrip('X').lstrip('Z')
+            
+            # Try to find a USD pair
+            pair = available_pairs.get(asset_norm) or available_pairs.get(asset)
+            if not pair:
+                # Try common suffixes
+                for suffix in ['USD', 'USDT', 'USDC']:
+                    test_pair = f"{asset_norm}{suffix}"
+                    if test_pair in [p for p in pairs_data.get('result', {}).keys()]:
+                        pair = test_pair
+                        break
+            
+            if pair:
+                pairs_to_fetch.append(pair)
+                asset_to_pair[asset] = pair
+                asset_to_pair[asset_norm] = pair
         
         # Fetch tickers in batch
         if pairs_to_fetch:
@@ -239,32 +261,44 @@ def get_kraken_positions():
         if qty_float <= 0.000001 or asset in stablecoins:
             continue
         
-        # Kraken balance keys are already clean (ADA, SOL, BABY, etc)
-        symbol = f"{asset}USD"
-        current_price = prices.get(symbol, 0)
+        # Normalize asset name
+        asset_norm = asset.replace('XXBT', 'BTC').replace('XBT', 'BTC').replace('XETH', 'ETH').replace('XXRP', 'XRP').lstrip('X').lstrip('Z')
         
-        # If USD pair not found, try USDT and USDC
+        # Find price from our fetched prices
+        current_price = 0
+        symbol = f"{asset_norm}USD"
+        
+        # Try finding the pair we used
+        pair = asset_to_pair.get(asset) or asset_to_pair.get(asset_norm)
+        if pair:
+            current_price = prices.get(pair, 0)
+            symbol = pair
+        
+        # If still no price, try direct lookups
         if not current_price:
-            for alt_quote in ['USDT', 'USDC']:
-                alt_pair = f"{asset}{alt_quote}"
-                current_price = prices.get(alt_pair, 0)
-                if current_price > 0:
-                    symbol = alt_pair
+            for test_pair in prices.keys():
+                # Check if this pair is for our asset
+                test_upper = test_pair.upper()
+                if test_upper.startswith(asset_norm.upper()) or test_upper.startswith(asset.upper()):
+                    current_price = prices.get(test_pair, 0)
+                    symbol = test_pair
                     break
         
         current_value = qty_float * current_price if current_price > 0 else 0
         
-        positions.append({
-            'exchange': 'kraken',
-            'symbol': symbol,
-            'quantity': qty_float,
-            'avg_cost': current_price,  # Use current price as cost basis for now
-            'current_price': current_price,
-            'current_value': current_value,
-            'unrealized_pnl': 0,
-            'pnl_percent': 0,
-            'cost_basis': current_value
-        })
+        # Only add if we have quantity (even without price, so user knows they hold it)
+        if qty_float > 0:
+            positions.append({
+                'exchange': 'kraken',
+                'symbol': symbol,
+                'quantity': qty_float,
+                'avg_cost': current_price,  # Use current price as cost basis for now
+                'current_price': current_price,
+                'current_value': current_value,
+                'unrealized_pnl': 0,
+                'pnl_percent': 0,
+                'cost_basis': current_value
+            })
     
     print(f"✅ Kraken: Processed {len(positions)} REAL positions with prices")
     

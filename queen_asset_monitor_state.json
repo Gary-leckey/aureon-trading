@@ -1,298 +1,284 @@
 {
   "positions": {
-    "kraken:ADA": {
-      "symbol": "ADA",
-      "exchange": "kraken",
-      "quantity": 27.90370799,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:BABY": {
-      "symbol": "BABY",
-      "exchange": "kraken",
-      "quantity": 0.00017,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:BSX": {
-      "symbol": "BSX",
-      "exchange": "kraken",
-      "quantity": 90744.1,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:CRO": {
-      "symbol": "CRO",
-      "exchange": "kraken",
-      "quantity": 172.37,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:EUL": {
-      "symbol": "EUL",
-      "exchange": "kraken",
-      "quantity": 3.639386,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:FIGHT": {
-      "symbol": "FIGHT",
-      "exchange": "kraken",
-      "quantity": 374.5,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:FIS": {
-      "symbol": "FIS",
-      "exchange": "kraken",
-      "quantity": 105.576,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:GHIBLI": {
-      "symbol": "GHIBLI",
-      "exchange": "kraken",
-      "quantity": 40400.0,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:ICNT": {
-      "symbol": "ICNT",
-      "exchange": "kraken",
-      "quantity": 16.0,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:IN": {
-      "symbol": "IN",
-      "exchange": "kraken",
-      "quantity": 210.0,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:KTA": {
-      "symbol": "KTA",
-      "exchange": "kraken",
-      "quantity": 0.00028,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:MXC": {
-      "symbol": "MXC",
-      "exchange": "kraken",
-      "quantity": 3100.0,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:OPEN": {
-      "symbol": "OPEN",
-      "exchange": "kraken",
-      "quantity": 10.78167,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:SAHARA": {
-      "symbol": "SAHARA",
-      "exchange": "kraken",
-      "quantity": 606.4649,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:SCRT": {
-      "symbol": "SCRT",
-      "exchange": "kraken",
-      "quantity": 0.00947493,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:SKR": {
-      "symbol": "SKR",
-      "exchange": "kraken",
-      "quantity": 500.0,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:SOL": {
-      "symbol": "SOL",
-      "exchange": "kraken",
-      "quantity": 0.0083389591,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:TRX": {
-      "symbol": "TRX",
-      "exchange": "kraken",
-      "quantity": 0.00906042,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:TRX.B": {
-      "symbol": "TRX.B",
-      "exchange": "kraken",
-      "quantity": 81.94517156,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:TUSD": {
-      "symbol": "TUSD",
-      "exchange": "kraken",
-      "quantity": 11.80156,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:ETH": {
-      "symbol": "ETH",
-      "exchange": "kraken",
-      "quantity": 1.1035e-06,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "kraken:XXRP": {
-      "symbol": "XXRP",
-      "exchange": "kraken",
-      "quantity": 10.67672,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:ZEC": {
-      "symbol": "ZEC",
-      "exchange": "binance",
-      "quantity": 0.014,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:AXS": {
-      "symbol": "AXS",
-      "exchange": "binance",
-      "quantity": 2.28,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:ROSE": {
-      "symbol": "ROSE",
-      "exchange": "binance",
-      "quantity": 2027.36513903,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:LPT": {
-      "symbol": "LPT",
-      "exchange": "binance",
-      "quantity": 0.56567817,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:SSV": {
-      "symbol": "SSV",
-      "exchange": "binance",
-      "quantity": 1.23982105,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:BEAMX": {
-      "symbol": "BEAMX",
-      "exchange": "binance",
-      "quantity": 1791.0,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:ZRO": {
-      "symbol": "ZRO",
-      "exchange": "binance",
-      "quantity": 5.95746638,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:KAIA": {
-      "symbol": "KAIA",
-      "exchange": "binance",
-      "quantity": 21.89421909,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:PENGU": {
-      "symbol": "PENGU",
-      "exchange": "binance",
-      "quantity": 1710.0,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:SHELL": {
-      "symbol": "SHELL",
-      "exchange": "binance",
-      "quantity": 82.72358723,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:STO": {
-      "symbol": "STO",
-      "exchange": "binance",
-      "quantity": 255.1,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:RESOLV": {
-      "symbol": "RESOLV",
-      "exchange": "binance",
-      "quantity": 59.943,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:SOMI": {
-      "symbol": "SOMI",
-      "exchange": "binance",
-      "quantity": 53.9,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:AVNT": {
-      "symbol": "AVNT",
-      "exchange": "binance",
-      "quantity": 72.2,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:NOM": {
-      "symbol": "NOM",
-      "exchange": "binance",
-      "quantity": 524.0,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:ENSO": {
-      "symbol": "ENSO",
-      "exchange": "binance",
-      "quantity": 3.88346538,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:TURTLE": {
-      "symbol": "TURTLE",
-      "exchange": "binance",
-      "quantity": 415.3,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:F": {
-      "symbol": "F",
-      "exchange": "binance",
-      "quantity": 819.221,
-      "entry_price": 0,
-      "cost_basis": 0
-    },
-    "binance:BREV": {
-      "symbol": "BREV",
+    "binance:BREVUSDC": {
+      "symbol": "BREVUSDC",
       "exchange": "binance",
       "quantity": 262.03587128,
-      "entry_price": 0,
-      "cost_basis": 0
+      "entry_price": 0.22470804501875777,
+      "cost_basis": 53.90745999999999
+    },
+    "binance:ROSEUSDC": {
+      "symbol": "ROSEUSDC",
+      "exchange": "binance",
+      "quantity": 2027.36513903,
+      "entry_price": 0.020955312105333874,
+      "cost_basis": 77.985194
+    },
+    "kraken:GHIBLIUSD": {
+      "symbol": "GHIBLIUSD",
+      "exchange": "kraken",
+      "quantity": 40400.0,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
+    },
+    "binance:TURTLEUSDC": {
+      "symbol": "TURTLEUSDC",
+      "exchange": "binance",
+      "quantity": 415.3,
+      "entry_price": 0.0817,
+      "cost_basis": 0.024510000000000927
+    },
+    "binance:STOUSDC": {
+      "symbol": "STOUSDC",
+      "exchange": "binance",
+      "quantity": 255.1,
+      "entry_price": 0.09383194618272842,
+      "cost_basis": 29.988690000000002
+    },
+    "binance:AVNTUSDC": {
+      "symbol": "AVNTUSDC",
+      "exchange": "binance",
+      "quantity": 72.2,
+      "entry_price": 0.3902245989304813,
+      "cost_basis": 0.0390224598930473
+    },
+    "kraken:XXRPZUSD": {
+      "symbol": "XXRPZUSD",
+      "exchange": "kraken",
+      "quantity": 10.67672,
+      "entry_price": 1.29186,
+      "cost_basis": 13.7928274992
+    },
+    "kraken:CROUSDT": {
+      "symbol": "CROUSDT",
+      "exchange": "kraken",
+      "quantity": 172.37,
+      "entry_price": 0.0741,
+      "cost_basis": 12.772617
+    },
+    "binance:PENGUUSDC": {
+      "symbol": "PENGUUSDC",
+      "exchange": "binance",
+      "quantity": 1710.0,
+      "entry_price": 0.010015828567872833,
+      "cost_basis": 0.08012662854298266
+    },
+    "kraken:INUSD": {
+      "symbol": "INUSD",
+      "exchange": "kraken",
+      "quantity": 210.0,
+      "entry_price": 0.08032666666666667,
+      "cost_basis": 16.8686
+    },
+    "binance:ZROUSDC": {
+      "symbol": "ZROUSDC",
+      "exchange": "binance",
+      "quantity": 5.95746638,
+      "entry_price": 2.3144363406408095,
+      "cost_basis": 0.5091759949409754
+    },
+    "binance:SOMIUSDC": {
+      "symbol": "SOMIUSDC",
+      "exchange": "binance",
+      "quantity": 53.9,
+      "entry_price": 0.300470325203252,
+      "cost_basis": 0.030047032520325628
+    },
+    "kraken:SAHARAUSD": {
+      "symbol": "SAHARAUSD",
+      "exchange": "kraken",
+      "quantity": 606.4649,
+      "entry_price": 0.01571,
+      "cost_basis": 9.527563578999999
+    },
+    "kraken:SKRUSD": {
+      "symbol": "SKRUSD",
+      "exchange": "kraken",
+      "quantity": 500.0,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
+    },
+    "kraken:ADAUSDT": {
+      "symbol": "ADAUSDT",
+      "exchange": "kraken",
+      "quantity": 27.90370799,
+      "entry_price": 0.260352,
+      "cost_basis": 7.26478618261248
+    },
+    "kraken:ICNTUSD": {
+      "symbol": "ICNTUSD",
+      "exchange": "kraken",
+      "quantity": 16.0,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
     },
     "alpaca:SHIBUSD": {
       "symbol": "SHIBUSD",
       "exchange": "alpaca",
       "quantity": 934990.229265847,
-      "entry_price": 6.962e-06,
-      "cost_basis": 6.509401976148826
+      "entry_price": 7.85e-06,
+      "cost_basis": 7.85e-15
+    },
+    "binance:ENSOUSDC": {
+      "symbol": "ENSOUSDC",
+      "exchange": "binance",
+      "quantity": 3.88346538,
+      "entry_price": 1.34,
+      "cost_basis": 5.203843609200001
+    },
+    "binance:RESOLVUSDC": {
+      "symbol": "RESOLVUSDC",
+      "exchange": "binance",
+      "quantity": 59.943,
+      "entry_price": 0.0853987427466151,
+      "cost_basis": 0.01707974854932205
+    },
+    "binance:SSVUSDC": {
+      "symbol": "SSVUSDC",
+      "exchange": "binance",
+      "quantity": 1.23982105,
+      "entry_price": 4.833,
+      "cost_basis": 5.997753
+    },
+    "binance:FUSDC": {
+      "symbol": "FUSDC",
+      "exchange": "binance",
+      "quantity": 819.221,
+      "entry_price": 0.007141952095319704,
+      "cost_basis": 175.02782
+    },
+    "binance:BEAMXUSDC": {
+      "symbol": "BEAMXUSDC",
+      "exchange": "binance",
+      "quantity": 1791.0,
+      "entry_price": 0.003349,
+      "cost_basis": 5.998059
+    },
+    "kraken:EULUSD": {
+      "symbol": "EULUSD",
+      "exchange": "kraken",
+      "quantity": 3.639386,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
+    },
+    "binance:NOMUSDC": {
+      "symbol": "NOMUSDC",
+      "exchange": "binance",
+      "quantity": 524.0,
+      "entry_price": 0.00793,
+      "cost_basis": 0.00793
+    },
+    "binance:AXSUSDC": {
+      "symbol": "AXSUSDC",
+      "exchange": "binance",
+      "quantity": 2.28,
+      "entry_price": 1.1352752756998536,
+      "cost_basis": 294.42229000000003
+    },
+    "binance:ZECUSDC": {
+      "symbol": "ZECUSDC",
+      "exchange": "binance",
+      "quantity": 0.014,
+      "entry_price": 487.99000000000007,
+      "cost_basis": 6.831860000000001
+    },
+    "kraken:MXCUSD": {
+      "symbol": "MXCUSD",
+      "exchange": "kraken",
+      "quantity": 3100.0,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
+    },
+    "binance:SHELLUSDC": {
+      "symbol": "SHELLUSDC",
+      "exchange": "binance",
+      "quantity": 82.72358723,
+      "entry_price": 0.0317,
+      "cost_basis": 2.622337715191
+    },
+    "kraken:FIGHTUSD": {
+      "symbol": "FIGHTUSD",
+      "exchange": "kraken",
+      "quantity": 374.5,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
+    },
+    "kraken:FISUSD": {
+      "symbol": "FISUSD",
+      "exchange": "kraken",
+      "quantity": 105.576,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
+    },
+    "kraken:OPENUSD": {
+      "symbol": "OPENUSD",
+      "exchange": "kraken",
+      "quantity": 10.78167,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
+    },
+    "kraken:BSXUSD": {
+      "symbol": "BSXUSD",
+      "exchange": "kraken",
+      "quantity": 90744.1,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
+    },
+    "binance:LPTUSDC": {
+      "symbol": "LPTUSDC",
+      "exchange": "binance",
+      "quantity": 0.56567817,
+      "entry_price": 2.412,
+      "cost_basis": 1.36441574604
+    },
+    "binance:KAIAUSDC": {
+      "symbol": "KAIAUSDC",
+      "exchange": "binance",
+      "quantity": 21.89421909,
+      "entry_price": 0.0518,
+      "cost_basis": 1.1341205488619999
+    },
+    "kraken:SOLUSDT": {
+      "symbol": "SOLUSDT",
+      "exchange": "kraken",
+      "quantity": 0.0083389591,
+      "entry_price": 123.36,
+      "cost_basis": 4.743952102980846
+    },
+    "kraken:TRXUSD": {
+      "symbol": "TRXUSD",
+      "exchange": "kraken",
+      "quantity": 0.00906042,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
+    },
+    "kraken:XETHZUSD": {
+      "symbol": "XETHZUSD",
+      "exchange": "kraken",
+      "quantity": 1.1035e-06,
+      "entry_price": 1953.28,
+      "cost_basis": 0.0021554444799999997
+    },
+    "kraken:SCRTUSD": {
+      "symbol": "SCRTUSD",
+      "exchange": "kraken",
+      "quantity": 0.00947493,
+      "entry_price": 0.0987,
+      "cost_basis": 0.0009351755909999999
+    },
+    "kraken:KTAUSD": {
+      "symbol": "KTAUSD",
+      "exchange": "kraken",
+      "quantity": 0.00028,
+      "entry_price": 0.0,
+      "cost_basis": 0.0
+    },
+    "kraken:BABYUSD": {
+      "symbol": "BABYUSD",
+      "exchange": "kraken",
+      "quantity": 0.00017,
+      "entry_price": 0.01265,
+      "cost_basis": 2.1505e-06
     }
   },
   "cost_basis": {
@@ -570,6 +556,6 @@
     "binance:SSVUSDC": 0,
     "binance:STOUSDC": 0
   },
-  "positions_updated": 1770296410.3966603,
-  "saved_at": 1770296418.3402953
+  "positions_updated": 1770307578.065812,
+  "saved_at": 1770307578.065813
 }
