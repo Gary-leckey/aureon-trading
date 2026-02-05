@@ -45,8 +45,9 @@ from typing import Dict, Any, Optional, Tuple, List
 from dataclasses import dataclass, field
 
 # =============================================================================
-# �🇪 SNIPER MODE CONFIGURATION - ZERO LOSS 🇮🇪
+# 🇮🇪 EARLY EXPORTS - Define these BEFORE heavy imports to prevent circular import
 # =============================================================================
+# These must be available immediately when another module imports from us
 
 SNIPER_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
@@ -95,8 +96,147 @@ SNIPER_CONFIG = {
     'SHOW_QUOTES': True,             # Show wisdom quotes on wins
 }
 
+def get_sniper_config() -> Dict[str, Any]:
+    """Get the current sniper configuration."""
+    return SNIPER_CONFIG.copy()
+
+# Placeholder for lazy-loaded Celtic Sniper (defined later in file)
+IRA_SNIPER_MODE = None
+
+def get_celtic_sniper(dry_run: bool = True):
+    """Get or create the global Celtic Sniper instance (lazy loading)."""
+    global IRA_SNIPER_MODE
+    if IRA_SNIPER_MODE is None:
+        # IraCelticSniper is defined later in this file
+        IRA_SNIPER_MODE = IraCelticSniper(dry_run=dry_run)
+    return IRA_SNIPER_MODE
+
 # =============================================================================
-# �🎯⏱️ ETA VERIFICATION SYSTEM WIRING
+# 🇮🇪🎯 IRAKillScanner - Alias for Orca Kill Cycle compatibility
+# =============================================================================
+# Orca expects IRAKillScanner - this is an alias to IraCelticSniper
+
+class IRAKillScanner:
+    """
+    🇮🇪🎯 IRA KILL SCANNER - Wrapper for Orca Kill Cycle Integration
+    
+    This provides the interface Orca expects:
+    - validate_entry() - Check if entry meets Celtic standards
+    - check_exit() - Check if we should exit (only on profit!)
+    - record_kill() - Record successful kill for learning
+    """
+    
+    def __init__(self, dry_run: bool = True):
+        self.dry_run = dry_run
+        self.sniper = None  # Lazy load the actual sniper
+        self.kills = 0
+        self.shots_fired = 0
+        self.total_pnl = 0.0
+        
+    def _ensure_sniper(self):
+        """Ensure the Celtic Sniper is loaded."""
+        if self.sniper is None:
+            self.sniper = get_celtic_sniper(dry_run=self.dry_run)
+        return self.sniper
+    
+    def validate_entry(self, symbol: str, price: float, 
+                      momentum_pct: float = 0, expected_move_pct: float = 0,
+                      coherence: float = 0.5, volume: float = 0) -> Dict[str, Any]:
+        """
+        🎯 Validate if this entry meets IRA Sniper standards.
+        
+        Returns:
+            {
+                'approved': bool,
+                'reason': str,
+                'quick_kill_prob': float,
+                'size_modifier': float
+            }
+        """
+        sniper = self._ensure_sniper()
+        if sniper and hasattr(sniper, 'validate_entry'):
+            return sniper.validate_entry(
+                symbol=symbol,
+                price=price,
+                volume=volume,
+                coherence=coherence
+            )
+        
+        # Default approval if sniper not available
+        return {
+            'approved': True,
+            'reason': 'IRA Sniper default approve (sniper not loaded)',
+            'quick_kill_prob': 0.5,
+            'size_modifier': 1.0
+        }
+    
+    def check_exit(self, symbol: str, entry_price: float, current_price: float,
+                   quantity: float, fee_rate: float = 0.0026) -> Dict[str, Any]:
+        """
+        🔫 Check if we should take the kill shot.
+        
+        ZERO LOSS RULE: Only exit on confirmed NET profit.
+        
+        Returns:
+            {
+                'should_exit': bool,
+                'is_win': bool,
+                'reason': str,
+                'gross_pnl': float,
+                'net_pnl': float
+            }
+        """
+        # Calculate P&L
+        entry_value = entry_price * quantity
+        current_value = current_price * quantity
+        gross_pnl = current_value - entry_value
+        
+        # Account for round-trip fees
+        total_fees = (entry_value + current_value) * fee_rate
+        net_pnl = gross_pnl - total_fees
+        
+        # ZERO LOSS MODE: Only exit if net profit > 0
+        win_threshold = SNIPER_CONFIG.get('WIN_THRESHOLD', 0.01)  # $0.01 minimum
+        should_exit = net_pnl >= win_threshold
+        is_win = should_exit  # In zero-loss mode, exit = win
+        
+        reason = ""
+        if should_exit:
+            reason = f"🎯 KILL SHOT! Net profit: ${net_pnl:.4f}"
+        else:
+            reason = f"⏳ Hold - Net P&L: ${net_pnl:.4f} (need ${win_threshold:.4f})"
+        
+        return {
+            'should_exit': should_exit,
+            'is_win': is_win,
+            'reason': reason,
+            'gross_pnl': gross_pnl,
+            'net_pnl': net_pnl,
+            'fees': total_fees
+        }
+    
+    def record_kill(self, symbol: str, pnl: float, hold_time: float = 0):
+        """Record a successful kill for statistics."""
+        self.kills += 1
+        self.total_pnl += pnl
+        
+        sniper = self._ensure_sniper()
+        if sniper and hasattr(sniper, 'kills'):
+            sniper.kills = self.kills
+            sniper.total_pnl = self.total_pnl
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get kill statistics."""
+        return {
+            'kills': self.kills,
+            'shots_fired': self.shots_fired,
+            'total_pnl': self.total_pnl,
+            'win_rate': 1.0 if self.kills > 0 else 0.0,  # 100% in zero-loss mode
+            'dry_run': self.dry_run
+        }
+
+# =============================================================================
+# 🎯⏱️ ETA VERIFICATION SYSTEM WIRING
 # =============================================================================
 
 try:
@@ -2940,6 +3080,119 @@ class IraCelticSniper:
         print("=" * 70)
         self._print_celtic_wisdom()
         print("=" * 70 + "\n")
+        
+        # Wire Queen systems for data recording
+        self._wire_queen_systems()
+    
+    def _wire_queen_systems(self):
+        """
+        👑 Wire IRA Sniper to Queen systems for unified consciousness.
+        
+        Reports kills, targets, and intelligence to:
+        - Queen Hive Mind (central consciousness)
+        - Queen Asset Monitor (position tracking)
+        - Queen Quantum Cognition (learning)
+        - ThoughtBus (cross-system events)
+        """
+        self.queen_hive = None
+        self.queen_asset_monitor = None
+        self.queen_cognition = None
+        self.thoughtbus = None
+        
+        # Wire Queen Hive Mind
+        try:
+            from aureon_queen_hive_mind import get_queen
+            self.queen_hive = get_queen()
+            print("   👑 Queen Hive Mind: ✅ WIRED")
+        except Exception as e:
+            print(f"   👑 Queen Hive Mind: ❌ ({e})")
+        
+        # Wire Queen Asset Monitor (use Elephant Memory as fallback)
+        try:
+            from aureon_elephant_learning import ElephantMemory
+            self.queen_asset_monitor = ElephantMemory()
+            print("   👑 Queen Asset Monitor (Elephant): ✅ WIRED")
+        except Exception as e:
+            print(f"   👑 Queen Asset Monitor: ❌ ({e})")
+        
+        # Wire Queen Quantum Cognition
+        try:
+            from queen_quantum_cognition import get_quantum_cognition
+            self.queen_cognition = get_quantum_cognition()
+            print("   👑 Queen Quantum Cognition: ✅ WIRED")
+        except Exception as e:
+            print(f"   👑 Queen Quantum Cognition: ❌ ({e})")
+        
+        # Wire ThoughtBus
+        try:
+            from aureon_thought_bus import ThoughtBus
+            if ThoughtBus is not None:
+                self.thoughtbus = True
+                print("   🧠 ThoughtBus: ✅ WIRED")
+            else:
+                print("   🧠 ThoughtBus: ❌ (not available)")
+        except Exception as e:
+            print(f"   🧠 ThoughtBus: ❌ ({e})")
+    
+    def _record_to_queen(self, event_type: str, data: Dict[str, Any]):
+        """
+        Record an event to all Queen systems.
+        
+        event_type: 'kill', 'target_acquired', 'target_lost', 'status_update'
+        """
+        timestamp = time.time()
+        
+        # Record to Queen Hive Mind
+        if self.queen_hive:
+            try:
+                if hasattr(self.queen_hive, 'receive_intel'):
+                    self.queen_hive.receive_intel({
+                        'source': 'ira_sniper',
+                        'event': event_type,
+                        'timestamp': timestamp,
+                        **data
+                    })
+            except Exception:
+                pass
+        
+        # Record to Queen Asset Monitor
+        if self.queen_asset_monitor:
+            try:
+                if event_type == 'kill' and hasattr(self.queen_asset_monitor, 'record_trade'):
+                    self.queen_asset_monitor.record_trade({
+                        'symbol': data.get('symbol', ''),
+                        'pnl': data.get('pnl', 0),
+                        'type': 'sniper_kill',
+                        'timestamp': timestamp
+                    })
+            except Exception:
+                pass
+        
+        # Record to Queen Quantum Cognition
+        if self.queen_cognition:
+            try:
+                if hasattr(self.queen_cognition, 'learn_from_outcome'):
+                    self.queen_cognition.learn_from_outcome({
+                        'system': 'ira_sniper',
+                        'event': event_type,
+                        'success': data.get('is_win', True),
+                        'pnl': data.get('pnl', 0),
+                        'timestamp': timestamp
+                    })
+            except Exception:
+                pass
+        
+        # Emit to ThoughtBus
+        if self.thoughtbus:
+            try:
+                from aureon_thought_bus import ThoughtBus
+                if ThoughtBus:
+                    ThoughtBus.emit(f'ira_sniper.{event_type}', {
+                        'timestamp': timestamp,
+                        **data
+                    })
+            except Exception:
+                pass
     
     def _wire_celtic_intelligence(self):
         """Wire up all Celtic warfare systems to the sniper"""
@@ -3132,6 +3385,17 @@ class IraCelticSniper:
         self.targets[f"{exchange}:{symbol}"] = target
         self.shots_fired += 1
         
+        # 👑 Record target acquisition to Queen systems
+        self._record_to_queen('target_acquired', {
+            'symbol': symbol,
+            'exchange': exchange,
+            'entry_price': price,
+            'size_usd': size,
+            'ambush_score': target.ambush_score,
+            'quick_kill_prob': target.quick_kill_prob,
+            'active_targets': len(self.targets)
+        })
+        
         print(f"   🎯 TARGET ACQUIRED: {symbol} @ ${price:.4f} on {exchange}")
         print(f"      📊 Ambush Score: {target.ambush_score:.2f}")
         print(f"      ⚡ Quick Kill Prob: {target.quick_kill_prob*100:.1f}%")
@@ -3217,6 +3481,19 @@ class IraCelticSniper:
         key = f"{target.exchange}:{target.symbol}"
         if key in self.targets:
             del self.targets[key]
+        
+        # 👑 Record kill to Queen systems
+        self._record_to_queen('kill', {
+            'symbol': target.symbol,
+            'exchange': target.exchange,
+            'pnl': pnl,
+            'is_win': True,
+            'entry_price': target.entry_price,
+            'exit_price': target.current_price,
+            'hold_time': time.time() - target.entry_time,
+            'total_kills': self.kills,
+            'total_pnl': self.total_pnl
+        })
         
         # Celebrate!
         celebrate_sniper_kill(pnl, target.symbol, self.kills - 1)
