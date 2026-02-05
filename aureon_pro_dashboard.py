@@ -4282,7 +4282,7 @@ class AureonProDashboard:
                                  if isinstance(v, dict) and v.get('total_cost', 0) > 0.01],
                                 key=lambda x: x[1].get('total_cost', 0),
                                 reverse=True
-                            )[:20]  # Top 20 by value
+                            )  # ALL positions, no limit
                             
                             # 🆕 FETCH LIVE PRICES from free APIs (CoinGecko, Binance public, Kraken public)
                             # Cost basis has BUY prices, but we need CURRENT prices for real values!
@@ -4392,7 +4392,8 @@ class AureonProDashboard:
                     'costBasis': total_cost,
                     'unrealizedPnl': total_value - total_cost,
                     'todayPnl': 0,
-                    'positions': positions[:20]
+                    'total_positions': len(positions),  # Track actual count
+                    'positions': positions  # ALL positions
                 }
                 self.exchange_balances = new_balances
                 
@@ -4476,7 +4477,8 @@ class AureonProDashboard:
                     "costBasis": total_cost,
                     "unrealizedPnl": total_value - total_cost,
                     "todayPnl": 0,
-                    "positions": positions[:20],
+                    "total_positions": len(positions),  # Track actual count
+                    "positions": positions,  # ALL positions
                 }
                 self.exchange_balances = new_balances
                 
