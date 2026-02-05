@@ -66,6 +66,27 @@ from metatron_probability_billion_path import (
 from kraken_client import KrakenClient, get_kraken_client
 from alpaca_client import AlpacaClient
 
+# 🏴‍☠️👑 QUEEN QUANTUM COGNITION + BARONS BANNER - ELITE WHALE HUNTER
+try:
+    from queen_quantum_cognition import (
+        QueenQuantumCognition, get_quantum_cognition,
+        QuantumCognitionState, BARONS_BANNER_AVAILABLE
+    )
+    QUANTUM_COGNITION_AVAILABLE = True
+except ImportError:
+    QUANTUM_COGNITION_AVAILABLE = False
+    BARONS_BANNER_AVAILABLE = False
+
+# Barons Banner direct import as fallback
+try:
+    from barons_banner import (
+        BaronsBannerAnalyzer, BaronsMarketAdapter, BaronsAnalysis,
+        MathematicalPattern, PHI as BARONS_PHI, FIBONACCI_SEQUENCE
+    )
+    BARONS_DIRECT_AVAILABLE = True
+except ImportError:
+    BARONS_DIRECT_AVAILABLE = False
+
 PHI = 1.618033988749895  # Golden Ratio
 BILLION = 1_000_000_000.0
 
@@ -88,6 +109,12 @@ class BlackBoxTrade:
     pnl_pct: float
     duration_seconds: float
     status: str  # "OPEN", "CLOSED_WIN", "CLOSED_LOSS"
+    # 🏴‍☠️ Elite Whale Detection Fields
+    elite_hierarchy_score: float = 0.0     # How "elite" the market was (0-1)
+    deception_level: float = 0.0           # Elite manipulation disguise level
+    manipulation_detected: bool = False     # Was manipulation active?
+    counter_strategy: str = "NONE"         # Counter-manipulation applied
+    elite_patterns_count: int = 0          # Fibonacci/harmonic patterns found
 
 @dataclass
 class BlackBoxSnapshot:
@@ -108,6 +135,12 @@ class BlackBoxSnapshot:
     progress_to_billion_pct: float
     projected_days_to_billion: float
     current_growth_rate: float  # % per hour
+    # 🏴‍☠️ Elite Whale Hunting Metrics
+    elite_hierarchy_avg: float = 0.0       # Average elite presence
+    elite_trades_detected: int = 0         # Trades where manipulation found
+    counter_strategy_active: str = "NONE" # Current counter-strategy
+    elite_wins: int = 0                    # Wins on elite-detected trades
+    elite_pnl: float = 0.0                 # P&L from flipping the 1%
 
 class BillionBlackBox:
     """
@@ -131,6 +164,23 @@ class BillionBlackBox:
         
         self.pingpong = QueenAurisPingPong()
         self.prob_matrix = ProbabilityMatrix()
+        
+        # 🏴‍☠️👑 ELITE WHALE HUNTING SYSTEMS
+        self.quantum_cognition = None
+        self.barons_analyzer = None
+        self.barons_adapter = None
+        self.elite_hunting_enabled = False
+        self.price_history: Dict[str, List[float]] = {}   # Per-symbol price history
+        self.volume_history: Dict[str, List[float]] = {}  # Per-symbol volume history
+        self.elite_hunt_stats = {
+            'total_detected': 0,
+            'successful_flips': 0,
+            'elite_pnl': 0.0,
+            'strategies_used': {},
+            'most_common_pattern': None
+        }
+        
+        self._init_elite_hunting_systems()
         
         # Exchanges
         self.exchanges = {}
@@ -156,6 +206,134 @@ class BillionBlackBox:
         print(f"🎯 TARGET: ${BILLION:,.0f}")
         print(f"📊 GROWTH NEEDED: {(BILLION/max(1, self.starting_capital)):.0f}x")
         print()
+    
+    def _init_elite_hunting_systems(self):
+        """🏴‍☠️👑 Initialize Elite Whale Hunting - FUCK THE 1%!"""
+        
+        print("   🏴‍☠️ ELITE WHALE HUNTING SYSTEMS:")
+        
+        # Try Queen Quantum Cognition first (includes Barons Banner)
+        if QUANTUM_COGNITION_AVAILABLE:
+            try:
+                self.quantum_cognition = get_quantum_cognition()
+                self.quantum_cognition.enabled = True
+                if hasattr(self.quantum_cognition, 'barons_analyzer'):
+                    self.barons_analyzer = self.quantum_cognition.barons_analyzer
+                    self.barons_adapter = self.quantum_cognition.barons_adapter
+                self.elite_hunting_enabled = True
+                print("      ✅ Queen Quantum Cognition WIRED")
+                print("      ✅ Barons Banner (via Cognition) ACTIVE")
+                print("      🎯 ELITE WHALE COUNTER-MANIPULATION ONLINE!")
+            except Exception as e:
+                print(f"      ⚠️  Quantum Cognition: {e}")
+        
+        # Fallback: Direct Barons Banner
+        if not self.elite_hunting_enabled and BARONS_DIRECT_AVAILABLE:
+            try:
+                self.barons_analyzer = BaronsBannerAnalyzer()
+                self.barons_adapter = BaronsMarketAdapter()
+                self.elite_hunting_enabled = True
+                print("      ✅ Barons Banner (direct) WIRED")
+                print("      🎯 ELITE PATTERN DETECTION ONLINE!")
+            except Exception as e:
+                print(f"      ⚠️  Barons Banner: {e}")
+        
+        if not self.elite_hunting_enabled:
+            print("      ❌ Elite hunting systems not available")
+            print("      💀 We'll hunt them blind... (no pattern detection)")
+        
+        print()
+        
+    def _analyze_elite_manipulation(self, symbol: str, price: float) -> Dict:
+        """
+        🏴‍☠️ Analyze market for elite whale manipulation patterns.
+        
+        Returns counter-strategy and confidence boosts if manipulation detected.
+        """
+        result = {
+            'elite_detected': False,
+            'hierarchy_score': 0.0,
+            'deception_level': 0.0,
+            'patterns_count': 0,
+            'counter_strategy': 'NONE',
+            'confidence_boost': 1.0,
+            'pattern_boost': 1.0,
+            'fibonacci_inversion': False
+        }
+        
+        if not self.elite_hunting_enabled:
+            return result
+        
+        # Build price/volume history for this symbol
+        if symbol not in self.price_history:
+            self.price_history[symbol] = []
+            self.volume_history[symbol] = []
+        
+        self.price_history[symbol].append(price)
+        # Keep last 100 prices
+        if len(self.price_history[symbol]) > 100:
+            self.price_history[symbol] = self.price_history[symbol][-100:]
+        
+        # Need at least 50 points for analysis
+        if len(self.price_history[symbol]) < 50:
+            return result
+        
+        try:
+            # Use quantum cognition if available (has enhanced analysis)
+            if self.quantum_cognition and hasattr(self.quantum_cognition, 'analyze_elite_patterns'):
+                analysis = self.quantum_cognition.analyze_elite_patterns(
+                    price_history=self.price_history[symbol],
+                    volume_history=self.volume_history.get(symbol, []),
+                    symbol=symbol
+                )
+                
+                result['elite_detected'] = analysis.get('elite_detected', False)
+                result['hierarchy_score'] = analysis.get('hierarchy_score', 0.0)
+                result['deception_level'] = analysis.get('deception_level', 0.0)
+                result['patterns_count'] = len(analysis.get('patterns', []))
+                result['counter_strategy'] = analysis.get('counter_strategy', 'NONE')
+                
+                # Get counter-strategy boosts
+                if self.quantum_cognition:
+                    boost = self.quantum_cognition.get_counter_strategy_boost()
+                    result['confidence_boost'] = boost.get('confidence_boost', 1.0)
+                    result['pattern_boost'] = boost.get('pattern_boost', 1.0)
+                    result['fibonacci_inversion'] = boost.get('fibonacci_inversion', False)
+            
+            # Fallback to direct Barons analysis
+            elif self.barons_adapter:
+                analysis = self.barons_adapter.analyze_market(
+                    price_history=self.price_history[symbol],
+                    volume_history=self.volume_history.get(symbol, [])
+                )
+                result['elite_detected'] = analysis.hierarchy_score > 0.3
+                result['hierarchy_score'] = analysis.hierarchy_score
+                result['deception_level'] = analysis.deception_potential
+                result['patterns_count'] = len(analysis.patterns)
+                
+                # Set counter-strategy based on hierarchy
+                if analysis.hierarchy_score > 0.6:
+                    result['counter_strategy'] = 'FADE_THE_ELITES'
+                    result['confidence_boost'] = 1.3
+                    result['pattern_boost'] = 1.5
+                    result['fibonacci_inversion'] = True
+                elif analysis.hierarchy_score > 0.3:
+                    result['counter_strategy'] = 'RIDE_THE_WAVE'
+                    result['confidence_boost'] = 1.1
+                    result['pattern_boost'] = 1.2
+            
+            # Track stats
+            if result['elite_detected']:
+                self.elite_hunt_stats['total_detected'] += 1
+                strategy = result['counter_strategy']
+                self.elite_hunt_stats['strategies_used'][strategy] = \
+                    self.elite_hunt_stats['strategies_used'].get(strategy, 0) + 1
+                    
+        except Exception as e:
+            # Fail silently - don't break trading
+            pass
+        
+        return result
         
     def get_total_capital(self) -> float:
         """Get total capital across all exchanges"""
@@ -241,13 +419,16 @@ class BillionBlackBox:
         """Main trading loop - runs continuously"""
         
         print("=" * 80)
-        print("⚫ BLACK BOX AUTONOMOUS TRADING - RACE TO $1 BILLION")
+        print("⚫🏴‍☠️ BLACK BOX AUTONOMOUS TRADING - RACE TO $1 BILLION 🏴‍☠️⚫")
         print("=" * 80)
         print()
         print(f"Mode: {'🔴 LIVE TRADING' if self.live_mode else '🔶 DRY RUN'}")
         print(f"Max Positions: {max_positions}")
+        print(f"Elite Hunting: {'🏴‍☠️ ACTIVE - FUCK THE 1%!' if self.elite_hunting_enabled else '❌ DISABLED'}")
         print()
         print("⏱️  BLACK BOX ACTIVATED - RECORDING EVERYTHING")
+        if self.elite_hunting_enabled:
+            print("🏴‍☠️ ELITE WHALE DETECTION ONLINE - Fibonacci/Harmonic pattern flip ARMED!")
         print()
         
         active_positions: List[BlackBoxTrade] = []
@@ -303,9 +484,20 @@ class BillionBlackBox:
                             }
                             price = prices.get(pred.symbol, 100.0)
                             
+                            # 🏴‍☠️👑 ELITE WHALE ANALYSIS - DETECT THE 1%!
+                            elite_analysis = self._analyze_elite_manipulation(pred.symbol, price)
+                            
+                            # Apply confidence boost from counter-strategy
+                            boosted_confidence = pred.confidence * elite_analysis['confidence_boost']
+                            
                             # Position size: split available capital
                             available = self.current_capital * 0.95  # Keep 5% buffer
                             position_size = available / max_positions
+                            
+                            # Boost position size if we're flipping the elites!
+                            if elite_analysis['elite_detected']:
+                                position_size *= elite_analysis['pattern_boost']
+                            
                             quantity = position_size / price
                             
                             # Create trade
@@ -320,19 +512,30 @@ class BillionBlackBox:
                                 exit_price=None,
                                 quantity=quantity,
                                 entry_capital=position_size,
-                                prediction_confidence=pred.confidence,
+                                prediction_confidence=boosted_confidence,
                                 sacred_alignment=pred.sacred_alignment,
                                 quantum_coherence=truth.confidence,
                                 pnl=0.0,
                                 pnl_pct=0.0,
                                 duration_seconds=0.0,
-                                status="OPEN"
+                                status="OPEN",
+                                # 🏴‍☠️ Elite whale fields
+                                elite_hierarchy_score=elite_analysis['hierarchy_score'],
+                                deception_level=elite_analysis['deception_level'],
+                                manipulation_detected=elite_analysis['elite_detected'],
+                                counter_strategy=elite_analysis['counter_strategy'],
+                                elite_patterns_count=elite_analysis['patterns_count']
                             )
                             
                             active_positions.append(trade)
                             self.record_trade(trade)
                             
-                            print(f"🎯 TRADE #{trade.trade_id}: {pred.symbol} {pred.action} @ ${price:,.2f} | Conf: {pred.confidence:.0%}")
+                            # 🏴‍☠️ Elite-enhanced output
+                            elite_marker = ""
+                            if elite_analysis['elite_detected']:
+                                elite_marker = f" | 🏴‍☠️ ELITE:{elite_analysis['hierarchy_score']*100:.0f}% [{elite_analysis['counter_strategy']}]"
+                            
+                            print(f"🎯 TRADE #{trade.trade_id}: {pred.symbol} {pred.action} @ ${price:,.2f} | Conf: {boosted_confidence:.0%}{elite_marker}")
                 
                 # Update active positions (simulate price movement)
                 for trade in active_positions[:]:
@@ -376,8 +579,15 @@ class BillionBlackBox:
                         # Update capital
                         self.current_capital += trade.pnl
                         
+                        # 🏴‍☠️ Track elite hunting stats
+                        if trade.manipulation_detected:
+                            self.elite_hunt_stats['elite_pnl'] += trade.pnl
+                            if "WIN" in trade.status:
+                                self.elite_hunt_stats['successful_flips'] += 1
+                        
                         result = "🏆 WIN" if trade.pnl > 0 else "💔 LOSS"
-                        print(f"{result} #{trade.trade_id}: {trade.symbol} | ${trade.pnl:+,.2f} ({trade.pnl_pct:+.2f}%) | {trade.duration_seconds:.0f}s")
+                        elite_marker = " 🏴‍☠️" if trade.manipulation_detected else ""
+                        print(f"{result}{elite_marker} #{trade.trade_id}: {trade.symbol} | ${trade.pnl:+,.2f} ({trade.pnl_pct:+.2f}%) | {trade.duration_seconds:.0f}s")
                 
                 # Record snapshot periodically
                 if current_time - last_snapshot_time >= snapshot_interval:
@@ -398,6 +608,17 @@ class BillionBlackBox:
                     
                     avg_sacred = sum(t.sacred_alignment for t in active_positions) / max(1, len(active_positions))
                     
+                    # 🏴‍☠️ Calculate elite whale hunting metrics
+                    elite_trades = [t for t in closed_trades if t.manipulation_detected]
+                    elite_wins = len([t for t in elite_trades if "WIN" in t.status])
+                    elite_pnl = sum(t.pnl for t in elite_trades)
+                    avg_elite_hierarchy = sum(t.elite_hierarchy_score for t in elite_trades) / max(1, len(elite_trades))
+                    
+                    # Get current counter-strategy
+                    current_strategy = "NONE"
+                    if self.quantum_cognition:
+                        current_strategy = self.quantum_cognition.state.counter_strategy
+                    
                     snapshot = BlackBoxSnapshot(
                         timestamp=current_time,
                         uptime_seconds=metrics['uptime_seconds'],
@@ -414,7 +635,13 @@ class BillionBlackBox:
                         sacred_alignment=avg_sacred,
                         progress_to_billion_pct=metrics['progress_to_billion_pct'],
                         projected_days_to_billion=metrics['projected_days_to_billion'],
-                        current_growth_rate=metrics['growth_rate_per_hour']
+                        current_growth_rate=metrics['growth_rate_per_hour'],
+                        # 🏴‍☠️ Elite whale hunting metrics
+                        elite_hierarchy_avg=avg_elite_hierarchy,
+                        elite_trades_detected=len(elite_trades),
+                        counter_strategy_active=current_strategy,
+                        elite_wins=elite_wins,
+                        elite_pnl=elite_pnl
                     )
                     
                     self.record_snapshot(snapshot)
@@ -441,6 +668,11 @@ class BillionBlackBox:
         else:
             ttb = "∞ (need profit!)"
         
+        # 🏴‍☠️ Elite hunting status
+        elite_status = ""
+        if snapshot.elite_trades_detected > 0:
+            elite_status = f" | 🏴‍☠️{snapshot.elite_wins}/{snapshot.elite_trades_detected} ${snapshot.elite_pnl:+,.0f}"
+        
         status = (
             f"\r⚫ {uptime} | "
             f"Capital: ${snapshot.total_capital:,.2f} | "
@@ -449,7 +681,7 @@ class BillionBlackBox:
             f"W/L: {snapshot.wins}/{snapshot.losses} ({snapshot.win_rate:.0f}%) | "
             f"→$1B: {snapshot.progress_to_billion_pct:.6f}% | "
             f"ETA: {ttb} | "
-            f"Growth: {snapshot.current_growth_rate:+.2f}%/hr"
+            f"Growth: {snapshot.current_growth_rate:+.2f}%/hr{elite_status}"
         )
         
         print(status, end='', flush=True)
@@ -496,6 +728,30 @@ class BillionBlackBox:
         print(f"💔 Losses: {losses}")
         print(f"📊 Win Rate: {(wins/max(1,len(closed_trades)))*100:.1f}%")
         print()
+        
+        # 🏴‍☠️👑 ELITE WHALE HUNTING SUMMARY - FUCK THE 1%!
+        elite_trades = [t for t in closed_trades if t.manipulation_detected]
+        if elite_trades:
+            elite_wins = len([t for t in elite_trades if "WIN" in t.status])
+            elite_losses = len(elite_trades) - elite_wins
+            elite_pnl = sum(t.pnl for t in elite_trades)
+            elite_win_rate = (elite_wins / len(elite_trades)) * 100
+            
+            print("🏴‍☠️👑 ELITE WHALE HUNTING STATS - FUCK THE 1%!")
+            print(f"   🎯 Elite Trades Detected: {len(elite_trades)}")
+            print(f"   🏆 Elite Flips Won: {elite_wins}")
+            print(f"   💔 Elite Flips Lost: {elite_losses}")
+            print(f"   📊 Elite Win Rate: {elite_win_rate:.1f}%")
+            print(f"   💰 P&L from Flipping Elites: ${elite_pnl:+,.2f}")
+            
+            # Show strategies used
+            strategies = self.elite_hunt_stats.get('strategies_used', {})
+            if strategies:
+                print(f"   📋 Counter-Strategies Used:")
+                for strat, count in sorted(strategies.items(), key=lambda x: -x[1]):
+                    print(f"      • {strat}: {count} trades")
+            print()
+        
         print(f"🎯 Progress to $1B: {metrics['progress_to_billion_pct']:.4f}%")
         print(f"⏱️  Projected Days to $1B: {metrics['projected_days_to_billion']:.1f}")
         print()
