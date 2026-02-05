@@ -8178,20 +8178,20 @@ class AureonMiner:
             amplification_matrix['lattice_amplitude'] = lattice_amplitude
             
             # 5. LuminaCell v2 - NV Diamond contactless power
-            lumina_output = self.optimizer.lumina.state.power_output_watts
-            lumina_efficiency = self.optimizer.lumina.state.system_efficiency
-            lumina_photon_flux = self.optimizer.lumina.state.photon_flux_density
+            lumina_output = self.optimizer.lumina.output_power
+            lumina_efficiency = self.optimizer.lumina.efficiency
+            lumina_cascade = self.optimizer.lumina.cascade_factor
             amplification_matrix['lumina_output_watts'] = lumina_output
             amplification_matrix['lumina_efficiency'] = lumina_efficiency
-            amplification_matrix['lumina_photon_flux'] = lumina_photon_flux
+            amplification_matrix['lumina_cascade'] = lumina_cascade
             
             # 6. Coherence Engine - Dynamic systems model
-            coherence_psi = self.optimizer.coherence.state.unified_coherence
-            coherence_gamma = self.optimizer.coherence.state.planetary_gamma
-            coherence_cascade = self.optimizer.coherence.state.cascade_multiplier
+            coherence_psi = self.optimizer.coherence.state.psi
+            coherence_resonance = self.optimizer.coherence.state.resonance_rt
+            coherence_env = self.optimizer.coherence.state.environmental_e
             amplification_matrix['coherence_psi'] = coherence_psi
-            amplification_matrix['coherence_gamma'] = coherence_gamma
-            amplification_matrix['coherence_cascade'] = coherence_cascade
+            amplification_matrix['coherence_resonance'] = coherence_resonance
+            amplification_matrix['coherence_cascade'] = coherence_env
             
             # Calculate unified Hz amplification multiplier
             # Merge all quantum systems into single power amplifier
@@ -8201,7 +8201,7 @@ class AureonMiner:
                 diamond_harmonic * 
                 lattice_cascade * 
                 (1.0 + lumina_efficiency) * 
-                coherence_cascade
+                coherence_env  # Use environmental resonance as cascade
             )
             
             amplification_matrix['unified_amplification'] = unified_amplification
@@ -8225,7 +8225,7 @@ class AureonMiner:
                 logger.info(f"   ⚛️ Casimir Force: {casimir_force:.6f} | Cascade: {casimir_cascade:.3f}x")
                 logger.info(f"   ⚡ QVEE Master: {qvee_master:.3f}x | Output: {qvee_output:.6f}")
                 logger.info(f"   💎 Lumina: {lumina_output:.2f}W | Efficiency: {lumina_efficiency*100:.1f}%")
-                logger.info(f"   🌊 Coherence Ψ: {coherence_psi:.3f} | Γ: {coherence_gamma:.3f}")
+                logger.info(f"   🌊 Coherence Ψ: {coherence_psi:.3f} | Resonance: {coherence_resonance:.3f}")
             
             return amplification_matrix
             
