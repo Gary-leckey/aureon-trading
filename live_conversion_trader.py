@@ -114,7 +114,7 @@ class LiveConversionTrader:
     Executes real conversions through the Mycelium Hub on Kraken.
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.running = False
         self.start_time = None

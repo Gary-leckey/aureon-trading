@@ -162,7 +162,7 @@ class MasterEquation:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class MultiPairTrader:
-    def __init__(self, dry_run: bool = True, max_pairs: int = 20, risk_percent: float = 2.0):
+    def __init__(self, dry_run: bool = False, max_pairs: int = 20, risk_percent: float = 2.0):
         self.dry_run = dry_run
         self.max_pairs = max_pairs
         self.risk_percent = risk_percent / 100.0
@@ -329,7 +329,7 @@ class MultiPairTrader:
                 
                 if self.dry_run:
                     logger.info(f"📝 DRY-RUN: {side} {size_usdt:.2f} USDT of {symbol} @ {price:.6f} (Γ={coherence:.4f})")
-                    return {'dry_run': True, 'price': price, 'size_usdt': size_usdt, 'timestamp': datetime.now().isoformat(), 'executed_qty': size_usdt/price}
+                    return {'dry_run': False, 'price': price, 'size_usdt': size_usdt, 'timestamp': datetime.now().isoformat(), 'executed_qty': size_usdt/price}
                 
                 order = self.client.place_market_order(symbol, side, quote_qty=size_usdt)
                 executed_qty = float(order.get('executedQty', size_usdt/price)) # Fallback if not present
@@ -342,7 +342,7 @@ class MultiPairTrader:
                 if quantity:
                     if self.dry_run:
                         logger.info(f"📝 DRY-RUN: {side} {quantity:.6f} {symbol} @ {price:.6f} (Γ={coherence:.4f})")
-                        return {'dry_run': True}
+                        return {'dry_run': False}
                     
                     # We need to be careful with LOT_SIZE filter. 
                     # For simplicity, we'll try to sell by quote_qty if we don't have precise lot size logic,
@@ -358,7 +358,7 @@ class MultiPairTrader:
                     size_usdt = 10.0 # Default fallback
                     if self.dry_run:
                         logger.info(f"📝 DRY-RUN: {side} ~{size_usdt:.2f} USDT of {symbol} @ {price:.6f} (Γ={coherence:.4f})")
-                        return {'dry_run': True}
+                        return {'dry_run': False}
                     order = self.client.place_market_order(symbol, side, quote_qty=size_usdt)
                     logger.info(f"✅ LIVE: {side} ~{size_usdt:.2f} USDT of {symbol} @ {price:.6f} (Γ={coherence:.4f})")
                     return {'order': order}

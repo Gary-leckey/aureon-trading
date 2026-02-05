@@ -433,7 +433,7 @@ class QueenSeroConsciousness:
         - Confidence levels
     """
     
-    def __init__(self, dry_run: bool = True, stream_interval_ms: int = THOUGHT_INTERVAL_MS):
+    def __init__(self, dry_run: bool = False, stream_interval_ms: int = THOUGHT_INTERVAL_MS):
         self.dry_run = dry_run
         self.stream_interval_ms = stream_interval_ms
         self.stream_interval_s = stream_interval_ms / 1000.0

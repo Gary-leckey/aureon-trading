@@ -3050,7 +3050,7 @@ class AureonProDashboard:
                     enabled_exchanges=['binance', 'alpaca', 'kraken'],
                     max_concurrent_positions=100
                 )
-                self.v11_station = V11PowerStationLive(config=v11_config, dry_run=True)
+                self.v11_station = V11PowerStationLive(config=v11_config, dry_run=False)
                 logger.info("⚡ V11 Power Station: INITIALIZED")
             except Exception as e:
                 logger.warning(f"⚡ V11 Power Station init failed: {e}")

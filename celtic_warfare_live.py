@@ -165,7 +165,7 @@ class CelticWarfareLiveTrader:
     - Zero loss enforcement
     """
     
-    def __init__(self, dry_run: bool = True, capital: float = 1000.0):
+    def __init__(self, dry_run: bool = False, capital: float = 1000.0):
         self.dry_run = dry_run
         self.initial_capital = capital
         

@@ -106,7 +106,7 @@ class PowerStationTurbo:
     No waiting. Pure speed.
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.state = PowerStationState()
         self.relays: Dict[str, any] = {}

@@ -893,7 +893,7 @@ class UnifiedOrchestrator:
     "Each system reads and reassures the next. Each is a piece to a big puzzle."
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.client = get_binance_client()
         
@@ -1074,7 +1074,7 @@ def main():
     parser.add_argument('--duration', type=int, default=300)
     args = parser.parse_args()
     
-    orchestrator = UnifiedOrchestrator(dry_run=True)  # Always dry-run for safety
+    orchestrator = UnifiedOrchestrator(dry_run=False)  # Always dry-run for safety
     orchestrator.run(duration_sec=args.duration)
 
 if __name__ == "__main__":

@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class CompoundKellyTrader:
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.client = get_binance_client()
         self.fee_pct = 0.002  # 0.2% round-trip

@@ -75,7 +75,7 @@ class QuackerTrade:
 class QuantumQuackers:
     """🦆 The Quantum Quacker - Kraken Momentum Hunter 🦆"""
     
-    def __init__(self, initial_balance: float = 1000.0, dry_run: bool = True):
+    def __init__(self, initial_balance: float = 1000.0, dry_run: bool = False):
         self.initial_balance = initial_balance
         self.balance = initial_balance
         self.dry_run = dry_run

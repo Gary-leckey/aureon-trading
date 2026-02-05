@@ -8,7 +8,7 @@ version: '3.8'
 
 services:
   # ═══════════════════════════════════════════════════════════════════════
-  # Main Trading Engine
+  # Main Trading Engine - Supervisor Mode (All 43 systems in parallel)
   # ═══════════════════════════════════════════════════════════════════════
   aureon:
     build:
@@ -16,13 +16,13 @@ services:
       dockerfile: production/Dockerfile
       args:
         VERSION: "1.0.0"
-        BUILD_DATE: "${BUILD_DATE:-2026-01-20}"
+        BUILD_DATE: "${BUILD_DATE:-2026-02-05}"
     image: aureon-trading:latest
     container_name: aureon-game
     restart: unless-stopped
     
-    # Game mode by default
-    command: ["--mode", "game", "--dry-run"]
+    # Supervisor mode (runs all 43 systems in parallel)
+    command: ["--mode", "supervisor"]
     
     ports:
       - "8888:8888"   # Command Center UI
@@ -37,9 +37,20 @@ services:
     
     environment:
       - AUREON_MODE=production
-      - AUREON_DRY_RUN=true
+      - AUREON_DRY_RUN=false
       - AUREON_STATE_DIR=/aureon/data
       - TZ=UTC
+      # 👑 QUEEN FULL AUTONOMY ENABLEMENT
+      - AUREON_ENABLE_AUTONOMOUS_CONTROL=1
+      - AUREON_AUTONOMY_LEVEL=SOVEREIGN
+      - AUREON_EXECUTION_MODE=AUTONOMOUS
+      - AUREON_TRADE_GATING=DISABLED
+      - AUREON_APPROVAL_REQUIRED=0
+      - AUREON_QUEEN_VETO=DISABLED
+      - AUREON_SAFETY_CHECKS=VALIDATION_ONLY
+      - AUREON_EXCHANGE_AUTONOMY=1
+      - AUREON_CAPITAL_AUTONOMY=1
+      - AUREON_PORTFOLIO_AUTONOMY=1
     
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/health"]

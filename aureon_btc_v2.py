@@ -391,7 +391,7 @@ def kelly_fraction(win_prob: float, win_ratio: float) -> float:
 # ═══════════════════════════════════════════════════════════════════════════
 
 class AureonBTCv2:
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.client = get_binance_client()
         self.lot_mgr = LotSizeManager(self.client)

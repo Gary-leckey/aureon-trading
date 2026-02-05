@@ -244,7 +244,7 @@ class SnowballEngine:
     Speed + Compounding = Exponential Growth
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.price_cache = PriceCache()
         self.portfolio = Portfolio()
@@ -258,7 +258,7 @@ class SnowballEngine:
                 self.kraken = get_kraken_client()
             except:
                 logger.warning("⚠️ Kraken client not available - running in dry mode")
-                self.dry_run = True
+                self.dry_run=False
                 
         # Stats
         self.scans_performed = 0

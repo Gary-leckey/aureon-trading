@@ -92,7 +92,7 @@ class QuantumWarfareLive:
     finds optimal entry points, and executes with quantum timing.
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.engine = QuantumWarfareEngine()
         
@@ -535,7 +535,7 @@ async def main():
     """Run live quantum warfare demonstration"""
     symbols = ['BTC/USD', 'ETH/USD', 'SOL/USD']
     
-    warfare = QuantumWarfareLive(dry_run=True)
+    warfare = QuantumWarfareLive(dry_run=False)
     await warfare.run_quantum_scan(symbols, duration_seconds=30)
 
 

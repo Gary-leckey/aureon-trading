@@ -1,26 +1,26 @@
 {
-  "timestamp": "2026-02-05T21:20:36.785033",
+  "timestamp": "2026-02-05T21:55:19.248695",
   "initial_vault": 1000.0,
   "available_cash": 0.0,
   "main_position": {
     "symbol": "GALA",
-    "quantity": 367980.9052312901,
-    "cost_basis": 1420.4062941927798,
-    "entry_price": 0.00386,
-    "entry_time": "2026-02-05T21:20:34.932458"
+    "quantity": 362286.7212073092,
+    "cost_basis": 1420.163947132652,
+    "entry_price": 0.00392,
+    "entry_time": "2026-02-05T21:27:21.135203"
   },
   "breadcrumbs": {
     "ETH": {
-      "quantity": 0.04046114920453381,
-      "cost_basis": 74.9830063173341,
-      "entry_price": 1853.21,
-      "entry_time": "2026-02-05T21:20:34.932451"
+      "quantity": 0.040252895524951426,
+      "cost_basis": 74.97021285731154,
+      "entry_price": 1862.48,
+      "entry_time": "2026-02-05T21:27:21.135196"
     }
   },
   "statistics": {
-    "total_cycles": 3,
-    "total_leaps": 1,
-    "total_breadcrumbs": 1,
+    "total_cycles": 11,
+    "total_leaps": 2,
+    "total_breadcrumbs": 2,
     "total_scalps": 0,
     "total_profit_realized": 0.0,
     "start_time": null

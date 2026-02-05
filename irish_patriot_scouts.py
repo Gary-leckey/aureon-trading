@@ -746,7 +746,7 @@ class PatriotScoutNetwork:
     coordinating strikes, united under Celtic command.
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.scouts: Dict[str, PatriotScout] = {}
         self.scout_counter = 0
@@ -1506,7 +1506,7 @@ class PatriotScoutDeployer:
     
     def __init__(self, ecosystem=None):
         self.ecosystem = ecosystem
-        self.network = PatriotScoutNetwork(dry_run=True)
+        self.network = PatriotScoutNetwork(dry_run=False)
         # Mycelium reference (set by ecosystem wiring or via ecosystem attr)
         self._mycelium = None
         if ecosystem and hasattr(ecosystem, 'mycelium'):
@@ -1728,7 +1728,7 @@ def test_patriot_network():
     print("=" * 70 + "\n")
     
     # Initialize network
-    network = PatriotScoutNetwork(dry_run=True)
+    network = PatriotScoutNetwork(dry_run=False)
     
     # Recruit some test scouts
     test_pairs = [
@@ -1835,7 +1835,7 @@ if __name__ == "__main__":
     elif args.demo:
         demo_ecosystem_integration()
     elif args.status:
-        network = PatriotScoutNetwork(dry_run=True)
+        network = PatriotScoutNetwork(dry_run=False)
         network.print_status()
     else:
         # Default: run both tests

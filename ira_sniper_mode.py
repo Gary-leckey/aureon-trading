@@ -103,7 +103,7 @@ def get_sniper_config() -> Dict[str, Any]:
 # Placeholder for lazy-loaded Celtic Sniper (defined later in file)
 IRA_SNIPER_MODE = None
 
-def get_celtic_sniper(dry_run: bool = True):
+def get_celtic_sniper(dry_run: bool = False):
     """Get or create the global Celtic Sniper instance (lazy loading)."""
     global IRA_SNIPER_MODE
     if IRA_SNIPER_MODE is None:
@@ -126,7 +126,7 @@ class IRAKillScanner:
     - record_kill() - Record successful kill for learning
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.sniper = None  # Lazy load the actual sniper
         self.kills = 0
@@ -3048,7 +3048,7 @@ class IraCelticSniper:
     "One bullet. One kill. Celtic precision. Irish determination."
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.targets: Dict[str, SniperTarget] = {}
         
@@ -3543,7 +3543,7 @@ class IraCelticSniper:
 # Global sniper instance for easy import
 IRA_SNIPER_MODE = None
 
-def get_celtic_sniper(dry_run: bool = True) -> IraCelticSniper:
+def get_celtic_sniper(dry_run: bool = False) -> IraCelticSniper:
     """Get or create the global Celtic Sniper instance"""
     global IRA_SNIPER_MODE
     if IRA_SNIPER_MODE is None:
@@ -3613,7 +3613,7 @@ if __name__ == "__main__":
     print("=" * 70)
     
     # Test the Celtic sniper
-    sniper = IraCelticSniper(dry_run=True)
+    sniper = IraCelticSniper(dry_run=False)
     
     # Acquire some test targets
     test_targets = [

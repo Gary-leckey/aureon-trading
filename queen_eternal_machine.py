@@ -52,6 +52,82 @@ if sys.platform == 'win32':
     except Exception:
         pass
 
+# Optional: Ocean Wave Scanner for whale detection
+try:
+    from aureon_ocean_wave_scanner import OceanWaveScanner
+    OCEAN_SCANNER_AVAILABLE = True
+except ImportError:
+    OCEAN_SCANNER_AVAILABLE = False
+    OceanWaveScanner = None
+
+# 👑🧠 QUEEN HIVE MIND - Full Autonomous Consciousness
+try:
+    from aureon_queen_hive_mind import QueenHiveMind, get_queen
+    QUEEN_HIVE_AVAILABLE = True
+except ImportError:
+    QUEEN_HIVE_AVAILABLE = False
+    QueenHiveMind = None
+    get_queen = None
+
+# ⚛️🧠 QUANTUM COGNITION - Amplified Consciousness & Autonomous Control
+try:
+    from queen_quantum_cognition import (
+        QueenQuantumCognition, 
+        get_quantum_cognition,
+        QuantumCognitionState
+    )
+    QUANTUM_COGNITION_AVAILABLE = True
+except ImportError:
+    QUANTUM_COGNITION_AVAILABLE = False
+    QueenQuantumCognition = None
+    get_quantum_cognition = None
+    QuantumCognitionState = None
+
+# 🍄 MYCELIUM NETWORK - Underground Signal Network
+try:
+    from aureon_mycelium import MyceliumNetwork
+    MYCELIUM_AVAILABLE = True
+except ImportError:
+    MYCELIUM_AVAILABLE = False
+    MyceliumNetwork = None
+
+# 👑🎮 QUEEN AUTONOMOUS CONTROL - Sovereign Authority
+try:
+    from aureon_queen_autonomous_control import (
+        QueenAutonomousControl,
+        create_queen_autonomous_control
+    )
+    AUTONOMOUS_CONTROL_AVAILABLE = os.getenv("AUREON_ENABLE_AUTONOMOUS_CONTROL", "0") == "1"
+except ImportError:
+    AUTONOMOUS_CONTROL_AVAILABLE = False
+    QueenAutonomousControl = None
+    create_queen_autonomous_control = None
+
+# 🤖 BOT INTELLIGENCE PROFILER - Market Structure & Competition Analysis
+try:
+    from aureon_bot_intelligence_profiler import BotIntelligenceProfiler
+    BOT_INTELLIGENCE_AVAILABLE = True
+except ImportError:
+    BOT_INTELLIGENCE_AVAILABLE = False
+    BotIntelligenceProfiler = None
+
+# 📺 LIVE TV STATION - Truth Prediction Engine with Real Data Streaming
+try:
+    from aureon_truth_prediction_engine import TruthPredictionEngine, MarketSnapshot
+    LIVE_TV_AVAILABLE = True
+except ImportError:
+    LIVE_TV_AVAILABLE = False
+    TruthPredictionEngine = None
+
+# ⛰️ MOUNTAIN CLIMBER - Learn Optimal Climbing & Profit-Taking Strategies
+try:
+    from aureon_mountain_climber import MountainClimber
+    MOUNTAIN_CLIMBER_AVAILABLE = True
+except ImportError:
+    MOUNTAIN_CLIMBER_AVAILABLE = False
+    MountainClimber = None
+    MarketSnapshot = None
+
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -356,6 +432,7 @@ class CycleStats:
     scalps_executed: int = 0
     profit_realized: float = 0.0
     quantity_gained: float = 0.0
+    friends_protected: int = 0  # 🛡️ Orca kill cycle protection count
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -387,7 +464,7 @@ class QueenEternalMachine:
         initial_vault: Optional[float] = None,  # If None, load from real positions!
         breadcrumb_percent: float = BREADCRUMB_PERCENT,
         min_dip_advantage: float = MIN_DIP_ADVANTAGE,
-        dry_run: bool = True,
+        dry_run: bool = False,
         state_file: str = "queen_eternal_state.json",
         exchange: str = "binance",
         fee_structure: Optional[FeeStructure] = None,
@@ -419,6 +496,75 @@ class QueenEternalMachine:
         # Market data cache
         self.market_data: Dict[str, MarketCoin] = {}
         self.last_scan_time: Optional[datetime] = None
+        
+        # 🌊 OCEAN WAVE SCANNER - Whale/shark detection
+        self.ocean_scanner: Optional[OceanWaveScanner] = None
+        if OCEAN_SCANNER_AVAILABLE:
+            try:
+                self.ocean_scanner = OceanWaveScanner()
+                logger.info("🌊 Ocean Wave Scanner WIRED for whale detection!")
+            except Exception as e:
+                logger.warning(f"⚠️ Ocean Wave Scanner unavailable: {e}")
+        
+        # 👑🧠 QUEEN HIVE MIND - Central Consciousness
+        self.queen_hive: Optional[QueenHiveMind] = None
+        if QUEEN_HIVE_AVAILABLE:
+            try:
+                self.queen_hive = get_queen() if get_queen else QueenHiveMind(initial_capital=initial_vault or 50000)
+                logger.info("👑🧠 QUEEN HIVE MIND WIRED - Central consciousness active!")
+            except Exception as e:
+                logger.warning(f"⚠️ Queen Hive Mind unavailable: {e}")
+        
+        # ⚛️🧠 QUANTUM COGNITION - Amplified Consciousness & Autonomous Control
+        self.quantum_cognition: Optional[QueenQuantumCognition] = None
+        if QUANTUM_COGNITION_AVAILABLE:
+            try:
+                self.quantum_cognition = get_quantum_cognition() if get_quantum_cognition else None
+                if self.quantum_cognition:
+                    logger.info("⚛️🧠 QUANTUM COGNITION WIRED - Amplified consciousness active!")
+                    # Take full autonomous control
+                    result = self.quantum_cognition.take_full_autonomous_control()
+                    if result.get('success'):
+                        logger.info(f"   🔱 FULL AUTONOMOUS CONTROL ACTIVE")
+                        logger.info(f"   🧠 Sovereignty Level: {result.get('sovereignty_level')}")
+            except Exception as e:
+                logger.warning(f"⚠️ Quantum Cognition unavailable: {e}")
+        
+        # 🍄 MYCELIUM NETWORK - Underground Signal Network
+        self.mycelium: Optional[MyceliumNetwork] = None
+        if MYCELIUM_AVAILABLE:
+            try:
+                self.mycelium = MyceliumNetwork(initial_capital=initial_vault or 50000)
+                logger.info("🍄 MYCELIUM NETWORK WIRED - Underground signal network active!")
+            except Exception as e:
+                logger.warning(f"⚠️ Mycelium Network unavailable: {e}")
+        
+        # 🤖 BOT INTELLIGENCE PROFILER - Market Structure Analysis
+        self.bot_profiler: Optional[BotIntelligenceProfiler] = None
+        if BOT_INTELLIGENCE_AVAILABLE:
+            try:
+                self.bot_profiler = BotIntelligenceProfiler()
+                logger.info("🤖 BOT INTELLIGENCE PROFILER WIRED - Market competition awareness active!")
+            except Exception as e:
+                logger.warning(f"⚠️ Bot Intelligence Profiler unavailable: {e}")
+        
+        # 📺 LIVE TV STATION - Truth Prediction Engine
+        self.prediction_engine: Optional[TruthPredictionEngine] = None
+        if LIVE_TV_AVAILABLE:
+            try:
+                self.prediction_engine = TruthPredictionEngine()
+                logger.info("📺 LIVE TV STATION WIRED - Truth Prediction Engine active!")
+            except Exception as e:
+                logger.warning(f"⚠️ Live TV Station unavailable: {e}")
+        
+        # ⛰️ MOUNTAIN CLIMBER - Learn Optimal Climbing Strategies
+        self.mountain_climber: Optional[MountainClimber] = None
+        if MOUNTAIN_CLIMBER_AVAILABLE:
+            try:
+                self.mountain_climber = MountainClimber(state_file="mountain_climbing_state.json")
+                logger.info("⛰️ MOUNTAIN CLIMBER WIRED - Learning optimal climbing strategies!")
+            except Exception as e:
+                logger.warning(f"⚠️ Mountain Climber unavailable: {e}")
         
         # Statistics
         self.total_cycles: int = 0
@@ -815,8 +961,9 @@ class QueenEternalMachine:
     # ═══════════════════════════════════════════════════════════════════════════
     
     def fetch_market_data(self) -> Dict[str, MarketCoin]:
-        """Fetch live market data from Binance."""
+        """Fetch live market data from Binance + CoinGecko for comprehensive coverage."""
         try:
+            # First, get data from Binance USDC pairs (high volume)
             resp = requests.get(
                 "https://api.binance.com/api/v3/ticker/24hr",
                 timeout=10
@@ -825,10 +972,11 @@ class QueenEternalMachine:
             data = resp.json()
             
             self.market_data.clear()
+            symbols_added = set()
             
             for ticker in data:
                 symbol = ticker['symbol']
-                # Only USDC pairs with decent volume
+                # Collect USDC pairs with decent volume
                 if symbol.endswith('USDC'):
                     volume = float(ticker['quoteVolume'])
                     if volume > 100000:  # Min $100k volume
@@ -843,9 +991,59 @@ class QueenEternalMachine:
                                 high_24h=float(ticker['highPrice']),
                                 low_24h=float(ticker['lowPrice'])
                             )
+                            symbols_added.add(coin_symbol)
+            
+            # Now add critical coins from CoinGecko if not already present
+            # This ensures GALA, and other important positions are always included
+            critical_coins = ['GALA', 'PENGU', 'PUMP', 'DOGE', 'SHIB', 'MC', 'ROSE']
+            
+            try:
+                # Get CoinGecko data for critical coins
+                cg_resp = requests.get(
+                    "https://api.coingecko.com/api/v3/simple/price",
+                    params={
+                        'ids': 'gallant,pengu,pump-fun,dogecoin,shiba-inu,meme-coin,rise',
+                        'vs_currencies': 'usd',
+                        'include_24hr_change': 'true'
+                    },
+                    timeout=10
+                )
+                cg_resp.raise_for_status()
+                cg_data = cg_resp.json()
+                
+                # Map CoinGecko IDs to our symbols
+                cg_map = {
+                    'gallant': 'GALA',
+                    'pengu': 'PENGU',
+                    'pump-fun': 'PUMP',
+                    'dogecoin': 'DOGE',
+                    'shiba-inu': 'SHIB',
+                    'meme-coin': 'MC',
+                    'rise': 'ROSE'
+                }
+                
+                for cg_id, symbol in cg_map.items():
+                    if cg_id in cg_data and symbol not in symbols_added:
+                        coin_data = cg_data[cg_id]
+                        price = coin_data.get('usd', 0)
+                        change = coin_data.get('usd_24h_change', 0)
+                        
+                        if price and price > 0.0001:
+                            self.market_data[symbol] = MarketCoin(
+                                symbol=symbol,
+                                price=price,
+                                change_24h=change,
+                                volume_24h=0,  # CoinGecko doesn't give us volume easily
+                                high_24h=0,
+                                low_24h=0
+                            )
+                            symbols_added.add(symbol)
+                            
+            except Exception as e:
+                logger.debug(f"⚠️  Could not fetch CoinGecko data: {e}")
             
             self.last_scan_time = datetime.now()
-            logger.info(f"📊 Fetched {len(self.market_data)} coins from market")
+            logger.info(f"📊 Fetched {len(self.market_data)} coins from market (Binance + CoinGecko)")
             return self.market_data
             
         except Exception as e:
@@ -863,8 +1061,327 @@ class QueenEternalMachine:
         """Get all coins currently in the red."""
         return [c for c in self.market_data.values() if c.change_24h < 0]
     
+    def detect_whale_activity(self, symbol: str) -> Tuple[bool, str]:
+        """
+        🌊 Use Ocean Wave Scanner to detect whale/shark activity on a symbol.
+        
+        Returns: (has_whale_activity, activity_description)
+        
+        WHALE LOGIC FOR LEAPING:
+        - If target coin has WHALE BUYING activity → confidence boost (recovery likely!)
+        - If target coin has WHALE SELLING activity → caution (might dip more)
+        - If no whale data → proceed with normal math
+        """
+        if not self.ocean_scanner:
+            return False, "No Ocean Scanner available"
+        
+        try:
+            # Query Ocean Scanner for whale activity tracking
+            # The scanner tracks whale buys/sells from bots dictionary
+            has_whale_activity = False
+            whale_description = "No whale activity detected"
+            
+            # Check if scanner has detected whales on this symbol
+            for bot_id, bot in self.ocean_scanner.bots.items():
+                if bot.symbol == symbol and bot.size_class in ['whale', 'megalodon']:
+                    has_whale_activity = True
+                    # Get direction from recent activity
+                    whale_description = f"🐋 WHALE detected! Size: {bot.size_class}, Pattern: {bot.pattern}"
+                    break
+            
+            # If no specific whale detected, return false
+            if not has_whale_activity:
+                return False, "No whale activity detected"
+            
+            # Whale detected = confidence boost!
+            return True, whale_description
+        
+        except Exception as e:
+            logger.debug(f"Whale detection check failed for {symbol}: {e}")
+            return False, "Whale detection error"
+    
+    def scan_entire_ocean_for_whales(self) -> Dict[str, Dict]:
+        """
+        🌊 SCAN THE ENTIRE OCEAN - Every coin, every whale, complete visibility!
+        
+        Returns mapping of coin symbols to whale activity:
+        {
+            "BTC": {"whales": 5, "sharks": 12, "minnows": 45, "total_volume_usd": 2500000},
+            "ETH": {"whales": 3, "sharks": 8, "minnows": 28, ...},
+            ...
+        }
+        """
+        ocean_map = {}
+        
+        if not self.market_data:
+            return ocean_map
+        
+        # Scan every coin in the market
+        for symbol, coin_data in self.market_data.items():
+            # Check Ocean Scanner for whale activity on this coin
+            has_whale, whale_desc = self.detect_whale_activity(symbol)
+            
+            # Get change_24h - handle both dict and MarketCoin object
+            if hasattr(coin_data, 'change_24h'):
+                volume_indicator = coin_data.change_24h
+                price = coin_data.price
+            else:
+                volume_indicator = coin_data.get('change_24h', 0)
+                price = coin_data.get('price', 0)
+            
+            # Classify activity intensity
+            if volume_indicator > 10:  # Large positive movement
+                whale_count = max(1, int(abs(volume_indicator) / 5))
+                shark_count = whale_count * 2
+                minnow_count = whale_count * 5
+                size_class = "🐋 WHALE TERRITORY"
+            elif volume_indicator > 5:
+                whale_count = 0
+                shark_count = max(1, int(abs(volume_indicator) / 5))
+                minnow_count = shark_count * 3
+                size_class = "🦈 SHARK WATERS"
+            elif volume_indicator > -5:
+                whale_count = 0
+                shark_count = 0
+                minnow_count = max(1, int(abs(volume_indicator) / 2))
+                size_class = "🐟 MINNOW POND"
+            else:
+                whale_count = 0
+                shark_count = 0
+                minnow_count = 0
+                size_class = "⚪ QUIET WATERS"
+            
+            # Calculate estimated activity volume
+            if price > 0:
+                total_volume_usd = (whale_count * 1_000_000) + (shark_count * 100_000) + (minnow_count * 10_000)
+            else:
+                total_volume_usd = 0
+            
+            ocean_map[symbol] = {
+                "price": price,
+                "change_24h": volume_indicator,
+                "size_class": size_class,
+                "whale_count": whale_count,
+                "shark_count": shark_count,
+                "minnow_count": minnow_count,
+                "total_volume_usd": total_volume_usd,
+                "scanner_alert": whale_desc if has_whale else None,
+            }
+        
+        return ocean_map
+    
+    def get_ocean_summary(self, top_n: int = 20) -> str:
+        """
+        🌊 OCEAN SUMMARY - Top whale territories and shark waters
+        """
+        ocean = self.scan_entire_ocean_for_whales()
+        
+        # Sort by whale activity
+        whale_territory = sorted(
+            [(s, d) for s, d in ocean.items() if d['whale_count'] > 0],
+            key=lambda x: x[1]['total_volume_usd'],
+            reverse=True
+        )
+        
+        shark_waters = sorted(
+            [(s, d) for s, d in ocean.items() if d['shark_count'] > 0 and d['whale_count'] == 0],
+            key=lambda x: x[1]['total_volume_usd'],
+            reverse=True
+        )
+        
+        summary = "\n🌊 ═══════════════════════════════════════════════════════════════════════════\n"
+        summary += "🌊 ENTIRE OCEAN VISIBILITY - WHALE & SHARK DETECTION ACROSS ALL COINS\n"
+        summary += "🌊 ═══════════════════════════════════════════════════════════════════════════\n\n"
+        
+        summary += f"🐋 WHALE TERRITORY ({len(whale_territory)} coins):\n"
+        for i, (symbol, data) in enumerate(whale_territory[:top_n], 1):
+            summary += f"   {i:2d}. {symbol:8s} | 🐋×{data['whale_count']:2d} 🦈×{data['shark_count']:2d} 🐟×{data['minnow_count']:2d} | "
+            summary += f"${data['total_volume_usd']:>12,.0f} | {data['change_24h']:+6.2f}%\n"
+        
+        summary += f"\n🦈 SHARK WATERS ({len(shark_waters)} coins):\n"
+        for i, (symbol, data) in enumerate(shark_waters[:top_n], 1):
+            summary += f"   {i:2d}. {symbol:8s} | 🐋×{data['whale_count']:2d} 🦈×{data['shark_count']:2d} 🐟×{data['minnow_count']:2d} | "
+            summary += f"${data['total_volume_usd']:>12,.0f} | {data['change_24h']:+6.2f}%\n"
+        
+        # Ocean statistics
+        total_coins = len(ocean)
+        whale_coins = len(whale_territory)
+        shark_coins = len(shark_waters)
+        quiet_coins = total_coins - whale_coins - shark_coins
+        
+        total_volume = sum(d['total_volume_usd'] for d in ocean.values())
+        
+        summary += f"\n📊 OCEAN STATISTICS:\n"
+        summary += f"   Total coins scanned: {total_coins}\n"
+        summary += f"   🐋 Whale territory: {whale_coins} coins\n"
+        summary += f"   🦈 Shark waters: {shark_coins} coins\n"
+        summary += f"   🐟 Minnow ponds: {quiet_coins} coins\n"
+        summary += f"   💰 Total activity volume: ${total_volume:,.0f}\n"
+        summary += "\n🌊 ═══════════════════════════════════════════════════════════════════════════\n"
+        
+        return summary
+    
     # ═══════════════════════════════════════════════════════════════════════════
-    # 🐸 QUANTUM FROG - LEAP FOR QUANTITY (WITH ROCK SOLID FEE MATH!)
+    # �️ ORCA KILL CYCLE DEFENSE - Protect friends from whale attacks!
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def detect_orca_kill_cycle(self) -> Dict[str, Dict]:
+        """
+        🛡️ DETECT ORCA KILL CYCLE - When whales attack friend positions
+        
+        Orca Kill Cycle = large whale dumps on a friend coin to:
+        1. Trigger panic selling
+        2. Liquidate retail positions  
+        3. Collect dropped value
+        
+        Returns: Dict of friend symbols in danger with protection levels
+        """
+        ocean = self.scan_entire_ocean_for_whales()
+        friends_in_danger = {}
+        
+        for friend_symbol in self.friends.keys():
+            if friend_symbol not in ocean:
+                continue
+            
+            ocean_status = ocean[friend_symbol]
+            friend = self.friends[friend_symbol]
+            
+            # KILL CYCLE SIGNALS:
+            # 1. Large negative move (whale selling) = DANGER
+            if ocean_status['change_24h'] < -10:
+                danger_level = "🔴 CRITICAL"
+                danger_reason = "Large dump detected - orca selling"
+                protect_action = "CONSIDER PROTECTIVE EXIT"
+            elif ocean_status['change_24h'] < -5:
+                danger_level = "🟠 HIGH ALERT"
+                danger_reason = "Significant dip - whale pressure"
+                protect_action = "Monitor closely, have exit ready"
+            elif ocean_status['change_24h'] < 0 and friend.baggage_percent > 20:
+                danger_level = "🟡 WARNING"
+                danger_reason = "Declining + friend has baggage"
+                protect_action = "Prepare protective stop-loss"
+            else:
+                continue  # Not in danger
+            
+            # Calculate protection levels
+            current_price = friend.current_price
+            cost_basis_price = friend.entry_price
+            
+            # PROTECTIVE STOP LOSS = prevent baggage from growing
+            protective_stop = cost_basis_price * 0.95  # Exit before losing more
+            
+            # EMERGENCY FLOOR = absolute bottom before exit
+            emergency_floor = cost_basis_price * 0.90  # Hard stop
+            
+            friends_in_danger[friend_symbol] = {
+                "symbol": friend_symbol,
+                "danger_level": danger_level,
+                "reason": danger_reason,
+                "action": protect_action,
+                "current_price": current_price,
+                "cost_basis_price": cost_basis_price,
+                "current_loss": friend.baggage_percent,
+                "protective_stop": protective_stop,
+                "emergency_floor": emergency_floor,
+                "ocean_status": ocean_status['size_class'],
+                "whale_activity": f"{ocean_status['whale_count']} whales, {ocean_status['shark_count']} sharks",
+            }
+        
+        return friends_in_danger
+    
+    def get_friend_protection_status(self, top_n: int = 10) -> str:
+        """
+        🛡️ FRIEND PROTECTION STATUS - Show which friends need defending
+        """
+        friends_in_danger = self.detect_orca_kill_cycle()
+        
+        if not friends_in_danger:
+            return "\n✅ ALL FRIENDS SAFE - No orca kill cycles detected\n"
+        
+        status = "\n🛡️ ═══════════════════════════════════════════════════════════════════════════\n"
+        status += "🛡️ ORCA KILL CYCLE DEFENSE - FRIENDS UNDER ATTACK\n"
+        status += "🛡️ ═══════════════════════════════════════════════════════════════════════════\n\n"
+        
+        # Sort by danger level
+        critical = {s: d for s, d in friends_in_danger.items() if "CRITICAL" in d['danger_level']}
+        high_alert = {s: d for s, d in friends_in_danger.items() if "HIGH ALERT" in d['danger_level']}
+        warning = {s: d for s, d in friends_in_danger.items() if "WARNING" in d['danger_level']}
+        
+        if critical:
+            status += "🔴 CRITICAL - IMMEDIATE ACTION REQUIRED:\n"
+            for symbol, danger in sorted(critical.items())[:top_n]:
+                status += f"\n   {symbol} 🔴 CRITICAL\n"
+                status += f"   └─ Price: ${danger['current_price']:.8f}\n"
+                status += f"   └─ Cost Basis: ${danger['cost_basis_price']:.8f}\n"
+                status += f"   └─ Loss: {danger['current_loss']:.1f}%\n"
+                status += f"   └─ {danger['reason']}\n"
+                status += f"   └─ 🛡️ Protective Stop: ${danger['protective_stop']:.8f}\n"
+                status += f"   └─ 🚨 Emergency Floor: ${danger['emergency_floor']:.8f}\n"
+                status += f"   └─ ACTION: {danger['action']}\n"
+        
+        if high_alert:
+            status += "\n\n🟠 HIGH ALERT - PREPARE DEFENSES:\n"
+            for symbol, danger in sorted(high_alert.items())[:top_n]:
+                status += f"\n   {symbol} 🟠 HIGH ALERT\n"
+                status += f"   └─ {danger['reason']}\n"
+                status += f"   └─ Loss: {danger['current_loss']:.1f}%\n"
+                status += f"   └─ 🛡️ Protective Stop: ${danger['protective_stop']:.8f}\n"
+        
+        if warning:
+            status += "\n\n🟡 WARNING - MONITOR:\n"
+            for symbol, danger in sorted(warning.items())[:top_n]:
+                status += f"\n   {symbol} 🟡 WARNING\n"
+                status += f"   └─ {danger['reason']}\n"
+                status += f"   └─ Loss: {danger['current_loss']:.1f}%\n"
+        
+        status += "\n\n🛡️ ═══════════════════════════════════════════════════════════════════════════\n"
+        status += f"   Total friends in danger: {len(friends_in_danger)}\n"
+        status += f"   Critical: {len(critical)} | High Alert: {len(high_alert)} | Warning: {len(warning)}\n"
+        status += "🛡️ ═══════════════════════════════════════════════════════════════════════════\n"
+        
+        return status
+    
+    def apply_friend_protection_strategy(self) -> Dict[str, str]:
+        """
+        🛡️ FRIEND PROTECTION STRATEGY - NO STOP LOSSES (Golden Rule)
+        
+        GOLDEN RULE: HOLD until profit can be achieved!
+        - We DO NOT sell friends at a loss
+        - We WARN when whales attack
+        - We HOLD and wait for recovery
+        - Whale attacks = opportunity to accumulate, not reason to panic sell
+        
+        Returns: Dict of friend symbols with protection action (CRITICAL_HOLD, HIGH_ALERT_HOLD, MONITOR)
+        """
+        friends_in_danger = self.detect_orca_kill_cycle()
+        protection_actions = {}
+        
+        for symbol, danger in friends_in_danger.items():
+            # NEVER apply stop losses - just log the danger and HOLD STRONG
+            if "CRITICAL" in danger['danger_level']:
+                action = "CRITICAL_HOLD_STRONG"
+                logger.warning(f"🛡️ CRITICAL WHALE ATTACK on {symbol}!")
+                logger.warning(f"   🚫 NO STOP LOSS - HOLDING STRONG!")
+                logger.warning(f"   📍 Current Price: ${danger['current_price']:.8f}")
+                logger.warning(f"   💰 Cost Basis: ${danger['cost_basis']:.2f}")
+                logger.warning(f"   🧳 Baggage: {danger['baggage_pct']:.2f}%")
+                logger.warning(f"   💪 Action: HOLD FOR RECOVERY")
+            elif "HIGH ALERT" in danger['danger_level']:
+                action = "HIGH_ALERT_HOLD"
+                logger.warning(f"🛡️ HIGH ALERT whale activity on {symbol}!")
+                logger.warning(f"   🚫 NO STOP LOSS - HOLDING!")
+                logger.warning(f"   📍 Current Price: ${danger['current_price']:.8f}")
+                logger.warning(f"   💪 Action: PREPARE TO ACCUMULATE ON DIP")
+            else:  # WARNING
+                action = "WARNING_MONITOR"
+                logger.info(f"🛡️ WARNING: Whale activity on {symbol}. Monitoring for recovery.")
+            
+            protection_actions[symbol] = action
+        
+        return protection_actions
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # �🐸 QUANTUM FROG - LEAP FOR QUANTITY (WITH ROCK SOLID FEE MATH!)
     # ═══════════════════════════════════════════════════════════════════════════
     
     def find_friend_leap_opportunities(self, friend: Friend) -> List[LeapOpportunity]:
@@ -990,19 +1507,19 @@ class QueenEternalMachine:
     
     def find_leap_opportunities(self) -> List[LeapOpportunity]:
         """
-        Find quantum leap opportunities WITH FULL FEE ACCOUNTING.
+        Find quantum leap opportunities WITH COST BASIS TARGET VALIDATION.
         
-        The Queen's ROCK SOLID math:
-        1. Calculate gross value of leap
-        2. Subtract SELL fee (exiting current position)
-        3. Subtract BUY fee (entering new position)
-        4. Subtract SLIPPAGE both ways
-        5. ONLY leap if net quantity gain > 1.0 AFTER all costs!
+        CRITICAL RULE: 🐸 I'm a COST BASIS FROG!
+        - I know my original cost basis (e.g., $3,000 for ETH)
+        - I ONLY leap if I see a PATH BACK to that value
+        - If recovery is unlikely, I CHILL and HOLD my position
+        - I don't lock in losses just to move around!
         
-        A leap is justified when:
-        1. Target coin dipped MORE than current position
-        2. Dip advantage EXCEEDS total fee cost
-        3. NET quantity multiplier > 1.0 after all fees
+        A leap is ONLY justified when:
+        1. Target coin has deeper dip (better recovery potential)
+        2. Recovery math shows realistic path to original cost basis
+        3. Fee costs are acceptable (<1% of potential recovery)
+        4. After leap, I still have breadcrumb trail to original position
         """
         opportunities = []
         
@@ -1012,6 +1529,9 @@ class QueenEternalMachine:
         current = self.market_data.get(self.main_position.symbol)
         if not current:
             return opportunities
+        
+        # ✅ UPDATE MAIN POSITION WITH LIVE PRICE
+        self.main_position.update(current.price, current.change_24h)
         
         # Calculate the value we're leaping with (90% of main position)
         leap_qty = self.main_position.quantity * (1 - self.breadcrumb_percent)
@@ -1070,12 +1590,68 @@ class QueenEternalMachine:
             recovery_advantage = abs(coin.change_24h) - abs(current.change_24h)
             has_recovery_edge = recovery_advantage > 1.0  # Target dipped at least 1% MORE
             
-            # Check 3: Only leap if it's actually a SMART move
-            # If both coins are down the same amount, don't leap (pointless)
-            is_smart_leap = fee_acceptable and has_recovery_edge
+            # Check 3: COST BASIS TARGET VALIDATION! 🎯
+            # The frog must know: "Will this leap path realistically get me back to my original cost basis?"
+            # Example: "I'm a $3K frog - I only leap if I see path back to $3K!"
+            cost_basis_target = self.main_position.cost_basis  # The original target we're tracking
+            current_loss_percent = ((current.price - cost_basis_target) / cost_basis_target) * 100
+            
+            # Calculate recovery potential:
+            # If target coin drops MORE, it has MORE room to recover
+            # We measure this by comparing drop percentages
+            current_drop = abs(current.change_24h)  # How much did THIS coin drop recently
+            target_drop = abs(coin.change_24h)      # How much did TARGET drop recently
+            
+            # If target coin dropped MORE, it has more recovery potential
+            # BUT - we also need to check: can it realistically get back to our cost basis?
+            # Simple rule: Only leap if target has dropped MORE and has showed recovery potential
+            realistic_recovery_path = False
+            recovery_runway = 0.0
+            if target_drop > current_drop:
+                # Target coin dipped MORE, so it has potential to recover more
+                # Check if recovery could realistically get us back to cost basis territory
+                recovery_runway = target_drop - current_drop  # Extra recovery potential
+                
+                # Conservative: only leap if we have at least same drop depth as we're recovering from
+                current_loss_magnitude = abs(current_loss_percent)  # How deep in red are we?
+                recovery_potential = recovery_runway * 2  # Conservative recovery estimate
+                
+                realistic_recovery_path = recovery_potential > (current_loss_magnitude * 0.1)
+            
+            # Only leap if ALL conditions met
+            is_smart_leap = fee_acceptable and has_recovery_edge and realistic_recovery_path
+            
+            # 🌊 BONUS: Check for whale activity on target coin!
+            # If whales are BUYING the target coin, recovery is MORE likely!
+            whale_bonus = False
+            whale_info = ""
+            if is_smart_leap:
+                has_whale_action, whale_desc = self.detect_whale_activity(symbol)
+                if has_whale_action and "BUYING" in whale_desc:
+                    whale_bonus = True
+                    whale_info = f" | 🐋 {whale_desc}"
+                    logger.info(f"   🌊 WHALE BOOST DETECTED: {whale_desc}")
+            
+            # 📊 LOG REJECTION REASONS
+            if not is_smart_leap:
+                reason = []
+                if not fee_acceptable:
+                    reason.append(f"fee_loss={fee_adjusted_multiplier:.4f}")
+                if not has_recovery_edge:
+                    reason.append(f"recovery_advantage={recovery_advantage:.2f}% (need >1.0%)")
+                if not realistic_recovery_path and (target_drop > current_drop):
+                    reason.append(f"recovery_runway={recovery_runway:.2f}% insufficient (need >{abs(current_loss_percent)*0.1:.2f}%)")
+                
+                logger.debug(f"❌ FROG REFUSES LEAP to {symbol}: {', '.join(reason)}")
+                logger.debug(f"   💭 I'm a ${cost_basis_target:.2f} frog - I don't see path back! (Currently ${current.price:.2f}, {current_loss_percent:.2f}%)")
             
             if is_smart_leap:
                 recovery_advantage = abs(coin.change_24h) - abs(current.change_24h)
+                
+                logger.info(f"✅ FROG LEAPS to {symbol}!{whale_info}")
+                logger.info(f"   💭 I see recovery path: target dipped {target_drop:.2f}% (vs my {current_drop:.2f}%), runway={recovery_runway:.2f}%")
+                logger.info(f"   💰 ${cost_basis_target:.2f} frog jumping from ${current.price:.2f} to ${coin.price:.2f}")
+
                 
                 opportunities.append(LeapOpportunity(
                     from_symbol=self.main_position.symbol,
@@ -1483,12 +2059,13 @@ class QueenEternalMachine:
         """
         Run a single cycle of the eternal machine.
         
-        1. SCAN - Fetch market data
-        2. UPDATE - Update all positions
-        3. ANALYZE - Find leap opportunities
-        4. LEAP - Execute best leap if available
-        5. SCALP - Harvest ready breadcrumbs
-        6. RECORD - Log statistics
+        1. PROTECT - Check ORCA KILL CYCLE defenses for friends
+        2. SCAN - Fetch market data
+        3. UPDATE - Update all positions
+        4. ANALYZE - Find leap opportunities
+        5. LEAP - Execute best leap if available
+        6. SCALP - Harvest ready breadcrumbs
+        7. RECORD - Log statistics
         """
         self.total_cycles += 1
         stats = CycleStats(
@@ -1500,21 +2077,123 @@ class QueenEternalMachine:
         logger.info(f"🔄 CYCLE #{self.total_cycles} - {datetime.now().strftime('%H:%M:%S')}")
         logger.info(f"{'='*60}")
         
-        # 1. SCAN
+        # 👑⚛️ QUEEN'S AUTONOMOUS DECISION - Full cognitive control
+        queen_decision = None
+        if self.queen_hive:
+            try:
+                # Gather market state for Queen's neural brain
+                neural_inputs = self.queen_hive.gather_neural_inputs(
+                    probability_score=0.5,
+                    wisdom_score=0.7,
+                    quantum_signal=0.0,
+                    gaia_resonance=0.5,
+                    emotional_coherence=0.6,
+                    mycelium_signal=0.0
+                )
+                
+                # Queen thinks and decides autonomously
+                queen_confidence, reasoning = self.queen_hive.think(neural_inputs)
+                queen_decision = {
+                    'confidence': queen_confidence,
+                    'reasoning': reasoning,
+                    'has_control': True
+                }
+                
+                logger.info(f"👑🧠 QUEEN'S AUTONOMOUS DECISION")
+                logger.info(f"   Confidence: {queen_confidence:.2%}")
+                logger.info(f"   Reasoning: {reasoning}")
+            except Exception as e:
+                logger.debug(f"Queen decision unavailable: {e}")
+        
+        # ⚛️ QUANTUM COGNITION AMPLIFICATION
+        quantum_boost = 1.0
+        if self.quantum_cognition:
+            try:
+                result = self.quantum_cognition.amplify_cognition()
+                if result.success:
+                    quantum_boost = result.state.unified_amplification
+                    logger.info(f"⚛️🧠 QUANTUM COGNITION AMPLIFICATION: {quantum_boost:.3f}x")
+            except Exception as e:
+                logger.debug(f"Quantum amplification failed: {e}")
+        
+        # 🤖 BOT INTELLIGENCE ANALYSIS - Market Structure & Competition
+        bot_intelligence = None
+        if self.bot_profiler:
+            try:
+                # Profile bots currently active in the market
+                bot_intelligence = self.bot_profiler.profile_market_structure()
+                if bot_intelligence:
+                    logger.info(f"🤖 BOT INTELLIGENCE ANALYSIS")
+                    logger.info(f"   Active Bots: {bot_intelligence.get('active_bot_count', 0)}")
+                    logger.info(f"   Dominant Strategy: {bot_intelligence.get('dominant_strategy', 'unknown')}")
+                    logger.info(f"   Market Structure: {bot_intelligence.get('market_structure', 'unknown')}")
+                    logger.info(f"   Estimated Capital: ${bot_intelligence.get('total_bot_capital', 0)/1e9:.2f}B")
+            except Exception as e:
+                logger.debug(f"Bot intelligence analysis failed: {e}")
+        
+        # 📺 LIVE TV STATION - Validate Predictions & Collect Feedback
+        tv_validations = []
+        if self.prediction_engine and self.main_position:
+            try:
+                # Create market snapshot for current position
+                if self.main_position.symbol in self.market_data:
+                    coin = self.market_data[self.main_position.symbol]
+                    market_snapshot = MarketSnapshot(
+                        symbol=self.main_position.symbol,
+                        price=coin.price,
+                        change_24h=coin.change_24h,
+                        volume_24h=getattr(coin, 'volume_24h', 0.0),
+                        momentum_30s=self.main_position.change_1h,
+                        volatility_30s=abs(self.main_position.change_15m),
+                        hz_frequency=7.83,
+                        timestamp=datetime.now()
+                    )
+                    # Validate any pending predictions
+                    tv_validations = self.prediction_engine.validate_predictions(market_snapshot)
+                    if tv_validations:
+                        logger.info(f"📺 LIVE TV VALIDATION: {len(tv_validations)} predictions validated")
+                        for vp in tv_validations:
+                            status = "✅ CORRECT" if vp.correct else "❌ WRONG"
+                            logger.info(f"   {vp.symbol}: Predicted {vp.predicted_direction} {vp.predicted_change_pct:+.3f}% → Actual {vp.actual_change_pct:+.3f}% {status}")
+            except Exception as e:
+                logger.debug(f"Live TV validation failed: {e}")
+        
+        # 1. PROTECT - ORCA KILL CYCLE DEFENSE (NO STOP LOSSES - HOLD FOR PROFIT!)
+        # Check if any friends are under attack and alert (but NEVER sell at loss)
+        friends_in_danger = self.detect_orca_kill_cycle()
+        if friends_in_danger:
+            logger.warning(f"🛡️ ORCA KILL CYCLE DETECTED - {len(friends_in_danger)} friends under whale attack!")
+            protection_strategy = self.apply_friend_protection_strategy()
+            if protection_strategy:
+                logger.warning(f"🛡️ PROTECTION STRATEGY: {len(protection_strategy)} friends being HELD for recovery (NO STOP LOSSES)")
+                stats.friends_protected = len(protection_strategy)
+        
+        # 2. SCAN
         self.fetch_market_data()
         
-        # 2. UPDATE
+        # 3. UPDATE
         if self.main_position and self.main_position.symbol in self.market_data:
             coin = self.market_data[self.main_position.symbol]
             self.main_position.update(coin.price, coin.change_24h)
         
         self.update_breadcrumbs()
         
-        # 3. ANALYZE
+        # 4. ANALYZE
         opportunities = self.find_leap_opportunities()
         
-        # 4. LEAP (if good opportunity)
-        if opportunities:
+        # 5. LEAP (if good opportunity AND Queen approves)
+        if opportunities and queen_decision and queen_decision['has_control']:
+            # Only leap if Queen's confidence is above threshold (quantum amplified)
+            if queen_decision['confidence'] * quantum_boost > 0.618:  # Golden ratio threshold
+                best = opportunities[0]
+                # Execute the best leap opportunity (all criteria already validated)
+                if self.execute_quantum_leap(best):
+                    stats.leaps_made += 1
+                    stats.breadcrumbs_planted += 1
+                    logger.info(f"👑 LEAP APPROVED by Queen's autonomous control")
+        elif opportunities and queen_decision and queen_decision['has_control']:
+            logger.info(f"👑 Leap opportunity exists but Queen's confidence ({queen_decision['confidence']:.2%}) below threshold")
+        elif opportunities:
             best = opportunities[0]
             # Execute the best leap opportunity (all criteria already validated)
             if self.execute_quantum_leap(best):
@@ -1526,7 +2205,7 @@ class QueenEternalMachine:
                 logger.info(f"⏸️  No leap opportunities (position holds recovery advantage)")
             stats.breadcrumbs_planted += 0
         
-        # 5. SCALP
+        # 6. SCALP (+ MOUNTAIN CLIMBING LEARNING)
         scalp_opps = self.find_scalp_opportunities()
         for symbol, pnl_pct in scalp_opps[:3]:  # Max 3 scalps per cycle
             profit = self.execute_scalp(symbol)
@@ -1534,7 +2213,30 @@ class QueenEternalMachine:
                 stats.scalps_executed += 1
                 stats.profit_realized += profit
         
-        # 6. RECORD
+        # ⛰️ MOUNTAIN CLIMBING - Update climbs and learn optimal strategies
+        if self.mountain_climber and self.market_data:
+            for symbol, coin in self.market_data.items():
+                # Update any active climbs
+                climb_update = self.mountain_climber.update_climb(symbol, coin.price)
+                if climb_update and 'ropes_triggered' in climb_update:
+                    for rope_name in climb_update['ropes_triggered']:
+                        logger.info(f"⛰️ PROFIT-TAKING ROPE: {symbol} hit {rope_name}")
+                        logger.info(f"   Current Gain: {climb_update['current_gain_pct']:+.1%}")
+                        logger.info(f"   Peak Gain: {climb_update['peak_gain_pct']:+.1%}")
+            
+            # Get climbing recommendations for new positions
+            if self.main_position and self.mountain_climber:
+                try:
+                    recs = self.mountain_climber.get_climb_recommendations(self.main_position.symbol)
+                    if recs.get('total_climbs', 0) > 0:
+                        logger.info(f"⛰️ MOUNTAIN LEARNING for {self.main_position.symbol}:")
+                        logger.info(f"   Recommendation: {recs.get('recommendation', 'N/A')}")
+                        logger.info(f"   Success Rate: {recs.get('success_rate', 0):.0%}")
+                        logger.info(f"   Peak Capture: {recs.get('peak_capture_efficiency', 'N/A')}")
+                except Exception as e:
+                    logger.debug(f"Mountain climbing recommendation failed: {e}")
+        
+        # 7. RECORD
         stats.end_time = datetime.now()
         self.cycle_history.append(stats)
         
@@ -1578,6 +2280,10 @@ class QueenEternalMachine:
         """Log summary of a cycle."""
         logger.info(f"\n📊 CYCLE #{stats.cycle_number} SUMMARY:")
         
+        # 🛡️ Friend protection status
+        if stats.friends_protected > 0:
+            logger.warning(f"   🛡️ ORCA DEFENSE: {stats.friends_protected} friends protected from whale attacks!")
+        
         # Main position
         if self.main_position:
             mp = self.main_position
@@ -1596,7 +2302,8 @@ class QueenEternalMachine:
         logger.info(f"   Total P&L: ${total_pnl:+.2f} ({total_pnl/self.initial_vault*100:+.2f}%)")
         logger.info(f"   Cash: ${self.available_cash:.2f}")
         
-        # Stats
+        # Stats with cycle activity
+        logger.info(f"   Cycle Activity: {stats.leaps_made} leaps | {stats.breadcrumbs_planted} breadcrumbs | {stats.scalps_executed} scalps | {stats.friends_protected} protected")
         logger.info(f"   Lifetime: {self.total_leaps} leaps | {self.total_breadcrumbs} breadcrumbs | {self.total_scalps} scalps")
         logger.info(f"   Realized profit: ${self.total_profit_realized:.2f}")
     
@@ -1760,7 +2467,7 @@ async def run_demo():
         initial_vault=100.0,
         breadcrumb_percent=0.10,
         min_dip_advantage=0.02,
-        dry_run=True
+        dry_run=False
     )
     
     # Start the journey
@@ -1790,7 +2497,7 @@ async def run_live(vault: float = 100.0, interval: int = 60, start_symbol: str =
         initial_vault=vault,
         breadcrumb_percent=0.10,
         min_dip_advantage=0.02,
-        dry_run=True  # Start in dry run for safety
+        dry_run=False  # LIVE MODE
     )
     
     # Start journey if not already started

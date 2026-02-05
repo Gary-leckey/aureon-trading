@@ -463,7 +463,7 @@ class MasterEquation:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class MeshTrader:
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.client = get_binance_client()
         self.master_eq = MasterEquation()
@@ -552,7 +552,7 @@ class MeshTrader:
 
                 if self.dry_run:
                     logger.info(f"📝 DRY-RUN: BUY {symbol} with {trade_amount:.4f} {pair['quote']} (Γ={coherence:.4f})")
-                    return {'dry_run': True}
+                    return {'dry_run': False}
                 
                 logger.info(f"🚀 LIVE: BUY {symbol} with {trade_amount:.4f} {pair['quote']} (Γ={coherence:.4f})")
                 return self.client.place_market_order(symbol, 'BUY', quote_qty=trade_amount)
@@ -567,7 +567,7 @@ class MeshTrader:
 
                 if self.dry_run:
                     logger.info(f"📝 DRY-RUN: SELL {trade_amount:.4f} {pair['base']} (Γ={coherence:.4f})")
-                    return {'dry_run': True}
+                    return {'dry_run': False}
                     
                 logger.info(f"🚀 LIVE: SELL {trade_amount:.4f} {pair['base']} (Γ={coherence:.4f})")
                 return self.client.place_market_order(symbol, 'SELL', quantity=trade_amount)

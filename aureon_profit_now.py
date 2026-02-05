@@ -144,7 +144,7 @@ class MasterEquation:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class ProfitTrader:
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.client = get_binance_client()
         self.master_eq = MasterEquation()

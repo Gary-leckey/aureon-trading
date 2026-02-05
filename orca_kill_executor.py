@@ -104,7 +104,7 @@ class OrcaKillExecutor:
     - Monitors for profit/stop
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.positions: Dict[str, OrcaPosition] = {}
         self.kraken = None
@@ -525,12 +525,12 @@ class OrcaKillExecutor:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def orca_execute_kill(symbol: str, exchange: str, side: str, 
-                      amount_usd: float = None, dry_run: bool = True):
+                      amount_usd: float = None, dry_run: bool = False):
     """🔪 Execute a kill (trade)."""
     executor = OrcaKillExecutor(dry_run=dry_run)
     return executor.execute_kill(symbol, exchange, side, amount_usd)
 
-def orca_hunt_and_kill(dry_run: bool = True):
+def orca_hunt_and_kill(dry_run: bool = False):
     """🦈 Run full hunt cycle and execute best kill."""
     from aureon_live_momentum_hunter import LiveMomentumHunter
     
@@ -585,7 +585,7 @@ if __name__ == "__main__":
             orca_monitor()
         elif cmd == 'hunt':
             # Dry run hunt and kill
-            orca_hunt_and_kill(dry_run=True)
+            orca_hunt_and_kill(dry_run=False)
         elif cmd == 'hunt-live':
             # LIVE hunt and kill
             print("⚠️ LIVE MODE - Real trades will be executed!")

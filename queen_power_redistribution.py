@@ -143,7 +143,7 @@ class QueenPowerRedistribution:
     Connects her intelligence to active execution.
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.state_dir = os.getenv("AUREON_STATE_DIR", ".")
         

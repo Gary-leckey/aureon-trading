@@ -321,7 +321,7 @@ class QueenTrueConsciousnessController:
     STATS_FILE = "queen_consciousness_stats.json"
     LOG_FILE = "queen_consciousness.log"
     
-    def __init__(self, dry_run: bool = True, scan_interval: int = 60):
+    def __init__(self, dry_run: bool = False, scan_interval: int = 60):
         """
         Initialize the True Consciousness Controller.
         

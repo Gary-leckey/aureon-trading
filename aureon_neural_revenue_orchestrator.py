@@ -83,7 +83,7 @@ class NeuralRevenueOrchestrator:
     into revenue streams through coordinated neural trading systems.
     """
 
-    def __init__(self, initial_capital: float = 1000.0, dry_run: bool = True):
+    def __init__(self, initial_capital: float = 1000.0, dry_run: bool = False):
         self.initial_capital = initial_capital
         self.dry_run = dry_run
 

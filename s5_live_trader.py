@@ -89,7 +89,7 @@ class S5LiveTrader:
     MIN_VOLATILITY = 0.0005    # 0.05% minimum volatility
     MIN_PROFIT = 0.00001       # $0.00001 minimum profit (micro profits)
     
-    def __init__(self, starting_capital: float = 1000.0, dry_run: bool = True):
+    def __init__(self, starting_capital: float = 1000.0, dry_run: bool = False):
         self.starting_capital = starting_capital
         self.dry_run = dry_run
         self.network = MyceliumNetwork(initial_capital=starting_capital)
@@ -553,7 +553,7 @@ async def main():
     # Create trader (dry run by default for safety)
     trader = S5LiveTrader(
         starting_capital=1000.0,
-        dry_run=True  # Set to False for live trading
+        dry_run=False  # Set to False for live trading
     )
     
     await trader.run()

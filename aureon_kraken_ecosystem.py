@@ -946,7 +946,7 @@ class AureonKrakenEcosystem:
     - 51%+ win rate strategy
     """
     
-    def __init__(self, initial_balance: float = 1000.0, dry_run: bool = True):
+    def __init__(self, initial_balance: float = 1000.0, dry_run: bool = False):
         self.dry_run = dry_run
         self.client = get_kraken_client()
         self.auris = AurisEngine()

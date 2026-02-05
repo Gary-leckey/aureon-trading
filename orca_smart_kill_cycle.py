@@ -49,7 +49,7 @@ from alpaca_client import AlpacaClient
 class OrcaSmartKillCycle:
     """Smart kill cycle that uses momentum hunter data."""
 
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.hunter = LiveMomentumHunter(dry_run=dry_run)
         self.killer = OrcaKillCycle()

@@ -60,7 +60,7 @@ class ExecutionResult:
 class UnifiedTradeExecutor:
     """Central execution hub"""
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.config = TradeGatingConfig()
         self.stats = {"requests": 0, "approved": 0, "rejected": 0, "pnl": 0.0}

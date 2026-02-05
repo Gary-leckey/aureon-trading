@@ -156,7 +156,7 @@ class MomentumSnowball:
     we're surfing momentum waves.
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.tracker = MomentumTracker(window_seconds=CONFIG['momentum_window_seconds'])
         self.running = False
@@ -190,7 +190,7 @@ class MomentumSnowball:
                 self.kraken = get_kraken_client()
             except:
                 print("⚠️ Kraken not available - dry run mode")
-                self.dry_run = True
+                self.dry_run=False
                 
     async def fetch_prices(self) -> Dict[str, float]:
         """Fetch current prices from Binance"""

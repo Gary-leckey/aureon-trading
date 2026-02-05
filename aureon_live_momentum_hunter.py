@@ -144,7 +144,7 @@ class LiveMomentumHunter:
     4. Execute via Scanner Bridge with trailing stops
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.hunt_history: List[HuntResult] = []
         
@@ -1127,7 +1127,7 @@ class LiveMomentumHunter:
 
 def quick_scan():
     """Quick scan - find opportunities without executing."""
-    hunter = LiveMomentumHunter(dry_run=True)
+    hunter = LiveMomentumHunter(dry_run=False)
     return hunter.hunt()
 
 
@@ -1148,13 +1148,13 @@ def continuous_hunt(interval: int = 60):
 
 def smart_scan():
     """🦈 Smart scan - use Orca's hunting grounds to find best venues."""
-    hunter = LiveMomentumHunter(dry_run=True)
+    hunter = LiveMomentumHunter(dry_run=False)
     return hunter.smart_hunt()
 
 
 def find_hunting_grounds():
     """🎯 Show the best hunting grounds across all exchanges."""
-    hunter = LiveMomentumHunter(dry_run=True)
+    hunter = LiveMomentumHunter(dry_run=False)
     return hunter.find_best_hunting_grounds()
 
 
@@ -1166,7 +1166,7 @@ def orca_kill():
 
 def orca_kill_dry():
     """🦈 Run Orca Kill Chain in dry-run mode (no real trades)."""
-    hunter = LiveMomentumHunter(dry_run=True)
+    hunter = LiveMomentumHunter(dry_run=False)
     return hunter.orca_kill_chain()
 
 

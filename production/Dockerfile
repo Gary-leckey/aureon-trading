@@ -65,9 +65,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     AUREON_CONFIG=/aureon/config \
     AUREON_MODE=production
 
-# Install curl for healthcheck (required in production image)
-RUN apt-get update && apt-get install -y --no-install-recommends curl && \
-    rm -rf /var/lib/apt/lists/*
+# Install curl for healthcheck and supervisor for process management
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create aureon user (non-root for security)
 RUN groupadd -r aureon && useradd -r -g aureon aureon
@@ -85,9 +87,11 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY --chown=aureon:aureon . /aureon/app/
 
-# Copy production entrypoint
+# Copy production entrypoint and supervisor config
 COPY --chown=aureon:aureon production/entrypoint.sh /aureon/entrypoint.sh
-RUN chmod +x /aureon/entrypoint.sh
+COPY --chown=aureon:aureon production/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN chmod +x /aureon/entrypoint.sh && \
+    mkdir -p /aureon/config/supervisor.d
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

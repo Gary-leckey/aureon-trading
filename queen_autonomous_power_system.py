@@ -64,7 +64,7 @@ class QueenAutonomousPowerSystem:
     Full integration: Queen's intelligence → Redistribution → Dashboard
     """
     
-    def __init__(self, dry_run: bool = True, scan_interval: int = 30):
+    def __init__(self, dry_run: bool = False, scan_interval: int = 30):
         self.dry_run = dry_run
         self.scan_interval = scan_interval
         self.redistribution_process = None

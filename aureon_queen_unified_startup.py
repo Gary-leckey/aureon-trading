@@ -99,7 +99,7 @@ class QueenUnifiedStartup:
     Streams live telemetry to ThoughtBus for dashboard display.
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.state = UnifiedState()
         self.thought_bus = None

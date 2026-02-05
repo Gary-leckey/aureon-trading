@@ -432,7 +432,7 @@ class QueenExecutionEngine:
     5. Log trade and monitor
     """
     
-    def __init__(self, dry_run: bool = True, exchange: str = "kraken"):
+    def __init__(self, dry_run: bool = False, exchange: str = "kraken"):
         self.dry_run = dry_run
         self.exchange = exchange.lower()
         

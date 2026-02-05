@@ -245,7 +245,7 @@ class TurboSnowball:
     Scans continuously, converts instantly when profit is found.
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.stream = TurboPriceStream()
         self.state = TurboState()
@@ -259,7 +259,7 @@ class TurboSnowball:
                 self.kraken = get_kraken_client()
             except:
                 print("⚠️ Kraken not available - running dry")
-                self.dry_run = True
+                self.dry_run=False
                 
         # Target assets (liquid pairs on Kraken)
         self.target_assets = [

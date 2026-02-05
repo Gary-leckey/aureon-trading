@@ -112,7 +112,7 @@ class OrcaQuantumLiveStream:
     Racing to $1 billion using ALL available cash across ALL exchanges!
     """
     
-    def __init__(self, dry_run: bool = True, max_positions: int = 10):
+    def __init__(self, dry_run: bool = False, max_positions: int = 10):
         self.dry_run = dry_run
         self.max_positions = max_positions
         

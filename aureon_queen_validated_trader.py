@@ -128,7 +128,7 @@ class QueenValidatedTrader:
     - Portfolio growth measured against 100% accuracy baseline
     """
     
-    def __init__(self, dry_run: bool = True):
+    def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
         self.mycelium_engine = None
         self.queen = None
