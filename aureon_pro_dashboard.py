@@ -4048,21 +4048,13 @@ class AureonProDashboard:
                 total_cost = 0
                 
                 # Fetch ALL positions in parallel - Binance, Alpaca, AND Kraken
+                # NOTE: These are sync functions but fast enough - asyncio.to_thread was causing issues
                 async def get_bin_pos():
                     try:
-                        # REDUCE TIMEOUT: Binance ticker API can be slow/blocked
-                        # Try with 2s timeout; if it fails, use cache and move on
-                        result = await asyncio.wait_for(
-                            asyncio.to_thread(get_binance_positions),
-                            timeout=2.0  # Reduced from 5s to 2s
-                        )
+                        result = get_binance_positions()  # Direct call - fast enough
                         if result:
                             self._cached_positions['binance'] = result
                         return result or self._cached_positions.get('binance', [])
-                    except asyncio.TimeoutError:
-                        # Binance API is hanging - use cache and don't block other exchanges
-                        self.logger.warning(f"⚠️  Binance fetch TIMEOUT (2s) - using cache with {len(self._cached_positions.get('binance', []))} cached positions")
-                        return self._cached_positions.get('binance', [])
                     except (ConnectionError, OSError) as e:
                         # Network errors - likely Binance IP ban or network issue
                         self.logger.warning(f"⚠️  Binance network error (likely IP ban or no connectivity): {e}")
@@ -4073,16 +4065,10 @@ class AureonProDashboard:
                 
                 async def get_alp_pos():
                     try:
-                        result = await asyncio.wait_for(
-                            asyncio.to_thread(get_alpaca_positions),
-                            timeout=3.0  # Reduced from 5s for faster fallback
-                        )
+                        result = get_alpaca_positions()  # Direct call - fast enough
                         if result:
                             self._cached_positions['alpaca'] = result
                         return result or self._cached_positions.get('alpaca', [])
-                    except asyncio.TimeoutError:
-                        self.logger.warning(f"⚠️  Alpaca fetch TIMEOUT (3s) - using cache with {len(self._cached_positions.get('alpaca', []))} cached positions")
-                        return self._cached_positions.get('alpaca', [])
                     except Exception as e:
                         self.logger.warning(f"⚠️  Alpaca fetch failed: {e}")
                         return self._cached_positions.get('alpaca', [])
@@ -4090,16 +4076,10 @@ class AureonProDashboard:
                 async def get_kraken_pos():
                     """Fetch Kraken positions from LIVE API - includes ALL meme coins and alt coins."""
                     try:
-                        result = await asyncio.wait_for(
-                            asyncio.to_thread(get_kraken_positions),
-                            timeout=3.0  # Reduced from 5s for consistency
-                        )
+                        result = get_kraken_positions()  # Direct call - fast enough
                         if result:
                             self._cached_positions['kraken'] = result
                         return result or self._cached_positions.get('kraken', [])
-                    except asyncio.TimeoutError:
-                        self.logger.warning(f"⚠️  Kraken fetch TIMEOUT (3s) - using cache with {len(self._cached_positions.get('kraken', []))} cached positions")
-                        return self._cached_positions.get('kraken', [])
                     except Exception as e:
                         self.logger.warning(f"⚠️  Kraken fetch failed: {e}")
                         return self._cached_positions.get('kraken', [])
@@ -4278,9 +4258,11 @@ class AureonProDashboard:
                     self.logger.debug(f"Balance load error: {e}")
                     new_balances = self.exchange_balances
                 
-                # FALLBACK FIRST: Check if we need to load from cost_basis_history.json (273 REAL positions!)
-                # This MUST happen BEFORE the atomic update so we use the right data
-                if not positions or len(positions) < 5:
+                # NOTE: cost_basis_history.json contains HISTORICAL trades (273 entries)
+                # but these may have been SOLD - it's NOT current holdings!
+                # ONLY use live_position_viewer for ACTUAL portfolio value
+                # The fallback below is DISABLED - we use REAL exchange data only
+                if False:  # DISABLED: cost_basis_history shows phantom positions
                     try:
                         cost_basis_path = os.path.join(state_dir, "cost_basis_history.json")
                         if os.path.exists(cost_basis_path):
