@@ -1034,6 +1034,19 @@ except ImportError:
     V11Config = None
     PowerGridState = None
 
+# 👑🐸 QUEEN ETERNAL MACHINE - Bloodless quantum leaps with fee-aware trading
+try:
+    from queen_eternal_machine import QueenEternalMachine, FeeStructure, LeapOpportunity, CycleStats
+    QUEEN_ETERNAL_MACHINE_AVAILABLE = True
+    print("👑🐸 Queen Eternal Machine: AVAILABLE (Bloodless Leaps!)")
+except ImportError:
+    QUEEN_ETERNAL_MACHINE_AVAILABLE = False
+    QueenEternalMachine = None
+    FeeStructure = None
+    LeapOpportunity = None
+    CycleStats = None
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🌍 FREE OPEN SOURCE DATA FEEDS - ZERO API COST!
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -3585,6 +3598,28 @@ class OrcaKillCycle:
         except Exception as e:
             self.fire_trader = None
             _safe_print(f"⚠️ Fire Trade missing: {e}")
+
+        # 👑🐸 QUEEN ETERNAL MACHINE - Bloodless quantum leaps with full fee accounting
+        self.queen_eternal_machine = None
+        if QUEEN_ETERNAL_MACHINE_AVAILABLE:
+            try:
+                # Detect exchange for fee profile
+                fee_exchange = "binance"  # Default
+                if self.clients.get("kraken"):
+                    fee_exchange = "kraken"
+                elif self.clients.get("alpaca"):
+                    fee_exchange = "alpaca"
+                
+                self.queen_eternal_machine = QueenEternalMachine(
+                    initial_vault=None,  # Load REAL positions from cost_basis_history.json!
+                    exchange=fee_exchange,
+                    dry_run=True  # Safety first!
+                )
+                _safe_print(f"👑🐸 Queen Eternal Machine: INTEGRATED ({fee_exchange} fees)")
+            except Exception as qem_err:
+                self.queen_eternal_machine = None
+                _safe_print(f"⚠️ Queen Eternal Machine init failed: {qem_err}")
+
 
         # ═══════════════════════════════════════════════════════════════════
         # 🧠 WIRE UP ALL INTELLIGENCE SYSTEMS!
@@ -12149,6 +12184,30 @@ class OrcaKillCycle:
                             session_stats['total_pnl'] += amt
                     except Exception as e:
                         print(f"⚠️ Avalanche cycle error: {e}")
+
+                # 👑🐸 QUEEN ETERNAL MACHINE - Bloodless Quantum Leaps!
+                if self.queen_eternal_machine and (current_time - getattr(self, "_qem_last_cycle", 0) >= 60):
+                    self._qem_last_cycle = current_time
+                    try:
+                        import asyncio
+                        async def _run_eternal_cycle():
+                            return await self.queen_eternal_machine.run_cycle()
+                        loop = asyncio.new_event_loop()
+                        eternal_stats = loop.run_until_complete(_run_eternal_cycle())
+                        loop.close()
+                        if eternal_stats.leaps_made > 0:
+                            print(f"\n👑🐸 ETERNAL MACHINE: {eternal_stats.leaps_made} quantum leap(s)!")
+                            print(f"   🐸 Value preserved, QUANTITY grew!")
+                            print(f"   🍞 Breadcrumbs: {self.queen_eternal_machine.total_breadcrumbs}")
+                            print(f"   💸 Fees paid: ${self.queen_eternal_machine.total_fees_paid:.4f}")
+                            if "eternal" not in session_stats:
+                                session_stats["eternal"] = {"leaps": 0, "breadcrumbs": 0, "fees": 0}
+                            session_stats["eternal"]["leaps"] += eternal_stats.leaps_made
+                            session_stats["eternal"]["breadcrumbs"] += eternal_stats.breadcrumbs_dropped
+                            session_stats["eternal"]["fees"] += eternal_stats.fees_paid
+                    except Exception as qem_err:
+                        pass  # Silent fail - Queen rests when markets are calm
+
 
                 # ⚡👑 V11 POWER STATION - COMPOUND CYCLE (Siphon + Compound + Reinvest)
                 # Never sell losers! Only extract 50% profits from winners, reinvest into best targets
