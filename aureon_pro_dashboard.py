@@ -4993,22 +4993,14 @@ class AureonProDashboard:
             positions_data = self._calculate_positions_breakdown()
             
             # ═══════════════════════════════════════════════════════════════════
-            # 🧠 GET QUEEN'S FULL COGNITIVE STATE
+            # 🧠 GET QUEEN'S COGNITIVE STATE FROM UNIFIED SYSTEM
             # ═══════════════════════════════════════════════════════════════════
-            cognition_state = self.queen_cognition.get_full_cognitive_state()
+            cognition_status = self.queen_cognition.get_status()
+            cognition_state = cognition_status.get('state', {})
             
-            # Get dominant thought from cognition
-            thought = None
-            if hasattr(self.queen_cognition, 'get_latest_thought'):
-                thought = self.queen_cognition.get_latest_thought()
-            
-            # ═══════════════════════════════════════════════════════════════════
-            # 📝 BUILD UNIFIED THOUGHT OUTPUT
-            # ═══════════════════════════════════════════════════════════════════
-            
-            # Calculate metrics
+            # Extract metrics from state
             coherence = cognition_state.get('coherence', 0.7)
-            lambda_val = cognition_state.get('lambda', 0.8)
+            lambda_val = cognition_state.get('lambda_stability', 0.8)
             confidence = cognition_state.get('confidence', 0.5)
             
             # Get top movers for context
