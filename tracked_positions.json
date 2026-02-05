@@ -459,5 +459,53 @@
         "buy_timestamp": "2026-02-02T16:35:21.374756",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
+    },
+    "ADAUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 27.90370799,
+        "buy_timestamp": "2026-02-05T20:54:56.047628",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "CROUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 172.37,
+        "buy_timestamp": "2026-02-05T20:54:56.049443",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "INUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 210.0,
+        "buy_timestamp": "2026-02-05T20:54:56.050541",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "SOLUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 0.0083389591,
+        "buy_timestamp": "2026-02-05T20:54:56.051341",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "TRX.BUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 81.94517156,
+        "buy_timestamp": "2026-02-05T20:54:56.052555",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "XRPUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 10.67672,
+        "buy_timestamp": "2026-02-05T20:54:56.053524",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
     }
 }

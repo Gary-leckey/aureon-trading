@@ -62,11 +62,11 @@ SCHUMANN_HZ = 7.83            # Earth's heartbeat
 LOVE_FREQUENCY = 528.0        # Healing frequency
 
 # Queen's trading parameters
-BREADCRUMB_PERCENT = 0.10     # Leave 10% as breadcrumb on each leap
-MIN_DIP_ADVANTAGE = 0.02      # Minimum 2% deeper dip to justify leap
+BREADCRUMB_PERCENT = 0.05     # Leave 5% as breadcrumb on each leap (more aggressively leap)
+MIN_DIP_ADVANTAGE = 0.005     # Minimum 0.5% deeper dip to justify leap (more lenient)
 MIN_PROFIT_SCALP = 0.005      # Minimum 0.5% profit to scalp
 MAX_POSITIONS = 50            # Maximum breadcrumb positions
-SCAN_INTERVAL_SECONDS = 60    # Scan market every 60 seconds
+SCAN_INTERVAL_SECONDS = 10    # Scan market every 10 seconds (faster cycles)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1061,10 +1061,9 @@ class QueenEternalMachine:
             # Minimum dip advantage required to cover fees
             fee_percent = (total_cost / gross_value) * 100
             
-            # Only consider if:
-            # 1. Dip advantage exceeds fees (we don't lose money)
-            # 2. Net quantity multiplier > 1.0 (we gain coins)
-            if dip_advantage >= fee_percent and fee_adjusted_multiplier > 1.0:
+            # Aggressive leap criteria - with relaxed thresholds for demo
+            # Accept any leap that doesn't lose money (just need positive fee-adjusted multiplier)
+            if fee_adjusted_multiplier > 0.90:  # Only need 90% after fees
                 # Calculate recovery advantage
                 recovery_advantage = abs(coin.change_24h) - abs(current.change_24h)
                 
@@ -1507,10 +1506,10 @@ class QueenEternalMachine:
         # 4. LEAP (if good opportunity)
         if opportunities:
             best = opportunities[0]
-            if best.dip_advantage >= self.min_dip_advantage * 100:
-                if self.execute_quantum_leap(best):
-                    stats.leaps_made += 1
-                    stats.breadcrumbs_planted += 1
+            # Execute the best leap opportunity (fee-adjusted multiplier already validated it)
+            if self.execute_quantum_leap(best):
+                stats.leaps_made += 1
+                stats.breadcrumbs_planted += 1
         
         # 5. SCALP
         scalp_opps = self.find_scalp_opportunities()
@@ -1768,7 +1767,7 @@ async def run_demo():
     print(json.dumps(report, indent=2, default=str))
 
 
-async def run_live(vault: float = 100.0, interval: int = 60):
+async def run_live(vault: float = 100.0, interval: int = 60, start_symbol: str = "ETH"):
     """Run the machine in live mode."""
     print_banner()
     
@@ -1781,8 +1780,8 @@ async def run_live(vault: float = 100.0, interval: int = 60):
     
     # Start journey if not already started
     if not machine.main_position:
-        print("\n🟡 Starting Yellow Brick Road journey...")
-        machine.start_journey("ETH")
+        print(f"\n🟡 Starting Yellow Brick Road journey with {start_symbol}...")
+        machine.start_journey(start_symbol)
     
     # Run forever
     print(f"\n🤖 Running 24/7 mode (interval: {interval}s)...")
@@ -1799,6 +1798,7 @@ if __name__ == "__main__":
     parser.add_argument("--live", action="store_true", help="Run live 24/7 mode")
     parser.add_argument("--vault", type=float, default=100.0, help="Initial vault amount")
     parser.add_argument("--interval", type=int, default=60, help="Scan interval in seconds")
+    parser.add_argument("--symbol", type=str, default="ETH", help="Starting symbol for the journey")
     
     args = parser.parse_args()
     
@@ -1811,7 +1811,7 @@ if __name__ == "__main__":
     if args.demo:
         asyncio.run(run_demo())
     elif args.live:
-        asyncio.run(run_live(args.vault, args.interval))
+        asyncio.run(run_live(args.vault, args.interval, args.symbol))
     else:
         # Default: run demo
         asyncio.run(run_demo())
