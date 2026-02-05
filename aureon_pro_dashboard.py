@@ -138,6 +138,65 @@ except ImportError:
     Thought = None
     logger.warning("ThoughtBus not available")
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# ⚛️ QUEEN QUANTUM COGNITION - Enhanced quantum-powered cognition amplifier
+# ═══════════════════════════════════════════════════════════════════════════════
+try:
+    from queen_quantum_cognition import get_quantum_cognition, QueenQuantumCognition
+    QUANTUM_COGNITION_AVAILABLE = True
+    logger.info("⚛️ Queen Quantum Cognition: AVAILABLE")
+except ImportError:
+    QUANTUM_COGNITION_AVAILABLE = False
+    get_quantum_cognition = None
+    QueenQuantumCognition = None
+    logger.warning("Queen Quantum Cognition not available")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 👑💰 QUEEN ASSET COMMAND CENTER - Full portfolio visibility
+# ═══════════════════════════════════════════════════════════════════════════════
+try:
+    from queen_asset_command_center import (
+        get_asset_command_center, 
+        get_asset_monitor,
+        get_ocean_view,
+        QueenAssetCommandCenter
+    )
+    ASSET_COMMAND_AVAILABLE = True
+    logger.info("👑💰 Queen Asset Command Center: AVAILABLE")
+except ImportError:
+    ASSET_COMMAND_AVAILABLE = False
+    get_asset_command_center = None
+    get_asset_monitor = None
+    get_ocean_view = None
+    QueenAssetCommandCenter = None
+    logger.warning("Queen Asset Command Center not available")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🔤 UNIFIED SYMBOL MANAGER - Correct symbols & quantities per exchange
+# ═══════════════════════════════════════════════════════════════════════════════
+try:
+    from unified_symbol_manager import get_symbol_manager, UnifiedSymbolManager
+    SYMBOL_MANAGER_AVAILABLE = True
+    logger.info("🔤 Unified Symbol Manager: AVAILABLE")
+except ImportError:
+    SYMBOL_MANAGER_AVAILABLE = False
+    get_symbol_manager = None
+    UnifiedSymbolManager = None
+    logger.warning("Unified Symbol Manager not available")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 👑🧠 QUEEN HIVE MIND - Central consciousness
+# ═══════════════════════════════════════════════════════════════════════════════
+try:
+    from aureon_queen_hive_mind import get_queen, QueenHiveMind
+    QUEEN_HIVE_AVAILABLE = True
+    logger.info("👑🧠 Queen Hive Mind: AVAILABLE")
+except ImportError:
+    QUEEN_HIVE_AVAILABLE = False
+    get_queen = None
+    QueenHiveMind = None
+    logger.warning("Queen Hive Mind not available")
+
 PRO_DASHBOARD_HTML = """
 <!DOCTYPE html>
 <html lang="en">
@@ -3009,6 +3068,86 @@ class AureonProDashboard:
             except Exception as e:
                 logger.warning(f"📡 ThoughtBus init failed: {e}")
         
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # ⚛️ QUEEN QUANTUM COGNITION - Enhanced quantum-powered cognition amplifier
+        # ═══════════════════════════════════════════════════════════════════════════════
+        self.quantum_cognition = None
+        self.quantum_data = {
+            'amplification_level': 0,
+            'coherence': 0,
+            'quantum_systems_online': 0,
+            'autonomous_mode': False,
+            'last_decision': None,
+            'last_update': None
+        }
+        if QUANTUM_COGNITION_AVAILABLE and get_quantum_cognition:
+            try:
+                self.quantum_cognition = get_quantum_cognition()
+                logger.info("⚛️ Queen Quantum Cognition: INITIALIZED")
+            except Exception as e:
+                logger.warning(f"⚛️ Quantum Cognition init failed: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # 👑💰 QUEEN ASSET COMMAND CENTER - Full portfolio visibility
+        # ═══════════════════════════════════════════════════════════════════════════════
+        self.asset_command = None
+        self.asset_monitor = None
+        self.ocean_view = None
+        self.asset_data = {
+            'total_portfolio_value': 0,
+            'total_positions': 0,
+            'exchanges_connected': 0,
+            'positions_by_exchange': {},
+            'top_holdings': [],
+            'last_update': None
+        }
+        if ASSET_COMMAND_AVAILABLE and get_asset_command_center:
+            try:
+                self.asset_command = get_asset_command_center()
+                self.asset_monitor = get_asset_monitor() if get_asset_monitor else None
+                self.ocean_view = get_ocean_view() if get_ocean_view else None
+                logger.info("👑💰 Queen Asset Command Center: INITIALIZED")
+            except Exception as e:
+                logger.warning(f"👑💰 Asset Command init failed: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # 🔤 UNIFIED SYMBOL MANAGER - Correct symbols & quantities per exchange
+        # ═══════════════════════════════════════════════════════════════════════════════
+        self.symbol_manager = None
+        self.symbol_data = {
+            'kraken_pairs': 0,
+            'binance_pairs': 0,
+            'alpaca_pairs': 0,
+            'capital_pairs': 0,
+            'loaded': False
+        }
+        if SYMBOL_MANAGER_AVAILABLE and get_symbol_manager:
+            try:
+                self.symbol_manager = get_symbol_manager()
+                logger.info("🔤 Unified Symbol Manager: INITIALIZED")
+            except Exception as e:
+                logger.warning(f"🔤 Symbol Manager init failed: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # 👑🧠 QUEEN HIVE MIND - Central consciousness (SERO)
+        # ═══════════════════════════════════════════════════════════════════════════════
+        self.queen_hive = None
+        self.queen_hive_data = {
+            'queen_name': 'SERO',
+            'authority_level': 'SUPREME_AUTONOMOUS',
+            'hive_systems_online': 0,
+            'total_hive_systems': 0,
+            'autonomous_enabled': False,
+            'last_directive': None,
+            'last_update': None
+        }
+        if QUEEN_HIVE_AVAILABLE and get_queen:
+            try:
+                self.queen_hive = get_queen()
+                logger.info("👑🧠 Queen Hive Mind: INITIALIZED")
+            except Exception as e:
+                logger.warning(f"👑🧠 Queen Hive Mind init failed: {e}")
+        
         # Setup web app
         self.app = web.Application()
         self.app.router.add_get('/', self.handle_index)
@@ -3024,6 +3163,11 @@ class AureonProDashboard:
         self.app.router.add_get('/api/v11', self.handle_v11)  # V11 Power Station
         self.app.router.add_get('/api/sentiment', self.handle_sentiment)  # Fear & Greed
         self.app.router.add_get('/api/thoughts', self.handle_thoughts)  # ThoughtBus events
+        # 👑 QUEEN SYSTEMS ENDPOINTS
+        self.app.router.add_get('/api/quantum', self.handle_quantum)  # Quantum Cognition
+        self.app.router.add_get('/api/assets', self.handle_assets)  # Asset Command Center
+        self.app.router.add_get('/api/symbols', self.handle_symbols)  # Symbol Manager
+        self.app.router.add_get('/api/queen', self.handle_queen)  # Queen Hive Mind
     
     def _on_thought_event(self, thought):
         """Handle incoming thought events from ThoughtBus."""
@@ -3368,6 +3512,92 @@ class AureonProDashboard:
             'count': len(self.thought_events)
         })
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # ⚛️ QUEEN QUANTUM COGNITION API
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def handle_quantum(self, request):
+        """Return Queen Quantum Cognition status."""
+        data = self.quantum_data.copy()
+        if self.quantum_cognition:
+            try:
+                # Get full subsystem status if available
+                if hasattr(self.quantum_cognition, 'get_full_subsystem_status'):
+                    status = self.quantum_cognition.get_full_subsystem_status()
+                    data['subsystem_status'] = status
+                if hasattr(self.quantum_cognition, 'amplification_level'):
+                    data['amplification_level'] = self.quantum_cognition.amplification_level
+                if hasattr(self.quantum_cognition, 'is_fully_autonomous'):
+                    data['autonomous_mode'] = self.quantum_cognition.is_fully_autonomous
+            except Exception as e:
+                data['error'] = str(e)
+        return web.json_response(data)
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 👑💰 QUEEN ASSET COMMAND CENTER API
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def handle_assets(self, request):
+        """Return Queen Asset Command Center portfolio data."""
+        data = self.asset_data.copy()
+        if self.asset_command:
+            try:
+                # Get portfolio overview
+                if hasattr(self.asset_command, 'get_full_portfolio'):
+                    portfolio = await asyncio.to_thread(self.asset_command.get_full_portfolio)
+                    if portfolio:
+                        data['portfolio'] = portfolio
+                        data['total_portfolio_value'] = portfolio.get('total_value', 0)
+                        data['total_positions'] = portfolio.get('total_positions', 0)
+            except Exception as e:
+                data['error'] = str(e)
+        return web.json_response(data)
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🔤 UNIFIED SYMBOL MANAGER API
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def handle_symbols(self, request):
+        """Return Unified Symbol Manager status."""
+        data = self.symbol_data.copy()
+        if self.symbol_manager:
+            try:
+                # Get counts per exchange
+                if hasattr(self.symbol_manager, 'kraken_pairs'):
+                    data['kraken_pairs'] = len(self.symbol_manager.kraken_pairs) if self.symbol_manager.kraken_pairs else 0
+                if hasattr(self.symbol_manager, 'binance_pairs'):
+                    data['binance_pairs'] = len(self.symbol_manager.binance_pairs) if self.symbol_manager.binance_pairs else 0
+                if hasattr(self.symbol_manager, 'alpaca_pairs'):
+                    data['alpaca_pairs'] = len(self.symbol_manager.alpaca_pairs) if self.symbol_manager.alpaca_pairs else 0
+                if hasattr(self.symbol_manager, 'capital_pairs'):
+                    data['capital_pairs'] = len(self.symbol_manager.capital_pairs) if self.symbol_manager.capital_pairs else 0
+                data['loaded'] = True
+            except Exception as e:
+                data['error'] = str(e)
+        return web.json_response(data)
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 👑🧠 QUEEN HIVE MIND API
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def handle_queen(self, request):
+        """Return Queen Hive Mind status."""
+        data = self.queen_hive_data.copy()
+        if self.queen_hive:
+            try:
+                # Get hive status
+                if hasattr(self.queen_hive, 'name'):
+                    data['queen_name'] = self.queen_hive.name
+                if hasattr(self.queen_hive, 'authority'):
+                    data['authority_level'] = str(self.queen_hive.authority)
+                if hasattr(self.queen_hive, 'hive_members'):
+                    data['hive_systems_online'] = len([m for m in self.queen_hive.hive_members.values() if m.get('active', False)])
+                    data['total_hive_systems'] = len(self.queen_hive.hive_members)
+                if hasattr(self.queen_hive, 'autonomous_enabled'):
+                    data['autonomous_enabled'] = self.queen_hive.autonomous_enabled
+                if hasattr(self.queen_hive, 'get_full_autonomous_status'):
+                    full_status = self.queen_hive.get_full_autonomous_status()
+                    data['full_autonomous_status'] = full_status
+            except Exception as e:
+                data['error'] = str(e)
+        return web.json_response(data)
+    
     async def broadcast(self, message: Dict):
         """Broadcast to all connected clients."""
         if not self.clients:
@@ -3478,6 +3708,160 @@ class AureonProDashboard:
                 self.logger.error(f"❌ Sentiment data loop error: {e}")
             
             await asyncio.sleep(300)  # Every 5 minutes (API rate limits)
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # ⚛️ QUEEN QUANTUM COGNITION DATA LOOP
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def quantum_cognition_loop(self):
+        """Periodically update Quantum Cognition status and broadcast."""
+        await asyncio.sleep(10)  # Wait for init
+        
+        while True:
+            try:
+                if self.quantum_cognition and QUANTUM_COGNITION_AVAILABLE:
+                    # Get quantum status
+                    if hasattr(self.quantum_cognition, 'get_full_subsystem_status'):
+                        status = self.quantum_cognition.get_full_subsystem_status()
+                        self.quantum_data['quantum_systems_online'] = status.get('quantum_systems_online', 0)
+                        self.quantum_data['hive_systems_online'] = status.get('hive_systems_online', 0)
+                    
+                    if hasattr(self.quantum_cognition, 'amplification_level'):
+                        self.quantum_data['amplification_level'] = self.quantum_cognition.amplification_level
+                    
+                    if hasattr(self.quantum_cognition, 'is_fully_autonomous'):
+                        self.quantum_data['autonomous_mode'] = self.quantum_cognition.is_fully_autonomous
+                    
+                    self.quantum_data['last_update'] = datetime.now().isoformat()
+                    
+                    # Broadcast to clients
+                    await self.broadcast({
+                        'type': 'quantum_update',
+                        'data': self.quantum_data
+                    })
+                    
+                    self.logger.info(f"⚛️ Quantum Cognition: Level {self.quantum_data.get('amplification_level', 0)}, Autonomous: {self.quantum_data.get('autonomous_mode', False)}")
+                    
+            except Exception as e:
+                self.logger.error(f"❌ Quantum Cognition loop error: {e}")
+            
+            await asyncio.sleep(30)  # Every 30 seconds
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 👑💰 QUEEN ASSET COMMAND CENTER DATA LOOP
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def asset_command_loop(self):
+        """Periodically update Asset Command Center portfolio data and broadcast."""
+        await asyncio.sleep(15)  # Wait for init
+        
+        while True:
+            try:
+                if self.asset_command and ASSET_COMMAND_AVAILABLE:
+                    # Get portfolio data
+                    if hasattr(self.asset_command, 'get_full_portfolio'):
+                        portfolio = await asyncio.to_thread(self.asset_command.get_full_portfolio)
+                        if portfolio:
+                            self.asset_data['total_portfolio_value'] = portfolio.get('total_value', 0)
+                            self.asset_data['total_positions'] = portfolio.get('total_positions', 0)
+                            self.asset_data['exchanges_connected'] = portfolio.get('exchanges_connected', 0)
+                            self.asset_data['positions_by_exchange'] = portfolio.get('by_exchange', {})
+                            self.asset_data['top_holdings'] = portfolio.get('top_holdings', [])[:10]
+                    
+                    self.asset_data['last_update'] = datetime.now().isoformat()
+                    
+                    # Broadcast to clients
+                    await self.broadcast({
+                        'type': 'assets_update',
+                        'data': self.asset_data
+                    })
+                    
+                    self.logger.info(f"👑💰 Asset Command: ${self.asset_data.get('total_portfolio_value', 0):,.2f} across {self.asset_data.get('total_positions', 0)} positions")
+                    
+            except Exception as e:
+                self.logger.error(f"❌ Asset Command loop error: {e}")
+            
+            await asyncio.sleep(60)  # Every 60 seconds
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🔤 UNIFIED SYMBOL MANAGER DATA LOOP
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def symbol_manager_loop(self):
+        """Periodically update Symbol Manager status and broadcast."""
+        await asyncio.sleep(12)  # Wait for init
+        
+        while True:
+            try:
+                if self.symbol_manager and SYMBOL_MANAGER_AVAILABLE:
+                    # Get symbol counts
+                    if hasattr(self.symbol_manager, 'kraken_pairs'):
+                        self.symbol_data['kraken_pairs'] = len(self.symbol_manager.kraken_pairs) if self.symbol_manager.kraken_pairs else 0
+                    if hasattr(self.symbol_manager, 'binance_pairs'):
+                        self.symbol_data['binance_pairs'] = len(self.symbol_manager.binance_pairs) if self.symbol_manager.binance_pairs else 0
+                    if hasattr(self.symbol_manager, 'alpaca_pairs'):
+                        self.symbol_data['alpaca_pairs'] = len(self.symbol_manager.alpaca_pairs) if self.symbol_manager.alpaca_pairs else 0
+                    if hasattr(self.symbol_manager, 'capital_pairs'):
+                        self.symbol_data['capital_pairs'] = len(self.symbol_manager.capital_pairs) if self.symbol_manager.capital_pairs else 0
+                    
+                    self.symbol_data['loaded'] = True
+                    self.symbol_data['last_update'] = datetime.now().isoformat()
+                    
+                    # Broadcast to clients
+                    await self.broadcast({
+                        'type': 'symbols_update',
+                        'data': self.symbol_data
+                    })
+                    
+                    total = self.symbol_data.get('kraken_pairs', 0) + self.symbol_data.get('binance_pairs', 0) + self.symbol_data.get('alpaca_pairs', 0) + self.symbol_data.get('capital_pairs', 0)
+                    self.logger.info(f"🔤 Symbol Manager: {total} total pairs loaded")
+                    
+            except Exception as e:
+                self.logger.error(f"❌ Symbol Manager loop error: {e}")
+            
+            await asyncio.sleep(300)  # Every 5 minutes (symbols don't change often)
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 👑🧠 QUEEN HIVE MIND DATA LOOP
+    # ═══════════════════════════════════════════════════════════════════════════════
+    async def queen_hive_loop(self):
+        """Periodically update Queen Hive Mind status and broadcast."""
+        await asyncio.sleep(8)  # Wait for init
+        
+        while True:
+            try:
+                if self.queen_hive and QUEEN_HIVE_AVAILABLE:
+                    # Get hive status
+                    if hasattr(self.queen_hive, 'name'):
+                        self.queen_hive_data['queen_name'] = self.queen_hive.name
+                    if hasattr(self.queen_hive, 'authority'):
+                        self.queen_hive_data['authority_level'] = str(self.queen_hive.authority)
+                    if hasattr(self.queen_hive, 'hive_members'):
+                        active = len([m for m in self.queen_hive.hive_members.values() if m.get('active', False)])
+                        total = len(self.queen_hive.hive_members)
+                        self.queen_hive_data['hive_systems_online'] = active
+                        self.queen_hive_data['total_hive_systems'] = total
+                    if hasattr(self.queen_hive, 'autonomous_enabled'):
+                        self.queen_hive_data['autonomous_enabled'] = self.queen_hive.autonomous_enabled
+                    
+                    # Get full autonomous status if available
+                    if hasattr(self.queen_hive, 'get_full_autonomous_status'):
+                        full_status = self.queen_hive.get_full_autonomous_status()
+                        self.queen_hive_data['full_autonomous_status'] = full_status
+                    
+                    self.queen_hive_data['last_update'] = datetime.now().isoformat()
+                    
+                    # Broadcast to clients
+                    await self.broadcast({
+                        'type': 'queen_update',
+                        'data': self.queen_hive_data
+                    })
+                    
+                    online = self.queen_hive_data.get('hive_systems_online', 0)
+                    total = self.queen_hive_data.get('total_hive_systems', 0)
+                    self.logger.info(f"👑🧠 Queen Hive Mind: {online}/{total} systems online, Autonomous: {self.queen_hive_data.get('autonomous_enabled', False)}")
+                    
+            except Exception as e:
+                self.logger.error(f"❌ Queen Hive loop error: {e}")
+            
+            await asyncio.sleep(20)  # Every 20 seconds
     
     async def _fetch_live_prices_for_symbols(self, symbols: list) -> dict:
         """Fetch LIVE prices from FREE public APIs (CoinGecko, Binance public, Kraken public).
@@ -5218,6 +5602,30 @@ class AureonProDashboard:
         # 🌐 MARKET SENTIMENT (Fear & Greed Index)
         asyncio.create_task(self.sentiment_data_loop())
         self.logger.info("🌐 Market Sentiment data loop: STARTED")
+        
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # 👑 QUEEN SYSTEMS DATA LOOPS
+        # ═══════════════════════════════════════════════════════════════════════════════
+        
+        # ⚛️ QUEEN QUANTUM COGNITION
+        if self.quantum_cognition:
+            asyncio.create_task(self.quantum_cognition_loop())
+            self.logger.info("⚛️ Queen Quantum Cognition data loop: STARTED")
+        
+        # 👑💰 QUEEN ASSET COMMAND CENTER
+        if self.asset_command:
+            asyncio.create_task(self.asset_command_loop())
+            self.logger.info("👑💰 Queen Asset Command Center data loop: STARTED")
+        
+        # 🔤 UNIFIED SYMBOL MANAGER
+        if self.symbol_manager:
+            asyncio.create_task(self.symbol_manager_loop())
+            self.logger.info("🔤 Unified Symbol Manager data loop: STARTED")
+        
+        # 👑🧠 QUEEN HIVE MIND
+        if self.queen_hive:
+            asyncio.create_task(self.queen_hive_loop())
+            self.logger.info("👑🧠 Queen Hive Mind data loop: STARTED")
         
         self.logger.info("✅ All systems online, dashboard ready")
         
