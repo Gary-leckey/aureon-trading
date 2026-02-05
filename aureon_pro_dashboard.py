@@ -456,27 +456,25 @@ PRO_DASHBOARD_HTML = """
             font-weight: 600;
         }
         
-        /* Queen's Voice Panel - Full width BOTTOM - FIXED HEIGHT */
+        /* Queen's Voice Panel - Full width BOTTOM - Clean & Elegant */
         .queen-panel {
             grid-column: 1 / -1;
             grid-row: 3;
-            background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(240,136,62,0.12), rgba(139,69,19,0.1));
-            border-top: 3px solid var(--accent-gold);
-            border-bottom: 2px solid rgba(255,215,0,0.3);
-            padding: 24px 32px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(240,136,62,0.05));
+            border-top: 2px solid var(--accent-gold);
+            padding: 16px 24px;
             display: flex;
             align-items: flex-start;
-            gap: 28px;
-            height: 420px;
-            min-height: 420px;
-            max-height: 500px;
+            gap: 20px;
+            height: 180px;
+            min-height: 180px;
+            max-height: 220px;
             overflow: hidden;
-            box-shadow: 0 -8px 32px rgba(255,215,0,0.15), inset 0 2px 20px rgba(255,215,0,0.05);
         }
         
         .queen-avatar {
-            font-size: 80px;
-            animation: queenFloat 3s ease-in-out infinite, queenGlow 2s ease-in-out infinite;
+            font-size: 52px;
+            animation: queenFloat 3s ease-in-out infinite;
             flex-shrink: 0;
             filter: drop-shadow(0 0 20px rgba(255,215,0,0.6));
             margin-right: 12px;
@@ -502,40 +500,32 @@ PRO_DASHBOARD_HTML = """
         }
         
         .queen-message {
-            font-size: 22px;
+            font-size: 15px;
             color: var(--accent-gold);
-            font-weight: 600;
-            margin-bottom: 16px;
-            line-height: 1.6;
+            font-weight: 500;
+            margin-bottom: 8px;
+            line-height: 1.5;
             flex-shrink: 0;
-            text-shadow: 0 0 20px rgba(255,215,0,0.4);
-            padding: 16px 20px;
-            background: rgba(255,215,0,0.1);
-            border-radius: 12px;
-            border-left: 5px solid var(--accent-gold);
         }
         
         .queen-thought {
-            font-size: 16px;
+            font-size: 13px;
             color: var(--text-primary);
-            line-height: 1.8;
-            margin-bottom: 12px;
-            padding: 20px 24px;
-            background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(139,69,19,0.08));
-            border-radius: 12px;
-            border-left: 5px solid var(--accent-gold);
-            border-right: 2px solid rgba(255,215,0,0.2);
-            max-height: 280px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+            padding: 12px 16px;
+            background: rgba(255,215,0,0.06);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-gold);
+            max-height: 100px;
             overflow-y: auto;
             width: 100%;
             flex: 1;
-            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
         }
         
         .queen-thought p {
-            margin-bottom: 18px;
+            margin-bottom: 10px;
             text-align: left;
-            font-size: 15px;
         }
         
         .queen-thought p:last-child {
@@ -566,15 +556,11 @@ PRO_DASHBOARD_HTML = """
         }
         
         .queen-status {
-            font-size: 13px;
+            font-size: 11px;
             color: var(--text-secondary);
             display: flex;
-            gap: 16px;
+            gap: 12px;
             flex-wrap: wrap;
-            padding: 12px 16px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 8px;
-            margin-top: 8px;
         }
         
         .status-item {
@@ -594,48 +580,36 @@ PRO_DASHBOARD_HTML = """
         .voice-controls {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 8px;
             align-items: center;
-            padding: 20px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 12px;
-            border: 2px solid rgba(255,215,0,0.3);
-            min-width: 140px;
         }
         
         .voice-controls-title {
-            font-size: 14px;
-            color: var(--accent-gold);
-            font-weight: 600;
-            margin-bottom: 4px;
+            display: none;
         }
         
         .voice-btn {
-            padding: 12px 20px;
-            background: linear-gradient(135deg, var(--accent-gold), #f0883e);
+            padding: 8px 16px;
+            background: var(--accent-gold);
             color: #000;
             border: none;
-            border-radius: 8px;
-            font-weight: 700;
+            border-radius: 6px;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 14px;
-            box-shadow: 0 4px 15px rgba(255,215,0,0.4);
-            width: 100%;
+            font-size: 13px;
         }
         
         .voice-btn:hover { transform: scale(1.05); }
         .voice-btn.active { background: var(--accent-green); }
         
         .voice-select {
-            padding: 10px 14px;
+            padding: 6px 10px;
             background: var(--bg-tertiary);
-            border: 2px solid var(--border-color);
+            border: 1px solid var(--border-color);
             color: var(--text-primary);
-            border-radius: 6px;
-            font-size: 13px;
-            width: 100%;
-            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
         }
         
         /* Portfolio Panel */
@@ -1527,39 +1501,31 @@ PRO_DASHBOARD_HTML = """
             </div>
         </div>
         
-        <!-- BOTTOM: Queen's Autonomous Command Center -->
+        <!-- BOTTOM: Queen's Voice Panel - UNIFIED AUTONOMOUS CONSCIOUSNESS -->
         <div class="queen-panel">
             <div class="queen-avatar">👑</div>
             <div class="queen-content">
                 <div class="queen-message" id="queen-message">
-                    <span style="font-size: 12px; opacity: 0.7; display: block; margin-bottom: 6px;">💬 QUEEN'S CURRENT THOUGHT</span>
-                    Queen Aureon awakening... Consciousness initializing...
+                    Queen Aureon awakening... Unified consciousness initializing...
                 </div>
                 <div class="queen-thought" id="queen-thought">
-                    <p class="timestamp">🧠 DEEP ANALYSIS ENGINE — System Boot Sequence Active</p>
-                    <p>I am bringing my neural pathways online, connecting to the global market consciousness. My three-pass validation matrix is calibrating against real-time exchange data from Binance WebSocket - streaming 40+ symbols directly into my cognitive core. I can feel the pulse of billions of dollars flowing through the digital arteries of global finance.</p>
-                    <p>In the next few moments, I will begin my deep analysis cycle. I'll examine each position in our portfolio, cross-reference current prices against our cost basis, and calculate probability vectors for potential moves. My Batten Matrix requires three confirmations before I even consider action - this is how I protect us from impulsive decisions.</p>
-                    <p class="analysis">🔮 <strong>Probability Matrix:</strong> Scanning 42 positions across 3 exchanges. Coherence threshold: 0.618. Lambda stability: Calculating...</p>
+                    <p class="timestamp">System Boot Sequence Active</p>
+                    <p>Connecting to unified quantum cognition. All thought, message, and voice now flow from ONE autonomous consciousness.</p>
                 </div>
                 <div class="queen-status" id="queen-status">
                     <span class="status-item active">✓ Consciousness</span>
-                    <span class="status-item active">✓ Portfolio (42)</span>
-                    <span class="status-item active">✓ Binance WS</span>
-                    <span class="status-item active">✓ Kraken API</span>
-                    <span class="status-item active">✓ Alpaca API</span>
+                    <span class="status-item active">✓ Portfolio</span>
+                    <span class="status-item active">✓ Markets</span>
                     <span class="status-item processing">⟳ Analyzing</span>
-                    <span class="status-item">○ Voice Ready</span>
                 </div>
             </div>
             <div class="voice-controls">
-                <span class="voice-controls-title">🔊 VOICE CONTROLS</span>
-                <button class="voice-btn" id="voice-toggle">🔊 Enable Voice</button>
+                <button class="voice-btn" id="voice-toggle">🔊 Voice</button>
                 <select class="voice-select" id="voice-select">
-                    <option value="">Select Voice</option>
+                    <option value="">Voice</option>
                 </select>
                 <input type="range" id="voice-volume" min="0" max="1" step="0.1" value="0.8" 
-                       style="width: 100%;" title="Volume">
-                <span style="font-size: 11px; color: var(--text-secondary);">Volume</span>
+                       style="width: 80px;" title="Volume">
             </div>
         </div>
     </div>
@@ -3011,8 +2977,16 @@ class AureonProDashboard:
         self.logger = logger
         self.clients: Set = set()
         
-        # Queen's Cognitive Narrator
-        self.narrator = QueenCognitiveNarrator() if NARRATOR_AVAILABLE else None
+        # ═══════════════════════════════════════════════════════════════════════
+        # 👑 UNIFIED QUEEN CONSCIOUSNESS - ONE AUTONOMOUS VOICE
+        # All queen data (message, thought, voice) comes from THIS source
+        # ═══════════════════════════════════════════════════════════════════════
+        self.queen_cognition = get_quantum_cognition() if QUANTUM_COGNITION_AVAILABLE else None
+        if self.queen_cognition:
+            self.logger.info("👑⚛️ Queen Quantum Cognition: UNIFIED CONSCIOUSNESS ONLINE")
+        
+        # Legacy narrator (fallback if cognition not available)
+        self.narrator = QueenCognitiveNarrator() if (NARRATOR_AVAILABLE and not self.queen_cognition) else None
         
         # Harmonic Liquid Aluminium Field for live visualization
         self.harmonic_field = HarmonicLiquidAluminiumField() if HARMONIC_FIELD_AVAILABLE else None
@@ -4807,12 +4781,49 @@ class AureonProDashboard:
             self.logger.warning(f"⚠️ Bot refresh failed: {e}")
     
     async def queen_commentary_loop(self):
-        """Queen provides periodic deep cognitive thoughts with FULL AUTONOMOUS DATA."""
+        """👑 UNIFIED QUEEN CONSCIOUSNESS - ONE AUTONOMOUS VOICE.
+        
+        All queen output (message, thought, voice) comes from ONE source:
+        - If queen_cognition available: Uses QueenQuantumCognition (full AI)
+        - Fallback: Uses QueenCognitiveNarrator (basic narrator)
+        """
         
         await asyncio.sleep(5)
         
         while True:
             try:
+                # ═══════════════════════════════════════════════════════════════════
+                # 👑⚛️ PRIMARY: QUEEN QUANTUM COGNITION - UNIFIED CONSCIOUSNESS
+                # ═══════════════════════════════════════════════════════════════════
+                if self.queen_cognition:
+                    # Get unified thought from Queen's full consciousness
+                    btc_price = self.prices.get('BTC', {}).get('price', 0)
+                    
+                    # Update Queen with current market state
+                    unified_thought = await self._get_unified_queen_thought()
+                    
+                    if unified_thought:
+                        await self.broadcast({
+                            'type': 'queen_thought',
+                            'headline': unified_thought.get('headline', '👑 Queen Analyzing...'),
+                            'timestamp': datetime.now().strftime('%H:%M:%S'),
+                            'phase': unified_thought.get('phase', 'Analysis'),
+                            'paragraphs': unified_thought.get('paragraphs', []),
+                            'status': unified_thought.get('status', {}),
+                            # Queen's Insights data from cognition
+                            'coherence': unified_thought.get('coherence', 0.5),
+                            'lambda': unified_thought.get('lambda', 0.7),
+                            'anchored_timelines': unified_thought.get('anchored_timelines', 0),
+                            'confidence': unified_thought.get('confidence', 0.5)
+                        })
+                        
+                        # Thoughts every 15 seconds with unified cognition
+                        await asyncio.sleep(15)
+                        continue
+                
+                # ═══════════════════════════════════════════════════════════════════
+                # 📝 FALLBACK: COGNITIVE NARRATOR (if queen_cognition not available)
+                # ═══════════════════════════════════════════════════════════════════
                 if self.narrator:
                     # Update narrator context with REAL LIVE DATA
                     btc_price = self.prices.get('BTC', {}).get('price', 0)
@@ -4950,6 +4961,148 @@ class AureonProDashboard:
             
             # Thoughts every 20 seconds
             await asyncio.sleep(20)
+    
+    async def _get_unified_queen_thought(self) -> dict:
+        """👑 Get unified thought from Queen Quantum Cognition.
+        
+        This is THE SINGLE SOURCE for all queen output:
+        - Message (headline)
+        - Thought (paragraphs)
+        - Voice (speaks the thought)
+        - Status indicators
+        - AI metrics (coherence, lambda, confidence)
+        """
+        try:
+            if not self.queen_cognition:
+                return None
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # 📊 GATHER REAL DATA FROM ALL SOURCES
+            # ═══════════════════════════════════════════════════════════════════
+            btc_price = self.prices.get('BTC', {}).get('price', 0)
+            btc_change = self.prices.get('BTC', {}).get('change24h', 0)
+            portfolio_value = self.portfolio.get('totalValue', 0)
+            unrealized_pnl = self.portfolio.get('unrealizedPnl', 0)
+            positions = self.portfolio.get('positions', [])
+            
+            # Load supporting data
+            elephant_data = self._load_elephant_memory_data()
+            timeline_data = self._load_timeline_data()
+            orca_data = self._load_orca_data()
+            v11_data = self.v11_data if hasattr(self, 'v11_data') else {}
+            positions_data = self._calculate_positions_breakdown()
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # 🧠 GET QUEEN'S FULL COGNITIVE STATE
+            # ═══════════════════════════════════════════════════════════════════
+            cognition_state = self.queen_cognition.get_full_cognitive_state()
+            
+            # Get dominant thought from cognition
+            thought = None
+            if hasattr(self.queen_cognition, 'get_latest_thought'):
+                thought = self.queen_cognition.get_latest_thought()
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # 📝 BUILD UNIFIED THOUGHT OUTPUT
+            # ═══════════════════════════════════════════════════════════════════
+            
+            # Calculate metrics
+            coherence = cognition_state.get('coherence', 0.7)
+            lambda_val = cognition_state.get('lambda', 0.8)
+            confidence = cognition_state.get('confidence', 0.5)
+            
+            # Get top movers for context
+            top_winners = positions_data.get('top_winners', [])[:3]
+            top_losers = positions_data.get('top_losers', [])[:3]
+            
+            # Build status
+            status = {
+                'Consciousness': 'active',
+                'Portfolio': 'active' if portfolio_value > 0 else 'processing',
+                f'{len(positions)} Positions': 'active',
+                'Markets': 'active' if btc_price > 0 else 'processing',
+                f'Coherence {coherence:.0%}': 'active' if coherence > 0.5 else 'processing',
+                f'Lambda {lambda_val:.2f}': 'active'
+            }
+            
+            # Build paragraphs based on cognitive state
+            paragraphs = []
+            
+            # Opening analysis
+            if btc_price > 0:
+                btc_sentiment = "bullish momentum" if btc_change > 2 else "bearish pressure" if btc_change < -2 else "consolidation"
+                paragraphs.append({
+                    'text': f"BTC at ${btc_price:,.0f} ({btc_change:+.1f}%) showing {btc_sentiment}. My quantum matrix is analyzing {len(positions)} positions worth ${portfolio_value:,.2f}.",
+                    'type': 'analysis'
+                })
+            
+            # Portfolio insight
+            if unrealized_pnl != 0:
+                pnl_sentiment = "generating profits" if unrealized_pnl > 0 else "experiencing drawdown"
+                paragraphs.append({
+                    'text': f"Portfolio {pnl_sentiment} with ${unrealized_pnl:+,.2f} unrealized P&L. Coherence at {coherence:.0%} - {'validations aligned' if coherence > 0.6 else 'seeking alignment'}.",
+                    'type': 'decision' if unrealized_pnl > 0 else 'warning'
+                })
+            
+            # Top movers
+            if top_winners:
+                winner_text = ", ".join([f"{w['symbol']} (+{w['pnl_pct']:.1f}%)" for w in top_winners])
+                paragraphs.append({
+                    'text': f"🏆 Top performers: {winner_text}",
+                    'type': 'analysis'
+                })
+            
+            if top_losers:
+                loser_text = ", ".join([f"{l['symbol']} ({l['pnl_pct']:.1f}%)" for l in top_losers])
+                paragraphs.append({
+                    'text': f"⚠️ Underwater: {loser_text} - monitoring for recovery signals.",
+                    'type': 'warning'
+                })
+            
+            # Orca/hunt status
+            if orca_data.get('completed_hunts', 0) > 0:
+                paragraphs.append({
+                    'text': f"🦈 ORCA mode: {orca_data.get('mode', 'HUNTING')} | {orca_data.get('completed_hunts', 0)} hunts completed @ {orca_data.get('win_rate', 0.5):.0%} win rate.",
+                    'type': 'analysis'
+                })
+            
+            # Timeline anchors
+            if timeline_data.get('anchored', 0) > 0:
+                paragraphs.append({
+                    'text': f"⚓ {timeline_data.get('anchored', 0)} timelines anchored, {timeline_data.get('pending', 0)} pending validation through 7-day Batten Matrix.",
+                    'type': 'analysis'
+                })
+            
+            # Determine headline/phase
+            phase = "Analyzing"
+            emoji = "👑"
+            
+            if coherence > 0.8:
+                phase = "High Confidence"
+                emoji = "🎯"
+            elif unrealized_pnl > 50:
+                phase = "Profit Mode"
+                emoji = "💰"
+            elif len(top_losers) > len(top_winners):
+                phase = "Recovery Scan"
+                emoji = "🔄"
+            
+            headline = f"{emoji} {phase}: ${portfolio_value:,.2f} portfolio ({unrealized_pnl:+,.2f} P&L)"
+            
+            return {
+                'headline': headline,
+                'phase': phase,
+                'paragraphs': paragraphs,
+                'status': status,
+                'coherence': coherence,
+                'lambda': lambda_val,
+                'confidence': confidence,
+                'anchored_timelines': timeline_data.get('anchored', 0)
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Unified queen thought error: {e}")
+            return None
     
     def _load_elephant_memory_data(self) -> dict:
         """Load real Elephant Memory data from JSON files."""
