@@ -1061,10 +1061,20 @@ class QueenEternalMachine:
             # Minimum dip advantage required to cover fees
             fee_percent = (total_cost / gross_value) * 100
             
-            # Aggressive leap criteria - with relaxed thresholds for demo
-            # Accept any leap that doesn't lose money (just need positive fee-adjusted multiplier)
-            if fee_adjusted_multiplier > 0.90:  # Only need 90% after fees
-                # Calculate recovery advantage
+            # ✅ INTELLIGENT LEAP CRITERIA - Only leap for RECOVERY, not just fee mitigation
+            # Check 1: Must not lose excessive fees (baseline)
+            fee_acceptable = fee_adjusted_multiplier > 0.90  # Can't lose more than 10% to fees
+            
+            # Check 2: Must offer RECOVERY ADVANTAGE (this is the whole point!)
+            # Only leap to coins that have DEEPER dips (more potential for recovery)
+            recovery_advantage = abs(coin.change_24h) - abs(current.change_24h)
+            has_recovery_edge = recovery_advantage > 1.0  # Target dipped at least 1% MORE
+            
+            # Check 3: Only leap if it's actually a SMART move
+            # If both coins are down the same amount, don't leap (pointless)
+            is_smart_leap = fee_acceptable and has_recovery_edge
+            
+            if is_smart_leap:
                 recovery_advantage = abs(coin.change_24h) - abs(current.change_24h)
                 
                 opportunities.append(LeapOpportunity(
@@ -1506,10 +1516,15 @@ class QueenEternalMachine:
         # 4. LEAP (if good opportunity)
         if opportunities:
             best = opportunities[0]
-            # Execute the best leap opportunity (fee-adjusted multiplier already validated it)
+            # Execute the best leap opportunity (all criteria already validated)
             if self.execute_quantum_leap(best):
                 stats.leaps_made += 1
                 stats.breadcrumbs_planted += 1
+        else:
+            # No opportunities found - why not?
+            if self.main_position:
+                logger.info(f"⏸️  No leap opportunities (position holds recovery advantage)")
+            stats.breadcrumbs_planted += 0
         
         # 5. SCALP
         scalp_opps = self.find_scalp_opportunities()

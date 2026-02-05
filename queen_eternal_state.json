@@ -1,24 +1,24 @@
 {
-  "timestamp": "2026-02-05T21:11:47.459565",
-  "initial_vault": 100.0,
+  "timestamp": "2026-02-05T21:20:36.785033",
+  "initial_vault": 1000.0,
   "available_cash": 0.0,
   "main_position": {
-    "symbol": "PUMP",
-    "quantity": 46753.05860549467,
-    "cost_basis": 94.6749436761267,
-    "entry_price": 0.002025,
-    "entry_time": "2026-02-05T21:11:25.635820"
+    "symbol": "GALA",
+    "quantity": 367980.9052312901,
+    "cost_basis": 1420.4062941927798,
+    "entry_price": 0.00386,
+    "entry_time": "2026-02-05T21:20:34.932458"
   },
   "breadcrumbs": {
-    "XRP": {
-      "quantity": 4.251700680272109,
-      "cost_basis": 4.997874149659864,
-      "entry_price": 1.1755,
-      "entry_time": "2026-02-05T21:11:25.635812"
+    "ETH": {
+      "quantity": 0.04046114920453381,
+      "cost_basis": 74.9830063173341,
+      "entry_price": 1853.21,
+      "entry_time": "2026-02-05T21:20:34.932451"
     }
   },
   "statistics": {
-    "total_cycles": 10,
+    "total_cycles": 3,
     "total_leaps": 1,
     "total_breadcrumbs": 1,
     "total_scalps": 0,
