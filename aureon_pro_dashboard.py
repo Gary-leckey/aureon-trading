@@ -460,22 +460,31 @@ PRO_DASHBOARD_HTML = """
         .queen-panel {
             grid-column: 1 / -1;
             grid-row: 3;
-            background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(240,136,62,0.1));
-            border-top: 2px solid var(--accent-gold);
-            padding: 12px 20px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(240,136,62,0.12), rgba(139,69,19,0.1));
+            border-top: 3px solid var(--accent-gold);
+            border-bottom: 2px solid rgba(255,215,0,0.3);
+            padding: 24px 32px;
             display: flex;
             align-items: flex-start;
-            gap: 20px;
-            height: 220px;
-            min-height: 220px;
-            max-height: 220px;
+            gap: 28px;
+            height: 420px;
+            min-height: 420px;
+            max-height: 500px;
             overflow: hidden;
+            box-shadow: 0 -8px 32px rgba(255,215,0,0.15), inset 0 2px 20px rgba(255,215,0,0.05);
         }
         
         .queen-avatar {
-            font-size: 48px;
-            animation: queenFloat 3s ease-in-out infinite;
+            font-size: 80px;
+            animation: queenFloat 3s ease-in-out infinite, queenGlow 2s ease-in-out infinite;
             flex-shrink: 0;
+            filter: drop-shadow(0 0 20px rgba(255,215,0,0.6));
+            margin-right: 12px;
+        }
+        
+        @keyframes queenGlow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(255,215,0,0.6)); }
+            50% { filter: drop-shadow(0 0 35px rgba(255,215,0,0.9)); }
         }
         
         @keyframes queenFloat {
@@ -493,32 +502,40 @@ PRO_DASHBOARD_HTML = """
         }
         
         .queen-message {
-            font-size: 15px;
+            font-size: 22px;
             color: var(--accent-gold);
-            font-weight: 500;
-            margin-bottom: 8px;
-            line-height: 1.5;
+            font-weight: 600;
+            margin-bottom: 16px;
+            line-height: 1.6;
             flex-shrink: 0;
+            text-shadow: 0 0 20px rgba(255,215,0,0.4);
+            padding: 16px 20px;
+            background: rgba(255,215,0,0.1);
+            border-radius: 12px;
+            border-left: 5px solid var(--accent-gold);
         }
         
         .queen-thought {
-            font-size: 14px;
+            font-size: 16px;
             color: var(--text-primary);
-            line-height: 1.7;
-            margin-bottom: 8px;
-            padding: 12px 16px;
-            background: rgba(255,215,0,0.08);
-            border-radius: 8px;
-            border-left: 4px solid var(--accent-gold);
-            max-height: 140px;
+            line-height: 1.8;
+            margin-bottom: 12px;
+            padding: 20px 24px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(139,69,19,0.08));
+            border-radius: 12px;
+            border-left: 5px solid var(--accent-gold);
+            border-right: 2px solid rgba(255,215,0,0.2);
+            max-height: 280px;
             overflow-y: auto;
             width: 100%;
             flex: 1;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
         }
         
         .queen-thought p {
-            margin-bottom: 14px;
+            margin-bottom: 18px;
             text-align: left;
+            font-size: 15px;
         }
         
         .queen-thought p:last-child {
@@ -549,11 +566,15 @@ PRO_DASHBOARD_HTML = """
         }
         
         .queen-status {
-            font-size: 11px;
+            font-size: 13px;
             color: var(--text-secondary);
             display: flex;
-            gap: 12px;
+            gap: 16px;
             flex-wrap: wrap;
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            margin-top: 8px;
         }
         
         .status-item {
@@ -572,32 +593,49 @@ PRO_DASHBOARD_HTML = """
         
         .voice-controls {
             display: flex;
-            gap: 12px;
+            flex-direction: column;
+            gap: 14px;
             align-items: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            border: 2px solid rgba(255,215,0,0.3);
+            min-width: 140px;
+        }
+        
+        .voice-controls-title {
+            font-size: 14px;
+            color: var(--accent-gold);
+            font-weight: 600;
+            margin-bottom: 4px;
         }
         
         .voice-btn {
-            padding: 8px 16px;
-            background: var(--accent-gold);
+            padding: 12px 20px;
+            background: linear-gradient(135deg, var(--accent-gold), #f0883e);
             color: #000;
             border: none;
-            border-radius: 6px;
-            font-weight: 600;
+            border-radius: 8px;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 13px;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(255,215,0,0.4);
+            width: 100%;
         }
         
         .voice-btn:hover { transform: scale(1.05); }
         .voice-btn.active { background: var(--accent-green); }
         
         .voice-select {
-            padding: 6px 10px;
+            padding: 10px 14px;
             background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
+            border: 2px solid var(--border-color);
             color: var(--text-primary);
-            border-radius: 4px;
-            font-size: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            width: 100%;
+            cursor: pointer;
         }
         
         /* Portfolio Panel */
@@ -1489,33 +1527,39 @@ PRO_DASHBOARD_HTML = """
             </div>
         </div>
         
-        <!-- BOTTOM: Queen's Voice Panel -->
-        <div class="queen-panel" style="min-height: 160px; align-items: flex-start; padding-top: 12px;">
-            <div class="queen-avatar" style="align-self: flex-start;">👑</div>
+        <!-- BOTTOM: Queen's Autonomous Command Center -->
+        <div class="queen-panel">
+            <div class="queen-avatar">👑</div>
             <div class="queen-content">
                 <div class="queen-message" id="queen-message">
+                    <span style="font-size: 12px; opacity: 0.7; display: block; margin-bottom: 6px;">💬 QUEEN'S CURRENT THOUGHT</span>
                     Queen Aureon awakening... Consciousness initializing...
                 </div>
                 <div class="queen-thought" id="queen-thought">
-                    <p class="timestamp">System Boot Sequence Active</p>
+                    <p class="timestamp">🧠 DEEP ANALYSIS ENGINE — System Boot Sequence Active</p>
                     <p>I am bringing my neural pathways online, connecting to the global market consciousness. My three-pass validation matrix is calibrating against real-time exchange data from Binance WebSocket - streaming 40+ symbols directly into my cognitive core. I can feel the pulse of billions of dollars flowing through the digital arteries of global finance.</p>
                     <p>In the next few moments, I will begin my deep analysis cycle. I'll examine each position in our portfolio, cross-reference current prices against our cost basis, and calculate probability vectors for potential moves. My Batten Matrix requires three confirmations before I even consider action - this is how I protect us from impulsive decisions.</p>
+                    <p class="analysis">🔮 <strong>Probability Matrix:</strong> Scanning 42 positions across 3 exchanges. Coherence threshold: 0.618. Lambda stability: Calculating...</p>
                 </div>
                 <div class="queen-status" id="queen-status">
                     <span class="status-item active">✓ Consciousness</span>
-                    <span class="status-item active">✓ Portfolio</span>
+                    <span class="status-item active">✓ Portfolio (42)</span>
                     <span class="status-item active">✓ Binance WS</span>
+                    <span class="status-item active">✓ Kraken API</span>
+                    <span class="status-item active">✓ Alpaca API</span>
                     <span class="status-item processing">⟳ Analyzing</span>
                     <span class="status-item">○ Voice Ready</span>
                 </div>
             </div>
-            <div class="voice-controls" style="flex-direction: column; gap: 8px; align-self: flex-start;">
+            <div class="voice-controls">
+                <span class="voice-controls-title">🔊 VOICE CONTROLS</span>
                 <button class="voice-btn" id="voice-toggle">🔊 Enable Voice</button>
                 <select class="voice-select" id="voice-select">
                     <option value="">Select Voice</option>
                 </select>
                 <input type="range" id="voice-volume" min="0" max="1" step="0.1" value="0.8" 
-                       style="width: 100px;" title="Volume">
+                       style="width: 100%;" title="Volume">
+                <span style="font-size: 11px; color: var(--text-secondary);">Volume</span>
             </div>
         </div>
     </div>
