@@ -33,7 +33,7 @@ Gary Leckey & GitHub Copilot | 2025-2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon_baton_link import link_system as _baton_link
 import time
 import json
 import os
