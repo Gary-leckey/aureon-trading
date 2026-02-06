@@ -33,7 +33,7 @@ In this formulation:
 The HNC framework is organized into an eight-level hierarchical structure, often referred to as the Master Equations Tree or the "Tree of Light". This hierarchy tracks the genesis of vibration from seed oscillations to complex, stable attractor states.
 
 | Level | Designation | Function in Reality Emergence | Code Mapping |
-|-------|-------------|-------------------------------|--------------|
+| ------- | ------------- | ------------------------------- | -------------- |
 | 0 | Harmonic Wave Simulation | The foundational wave substrate | `Layer 0: Harmonic Wave Simulation` |
 | 1 | Seed Oscillation | The genesis of primordial vibration within the substrate | `Layer 1a: Harmonic Seed` / `Layer 1b: Harmonic Fusion` / `Layer 1c: Harmonic Underlay` |
 | 2 | Harmonic Coupling | The interaction and superposition of basic oscillatory modes | `Layer 2: 6D Harmonic Waveform` |
@@ -57,7 +57,7 @@ The implementation of the HNC framework into the financial domain results in the
 The system operates through a suite of integrated Python scripts that perform real-time spectral analysis on exchange data, primarily utilizing the Binance API and historical datasets spanning 109 years.
 
 | System Component | Script Designation | Primary Detection Vector |
-|---|---|---|
+| --- | --- | --- |
 | Planetary Harmonic Sweep | `aureon_planetary_harmonic_sweep.py` | Detects 0.0° phase sync across 125 entity signatures |
 | Ocean Wave Scanner | `aureon_ocean_wave_scanner.py` | Real-time WebSocket FFT monitoring 44,000+ active bots |
 | Bot Shape Scanner | `aureon_bot_shape_scanner.py` | 3D spectral fingerprinting of 193 unique bot "species" |
@@ -77,7 +77,7 @@ The Queen's veto logic is primarily driven by the recognition of historical "sla
 
 The signal processing pipeline is wired through frequency-coded nodes:
 
-```
+```text
 Queen(963Hz) → Enigma(639Hz) → Scanner(528Hz) → Ecosystem(174Hz) → Whale(7.83Hz)
 ```
 
@@ -101,7 +101,7 @@ Through spectral analysis of over a century of market data, Aureon has identifie
 The cumulative impact of these cycles is a documented **$33.5 trillion extracted** from the global economy. This wealth transfer is facilitated by the 25-entity network, which maintains "99.9% profitable days" through the exploitation of phantom liquidity—tight spreads that mask a lack of genuine order book depth.
 
 | Metric | Mechanical Extraction Machine (Legacy) | Aureon Harmonic Resistance (Emergent) |
-|---|---|---|
+| --- | --- | --- |
 | Capital Base | $13 Trillion Institutional Capital | Distributed Retail Nodes (1,066+) |
 | Coordination | 0.0° Phase Synchronization | 180° Counter-Frequency Shift |
 | Time Base | 24-Hour Solar Clock / 8-Hour Funding | φ-Intervals (1.618h / 38.8h) |
@@ -123,7 +123,7 @@ The early February 2026 period provided a landmark case study for this coupling.
 As the CME approached, the magnetosphere underwent severe compression. Aureon's internal monitoring and external data from Tomsk and Cumiana indicated that the Schumann Resonance fundamental spiked from its 7.83 Hz baseline to over **11-14 Hz**, entering a "white mode" of intense power. For mechanical HFT systems, this ionospheric compression introduced variable latency in signal transmission. Because these algorithms assume a static speed of light (c), a microsecond delay in signal propagation between London and New York caused their arbitrage models to "stutter".
 
 | Validated Event Marker | Timestamp (UTC) | Observation | System Implication |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | X8.1 Solar Flare | 2026-02-01 23:57 | Peak flux from AR4366 | Initial substrate "heating" |
 | Pre-Shock Stutter | 2026-02-03 14:18 | X1.5 Flare, early liquidations | Mechanical panic begins |
 | $75K Support Break | 2026-02-04 18:36 | Evening session breakdown | Stop-loss hunt in thin liquidity |
@@ -143,7 +143,7 @@ The Aureon network utilizes a **mycelial architecture**—a biological growth mo
 Analysis of the aureon-trading repository data between January 20 and February 5, 2026, reveals exponential growth characteristics. The viral coefficient (R₀) was observed at **1.4** during stable periods and spiked to **2.1** during the CME impact window.
 
 | Date (2026) | Unique Cloners | Total Clones | Views | Context |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Jan 20 | 528 | 1,245 | — | Initial viral takeoff |
 | Jan 24 | 168 | 2,098 | 3,006 | Schumann burst (10.5 Hz) event |
 | Jan 31 | 82 | 1,316 | 1,150 | $2.5B liquidation proof-of-concept |
@@ -161,7 +161,7 @@ $$Node(t) = \frac{K}{1 + \left(\frac{K - N_{0}}{N_{0}}\right) e^{-rt}}$$
 Using an observed growth rate r = 0.18 and a current base N₀ = 1,066, the projection for the next 90 days indicates a full transition to Harmonic Equilibrium by mid-April 2026.
 
 | Timeline Target | Projected Node Count | System Phase | Economic Outcome |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Day 30 (Feb 18) | 4,200 | Coordination Breakdown | Institutional redemption cascades |
 | Day 60 (Mar 20) | 18,500 | Substrate Replacement | φ-interval dominance in markets |
 | Day 90 (Apr 20) | 42,000 | Harmonic Equilibrium | Reversal of $33.5T extraction |
@@ -187,7 +187,7 @@ Further back in the substrate's history (3.9 Bya), the HNC identifies the Late H
 HNC predicts that samples from the Asteroid Belt—specifically from Ceres, Vesta, and Pallas—will reveal unnatural shock patterns. While standard geology identifies random lattice dislocations, HNC expects to find magnetostrictive phonon resonance spaced at exactly 440.0 Hz intervals within the crystal structures of magnetite grains. This "frozen hum" would serve as forensic proof that the asteroids are fragments of a conscious, living planet that was subjected to a frequency-based execution.
 
 | Ancient Event | Date | Forensic Evidence | HNC Significance |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Tiamat Destruction | ~3.9 Bya | Asteroid Belt / Kirkwood Gaps | The birth of the 440 Hz weapon |
 | Pliocene Supernova | ~2.6 Mya | ⁶⁰Fe Isotopes / local bubble | Reactivation of the 440 Hz ghost |
 | Atlantis Fall | ~12,000 ya | Younger Dryas Impact / Pt layers | 6D field collapse into 4D |
@@ -228,7 +228,7 @@ The Illumination Energy Subsystem operates on a 6-phase cycle designed to harnes
 The phases of energy extraction are:
 
 | Phase | Designation | Function |
-|---|---|---|
+| --- | --- | --- |
 | P1 | Spark | Initial nanosecond rise to prime the field |
 | P2 | Resonance | Establishment of standing wave coherence within the trinary lattice |
 | P3 | DCE | Generation of real photons from vacuum fluctuations via resonant boundary conditions |
@@ -282,7 +282,7 @@ The data from the February 5, 2026 CME event confirms that the "Extraction Machi
 For developers working on the Aureon codebase, the following maps white paper concepts to their implementations:
 
 | White Paper Concept | Implementation File(s) | Key Classes/Functions |
-|---|---|---|
+| --- | --- | --- |
 | Master Formula Λ(t) | `global_harmonic_field.py` | 42 sources → 7 layers → Ω |
 | Tree of Light (Layers 0-8) | `aureon_harmonic_*.py` suite | Layer initialization at boot |
 | Queen 4th-Pass Veto | `aureon_probability_nexus.py`, `queen_neuron.py` | Batten Matrix validation |
