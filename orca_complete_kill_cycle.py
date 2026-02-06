@@ -10221,7 +10221,7 @@ class OrcaKillCycle:
                 buy_order = client.place_market_order(
                     symbol=symbol,
                     side='buy',
-                    amount=quantity  # Use amount for crypto exchanges
+                    quantity=quantity
                 )
             else:
                 # For Alpaca, use quote_qty
@@ -10387,7 +10387,7 @@ class OrcaKillCycle:
                 sell_order = client.place_market_order(
                     symbol=symbol,
                     side='sell',
-                    amount=buy_qty  # Use amount for crypto exchanges
+                    quantity=buy_qty
                 )
             else:
                 sell_order = client.place_market_order(

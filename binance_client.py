@@ -90,6 +90,13 @@ class BinanceClient:
         
         # Server time offset for clock sync (fixes Windows clock drift)
         self._time_offset_ms: int = 0
+
+    @staticmethod
+    def _norm(symbol: str) -> str:
+        """Normalize symbol for Binance API: strip '/' separators.
+        E.g. 'XRP/USDC' -> 'XRPUSDC', 'BTCUSDT' -> 'BTCUSDT'.
+        """
+        return symbol.replace('/', '') if symbol else symbol
         self._time_sync_timestamp: float = 0
         self._sync_server_time()  # Auto-sync on init
 
@@ -353,6 +360,7 @@ class BinanceClient:
         return formatted or '0'
 
     def place_market_order(self, symbol: str, side: str, quantity: float | str | Decimal | None = None, quote_qty: float | str | Decimal | None = None) -> Dict[str, Any]:
+        symbol = self._norm(symbol)
         # 🇬🇧 UK Mode: Check restrictions before attempting trade
         # Also check cached restricted symbols to skip known-bad symbols
         if self.uk_mode:
@@ -734,6 +742,7 @@ class BinanceClient:
     
     def get_ticker_price(self, symbol: str) -> Optional[Dict[str, str]]:
         """Get current price for a symbol."""
+        symbol = self._norm(symbol)
         try:
             r = self.session.get(f"{self.base}/api/v3/ticker/price", params={"symbol": symbol}, timeout=5)
             if r.status_code == 200:
@@ -748,6 +757,7 @@ class BinanceClient:
         Wraps get_24h_ticker to provide a richer object, but falls back
         to get_ticker_price if needed.
         """
+        symbol = self._norm(symbol)
         try:
             # get_24h_ticker provides bid/ask, which is preferred
             ticker_24h = self.get_24h_ticker(symbol)
@@ -812,6 +822,7 @@ class BinanceClient:
         
         In dry-run mode, fallback to mainnet public API if testnet fails.
         """
+        symbol = self._norm(symbol)
         # Try configured endpoint first
         try:
             r = self.session.get(f"{self.base}/api/v3/ticker/24hr", params={"symbol": symbol}, timeout=10)
