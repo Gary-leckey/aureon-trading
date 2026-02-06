@@ -98,34 +98,32 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
 
 def main():
     """Start the health check server"""
-    port = int(os.environ.get("HEALTH_CHECK_PORT", "8080"))
+    # DigitalOcean App Platform sets PORT automatically, fallback to 8080
+    port = int(os.environ.get("PORT", os.environ.get("HEALTH_CHECK_PORT", "8080")))
     
     try:
         logger.info(f"🏥 Starting Health Check Server on 0.0.0.0:{port}")
+        logger.info(f"   PORT env: {os.environ.get('PORT', 'not set')}")
+        logger.info(f"   HEALTH_CHECK_PORT env: {os.environ.get('HEALTH_CHECK_PORT', 'not set')}")
         
-        # Create HTTP server
+        # Create HTTP server with SO_REUSEADDR from the start
         server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
+        server.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         
         logger.info(f"✅ Health Check Server listening on port {port}")
         logger.info(f"   Endpoints: GET /health, GET /status, GET /")
         logger.info(f"   Autonomous: {HEALTH_STATUS['autonomous_control']}")
+        logger.info(f"   Ready to receive health check requests")
+        
+        # Flush logs immediately
+        sys.stdout.flush()
         
         # Start serving requests
         server.serve_forever()
         
-    except OSError as e:
-        logger.error(f"❌ Failed to bind to port {port}: {e}")
-        # Try with SO_REUSEADDR
-        try:
-            server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
-            server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            logger.info(f"✅ Retried with SO_REUSEADDR")
-            server.serve_forever()
-        except Exception as e2:
-            logger.error(f"❌ Fatal error: {e2}")
-            sys.exit(1)
     except Exception as e:
-        logger.error(f"❌ Unexpected error: {e}", exc_info=True)
+        logger.error(f"❌ Fatal error starting server on port {port}: {e}", exc_info=True)
+        sys.stderr.flush()
         sys.exit(1)
 
 if __name__ == "__main__":
