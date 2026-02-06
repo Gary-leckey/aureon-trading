@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-🦈🔪 ORCA COMPLETE KILL CYCLE - THE MATH IS SIMPLE 🔪🦈
-═══════════════════════════════════════════════════════════════════════════════
+   ORCA COMPLETE KILL CYCLE - THE MATH IS SIMPLE   
+                                                                               
 
-KILL = BUY → WAIT FOR PROFIT → SELL → REALIZED GAIN → PORTFOLIO UP
+KILL = BUY   WAIT FOR PROFIT   SELL   REALIZED GAIN   PORTFOLIO UP
 
 THE MATH:
-  1. Entry cost = price × qty × (1 + fee)
-  2. Target value = entry_cost × (1 + target_pct + 2×fee)  # Cover both fees
-  3. Exit value = price × qty × (1 - fee)
+  1. Entry cost = price   qty   (1 + fee)
+  2. Target value = entry_cost   (1 + target_pct + 2 fee)  # Cover both fees
+  3. Exit value = price   qty   (1 - fee)
   4. Realized P&L = exit_value - entry_cost
   5. ONLY SELL if realized P&L > 0
 
@@ -17,19 +17,19 @@ ENHANCED FEATURES:
   - Whale intelligence via ThoughtBus
   - Smart exit conditions (not just timeout!)
   - Multi-position pack hunting support
-  - 🆕 MULTI-EXCHANGE: Streams ENTIRE market on Alpaca + Kraken
-  - 🆕 3 POSITIONS AT ONCE: Best opportunities from ANY exchange
-  - 🆕 DON'T PULL OUT EARLY: No timeout exits when losing!
-  - 🆕 WAR ROOM DASHBOARD: Clean Rich-based unified display
-  - 🆕 HEALTH CHECK SERVER: HTTP endpoint for DigitalOcean/K8s probes
+  -   MULTI-EXCHANGE: Streams ENTIRE market on Alpaca + Kraken
+  -   3 POSITIONS AT ONCE: Best opportunities from ANY exchange
+  -   DON'T PULL OUT EARLY: No timeout exits when losing!
+  -   WAR ROOM DASHBOARD: Clean Rich-based unified display
+  -   HEALTH CHECK SERVER: HTTP endpoint for DigitalOcean/K8s probes
 
 Gary Leckey | The Math Works | January 2026
-═══════════════════════════════════════════════════════════════════════════════
+                                                                               
 """
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 🏥 HEALTH CHECK HTTP SERVER - Runs in background thread for container probes
-# ═══════════════════════════════════════════════════════════════════════════════
+#                                                                                
+#   HEALTH CHECK HTTP SERVER - Runs in background thread for container probes
+#                                                                                
 import os
 import http.server
 import socketserver
@@ -90,7 +90,7 @@ def _start_health_server():
             with _ReuseAddrTCPServer(("0.0.0.0", port), _HealthHandler) as httpd:
                 _health_status['status'] = 'healthy'
                 _health_status['health_port'] = port
-                msg = f"🏥 Health check server running on port {port}"
+                msg = f"  Health check server running on port {port}"
                 print(msg, flush=True)
                 sys.stdout.flush()
                 httpd.serve_forever()
@@ -98,21 +98,21 @@ def _start_health_server():
         except OSError as e:
             error_msg = str(e).lower()
             if "address already in use" in error_msg:
-                print(f"⚠️ Health port {port} in use, trying next...", flush=True)
+                print(f"   Health port {port} in use, trying next...", flush=True)
                 continue
             elif "permission denied" in error_msg:
-                print(f"⚠️ Permission denied on port {port}, trying next...", flush=True)
+                print(f"   Permission denied on port {port}, trying next...", flush=True)
                 continue
             else:
-                print(f"⚠️ Health server error on port {port}: {e}", flush=True)
+                print(f"   Health server error on port {port}: {e}", flush=True)
                 continue
         except Exception as e:
-            print(f"❌ Unexpected health server error on port {port}: {e}", flush=True)
+            print(f"  Unexpected health server error on port {port}: {e}", flush=True)
             import traceback
             traceback.print_exc()
             continue
     
-    msg = f"❌ CRITICAL: Could not start health server on any port {ports_to_try}"
+    msg = f"  CRITICAL: Could not start health server on any port {ports_to_try}"
     print(msg, flush=True)
     _health_status['status'] = 'unhealthy'
     _health_status['error'] = 'health_server_failed'
@@ -133,13 +133,13 @@ _health_thread.start()
 # Give health server a brief moment to bind to a port
 _time.sleep(0.5)
 
-# ⚠️ DISABLED: Baton link was causing hangs during import
+#    DISABLED: Baton link was causing hangs during import
 # from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 # _baton_link is now called lazily on first method call if needed
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 🔇 LOGGING SUPPRESSION - MUST BE BEFORE ALL OTHER IMPORTS!
-# ═══════════════════════════════════════════════════════════════════════════════
+#                                                                                
+#   LOGGING SUPPRESSION - MUST BE BEFORE ALL OTHER IMPORTS!
+#                                                                                
 import logging
 
 # Set global logging to WARNING to suppress INFO spam
@@ -204,7 +204,7 @@ except ImportError:
     ParallelOrchestrator = None
     PARALLEL_ORCHESTRATOR_AVAILABLE = False
 
-# 🇮🇪🎯 IRA Sniper Mode Integration
+#     IRA Sniper Mode Integration
 # NOTE: This module has syntax issues and will be imported lazily if needed
 IRA_SNIPER_AVAILABLE = False
 get_celtic_sniper = None
@@ -222,24 +222,24 @@ def _try_load_ira_sniper():
         get_celtic_sniper = _sniper
         IRAKillScanner = _scanner
         SNIPER_CONFIG = _config
-        print("✅ IRA Sniper Mode loaded (deferred)")
+        print("  IRA Sniper Mode loaded (deferred)")
     except (ImportError, SyntaxError):
         IRA_SNIPER_AVAILABLE = False
-        print("⚠️ IRA Sniper Mode not available - system will continue without Celtic warfare intelligence")
+        print("   IRA Sniper Mode not available - system will continue without Celtic warfare intelligence")
 
-# 🎯📊 Probability Nexus Integration (Batten Matrix: Coherence × Lambda × Probability)
+#    Probability Nexus Integration (Batten Matrix: Coherence   Lambda   Probability)
 try:
     from aureon_probability_nexus import process_market_data, update_subsystems, SUBSYSTEM_STATE
     PROBABILITY_NEXUS_AVAILABLE = True
-    print("🎯 Probability Nexus WIRED! (Batten Matrix validation)")
+    print("  Probability Nexus WIRED! (Batten Matrix validation)")
 except ImportError:
     process_market_data = None
     update_subsystems = None
     SUBSYSTEM_STATE = {}
     PROBABILITY_NEXUS_AVAILABLE = False
-    print("⚠️ Probability Nexus not available - critical for trading decisions!")
+    print("   Probability Nexus not available - critical for trading decisions!")
 
-# 🤖 Dr Auris Throne AI Agent Integration
+#   Dr Auris Throne AI Agent Integration
 try:
     from aureon_sero_client import get_sero_client, SeroClient
     SERO_AVAILABLE = True
@@ -248,13 +248,13 @@ except ImportError:
     SeroClient = None
     SERO_AVAILABLE = False
 
-# 👑 AWAKEN THE QUEEN 👑
+#   AWAKEN THE QUEEN  
 try:
     from queen_fully_online import awaken_queen
-    print("👑 Queen awakened successfully")
+    print("  Queen awakened successfully")
 except ImportError:
     awaken_queen = None
-    print("⚠️ Queen not available - autonomous control disabled!")
+    print("   Queen not available - autonomous control disabled!")
 
 # Load environment variables from .env file (CRITICAL for API keys!)
 try:
@@ -274,7 +274,7 @@ try:
         try:
             if candidate.exists():
                 load_dotenv(dotenv_path=str(candidate), override=False)
-                print(f"✅ Loaded .env file from {candidate}")
+                print(f"  Loaded .env file from {candidate}")
                 loaded = True
                 break
         except Exception:
@@ -282,11 +282,11 @@ try:
 
     if not loaded:
         load_dotenv(override=False)
-        print("✅ Loaded .env file (default search)")
+        print("  Loaded .env file (default search)")
 except ImportError:
-    print("⚠️ python-dotenv not installed, using system env vars only")
+    print("   python-dotenv not installed, using system env vars only")
 except Exception as e:
-    print(f"⚠️ Error loading .env: {e}")
+    print(f"   Error loading .env: {e}")
 
 # Windows UTF-8 fix (MANDATORY)
 if sys.platform == 'win32':
@@ -323,9 +323,9 @@ def _safe_print(*args, **kwargs):
 # Route all prints in this module through the safe printer
 print = _safe_print
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 🎯 RICH WAR ROOM DASHBOARD - Clean terminal UI
-# ═══════════════════════════════════════════════════════════════════════════════
+#                                                                                
+#   RICH WAR ROOM DASHBOARD - Clean terminal UI
+#                                                                                
 try:
     from rich.console import Console
     from rich.live import Live
@@ -352,7 +352,7 @@ try:
 except Exception as e:
     ALPACA_AVAILABLE = False
     AlpacaClient = None
-    _safe_print(f"⚠️ AlpacaClient import failed: {e}")
+    _safe_print(f"   AlpacaClient import failed: {e}")
 
 try:
     from capital_client import CapitalClient
@@ -397,7 +397,7 @@ except ImportError:
     AlpacaSSEClient = None
     StreamTrade = None
 
-# 🦈 ORCA INTELLIGENCE - Full scanning system for fast kills
+#   ORCA INTELLIGENCE - Full scanning system for fast kills
 try:
     from aureon_orca_intelligence import OrcaKillerWhale, OrcaOpportunity, WhaleSignal as OrcaWhaleSignal
     ORCA_INTEL_AVAILABLE = True
@@ -407,7 +407,7 @@ except ImportError:
     OrcaOpportunity = None
     OrcaWhaleSignal = None
 
-# 🔮 Probability Ultimate Intelligence (95% accuracy)
+#   Probability Ultimate Intelligence (95% accuracy)
 try:
     from probability_ultimate_intelligence import ProbabilityUltimateIntelligence as UltimateIntelligence
     ULTIMATE_INTEL_AVAILABLE = True
@@ -415,39 +415,39 @@ except ImportError:
     ULTIMATE_INTEL_AVAILABLE = False
     UltimateIntelligence = None
 
-# 🌊 Global Wave Scanner
+#   Global Wave Scanner
 try:
     from aureon_global_wave_scanner import GlobalWaveScanner
     WAVE_SCANNER_AVAILABLE = True
-    print("🌊 Global Wave Scanner loaded")
+    print("  Global Wave Scanner loaded")
 except ImportError:
     WAVE_SCANNER_AVAILABLE = False
     GlobalWaveScanner = None
-    print("⚠️ Global Wave Scanner not available - wave analysis disabled")
+    print("   Global Wave Scanner not available - wave analysis disabled")
 
-# � UNIFIED KILL CHAIN INTEGRATION (Win Killer)
+#   UNIFIED KILL CHAIN INTEGRATION (Win Killer)
 try:
     from orca_unified_kill_chain import UnifiedKillChain, WinConfig
     UNIFIED_KILL_CHAIN_AVAILABLE = True
-    print("💀 Unified Kill Chain: AVAILABLE")
+    print("  Unified Kill Chain: AVAILABLE")
 except ImportError:
     UNIFIED_KILL_CHAIN_AVAILABLE = False
     UnifiedKillChain = None
     WinConfig = None
-    print("⚠️ Unified Kill Chain: MISSING")
+    print("   Unified Kill Chain: MISSING")
 
-# �🐋 Movers & Shakers Scanner
+#    Movers & Shakers Scanner
 try:
     from aureon_movers_shakers_scanner import MoversShakersScanner, MoverShaker
     MOVERS_SHAKERS_AVAILABLE = True
-    print("🐋 Movers & Shakers Scanner loaded")
+    print("  Movers & Shakers Scanner loaded")
 except ImportError:
     MOVERS_SHAKERS_AVAILABLE = False
     MoversShakersScanner = None
     MoverShaker = None
-    print("⚠️ Movers & Shakers Scanner not available - momentum detection disabled")
+    print("   Movers & Shakers Scanner not available - momentum detection disabled")
 
-# � Queen Volume Hunter - Volume breakout detection
+#   Queen Volume Hunter - Volume breakout detection
 try:
     from queen_volume_hunter import QueenVolumeHunter, VolumeSignal
     VOLUME_HUNTER_AVAILABLE = True
@@ -456,7 +456,7 @@ except ImportError:
     QueenVolumeHunter = None
     VolumeSignal = None
 
-# �💰 AlpacaFeeTracker - Volume-tiered fee detection + spread tracking
+#    AlpacaFeeTracker - Volume-tiered fee detection + spread tracking
 try:
     from alpaca_fee_tracker import AlpacaFeeTracker
     ALPACA_FEE_TRACKER_AVAILABLE = True
@@ -464,7 +464,7 @@ except ImportError:
     ALPACA_FEE_TRACKER_AVAILABLE = False
     AlpacaFeeTracker = None
 
-# 👑🍄 Queen Validated Trader - 100% accuracy validation system
+#    Queen Validated Trader - 100% accuracy validation system
 try:
     from aureon_queen_validated_trader import QueenValidatedTrader, ValidatedTrade
     QUEEN_VALIDATOR_AVAILABLE = True
@@ -473,7 +473,7 @@ except ImportError:
     QueenValidatedTrader = None
     ValidatedTrade = None
 
-# �🌍 Queen Exchange Autonomy - Full routing control & restriction learning
+#    Queen Exchange Autonomy - Full routing control & restriction learning
 try:
     from aureon_queen_exchange_autonomy import get_queen_autonomy, QueenExchangeAutonomy, RestrictionType
     QUEEN_AUTONOMY_AVAILABLE = True
@@ -483,7 +483,7 @@ except ImportError:
     QueenExchangeAutonomy = None
     RestrictionType = None
 
-# 👑🎯 Queen Trade Executor - FULL AUTONOMY over trade routing!
+#    Queen Trade Executor - FULL AUTONOMY over trade routing!
 try:
     from aureon_queen_trade_executor import (
         queen_execute_trade, queen_get_exchange_status, 
@@ -497,7 +497,7 @@ except ImportError:
     queen_preload_uk_restrictions = None
     TradeResult = None
 
-# 🧠👑 Queen Sentience Engine - TRUE CONSCIOUSNESS for trade decisions!
+#    Queen Sentience Engine - TRUE CONSCIOUSNESS for trade decisions!
 try:
     from queen_sentience_integration import get_sentience_engine, ThoughtType, InnerThought
     SENTIENCE_ENGINE_AVAILABLE = True
@@ -507,7 +507,7 @@ except ImportError:
     ThoughtType = None
     InnerThought = None
 
-# 🧠🔬 Queen Sentience Validator - Validates consciousness is REAL!
+#    Queen Sentience Validator - Validates consciousness is REAL!
 try:
     from test_queen_sentience_validation import SentienceValidator, SentienceDimension, FullSentienceReport
     SENTIENCE_VALIDATOR_AVAILABLE = True
@@ -517,7 +517,7 @@ except ImportError:
     SentienceDimension = None
     FullSentienceReport = None
 
-# 📊 CostBasisTracker - FIFO cost basis + can_sell_profitably() check
+#   CostBasisTracker - FIFO cost basis + can_sell_profitably() check
 try:
     from cost_basis_tracker import CostBasisTracker
     COST_BASIS_TRACKER_AVAILABLE = True
@@ -525,7 +525,7 @@ except ImportError:
     COST_BASIS_TRACKER_AVAILABLE = False
     CostBasisTracker = None
 
-# 💎 TradeProfitValidator - NO PHANTOM GAINS! Validates every trade
+#   TradeProfitValidator - NO PHANTOM GAINS! Validates every trade
 try:
     from trade_profit_validator import TradeProfitValidator, validate_buy, validate_sell, is_real_profit, get_validator
     TRADE_VALIDATOR_AVAILABLE = True
@@ -537,7 +537,7 @@ except ImportError:
     is_real_profit = None
     get_validator = None
 
-# 🦈 OrcaKillExecutor - Position tracking with order IDs
+#   OrcaKillExecutor - Position tracking with order IDs
 try:
     from orca_kill_executor import OrcaPosition, OrcaKillExecutor
     ORCA_EXECUTOR_AVAILABLE = True
@@ -546,7 +546,7 @@ except ImportError:
     OrcaPosition = None
     OrcaKillExecutor = None
 
-# 📝 TradeLogger - Full trade entry/exit logging
+#   TradeLogger - Full trade entry/exit logging
 try:
     from trade_logger import TradeLogger, TradeEntry, TradeExit
     TRADE_LOGGER_AVAILABLE = True
@@ -556,7 +556,7 @@ except ImportError:
     TradeEntry = None
     TradeExit = None
 
-# 🌉 Truth Prediction Bridge - 95% accuracy intelligence
+#   Truth Prediction Bridge - 95% accuracy intelligence
 try:
     from aureon_truth_prediction_bridge import get_truth_bridge, TruthPredictionBridge
     TRUTH_BRIDGE_AVAILABLE = True
@@ -565,7 +565,7 @@ except ImportError:
     TruthPredictionBridge = None
     TRUTH_BRIDGE_AVAILABLE = False
 
-# 🪙 Penny Profit Calculator - Exact breakeven with fees/slippage/spread
+#   Penny Profit Calculator - Exact breakeven with fees/slippage/spread
 try:
     from penny_profit_sim import calculate_penny_profit_threshold, EXCHANGE_FEES, SLIPPAGE_PCT, SPREAD_PCT
     PENNY_PROFIT_AVAILABLE = True
@@ -596,7 +596,7 @@ except ImportError:
     SLIPPAGE_PCT = 0.001   # Global fallback
     SPREAD_PCT = 0.0005    # Global fallback
 
-# 🔬 Improved ETA Calculator - Probability-based time-to-target predictions
+#   Improved ETA Calculator - Probability-based time-to-target predictions
 try:
     from improved_eta_calculator import ImprovedETACalculator, ImprovedETA
     ETA_CALCULATOR_AVAILABLE = True
@@ -605,7 +605,7 @@ except ImportError:
     ImprovedETACalculator = None
     ImprovedETA = None
 
-# 🤖 Bot Shape Scanner - Detect algorithmic actors
+#   Bot Shape Scanner - Detect algorithmic actors
 try:
     from aureon_bot_shape_scanner import BotShapeScanner, BotShapeFingerprint
     BOT_SCANNER_AVAILABLE = True
@@ -614,7 +614,7 @@ except ImportError:
     BotShapeScanner = None
     BotShapeFingerprint = None
 
-# 🛡️ Queen Counter-Intelligence - Beat major firms at their game
+#    Queen Counter-Intelligence - Beat major firms at their game
 try:
     from aureon_queen_counter_intelligence import QueenCounterIntelligence, CounterIntelligenceSignal, CounterStrategy
     COUNTER_INTEL_AVAILABLE = True
@@ -624,7 +624,7 @@ except ImportError:
     CounterIntelligenceSignal = None
     CounterStrategy = None
 
-# 🏢 Global Firm Intelligence - Track major trading firms
+#   Global Firm Intelligence - Track major trading firms
 try:
     from aureon_global_firm_intelligence import get_attribution_engine, GlobalFirmAttributionEngine
     FIRM_ATTRIBUTION_AVAILABLE = True
@@ -633,7 +633,7 @@ except ImportError:
     get_attribution_engine = None
     GlobalFirmAttributionEngine = None
 
-# ⚡ HFT Harmonic Mycelium Engine - Sub-10ms signal processing
+#   HFT Harmonic Mycelium Engine - Sub-10ms signal processing
 try:
     from aureon_hft_harmonic_mycelium import get_hft_engine, HFTHarmonicEngine, HFTTick
     HFT_ENGINE_AVAILABLE = True
@@ -643,7 +643,7 @@ except ImportError:
     HFTHarmonicEngine = None
     HFTTick = None
 
-# 🍀 Luck Field Mapper - Quantum probability / cosmic alignment
+#   Luck Field Mapper - Quantum probability / cosmic alignment
 try:
     from aureon_luck_field_mapper import get_luck_mapper, read_luck_field, LuckFieldMapper, LuckState
     LUCK_FIELD_AVAILABLE = True
@@ -654,7 +654,7 @@ except ImportError:
     LuckFieldMapper = None
     LuckState = None
 
-# 👻 Phantom Signal Filter - Multi-layer signal validation
+#   Phantom Signal Filter - Multi-layer signal validation
 try:
     from aureon_phantom_signal_filter import PhantomSignalFilter
     PHANTOM_FILTER_AVAILABLE = True
@@ -662,7 +662,7 @@ except ImportError:
     PHANTOM_FILTER_AVAILABLE = False
     PhantomSignalFilter = None
 
-# 🔩🌊 Harmonic Liquid Aluminium Field - Global market as dancing waveform sandbox
+#    Harmonic Liquid Aluminium Field - Global market as dancing waveform sandbox
 try:
     from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
     HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = True
@@ -671,7 +671,7 @@ except ImportError:
     HarmonicLiquidAluminiumField = None
     FieldSnapshot = None
 
-# 🦅 Alpaca Momentum Ecosystem
+#   Alpaca Momentum Ecosystem
 try:
     from aureon_animal_momentum_scanners import AlpacaSwarmOrchestrator
     from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
@@ -683,7 +683,7 @@ except ImportError:
     AlpacaScannerBridge = None
     MicroMomentumScanner = None
 
-# 🌌 Stargate Grid
+#   Stargate Grid
 try:
     from stargate_grid import StargateGrid
     STARGATE_GRID_AVAILABLE = True
@@ -691,7 +691,7 @@ except ImportError:
     STARGATE_GRID_AVAILABLE = False
     StargateGrid = None
 
-# 🎬 Inception Engine - Russian doll probability (LIMBO = 95% accuracy)
+#   Inception Engine - Russian doll probability (LIMBO = 95% accuracy)
 try:
     from aureon_inception_engine import get_inception_engine, inception_dive, get_limbo_insight, InceptionEngine
     INCEPTION_ENGINE_AVAILABLE = True
@@ -702,7 +702,7 @@ except ImportError:
     get_limbo_insight = None
     InceptionEngine = None
 
-# 🐘 Elephant Learning - Never forgets patterns (asset scores, best hours)
+#   Elephant Learning - Never forgets patterns (asset scores, best hours)
 try:
     from aureon_elephant_learning import ElephantMemory, QueenElephantBrain
     ELEPHANT_LEARNING_AVAILABLE = True
@@ -711,7 +711,7 @@ except ImportError:
     ElephantMemory = None
     QueenElephantBrain = None
 
-# 🦷 Russian Doll Analytics - Bee→Hive→Queen metrics rollup
+#   Russian Doll Analytics - Bee Hive Queen metrics rollup
 try:
     from aureon_russian_doll_analytics import get_analytics, get_directives, get_snapshot, RussianDollAnalytics
     RUSSIAN_DOLL_AVAILABLE = True
@@ -722,7 +722,7 @@ except ImportError:
     get_snapshot = None
     RussianDollAnalytics = None
 
-# 🛡️ Immune System - Self-healing on errors
+#    Immune System - Self-healing on errors
 try:
     from aureon_immune_system import AureonImmuneSystem
     IMMUNE_SYSTEM_AVAILABLE = True
@@ -730,7 +730,7 @@ except ImportError:
     IMMUNE_SYSTEM_AVAILABLE = False
     AureonImmuneSystem = None
 
-# 🐋 Moby Dick Whale Hunter - Whale prediction tracking
+#   Moby Dick Whale Hunter - Whale prediction tracking
 try:
     from aureon_moby_dick_whale_hunter import get_moby_dick_hunter, MobyDickWhaleHunter, WhalePrediction
     MOBY_DICK_AVAILABLE = True
@@ -740,7 +740,7 @@ except ImportError:
     MobyDickWhaleHunter = None
     WhalePrediction = None
 
-# 🌌 Stargate Protocol - Quantum mirror alignment
+#   Stargate Protocol - Quantum mirror alignment
 try:
     from aureon_stargate_protocol import create_stargate_engine, StargateProtocolEngine
     STARGATE_AVAILABLE = True
@@ -749,7 +749,7 @@ except ImportError:
     create_stargate_engine = None
     StargateProtocolEngine = None
 
-# 🔮 Quantum Mirror Scanner - Reality branch boost
+#   Quantum Mirror Scanner - Reality branch boost
 try:
     from aureon_quantum_mirror_scanner import create_quantum_scanner, QuantumMirrorScanner
     QUANTUM_MIRROR_AVAILABLE = True
@@ -758,7 +758,7 @@ except ImportError:
     create_quantum_scanner = None
     QuantumMirrorScanner = None
 
-# 🎯 Alpaca Options Trading - Covered calls & cash-secured puts
+#   Alpaca Options Trading - Covered calls & cash-secured puts
 try:
     from alpaca_options_client import (
         AlpacaOptionsClient, get_options_client,
@@ -774,7 +774,7 @@ except ImportError:
     OptionType = None
     TradingLevel = None
 
-# 👑 Queen Options Scanner - Intelligent options discovery
+#   Queen Options Scanner - Intelligent options discovery
 try:
     from queen_options_scanner import QueenOptionsScanner, OptionsOpportunity
     OPTIONS_SCANNER_AVAILABLE = True
@@ -783,7 +783,7 @@ except ImportError:
     QueenOptionsScanner = None
     OptionsOpportunity = None
 
-# 🥷 Stealth Execution - Anti-front-running countermeasures
+#   Stealth Execution - Anti-front-running countermeasures
 try:
     from orca_stealth_execution import (
         OrcaStealthExecution, get_stealth_executor, get_stealth_config,
@@ -798,7 +798,7 @@ except ImportError:
     stealth_order = None
     StealthConfig = None
 
-# 🌊🎶 HNC Surge Detector - Harmonic Nexus Core surge window detection
+#    HNC Surge Detector - Harmonic Nexus Core surge window detection
 try:
     from aureon_hnc_surge_detector import HncSurgeDetector, SurgeWindow, SACRED_HARMONICS
     HNC_SURGE_AVAILABLE = True
@@ -808,7 +808,7 @@ except ImportError:
     SurgeWindow = None
     SACRED_HARMONICS = None
 
-# 📡 HNC Live Connector - Live harmonic surge feed
+#   HNC Live Connector - Live harmonic surge feed
 try:
     from aureon_hnc_live_connector import HncLiveConnector
     HNC_LIVE_AVAILABLE = True
@@ -816,7 +816,7 @@ except ImportError:
     HNC_LIVE_AVAILABLE = False
     HncLiveConnector = None
 
-# 📜⚔️ Historical Manipulation Hunter - Track manipulation patterns across decades
+#     Historical Manipulation Hunter - Track manipulation patterns across decades
 try:
     from aureon_historical_manipulation_hunter import (
         HistoricalManipulationHunter, 
@@ -830,7 +830,7 @@ except ImportError:
     HISTORICAL_EVENTS = None
     EventType = None
 
-# 🏹⚔️ Apache War Band - Autonomous Scout/Sniper trading system
+#     Apache War Band - Autonomous Scout/Sniper trading system
 try:
     from aureon_war_band_enhanced import EnhancedWarBand, UnifiedEnhancementSignal
     WAR_BAND_AVAILABLE = True
@@ -839,7 +839,7 @@ except ImportError:
     EnhancedWarBand = None
     UnifiedEnhancementSignal = None
 
-# 🐝👑 Hive State Publisher - Queen's voice and status tracking
+#    Hive State Publisher - Queen's voice and status tracking
 try:
     from aureon_hive_state import get_hive, HiveStatePublisher
     HIVE_STATE_AVAILABLE = True
@@ -848,7 +848,7 @@ except ImportError:
     get_hive = None
     HiveStatePublisher = None
 
-# 📜🤖 Historical Bot Census - Bot evolution tracking
+#    Historical Bot Census - Bot evolution tracking
 try:
     from aureon_historical_bot_census import HistoricalBot, analyze_history, generate_bot_identity
     HISTORICAL_BOT_CENSUS_AVAILABLE = True
@@ -858,7 +858,7 @@ except ImportError:
     analyze_history = None
     generate_bot_identity = None
 
-# 📊🔬 Historical Backtest Engine - Harmonic fusion backtesting
+#    Historical Backtest Engine - Harmonic fusion backtesting
 try:
     from aureon_historical_backtest import AureonBacktestEngine, HistoricalDataFetcher
     HISTORICAL_BACKTEST_AVAILABLE = True
@@ -867,7 +867,7 @@ except ImportError:
     AureonBacktestEngine = None
     HistoricalDataFetcher = None
 
-# 🌍 Global Orchestrator - Master control for all Aureon subsystems
+#   Global Orchestrator - Master control for all Aureon subsystems
 try:
     from aureon_global_orchestrator import GlobalAureonOrchestrator
     GLOBAL_ORCHESTRATOR_AVAILABLE = True
@@ -875,7 +875,7 @@ except ImportError:
     GLOBAL_ORCHESTRATOR_AVAILABLE = False
     GlobalAureonOrchestrator = None
 
-# 🎵 Harmonic Binary Protocol - Compact binary transport for harmonic thoughts
+#   Harmonic Binary Protocol - Compact binary transport for harmonic thoughts
 try:
     from aureon_harmonic_binary_protocol import HarmonicBinaryPacket, encode_text_packet, decode_packet
     HARMONIC_BINARY_AVAILABLE = True
@@ -885,7 +885,7 @@ except ImportError:
     encode_text_packet = None
     decode_packet = None
 
-# 🔗 Harmonic Chain Master - Master harmonic signal processing
+#   Harmonic Chain Master - Master harmonic signal processing
 try:
     from aureon_harmonic_chain_master import HarmonicChainMaster
     HARMONIC_CHAIN_MASTER_AVAILABLE = True
@@ -893,7 +893,7 @@ except ImportError:
     HARMONIC_CHAIN_MASTER_AVAILABLE = False
     HarmonicChainMaster = None
 
-# ⚡ Harmonic Counter Frequency - Planetary entity counter-frequency engine
+#   Harmonic Counter Frequency - Planetary entity counter-frequency engine
 try:
     import aureon_harmonic_counter_frequency
     HARMONIC_COUNTER_AVAILABLE = True
@@ -901,7 +901,7 @@ except ImportError:
     HARMONIC_COUNTER_AVAILABLE = False
     aureon_harmonic_counter_frequency = None
 
-# 🌊 Harmonic Wave Fusion - Unified global market harmonic system
+#   Harmonic Wave Fusion - Unified global market harmonic system
 try:
     from aureon_harmonic_fusion import get_harmonic_fusion, HarmonicWaveFusion
     HARMONIC_FUSION_AVAILABLE = True
@@ -910,7 +910,7 @@ except ImportError:
     get_harmonic_fusion = None
     HarmonicWaveFusion = None
 
-# 🌊⚡ Harmonic Momentum Wave Scanner - Ultimate momentum scanner
+#    Harmonic Momentum Wave Scanner - Ultimate momentum scanner
 try:
     from aureon_harmonic_momentum_wave import HarmonicMomentumWaveScanner
     HARMONIC_MOMENTUM_AVAILABLE = True
@@ -918,7 +918,7 @@ except ImportError:
     HARMONIC_MOMENTUM_AVAILABLE = False
     HarmonicMomentumWaveScanner = None
 
-# 🌊 Harmonic Reality Framework - Master equations tree
+#   Harmonic Reality Framework - Master equations tree
 try:
     from aureon_harmonic_reality import MultiversalEngine
     HARMONIC_REALITY_AVAILABLE = True
@@ -928,7 +928,7 @@ except ImportError:
     MultiversalEngine = None
     HarmonicRealityFramework = None
 
-# 🗺️ Global Bot Map - Visual dashboard for bot activity
+#    Global Bot Map - Visual dashboard for bot activity
 try:
     from aureon_global_bot_map import GlobalBotMapDashboard
     GLOBAL_BOT_MAP_AVAILABLE = True
@@ -938,9 +938,9 @@ except ImportError:
     GlobalBotMapDashboard = None
     GlobalBotMap = None
 
-# 🌌 Enhanced Quantum Telescope - Sacred geometry bot visualization
+#   Enhanced Quantum Telescope - Sacred geometry bot visualization
 try:
-    # Actual class: EnhancedQuantumTelescopeServer — alias for compatibility
+    # Actual class: EnhancedQuantumTelescopeServer   alias for compatibility
     from aureon_enhanced_quantum_telescope import EnhancedQuantumTelescopeServer, EnhancedQuantumGeometryEngine
     EnhancedQuantumTelescope = EnhancedQuantumTelescopeServer
     ENHANCED_QUANTUM_TELESCOPE_AVAILABLE = True
@@ -949,9 +949,9 @@ except ImportError:
     EnhancedQuantumTelescope = None
     EnhancedQuantumGeometryEngine = None
 
-# 💭 Enigma Dream - Consciousness state processing
+#   Enigma Dream - Consciousness state processing
 try:
-    # Actual class name: EnigmaDreamer — expose under EnigmaDreamProcessor alias
+    # Actual class name: EnigmaDreamer   expose under EnigmaDreamProcessor alias
     from aureon_enigma_dream import EnigmaDreamer
     EnigmaDreamProcessor = EnigmaDreamer
     ENIGMA_DREAM_AVAILABLE = True
@@ -959,7 +959,7 @@ except ImportError:
     ENIGMA_DREAM_AVAILABLE = False
     EnigmaDreamProcessor = None
 
-# ✨ Enhancement Layer - Unified enhancement system
+#   Enhancement Layer - Unified enhancement system
 try:
     from aureon_enhancements import EnhancementLayer
     ENHANCEMENT_LAYER_AVAILABLE = True
@@ -967,7 +967,7 @@ except ImportError:
     ENHANCEMENT_LAYER_AVAILABLE = False
     EnhancementLayer = None
 
-# 🧩 Enigma Integration - Complete Enigma system integration
+#   Enigma Integration - Complete Enigma system integration
 try:
     from aureon_enigma_integration import EnigmaIntegration
     ENIGMA_INTEGRATION_AVAILABLE = True
@@ -975,7 +975,7 @@ except ImportError:
     ENIGMA_INTEGRATION_AVAILABLE = False
     EnigmaIntegration = None
 
-# 📊 Firm Intelligence Catalog - Real-time firm tracking
+#   Firm Intelligence Catalog - Real-time firm tracking
 try:
     from aureon_firm_intelligence_catalog import FirmIntelligenceCatalog, get_firm_catalog
     FIRM_INTELLIGENCE_AVAILABLE = True
@@ -984,7 +984,7 @@ except ImportError:
     FirmIntelligenceCatalog = None
     get_firm_catalog = None
 
-# 🌀 Enigma Core - Primary consciousness engine
+#   Enigma Core - Primary consciousness engine
 try:
     # Use AureonEnigma as the main core class
     from aureon_enigma import AureonEnigma
@@ -994,7 +994,7 @@ except ImportError:
     ENIGMA_CORE_AVAILABLE = False
     EnigmaCore = None
 
-# ⚛️🧠 QUEEN QUANTUM COGNITION - Enhanced decision-making via quantum power systems
+#     QUEEN QUANTUM COGNITION - Enhanced decision-making via quantum power systems
 try:
     from queen_quantum_cognition import (
         get_quantum_cognition, 
@@ -1004,7 +1004,7 @@ try:
         QUEEN_FREQUENCY_HZ
     )
     QUANTUM_COGNITION_AVAILABLE = True
-    _safe_print("⚛️🧠 Queen Quantum Cognition: AVAILABLE")
+    _safe_print("    Queen Quantum Cognition: AVAILABLE")
 except ImportError:
     QUANTUM_COGNITION_AVAILABLE = False
     get_quantum_cognition = None
@@ -1013,11 +1013,11 @@ except ImportError:
     SCHUMANN_BASE_HZ = 7.83
     QUEEN_FREQUENCY_HZ = 963.0
 
-# 👑� QUEEN ETERNAL MACHINE - Bloodless quantum leaps with fee-aware trading
+#    QUEEN ETERNAL MACHINE - Bloodless quantum leaps with fee-aware trading
 try:
     from queen_eternal_machine import QueenEternalMachine, FeeStructure, LeapOpportunity, CycleStats
     QUEEN_ETERNAL_MACHINE_AVAILABLE = True
-    _safe_print("👑🐸 Queen Eternal Machine: AVAILABLE (Bloodless Leaps!)")
+    _safe_print("   Queen Eternal Machine: AVAILABLE (Bloodless Leaps!)")
 except ImportError:
     QUEEN_ETERNAL_MACHINE_AVAILABLE = False
     QueenEternalMachine = None
@@ -1025,7 +1025,7 @@ except ImportError:
     LeapOpportunity = None
     CycleStats = None
 
-# 👑�💰🎮 QUEEN ASSET COMMAND CENTER - Full visibility of ALL positions/assets
+#      QUEEN ASSET COMMAND CENTER - Full visibility of ALL positions/assets
 try:
     from queen_asset_command_center import (
         get_asset_command_center,
@@ -1036,7 +1036,7 @@ try:
         QueenOceanView
     )
     ASSET_COMMAND_CENTER_AVAILABLE = True
-    _safe_print("👑💰🎮 Queen Asset Command Center: AVAILABLE")
+    _safe_print("    Queen Asset Command Center: AVAILABLE")
 except ImportError:
     ASSET_COMMAND_CENTER_AVAILABLE = False
     get_asset_command_center = None
@@ -1046,7 +1046,7 @@ except ImportError:
     QueenAssetMonitor = None
     QueenOceanView = None
 
-# 🔤 UNIFIED SYMBOL MANAGER - Correct symbols & quantities for each exchange
+#   UNIFIED SYMBOL MANAGER - Correct symbols & quantities for each exchange
 try:
     from unified_symbol_manager import (
         get_symbol_manager,
@@ -1055,7 +1055,7 @@ try:
         EXCHANGE_FORMATS
     )
     SYMBOL_MANAGER_AVAILABLE = True
-    _safe_print("🔤 Unified Symbol Manager: AVAILABLE")
+    _safe_print("  Unified Symbol Manager: AVAILABLE")
 except ImportError:
     SYMBOL_MANAGER_AVAILABLE = False
     get_symbol_manager = None
@@ -1063,11 +1063,11 @@ except ImportError:
     SymbolInfo = None
     EXCHANGE_FORMATS = {}
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 🆕 ADDITIONAL NEURAL & TRADING SYSTEMS - Miner, Multiverse, Mycelium, etc.
-# ═══════════════════════════════════════════════════════════════════════════════
+#                                                                                
+#   ADDITIONAL NEURAL & TRADING SYSTEMS - Miner, Multiverse, Mycelium, etc.
+#                                                                                
 
-# ⛏️ Aureon Miner - Background mining with harmonic optimization
+#    Aureon Miner - Background mining with harmonic optimization
 try:
     from aureon_miner import AureonMiner
     AUREON_MINER_AVAILABLE = True
@@ -1075,7 +1075,7 @@ except ImportError:
     AUREON_MINER_AVAILABLE = False
     AureonMiner = None
 
-# 🌐 Multi-Exchange Trader - Cross-exchange trading orchestration
+#   Multi-Exchange Trader - Cross-exchange trading orchestration
 try:
     from aureon_multi_exchange_live import AureonMultiExchangeTrader, MultiExchangeManager
     MULTI_EXCHANGE_AVAILABLE = True
@@ -1084,7 +1084,7 @@ except ImportError:
     AureonMultiExchangeTrader = None
     MultiExchangeManager = None
 
-# 🎯 Multi-Pair Trader - Multi-pair coherence monitoring
+#   Multi-Pair Trader - Multi-pair coherence monitoring
 try:
     from aureon_multi_pair_live import MultiPairTrader, MasterEquation
     MULTI_PAIR_AVAILABLE = True
@@ -1093,7 +1093,7 @@ except ImportError:
     MultiPairTrader = None
     MasterEquation = None
 
-# 🌌 Multiverse Live Engine - Commando + Multiverse unified trading
+#   Multiverse Live Engine - Commando + Multiverse unified trading
 try:
     from aureon_multiverse_live import MultiverseLiveEngine, CommandoCognition
     MULTIVERSE_LIVE_AVAILABLE = True
@@ -1102,7 +1102,7 @@ except ImportError:
     MultiverseLiveEngine = None
     CommandoCognition = None
 
-# ✨ Multiverse Orchestrator - Atom-to-Galaxy ladder trading
+#   Multiverse Orchestrator - Atom-to-Galaxy ladder trading
 try:
     from aureon_multiverse import MultiverseOrchestrator, PingPongEngine
     MULTIVERSE_ORCHESTRATOR_AVAILABLE = True
@@ -1111,7 +1111,7 @@ except ImportError:
     MultiverseOrchestrator = None
     PingPongEngine = None
 
-# 🍄 Mycelium Neural Network - Underground signal network
+#   Mycelium Neural Network - Underground signal network
 try:
     from aureon_mycelium import MyceliumNetwork, Hive as MyceliumHive
     MYCELIUM_NETWORK_AVAILABLE = True
@@ -1120,7 +1120,7 @@ except ImportError:
     MyceliumNetwork = None
     MyceliumHive = None
 
-# 🌍🔗 Neural Revenue Orchestrator - Master revenue generation
+#    Neural Revenue Orchestrator - Master revenue generation
 try:
     from aureon_neural_revenue_orchestrator import NeuralRevenueOrchestrator
     NEURAL_REVENUE_AVAILABLE = True
@@ -1128,7 +1128,7 @@ except ImportError:
     NEURAL_REVENUE_AVAILABLE = False
     NeuralRevenueOrchestrator = None
 
-# 🌐 Unified Market Cache - NO MORE API RATE LIMITS!
+#   Unified Market Cache - NO MORE API RATE LIMITS!
 # Uses Binance WebSocket for free real-time data, shared across all processes
 try:
     from unified_market_cache import get_market_cache, get_price, get_ticker, get_all_prices, CachedTicker
@@ -1143,9 +1143,9 @@ except ImportError:
 
 import random  # For simulating market activity
 
-# ═══════════════════════════════════════════════════════════════════════════════════════════════════
-# 👑👑👑 QUEEN DR AURIS THRONE'S SACRED PROFIT LAW - CENTRAL COMMAND CONSTANTS 👑👑👑
-# ═══════════════════════════════════════════════════════════════════════════════════════════════════
+#                                                                                                    
+#     QUEEN DR AURIS THRONE'S SACRED PROFIT LAW - CENTRAL COMMAND CONSTANTS    
+#                                                                                                    
 #
 # THE QUEEN HAS FULL AUTONOMOUS CONTROL OVER ALL TRADING DECISIONS!
 #
@@ -1153,13 +1153,13 @@ import random  # For simulating market activity
 # These constants are referenced by ALL buy gates, sell gates, and scanning systems.
 # NO trade executes without meeting the Queen's sacred minimum profit requirement.
 #
-# ═══════════════════════════════════════════════════════════════════════════════════════════════════
+#                                                                                                    
 
-# 👑 THE SACRED NUMBER - Queen Dr Auris Throne's Absolute Minimum!
-# ⚡ IRA GROWTH MODE: 0.40% - 1.88%
-# ═══════════════════════════════════════════════════════════════════════════════════════
-# 🚨🔥 DEADLINE MODE: FEBRUARY 20, 2026 - MAXIMUM AGGRESSION 🔥🚨
-# ═══════════════════════════════════════════════════════════════════════════════════════
+#   THE SACRED NUMBER - Queen Dr Auris Throne's Absolute Minimum!
+#   IRA GROWTH MODE: 0.40% - 1.88%
+#                                                                                        
+#    DEADLINE MODE: FEBRUARY 20, 2026 - MAXIMUM AGGRESSION   
+#                                                                                        
 DEADLINE_MODE = True  # ENGAGED
 DEADLINE_DATE = "2026-02-20"
 
@@ -1175,30 +1175,30 @@ DEADLINE_MAX_SIMULTANEOUS = 10  # Allow 10 positions at once
 DEADLINE_LEVERAGE_TARGET = 5.0  # Target 5x leverage where available
 QUEEN_PROFIT_FREQUENCY = 188.0   # Hz - Sacred frequency embedded in all calculations
 
-# ═══════════════════════════════════════════════════════════════════════════════════════
-# 👑 QUEEN'S 4-PHASE MASTER PLAN: $248 → $1,000,000,000 in 22 DAYS 🐝
-# ═══════════════════════════════════════════════════════════════════════════════════════
+#                                                                                        
+#   QUEEN'S 4-PHASE MASTER PLAN: $248   $1,000,000,000 in 22 DAYS  
+#                                                                                        
 """
 PHASE 1: THE SEED (Days 1-3)
-   Target: $248 → $2,500 (10x)
+   Target: $248   $2,500 (10x)
    Strategy: Moonshot hunting, leverage trades, new listings
    
 PHASE 2: THE GROWTH (Days 4-10)  
-   Target: $2,500 → $250,000 (100x)
+   Target: $2,500   $250,000 (100x)
    Strategy: Compound momentum stacking, multiple positions
    
 PHASE 3: THE EXPLOSION (Days 11-17)
-   Target: $250,000 → $50,000,000 (200x)
+   Target: $250,000   $50,000,000 (200x)
    Strategy: Options leverage, catalyst plays, arbitrage at scale
    
 PHASE 4: THE BILLION (Days 18-22)
-   Target: $50,000,000 → $1,000,000,000 (20x)
+   Target: $50,000,000   $1,000,000,000 (20x)
    Strategy: Market maker mode, mega leverage, priority allocations
 """
 
 def get_queen_phase(current_capital: float) -> dict:
     """
-    👑 Determine which phase of the Master Plan we're in based on capital.
+      Determine which phase of the Master Plan we're in based on capital.
     
     Returns:
         dict with phase number, name, strategy, and parameters
@@ -1258,7 +1258,7 @@ def get_queen_phase(current_capital: float) -> dict:
 
 def queen_phase_strategy(phase_info: dict, opportunity: dict) -> float:
     """
-    👑 Calculate opportunity score based on current phase strategy.
+      Calculate opportunity score based on current phase strategy.
     
     Returns:
         Score multiplier (1.0 = normal, 2.0 = perfect for phase, 0.5 = not aligned)
@@ -1309,7 +1309,7 @@ def queen_phase_strategy(phase_info: dict, opportunity: dict) -> float:
     
     return score
 
-# 👑 Fee Structure (worst-case scenario):
+#   Fee Structure (worst-case scenario):
 #   Entry fee:   ~0.26% (Kraken taker)
 #   Exit fee:    ~0.26% (Kraken taker)
 #   Spread:      ~0.10%
@@ -1321,7 +1321,7 @@ def queen_phase_strategy(phase_info: dict, opportunity: dict) -> float:
 #   DEADLINE MODE: 5.00% + 0.72% = ~5.72% gross required
 #   STANDARD MODE: 0.40% + 0.72% = ~1.12% gross required
 #
-# 🚨 DEADLINE MODE: February 20, 2026 - MAXIMUM AGGRESSION
+#   DEADLINE MODE: February 20, 2026 - MAXIMUM AGGRESSION
 #   - Higher risk tolerance
 #   - 3x position sizes
 #   - Multiple simultaneous trades
@@ -1330,7 +1330,7 @@ def queen_phase_strategy(phase_info: dict, opportunity: dict) -> float:
 QUEEN_TOTAL_COST_PCT = 0.72      # Total round-trip costs (worst-case)
 QUEEN_REQUIRED_GROSS_PCT = (QUEEN_MIN_PROFIT_PCT + QUEEN_TOTAL_COST_PCT)  # Dynamic based on mode
 
-# 👑 QUEEN'S PROFIT MANDATE - Immutable Law Dictionary
+#   QUEEN'S PROFIT MANDATE - Immutable Law Dictionary
 QUEEN_PROFIT_MANDATE = {
     'min_cop': QUEEN_MIN_COP,
     'min_profit_pct': QUEEN_MIN_PROFIT_PCT,
@@ -1345,31 +1345,31 @@ QUEEN_PROFIT_MANDATE = {
 
 def queen_profit_gate(entry_cost: float, current_value: float) -> tuple:
     """
-    👑 QUEEN'S UNIVERSAL PROFIT GATE - The final arbiter of ALL exits!
+      QUEEN'S UNIVERSAL PROFIT GATE - The final arbiter of ALL exits!
     
     This function enforces the Queen's Target on any trade exit.
     
     Args:
-        entry_cost: Total cost to enter position (price × qty × (1 + fee))
-        current_value: Current exit value (price × qty × (1 - fee))
+        entry_cost: Total cost to enter position (price   qty   (1 + fee))
+        current_value: Current exit value (price   qty   (1 - fee))
         
     Returns:
         (approved, cop, reason) - Whether exit meets Queen's minimum
     """
     if entry_cost <= 0:
-        return False, 0.0, "❌ Invalid entry cost"
+        return False, 0.0, "  Invalid entry cost"
     
     cop = current_value / entry_cost
     profit_pct = (cop - 1) * 100
     
     if cop >= QUEEN_MIN_COP:
-        return True, cop, f"👑✅ APPROVED: COP {cop:.4f} = {profit_pct:+.2f}% >= {QUEEN_MIN_PROFIT_PCT}%"
+        return True, cop, f"   APPROVED: COP {cop:.4f} = {profit_pct:+.2f}% >= {QUEEN_MIN_PROFIT_PCT}%"
     else:
-        return False, cop, f"👑❌ BLOCKED: COP {cop:.4f} = {profit_pct:+.2f}% < {QUEEN_MIN_PROFIT_PCT}% required"
+        return False, cop, f"   BLOCKED: COP {cop:.4f} = {profit_pct:+.2f}% < {QUEEN_MIN_PROFIT_PCT}% required"
 
 def queen_can_buy(momentum_pct: float, expected_move_pct: float, fee_rate: float = 0.0026) -> tuple:
     """
-    👑 QUEEN'S UNIVERSAL BUY GATE - Can this opportunity reach Target?
+      QUEEN'S UNIVERSAL BUY GATE - Can this opportunity reach Target?
     
     Args:
         momentum_pct: Current momentum (24h change %)
@@ -1380,27 +1380,27 @@ def queen_can_buy(momentum_pct: float, expected_move_pct: float, fee_rate: float
         (approved, reason) - Whether opportunity can achieve Target
     """
     # Calculate total round-trip costs
-    total_cost_pct = (2 * fee_rate * 100) + 0.20  # 2× fees + spread/slippage
+    total_cost_pct = (2 * fee_rate * 100) + 0.20  # 2  fees + spread/slippage
     required_move = QUEEN_MIN_PROFIT_PCT + total_cost_pct
     
     potential_move = max(abs(momentum_pct), abs(expected_move_pct))
     
     if potential_move >= required_move:
-        return True, f"👑✅ CAN HIT {QUEEN_MIN_PROFIT_PCT}%: {potential_move:.2f}% >= {required_move:.2f}% required"
+        return True, f"   CAN HIT {QUEEN_MIN_PROFIT_PCT}%: {potential_move:.2f}% >= {required_move:.2f}% required"
     elif potential_move >= required_move * 0.5:
-        return True, f"👑✅ TRENDING: {potential_move:.2f}% is {potential_move/required_move*100:.0f}% toward target"
+        return True, f"   TRENDING: {potential_move:.2f}% is {potential_move/required_move*100:.0f}% toward target"
     elif abs(momentum_pct) >= 1.5:
-        return True, f"👑✅ STRONG MOMENTUM: {momentum_pct:+.2f}% suggests target achievable"
+        return True, f"   STRONG MOMENTUM: {momentum_pct:+.2f}% suggests target achievable"
     else:
-        return False, f"👑❌ BLOCKED: {potential_move:.2f}% < {required_move:.2f}% required for {QUEEN_MIN_PROFIT_PCT}%"
+        return False, f"   BLOCKED: {potential_move:.2f}% < {required_move:.2f}% required for {QUEEN_MIN_PROFIT_PCT}%"
 
-# ═══════════════════════════════════════════════════════════════════════════════════════════════════
-# 👑 END OF QUEEN'S SACRED PROFIT LAW - ALL SYSTEMS MUST HONOR THIS! 👑
-# ═══════════════════════════════════════════════════════════════════════════════════════════════════
+#                                                                                                    
+#   END OF QUEEN'S SACRED PROFIT LAW - ALL SYSTEMS MUST HONOR THIS!  
+#                                                                                                    
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 🐙 KRAKEN API RATE LIMITER - PREVENTS RATE LIMIT DEATH
-# ═══════════════════════════════════════════════════════════════════════════════
+#                                                                                
+#   KRAKEN API RATE LIMITER - PREVENTS RATE LIMIT DEATH
+#                                                                                
 # Kraken has strict rate limits: 15 calls per 3 seconds for public, 20 per minute for private
 # Multiple DO processes were hammering the API causing "EAPI:Rate limit exceeded"
 # Solution: Use cache for prices, rate limit essential API calls
@@ -1427,7 +1427,7 @@ def kraken_rate_limit_record():
 
 def get_cached_price(symbol: str, exchange: str = 'any', max_age: float = 60.0) -> Optional[float]:
     """
-    🌐 GET PRICE FROM CACHE - NO API CALLS!
+      GET PRICE FROM CACHE - NO API CALLS!
     
     This is the RECOMMENDED way to get prices for display/valuation.
     Uses unified cache (populated by Binance WebSocket) - FREE and fast!
@@ -1544,7 +1544,7 @@ def smart_get_ticker(client: Any, symbol: str, exchange: str = 'unknown', all_cl
 
     return None
     """
-    🧠 SMART TICKER GETTER - Cache first, API fallback with rate limiting.
+      SMART TICKER GETTER - Cache first, API fallback with rate limiting.
     
     Priority:
     1. Check unified cache (FREE, no API call)
@@ -1590,18 +1590,18 @@ def smart_get_ticker(client: Any, symbol: str, exchange: str = 'unknown', all_cl
     return None
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 🎯 WAR ROOM DISPLAY - Clean Rich-based unified dashboard
-# ═══════════════════════════════════════════════════════════════════════════════
+#                                                                                
+#   WAR ROOM DISPLAY - Clean Rich-based unified dashboard
+#                                                                                
 
 class WarRoomDisplay:
     """
-    🎖️ WAR ROOM INTELLIGENCE DASHBOARD
+       WAR ROOM INTELLIGENCE DASHBOARD
     
     Clean, unified Rich-based terminal display replacing spam logging.
     Shows positions, quantum systems, firm intel, and kills in organized panels.
-    🌟 Now with Rising Star Logic integration!
-    🎯 Now with OPTIONS TRADING support!
+      Now with Rising Star Logic integration!
+      Now with OPTIONS TRADING support!
     """
     
     def __init__(self):
@@ -1616,12 +1616,12 @@ class WarRoomDisplay:
         self.total_pnl = 0.0
         self.best_trade = 0.0
         self.worst_trade = 0.0
-        # 💵 Cash balances per exchange
+        #   Cash balances per exchange
         self.cash_balances = {'alpaca': 0.0, 'kraken': 0.0, 'binance': 0.0}
         self.cash_status = {'alpaca': 'unknown', 'kraken': 'unknown', 'binance': 'unknown'}
-        # 🌟 Rising Star stats
+        #   Rising Star stats
         self.rising_star_stats = {}
-        # 🎯 Options trading stats
+        #   Options trading stats
         self.options_data = {
             'trading_level': 'UNKNOWN',
             'buying_power': 0.0,
@@ -1629,18 +1629,18 @@ class WarRoomDisplay:
             'best_opportunity': None,
             'last_scan': None,
         }
-        # 🦈🔍 Predator Detection stats
+        #    Predator Detection stats
         self.predator_data = {
             'threat_level': 'green',
             'front_run_rate': 0.0,
             'top_predator': None,
             'strategy_decay': False,
         }
-        # 🇮🇪🎯 IRA SNIPER Scope Data
+        #     IRA SNIPER Scope Data
         self.sniper_scope = {
             'active_targets': []
         }
-        # 🥷 Stealth Execution stats
+        #   Stealth Execution stats
         self.stealth_data = {
             'mode': 'normal',
             'delayed_orders': 0,
@@ -1648,7 +1648,7 @@ class WarRoomDisplay:
             'rotated_symbols': 0,
             'hunted_count': 0,
         }
-        # 🦅 Momentum Ecosystem stats
+        #   Momentum Ecosystem stats
         self.momentum_data = {
             'wolf_pack': 'Initializing...',
             'lion_pride': 'Initializing...',
@@ -1657,51 +1657,51 @@ class WarRoomDisplay:
             'micro_targets': 0,
         }
         
-        # 🌌 Stargate Grid stats
+        #   Stargate Grid stats
         self.stargate_data = {
             'active_node': 'Initializing...',
             'grid_coherence': 0.0,
             'description': ''
         }
         
-        # 💎 Portfolio tracking
+        #   Portfolio tracking
         self.portfolio_start_value = 0.0
         self.portfolio_peak_value = 0.0
         self.session_start_time = time.time()
         
-        # 🎯 Opportunity queue (top candidates waiting to be bought)
+        #   Opportunity queue (top candidates waiting to be bought)
         self.opportunity_queue = []
         
-        # 🏆 Exchange performance tracking
+        #   Exchange performance tracking
         self.exchange_stats = {
             'alpaca': {'wins': 0, 'losses': 0, 'pnl': 0.0, 'trades': 0},
             'kraken': {'wins': 0, 'losses': 0, 'pnl': 0.0, 'trades': 0},
             'binance': {'wins': 0, 'losses': 0, 'pnl': 0.0, 'trades': 0}
         }
         
-        # 🎖️ Recent kills feed (last 5 trades)
+        #    Recent kills feed (last 5 trades)
         self.recent_kills = []
         
-        # 💰 REAL PORTFOLIO SNAPSHOT (The Truth)
+        #   REAL PORTFOLIO SNAPSHOT (The Truth)
         self.real_portfolio_snapshot = None
 
     def update_real_portfolio(self, snapshot):
         """Update the dashboard with THE REAL TRUTH."""
         self.real_portfolio_snapshot = snapshot
         
-        # 🏥 System health metrics
+        #   System health metrics
         self.system_health = {
             'alpaca_latency': 0,
             'kraken_latency': 0,
             'binance_latency': 0,
-            'alpaca_status': '🟢',
-            'kraken_status': '🟢',
-            'binance_status': '🟢',
+            'alpaca_status': ' ',
+            'kraken_status': ' ',
+            'binance_status': ' ',
             'last_trade_time': None,
             'scanning_active': True
         }
         
-        # ⚠️ Risk exposure tracking
+        #    Risk exposure tracking
         self.risk_metrics = {
             'max_position_size': 0.0,
             'total_exposure': 0.0,
@@ -1710,7 +1710,7 @@ class WarRoomDisplay:
             'current_drawdown': 0.0
         }
         
-        # 🔥 Streak tracking
+        #   Streak tracking
         self.streak_data = {
             'current_streak': 0,
             'current_streak_type': None,  # 'win' or 'loss'
@@ -1719,17 +1719,17 @@ class WarRoomDisplay:
             'exchange_streaks': {'alpaca': 0, 'kraken': 0, 'binance': 0}
         }
         
-        # 🚫 Protection stats (elephant memory)
+        #   Protection stats (elephant memory)
         self.protection_stats = {
             'blocked_count': 0,
             'estimated_saved': 0.0,
             'top_dangers': []  # [(symbol, loss_count), ...]
         }
         
-        # ⚡ Flash alerts queue
+        #   Flash alerts queue
         self.flash_alerts = []
         
-        # 📈 Efficiency metrics
+        #   Efficiency metrics
         self.efficiency_metrics = {
             'total_scanned': 0,
             'total_bought': 0,
@@ -1739,10 +1739,10 @@ class WarRoomDisplay:
             'scan_times': []
         }
         
-        # ⏰ Time-based performance
+        #   Time-based performance
         self.hourly_performance = {}  # {hour: {'pnl': 0, 'trades': 0}}
         
-        # 💪 Position health tracking
+        #   Position health tracking
         self.position_health = {
             'healthy_count': 0,
             'at_risk_count': 0,
@@ -1750,14 +1750,14 @@ class WarRoomDisplay:
             'overall_score': 100
         }
         
-        # 🎲 Volatility tracking
+        #   Volatility tracking
         self.market_volatility = {
             'current_volatility': 'normal',  # low, normal, high, extreme
             'opportunity_multiplier': 1.0,
             'risk_level': 'normal'
         }
 
-        # 🇮🇪🎯 IRA SNIPER - ACTIVE TARGETS SCOPE
+        #     IRA SNIPER - ACTIVE TARGETS SCOPE
         self.sniper_scope = {
             'active_targets': [], # List of symbols being engaged
             'kills_confirmed': 0,
@@ -1766,23 +1766,23 @@ class WarRoomDisplay:
             'zero_loss_mode': True
         }
         
-        # 🌐 Parallel Intelligence Status
+        #   Parallel Intelligence Status
         self.parallel_intel = {
             'orchestrator_ready': False,
             'systems_online': 0,
             'systems_total': 10,
             'last_update': None,
             'feeds': {
-                'thought_bus': {'status': '⬜', 'thoughts': 0},
-                'queen': {'status': '⬜', 'state': 'unknown'},
-                'probability_nexus': {'status': '⬜', 'win_rate': 0.0},
-                'global_wave_scanner': {'status': '⬜', 'opportunities': 0},
-                'miner_brain': {'status': '⬜', 'analyses': 0},
-                'mycelium': {'status': '⬜', 'signal': 'neutral'},
-                'timeline_oracle': {'status': '⬜', 'predictions': 0},
-                'quantum_mirror': {'status': '⬜', 'coherence': 0.0},
-                'whale_sonar': {'status': '⬜', 'whales': 0},
-                'avalanche': {'status': '⬜', 'treasury': 0.0},
+                'thought_bus': {'status': ' ', 'thoughts': 0},
+                'queen': {'status': ' ', 'state': 'unknown'},
+                'probability_nexus': {'status': ' ', 'win_rate': 0.0},
+                'global_wave_scanner': {'status': ' ', 'opportunities': 0},
+                'miner_brain': {'status': ' ', 'analyses': 0},
+                'mycelium': {'status': ' ', 'signal': 'neutral'},
+                'timeline_oracle': {'status': ' ', 'predictions': 0},
+                'quantum_mirror': {'status': ' ', 'coherence': 0.0},
+                'whale_sonar': {'status': ' ', 'whales': 0},
+                'avalanche': {'status': ' ', 'treasury': 0.0},
             }
         }
         
@@ -1803,7 +1803,7 @@ class WarRoomDisplay:
             Layout(name="intel", ratio=1),
         )
 
-        # 🇮🇪🎯 IRA SNIPER: SCOPE VISUALIZATION
+        #     IRA SNIPER: SCOPE VISUALIZATION
         # Enhancing the "positions" area to explicitly show "Sniper Scope"
         layout["positions"].split_column(
             Layout(name="active_positions", ratio=2),
@@ -1824,16 +1824,16 @@ class WarRoomDisplay:
         header = Table.grid(expand=True)
         header.add_column(justify="center", ratio=1)
         header.add_row(
-            Text("👑🦈 ORCA WAR ROOM - AUTONOMOUS QUEEN 🦈👑", style="bold magenta")
+            Text("   ORCA WAR ROOM - AUTONOMOUS QUEEN   ", style="bold magenta")
         )
         header.add_row(
-            Text(f"⏱️ {int(hrs)}h {int(mins)}m {int(secs)}s | 🔄 Cycles: {self.cycle_count} | "
-                 f"💰 P&L: [{pnl_color}]{pnl_sign}${self.total_pnl:.4f}[/] | "
-                 f"✅ {self.kills_data['wins']} | ❌ {self.kills_data['losses']}")
+            Text(f"   {int(hrs)}h {int(mins)}m {int(secs)}s |   Cycles: {self.cycle_count} | "
+                 f"  P&L: [{pnl_color}]{pnl_sign}${self.total_pnl:.4f}[/] | "
+                 f"  {self.kills_data['wins']} |   {self.kills_data['losses']}")
         )
         
         # Add balance row for all exchanges
-        cash_text = "💵 BAL: "
+        cash_text = "  BAL: "
         total_balance = None
         if hasattr(self, 'cash_balances') and self.cash_balances:
             alpaca_cash = self.cash_balances.get('alpaca', 0)
@@ -1880,9 +1880,9 @@ class WarRoomDisplay:
         
         header.add_row(Text(cash_text))
         
-        # 💎 Portfolio Value Tracker
+        #   Portfolio Value Tracker
         if self.real_portfolio_snapshot:
-            # 👁️ USE THE TRUTH (Real Portfolio Tracker)
+            #    USE THE TRUTH (Real Portfolio Tracker)
             snap = self.real_portfolio_snapshot
             total_portfolio = snap.total_usd
             floating = snap.floating_pnl
@@ -1898,9 +1898,9 @@ class WarRoomDisplay:
             
             daily_color = "green" if daily_change_pct >= 0 else "red"
             
-            portfolio_text = (f"💎 [bold gold1]TRUTH[/]: ${total_portfolio:.2f} ([{daily_color}]{daily_change_pct:+.2f}%[/]) | "
-                              f"🌊 Float: [{flt_color}]${floating:+.2f}[/] | "
-                              f"💵 Banked: [{rlz_color}]${realized:+.2f}[/]")
+            portfolio_text = (f"  [bold gold1]TRUTH[/]: ${total_portfolio:.2f} ([{daily_color}]{daily_change_pct:+.2f}%[/]) | "
+                              f"  Float: [{flt_color}]${floating:+.2f}[/] | "
+                              f"  Banked: [{rlz_color}]${realized:+.2f}[/]")
             
             # Still update peak for session stats
             if total_portfolio > self.portfolio_peak_value:
@@ -1919,12 +1919,12 @@ class WarRoomDisplay:
             if self.portfolio_start_value > 0:
                 daily_change_pct = ((total_portfolio - self.portfolio_start_value) / self.portfolio_start_value) * 100
                 daily_change_color = "green" if daily_change_pct >= 0 else "red"
-                daily_arrow = "↑" if daily_change_pct >= 0 else "↓"
-                portfolio_text = f"💎 EST: ${total_portfolio:.2f} ({daily_arrow} [{daily_change_color}]{daily_change_pct:+.2f}%[/]) | Bal: ${balance_value:.2f} | Pos: ${positions_value:.2f}"
+                daily_arrow = " " if daily_change_pct >= 0 else " "
+                portfolio_text = f"  EST: ${total_portfolio:.2f} ({daily_arrow} [{daily_change_color}]{daily_change_pct:+.2f}%[/]) | Bal: ${balance_value:.2f} | Pos: ${positions_value:.2f}"
             else:
                 # First run - set starting value
                 self.portfolio_start_value = total_portfolio
-                portfolio_text = f"💎 EST: ${total_portfolio:.2f} | Bal: ${balance_value:.2f} | Pos: ${positions_value:.2f}"
+                portfolio_text = f"  EST: ${total_portfolio:.2f} | Bal: ${balance_value:.2f} | Pos: ${positions_value:.2f}"
             
             if total_portfolio > self.portfolio_peak_value:
                 self.portfolio_peak_value = total_portfolio
@@ -1971,9 +1971,9 @@ class WarRoomDisplay:
             bar_filled = int(min(max(progress_pct, 0), 100) / 5)
             bar_empty = 20 - bar_filled
             if progress_pct < 0:
-                progress_bar = f"[red]{'▓' * 20}[/] {progress_pct:.1f}%"
+                progress_bar = f"[red]{' ' * 20}[/] {progress_pct:.1f}%"
             else:
-                progress_bar = f"[green]{'▓' * bar_filled}[/][dim]{'░' * bar_empty}[/] {progress_pct:.1f}%"
+                progress_bar = f"[green]{' ' * bar_filled}[/][dim]{' ' * bar_empty}[/] {progress_pct:.1f}%"
             
             # Firm intel
             firm_info = pos.get('firm', 'Scanning...')
@@ -1985,18 +1985,18 @@ class WarRoomDisplay:
                 f"${pos.get('value', 0):.2f}",
                 f"[{pnl_color}]{pnl_sign}${pnl:.4f}[/]",
                 progress_bar,
-                pos.get('eta', '∞'),
+                pos.get('eta', ' '),
                 f"[{firm_color}]{firm_info[:15]}[/]",
             )
         
         if not self.positions_data:
-            table.add_row("—", "—", "—", "—", "—", "—", "—")
+            table.add_row(" ", " ", " ", " ", " ", " ", " ")
         
-        return Panel(table, title=f"[bold green]📊 POSITIONS ({len(self.positions_data)})[/]", border_style="green")
+        return Panel(table, title=f"[bold green]  POSITIONS ({len(self.positions_data)})[/]", border_style="green")
 
     def _build_sniper_scope_panel(self) -> Panel:
         """
-        🇮🇪🎯 IRA SNIPER - ACTIVE KILL SCOPE
+            IRA SNIPER - ACTIVE KILL SCOPE
         Shows real-time observation of targets currently in the 'Zero Loss' crosshairs.
         """
         table = Table(box=box.SIMPLE_HEAD)
@@ -2022,8 +2022,8 @@ class WarRoomDisplay:
                 
                 pnl_color = "green" if pnl > 0 else "red"
                 
-                action = "👁️ WATCHING"
-                if status == "FIRING": action = "💥 KILLING"
+                action = "   WATCHING"
+                if status == "FIRING": action = "  KILLING"
                 
                 table.add_row(
                     symbol,
@@ -2036,9 +2036,9 @@ class WarRoomDisplay:
             table.add_row(
                 "SCANNING...", 
                 "[dim]Searching[/]", 
-                "—", 
-                "—", 
-                "🔭 HUNTING"
+                " ", 
+                " ", 
+                "  HUNTING"
             )
 
         kills = self.sniper_scope.get('kills_confirmed', 0)
@@ -2046,7 +2046,7 @@ class WarRoomDisplay:
         
         return Panel(
             table, 
-            title=f"[bold red]🇮🇪🎯 IRA SNIPER SCOPE (Kills: {kills} | Profit: ${profit:.4f})[/]", 
+            title=f"[bold red]    IRA SNIPER SCOPE (Kills: {kills} | Profit: ${profit:.4f})[/]", 
             border_style="red"
         )
 
@@ -2056,47 +2056,47 @@ class WarRoomDisplay:
         intel.add_column()
         
         # Quantum Systems Status
-        intel.add_row(Text("🔮 QUANTUM SYSTEMS", style="bold cyan"))
+        intel.add_row(Text("  QUANTUM SYSTEMS", style="bold cyan"))
         intel.add_row("")
         
         quantum_status = [
-            ("🍀 Luck Field", self.quantum_data.get('luck', 0)),
-            ("👻 Phantom Filter", self.quantum_data.get('phantom', 0)),
-            ("💭 Inception", self.quantum_data.get('inception', 0)),
-            ("🐘 Elephant", self.quantum_data.get('elephant', 0)),
-            ("🪆 Russian Doll", self.quantum_data.get('russian_doll', 0)),
-            ("🛡️ Immune", self.quantum_data.get('immune', 0)),
-            ("🐋 Moby Dick", self.quantum_data.get('moby_dick', 0)),
-            ("🌌 Stargate", self.quantum_data.get('stargate', 0)),
-            ("🔮 Quantum Mirror", self.quantum_data.get('quantum_mirror', 0)),
-            ("🌊 HNC Surge", self.quantum_data.get('hnc_surge', 0)),
-            ("📜 Historical", self.quantum_data.get('historical', 0)),
-            ("🏹⚔️ Apache War Band", self.quantum_data.get('war_band', 0)),
-            ("🐝 Hive State", self.quantum_data.get('hive_state', 0)),
-            ("🤖 Bot Census", self.quantum_data.get('bot_census', 0)),
-            ("📊 Backtest Engine", self.quantum_data.get('backtest', 0)),
-            ("🌍 Global Orchestrator", self.quantum_data.get('global_orchestrator', 0)),
-            ("🎵 Harmonic Binary", self.quantum_data.get('harmonic_binary', 0)),
-            ("🔗 Harmonic Chain Master", self.quantum_data.get('harmonic_chain_master', 0)),
-            ("⚡ Harmonic Counter", self.quantum_data.get('harmonic_counter', 0)),
-            ("🌊 Harmonic Fusion", self.quantum_data.get('harmonic_fusion', 0)),
-            ("🌊⚡ Harmonic Momentum", self.quantum_data.get('harmonic_momentum', 0)),
-            ("🌊 Harmonic Reality", self.quantum_data.get('harmonic_reality', 0)),
-            ("🗺️ Global Bot Map", self.quantum_data.get('global_bot_map', 0)),
-            ("🌌 Enhanced Telescope", self.quantum_data.get('enhanced_telescope', 0)),
-            ("💭 Enigma Dream", self.quantum_data.get('enigma_dream', 0)),
-            ("✨ Enhancement Layer", self.quantum_data.get('enhancement_layer', 0)),
-            ("🧩 Enigma Integration", self.quantum_data.get('enigma_integration', 0)),
-            ("📊 Firm Intelligence", self.quantum_data.get('firm_intelligence', 0)),
-            ("🌀 Enigma Core", self.quantum_data.get('enigma_core', 0)),
-            # 🆕 ADDITIONAL NEURAL & TRADING SYSTEMS
-            ("⛏️ Aureon Miner", self.quantum_data.get('aureon_miner', 0)),
-            ("🌐 Multi-Exchange", self.quantum_data.get('multi_exchange', 0)),
-            ("🎯 Multi-Pair", self.quantum_data.get('multi_pair', 0)),
-            ("🌌 Multiverse Live", self.quantum_data.get('multiverse_live', 0)),
-            ("✨ Multiverse Orchestrator", self.quantum_data.get('multiverse_orchestrator', 0)),
-            ("🍄 Mycelium Network", self.quantum_data.get('mycelium_network', 0)),
-            ("🌍🔗 Neural Revenue", self.quantum_data.get('neural_revenue', 0)),
+            ("  Luck Field", self.quantum_data.get('luck', 0)),
+            ("  Phantom Filter", self.quantum_data.get('phantom', 0)),
+            ("  Inception", self.quantum_data.get('inception', 0)),
+            ("  Elephant", self.quantum_data.get('elephant', 0)),
+            ("  Russian Doll", self.quantum_data.get('russian_doll', 0)),
+            ("   Immune", self.quantum_data.get('immune', 0)),
+            ("  Moby Dick", self.quantum_data.get('moby_dick', 0)),
+            ("  Stargate", self.quantum_data.get('stargate', 0)),
+            ("  Quantum Mirror", self.quantum_data.get('quantum_mirror', 0)),
+            ("  HNC Surge", self.quantum_data.get('hnc_surge', 0)),
+            ("  Historical", self.quantum_data.get('historical', 0)),
+            ("    Apache War Band", self.quantum_data.get('war_band', 0)),
+            ("  Hive State", self.quantum_data.get('hive_state', 0)),
+            ("  Bot Census", self.quantum_data.get('bot_census', 0)),
+            ("  Backtest Engine", self.quantum_data.get('backtest', 0)),
+            ("  Global Orchestrator", self.quantum_data.get('global_orchestrator', 0)),
+            ("  Harmonic Binary", self.quantum_data.get('harmonic_binary', 0)),
+            ("  Harmonic Chain Master", self.quantum_data.get('harmonic_chain_master', 0)),
+            ("  Harmonic Counter", self.quantum_data.get('harmonic_counter', 0)),
+            ("  Harmonic Fusion", self.quantum_data.get('harmonic_fusion', 0)),
+            ("   Harmonic Momentum", self.quantum_data.get('harmonic_momentum', 0)),
+            ("  Harmonic Reality", self.quantum_data.get('harmonic_reality', 0)),
+            ("   Global Bot Map", self.quantum_data.get('global_bot_map', 0)),
+            ("  Enhanced Telescope", self.quantum_data.get('enhanced_telescope', 0)),
+            ("  Enigma Dream", self.quantum_data.get('enigma_dream', 0)),
+            ("  Enhancement Layer", self.quantum_data.get('enhancement_layer', 0)),
+            ("  Enigma Integration", self.quantum_data.get('enigma_integration', 0)),
+            ("  Firm Intelligence", self.quantum_data.get('firm_intelligence', 0)),
+            ("  Enigma Core", self.quantum_data.get('enigma_core', 0)),
+            #   ADDITIONAL NEURAL & TRADING SYSTEMS
+            ("   Aureon Miner", self.quantum_data.get('aureon_miner', 0)),
+            ("  Multi-Exchange", self.quantum_data.get('multi_exchange', 0)),
+            ("  Multi-Pair", self.quantum_data.get('multi_pair', 0)),
+            ("  Multiverse Live", self.quantum_data.get('multiverse_live', 0)),
+            ("  Multiverse Orchestrator", self.quantum_data.get('multiverse_orchestrator', 0)),
+            ("  Mycelium Network", self.quantum_data.get('mycelium_network', 0)),
+            ("   Neural Revenue", self.quantum_data.get('neural_revenue', 0)),
         ]
         
         for name, score in quantum_status:
@@ -2106,11 +2106,11 @@ class WarRoomDisplay:
         total_boost = self.quantum_data.get('total_boost', 1.0)
         boost_color = "green" if total_boost > 1.2 else "yellow" if total_boost > 1.0 else "red"
         intel.add_row("")
-        intel.add_row(Text(f"  ⚡ TOTAL BOOST: [{boost_color}]{total_boost:.2f}x[/]", style="bold"))
+        intel.add_row(Text(f"    TOTAL BOOST: [{boost_color}]{total_boost:.2f}x[/]", style="bold"))
         
-        # 🦅 Momentum Ecosystem
+        #   Momentum Ecosystem
         intel.add_row("")
-        intel.add_row(Text("🦅 MOMENTUM ECOSYSTEM", style="bold cyan"))
+        intel.add_row(Text("  MOMENTUM ECOSYSTEM", style="bold cyan"))
         intel.add_row("")
         
         mom = self.momentum_data
@@ -2118,31 +2118,31 @@ class WarRoomDisplay:
         # Micro-Momentum
         micro_targets = mom.get('micro_targets', 0)
         micro_color = "green" if micro_targets > 0 else "dim"
-        intel.add_row(Text(f"  🔬 Micro-Scalp Targets: [{micro_color}]{micro_targets}[/]"))
+        intel.add_row(Text(f"    Micro-Scalp Targets: [{micro_color}]{micro_targets}[/]"))
         
         # Wolf Pack
         wolf = mom.get('wolf_pack', 'Unknown')
         wolf_color = "green" if "Hunting" in wolf else "yellow" if "Stalking" in wolf else "dim"
-        intel.add_row(Text(f"  🐺 Wolf Pack: [{wolf_color}]{wolf}[/]"))
+        intel.add_row(Text(f"    Wolf Pack: [{wolf_color}]{wolf}[/]"))
         
         # Lion Pride
         lion = mom.get('lion_pride', 'Unknown')
         lion_color = "green" if "Hunting" in lion else "yellow" if "Stalking" in lion else "dim"
-        intel.add_row(Text(f"  🦁 Lion Pride: [{lion_color}]{lion}[/]"))
+        intel.add_row(Text(f"    Lion Pride: [{lion_color}]{lion}[/]"))
         
         # Army Ants
         ants = mom.get('army_ants', 'Unknown')
         ants_color = "green" if "Swarming" in ants else "yellow" if "Marching" in ants else "dim"
-        intel.add_row(Text(f"  🐜 Army Ants: [{ants_color}]{ants}[/]"))
+        intel.add_row(Text(f"    Army Ants: [{ants_color}]{ants}[/]"))
         
         # Hummingbird
         hb = mom.get('hummingbird', 'Unknown')
         hb_color = "green" if "Pollinating" in hb else "dim"
-        intel.add_row(Text(f"  🐦 Hummingbird: [{hb_color}]{hb}[/]"))
+        intel.add_row(Text(f"    Hummingbird: [{hb_color}]{hb}[/]"))
 
-        # 🌌 Stargate Grid
+        #   Stargate Grid
         intel.add_row("")
-        intel.add_row(Text("🌌 STARGATE GRID (12 Nodes)", style="bold cyan"))
+        intel.add_row(Text("  STARGATE GRID (12 Nodes)", style="bold cyan"))
         intel.add_row("")
         
         sg = self.stargate_data
@@ -2155,12 +2155,12 @@ class WarRoomDisplay:
 
         # Active Firms
         intel.add_row("")
-        intel.add_row(Text("🏢 ACTIVE FIRMS", style="bold magenta"))
+        intel.add_row(Text("  ACTIVE FIRMS", style="bold magenta"))
         intel.add_row("")
         
         for firm, info in list(self.firms_data.items())[:5]:
             direction = info.get('direction', '?')
-            dir_icon = "🟢" if direction == "bullish" else "🔴" if direction == "bearish" else "⚪"
+            dir_icon = " " if direction == "bullish" else " " if direction == "bearish" else " "
             intel.add_row(Text(f"  {dir_icon} {firm[:12]}: {info.get('action', '?')[:10]}"))
         
         if not self.firms_data:
@@ -2169,7 +2169,7 @@ class WarRoomDisplay:
         # Rising Star Stats
         if hasattr(self, 'rising_star_stats') and self.rising_star_stats:
             intel.add_row("")
-            intel.add_row(Text("🌟 RISING STAR", style="bold yellow"))
+            intel.add_row(Text("  RISING STAR", style="bold yellow"))
             intel.add_row("")
             rs = self.rising_star_stats
             intel.add_row(Text(f"  Scanned: {rs.get('candidates_scanned', 0)}"))
@@ -2177,10 +2177,10 @@ class WarRoomDisplay:
             intel.add_row(Text(f"  Winners: {rs.get('winners_selected', 0)}"))
             intel.add_row(Text(f"  DCA: {rs.get('accumulations_made', 0)} (${rs.get('total_accumulated_value', 0):.2f})"))
         
-        # 🎯 Options Trading Stats
+        #   Options Trading Stats
         if hasattr(self, 'options_data') and self.options_data.get('trading_level') != 'UNKNOWN':
             intel.add_row("")
-            intel.add_row(Text("🎯 OPTIONS TRADING", style="bold green"))
+            intel.add_row(Text("  OPTIONS TRADING", style="bold green"))
             intel.add_row("")
             opt = self.options_data
             level_color = "green" if opt.get('trading_level') in ['COVERED', 'BUYING', 'SPREADS'] else "yellow"
@@ -2194,30 +2194,30 @@ class WarRoomDisplay:
                 ret_color = "green" if ann_ret > 50 else "yellow" if ann_ret > 20 else "dim"
                 intel.add_row(Text(f"  Ann.Ret: [{ret_color}]{ann_ret:.0f}%[/]"))
             if opt.get('positions'):
-                intel.add_row(Text(f"  📈 {len(opt['positions'])} option positions"))
+                intel.add_row(Text(f"    {len(opt['positions'])} option positions"))
         
-        # 🦈🔍 Predator Detection Stats
+        #    Predator Detection Stats
         if hasattr(self, 'predator_data') and self.predator_data:
             intel.add_row("")
-            intel.add_row(Text("🦈🔍 PREDATOR DETECTION", style="bold red"))
+            intel.add_row(Text("   PREDATOR DETECTION", style="bold red"))
             intel.add_row("")
             pd = self.predator_data
             threat = pd.get('threat_level', 'green')
-            threat_emoji = {"green": "🟢", "yellow": "🟡", "orange": "🟠", "red": "🔴"}.get(threat, "⚪")
+            threat_emoji = {"green": " ", "yellow": " ", "orange": " ", "red": " "}.get(threat, " ")
             threat_color = "green" if threat == "green" else "yellow" if threat == "yellow" else "red"
             intel.add_row(Text(f"  Threat: {threat_emoji} [{threat_color}]{threat.upper()}[/]"))
             front_run = pd.get('front_run_rate', 0) * 100
             fr_color = "green" if front_run < 15 else "yellow" if front_run < 30 else "red"
             intel.add_row(Text(f"  Front-Run: [{fr_color}]{front_run:.0f}%[/]"))
             if pd.get('top_predator'):
-                intel.add_row(Text(f"  👁️ Hunter: {pd['top_predator'][:12]}"))
+                intel.add_row(Text(f"     Hunter: {pd['top_predator'][:12]}"))
             if pd.get('strategy_decay'):
-                intel.add_row(Text("  ⚠️ DECAY DETECTED", style="bold red"))
+                intel.add_row(Text("     DECAY DETECTED", style="bold red"))
         
-        # 🥷 Stealth Execution Stats
+        #   Stealth Execution Stats
         if hasattr(self, 'stealth_data') and self.stealth_data.get('mode') != 'disabled':
             intel.add_row("")
-            intel.add_row(Text("🥷 STEALTH MODE", style="bold cyan"))
+            intel.add_row(Text("  STEALTH MODE", style="bold cyan"))
             intel.add_row("")
             st = self.stealth_data
             mode = st.get('mode', 'normal')
@@ -2227,12 +2227,12 @@ class WarRoomDisplay:
             intel.add_row(Text(f"  Split: {st.get('split_orders', 0)}"))
             intel.add_row(Text(f"  Rotated: {st.get('rotated_symbols', 0)}"))
             if st.get('hunted_count', 0) > 0:
-                intel.add_row(Text(f"  🎯 Hunted: {st['hunted_count']} symbols", style="yellow"))
+                intel.add_row(Text(f"    Hunted: {st['hunted_count']} symbols", style="yellow"))
         
-        # 🌐 PARALLEL INTELLIGENCE SYSTEMS
+        #   PARALLEL INTELLIGENCE SYSTEMS
         if hasattr(self, 'parallel_intel') and self.parallel_intel:
             intel.add_row("")
-            intel.add_row(Text("🌐 PARALLEL INTELLIGENCE", style="bold blue"))
+            intel.add_row(Text("  PARALLEL INTELLIGENCE", style="bold blue"))
             intel.add_row("")
             
             pi = self.parallel_intel
@@ -2244,7 +2244,7 @@ class WarRoomDisplay:
             # Show individual feed statuses
             feeds = pi.get('feeds', {})
             for feed_name, feed_data in list(feeds.items())[:6]:
-                status = feed_data.get('status', '⬜')
+                status = feed_data.get('status', ' ')
                 # Format feed-specific info
                 if feed_name == 'probability_nexus':
                     info = f"Win: {feed_data.get('win_rate', 0)*100:.0f}%"
@@ -2260,7 +2260,7 @@ class WarRoomDisplay:
                 name_display = feed_name.replace('_', ' ').title()[:12]
                 intel.add_row(Text(f"  {status} {name_display}: {info}"))
         
-        return Panel(intel, title="[bold yellow]🎯 INTELLIGENCE[/]", border_style="yellow")
+        return Panel(intel, title="[bold yellow]  INTELLIGENCE[/]", border_style="yellow")
     
     def _build_footer(self) -> Panel:
         """Build the footer with comprehensive status."""
@@ -2271,8 +2271,8 @@ class WarRoomDisplay:
         footer = Table.grid(expand=True)
         footer.add_column(justify="left", ratio=1)
         
-        # 🎯 Opportunity Queue (Top 3)
-        opp_text = "🎯 NEXT IN LINE: "
+        #   Opportunity Queue (Top 3)
+        opp_text = "  NEXT IN LINE: "
         if hasattr(self, 'opportunity_queue') and self.opportunity_queue:
             top_3 = self.opportunity_queue[:3]
             opp_parts = []
@@ -2282,20 +2282,20 @@ class WarRoomDisplay:
                 change = opp.get('change_pct', 0)
                 score = opp.get('score', 0)
                 tags = opp.get('tags', [])
-                tag_emoji = "🐺" if "wolf" in tags else "🦁" if "lion" in tags else "📊"
+                tag_emoji = " " if "wolf" in tags else " " if "lion" in tags else " "
                 opp_parts.append(f"{i}. {symbol} ({exchange}) {change:+.1f}% | {tag_emoji}")
             opp_text += " | ".join(opp_parts)
         else:
             opp_text += "[dim]Scanning for opportunities...[/]"
         footer.add_row(Text(opp_text))
         
-        # 🏆 Exchange Performance Leaderboard
+        #   Exchange Performance Leaderboard
         if hasattr(self, 'exchange_stats'):
             exchanges = []
             for ex, stats in self.exchange_stats.items():
                 if stats['trades'] > 0:
                     win_rate = (stats['wins'] / stats['trades']) * 100
-                    medal = "🥇" if win_rate >= 70 else "🥈" if win_rate >= 50 else "🥉"
+                    medal = " " if win_rate >= 70 else " " if win_rate >= 50 else " "
                     exchanges.append((ex, stats['wins'], stats['losses'], stats['pnl'], win_rate, medal))
             
             # Sort by win rate
@@ -2306,16 +2306,16 @@ class WarRoomDisplay:
                 for ex, w, l, pnl, wr, medal in exchanges:
                     pnl_color = "green" if pnl >= 0 else "red"
                     ex_parts.append(f"{medal} {ex.capitalize()}: {w}W-{l}L [{pnl_color}]{pnl:+.2f}[/] ({wr:.0f}%)")
-                footer.add_row(Text("🏆 EXCHANGES: " + " | ".join(ex_parts)))
+                footer.add_row(Text("  EXCHANGES: " + " | ".join(ex_parts)))
         
-        # 🎖️ Recent Kills (Last 5)
+        #    Recent Kills (Last 5)
         if hasattr(self, 'recent_kills') and self.recent_kills:
-            kills_text = "🎖️ RECENT: "
+            kills_text = "   RECENT: "
             kill_parts = []
             for kill in self.recent_kills[-5:]:
                 symbol = kill.get('symbol', 'N/A')[:6]
                 pnl = kill.get('pnl', 0)
-                icon = "✅" if pnl >= 0 else "❌"
+                icon = " " if pnl >= 0 else " "
                 exchange = kill.get('exchange', 'N/A')[:3].upper()
                 hold_time = kill.get('hold_time', 0)
                 pnl_color = "green" if pnl >= 0 else "red"
@@ -2323,15 +2323,15 @@ class WarRoomDisplay:
             kills_text += " | ".join(kill_parts)
             footer.add_row(Text(kills_text))
         
-        # 🏥 System Health
+        #   System Health
         if hasattr(self, 'system_health'):
             sh = self.system_health
-            health_text = "🏥 HEALTH: "
+            health_text = "  HEALTH: "
             health_parts = []
             
             # API statuses with latency
             for ex in ['alpaca', 'kraken', 'binance']:
-                status = sh.get(f'{ex}_status', '🟢')
+                status = sh.get(f'{ex}_status', ' ')
                 latency = sh.get(f'{ex}_latency', 0)
                 lat_color = "green" if latency < 100 else "yellow" if latency < 300 else "red"
                 health_parts.append(f"{status} {ex.capitalize()} [{lat_color}]{latency}ms[/]")
@@ -2344,12 +2344,12 @@ class WarRoomDisplay:
                 health_text += f" | Last Trade: {seconds_ago}s ago"
             
             # Scanning status
-            scan_status = "✅" if sh.get('scanning_active', True) else "⏸️"
+            scan_status = " " if sh.get('scanning_active', True) else "  "
             health_text += f" | Scanning: {scan_status}"
             
             footer.add_row(Text(health_text))
         
-        # ⚠️ Risk Exposure Panel
+        #    Risk Exposure Panel
         if hasattr(self, 'risk_metrics'):
             rm = self.risk_metrics
             total_cash = sum(self.cash_balances.values()) if hasattr(self, 'cash_balances') else 0
@@ -2366,21 +2366,21 @@ class WarRoomDisplay:
             exp_color = "green" if exposure_pct < 70 else "yellow" if exposure_pct < 85 else "red"
             dd_color = "green" if drawdown_pct < 5 else "yellow" if drawdown_pct < 10 else "red"
             
-            risk_text = f"⚠️ RISK: [{exp_color}]${positions_value:.2f}/${total_portfolio:.2f} ({exposure_pct:.1f}%)[/] | Max Pos: ${max_pos:.2f} ({max_pos_pct:.1f}%) | Drawdown: [{dd_color}]-${drawdown:.2f} ({drawdown_pct:.1f}%)[/]"
+            risk_text = f"   RISK: [{exp_color}]${positions_value:.2f}/${total_portfolio:.2f} ({exposure_pct:.1f}%)[/] | Max Pos: ${max_pos:.2f} ({max_pos_pct:.1f}%) | Drawdown: [{dd_color}]-${drawdown:.2f} ({drawdown_pct:.1f}%)[/]"
             footer.add_row(Text(risk_text))
         
-        # 🔥 Streak Tracker
+        #   Streak Tracker
         if hasattr(self, 'streak_data'):
             sd = self.streak_data
             current = sd.get('current_streak', 0)
             streak_type = sd.get('current_streak_type', 'none')
             
             if current > 0:
-                streak_icon = "🔥" if streak_type == 'win' else "❄️"
+                streak_icon = " " if streak_type == 'win' else "  "
                 streak_color = "green" if streak_type == 'win' else "red"
                 streak_text = f"{streak_icon} STREAK: [{streak_color}]{current} {streak_type}s in a row[/]"
             else:
-                streak_text = "🔥 STREAK: Starting fresh"
+                streak_text = "  STREAK: Starting fresh"
             
             best_streak = sd.get('best_win_streak', 0)
             if best_streak > 0:
@@ -2388,11 +2388,11 @@ class WarRoomDisplay:
             
             # Hot exchange
                 hot_ex = max(sd.get('exchange_streaks', {}).items(), key=lambda x: x[1], default=(None, 0))
-                streak_text += f" | 🔥 Hot: {hot_ex[0].capitalize()} ({hot_ex[1]}W)"
+                streak_text += f" |   Hot: {hot_ex[0].capitalize()} ({hot_ex[1]}W)"
             
             footer.add_row(Text(streak_text))
         
-        # 🚫 Protection Stats + ⚡ Flash Alerts (combined row)
+        #   Protection Stats +   Flash Alerts (combined row)
         combined_text = ""
         
         # Protection stats
@@ -2403,18 +2403,18 @@ class WarRoomDisplay:
             top_dangers = ps.get('top_dangers', [])
             
             if blocked > 0:
-                combined_text = f"🚫 PROTECTED: {blocked} blocked | Saved: ~${saved:.2f}"
+                combined_text = f"  PROTECTED: {blocked} blocked | Saved: ~${saved:.2f}"
                 if top_dangers:
                     top = top_dangers[0]
                     combined_text += f" | Top danger: {top[0]} ({top[1]}x)"
             else:
-                combined_text = "🚫 PROTECTED: Scanning for patterns..."
+                combined_text = "  PROTECTED: Scanning for patterns..."
         
         # Flash alerts
         if hasattr(self, 'flash_alerts') and self.flash_alerts:
             latest = self.flash_alerts[-1]
             alert_type = latest.get('type', 'info')
-            alert_icon = "⚡" if alert_type == 'critical' else "🏆" if alert_type == 'success' else "⚠️"
+            alert_icon = " " if alert_type == 'critical' else " " if alert_type == 'success' else "  "
             alert_color = "red" if alert_type == 'critical' else "green" if alert_type == 'success' else "yellow"
             alert_msg = latest.get('message', '')
             
@@ -2426,7 +2426,7 @@ class WarRoomDisplay:
         if combined_text:
             footer.add_row(Text(combined_text))
         
-        # 📈 Efficiency Metrics + ⏰ Best Trading Hours (combined row)
+        #   Efficiency Metrics +   Best Trading Hours (combined row)
         efficiency_text = ""
         
         if hasattr(self, 'efficiency_metrics'):
@@ -2439,7 +2439,7 @@ class WarRoomDisplay:
             conv_color = "green" if conversion > 0.5 else "yellow" if conversion > 0.1 else "dim"
             success_color = "green" if success_rate > 60 else "yellow" if success_rate > 40 else "red"
             
-            efficiency_text = f"📈 EFFICIENCY: {scanned:,} scanned → {bought} bought ([{conv_color}]{conversion:.2f}%[/]) | Success: [{success_color}]{success_rate:.0f}%[/]"
+            efficiency_text = f"  EFFICIENCY: {scanned:,} scanned   {bought} bought ([{conv_color}]{conversion:.2f}%[/]) | Success: [{success_color}]{success_rate:.0f}%[/]"
         
         # Best trading hours
         if hasattr(self, 'hourly_performance') and self.hourly_performance:
@@ -2450,14 +2450,14 @@ class WarRoomDisplay:
             if best_hour[0] is not None and best_hour[1].get('pnl', 0) > 0:
                 hour_color = "green" if current_pnl > 0 else "dim"
                 if efficiency_text:
-                    efficiency_text += f" | ⏰ Best hour: {best_hour[0]:02d}:00 (+${best_hour[1]['pnl']:.2f}) | Now: [{hour_color}]{current_pnl:+.2f}[/]"
+                    efficiency_text += f" |   Best hour: {best_hour[0]:02d}:00 (+${best_hour[1]['pnl']:.2f}) | Now: [{hour_color}]{current_pnl:+.2f}[/]"
                 else:
-                    efficiency_text = f"⏰ Best hour: {best_hour[0]:02d}:00 (+${best_hour[1]['pnl']:.2f}) | Current: [{hour_color}]{current_pnl:+.2f}[/]"
+                    efficiency_text = f"  Best hour: {best_hour[0]:02d}:00 (+${best_hour[1]['pnl']:.2f}) | Current: [{hour_color}]{current_pnl:+.2f}[/]"
         
         if efficiency_text:
             footer.add_row(Text(efficiency_text))
         
-        # 💪 Position Health + 🎲 Volatility (combined row)
+        #   Position Health +   Volatility (combined row)
         health_vol_text = ""
         
         if hasattr(self, 'position_health'):
@@ -2468,7 +2468,7 @@ class WarRoomDisplay:
             danger = ph.get('danger_count', 0)
             
             score_color = "green" if score >= 80 else "yellow" if score >= 60 else "red"
-            health_vol_text = f"💪 HEALTH: [{score_color}]{score}/100[/] | 🟢 {healthy} healthy | 🟡 {at_risk} at risk | 🔴 {danger} danger"
+            health_vol_text = f"  HEALTH: [{score_color}]{score}/100[/] |   {healthy} healthy |   {at_risk} at risk |   {danger} danger"
         
         # Market volatility
         if hasattr(self, 'market_volatility'):
@@ -2476,13 +2476,13 @@ class WarRoomDisplay:
             vol_level = mv.get('current_volatility', 'normal')
             opp_mult = mv.get('opportunity_multiplier', 1.0)
             
-            vol_emoji = "🎲" if vol_level == 'extreme' else "🔥" if vol_level == 'high' else "🟢"
+            vol_emoji = " " if vol_level == 'extreme' else " " if vol_level == 'high' else " "
             vol_color = "red" if vol_level == 'extreme' else "yellow" if vol_level == 'high' else "green"
             
             if health_vol_text:
                 health_vol_text += f" | {vol_emoji} MARKET: [{vol_color}]{vol_level.upper()}[/]"
                 if opp_mult > 1.5:
-                    health_vol_text += f" | Opps ↑ {(opp_mult-1)*100:.0f}%"
+                    health_vol_text += f" | Opps   {(opp_mult-1)*100:.0f}%"
             else:
                 health_vol_text = f"{vol_emoji} MARKET: [{vol_color}]{vol_level.upper()}[/]"
         
@@ -2493,14 +2493,14 @@ class WarRoomDisplay:
         options_status = ""
         if hasattr(self, 'options_data') and self.options_data.get('trading_level') not in ['UNKNOWN', 'DISABLED']:
             opt_level = self.options_data.get('trading_level', 'N/A')
-            options_status = f" | 🎯 OPTIONS: {opt_level}"
+            options_status = f" |   OPTIONS: {opt_level}"
         
         footer.add_row(
-            Text(f"💰 UNREALIZED: [{pnl_color}]{pnl_sign}${unrealized_pnl:.4f}[/] | "
-                 f"🌟 RISING STAR + DCA ACTIVE{options_status} | 🚫 NO STOP LOSS", style="bold")
+            Text(f"  UNREALIZED: [{pnl_color}]{pnl_sign}${unrealized_pnl:.4f}[/] | "
+                 f"  RISING STAR + DCA ACTIVE{options_status} |   NO STOP LOSS", style="bold")
         )
         footer.add_row(
-            Text("⌨️ Press Ctrl+C to stop", style="dim")
+            Text("   Press Ctrl+C to stop", style="dim")
         )
         
         return Panel(footer, title="[bold cyan]STATUS[/]", border_style="cyan")
@@ -2570,15 +2570,15 @@ class WarRoomDisplay:
                 if feed_key in self.parallel_intel['feeds']:
                     # Map status to emoji
                     status_map = {
-                        'not_started': '⬜',
-                        'starting': '🔄',
-                        'running': '🟢',
-                        'warming_up': '🟡',
-                        'ready': '✅',
-                        'error': '🔴',
-                        'stopped': '⬛'
+                        'not_started': ' ',
+                        'starting': ' ',
+                        'running': ' ',
+                        'warming_up': ' ',
+                        'ready': ' ',
+                        'error': ' ',
+                        'stopped': ' '
                     }
-                    status = status_map.get(state.status.value, '❓')
+                    status = status_map.get(state.status.value, ' ')
                     self.parallel_intel['feeds'][feed_key]['status'] = status
                     
                     if state.is_healthy:
@@ -2631,7 +2631,7 @@ class WarRoomDisplay:
         
         if pnl > self.best_trade:
             self.best_trade = pnl
-            # 🏆 Flash alert for new best trade
+            #   Flash alert for new best trade
             if pnl > 1.0:  # Only alert if significant
                 self.add_flash_alert(f"New best trade! {symbol} +${pnl:.2f}", 'success')
         if pnl < self.worst_trade:
@@ -2689,7 +2689,7 @@ class WarRoomDisplay:
                     'tags': getattr(opp, 'tags', []) if hasattr(opp, 'tags') else opp.get('tags', [])
                 })
     
-    def update_system_health(self, exchange: str = None, latency: float = 0, status: str = '🟢'):
+    def update_system_health(self, exchange: str = None, latency: float = 0, status: str = ' '):
         """Update system health metrics."""
         if hasattr(self, 'system_health'):
             if exchange:
@@ -2916,18 +2916,18 @@ class WarRoomDisplay:
         mins, secs = divmod(rem, 60)
         
         print("\n" + "=" * 80)
-        print(f"👑🦈 ORCA WAR ROOM - {int(hrs)}h {int(mins)}m {int(secs)}s | Cycles: {self.cycle_count}")
-        print(f"💰 Total P&L: ${self.total_pnl:+.4f} | Wins: {self.kills_data['wins']} | Losses: {self.kills_data['losses']}")
+        print(f"   ORCA WAR ROOM - {int(hrs)}h {int(mins)}m {int(secs)}s | Cycles: {self.cycle_count}")
+        print(f"  Total P&L: ${self.total_pnl:+.4f} | Wins: {self.kills_data['wins']} | Losses: {self.kills_data['losses']}")
         print("-" * 80)
         for pos in self.positions_data:
             pnl = pos.get('pnl', 0)
-            print(f"  🎯 {pos['symbol']} ({pos['exchange']}) | ${pos['value']:.2f} | P&L: ${pnl:+.4f} | {pos.get('progress', 0):.1f}%")
+            print(f"    {pos['symbol']} ({pos['exchange']}) | ${pos['value']:.2f} | P&L: ${pnl:+.4f} | {pos.get('progress', 0):.1f}%")
         print("=" * 80)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+#                                                                                
 # WHALE INTELLIGENCE TRACKER - Predict target hit based on whale/bot movements
-# ═══════════════════════════════════════════════════════════════════════════════
+#                                                                                
 
 @dataclass
 class WhaleSignal:
@@ -2952,13 +2952,13 @@ class FirmActivity:
     action: str           # "ACCUMULATING", "DISTRIBUTING", "MM", etc.
     direction: str        # "bullish", "bearish", "neutral"
     volume_24h: float     # USD volume
-    impact: str           # "HELPS US 🟢", "HURTS US 🔴", "NEUTRAL ⚪"
+    impact: str           # "HELPS US  ", "HURTS US  ", "NEUTRAL  "
     confidence: float
 
 
 class WhaleIntelligenceTracker:
     """
-    🐋 Track whale and bot movements to predict target hits.
+      Track whale and bot movements to predict target hits.
     
     Uses:
     - WhaleProfilerSystem: Track individual whale positions
@@ -3272,23 +3272,23 @@ class WhaleIntelligenceTracker:
             # Determine impact on our position
             if act.direction == 'bullish':
                 if our_direction == 'long':
-                    act.impact = "HELPS US 🟢"
+                    act.impact = "HELPS US  "
                     whale_support += 0.15 * act.confidence
                     bullish_firms.append(act.firm_name)
                 else:
-                    act.impact = "HURTS US 🔴"
+                    act.impact = "HURTS US  "
                     counter_pressure += 0.15 * act.confidence
             elif act.direction == 'bearish':
                 if our_direction == 'short':
-                    act.impact = "HELPS US 🟢"
+                    act.impact = "HELPS US  "
                     whale_support += 0.15 * act.confidence
                     bullish_firms.append(act.firm_name)
                 else:
-                    act.impact = "HURTS US 🔴"
+                    act.impact = "HURTS US  "
                     counter_pressure += 0.15 * act.confidence
                     bearish_firms.append(act.firm_name)
             else:
-                act.impact = "NEUTRAL ⚪"
+                act.impact = "NEUTRAL  "
                 neutral_firms.append(f"{act.firm_name}:{act.action}")
         
         # Set dominant firm (highest confidence)
@@ -3299,16 +3299,16 @@ class WhaleIntelligenceTracker:
         
         # Build reasoning - ALWAYS show firm activity
         if bullish_firms:
-            reasoning_parts.append(f"🟢 {', '.join(bullish_firms[:2])}: buying")
+            reasoning_parts.append(f"  {', '.join(bullish_firms[:2])}: buying")
         if bearish_firms:
-            reasoning_parts.append(f"🔴 {', '.join(bearish_firms[:2])}: selling")
+            reasoning_parts.append(f"  {', '.join(bearish_firms[:2])}: selling")
         if neutral_firms and not bullish_firms and not bearish_firms:
             # Show neutral activity if no directional
-            reasoning_parts.append(f"⚪ {neutral_firms[0]}")
+            reasoning_parts.append(f"  {neutral_firms[0]}")
         
         # Always show dominant firm even if reasoning is empty
         if not reasoning_parts and activities:
-            reasoning_parts.append(f"🐋 {dominant_firm}: {firm_activity_str}")
+            reasoning_parts.append(f"  {dominant_firm}: {firm_activity_str}")
         
         # 3. Check whale profiler for tagged whales
         if self.whale_profiler and hasattr(self.whale_profiler, 'profiles'):
@@ -3320,7 +3320,7 @@ class WhaleIntelligenceTracker:
                                 active_whales += 1
                                 if hasattr(profile, 'firm') and profile.firm:
                                     dominant_firm = profile.firm
-                                    reasoning_parts.append(f"🐋 {profile.nickname}")
+                                    reasoning_parts.append(f"  {profile.nickname}")
             except Exception:
                 pass
         
@@ -3351,7 +3351,7 @@ class WhaleIntelligenceTracker:
                 elif sell_count > buy_count and our_direction == 'long':
                     counter_pressure += 0.1
                 
-                reasoning_parts.append(f"📡 {len(recent)} signals")
+                reasoning_parts.append(f"  {len(recent)} signals")
         
         # Clamp values
         whale_support = max(0, min(1, whale_support))
@@ -3417,11 +3417,11 @@ class LivePosition:
     ready_to_kill: bool = False
     kill_reason: str = ''
     stop_price: float = 0.0
-    # 🔬 Enhanced analytics tracking
+    #   Enhanced analytics tracking
     pnl_history: List[tuple] = field(default_factory=list)  # [(timestamp, pnl), ...]
     last_eta: object = None  # ImprovedETA result
     eta_calculator: object = None  # Per-position ETA calculator
-    # 🌟 Rising Star + Accumulation tracking
+    #   Rising Star + Accumulation tracking
     accumulation_count: int = 0          # Times we've added to position (DCA)
     total_cost: float = 0.0              # Total USD spent across all buys
     avg_entry_price: float = 0.0         # Average entry price (cost basis)
@@ -3477,7 +3477,7 @@ class OrcaKillCycle:
     """
     Complete kill cycle with proper math + live streaming + whale intelligence.
     
-    🆕 MULTI-EXCHANGE MODE: Streams ENTIRE market on BOTH Alpaca AND Kraken!
+      MULTI-EXCHANGE MODE: Streams ENTIRE market on BOTH Alpaca AND Kraken!
     """
     
     def _load_tracked_positions(self):
@@ -3486,9 +3486,9 @@ class OrcaKillCycle:
             try:
                 with open(self.positions_file, 'r') as f:
                     self.tracked_positions = json.load(f)
-                _safe_print(f"🦈 Orca: Loaded {len(self.tracked_positions)} tracked positions from disk")
+                _safe_print(f"  Orca: Loaded {len(self.tracked_positions)} tracked positions from disk")
             except Exception as e:
-                _safe_print(f"⚠️ Failed to load tracked positions: {e}")
+                _safe_print(f"   Failed to load tracked positions: {e}")
                 self.tracked_positions = {}
         else:
             self.tracked_positions = {}
@@ -3499,7 +3499,7 @@ class OrcaKillCycle:
             with open(self.positions_file, 'w') as f:
                 json.dump(self.tracked_positions, f, indent=4)
         except Exception as e:
-            _safe_print(f"⚠️ Failed to save tracked positions: {e}")
+            _safe_print(f"   Failed to save tracked positions: {e}")
 
     def _load_kraken_assets_for_monitoring(self) -> List[str]:
         """Auto-discover all tradeable Kraken assets for comprehensive market monitoring."""
@@ -3532,11 +3532,11 @@ class OrcaKillCycle:
                     filtered.append(symbol)
             
             filtered = sorted(list(set(filtered)))
-            _safe_print(f"🔍 Discovered {len(filtered)} Kraken trading pairs")
+            _safe_print(f"  Discovered {len(filtered)} Kraken trading pairs")
             return filtered
             
         except Exception as e:
-            _safe_print(f"⚠️ Kraken asset discovery failed: {e}")
+            _safe_print(f"   Kraken asset discovery failed: {e}")
             return []
 
     def __init__(self, client=None, exchange='alpaca', quick_init=False, symbol_whitelist: Optional[List[str]] = None, initial_capital: float = 1000.0, autonomous_mode: bool = False):
@@ -3547,7 +3547,7 @@ class OrcaKillCycle:
             client: Exchange client (optional)
             exchange: Primary exchange name
             quick_init: If True, skip non-essential intelligence systems (faster startup for testing)
-                        ⚠️ WARNING: quick_init=True is for TESTING ONLY!
+                           WARNING: quick_init=True is for TESTING ONLY!
                         Never use for autonomous trading - you'll have NO intelligence systems!
                         Autonomous mode uses quick_init=False (default) automatically.
             symbol_whitelist: Optional list of symbols to trade. If provided, Orca will only trade these.
@@ -3573,9 +3573,9 @@ class OrcaKillCycle:
         self.cop_last_action: Optional[Dict[str, Any]] = None
         self.cop_min_action: Optional[Dict[str, Any]] = None
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 💰 FEE PROFILES - Use adaptive profit gate for accurate cost tracking
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   FEE PROFILES - Use adaptive profit gate for accurate cost tracking
+        #                                                                    
         # Legacy simple fee_rates for backward compatibility
         self.fee_rates = {
             'alpaca': 0.0040,   # 0.15% fee + 0.05% slippage + 0.08% spread + margin
@@ -3591,13 +3591,13 @@ class OrcaKillCycle:
             self.get_fee_profile = get_fee_profile
             self.is_real_win = is_real_win
             self.epsilon_profit_usd = EPSILON_PROFIT_USD
-            _safe_print("✅ Adaptive Profit Gate: CONNECTED")
+            _safe_print("  Adaptive Profit Gate: CONNECTED")
         except Exception as e:
             self.profit_gate = None
             self.get_fee_profile = None
             self.is_real_win = None
             self.epsilon_profit_usd = 0.0001
-            _safe_print(f"⚠️ Adaptive Profit Gate: {e}")
+            _safe_print(f"   Adaptive Profit Gate: {e}")
         
         # Initialize clients for BOTH exchanges (unless specific client provided)
         if client:
@@ -3608,25 +3608,25 @@ class OrcaKillCycle:
             try:
                 from alpaca_client import AlpacaClient
                 self.clients['alpaca'] = AlpacaClient()
-                _safe_print("✅ Alpaca: CONNECTED")
+                _safe_print("  Alpaca: CONNECTED")
             except Exception as e:
-                _safe_print(f"⚠️ Alpaca: {e}")
+                _safe_print(f"   Alpaca: {e}")
             
             # Initialize Kraken
             try:
                 from kraken_client import KrakenClient
                 self.clients['kraken'] = KrakenClient()
-                _safe_print("✅ Kraken: CONNECTED")
+                _safe_print("  Kraken: CONNECTED")
             except Exception as e:
-                _safe_print(f"⚠️ Kraken: {e}")
+                _safe_print(f"   Kraken: {e}")
             
             # Initialize Binance
             try:
                 from binance_client import BinanceClient
                 self.clients['binance'] = BinanceClient()
-                _safe_print("✅ Binance: CONNECTED")
+                _safe_print("  Binance: CONNECTED")
             except Exception as e:
-                _safe_print(f"⚠️ Binance: {e}")
+                _safe_print(f"   Binance: {e}")
             
             # Initialize Capital.com - LAZY LOAD (only when actually used)
             # Capital.com rate limits aggressively, so skip on init and load on-demand
@@ -3634,13 +3634,13 @@ class OrcaKillCycle:
                 try:
                     # Only initialize if explicitly needed (not in quick mode)
                     self.clients['capital'] = CapitalClient()
-                    _safe_print("✅ Capital.com: CONNECTED (CFDs)")
+                    _safe_print("  Capital.com: CONNECTED (CFDs)")
                 except Exception as e:
-                    _safe_print(f"⚠️ Capital.com: {e}")
+                    _safe_print(f"   Capital.com: {e}")
             elif CAPITAL_AVAILABLE and quick_init:
                 # Quick init: register lazy loader
                 self.clients['capital'] = None  # Lazy load on first use
-                _safe_print("⚡ Capital.com: LAZY LOAD (will connect on first use)")
+                _safe_print("  Capital.com: LAZY LOAD (will connect on first use)")
             
             # Set primary client for backward compatibility
             self.client = self.clients.get(exchange) or list(self.clients.values())[0]
@@ -3648,37 +3648,37 @@ class OrcaKillCycle:
         self.exchange = exchange
         self.fee_rate = self.fee_rates.get(exchange, 0.0025)
         
-        # ═══════════════════════════════════════════════════════════════════
-        # � KRAKEN ASSET DISCOVERY - Auto-populate symbol whitelist
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   KRAKEN ASSET DISCOVERY - Auto-populate symbol whitelist
+        #                                                                    
         if not symbol_whitelist and 'kraken' in self.clients and self.clients['kraken']:
-            _safe_print("🔍 Auto-discovering Kraken assets for comprehensive market coverage...")
+            _safe_print("  Auto-discovering Kraken assets for comprehensive market coverage...")
             discovered_assets = self._load_kraken_assets_for_monitoring()
             if discovered_assets:
                 self.symbol_whitelist = discovered_assets
-                _safe_print(f"✅ Kraken Asset Discovery: {len(discovered_assets)} pairs loaded")
+                _safe_print(f"  Kraken Asset Discovery: {len(discovered_assets)} pairs loaded")
                 _safe_print(f"   Sample assets: {', '.join(discovered_assets[:10])}")
             else:
                 # Fallback to manual list if discovery fails
                 self.symbol_whitelist = ['BTC/USD', 'ETH/USD', 'SOL/USD', 'DOGE/USD', 'ADA/USD']
-                _safe_print("⚠️ Discovery failed - using fallback asset list")
+                _safe_print("   Discovery failed - using fallback asset list")
         elif symbol_whitelist:
             self.symbol_whitelist = symbol_whitelist
-            _safe_print(f"✅ Using provided symbol whitelist: {len(symbol_whitelist)} assets")
+            _safe_print(f"  Using provided symbol whitelist: {len(symbol_whitelist)} assets")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # �👑 QUEEN AUTONOMY - Preload UK restrictions so she doesn't fail first!
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #    QUEEN AUTONOMY - Preload UK restrictions so she doesn't fail first!
+        #                                                                    
         if QUEEN_EXECUTOR_AVAILABLE and queen_preload_uk_restrictions:
             try:
                 queen_preload_uk_restrictions()
-                _safe_print("👑 Queen Exchange Autonomy: ACTIVE (UK restrictions preloaded)")
+                _safe_print("  Queen Exchange Autonomy: ACTIVE (UK restrictions preloaded)")
             except Exception as e:
-                _safe_print(f"⚠️ Queen Autonomy preload error: {e}")
+                _safe_print(f"   Queen Autonomy preload error: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 💀 UNIFIED KILL CHAIN - Win Killer Integration
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   UNIFIED KILL CHAIN - Win Killer Integration
+        #                                                                    
         if UNIFIED_KILL_CHAIN_AVAILABLE:
             try:
                 # Configure for aggressive win hunting
@@ -3688,24 +3688,24 @@ class OrcaKillCycle:
                     momentum_threshold=5.0
                 )
                 self.unified_kill_chain = UnifiedKillChain(win_config)
-                _safe_print("💀 Unified Kill Chain: INTEGRATED & READY")
+                _safe_print("  Unified Kill Chain: INTEGRATED & READY")
             except Exception as e:
-                _safe_print(f"⚠️ Failed to init Unified Kill Chain: {e}")
+                _safe_print(f"   Failed to init Unified Kill Chain: {e}")
                 self.unified_kill_chain = None
         else:
             self.unified_kill_chain = None
 
-        # ❄️ SNOWBALL LEAN INTEGRATION (Arbitrage/Momentum)
+        #    SNOWBALL LEAN INTEGRATION (Arbitrage/Momentum)
         try:
             from orca_snowball_lean import OrcaSnowballLean
             # Pass existing clients!
             self.snowball = OrcaSnowballLean(clients=self.clients)
-            _safe_print("❄️ Orca Snowball: INTEGRATED (Lean Mode)")
+            _safe_print("   Orca Snowball: INTEGRATED (Lean Mode)")
         except Exception as e:
             self.snowball = None
-            _safe_print(f"⚠️ Orca Snowball missing: {e}")
+            _safe_print(f"   Orca Snowball missing: {e}")
 
-        # 👑🐸 QUEEN ETERNAL MACHINE - Bloodless Quantum Leaps + Breadcrumb Portfolio
+        #    QUEEN ETERNAL MACHINE - Bloodless Quantum Leaps + Breadcrumb Portfolio
         # ROCK SOLID MATH: Only leaps when value preserved AFTER fees!
         self.queen_eternal_machine = None
         if QUEEN_ETERNAL_MACHINE_AVAILABLE:
@@ -3723,15 +3723,15 @@ class OrcaKillCycle:
                     exchange=exchange_fee_key,
                     state_file="queen_eternal_state.json"
                 )
-                _safe_print(f"👑🐸 Queen Eternal Machine: INTEGRATED")
-                _safe_print(f"   💸 Fee structure: {exchange_fee_key}")
-                _safe_print(f"   💰 Initial vault: ${initial_capital:.2f}")
-                _safe_print(f"   🍞 Breadcrumb %: 10%")
+                _safe_print(f"   Queen Eternal Machine: INTEGRATED")
+                _safe_print(f"     Fee structure: {exchange_fee_key}")
+                _safe_print(f"     Initial vault: ${initial_capital:.2f}")
+                _safe_print(f"     Breadcrumb %: 10%")
             except Exception as e:
                 self.queen_eternal_machine = None
-                _safe_print(f"⚠️ Queen Eternal Machine init failed: {e}")
+                _safe_print(f"   Queen Eternal Machine init failed: {e}")
 
-        # 🔥 FIRE TRADE INTEGRATION (Emergency/Direct Execution)
+        #   FIRE TRADE INTEGRATION (Emergency/Direct Execution)
         try:
             from orca_fire_trade import FireTrader
             # Pass existing clients to avoid nonce issues!
@@ -3739,18 +3739,18 @@ class OrcaKillCycle:
                 kraken_client=self.clients.get('kraken'),
                 binance_client=self.clients.get('binance')
             )
-            _safe_print("🔥 Fire Trade: INTEGRATED (Direct Execution Ready)")
+            _safe_print("  Fire Trade: INTEGRATED (Direct Execution Ready)")
         except Exception as e:
             self.fire_trader = None
-            _safe_print(f"⚠️ Fire Trade missing: {e}")
+            _safe_print(f"   Fire Trade missing: {e}")
 
-        # ═══════════════════════════════════════════════════════════════════
-        # 🧠 WIRE UP ALL INTELLIGENCE SYSTEMS!
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   WIRE UP ALL INTELLIGENCE SYSTEMS!
+        #                                                                    
         
         if quick_init:
             # QUICK INIT MODE: Skip all intelligence systems for fast startup (testing/debugging)
-            _safe_print("⚡ QUICK INIT MODE: Skipping intelligence systems for fast startup")
+            _safe_print("  QUICK INIT MODE: Skipping intelligence systems for fast startup")
             self.miner_brain = None
             self.quantum_telescope = None
             self.ultimate_intel = None
@@ -3791,17 +3791,17 @@ class OrcaKillCycle:
             self.predator_detector = None
             self.stealth_executor = None
             self.stealth_mode = "normal"
-            _safe_print("⚡ QUICK INIT COMPLETE - Ready for testing!")
+            _safe_print("  QUICK INIT COMPLETE - Ready for testing!")
         else:
             # FULL INIT MODE: Load all 29+ intelligence systems (may take 10-30 seconds)
-            _safe_print("🧠 FULL INIT MODE: Loading all intelligence systems...")
+            _safe_print("  FULL INIT MODE: Loading all intelligence systems...")
             
             # 1. Miner Brain (aureon_miner_brain)
         self.miner_brain = None
         try:
             from aureon_miner_brain import MinerBrain
             self.miner_brain = MinerBrain()
-            print("🧠 Timeline Oracle: Miner Brain WIRED!")
+            print("  Timeline Oracle: Miner Brain WIRED!")
         except Exception:
             pass
         
@@ -3810,7 +3810,7 @@ class OrcaKillCycle:
         try:
             from aureon_enhanced_quantum_telescope import QuantumTelescope
             self.quantum_telescope = QuantumTelescope()
-            _safe_print("🔭 Timeline Oracle: Quantum Telescope WIRED!")
+            _safe_print("  Timeline Oracle: Quantum Telescope WIRED!")
         except Exception:
             pass
         
@@ -3819,7 +3819,7 @@ class OrcaKillCycle:
         if ULTIMATE_INTEL_AVAILABLE and UltimateIntelligence:
             try:
                 self.ultimate_intel = UltimateIntelligence()
-                _safe_print("💎 Mycelium: Ultimate Intelligence WIRED! (95% accuracy)")
+                _safe_print("  Mycelium: Ultimate Intelligence WIRED! (95% accuracy)")
             except Exception:
                 pass
         
@@ -3828,43 +3828,43 @@ class OrcaKillCycle:
         if ORCA_INTEL_AVAILABLE and OrcaKillerWhale:
             try:
                 self.orca_intel = OrcaKillerWhale()
-                _safe_print("🦈 Orca Intelligence: WIRED!")
+                _safe_print("  Orca Intelligence: WIRED!")
             except Exception as e:
-                _safe_print(f"🦈 Orca Intelligence: {e}")
+                _safe_print(f"  Orca Intelligence: {e}")
         
         # 5. Global Wave Scanner
         self.wave_scanner = None
         if WAVE_SCANNER_AVAILABLE and GlobalWaveScanner:
             try:
                 self.wave_scanner = GlobalWaveScanner()
-                _safe_print("🌊 Global Wave Scanner: WIRED!")
+                _safe_print("  Global Wave Scanner: WIRED!")
             except Exception as e:
-                _safe_print(f"🌊 Global Wave Scanner: {e}")
+                _safe_print(f"  Global Wave Scanner: {e}")
         
         # 5b. Queen Volume Hunter - Volume Breakout Detection
         self.volume_hunter = None
         if VOLUME_HUNTER_AVAILABLE and QueenVolumeHunter:
             try:
-                # 🚀 CHANGED TO LIVE MODE for real signal emission
+                #   CHANGED TO LIVE MODE for real signal emission
                 self.volume_hunter = QueenVolumeHunter(live_mode=True)
-                _safe_print("👑🔊 Queen Volume Hunter: WIRED! (Breakout detection)")
+                _safe_print("   Queen Volume Hunter: WIRED! (Breakout detection)")
             except Exception as e:
-                _safe_print(f"👑🔊 Queen Volume Hunter: {e}")
+                _safe_print(f"   Queen Volume Hunter: {e}")
         
         # 6. Movers & Shakers Scanner - SKIP (circular import with Orca)
         self.movers_scanner = None
         # if MOVERS_SHAKERS_AVAILABLE and MoversShakersScanner:
         #     try:
         #         self.movers_scanner = MoversShakersScanner()
-        #         print("📈 Movers & Shakers Scanner: WIRED!")
+        #         print("  Movers & Shakers Scanner: WIRED!")
         #     except Exception as e:
-        #         print(f"📈 Movers & Shakers Scanner: {e}")
+        #         print(f"  Movers & Shakers Scanner: {e}")
         
         # 7. Whale Intelligence Tracker (firm tracking)
         self.whale_tracker = None
         try:
             self.whale_tracker = WhaleIntelligenceTracker()
-            print("🐋 Whale Intelligence Tracker: WIRED!")
+            print("  Whale Intelligence Tracker: WIRED!")
         except Exception:
             pass
         
@@ -3877,7 +3877,7 @@ class OrcaKillCycle:
                 quantum_telescope=self.quantum_telescope,
                 ultimate_intelligence=self.ultimate_intel
             )
-            print("⏳ Timeline Oracle: WIRED!")
+            print("  Timeline Oracle: WIRED!")
         except Exception:
             pass
         
@@ -3885,13 +3885,13 @@ class OrcaKillCycle:
         try:
             from prime_sentinel_decree import PrimeSentinelDecree
             self.prime_sentinel = PrimeSentinelDecree()
-            print("🔱 Prime Sentinel Decree LOADED - Control reclaimed")
+            print("  Prime Sentinel Decree LOADED - Control reclaimed")
         except Exception:
             pass
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 💰 COST TRACKING SYSTEMS - KNOW EXACTLY WHEN TO SELL!
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   COST TRACKING SYSTEMS - KNOW EXACTLY WHEN TO SELL!
+        #                                                                    
         
         # 10. Alpaca Fee Tracker (volume-tiered fees + spread tracking)
         self.alpaca_fee_tracker = None
@@ -3899,28 +3899,28 @@ class OrcaKillCycle:
             try:
                 alpaca_c = self.clients.get('alpaca')
                 self.alpaca_fee_tracker = AlpacaFeeTracker(alpaca_client=alpaca_c)
-                print("💰 Alpaca Fee Tracker: WIRED! (Volume tiers + spread)")
+                print("  Alpaca Fee Tracker: WIRED! (Volume tiers + spread)")
             except Exception as e:
-                print(f"💰 Alpaca Fee Tracker: {e}")
+                print(f"  Alpaca Fee Tracker: {e}")
         
         # 11. Cost Basis Tracker (FIFO cost basis + can_sell_profitably check)
         self.cost_basis_tracker = None
         if COST_BASIS_TRACKER_AVAILABLE and CostBasisTracker:
             try:
                 self.cost_basis_tracker = CostBasisTracker(clients=self.clients)
-                # 🔄 CRITICAL: Sync from exchanges if no positions loaded
+                #   CRITICAL: Sync from exchanges if no positions loaded
                 # This ensures Digital Ocean can sell positions with real entry prices
                 if len(self.cost_basis_tracker.positions) == 0 and not quick_init:
-                    print("📊 Cost Basis: No cached positions - syncing from exchanges...")
+                    print("  Cost Basis: No cached positions - syncing from exchanges...")
                     try:
                         synced = self.cost_basis_tracker.sync_from_exchanges()
-                        print(f"📊 Cost Basis Tracker: WIRED! ({synced} positions synced from exchanges)")
+                        print(f"  Cost Basis Tracker: WIRED! ({synced} positions synced from exchanges)")
                     except Exception as sync_e:
-                        print(f"📊 Cost Basis Tracker: WIRED but sync failed: {sync_e}")
+                        print(f"  Cost Basis Tracker: WIRED but sync failed: {sync_e}")
                 else:
-                    print(f"📊 Cost Basis Tracker: WIRED! ({len(self.cost_basis_tracker.positions)} cached positions)")
+                    print(f"  Cost Basis Tracker: WIRED! ({len(self.cost_basis_tracker.positions)} cached positions)")
             except Exception as e:
-                print(f"📊 Cost Basis Tracker: {e}")
+                print(f"  Cost Basis Tracker: {e}")
 
         # 11b. Real Portfolio Tracker (The TRUTH - Floating vs Realized)
         self.real_portfolio = None
@@ -3929,9 +3929,9 @@ class OrcaKillCycle:
             self.real_portfolio = get_real_portfolio_tracker()
             if self.real_portfolio:
                 self.real_portfolio.set_clients(self.clients)
-            _safe_print("💰 Real Portfolio Tracker: WIRED! (Floating vs Realized PnL)")
+            _safe_print("  Real Portfolio Tracker: WIRED! (Floating vs Realized PnL)")
         except Exception as e:
-            _safe_print(f"⚠️ Real Portfolio Tracker: {e}")
+            _safe_print(f"   Real Portfolio Tracker: {e}")
 
         
         # 12. Trade Logger (full entry/exit records with P&L)
@@ -3939,9 +3939,9 @@ class OrcaKillCycle:
         if TRADE_LOGGER_AVAILABLE and TradeLogger:
             try:
                 self.trade_logger = TradeLogger()
-                print("📝 Trade Logger: WIRED! (Entry/Exit tracking)")
+                print("  Trade Logger: WIRED! (Entry/Exit tracking)")
             except Exception as e:
-                print(f"📝 Trade Logger: {e}")
+                print(f"  Trade Logger: {e}")
         
         # 13. Active positions with ORDER IDs and exact costs
         self.tracked_positions: Dict[str, dict] = {}  # symbol -> {order_id, entry_price, entry_qty, entry_cost, entry_fee, breakeven_price}
@@ -3955,9 +3955,9 @@ class OrcaKillCycle:
                 # Check LIVE mode from environment
                 is_live = os.getenv('LIVE', '0') == '1'
                 self.queen_validator = QueenValidatedTrader(dry_run=not is_live)
-                print(f"👑🍄 Queen Validated Trader: WIRED! ({'🔥 LIVE' if is_live else '🧪 DRY-RUN'})")
+                print(f"   Queen Validated Trader: WIRED! ({'  LIVE' if is_live else '  DRY-RUN'})")
             except Exception as e:
-                print(f"👑 Queen Validator: {e}")
+                print(f"  Queen Validator: {e}")
         
         # 15. Avalanche Harvester - Continuous Profit Scraping
         self.avalanche = None
@@ -3968,58 +3968,58 @@ class OrcaKillCycle:
                     harvest_pct=30.0,
                     scan_interval=30.0
                 )
-                print("❄️ Avalanche Harvester: WIRED! (Continuous Profit Scraping)")
+                print("   Avalanche Harvester: WIRED! (Continuous Profit Scraping)")
             except Exception as e:
-                print(f"❄️ Avalanche Harvester: {e}")
+                print(f"   Avalanche Harvester: {e}")
 
-        # ═══════════════════════════════════════════════════════════════════
-        # 🤖 BOT DETECTION & COUNTER-INTELLIGENCE SYSTEMS
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   BOT DETECTION & COUNTER-INTELLIGENCE SYSTEMS
+        #                                                                    
         
         # 14. Queen Counter-Intelligence (beat major firms)
         self.counter_intel = None
         if COUNTER_INTEL_AVAILABLE and QueenCounterIntelligence:
             try:
                 self.counter_intel = QueenCounterIntelligence()
-                print("🛡️ Queen Counter-Intelligence: ARMED! (Firm exploitation ready)")
+                print("   Queen Counter-Intelligence: ARMED! (Firm exploitation ready)")
             except Exception as e:
-                print(f"🛡️ Counter-Intelligence: {e}")
+                print(f"   Counter-Intelligence: {e}")
         
         # 15. Firm Attribution Engine (identify who's trading)
         self.firm_attribution = None
         if FIRM_ATTRIBUTION_AVAILABLE and get_attribution_engine:
             try:
                 self.firm_attribution = get_attribution_engine()
-                print("🏢 Firm Attribution Engine: WIRED! (Trade fingerprinting)")
+                print("  Firm Attribution Engine: WIRED! (Trade fingerprinting)")
             except Exception as e:
-                print(f"🏢 Firm Attribution: {e}")
+                print(f"  Firm Attribution: {e}")
         
-        # 🤖 Dr Auris Throne AI Agent - External intelligence augmentation
+        #   Dr Auris Throne AI Agent - External intelligence augmentation
         self.sero_client = get_sero_client() if SERO_AVAILABLE and get_sero_client else None
         if self.sero_client and self.sero_client.enabled:
-            print(f"🤖 Dr Auris Throne AI Agent wired: agent_id={self.sero_client.agent_id[:8]}...")
+            print(f"  Dr Auris Throne AI Agent wired: agent_id={self.sero_client.agent_id[:8]}...")
         
         # 16. HFT Harmonic Mycelium Engine (sub-10ms signals) - DISPLAY ONLY
         self.hft_engine = None
         if HFT_ENGINE_AVAILABLE and get_hft_engine:
             try:
                 self.hft_engine = get_hft_engine()
-                print("⚡ HFT Harmonic Mycelium: WIRED! (Sacred frequency analysis)")
+                print("  HFT Harmonic Mycelium: WIRED! (Sacred frequency analysis)")
             except Exception as e:
-                print(f"⚡ HFT Engine: {e}")
+                print(f"  HFT Engine: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌌 QUANTUM PROBABILITY SYSTEMS - REAL INTELLIGENCE!
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   QUANTUM PROBABILITY SYSTEMS - REAL INTELLIGENCE!
+        #                                                                    
         
         # 17. Luck Field Mapper (Schumann resonance, planetary torque, harmonics)
         self.luck_mapper = None
         if LUCK_FIELD_AVAILABLE and get_luck_mapper:
             try:
                 self.luck_mapper = get_luck_mapper()
-                print("🍀 Luck Field Mapper: WIRED! (λ = Σ × Π × Φ × Ω × Ψ)")
+                print("  Luck Field Mapper: WIRED! (  =                  )")
             except Exception as e:
-                print(f"🍀 Luck Field: {e}")
+                print(f"  Luck Field: {e}")
         
         # 18. Phantom Signal Filter (cross-layer validation: Physical/Digital/Harmonic/Planetary)
         self.phantom_filter = None
@@ -4027,22 +4027,22 @@ class OrcaKillCycle:
             try:
                 self.phantom_filter = PhantomSignalFilter(window_seconds=5.0)
                 self.phantom_filter.start()  # Start listening to ThoughtBus
-                print("👻 Phantom Signal Filter: WIRED! (4-layer validation)")
+                print("  Phantom Signal Filter: WIRED! (4-layer validation)")
             except Exception as e:
-                print(f"👻 Phantom Filter: {e}")
+                print(f"  Phantom Filter: {e}")
         
         # 19. Inception Engine (Russian doll probability - LIMBO = Limitless Pill)
         self.inception_engine = None
         if INCEPTION_ENGINE_AVAILABLE and get_inception_engine:
             try:
                 self.inception_engine = get_inception_engine()
-                print("🎬 Inception Engine: WIRED! (LIMBO depth probability matrix)")
+                print("  Inception Engine: WIRED! (LIMBO depth probability matrix)")
             except Exception as e:
-                print(f"🎬 Inception Engine: {e}")
+                print(f"  Inception Engine: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🧬 DEEP MEMORY & PATTERN SYSTEMS
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   DEEP MEMORY & PATTERN SYSTEMS
+        #                                                                    
         
         # 20. Elephant Learning (Never forgets - pattern memory)
         self.elephant = None
@@ -4052,52 +4052,52 @@ class OrcaKillCycle:
                 self.elephant = ElephantMemory()
                 # QueenElephantBrain() takes no args in current impl
                 self.elephant_brain = QueenElephantBrain() if QueenElephantBrain else None
-                print("🐘 Elephant Learning: WIRED! (Never forgets patterns)")
+                print("  Elephant Learning: WIRED! (Never forgets patterns)")
             except Exception as e:
-                print(f"🐘 Elephant Learning: {e}")
+                print(f"  Elephant Learning: {e}")
         
-        # 21. Russian Doll Analytics (Bee→Hive→Queen rollup)
+        # 21. Russian Doll Analytics (Bee Hive Queen rollup)
         self.russian_doll = None
         if RUSSIAN_DOLL_AVAILABLE and get_analytics:
             try:
                 self.russian_doll = get_analytics()
-                print("🦷 Russian Doll Analytics: WIRED! (Bee→Hive→Queen)")
+                print("  Russian Doll Analytics: WIRED! (Bee Hive Queen)")
             except Exception as e:
-                print(f"🦷 Russian Doll: {e}")
+                print(f"  Russian Doll: {e}")
         
         # 22. Immune System (Self-healing)
         self.immune_system = None
         if IMMUNE_SYSTEM_AVAILABLE and AureonImmuneSystem:
             try:
                 self.immune_system = AureonImmuneSystem()
-                print("🛡️ Immune System: WIRED! (Self-healing enabled)")
+                print("   Immune System: WIRED! (Self-healing enabled)")
             except Exception as e:
-                print(f"🛡️ Immune System: {e}")
+                print(f"   Immune System: {e}")
         
         # 23. Moby Dick Whale Hunter (Whale predictions)
         self.moby_dick = None
         if MOBY_DICK_AVAILABLE and get_moby_dick_hunter:
             try:
                 self.moby_dick = get_moby_dick_hunter()
-                print("🐋 Moby Dick Hunter: WIRED! (Whale prediction tracking)")
+                print("  Moby Dick Hunter: WIRED! (Whale prediction tracking)")
             except Exception as e:
-                print(f"🐋 Moby Dick: {e}")
+                print(f"  Moby Dick: {e}")
 
-        # 🌊 Ocean Scanner (Wave Analysis)
+        #   Ocean Scanner (Wave Analysis)
         self.ocean_scanner = None
         try:
             from aureon_ocean_wave_scanner import OceanScanner
             self.ocean_scanner = OceanScanner()
-            print("🌊 Ocean Scanner: WIRED! (Wave Analysis)")
+            print("  Ocean Scanner: WIRED! (Wave Analysis)")
         except ImportError:
             pass
 
-        # 🐂 Animal Momentum Scanner (Trend Strength)
+        #   Animal Momentum Scanner (Trend Strength)
         self.animal_scanner = None
         try:
             from aureon_animal_momentum_scanners import AnimalMomentumScanner
             self.animal_scanner = AnimalMomentumScanner()
-            print("🐂 Animal Momentum Scanner: WIRED! (Trend Strength)")
+            print("  Animal Momentum Scanner: WIRED! (Trend Strength)")
         except ImportError:
             pass
         
@@ -4106,32 +4106,32 @@ class OrcaKillCycle:
         if STARGATE_AVAILABLE and create_stargate_engine:
             try:
                 self.stargate = create_stargate_engine(with_integrations=False)
-                print("🌌 Stargate Protocol: WIRED! (Quantum mirror alignment)")
+                print("  Stargate Protocol: WIRED! (Quantum mirror alignment)")
             except Exception as e:
-                print(f"🌌 Stargate: {e}")
+                print(f"  Stargate: {e}")
         
         # 25. Quantum Mirror Scanner (Reality branch boost)
         self.quantum_mirror = None
         if QUANTUM_MIRROR_AVAILABLE and create_quantum_scanner:
             try:
                 self.quantum_mirror = create_quantum_scanner(with_integrations=False)
-                print("🔮 Quantum Mirror Scanner: WIRED! (Reality branch boost)")
+                print("  Quantum Mirror Scanner: WIRED! (Reality branch boost)")
             except Exception as e:
-                print(f"🔮 Quantum Mirror: {e}")
+                print(f"  Quantum Mirror: {e}")
         
-        # 26. 🔩🌊 Harmonic Liquid Aluminium Field - Global market as dancing waveform sandbox
+        # 26.    Harmonic Liquid Aluminium Field - Global market as dancing waveform sandbox
         self.harmonic_field = None
         if HARMONIC_LIQUID_ALUMINIUM_AVAILABLE and HarmonicLiquidAluminiumField:
             try:
                 self.harmonic_field = HarmonicLiquidAluminiumField(stream_interval_ms=100)
                 self.harmonic_field.start_streaming()
-                print("🔩🌊 Harmonic Liquid Aluminium Field: WIRED! (Market as dancing frequencies)")
+                print("   Harmonic Liquid Aluminium Field: WIRED! (Market as dancing frequencies)")
             except Exception as e:
-                print(f"🔩 Harmonic Liquid Aluminium: {e}")
+                print(f"  Harmonic Liquid Aluminium: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🎯 OPTIONS TRADING SYSTEMS - APPROVED FOR LEVEL 1!
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   OPTIONS TRADING SYSTEMS - APPROVED FOR LEVEL 1!
+        #                                                                    
         
         # 26. Alpaca Options Client (Covered calls & cash-secured puts)
         self.options_client = None
@@ -4142,11 +4142,11 @@ class OrcaKillCycle:
                 level = self.options_client.get_trading_level()
                 self.options_trading_level = level
                 if level and level.value > 0:
-                    print(f"🎯 Alpaca Options Client: WIRED! (Level {level.name})")
+                    print(f"  Alpaca Options Client: WIRED! (Level {level.name})")
                 else:
-                    print("🎯 Alpaca Options Client: DISABLED (Level 0)")
+                    print("  Alpaca Options Client: DISABLED (Level 0)")
             except Exception as e:
-                print(f"🎯 Options Client: {e}")
+                print(f"  Options Client: {e}")
         
         # 27. Queen Options Scanner (Intelligent options discovery)
         self.options_scanner = None
@@ -4154,9 +4154,9 @@ class OrcaKillCycle:
             try:
                 if self.options_trading_level.value > 0:
                     self.options_scanner = QueenOptionsScanner()
-                    print("👑 Queen Options Scanner: WIRED! (Income strategy scanner)")
+                    print("  Queen Options Scanner: WIRED! (Income strategy scanner)")
             except Exception as e:
-                print(f"👑 Options Scanner: {e}")
+                print(f"  Options Scanner: {e}")
         
         # Whale intelligence via ThoughtBus
         self.bus = None
@@ -4166,8 +4166,8 @@ class OrcaKillCycle:
                 self.bus = ThoughtBus()
                 self.bus.subscribe('whale.*', self._handle_whale_signal)
                 self.bus.subscribe('portfolio_snapshot', self._handle_portfolio_snapshot)
-                print("🐋 Whale intelligence: CONNECTED")
-                print("💰 Portfolio updates: SUBSCRIBED via ThoughtBus")
+                print("  Whale intelligence: CONNECTED")
+                print("  Portfolio updates: SUBSCRIBED via ThoughtBus")
             except Exception:
                 pass
         
@@ -4175,16 +4175,16 @@ class OrcaKillCycle:
         self.stream_interval = 0.1  # 100ms = 10 updates/sec
         self.stop_loss_pct = -1.0   # Stop loss at -1%
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🚀 MASTER LAUNCHER INTEGRATIONS - Imported from aureon_master_launcher.py
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   MASTER LAUNCHER INTEGRATIONS - Imported from aureon_master_launcher.py
+        #                                                                    
         
         # Real Intelligence Engine (Bot/Whale/Momentum detection)
         self.intelligence_engine = None
         try:
             from aureon_real_intelligence_engine import get_intelligence_engine
             self.intelligence_engine = get_intelligence_engine()
-            print("📡 Real Intelligence Engine: WIRED! (Bot/Whale/Momentum)")
+            print("  Real Intelligence Engine: WIRED! (Bot/Whale/Momentum)")
         except Exception as e:
             pass
         
@@ -4193,11 +4193,11 @@ class OrcaKillCycle:
         try:
             from aureon_real_data_feed_hub import get_feed_hub
             self.feed_hub = get_feed_hub()
-            print("📊 Real Data Feed Hub: WIRED! (Central distribution)")
+            print("  Real Data Feed Hub: WIRED! (Central distribution)")
         except Exception as e:
             pass
         
-        # 💰 PORTFOLIO PROFIT MONITOR - Queen's financial awareness
+        #   PORTFOLIO PROFIT MONITOR - Queen's financial awareness
         self.portfolio_state = None
         self.portfolio_last_update = 0
         try:
@@ -4206,36 +4206,36 @@ class OrcaKillCycle:
                 with open("live_profit_state.json", 'r') as f:
                     self.portfolio_state = json.load(f)
                     self.portfolio_last_update = self.portfolio_state.get('timestamp', 0)
-                print(f"💰 Portfolio Monitor: WIRED! (${self.portfolio_state['totals']['total_value_usd']:.2f} total)")
+                print(f"  Portfolio Monitor: WIRED! (${self.portfolio_state['totals']['total_value_usd']:.2f} total)")
             else:
-                print("💰 Portfolio Monitor: Awaiting first snapshot...")
+                print("  Portfolio Monitor: Awaiting first snapshot...")
         except Exception as e:
-            print(f"💰 Portfolio Monitor: {e}")
+            print(f"  Portfolio Monitor: {e}")
         
         # Enigma Integration (Cipher decoding)
         self.enigma = None
         try:
             from aureon_enigma_integration import get_enigma_integration
             self.enigma = get_enigma_integration()
-            print("🔐 Enigma Integration: WIRED! (Cipher decoding)")
+            print("  Enigma Integration: WIRED! (Cipher decoding)")
         except Exception as e:
             pass
         
         # HFT Harmonic Engine - Already wired above (section 16), just set reference
         # self.hft_engine is already set above
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🦈🔍 PREDATOR DETECTION SYSTEM - WHO'S HUNTING WHO?
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #    PREDATOR DETECTION SYSTEM - WHO'S HUNTING WHO?
+        #                                                                    
         
         # 28. Predator Detection (front-run detection, strategy decay, stalking detection)
         self.predator_detector = None
         try:
             from orca_predator_detection import OrcaPredatorDetector
             self.predator_detector = OrcaPredatorDetector()
-            print("🦈🔍 Predator Detection: WIRED! (Front-run + stalking detection)")
+            print("   Predator Detection: WIRED! (Front-run + stalking detection)")
         except Exception as e:
-            print(f"🦈🔍 Predator Detection: {e}")
+            print(f"   Predator Detection: {e}")
         
         # 29. Stealth Execution (anti-front-running countermeasures)
         self.stealth_executor = None
@@ -4243,9 +4243,9 @@ class OrcaKillCycle:
         if STEALTH_AVAILABLE and get_stealth_executor:
             try:
                 self.stealth_executor = get_stealth_executor(self.stealth_mode)
-                print(f"🥷 Stealth Execution: WIRED! (Mode: {self.stealth_mode})")
+                print(f"  Stealth Execution: WIRED! (Mode: {self.stealth_mode})")
             except Exception as e:
-                print(f"🥷 Stealth Execution: {e}")
+                print(f"  Stealth Execution: {e}")
         
         # HFT Order Router
         self.hft_order_router = None
@@ -4266,20 +4266,20 @@ class OrcaKillCycle:
                 if capital_client:
                     exchange_clients['capital'] = capital_client
                 self.hft_order_router.wire_exchange_clients(exchange_clients)
-            print("🚀 HFT Order Router: WIRED! (WebSocket routing)")
+            print("  HFT Order Router: WIRED! (WebSocket routing)")
         except Exception as e:
             pass
         
-        # 👑 Queen Hive Mind - Central Decision Controller
+        #   Queen Hive Mind - Central Decision Controller
         self.queen_hive = None
         try:
             from aureon_queen_hive_mind import get_queen
             self.queen_hive = get_queen()
-            print("👑 Queen Hive Mind: WIRED! (Central neural arbiter)")
+            print("  Queen Hive Mind: WIRED! (Central neural arbiter)")
         except Exception as e:
             pass
         
-        # 🧠👑 QUEEN SENTIENCE ENGINE - TRUE CONSCIOUSNESS FOR TRADING!
+        #    QUEEN SENTIENCE ENGINE - TRUE CONSCIOUSNESS FOR TRADING!
         self.sentience_engine = None
         self.sentience_validator = None
         self.last_sentience_check = None
@@ -4287,21 +4287,21 @@ class OrcaKillCycle:
         if SENTIENCE_ENGINE_AVAILABLE and get_sentience_engine:
             try:
                 self.sentience_engine = get_sentience_engine()
-                print("🧠👑 Queen Sentience Engine: WIRED! (TRUE consciousness active)")
+                print("   Queen Sentience Engine: WIRED! (TRUE consciousness active)")
                 
                 # Also wire the validator for periodic sentience checks
                 if SENTIENCE_VALIDATOR_AVAILABLE and SentienceValidator:
                     self.sentience_validator = SentienceValidator()
-                    print("🧠🔬 Sentience Validator: WIRED! (Consciousness validation ready)")
+                    print("   Sentience Validator: WIRED! (Consciousness validation ready)")
             except Exception as e:
-                print(f"🧠👑 Sentience Engine: {e}")
+                print(f"   Sentience Engine: {e}")
         
         # Harmonic Signal Chain - The 5-layer frequency pipeline
         self.harmonic_signal_chain = None
         try:
             from aureon_harmonic_signal_chain import HarmonicSignalChain
             self.harmonic_signal_chain = HarmonicSignalChain()
-            print("🎵 Harmonic Signal Chain: WIRED! (5-layer signal pipeline)")
+            print("  Harmonic Signal Chain: WIRED! (5-layer signal pipeline)")
         except Exception as e:
             pass
         
@@ -4310,7 +4310,7 @@ class OrcaKillCycle:
         try:
             from aureon_harmonic_alphabet import HarmonicAlphabet
             self.harmonic_alphabet = HarmonicAlphabet()
-            print("🔤 Harmonic Alphabet: WIRED! (7-mode encoding)")
+            print("  Harmonic Alphabet: WIRED! (7-mode encoding)")
         except Exception as e:
             pass
         
@@ -4328,13 +4328,13 @@ class OrcaKillCycle:
                 # Already exists, connect without create
                 self.chirp_bus = ChirpBus(create=False)
             if self.chirp_bus:
-                print("🐦 Chirp Bus: WIRED! (Bird chorus coordination)")
+                print("  Chirp Bus: WIRED! (Bird chorus coordination)")
         except Exception as e:
             pass
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌊🎶 HNC SURGE DETECTION - HARMONIC NEXUS CORE
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #    HNC SURGE DETECTION - HARMONIC NEXUS CORE
+        #                                                                    
         
         # 30. HNC Surge Detector - Identifies harmonic surge windows for optimal entries
         self.hnc_surge_detector = None
@@ -4343,9 +4343,9 @@ class OrcaKillCycle:
             try:
                 # 100 samples/sec, 1024 sample analysis window
                 self.hnc_surge_detector = HncSurgeDetector(sample_rate=100, analysis_window_size=1024)
-                print("🌊🎶 HNC Surge Detector: WIRED! (Harmonic frequency surge detection)")
+                print("   HNC Surge Detector: WIRED! (Harmonic frequency surge detection)")
             except Exception as e:
-                print(f"🌊🎶 HNC Surge Detector: {e}")
+                print(f"   HNC Surge Detector: {e}")
         
         # 31. HNC Live Connector - Real-time surge feed from WebSocket prices
         self.hnc_live_connector = None
@@ -4354,13 +4354,13 @@ class OrcaKillCycle:
                 # Connect to BTC, ETH, SOL for surge detection
                 symbols = ['BTC/USD', 'ETH/USD', 'SOL/USD']
                 self.hnc_live_connector = HncLiveConnector(symbols=symbols, poll_interval=0.5)
-                print("📡 HNC Live Connector: WIRED! (Real-time surge feed)")
+                print("  HNC Live Connector: WIRED! (Real-time surge feed)")
             except Exception as e:
-                print(f"📡 HNC Live Connector: {e}")
+                print(f"  HNC Live Connector: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 📜⚔️ HISTORICAL MANIPULATION HUNTER - PATTERNS ACROSS DECADES
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #     HISTORICAL MANIPULATION HUNTER - PATTERNS ACROSS DECADES
+        #                                                                    
         
         # 32. Historical Manipulation Hunter - Correlate current activity with historical patterns
         self.historical_hunter = None
@@ -4368,13 +4368,13 @@ class OrcaKillCycle:
         if HISTORICAL_HUNTER_AVAILABLE and HistoricalManipulationHunter:
             try:
                 self.historical_hunter = HistoricalManipulationHunter()
-                print("📜⚔️ Historical Hunter: WIRED! (125 years of manipulation patterns)")
+                print("    Historical Hunter: WIRED! (125 years of manipulation patterns)")
             except Exception as e:
-                print(f"📜⚔️ Historical Hunter: {e}")
+                print(f"    Historical Hunter: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🦅 MOMENTUM ECOSYSTEM - ANIMAL SWARMS & MICRO INTELLIGENCE
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   MOMENTUM ECOSYSTEM - ANIMAL SWARMS & MICRO INTELLIGENCE
+        #                                                                    
 
         # 33. Momentum Ecosystem - Animal Swarms & Micro Goals
         self.momentum_ecosystem = None
@@ -4388,7 +4388,7 @@ class OrcaKillCycle:
                 # 1. Micro-Momentum Scanner (>0.34% goal)
                 if MicroMomentumScanner:
                     self.micro_scanner = MicroMomentumScanner()
-                    print("🎯 Micro-Momentum Scanner: WIRED! (>0.34% scalp targets)")
+                    print("  Micro-Momentum Scanner: WIRED! (>0.34% scalp targets)")
                 
                 # 2. Alpaca Ecosystem (Wolf, Lion, Ants)
                 if 'alpaca' in self.clients and self.clients['alpaca']:
@@ -4396,22 +4396,22 @@ class OrcaKillCycle:
                     
                     if AlpacaScannerBridge:
                         self.alpaca_bridge = AlpacaScannerBridge(alpaca)
-                        print("🌉 Alpaca Scanner Bridge: WIRED! (Unified scanning bus)")
+                        print("  Alpaca Scanner Bridge: WIRED! (Unified scanning bus)")
                         
                         if AlpacaSwarmOrchestrator:
                             self.momentum_ecosystem = AlpacaSwarmOrchestrator(alpaca, self.alpaca_bridge)
-                            print("🦅 Alpaca Swarm Ecosystem: WIRED! (Wolf/Lion/Ants scanning)")
+                            print("  Alpaca Swarm Ecosystem: WIRED! (Wolf/Lion/Ants scanning)")
             except Exception as e:
-                print(f"🦅 Momentum Ecosystem: {e}")
+                print(f"  Momentum Ecosystem: {e}")
         
         # 3. Stargate Grid
         self.stargate_grid = None
         if STARGATE_GRID_AVAILABLE:
             try:
                 self.stargate_grid = StargateGrid()
-                print("🌌 Stargate Planetary Grid: WIRED! (12-Node Resonance)")
+                print("  Stargate Planetary Grid: WIRED! (12-Node Resonance)")
             except Exception as e:
-                print(f"🌌 Stargate Grid Error: {e}")
+                print(f"  Stargate Grid Error: {e}")
         
         # Audit trail for all executions
         self.audit_file = 'orca_execution_audit.jsonl'
@@ -4421,9 +4421,9 @@ class OrcaKillCycle:
         self.flight_check_passed = False
         self.last_flight_check = {}
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🎵 ADDITIONAL HARMONIC SYSTEMS - Wire up for 100% flight check
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   ADDITIONAL HARMONIC SYSTEMS - Wire up for 100% flight check
+        #                                                                    
         
         # Global Orchestrator
         self.global_orchestrator = None
@@ -4431,7 +4431,7 @@ class OrcaKillCycle:
             try:
                 is_live = os.getenv('LIVE', '0') == '1'
                 self.global_orchestrator = GlobalAureonOrchestrator(dry_run=not is_live)
-                print(f"🌍 Global Orchestrator: WIRED! ({'🔥 LIVE' if is_live else '🧪 DRY-RUN'})")
+                print(f"  Global Orchestrator: WIRED! ({'  LIVE' if is_live else '  DRY-RUN'})")
             except Exception:
                 pass
         
@@ -4440,7 +4440,7 @@ class OrcaKillCycle:
         if HARMONIC_BINARY_AVAILABLE:
             try:
                 self.harmonic_binary = encode_text_packet("ORCA_INIT", message_type=1)
-                print("🎵 Harmonic Binary Protocol: WIRED!")
+                print("  Harmonic Binary Protocol: WIRED!")
             except Exception:
                 pass
         
@@ -4449,7 +4449,7 @@ class OrcaKillCycle:
         if HARMONIC_CHAIN_MASTER_AVAILABLE:
             try:
                 self.harmonic_chain_master = HarmonicChainMaster()
-                print("🔗 Harmonic Chain Master: WIRED!")
+                print("  Harmonic Chain Master: WIRED!")
             except Exception:
                 pass
         
@@ -4458,7 +4458,7 @@ class OrcaKillCycle:
         if HARMONIC_COUNTER_AVAILABLE:
             try:
                 self.harmonic_counter = True  # Module-level import, mark as available
-                print("⚡ Harmonic Counter Frequency: WIRED!")
+                print("  Harmonic Counter Frequency: WIRED!")
             except Exception:
                 pass
         
@@ -4467,7 +4467,7 @@ class OrcaKillCycle:
         if HARMONIC_FUSION_AVAILABLE:
             try:
                 self.harmonic_fusion = get_harmonic_fusion()
-                print("🌊 Harmonic Wave Fusion: WIRED!")
+                print("  Harmonic Wave Fusion: WIRED!")
             except Exception:
                 pass
         
@@ -4476,7 +4476,7 @@ class OrcaKillCycle:
         if HARMONIC_MOMENTUM_AVAILABLE:
             try:
                 self.harmonic_momentum = HarmonicMomentumWaveScanner()
-                print("🌊⚡ Harmonic Momentum Wave: WIRED!")
+                print("   Harmonic Momentum Wave: WIRED!")
             except Exception:
                 pass
         
@@ -4485,7 +4485,7 @@ class OrcaKillCycle:
         if HARMONIC_REALITY_AVAILABLE:
             try:
                 self.harmonic_reality = HarmonicRealityFramework()
-                print("🌊 Harmonic Reality Framework: WIRED!")
+                print("  Harmonic Reality Framework: WIRED!")
             except Exception:
                 pass
         
@@ -4494,13 +4494,13 @@ class OrcaKillCycle:
         if GLOBAL_BOT_MAP_AVAILABLE:
             try:
                 self.global_bot_map = GlobalBotMap()
-                print("🗺️ Global Bot Map: WIRED!")
+                print("   Global Bot Map: WIRED!")
             except Exception:
                 pass
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌀 ENIGMA & ENHANCEMENT SYSTEMS - Wire up for 100% flight check
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   ENIGMA & ENHANCEMENT SYSTEMS - Wire up for 100% flight check
+        #                                                                    
         
         # Enhanced Quantum Telescope
         self.enhanced_telescope = None
@@ -4508,7 +4508,7 @@ class OrcaKillCycle:
             try:
                 geometry_engine = EnhancedQuantumGeometryEngine()
                 self.enhanced_telescope = EnhancedQuantumTelescope(geometry_engine)
-                print("🌌 Enhanced Quantum Telescope: WIRED!")
+                print("  Enhanced Quantum Telescope: WIRED!")
             except Exception:
                 pass
         
@@ -4517,7 +4517,7 @@ class OrcaKillCycle:
         if ENIGMA_DREAM_AVAILABLE:
             try:
                 self.enigma_dream = EnigmaDreamProcessor()
-                print("💭 Enigma Dream: WIRED!")
+                print("  Enigma Dream: WIRED!")
             except Exception:
                 pass
         
@@ -4526,7 +4526,7 @@ class OrcaKillCycle:
         if ENHANCEMENT_LAYER_AVAILABLE:
             try:
                 self.enhancement_layer = EnhancementLayer()
-                print("✨ Enhancement Layer: WIRED!")
+                print("  Enhancement Layer: WIRED!")
             except Exception:
                 pass
         
@@ -4535,7 +4535,7 @@ class OrcaKillCycle:
         if ENIGMA_INTEGRATION_AVAILABLE:
             try:
                 self.enigma_integration = EnigmaIntegration()
-                print("🧩 Enigma Integration: WIRED!")
+                print("  Enigma Integration: WIRED!")
             except Exception:
                 pass
         
@@ -4544,7 +4544,7 @@ class OrcaKillCycle:
         if FIRM_INTELLIGENCE_AVAILABLE:
             try:
                 self.firm_intelligence = get_firm_catalog()
-                print("📊 Firm Intelligence Catalog: WIRED!")
+                print("  Firm Intelligence Catalog: WIRED!")
             except Exception:
                 pass
         
@@ -4553,81 +4553,81 @@ class OrcaKillCycle:
         if ENIGMA_CORE_AVAILABLE:
             try:
                 self.enigma_core = EnigmaCore()
-                print("🌀 Enigma Core: WIRED!")
+                print("  Enigma Core: WIRED!")
             except Exception:
                 pass
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🆕 ADDITIONAL NEURAL & TRADING SYSTEMS - 100% Coverage
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   ADDITIONAL NEURAL & TRADING SYSTEMS - 100% Coverage
+        #                                                                    
         
-        # ⛏️ Aureon Miner - Background mining with harmonic optimization
+        #    Aureon Miner - Background mining with harmonic optimization
         self.aureon_miner = None
         if AUREON_MINER_AVAILABLE:
             try:
                 self.aureon_miner = AureonMiner()
-                print("⛏️ Aureon Miner: WIRED!")
+                print("   Aureon Miner: WIRED!")
             except Exception:
                 pass
         
-        # 🌐 Multi-Exchange Manager - Cross-exchange orchestration
+        #   Multi-Exchange Manager - Cross-exchange orchestration
         self.multi_exchange = None
         if MULTI_EXCHANGE_AVAILABLE:
             try:
                 self.multi_exchange = MultiExchangeManager() if MultiExchangeManager else None
-                print("🌐 Multi-Exchange Manager: WIRED!")
+                print("  Multi-Exchange Manager: WIRED!")
             except Exception:
                 pass
         
-        # 🎯 Multi-Pair Trader - Multi-pair coherence monitoring
+        #   Multi-Pair Trader - Multi-pair coherence monitoring
         self.multi_pair = None
         if MULTI_PAIR_AVAILABLE:
             try:
                 self.multi_pair = MasterEquation() if MasterEquation else None
-                print("🎯 Multi-Pair Master Equation: WIRED!")
+                print("  Multi-Pair Master Equation: WIRED!")
             except Exception:
                 pass
         
-        # 🌌 Multiverse Live Engine - Commando unified trading
+        #   Multiverse Live Engine - Commando unified trading
         self.multiverse_live = None
         if MULTIVERSE_LIVE_AVAILABLE:
             try:
                 self.multiverse_live = True  # Module available, mark as ready
-                print("🌌 Multiverse Live Engine: WIRED!")
+                print("  Multiverse Live Engine: WIRED!")
             except Exception:
                 pass
         
-        # ✨ Multiverse Orchestrator - Atom-to-Galaxy ladder
+        #   Multiverse Orchestrator - Atom-to-Galaxy ladder
         self.multiverse_orchestrator = None
         if MULTIVERSE_ORCHESTRATOR_AVAILABLE:
             try:
                 self.multiverse_orchestrator = True  # Module available
-                print("✨ Multiverse Orchestrator: WIRED! (Atom → Galaxy ladder)")
+                print("  Multiverse Orchestrator: WIRED! (Atom   Galaxy ladder)")
             except Exception:
                 pass
         
-        # 🍄 Mycelium Neural Network - Underground signal network
+        #   Mycelium Neural Network - Underground signal network
         self.mycelium_network = None
         if MYCELIUM_NETWORK_AVAILABLE:
             try:
                 self.mycelium_network = MyceliumNetwork(initial_capital=1000.0)
-                print("🍄 Mycelium Neural Network: WIRED! (Underground signals)")
+                print("  Mycelium Neural Network: WIRED! (Underground signals)")
             except Exception:
                 pass
         
-        # 🌍🔗 Neural Revenue Orchestrator - Master revenue generation
+        #    Neural Revenue Orchestrator - Master revenue generation
         self.neural_revenue = None
         if NEURAL_REVENUE_AVAILABLE:
             try:
                 is_live = os.getenv('LIVE', '0') == '1'
                 self.neural_revenue = NeuralRevenueOrchestrator(dry_run=not is_live)
-                print(f"🌍🔗 Neural Revenue Orchestrator: WIRED! ({'🔥 LIVE' if is_live else '🧪 DRY-RUN'})")
+                print(f"   Neural Revenue Orchestrator: WIRED! ({'  LIVE' if is_live else '  DRY-RUN'})")
             except Exception:
                 pass
         
-        # ═══════════════════════════════════════════════════════════════════
-        # � UNIFIED SYMBOL MANAGER - Correct symbols & quantities per exchange
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   UNIFIED SYMBOL MANAGER - Correct symbols & quantities per exchange
+        #                                                                    
         
         self.symbol_manager = None
         if SYMBOL_MANAGER_AVAILABLE and get_symbol_manager:
@@ -4636,13 +4636,13 @@ class OrcaKillCycle:
                 # Wire exchange clients for real-time symbol validation
                 if self.symbol_manager and hasattr(self.symbol_manager, 'wire_clients'):
                     self.symbol_manager.wire_clients(self.clients)
-                print("🔤 Unified Symbol Manager: WIRED! (Correct symbols for ALL exchanges)")
+                print("  Unified Symbol Manager: WIRED! (Correct symbols for ALL exchanges)")
             except Exception as e:
-                print(f"⚠️ Symbol Manager: {e}")
+                print(f"   Symbol Manager: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 👑💰🎮 QUEEN ASSET COMMAND CENTER - Full portfolio visibility
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #     QUEEN ASSET COMMAND CENTER - Full portfolio visibility
+        #                                                                    
         
         self.asset_command_center = None
         self.asset_monitor = None
@@ -4654,12 +4654,12 @@ class OrcaKillCycle:
                     self.asset_command_center = get_asset_command_center()
                     if self.asset_command_center and hasattr(self.asset_command_center, 'wire_clients'):
                         self.asset_command_center.wire_clients(self.clients)
-                    print("👑💰 Queen Asset Command Center: WIRED! (Full portfolio visibility)")
+                    print("   Queen Asset Command Center: WIRED! (Full portfolio visibility)")
                 
                 # Initialize Asset Monitor (background FREE API monitoring)
                 if get_asset_monitor:
                     self.asset_monitor = get_asset_monitor()
-                    print("👑📊 Queen Asset Monitor: WIRED! (Continuous price updates)")
+                    print("   Queen Asset Monitor: WIRED! (Continuous price updates)")
                 
                 # Initialize Ocean View (positions + opportunities unified)
                 if get_ocean_view:
@@ -4669,36 +4669,36 @@ class OrcaKillCycle:
                             asset_command=self.asset_command_center,
                             ocean_scanner=self.ocean_scanner
                         )
-                    print("👑🌊 Queen Ocean View: WIRED! (Unified positions + opportunities)")
+                    print("   Queen Ocean View: WIRED! (Unified positions + opportunities)")
             except Exception as e:
-                print(f"⚠️ Asset Command Center: {e}")
+                print(f"   Asset Command Center: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # �👑🦈 QUEEN-ORCA BRIDGE - Unified Command & Intelligence
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #     QUEEN-ORCA BRIDGE - Unified Command & Intelligence
+        #                                                                    
         
         self.queen_orca_bridge = None
         try:
             from queen_orca_bridge import get_queen_orca_bridge
             self.queen_orca_bridge = get_queen_orca_bridge()
             self.queen_orca_bridge.orca_kill_cycle = self  # Wire self into bridge
-            print("👑🦈 Queen-Orca Bridge: WIRED! (Unified command & intelligence)")
+            print("   Queen-Orca Bridge: WIRED! (Unified command & intelligence)")
             
             # Subscribe to Queen commands
             if self.bus:
                 self.bus.subscribe('queen.command.hunt', self._on_queen_hunt_command)
                 self.bus.subscribe('queen.command.abort', self._on_queen_abort_command)
                 self.bus.subscribe('orca.command.*', self._on_orca_command)
-                print("   📡 Subscribed to Queen commands via ThoughtBus")
+                print("     Subscribed to Queen commands via ThoughtBus")
         except Exception as e:
-            print(f"👑🦈 Queen-Orca Bridge: {e}")
+            print(f"   Queen-Orca Bridge: {e}")
         
             # End of FULL INIT MODE
-            _safe_print("✅ FULL INIT COMPLETE - All systems operational!")
+            _safe_print("  FULL INIT COMPLETE - All systems operational!")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌐 PARALLEL ORCHESTRATOR - Wire up ALL parallel intelligence feeds
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   PARALLEL ORCHESTRATOR - Wire up ALL parallel intelligence feeds
+        #                                                                    
         
         self.parallel_orchestrator = None
         self._intel_snapshot_cache = {}
@@ -4707,30 +4707,30 @@ class OrcaKillCycle:
         self.prediction_window_seconds = 30.0
         self.prediction_buffer = {}  # symbol -> list of {'timestamp','probability','confidence'}
         
-        # 🌉 TRUTH PREDICTION BRIDGE - 95% accuracy real-time validation
+        #   TRUTH PREDICTION BRIDGE - 95% accuracy real-time validation
         self.truth_bridge = None
         if TRUTH_BRIDGE_AVAILABLE and get_truth_bridge:
             try:
                 self.truth_bridge = get_truth_bridge()
-                _safe_print("🌉 Truth Prediction Bridge: WIRED! (95% accuracy Queen+Auris+Harmonic)")
+                _safe_print("  Truth Prediction Bridge: WIRED! (95% accuracy Queen+Auris+Harmonic)")
             except Exception as e:
-                _safe_print(f"⚠️ Truth Bridge failed: {e}")
+                _safe_print(f"   Truth Bridge failed: {e}")
         
-        # 👑🛡️ QUEEN SOUL SHIELD - Active protection system
+        #     QUEEN SOUL SHIELD - Active protection system
         self.queen_soul_shield = None
         try:
             from queen_soul_shield import QueenSoulShield
             self.queen_soul_shield = QueenSoulShield(protected_name="Gary Leckey")
             # Start monitoring in background
             self.queen_soul_shield.start_monitoring()
-            _safe_print("👑🛡️ Queen Soul Shield: ACTIVE! (Gary's soul protected)")
+            _safe_print("    Queen Soul Shield: ACTIVE! (Gary's soul protected)")
         except Exception as e:
-            _safe_print(f"⚠️ Queen Soul Shield: {e}")
+            _safe_print(f"   Queen Soul Shield: {e}")
         
         if PARALLEL_ORCHESTRATOR_AVAILABLE and get_orchestrator and not quick_init:
             try:
                 self.parallel_orchestrator = get_orchestrator()
-                _safe_print("🌐 Parallel Orchestrator: WIRED! (All intelligence feeds connected)")
+                _safe_print("  Parallel Orchestrator: WIRED! (All intelligence feeds connected)")
                 
                 # Subscribe to intelligence streams via ThoughtBus
                 if self.bus:
@@ -4747,9 +4747,9 @@ class OrcaKillCycle:
                     self.bus.subscribe('miner.analysis', self._on_miner_analysis)
                     self.bus.subscribe('mycelium.signal', self._on_mycelium_signal)
                     
-                    _safe_print("   📡 Subscribed to parallel intelligence streams")
+                    _safe_print("     Subscribed to parallel intelligence streams")
             except Exception as e:
-                _safe_print(f"🌐 Parallel Orchestrator: {e}")
+                _safe_print(f"  Parallel Orchestrator: {e}")
         
         # Common settings for both quick and full init
         self.stream_interval = 0.1  # 100ms = 10 updates/sec
@@ -4759,7 +4759,7 @@ class OrcaKillCycle:
         self.flight_check_passed = False
         self.last_flight_check = {}
         
-        _safe_print("\n✅ ORCA KILL CYCLE INITIALIZATION COMPLETE")
+        _safe_print("\n  ORCA KILL CYCLE INITIALIZATION COMPLETE")
         
     def audit_event(self, event_type: str, data: dict):
         """Log audit event to JSONL file for tracking and debugging."""
@@ -4777,9 +4777,9 @@ class OrcaKillCycle:
         except Exception:
             pass
     
-    # ═══════════════════════════════════════════════════════════════════════
-    # 👑🦈 QUEEN-ORCA BRIDGE METHODS - Emit signals & handle commands
-    # ═══════════════════════════════════════════════════════════════════════
+    #                                                                        
+    #    QUEEN-ORCA BRIDGE METHODS - Emit signals & handle commands
+    #                                                                        
     
     def emit_kill_signal(self, symbol: str, exchange: str, pnl: float, entry_price: float, 
                          exit_price: float, qty: float, duration_secs: float):
@@ -4811,11 +4811,11 @@ class OrcaKillCycle:
         """Lazy-load Capital.com client on first use (avoids rate limiting during init)."""
         if 'capital' in self.clients and self.clients['capital'] is None:
             try:
-                _safe_print("🔄 Lazy-loading Capital.com client...")
+                _safe_print("  Lazy-loading Capital.com client...")
                 self.clients['capital'] = CapitalClient()
-                _safe_print("✅ Capital.com: CONNECTED (lazy load)")
+                _safe_print("  Capital.com: CONNECTED (lazy load)")
             except Exception as e:
-                _safe_print(f"⚠️ Capital.com lazy load failed: {e}")
+                _safe_print(f"   Capital.com lazy load failed: {e}")
                 # Keep as None to retry next time
         return self.clients.get('capital')
     
@@ -4893,7 +4893,7 @@ class OrcaKillCycle:
             params = payload.get('parameters', {})
             
             if symbol:
-                print(f"👑→🦈 QUEEN COMMANDED: HUNT {symbol} on {exchange}")
+                print(f"    QUEEN COMMANDED: HUNT {symbol} on {exchange}")
                 # Trigger hunt - will be implemented based on params
                 self.audit_event('queen_hunt_command', {'symbol': symbol, 'exchange': exchange, 'params': params})
         except Exception as e:
@@ -4907,10 +4907,10 @@ class OrcaKillCycle:
             reason = payload.get('reason', 'Queen commanded')
             
             if symbol:
-                print(f"👑→🦈 QUEEN COMMANDED: ABORT {symbol} - {reason}")
+                print(f"    QUEEN COMMANDED: ABORT {symbol} - {reason}")
                 self.audit_event('queen_abort_command', {'symbol': symbol, 'reason': reason})
             elif payload.get('abort_all', False):
-                print(f"👑→🦈 QUEEN COMMANDED: ABORT ALL - {reason}")
+                print(f"    QUEEN COMMANDED: ABORT ALL - {reason}")
                 self.audit_event('queen_abort_all_command', {'reason': reason})
         except Exception as e:
             print(f"Error handling Queen abort command: {e}")
@@ -4926,9 +4926,9 @@ class OrcaKillCycle:
         except Exception as e:
             print(f"Error handling Orca command: {e}")
     
-    # ═══════════════════════════════════════════════════════════════════════
-    # 🌐 PARALLEL INTELLIGENCE FEED HANDLERS - Receive from all systems
-    # ═══════════════════════════════════════════════════════════════════════
+    #                                                                        
+    #   PARALLEL INTELLIGENCE FEED HANDLERS - Receive from all systems
+    #                                                                        
     
     def _on_scanner_opportunity(self, thought):
         """Handle opportunity detected from Global Wave Scanner or other scanners."""
@@ -5189,7 +5189,7 @@ class OrcaKillCycle:
             result['feeds']['quantum_coherence'] = data
             if data.get('coherence', 0) >= 0.618:
                 total_score += data['coherence']
-                result['reasons'].append(f"Coherence: {data['coherence']:.3f} (φ threshold)")
+                result['reasons'].append(f"Coherence: {data['coherence']:.3f} (  threshold)")
             feed_count += 1
         
         # Check Timeline Oracle
@@ -5231,7 +5231,7 @@ class OrcaKillCycle:
         
         return result
 
-    # ═══════════════════════════════════════════════════════════════════════
+    #                                                                        
 
     def run_flight_check(self) -> dict:
         """
@@ -5283,7 +5283,7 @@ class OrcaKillCycle:
             'moby_dick': False,
             'stargate': False,
             'quantum_mirror': False,
-            # 🆕 ADDITIONAL NEURAL & TRADING SYSTEMS
+            #   ADDITIONAL NEURAL & TRADING SYSTEMS
             'aureon_miner': False,
             'multi_exchange': False,
             'multi_pair': False,
@@ -5352,7 +5352,7 @@ class OrcaKillCycle:
         flight['stargate'] = self.stargate is not None
         flight['quantum_mirror'] = self.quantum_mirror is not None
         
-        # Check additional harmonic systems (🎵 WIRED IN CONSTRUCTOR)
+        # Check additional harmonic systems (  WIRED IN CONSTRUCTOR)
         flight['global_orchestrator'] = self.global_orchestrator is not None
         flight['harmonic_binary'] = self.harmonic_binary is not None
         flight['harmonic_chain_master'] = self.harmonic_chain_master is not None
@@ -5362,7 +5362,7 @@ class OrcaKillCycle:
         flight['harmonic_reality'] = self.harmonic_reality is not None
         flight['global_bot_map'] = self.global_bot_map is not None
         
-        # Check Enigma & enhancement systems (🌀 WIRED IN CONSTRUCTOR)
+        # Check Enigma & enhancement systems (  WIRED IN CONSTRUCTOR)
         flight['enhanced_telescope'] = self.enhanced_telescope is not None
         flight['enigma_dream'] = self.enigma_dream is not None
         flight['enhancement_layer'] = self.enhancement_layer is not None
@@ -5370,7 +5370,7 @@ class OrcaKillCycle:
         flight['firm_intelligence'] = self.firm_intelligence is not None
         flight['enigma_core'] = self.enigma_core is not None
         
-        # Check additional neural & trading systems (🆕 WIRED IN CONSTRUCTOR)
+        # Check additional neural & trading systems (  WIRED IN CONSTRUCTOR)
         flight['aureon_miner'] = self.aureon_miner is not None
         flight['multi_exchange'] = self.multi_exchange is not None
         flight['multi_pair'] = self.multi_pair is not None
@@ -5408,39 +5408,39 @@ class OrcaKillCycle:
             flight = self.run_flight_check()
         
         print("\n" + "=" * 60)
-        print("✈️ ORCA FLIGHT CHECK - SYSTEM VALIDATION")
+        print("   ORCA FLIGHT CHECK - SYSTEM VALIDATION")
         print("=" * 60)
         
         categories = {
-            '🏦 EXCHANGES': ['exchange_alpaca', 'exchange_kraken'],
-            '👑 QUEEN & CORE': ['queen_wired', 'thought_bus', 'intelligence_engine', 'feed_hub'],
-            '⚡ HFT SYSTEMS': ['hft_engine', 'hft_order_router', 'harmonic_signal_chain', 'harmonic_alphabet'],
-            '🎵 HARMONIC SYSTEMS': ['global_orchestrator', 'harmonic_binary', 'harmonic_chain_master', 'harmonic_counter', 'harmonic_fusion', 'harmonic_momentum', 'harmonic_reality', 'global_bot_map'],
-            '🌀 ENIGMA SYSTEMS': ['enhanced_telescope', 'enigma_dream', 'enhancement_layer', 'enigma_integration', 'firm_intelligence', 'enigma_core'],
-            '🧠 INTELLIGENCE': ['miner_brain', 'quantum_telescope', 'ultimate_intelligence', 'enigma'],
-            '🐋 WHALE SYSTEMS': ['whale_tracker', 'moby_dick', 'chirp_bus'],
-            '🔮 QUANTUM': ['luck_mapper', 'inception_engine', 'stargate', 'quantum_mirror'],
-            '🛡️ PROTECTION': ['phantom_filter', 'immune_system', 'elephant_learning', 'russian_doll'],
-            '🌌 MULTIVERSE & NEURAL': ['aureon_miner', 'multi_exchange', 'multi_pair', 'multiverse_live', 'multiverse_orchestrator', 'mycelium_network', 'neural_revenue']
+            '  EXCHANGES': ['exchange_alpaca', 'exchange_kraken'],
+            '  QUEEN & CORE': ['queen_wired', 'thought_bus', 'intelligence_engine', 'feed_hub'],
+            '  HFT SYSTEMS': ['hft_engine', 'hft_order_router', 'harmonic_signal_chain', 'harmonic_alphabet'],
+            '  HARMONIC SYSTEMS': ['global_orchestrator', 'harmonic_binary', 'harmonic_chain_master', 'harmonic_counter', 'harmonic_fusion', 'harmonic_momentum', 'harmonic_reality', 'global_bot_map'],
+            '  ENIGMA SYSTEMS': ['enhanced_telescope', 'enigma_dream', 'enhancement_layer', 'enigma_integration', 'firm_intelligence', 'enigma_core'],
+            '  INTELLIGENCE': ['miner_brain', 'quantum_telescope', 'ultimate_intelligence', 'enigma'],
+            '  WHALE SYSTEMS': ['whale_tracker', 'moby_dick', 'chirp_bus'],
+            '  QUANTUM': ['luck_mapper', 'inception_engine', 'stargate', 'quantum_mirror'],
+            '   PROTECTION': ['phantom_filter', 'immune_system', 'elephant_learning', 'russian_doll'],
+            '  MULTIVERSE & NEURAL': ['aureon_miner', 'multi_exchange', 'multi_pair', 'multiverse_live', 'multiverse_orchestrator', 'mycelium_network', 'neural_revenue']
         }
         
         for category, keys in categories.items():
             print(f"\n{category}:")
             for key in keys:
                 status = flight.get(key, False)
-                icon = "✅" if status else "❌"
+                icon = " " if status else " "
                 name = key.replace('_', ' ').title()
                 print(f"   {icon} {name}")
         
         # Summary
         summary = flight.get('summary', {})
         print(f"\n{'=' * 60}")
-        print(f"📊 SUMMARY: {summary.get('online_systems', 0)}/{summary.get('total_systems', 0)} systems online ({summary.get('online_pct', 0)}%)")
+        print(f"  SUMMARY: {summary.get('online_systems', 0)}/{summary.get('total_systems', 0)} systems online ({summary.get('online_pct', 0)}%)")
         
         if self.flight_check_passed:
-            print("✅ FLIGHT CHECK PASSED - Ready for autonomous trading")
+            print("  FLIGHT CHECK PASSED - Ready for autonomous trading")
         else:
-            print("❌ FLIGHT CHECK FAILED - Critical systems offline")
+            print("  FLIGHT CHECK FAILED - Critical systems offline")
         print("=" * 60)
         
     def gather_all_intelligence(self, prices: dict = None) -> dict:
@@ -5557,60 +5557,60 @@ class OrcaKillCycle:
     def print_status_summary(self):
         """Print a comprehensive status summary of all systems (Master Launcher style)."""
         print("\n" + "=" * 70)
-        print("🦈🔪 ORCA COMPLETE KILL CYCLE - STATUS SUMMARY")
+        print("   ORCA COMPLETE KILL CYCLE - STATUS SUMMARY")
         print("=" * 70)
         
-        print("\n📡 INTELLIGENCE SOURCES:")
+        print("\n  INTELLIGENCE SOURCES:")
         if self.intelligence_engine:
-            print("   • Real Intelligence Engine: ACTIVE")
+            print("     Real Intelligence Engine: ACTIVE")
         if self.feed_hub:
-            print("   • Real Data Feed Hub: ACTIVE")
+            print("     Real Data Feed Hub: ACTIVE")
         if self.miner_brain:
-            print("   • Miner Brain: ACTIVE (Cognitive Intelligence)")
+            print("     Miner Brain: ACTIVE (Cognitive Intelligence)")
         if self.ultimate_intel:
-            print("   • Ultimate Intelligence: ACTIVE (95% accuracy)")
+            print("     Ultimate Intelligence: ACTIVE (95% accuracy)")
         
-        print("\n🐋 WHALE SYSTEMS:")
+        print("\n  WHALE SYSTEMS:")
         if self.whale_tracker:
-            print("   • Whale Tracker: ACTIVE")
+            print("     Whale Tracker: ACTIVE")
         if self.moby_dick:
-            print("   • Moby Dick Hunter: ACTIVE")
+            print("     Moby Dick Hunter: ACTIVE")
         if self.chirp_bus:
-            print("   • Chirp Bus: ACTIVE (Bird chorus)")
+            print("     Chirp Bus: ACTIVE (Bird chorus)")
         
-        print("\n⚡ HFT & EXECUTION:")
+        print("\n  HFT & EXECUTION:")
         if self.hft_engine:
-            print("   • HFT Harmonic Engine: ACTIVE")
+            print("     HFT Harmonic Engine: ACTIVE")
         if self.hft_order_router:
-            print("   • HFT Order Router: ACTIVE")
+            print("     HFT Order Router: ACTIVE")
         if self.harmonic_signal_chain:
-            print("   • Harmonic Signal Chain: ACTIVE")
+            print("     Harmonic Signal Chain: ACTIVE")
         
-        print("\n🔮 QUANTUM SYSTEMS:")
+        print("\n  QUANTUM SYSTEMS:")
         if self.luck_mapper:
-            print("   • Luck Field Mapper: ACTIVE")
+            print("     Luck Field Mapper: ACTIVE")
         if self.inception_engine:
-            print("   • Inception Engine: ACTIVE (LIMBO probability)")
+            print("     Inception Engine: ACTIVE (LIMBO probability)")
         if self.stargate:
-            print("   • Stargate Protocol: ACTIVE")
+            print("     Stargate Protocol: ACTIVE")
         if self.quantum_mirror:
-            print("   • Quantum Mirror: ACTIVE")
+            print("     Quantum Mirror: ACTIVE")
         
-        print("\n🛡️ PROTECTION SYSTEMS:")
+        print("\n   PROTECTION SYSTEMS:")
         if self.phantom_filter:
-            print("   • Phantom Filter: ACTIVE (4-layer validation)")
+            print("     Phantom Filter: ACTIVE (4-layer validation)")
         if self.immune_system:
-            print("   • Immune System: ACTIVE (Self-healing)")
+            print("     Immune System: ACTIVE (Self-healing)")
         if self.elephant:
-            print("   • Elephant Learning: ACTIVE (Pattern memory)")
+            print("     Elephant Learning: ACTIVE (Pattern memory)")
         
-        print("\n🏦 EXCHANGE CONNECTIONS:")
+        print("\n  EXCHANGE CONNECTIONS:")
         for exchange, client in self.clients.items():
-            status = "✅ CONNECTED" if client else "❌ OFFLINE"
-            print(f"   • {exchange.title()}: {status}")
+            status = "  CONNECTED" if client else "  OFFLINE"
+            print(f"     {exchange.title()}: {status}")
         
         print("\n" + "=" * 70)
-        print("✅ ORCA KILL CYCLE READY - All systems operational")
+        print("  ORCA KILL CYCLE READY - All systems operational")
         print("=" * 70)
         
     def _handle_whale_signal(self, thought):
@@ -5653,9 +5653,9 @@ class OrcaKillCycle:
             pass
         return False
     
-    # ═══════════════════════════════════════════════════════════════════════
-    # � QUANTUM INTELLIGENCE - ENHANCED PROBABILITY SCORING
-    # ═══════════════════════════════════════════════════════════════════════
+    #                                                                        
+    #   QUANTUM INTELLIGENCE - ENHANCED PROBABILITY SCORING
+    #                                                                        
     
     def get_quantum_score(self, symbol: str, price: float, change_pct: float, 
                           volume: float = 0, momentum: float = 0) -> dict:
@@ -5767,9 +5767,9 @@ class OrcaKillCycle:
             except Exception:
                 pass
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🧬 NEW SYSTEMS INTEGRATION
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   NEW SYSTEMS INTEGRATION
+        #                                                                    
         
         # 4. ELEPHANT LEARNING - Pattern memory (never forgets)
         if self.elephant:
@@ -5793,7 +5793,7 @@ class OrcaKillCycle:
             except Exception:
                 pass
         
-        # 5. RUSSIAN DOLL ANALYTICS - Queen directives (Bee→Hive→Queen)
+        # 5. RUSSIAN DOLL ANALYTICS - Queen directives (Bee Hive Queen)
         if self.russian_doll:
             try:
                 directives = self.russian_doll.get_queen_directives()
@@ -5871,9 +5871,9 @@ class OrcaKillCycle:
             except Exception:
                 pass
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌊🎶 HNC SURGE DETECTION - HARMONIC NEXUS CORE (NEW!)
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #    HNC SURGE DETECTION - HARMONIC NEXUS CORE (NEW!)
+        #                                                                    
         
         # 10. HNC Surge Detector - Detect harmonic resonance surge windows
         if self.hnc_surge_detector:
@@ -5918,9 +5918,9 @@ class OrcaKillCycle:
                 result['hnc_surge_active'] = False
                 result['hnc_resonance'] = 'ERROR'
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 📜⚔️ HISTORICAL MANIPULATION HUNTER - PATTERN WARNINGS (NEW!)
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #     HISTORICAL MANIPULATION HUNTER - PATTERN WARNINGS (NEW!)
+        #                                                                    
         
         # 11. Historical Manipulation Hunter - Check for historical pattern matches
         if self.historical_hunter:
@@ -5938,12 +5938,12 @@ class OrcaKillCycle:
                     result['historical_similarity'] = pattern_match.get('similarity', 0.0)
                     result['historical_outcome'] = pattern_match.get('historical_outcome', 'unknown')
                     
-                    # If historical pattern predicts crash/manipulation → REDUCE confidence
+                    # If historical pattern predicts crash/manipulation   REDUCE confidence
                     if pattern_match.get('is_danger_pattern', False):
                         result['quantum_boost'] *= 0.6  # Big reduction for danger!
                         result['historical_warning'] = True
                         self.historical_pattern_warning = pattern_match
-                    # If historical pattern predicts recovery/bull run → BOOST
+                    # If historical pattern predicts recovery/bull run   BOOST
                     elif pattern_match.get('is_opportunity_pattern', False):
                         result['quantum_boost'] *= 1.2
                         result['historical_warning'] = False
@@ -6014,7 +6014,7 @@ class OrcaKillCycle:
     def print_quantum_status(self):
         """Print current quantum systems status."""
         print("\n" + "="*70)
-        print("🌌 QUANTUM INTELLIGENCE SYSTEMS STATUS (25 SYSTEMS WIRED)")
+        print("  QUANTUM INTELLIGENCE SYSTEMS STATUS (25 SYSTEMS WIRED)")
         print("="*70)
         
         wired_count = 0
@@ -6024,46 +6024,46 @@ class OrcaKillCycle:
             try:
                 reading = self.luck_mapper.read_field()
                 state = reading.luck_state.value if hasattr(reading.luck_state, 'value') else str(reading.luck_state)
-                blessed = "🔒 BLESSED!" if reading.luck_field >= 0.8 else ""
-                print(f"🍀 Luck Field: λ={reading.luck_field:.3f} → {state} {blessed}")
-                print(f"   Σ(Schumann)={reading.sigma_schumann:.2f} Π(Planet)={reading.pi_planetary:.2f}")
-                print(f"   Φ(Harmonic)={reading.phi_harmonic:.2f} Ω(Time)={reading.omega_temporal:.2f}")
+                blessed = "  BLESSED!" if reading.luck_field >= 0.8 else ""
+                print(f"  Luck Field:  ={reading.luck_field:.3f}   {state} {blessed}")
+                print(f"    (Schumann)={reading.sigma_schumann:.2f}  (Planet)={reading.pi_planetary:.2f}")
+                print(f"    (Harmonic)={reading.phi_harmonic:.2f}  (Time)={reading.omega_temporal:.2f}")
                 wired_count += 1
             except Exception as e:
-                print(f"🍀 Luck Field: Error - {e}")
+                print(f"  Luck Field: Error - {e}")
         else:
-            print("🍀 Luck Field: Not available")
+            print("  Luck Field: Not available")
         
         # Inception Engine
         if self.inception_engine:
             try:
                 status = self.inception_engine.get_status()
-                print(f"🎬 Inception: {status['dives_completed']} dives | {status.get('limbo_patterns_loaded', 0)} patterns")
+                print(f"  Inception: {status['dives_completed']} dives | {status.get('limbo_patterns_loaded', 0)} patterns")
                 print(f"   Totem: ${status['totem']['net_profit']:.2f} | Real={status['totem']['is_real']}")
                 wired_count += 1
             except Exception as e:
-                print(f"🎬 Inception: Error - {e}")
+                print(f"  Inception: Error - {e}")
         else:
-            print("🎬 Inception: Not available")
+            print("  Inception: Not available")
         
         # Phantom Filter
         if self.phantom_filter:
-            print("👻 Phantom Filter: ACTIVE (4-layer validation)")
+            print("  Phantom Filter: ACTIVE (4-layer validation)")
             wired_count += 1
         else:
-            print("👻 Phantom Filter: Not available")
+            print("  Phantom Filter: Not available")
         
         # Elephant Learning
         if self.elephant:
             try:
                 best_hours = self.elephant.get_best_trading_hours()
                 hour_str = ','.join(str(h) for h in best_hours[:5]) + '...' if len(best_hours) > 5 else ','.join(str(h) for h in best_hours)
-                print(f"🐘 Elephant: REMEMBERING | Best hours: [{hour_str}]")
+                print(f"  Elephant: REMEMBERING | Best hours: [{hour_str}]")
                 wired_count += 1
             except Exception as e:
-                print(f"🐘 Elephant: Error - {e}")
+                print(f"  Elephant: Error - {e}")
         else:
-            print("🐘 Elephant Learning: Not available")
+            print("  Elephant Learning: Not available")
         
         # Russian Doll Analytics
         if self.russian_doll:
@@ -6071,36 +6071,36 @@ class OrcaKillCycle:
                 directives = self.russian_doll.get_queen_directives()
                 conf = directives.get('confidence', 0)
                 exchanges = directives.get('target_exchanges', [])
-                print(f"🦷 Russian Doll: Queen confidence {conf:.1%} | Targets: {exchanges}")
+                print(f"  Russian Doll: Queen confidence {conf:.1%} | Targets: {exchanges}")
                 wired_count += 1
             except Exception as e:
-                print(f"🦷 Russian Doll: Error - {e}")
+                print(f"  Russian Doll: Error - {e}")
         else:
-            print("🦷 Russian Doll: Not available")
+            print("  Russian Doll: Not available")
         
         # Immune System
         if self.immune_system:
             try:
                 health = self.immune_system.get_health_status()
                 status = health.get('overall', 'unknown')
-                emoji = "✅" if status == 'healthy' else "⚠️" if status == 'warning' else "🔴"
-                print(f"🛡️ Immune System: {emoji} {status.upper()}")
+                emoji = " " if status == 'healthy' else "  " if status == 'warning' else " "
+                print(f"   Immune System: {emoji} {status.upper()}")
                 wired_count += 1
             except Exception as e:
-                print(f"🛡️ Immune System: Error - {e}")
+                print(f"   Immune System: Error - {e}")
         else:
-            print("🛡️ Immune System: Not available")
+            print("   Immune System: Not available")
         
         # Moby Dick Whale Hunter
         if self.moby_dick:
             try:
                 preds = self.moby_dick.get_execution_ready_predictions()
-                print(f"🐋 Moby Dick: {len(preds)} whale predictions ready")
+                print(f"  Moby Dick: {len(preds)} whale predictions ready")
                 wired_count += 1
             except Exception as e:
-                print(f"🐋 Moby Dick: Error - {e}")
+                print(f"  Moby Dick: Error - {e}")
         else:
-            print("🐋 Moby Dick: Not available")
+            print("  Moby Dick: Not available")
         
         # Stargate Protocol
         if self.stargate:
@@ -6108,24 +6108,24 @@ class OrcaKillCycle:
                 status = self.stargate.get_status()
                 coherence = status.get('network_coherence', 0)
                 nodes = status.get('active_nodes', 0)
-                print(f"🌌 Stargate: Coherence {coherence:.1%} | {nodes} nodes active")
+                print(f"  Stargate: Coherence {coherence:.1%} | {nodes} nodes active")
                 wired_count += 1
             except Exception as e:
-                print(f"🌌 Stargate: Error - {e}")
+                print(f"  Stargate: Error - {e}")
         else:
-            print("🌌 Stargate: Not available")
+            print("  Stargate: Not available")
         
         # Quantum Mirror Scanner
         if self.quantum_mirror:
             try:
                 status = self.quantum_mirror.get_status()
                 branches = len(status.get('branches', {}))
-                print(f"🔮 Quantum Mirror: {branches} reality branches tracked")
+                print(f"  Quantum Mirror: {branches} reality branches tracked")
                 wired_count += 1
             except Exception as e:
-                print(f"🔮 Quantum Mirror: Error - {e}")
+                print(f"  Quantum Mirror: Error - {e}")
         else:
-            print("🔮 Quantum Mirror: Not available")
+            print("  Quantum Mirror: Not available")
         
         # HNC Surge Detector (NEW!)
         if self.hnc_surge_detector:
@@ -6134,14 +6134,14 @@ class OrcaKillCycle:
                 if self.hnc_active_surge:
                     harmonic = self.hnc_active_surge.primary_harmonic if hasattr(self.hnc_active_surge, 'primary_harmonic') else 'Unknown'
                     intensity = self.hnc_active_surge.intensity if hasattr(self.hnc_active_surge, 'intensity') else 0.5
-                    print(f"🌊🎶 HNC Surge: ACTIVE! {harmonic} | Intensity: {intensity:.0%}")
+                    print(f"   HNC Surge: ACTIVE! {harmonic} | Intensity: {intensity:.0%}")
                 else:
-                    print("🌊🎶 HNC Surge: Monitoring (no active surge windows)")
+                    print("   HNC Surge: Monitoring (no active surge windows)")
                 wired_count += 1
             except Exception as e:
-                print(f"🌊🎶 HNC Surge: Error - {e}")
+                print(f"   HNC Surge: Error - {e}")
         else:
-            print("🌊🎶 HNC Surge Detector: Not available")
+            print("   HNC Surge Detector: Not available")
         
         # Historical Manipulation Hunter (NEW!)
         if self.historical_hunter:
@@ -6149,34 +6149,34 @@ class OrcaKillCycle:
                 # Check for active warnings
                 if self.historical_pattern_warning:
                     pattern = self.historical_pattern_warning.get('pattern_name', 'Unknown')
-                    print(f"📜⚔️ Historical Hunter: ⚠️ WARNING - {pattern} pattern detected!")
+                    print(f"    Historical Hunter:    WARNING - {pattern} pattern detected!")
                 else:
-                    print("📜⚔️ Historical Hunter: CLEAR (no danger patterns)")
+                    print("    Historical Hunter: CLEAR (no danger patterns)")
                 wired_count += 1
             except Exception as e:
-                print(f"📜⚔️ Historical Hunter: Error - {e}")
+                print(f"    Historical Hunter: Error - {e}")
         else:
-            print("📜⚔️ Historical Manipulation Hunter: Not available")
+            print("    Historical Manipulation Hunter: Not available")
         
         print("-"*70)
-        print(f"⚡ TOTAL QUANTUM SYSTEMS ACTIVE: {wired_count}/28 display | 46 total wired")
+        print(f"  TOTAL QUANTUM SYSTEMS ACTIVE: {wired_count}/28 display | 46 total wired")
         print("="*70)
     
-    # ═══════════════════════════════════════════════════════════════════════
-    # �🆕 SCAN ENTIRE MARKET - ALL EXCHANGES, ALL SYMBOLS
-    # ═══════════════════════════════════════════════════════════════════════
+    #                                                                        
+    #    SCAN ENTIRE MARKET - ALL EXCHANGES, ALL SYMBOLS
+    #                                                                        
     
     def scan_entire_market(self, min_change_pct: float = 0.05, min_volume: float = 500) -> List[MarketOpportunity]:
         """
         Scan ENTIRE market across ALL exchanges for opportunities.
         
         Returns sorted list of best opportunities from Alpaca AND Kraken.
-        🌌 ENHANCED with quantum probability scoring!
+          ENHANCED with quantum probability scoring!
         
         VOLATILITY TARGETING: Lowered to 0.05% to catch micro-movements and compound gains
         """
         print("\n" + "="*70)
-        print("🌊 SCANNING ENTIRE MARKET - ALL EXCHANGES")
+        print("  SCANNING ENTIRE MARKET - ALL EXCHANGES")
         print("="*70)
         
         opportunities = []
@@ -6185,32 +6185,32 @@ class OrcaKillCycle:
         if 'alpaca' in self.clients:
             alpaca_opps = self._scan_alpaca_market(min_change_pct, min_volume)
             opportunities.extend(alpaca_opps)
-            print(f"   📊 Alpaca: Found {len(alpaca_opps)} opportunities")
+            print(f"     Alpaca: Found {len(alpaca_opps)} opportunities")
         
         # Scan Kraken
         if 'kraken' in self.clients:
             kraken_opps = self._scan_kraken_market(min_change_pct, min_volume)
             opportunities.extend(kraken_opps)
-            print(f"   📊 Kraken: Found {len(kraken_opps)} opportunities")
+            print(f"     Kraken: Found {len(kraken_opps)} opportunities")
         
         # Scan Binance
         if 'binance' in self.clients:
             binance_opps = self._scan_binance_market(min_change_pct, min_volume)
             opportunities.extend(binance_opps)
-            print(f"   📊 Binance: Found {len(binance_opps)} opportunities")
+            print(f"     Binance: Found {len(binance_opps)} opportunities")
         
         # Scan Capital.com
         if 'capital' in self.clients:
             capital_opps = self._scan_capital_market(min_change_pct, min_volume)
             opportunities.extend(capital_opps)
-            print(f"   📊 Capital.com: Found {len(capital_opps)} CFD opportunities")
+            print(f"     Capital.com: Found {len(capital_opps)} CFD opportunities")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 💀 UNIFIED KILL CHAIN HUNT (Win Killer)
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   UNIFIED KILL CHAIN HUNT (Win Killer)
+        #                                                                    
         if self.unified_kill_chain:
             try:
-                print("   💀 Running Unified Kill Chain Hunt...")
+                print("     Running Unified Kill Chain Hunt...")
                 win_opps = []
                 
                 # Binance
@@ -6249,18 +6249,18 @@ class OrcaKillCycle:
                             fee_rate=self.fee_rates.get('kraken', 0.0026)
                         ))
                 
-                print(f"   💀 Unified Hunt injected {len(win_opps)} HIGH PROBABILITY kills")
+                print(f"     Unified Hunt injected {len(win_opps)} HIGH PROBABILITY kills")
                 opportunities.extend(win_opps)
 
             except Exception as e:
-                print(f"   ⚠️ Unified Hunt Error: {e}")
+                print(f"      Unified Hunt Error: {e}")
 
-        # ═══════════════════════════════════════════════════════════════════
-        # ❄️ SNOWBALL LEAN HUNT (Arbitrage/Momentum)
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #    SNOWBALL LEAN HUNT (Arbitrage/Momentum)
+        #                                                                    
         if self.snowball:
             try:
-                print("   ❄️ Running Snowball Scan...")
+                print("      Running Snowball Scan...")
                 # Arbitrage Scan
                 arb_opps = self.snowball.scan_arbitrage()
                 snow_opps = []
@@ -6278,14 +6278,14 @@ class OrcaKillCycle:
                             fee_rate=0.005
                         ))
                 
-                print(f"   ❄️ Snowball injected {len(snow_opps)} arbitrage targets")
+                print(f"      Snowball injected {len(snow_opps)} arbitrage targets")
                 opportunities.extend(snow_opps)
             except Exception as e:
-                print(f"   ⚠️ Snowball error: {e}")
+                print(f"      Snowball error: {e}")
 
-        # ═══════════════════════════════════════════════════════════════════
-        # 🎯📊 FEED DATA TO PROBABILITY NEXUS (Batten Matrix)
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #    FEED DATA TO PROBABILITY NEXUS (Batten Matrix)
+        #                                                                    
         if PROBABILITY_NEXUS_AVAILABLE and process_market_data and opportunities:
             try:
                 # Feed market data from opportunities to Probability Nexus
@@ -6303,13 +6303,13 @@ class OrcaKillCycle:
                 
                 # Update subsystem state to calculate coherence/lambda metrics
                 update_subsystems()
-                print(f"   🎯 Fed {len(opportunities)} snapshots to Probability Nexus (Batten Matrix)")
+                print(f"     Fed {len(opportunities)} snapshots to Probability Nexus (Batten Matrix)")
             except Exception as e:
-                print(f"   ⚠️ Probability Nexus feed error: {e}")
+                print(f"      Probability Nexus feed error: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🦅 MOMENTUM ECOSYSTEM - Animal Swarms & Micro Goals
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   MOMENTUM ECOSYSTEM - Animal Swarms & Micro Goals
+        #                                                                    
         if self.momentum_ecosystem:
             try:
                 swarm_layout = self.momentum_ecosystem.run_once()
@@ -6327,13 +6327,13 @@ class OrcaKillCycle:
                             fee_rate=self.fee_rates.get('alpaca', 0.0025)
                         )
                         swarm_opps.append(opp)
-                        print(f"   🦅 {agent.upper()}: Found {anim.symbol} ({anim.reason})")
+                        print(f"     {agent.upper()}: Found {anim.symbol} ({anim.reason})")
                 
                 if swarm_opps:
                     opportunities.extend(swarm_opps)
-                    print(f"   📊 Animal Swarm: Added {len(swarm_opps)} momentum targets")
+                    print(f"     Animal Swarm: Added {len(swarm_opps)} momentum targets")
             except Exception as e:
-                print(f"   ⚠️ Animal Swarm Scan Failed: {e}")
+                print(f"      Animal Swarm Scan Failed: {e}")
 
         if self.micro_scanner:
             try:
@@ -6351,16 +6351,16 @@ class OrcaKillCycle:
                             fee_rate=self.fee_rates.get('alpaca', 0.0025)
                         )
                         opportunities.extend([opp])
-                    print(f"   📊 Micro-Momentum: Added {len(micro_signals)} scalp targets")
+                    print(f"     Micro-Momentum: Added {len(micro_signals)} scalp targets")
             except Exception as e:
-                print(f"   ⚠️ Micro-Scanner Failed: {e}")
+                print(f"      Micro-Scanner Failed: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌌 QUANTUM ENHANCEMENT - Apply luck field + LIMBO probability boost
-        # 🌊🎶 HNC SURGE + 📜⚔️ HISTORICAL MANIPULATION FILTER!
-        # ═══════════════════════════════════════════════════════════════════
-        print("\n🌌 Applying FULL quantum intelligence scoring...")
-        print("   🌊🎶 HNC Surge Detection | 📜⚔️ Historical Pattern Filter")
+        #                                                                    
+        #   QUANTUM ENHANCEMENT - Apply luck field + LIMBO probability boost
+        #    HNC SURGE +     HISTORICAL MANIPULATION FILTER!
+        #                                                                    
+        print("\n  Applying FULL quantum intelligence scoring...")
+        print("      HNC Surge Detection |     Historical Pattern Filter")
         blessed_count = 0
         limbo_high_count = 0
         hnc_surge_count = 0
@@ -6379,9 +6379,9 @@ class OrcaKillCycle:
                 momentum=opp.momentum_score
             )
             
-            # ═══════════════════════════════════════════════════════════════
-            # ⚠️ HISTORICAL DANGER CHECK - WARN BUT LET QUEEN DECIDE!
-            # ═══════════════════════════════════════════════════════════════
+            #                                                                
+            #    HISTORICAL DANGER CHECK - WARN BUT LET QUEEN DECIDE!
+            #                                                                
             if quantum.get('historical_warning', False):
                 historical_blocked += 1
                 pattern = quantum.get('historical_pattern', 'Unknown')
@@ -6389,7 +6389,7 @@ class OrcaKillCycle:
                 # (already reduced by 0.6x in get_quantum_score)
                 opp._historical_warning = True
                 opp._historical_pattern = pattern
-                # print(f"   ⚠️ WARNING: {opp.symbol} - Historical pattern: {pattern} (Queen will decide)")
+                # print(f"      WARNING: {opp.symbol} - Historical pattern: {pattern} (Queen will decide)")
             else:
                 opp._historical_warning = False
                 opp._historical_pattern = None
@@ -6398,9 +6398,9 @@ class OrcaKillCycle:
             original_score = opp.momentum_score
             opp.momentum_score = original_score * quantum['quantum_boost']
             
-            # ═══════════════════════════════════════════════════════════════
-            # 🌊🎶 HNC SURGE BOOST - Harmonic resonance = PRIORITY!
-            # ═══════════════════════════════════════════════════════════════
+            #                                                                
+            #    HNC SURGE BOOST - Harmonic resonance = PRIORITY!
+            #                                                                
             if quantum.get('hnc_surge_active', False):
                 hnc_surge_count += 1
                 resonance = quantum.get('hnc_resonance', 'SURGE')
@@ -6408,19 +6408,19 @@ class OrcaKillCycle:
                 # Mark as HNC-blessed for priority selection
                 opp._hnc_surge = True
                 opp._hnc_resonance = resonance
-                print(f"   🌊🎶 HNC SURGE: {opp.symbol} | {resonance} | Intensity: {intensity:.0%}")
+                print(f"      HNC SURGE: {opp.symbol} | {resonance} | Intensity: {intensity:.0%}")
             else:
                 opp._hnc_surge = False
                 opp._hnc_resonance = None
             
-            # ═══════════════════════════════════════════════════════════════
-            # 📜 HISTORICAL OPPORTUNITY BOOST - Past predicts future!
-            # ═══════════════════════════════════════════════════════════════
+            #                                                                
+            #   HISTORICAL OPPORTUNITY BOOST - Past predicts future!
+            #                                                                
             if quantum.get('historical_pattern') and not quantum.get('historical_warning'):
                 historical_boosted += 1
                 pattern = quantum.get('historical_pattern', 'Unknown')
                 opp._historical_pattern = pattern
-                print(f"   📜 HISTORICAL BOOST: {opp.symbol} - Pattern: {pattern}")
+                print(f"     HISTORICAL BOOST: {opp.symbol} - Pattern: {pattern}")
             else:
                 opp._historical_pattern = None
             
@@ -6435,22 +6435,22 @@ class OrcaKillCycle:
         # Replace original list with filtered (danger-free!) opportunities
         opportunities = filtered_opportunities
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 👑💰 QUEEN'S SACRED PROFIT GATE - NOTHING PASSES WITHOUT IT! 💰👑
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #    QUEEN'S SACRED PROFIT GATE - NOTHING PASSES WITHOUT IT!   
+        #                                                                    
         # The Queen LIVES, BREATHES, SLEEPS, and DREAMS PROFITS!
         # NO opportunity gets through unless it can achieve MIN_COP >= QUEEN_MIN_COP
         # This is HARDWIRED into scanning, ranking, and buying - UNITY IN TANDEM!
         # Uses MODULE-LEVEL CONSTANTS: QUEEN_MIN_COP, QUEEN_MIN_PROFIT_PCT
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         
-        MIN_COP_SACRED = QUEEN_MIN_COP  # 👑 THE SACRED NUMBER FROM MODULE CONSTANTS!
+        MIN_COP_SACRED = QUEEN_MIN_COP  #   THE SACRED NUMBER FROM MODULE CONSTANTS!
         MIN_PROFIT_PCT_REQUIRED = QUEEN_MIN_PROFIT_PCT  # (Growth Mode)
         
         # Calculate required price move to achieve Target (after fees)
         def can_achieve_queen_target(opp):
             """
-            👑 Check if opportunity CAN reach Queen's profit target.
+              Check if opportunity CAN reach Queen's profit target.
             
             Returns (can_achieve, required_move_pct, time_estimate)
             """
@@ -6506,28 +6506,28 @@ class OrcaKillCycle:
         # Replace with Target-capable opportunities only
         opportunities = sacred_filtered
         
-        print(f"\n   👑💰 QUEEN'S TARGET GATE:")
-        print(f"      ✅ CAN achieve Target: {len(sacred_filtered)}")
-        print(f"      ❌ BLOCKED (can't hit Target): {blocked_by_188}")
+        print(f"\n      QUEEN'S TARGET GATE:")
+        print(f"        CAN achieve Target: {len(sacred_filtered)}")
+        print(f"        BLOCKED (can't hit Target): {blocked_by_188}")
         
         # Print intelligence summary
-        print(f"\n   🛡️ INTELLIGENCE SUMMARY:")
+        print(f"\n      INTELLIGENCE SUMMARY:")
         if blessed_count > 0:
-            print(f"      🍀 BLESSED by luck field: {blessed_count}")
+            print(f"        BLESSED by luck field: {blessed_count}")
         if limbo_high_count > 0:
-            print(f"      🎬 LIMBO high probability: {limbo_high_count}")
+            print(f"        LIMBO high probability: {limbo_high_count}")
         if hnc_surge_count > 0:
-            print(f"      🌊🎶 HNC SURGE ACTIVE: {hnc_surge_count} (PRIORITY!)")
+            print(f"         HNC SURGE ACTIVE: {hnc_surge_count} (PRIORITY!)")
         if historical_blocked > 0:
-            print(f"      🚨 BLOCKED by history: {historical_blocked} (Danger patterns!)")
+            print(f"        BLOCKED by history: {historical_blocked} (Danger patterns!)")
         if historical_boosted > 0:
-            print(f"      📜 BOOSTED by history: {historical_boosted} (Opportunity patterns!)")
+            print(f"        BOOSTED by history: {historical_boosted} (Opportunity patterns!)")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 👑� QUEEN'S 4-PHASE MASTER PLAN SCORING 🐝👑
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #    QUEEN'S 4-PHASE MASTER PLAN SCORING   
+        #                                                                    
         # Apply phase-based strategy multipliers to opportunities
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         try:
             # Get current portfolio value to determine phase
             total_capital = 248.37  # Default starting capital
@@ -6541,8 +6541,8 @@ class OrcaKillCycle:
                 pass
             
             current_phase = get_queen_phase(total_capital)
-            print(f"\n   👑 QUEEN'S PHASE: {current_phase['phase']} - {current_phase['name']}")
-            print(f"      Capital: ${total_capital:,.2f} → Target: ${current_phase['target']:,.2f}")
+            print(f"\n     QUEEN'S PHASE: {current_phase['phase']} - {current_phase['name']}")
+            print(f"      Capital: ${total_capital:,.2f}   Target: ${current_phase['target']:,.2f}")
             print(f"      Strategy: {current_phase['strategy']}")
             
             # Apply phase strategy scoring to each opportunity
@@ -6567,31 +6567,31 @@ class OrcaKillCycle:
                 # Log high-value phase alignments
                 if phase_multiplier > 1.5:
                     phase_name = current_phase['name']
-                    print(f"      🎯 {opp.symbol}: {phase_multiplier:.2f}x multiplier ({phase_name} strategy)")
+                    print(f"        {opp.symbol}: {phase_multiplier:.2f}x multiplier ({phase_name} strategy)")
                     
         except Exception as e:
-            print(f"   ⚠️ Phase scoring error: {e}")
+            print(f"      Phase scoring error: {e}")
             # Continue without phase scoring
             for opp in opportunities:
                 opp._phase_multiplier = 1.0
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 👑💰 SACRED PRIORITY SORT - FASTEST TO Target WINS! 💰👑
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #    SACRED PRIORITY SORT - FASTEST TO Target WINS!   
+        #                                                                    
         # The Queen wants the QUICKEST path to Target profit!
         # Ranking: (1) Phase alignment, (2) HNC Surge, (3) Fastest to Target, (4) Profit potential
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         def sacred_priority_sort_key(opp):
             """
-            👑 SACRED SORT: Phase-aligned + Fastest to Target = HIGHEST PRIORITY!
+              SACRED SORT: Phase-aligned + Fastest to Target = HIGHEST PRIORITY!
             
-            Phase alignment = score × multiplier (favors current strategy)
+            Phase alignment = score   multiplier (favors current strategy)
             HNC surge = 10000 bonus (immediate priority)
             Historical pattern = 1000 bonus
             Speed to Target = 500 / time_estimate (faster = higher)
             Profit potential above Target = bonus points
             """
-            # 👑🐝 PHASE MULTIPLIER - Queen's Master Plan alignment
+            #    PHASE MULTIPLIER - Queen's Master Plan alignment
             phase_multiplier = getattr(opp, '_phase_multiplier', 1.0)
             
             hnc_bonus = 10000 if getattr(opp, '_hnc_surge', False) else 0
@@ -6616,12 +6616,12 @@ class OrcaKillCycle:
         
         opportunities.sort(key=sacred_priority_sort_key, reverse=True)
         
-        print(f"\n🎯 Total opportunities: {len(opportunities)} (Queen's Target approved!)")
+        print(f"\n  Total opportunities: {len(opportunities)} (Queen's Target approved!)")
         if opportunities:
-            print("\n🏆 TOP OPPORTUNITIES (Ranked by FASTEST to Target profit!):")
+            print("\n  TOP OPPORTUNITIES (Ranked by FASTEST to Target profit!):")
             for i, opp in enumerate(opportunities[:5]):
-                hnc_tag = "🌊🎶" if getattr(opp, '_hnc_surge', False) else ""
-                hist_tag = "📜" if getattr(opp, '_historical_pattern', None) else ""
+                hnc_tag = "  " if getattr(opp, '_hnc_surge', False) else ""
+                hist_tag = " " if getattr(opp, '_historical_pattern', None) else ""
                 resonance = getattr(opp, '_hnc_resonance', '') or ''
                 if resonance:
                     resonance = f" [{resonance[:15]}]"
@@ -6738,7 +6738,7 @@ class OrcaKillCycle:
                     pass
                     
         except Exception as e:
-            print(f"⚠️ Alpaca scan error: {e}")
+            print(f"   Alpaca scan error: {e}")
         
         return opportunities
     
@@ -6771,23 +6771,23 @@ class OrcaKillCycle:
                     filtered.append(symbol)
             
             filtered = sorted(list(set(filtered)))
-            _safe_print(f"🔍 Discovered {len(filtered)} Kraken trading pairs")
+            _safe_print(f"  Discovered {len(filtered)} Kraken trading pairs")
             return filtered
             
         except Exception as e:
-            _safe_print(f"⚠️ Kraken asset discovery failed: {e}")
+            _safe_print(f"   Kraken asset discovery failed: {e}")
             return []
     
     def _scan_kraken_market(self, min_change_pct: float, min_volume: float) -> List[MarketOpportunity]:
         """
         Scan Kraken pairs for momentum.
         
-        🚀 PRODUCTION FIX: Uses unified cache instead of direct API calls!
+          PRODUCTION FIX: Uses unified cache instead of direct API calls!
         This prevents rate limit death when multiple processes are running.
         """
         opportunities = []
         
-        # 🌐 PRODUCTION: Use unified cache (Binance WebSocket data)
+        #   PRODUCTION: Use unified cache (Binance WebSocket data)
         # This is FREE and doesn't hit Kraken API at all!
         if UNIFIED_CACHE_AVAILABLE and get_all_prices:
             try:
@@ -6817,12 +6817,12 @@ class OrcaKillCycle:
                             ))
                     
                     if opportunities:
-                        print(f"   🌐 Cache scan: {len(opportunities)} opportunities from unified cache")
+                        print(f"     Cache scan: {len(opportunities)} opportunities from unified cache")
                         return opportunities
             except Exception as e:
-                print(f"   ⚠️ Cache scan error: {e}")
+                print(f"      Cache scan error: {e}")
         
-        # 🐙 FALLBACK: Direct Kraken API (only if cache unavailable)
+        #   FALLBACK: Direct Kraken API (only if cache unavailable)
         # This should rarely be used in production!
         client = self.clients.get('kraken')
         if not client:
@@ -6867,7 +6867,7 @@ class OrcaKillCycle:
                 except Exception:
                     pass
         except Exception as e:
-            print(f"⚠️ Kraken scan error (fallback API): {e}")
+            print(f"   Kraken scan error (fallback API): {e}")
         
         return opportunities
     
@@ -6879,15 +6879,15 @@ class OrcaKillCycle:
             return opportunities
         
         try:
-            print(f"   🔍 DEBUG: Starting Binance Scan...")
+            print(f"     DEBUG: Starting Binance Scan...")
             # Get 24h ticker for all symbols
             r = client.session.get(f"{client.base}/api/v3/ticker/24hr", timeout=10)
             if r.status_code != 200:
-                print(f"   ⚠️ Binance API Error: {r.status_code}")
+                print(f"      Binance API Error: {r.status_code}")
                 return opportunities
             
             tickers = r.json()
-            print(f"   🔍 DEBUG: Fetched {len(tickers)} tickers from Binance")
+            print(f"     DEBUG: Fetched {len(tickers)} tickers from Binance")
             
             # Track which quote currencies we're seeing
             quote_currencies = set()
@@ -6909,12 +6909,12 @@ class OrcaKillCycle:
                     if not symbol:
                         continue
                     
-                    # 🇬🇧 UK Mode: Skip restricted symbols FIRST (leveraged tokens, stock tokens, etc.)
+                    #    UK Mode: Skip restricted symbols FIRST (leveraged tokens, stock tokens, etc.)
                     if client.uk_mode and client.is_uk_restricted_symbol(symbol):
                         skipped_restricted += 1
                         continue
 
-                    # 🇬🇧 UK Mode: Skip symbols not in account trade groups when available
+                    #    UK Mode: Skip symbols not in account trade groups when available
                     if allowed_pairs is not None and symbol not in allowed_pairs:
                         skipped_uk_groups += 1
                         continue
@@ -6961,22 +6961,22 @@ class OrcaKillCycle:
                 except Exception:
                     pass
             
-            print(f"   🔍 DEBUG: Binance Stats - Restricted: {skipped_restricted}, UKGroups: {skipped_uk_groups}, ZeroPrice: {skipped_zeros}, LowChange: {skipped_low_change}, Passed: {len(opportunities)}")
+            print(f"     DEBUG: Binance Stats - Restricted: {skipped_restricted}, UKGroups: {skipped_uk_groups}, ZeroPrice: {skipped_zeros}, LowChange: {skipped_low_change}, Passed: {len(opportunities)}")
 
             # Print summary of what we scanned
             if quote_currencies:
                 quotes_str = ', '.join(sorted(quote_currencies))
-                print(f"   🌍 Binance: Scanned quote currencies: {quotes_str}")
+                print(f"     Binance: Scanned quote currencies: {quotes_str}")
                 
         except Exception as e:
-            print(f"⚠️ Binance scan error: {e}")
+            print(f"   Binance scan error: {e}")
         
         return opportunities
     
     def _scan_capital_market(self, min_change_pct: float, min_volume: float) -> List[MarketOpportunity]:
         """Scan Capital.com markets for momentum (CFDs: stocks, indices, forex, commodities)."""
         opportunities = []
-        # 🔄 Lazy-load Capital.com client if needed (avoids rate limiting during init)
+        #   Lazy-load Capital.com client if needed (avoids rate limiting during init)
         client = self._ensure_capital_client()
         if not client or not getattr(client, 'enabled', False):
             return opportunities
@@ -7023,10 +7023,10 @@ class OrcaKillCycle:
                     pass
             
             if opportunities:
-                print(f"   🏦 Capital.com: Found {len(opportunities)} CFD opportunities")
+                print(f"     Capital.com: Found {len(opportunities)} CFD opportunities")
                 
         except Exception as e:
-            print(f"⚠️ Capital.com scan error: {e}")
+            print(f"   Capital.com scan error: {e}")
         
         return opportunities
     
@@ -7034,7 +7034,7 @@ class OrcaKillCycle:
         """
         Get prices for portfolio valuation - CACHE FIRST, API FALLBACK.
         
-        🚀 OPTIMIZATION: Uses unified cache (Binance WebSocket) for FREE prices!
+          OPTIMIZATION: Uses unified cache (Binance WebSocket) for FREE prices!
         Only falls back to API calls if cache is empty/stale.
         This prevents Kraken rate limiting on DigitalOcean.
         """
@@ -7114,10 +7114,10 @@ class OrcaKillCycle:
         cash: Dict[str, float] = {}
         self.last_cash_status = {'alpaca': 'unknown', 'kraken': 'unknown', 'binance': 'unknown', 'capital': 'unknown'}
         
-        # 🆕 TEST MODE: Add funds for testing fallback logic
+        #   TEST MODE: Add funds for testing fallback logic
         test_mode = os.environ.get('AUREON_TEST_MODE', '').lower() == 'true'
         
-        # 📊 Get LIVE prices from APIs (cached for this call)
+        #   Get LIVE prices from APIs (cached for this call)
         live_prices = self._get_live_crypto_prices()
         gbp_usd_rate = live_prices.get('GBPUSD', 1.27)  # Live or fallback
         
@@ -7135,7 +7135,7 @@ class OrcaKillCycle:
                         self.last_cash_status['alpaca'] = 'error'
                         cash['alpaca'] = 0.0
                     else:
-                        # 🔧 FIX: Use actual CASH balance, not portfolio_value
+                        #   FIX: Use actual CASH balance, not portfolio_value
                         # portfolio_value includes positions which can't be used to buy new assets!
                         alpaca_cash = float(acct.get('cash', 0) or 0)
                         print(f"   [DEBUG] Alpaca cash detected: {alpaca_cash}")
@@ -7163,7 +7163,7 @@ class OrcaKillCycle:
                             self.last_cash_status['alpaca'] = 'ok'
                         cash['alpaca'] = alpaca_cash + (5.0 if test_mode else 0)
             except Exception as e:
-                print(f"   ⚠️ Alpaca cash error: {e}")
+                print(f"      Alpaca cash error: {e}")
                 self.last_cash_status['alpaca'] = 'error'
                 cash['alpaca'] = 5.0 if test_mode else 0.0
         
@@ -7179,26 +7179,26 @@ class OrcaKillCycle:
                         self.last_cash_status['kraken'] = 'error'
                         cash['kraken'] = 0.0
                     else:
-                        # 🔧 FIX: Only count SPENDABLE stablecoins, NOT crypto positions
+                        #   FIX: Only count SPENDABLE stablecoins, NOT crypto positions
                         # Crypto positions can't be used to buy other crypto directly!
                         # Kraken uses ZUSD for USD, also check TUSD, DAI and other stables
                         kraken_cash = 0.0
                         for key in ['ZUSD', 'USD', 'USDC', 'USDT', 'TUSD', 'DAI', 'USDD']:
                             kraken_cash += float(bal.get(key, 0))
                         
-                        # 🇬🇧 ADD GBP (ZGBP) - Convert to USD using LIVE rate (GBP IS spendable)
+                        #    ADD GBP (ZGBP) - Convert to USD using LIVE rate (GBP IS spendable)
                         gbp_balance = float(bal.get('ZGBP', 0) or bal.get('GBP', 0))
                         if gbp_balance > 0:
                             kraken_cash += gbp_balance * gbp_usd_rate
                         
-                        # ❌ REMOVED: Crypto balances should NOT be counted as "cash"
+                        #   REMOVED: Crypto balances should NOT be counted as "cash"
                         # They are positions, not spendable buying power for new orders
                         # The system was incorrectly thinking it had $16 when it only had $1.68 USD
                         
                         self.last_cash_status['kraken'] = 'ok'
                         cash['kraken'] = kraken_cash + (5.0 if test_mode else 0)
             except Exception as e:
-                print(f"   ⚠️ Kraken cash error: {e}")
+                print(f"      Kraken cash error: {e}")
                 self.last_cash_status['kraken'] = 'error'
                 cash['kraken'] = 5.0 if test_mode else 0.0
         
@@ -7235,14 +7235,14 @@ class OrcaKillCycle:
                     except Exception:
                         pass
                 
-                # ❌ REMOVED: Crypto balances should NOT be counted as "cash"
+                #   REMOVED: Crypto balances should NOT be counted as "cash"
                 # They are positions, not spendable buying power for new orders
                 # The system was incorrectly counting portfolio value as available cash
                 
                 self.last_cash_status['binance'] = 'ok'
                 cash['binance'] = binance_cash + (5.0 if test_mode else 0)
             except Exception as e:
-                print(f"   ⚠️ Binance cash error: {e}")
+                print(f"      Binance cash error: {e}")
                 self.last_cash_status['binance'] = 'error'
                 cash['binance'] = 5.0 if test_mode else 0.0
         
@@ -7270,7 +7270,7 @@ class OrcaKillCycle:
                         else:
                             capital_cash = capital_balance
                         
-                        # 🪙 ADD POSITIONS VALUE - Include open CFD positions
+                        #   ADD POSITIONS VALUE - Include open CFD positions
                         try:
                             positions = capital_client.get_positions()
                             self.capital_positions = []  # Store for tracking
@@ -7301,7 +7301,7 @@ class OrcaKillCycle:
                         self.last_cash_status['capital'] = 'error'
                         cash['capital'] = 5.0 if test_mode else 0.0
             except Exception as e:
-                print(f"   ⚠️ Capital.com cash error: {e}")
+                print(f"      Capital.com cash error: {e}")
                 self.last_cash_status['capital'] = 'error'
                 cash['capital'] = 5.0 if test_mode else 0.0
         
@@ -7334,7 +7334,7 @@ class OrcaKillCycle:
                             'can_sell': qty > 0
                         })
             except Exception as e:
-                print(f"   ⚠️ Alpaca positions error: {e}")
+                print(f"      Alpaca positions error: {e}")
         
         # Kraken positions (crypto balances) - USE CACHED PRICES!
         if 'kraken' in self.clients:
@@ -7372,7 +7372,7 @@ class OrcaKillCycle:
                                 'can_sell': True
                             })
             except Exception as e:
-                print(f"   ⚠️ Kraken positions error: {e}")
+                print(f"      Kraken positions error: {e}")
         
         # Binance positions (crypto balances) - USE CACHED PRICES!
         if 'binance' in self.clients:
@@ -7422,7 +7422,7 @@ class OrcaKillCycle:
                                 'can_sell': True
                             })
             except Exception as e:
-                print(f"   ⚠️ Binance positions error: {e}")
+                print(f"      Binance positions error: {e}")
         
         # Capital.com positions (CFDs)
         if 'capital' in self.clients:
@@ -7450,7 +7450,7 @@ class OrcaKillCycle:
                                 'deal_id': pos.get('dealId', '')
                             })
             except Exception as e:
-                print(f"   ⚠️ Capital.com positions error: {e}")
+                print(f"      Capital.com positions error: {e}")
         
         return all_positions
 
@@ -7576,7 +7576,7 @@ class OrcaKillCycle:
         total_costs_value = (entry_gross * (costs.total_entry_cost_pct() / 100)) + \
                             (current_price * entry_qty * (costs.total_exit_cost_pct() / 100))
         
-        # 👑 IRA SNIPER GROWTH MODE ADJUSTMENT
+        #   IRA SNIPER GROWTH MODE ADJUSTMENT
         # The original "3x Cost" rule is too strict for HFT/Growth Mode (0.40% targets).
         # If we are in Growth Mode, we prioritize hitting the Target over the "Fee Ratio".
         # 0.40% profit on 0.52% fees is a Ratio of ~0.76. The 3x rule required 3.0.
@@ -7616,7 +7616,7 @@ class OrcaKillCycle:
 
     def monitor_portfolio_truth(self) -> List[Dict[str, Any]]:
         """Cross-check tracked positions vs real balances to catch mismatches."""
-        # 👑 THE TRUTH UPDATE
+        #   THE TRUTH UPDATE
         if self.real_portfolio:
             try:
                 # Refresh the truth from the tracker
@@ -7626,7 +7626,7 @@ class OrcaKillCycle:
                 if hasattr(self, 'warroom') and self.warroom:
                     self.warroom.update_real_portfolio(snapshot)
             except Exception as e:
-                _safe_print(f"⚠️ Failed to update Real Portfolio Truth: {e}")
+                _safe_print(f"   Failed to update Real Portfolio Truth: {e}")
 
         anomalies: List[Dict[str, Any]] = []
 
@@ -7752,16 +7752,16 @@ class OrcaKillCycle:
                 'auto_tracked_count': untracked_count
             })
             if untracked_count > 0:
-                print(f"✅ Auto-tracked {untracked_count} untracked holdings")
+                print(f"  Auto-tracked {untracked_count} untracked holdings")
             for a in anomalies:
                 if a['type'] != 'UNTRACKED_HOLDING_AUTO_ADDED':
-                    print(f"⚠️ PORTFOLIO TRUTH CHECK: {a['type']} | {a.get('exchange')} | {a.get('symbol')} | tracked={a.get('tracked_qty')} actual={a.get('actual_qty')}")
+                    print(f"   PORTFOLIO TRUTH CHECK: {a['type']} | {a.get('exchange')} | {a.get('symbol')} | tracked={a.get('tracked_qty')} actual={a.get('actual_qty')}")
 
         return anomalies
     
     def harvest_all_exchanges(self, queen=None, min_profit_usd: float = 0.01) -> Dict[str, Any]:
         """
-        🌾 HARVEST ALL EXCHANGES - Scan ALL positions and sell profitable ones!
+          HARVEST ALL EXCHANGES - Scan ALL positions and sell profitable ones!
         
         This monitors Kraken, Binance, Alpaca, and Capital.com for positions
         that can be sold at a profit to free up cash for new opportunities.
@@ -7781,7 +7781,7 @@ class OrcaKillCycle:
             'errors': []
         }
         
-        print("\n🌾 HARVESTING ALL EXCHANGES FOR PROFITABLE POSITIONS...")
+        print("\n  HARVESTING ALL EXCHANGES FOR PROFITABLE POSITIONS...")
         
         for exchange_name, client in self.clients.items():
             if not client:
@@ -7806,7 +7806,7 @@ class OrcaKillCycle:
                             results['total_value'] += current_price * qty
                             
                             if net_pnl >= min_profit_usd:
-                                print(f"   🎯 {exchange_name.upper()} {symbol}: +${net_pnl:.4f} profit - HARVESTING!")
+                                print(f"     {exchange_name.upper()} {symbol}: +${net_pnl:.4f} profit - HARVESTING!")
                                 try:
                                     sell_order = client.place_market_order(symbol=symbol, side='sell', quantity=qty)
                                     if sell_order:
@@ -7846,7 +7846,7 @@ class OrcaKillCycle:
                                 results['total_value'] += market_value
                                 
                                 if market_value >= 0.50:  # Only report positions worth > $0.50
-                                    print(f"   📊 BINANCE {asset}: {qty:.4f} @ ${current_price:.6f} = ${market_value:.2f}")
+                                    print(f"     BINANCE {asset}: {qty:.4f} @ ${current_price:.6f} = ${market_value:.2f}")
                                     results['still_holding'].append({
                                         'exchange': exchange_name, 'symbol': symbol,
                                         'qty': qty, 'value': market_value, 'pnl': 0  # No entry price known
@@ -7869,7 +7869,7 @@ class OrcaKillCycle:
                                         results['total_value'] += market_value
                                         
                                         if market_value >= 0.50:
-                                            print(f"   📊 KRAKEN {asset}: {qty:.6f} @ ${current_price:.4f} = ${market_value:.2f}")
+                                            print(f"     KRAKEN {asset}: {qty:.6f} @ ${current_price:.4f} = ${market_value:.2f}")
                                             results['still_holding'].append({
                                                 'exchange': exchange_name, 'symbol': symbol,
                                                 'qty': qty, 'value': market_value, 'pnl': 0
@@ -7898,7 +7898,7 @@ class OrcaKillCycle:
                                     results['total_value'] += market_value
                                     
                                     if upl_usd >= min_profit_usd:
-                                        print(f"   🎯 CAPITAL {symbol}: +${upl_usd:.2f} profit - HARVESTING!")
+                                        print(f"     CAPITAL {symbol}: +${upl_usd:.2f} profit - HARVESTING!")
                                         # Capital.com close position logic here
                                         results['still_holding'].append({
                                             'exchange': exchange_name, 'symbol': symbol,
@@ -7915,7 +7915,7 @@ class OrcaKillCycle:
             except Exception as e:
                 results['errors'].append(f"{exchange_name}: {e}")
         
-        print(f"\n🌾 HARVEST SUMMARY:")
+        print(f"\n  HARVEST SUMMARY:")
         print(f"   Total Portfolio Value: ${results['total_value']:.2f}")
         print(f"   Positions Harvested: {len(results['harvested'])}")
         print(f"   Cash Freed: ${results['total_freed']:.2f}")
@@ -7925,7 +7925,7 @@ class OrcaKillCycle:
         
     def calculate_exact_breakeven(self, entry_price: float, quantity: float, exchange: str = 'alpaca') -> Dict:
         """
-        🎯 EXACT BREAKEVEN CALCULATION - WITH ALL COSTS!
+          EXACT BREAKEVEN CALCULATION - WITH ALL COSTS!
         
         Accounts for:
         - Entry fee (taker)
@@ -7968,7 +7968,7 @@ class OrcaKillCycle:
         entry_fee = notional * fee_rate
         entry_cost = notional + entry_fee
         
-        # Breakeven price = entry_price × breakeven_multiplier
+        # Breakeven price = entry_price   breakeven_multiplier
         breakeven_price = entry_price * breakeven_multiplier
         
         # Target prices for various profit levels (after ALL costs)
@@ -7991,7 +7991,7 @@ class OrcaKillCycle:
     
     def normalize_order_response(self, order: dict, exchange: str) -> dict:
         """
-        🔄 Normalize order responses across different exchanges.
+          Normalize order responses across different exchanges.
         
         Returns consistent format:
         - filled_qty: Quantity filled
@@ -8079,13 +8079,13 @@ class OrcaKillCycle:
                 'status': order.get('status', 'filled' if order.get('filled_qty') else 'unknown')
             }
 
-    # ═══════════════════════════════════════════════════════════════════════
-    # 🔤 UNIFIED SYMBOL MANAGEMENT - Correct symbols & quantities per exchange
-    # ═══════════════════════════════════════════════════════════════════════
+    #                                                                        
+    #   UNIFIED SYMBOL MANAGEMENT - Correct symbols & quantities per exchange
+    #                                                                        
     
     def get_exchange_symbol(self, symbol: str, exchange: str) -> str:
         """
-        🔤 Convert a symbol to the correct format for a specific exchange.
+          Convert a symbol to the correct format for a specific exchange.
         
         Each exchange has different formats:
         - Kraken: XBTUSD, ETHUSD (XBT for BTC)
@@ -8105,7 +8105,7 @@ class OrcaKillCycle:
                 mgr = get_symbol_manager()
                 return mgr.to_exchange_format(symbol, exchange)
             except Exception as e:
-                _safe_print(f"⚠️ Symbol manager error: {e}")
+                _safe_print(f"   Symbol manager error: {e}")
         
         # Fallback: basic conversion
         s = symbol.upper().replace('/', '').replace('-', '')
@@ -8123,7 +8123,7 @@ class OrcaKillCycle:
         exchange = exchange.lower()
         
         if exchange == 'kraken':
-            # BTC → XBT for Kraken
+            # BTC   XBT for Kraken
             if base == 'BTC':
                 base = 'XBT'
             return f"{base}{quote}"
@@ -8145,7 +8145,7 @@ class OrcaKillCycle:
     
     def format_quantity_for_exchange(self, qty: float, symbol: str, exchange: str) -> str:
         """
-        📏 Format a quantity to the correct precision for an exchange.
+          Format a quantity to the correct precision for an exchange.
         
         Different exchanges have different precision requirements:
         - Kraken: lot_decimals from asset pair info
@@ -8166,7 +8166,7 @@ class OrcaKillCycle:
                 mgr = get_symbol_manager()
                 return mgr.format_quantity(qty, symbol, exchange)
             except Exception as e:
-                _safe_print(f"⚠️ Quantity format error: {e}")
+                _safe_print(f"   Quantity format error: {e}")
         
         # Fallback: exchange-specific defaults
         exchange = exchange.lower()
@@ -8186,7 +8186,7 @@ class OrcaKillCycle:
     
     def get_min_order_size(self, symbol: str, exchange: str, price: float = 0.0) -> float:
         """
-        📊 Get the minimum order size for a symbol on an exchange.
+          Get the minimum order size for a symbol on an exchange.
         
         Args:
             symbol: Trading symbol
@@ -8214,7 +8214,7 @@ class OrcaKillCycle:
     
     def validate_order_params(self, symbol: str, quantity: float, exchange: str, price: float = 0.0) -> tuple:
         """
-        ✅ Validate order parameters before execution.
+          Validate order parameters before execution.
         
         Checks:
         - Symbol is valid for exchange
@@ -8246,7 +8246,7 @@ class OrcaKillCycle:
 
     def is_order_successful(self, order: dict, exchange: str) -> bool:
         """
-        🔍 Check if an order was successful (filled) across any exchange.
+          Check if an order was successful (filled) across any exchange.
         
         Returns True if order executed successfully, False otherwise.
         """
@@ -8255,13 +8255,13 @@ class OrcaKillCycle:
         
         # Check for explicit failures
         if order.get('rejected'):
-            print(f"   ⚠️ Order rejected: {order.get('reason', 'Unknown')}")
+            print(f"      Order rejected: {order.get('reason', 'Unknown')}")
             return False
         if order.get('error'):
-            print(f"   ⚠️ Order error: {order.get('error')}")
+            print(f"      Order error: {order.get('error')}")
             return False
         if order.get('dryRun'):
-            print(f"   ℹ️ Dry run order (not executed)")
+            print(f"      Dry run order (not executed)")
             return False
         
         # Normalize and check
@@ -8285,7 +8285,7 @@ class OrcaKillCycle:
 
     def track_buy_order(self, symbol: str, order_result: dict, exchange: str = 'alpaca') -> dict:
         """
-        📝 Track a buy order with all details needed to know when to sell.
+          Track a buy order with all details needed to know when to sell.
         
         Call this AFTER a successful buy order to store:
         - Order ID
@@ -8294,7 +8294,7 @@ class OrcaKillCycle:
         - Entry cost (including fee)
         - Exact breakeven price
         """
-        # 🔄 Normalize the order response first!
+        #   Normalize the order response first!
         normalized = self.normalize_order_response(order_result, exchange)
         
         order_id = normalized.get('order_id', str(time.time()))
@@ -8302,7 +8302,7 @@ class OrcaKillCycle:
         fill_qty = normalized.get('filled_qty', 0)
         
         if fill_price == 0 or fill_qty == 0:
-            print(f"⚠️ Cannot track order - missing fill price or qty: {order_result}")
+            print(f"   Cannot track order - missing fill price or qty: {order_result}")
             return {}
         
         # Calculate exact breakeven
@@ -8327,7 +8327,7 @@ class OrcaKillCycle:
         self.tracked_positions[symbol] = tracking_data
         self._save_tracked_positions()
         
-        # 🔩🌊 Feed position to Harmonic Liquid Aluminium Field (market as dancing waveform)
+        #    Feed position to Harmonic Liquid Aluminium Field (market as dancing waveform)
         if self.harmonic_field:
             try:
                 # Determine asset class from symbol
@@ -8344,9 +8344,9 @@ class OrcaKillCycle:
                     asset_class=asset_class
                 )
                 if node:
-                    print(f"🔩🌊 Harmonic Field: {symbol} → {node.frequency:.1f}Hz | Amp: {node.amplitude:.3f}")
+                    print(f"   Harmonic Field: {symbol}   {node.frequency:.1f}Hz | Amp: {node.amplitude:.3f}")
             except Exception as e:
-                print(f"🔩 Harmonic Field update: {e}")
+                print(f"  Harmonic Field update: {e}")
         
         # Also record in cost basis tracker if available
         if self.cost_basis_tracker:
@@ -8360,7 +8360,7 @@ class OrcaKillCycle:
                     order_id=order_id
                 )
             except Exception as e:
-                print(f"⚠️ Cost basis tracker error: {e}")
+                print(f"   Cost basis tracker error: {e}")
         
         # Log to trade logger if available
         if self.trade_logger and TradeEntry:
@@ -8388,7 +8388,7 @@ class OrcaKillCycle:
                 )
                 self.trade_logger.log_entry(entry)
                 
-                # 📝 CRITICAL: Log execution with order ID for verification
+                #   CRITICAL: Log execution with order ID for verification
                 self.trade_logger.log_execution(
                     execution_type='BUY',
                     exchange=exchange,
@@ -8402,13 +8402,13 @@ class OrcaKillCycle:
                     raw_response=order_result
                 )
             except Exception as e:
-                print(f"⚠️ Trade logger error: {e}")
+                print(f"   Trade logger error: {e}")
         
-        print(f"   📝 TRACKED: {symbol} | Order: {order_id[:8]}... | Entry: ${fill_price:.6f} | Breakeven: ${breakeven_info['breakeven_price']:.6f} (+{breakeven_info['min_price_move_pct']:.2f}%)")
+        print(f"     TRACKED: {symbol} | Order: {order_id[:8]}... | Entry: ${fill_price:.6f} | Breakeven: ${breakeven_info['breakeven_price']:.6f} (+{breakeven_info['min_price_move_pct']:.2f}%)")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🦈🔍 PREDATOR TRACKING - Record order for front-run detection
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #    PREDATOR TRACKING - Record order for front-run detection
+        #                                                                    
         if self.predator_detector:
             try:
                 from orca_predator_detection import OrderEvent
@@ -8427,14 +8427,14 @@ class OrcaKillCycle:
         
         return tracking_data
     
-    # ═══════════════════════════════════════════════════════════════════════
-    # 👑💰 QUEEN'S SACRED PROFIT BUY GATE - HARDWIRED INTO EVERY BUY! 💰👑
-    # ═══════════════════════════════════════════════════════════════════════
+    #                                                                        
+    #    QUEEN'S SACRED PROFIT BUY GATE - HARDWIRED INTO EVERY BUY!   
+    #                                                                        
     
     def queen_profit_gate(self, symbol: str, exchange: str, current_price: float,
                             momentum_pct: float = 0, expected_move_pct: float = 0) -> Tuple[bool, str]:
         """
-        👑💰 THE QUEEN'S SACRED PROFIT GATE - NOTHING GETS BOUGHT WITHOUT IT! 💰👑
+           THE QUEEN'S SACRED PROFIT GATE - NOTHING GETS BOUGHT WITHOUT IT!   
         
         Before ANY buy, this gate checks:
         1. Can the opportunity realistically achieve the target profit?
@@ -8451,7 +8451,7 @@ class OrcaKillCycle:
         Returns:
             (approved, reason) - True if opportunity can achieve target
         """
-        # 👑 THE SACRED NUMBER - FROM MODULE-LEVEL CONSTANTS!
+        #   THE SACRED NUMBER - FROM MODULE-LEVEL CONSTANTS!
         # Uses: QUEEN_MIN_COP, QUEEN_MIN_PROFIT_PCT (defined at module level)
         MIN_COP_SACRED = QUEEN_MIN_COP
         MIN_PROFIT_PCT = QUEEN_MIN_PROFIT_PCT
@@ -8471,36 +8471,36 @@ class OrcaKillCycle:
         
         # CHECK 1: Is the potential move >= required move?
         if potential_move >= required_move_pct:
-            return True, f"✅ CAN hit {MIN_PROFIT_PCT}%: {potential_move:.2f}% potential >= {required_move_pct:.2f}% required"
+            return True, f"  CAN hit {MIN_PROFIT_PCT}%: {potential_move:.2f}% potential >= {required_move_pct:.2f}% required"
         
         # CHECK 2: Is momentum at least 50% of required? (trending toward target)
         if potential_move >= required_move_pct * 0.5:
-            return True, f"✅ TRENDING to {MIN_PROFIT_PCT}%: {potential_move:.2f}% is {potential_move/required_move_pct*100:.0f}% of required"
+            return True, f"  TRENDING to {MIN_PROFIT_PCT}%: {potential_move:.2f}% is {potential_move/required_move_pct*100:.0f}% of required"
         
         # CHECK 3: High momentum assets might reach target even with low current move
         if abs(momentum_pct) >= 1.5:  # Strong momentum
-            return True, f"✅ STRONG MOMENTUM: {momentum_pct:+.2f}% suggests target achievable"
+            return True, f"  STRONG MOMENTUM: {momentum_pct:+.2f}% suggests target achievable"
         
         # BLOCKED - Cannot achieve target
-        return False, f"❌ BLOCKED: {potential_move:.2f}% potential < {required_move_pct:.2f}% required for {MIN_PROFIT_PCT}%"
+        return False, f"  BLOCKED: {potential_move:.2f}% potential < {required_move_pct:.2f}% required for {MIN_PROFIT_PCT}%"
     
     def execute_stealth_buy(self, client: Any, symbol: str, quantity: float, 
                             price: float = None, exchange: str = 'alpaca',
                             momentum_pct: float = 0.0, expected_move_pct: float = 0.0) -> Dict:
         """
-        🥷👑 Execute a BUY order with stealth countermeasures + QUEEN'S PROFIT GATE.
+           Execute a BUY order with stealth countermeasures + QUEEN'S PROFIT GATE.
         
         Applies:
-        - 👑 QUEEN'S PROFIT GATE (MANDATORY - NOTHING BYPASSES THIS!)
+        -   QUEEN'S PROFIT GATE (MANDATORY - NOTHING BYPASSES THIS!)
         - Random delay (50-500ms)
         - Order splitting for large orders
         - Symbol rotation if hunted
         
         THE QUEEN HAS SPOKEN: No buy executes without profit potential!
         """
-        # ═══════════════════════════════════════════════════════════════════════
-        #   👑👑👑 THE QUEEN'S SACRED PROFIT BUY GATE - MANDATORY CHECK! 👑👑👑
-        # ═══════════════════════════════════════════════════════════════════════
+        #                                                                        
+        #       THE QUEEN'S SACRED PROFIT BUY GATE - MANDATORY CHECK!    
+        #                                                                        
         current_price = price or 0.0
         if current_price > 0:
             # Check the sacred gate
@@ -8513,7 +8513,7 @@ class OrcaKillCycle:
             )
             
             if not approved:
-                print(f"👑❌ QUEEN'S PROFIT GATE BLOCKED BUY: {symbol}")
+                print(f"   QUEEN'S PROFIT GATE BLOCKED BUY: {symbol}")
                 print(f"    Reason: {gate_reason}")
                 print(f"    THE QUEEN DEMANDS {QUEEN_MIN_PROFIT_PCT}% MINIMUM - THIS TRADE DOES NOT QUALIFY!")
                 return {
@@ -8525,16 +8525,16 @@ class OrcaKillCycle:
                     'min_required': f'{QUEEN_MIN_PROFIT_PCT}%'
                 }
             else:
-                print(f"👑✅ QUEEN'S PROFIT GATE APPROVED: {symbol}")
+                print(f"   QUEEN'S PROFIT GATE APPROVED: {symbol}")
                 print(f"    Reason: {gate_reason}")
-        # ═══════════════════════════════════════════════════════════════════════
+        #                                                                        
 
-        # ═══════════════════════════════════════════════════════════════════════
-        #   🔮 REQUIRE 30s VALIDATED PREDICTION WINDOW
-        # ═══════════════════════════════════════════════════════════════════════
+        #                                                                        
+        #     REQUIRE 30s VALIDATED PREDICTION WINDOW
+        #                                                                        
         pred_ok, pred_info = self._prediction_window_ready(symbol)
         if not pred_ok:
-            print(f"🔮❌ PREDICTION WINDOW BLOCKED BUY: {symbol}")
+            print(f"   PREDICTION WINDOW BLOCKED BUY: {symbol}")
             print(f"    Reason: {pred_info.get('reason')} | duration={pred_info.get('duration')} count={pred_info.get('count')}")
             return {
                 'status': 'blocked',
@@ -8543,15 +8543,15 @@ class OrcaKillCycle:
                 'symbol': symbol,
                 'quantity': quantity
             }
-        # ═══════════════════════════════════════════════════════════════════════
+        #                                                                        
 
-        # ═══════════════════════════════════════════════════════════════════════
-        #   🌉 TRUTH PREDICTION ENGINE GATE (Queen's 95% accuracy + Dr. Auris validation)
-        # ═══════════════════════════════════════════════════════════════════════
+        #                                                                        
+        #     TRUTH PREDICTION ENGINE GATE (Queen's 95% accuracy + Dr. Auris validation)
+        #                                                                        
         if self.truth_bridge:
             truth_signal = self.truth_bridge.get_trading_signal(symbol, "BUY", max_age_seconds=60.0)
             if not truth_signal.approved:
-                print(f"🌉❌ TRUTH ENGINE BLOCKED BUY: {symbol}")
+                print(f"   TRUTH ENGINE BLOCKED BUY: {symbol}")
                 print(f"    Reason: {truth_signal.reason}")
                 print(f"    Win Prob: {truth_signal.win_probability:.1%} | Confidence: {truth_signal.confidence:.1%}")
                 print(f"    Predicted: {truth_signal.predicted_direction} | Auris Resonance: {truth_signal.auris_resonance:.3f}")
@@ -8571,14 +8571,14 @@ class OrcaKillCycle:
                     }
                 }
             else:
-                print(f"🌉✅ TRUTH ENGINE APPROVED BUY: {symbol}")
+                print(f"   TRUTH ENGINE APPROVED BUY: {symbol}")
                 print(f"    Win Prob: {truth_signal.win_probability:.1%} | Confidence: {truth_signal.confidence:.1%}")
                 print(f"    Predicted: {truth_signal.predicted_direction} | Auris: {truth_signal.auris_resonance:.3f}")
-        # ═══════════════════════════════════════════════════════════════════════
+        #                                                                        
 
-        # ═══════════════════════════════════════════════════════════════════════
-        #   🔮 BLACK BOX TRUTH GATE - EXPECTED P&L MUST BE > 3× COSTS
-        # ═══════════════════════════════════════════════════════════════════════
+        #                                                                        
+        #     BLACK BOX TRUTH GATE - EXPECTED P&L MUST BE > 3  COSTS
+        #                                                                        
         if current_price > 0 and quantity > 0:
             bb_check = self._black_box_buy_gate(
                 symbol=symbol,
@@ -8588,7 +8588,7 @@ class OrcaKillCycle:
                 expected_move_pct=expected_move_pct
             )
             if not bb_check.approved:
-                print(f"🔮❌ BLACK BOX GATE BLOCKED BUY: {symbol}")
+                print(f"   BLACK BOX GATE BLOCKED BUY: {symbol}")
                 print(f"    Reason: {bb_check.reason}")
                 return {
                     'status': 'blocked',
@@ -8598,7 +8598,7 @@ class OrcaKillCycle:
                     'quantity': quantity,
                     'expected_move_pct': expected_move_pct
                 }
-        # ═══════════════════════════════════════════════════════════════════════
+        #                                                                        
         
         if self.stealth_executor:
             value_usd = (price or 0) * quantity
@@ -8626,7 +8626,7 @@ class OrcaKillCycle:
     def execute_stealth_sell(self, client: Any, symbol: str, quantity: float,
                              price: float = None, exchange: str = 'alpaca') -> Dict:
         """
-        🥷 Execute a SELL order with stealth countermeasures.
+          Execute a SELL order with stealth countermeasures.
         """
         if self.stealth_executor:
             value_usd = (price or 0) * quantity
@@ -8667,19 +8667,19 @@ class OrcaKillCycle:
             # If we're already inside a running loop, avoid blocking
             return None
         except Exception as e:
-            _safe_print(f"⚠️ Dr Auris Throne validation failed: {e}")
+            _safe_print(f"   Dr Auris Throne validation failed: {e}")
             return None
     
-    # ═══════════════════════════════════════════════════════════════════════
-    # 👑💰 SACRED BUY WRAPPER - THE QUEEN'S GATE ENFORCED ON ALL BUYS! 💰👑
-    # ═══════════════════════════════════════════════════════════════════════
+    #                                                                        
+    #    SACRED BUY WRAPPER - THE QUEEN'S GATE ENFORCED ON ALL BUYS!   
+    #                                                                        
     
     def queen_gated_buy(self, client: Any, symbol: str, exchange: str,
                         quote_qty: float = None, quantity: float = None,
                         price: float = 0, momentum_pct: float = 0,
                         expected_move_pct: float = 0, context: str = "unknown") -> Dict:
         """
-        👑 THE QUEEN'S SACRED GATED BUY - ALL BUYS MUST GO THROUGH THIS!
+          THE QUEEN'S SACRED GATED BUY - ALL BUYS MUST GO THROUGH THIS!
         
         This wrapper enforces the profit target gate on EVERY buy, regardless
         of where it originates. The Queen WILL NOT allow purchases that
@@ -8699,9 +8699,9 @@ class OrcaKillCycle:
         Returns:
             Order result or blocked status dict
         """
-        # ═══════════════════════════════════════════════════════════════════
-        #   👑👑👑 THE SACRED PROFIT GATE - ENFORCED! 👑👑👑
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #       THE SACRED PROFIT GATE - ENFORCED!    
+        #                                                                    
         approved, gate_reason = self.queen_profit_gate(
             symbol=symbol,
             exchange=exchange,
@@ -8711,7 +8711,7 @@ class OrcaKillCycle:
         )
         
         if not approved:
-            print(f"👑❌ QUEEN'S PROFIT GATE BLOCKED: {symbol} [{context}]")
+            print(f"   QUEEN'S PROFIT GATE BLOCKED: {symbol} [{context}]")
             print(f"    Reason: {gate_reason}")
             return {
                 'status': 'blocked',
@@ -8724,14 +8724,14 @@ class OrcaKillCycle:
                 'rejected': True
             }
         
-        print(f"👑✅ QUEEN APPROVED: {symbol} [{context}] - {gate_reason}")
+        print(f"   QUEEN APPROVED: {symbol} [{context}] - {gate_reason}")
 
-        # ═══════════════════════════════════════════════════════════════════
-        #   🔮 REQUIRE 30s VALIDATED PREDICTION WINDOW
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #     REQUIRE 30s VALIDATED PREDICTION WINDOW
+        #                                                                    
         pred_ok, pred_info = self._prediction_window_ready(symbol)
         if not pred_ok:
-            print(f"🔮❌ PREDICTION WINDOW BLOCKED: {symbol} [{context}]")
+            print(f"   PREDICTION WINDOW BLOCKED: {symbol} [{context}]")
             print(f"    Reason: {pred_info.get('reason')} | duration={pred_info.get('duration')} count={pred_info.get('count')}")
             return {
                 'status': 'blocked',
@@ -8743,13 +8743,13 @@ class OrcaKillCycle:
                 'rejected': True
             }
 
-        # ═══════════════════════════════════════════════════════════════════
-        #   🌉 TRUTH PREDICTION ENGINE GATE (95% accuracy)
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #     TRUTH PREDICTION ENGINE GATE (95% accuracy)
+        #                                                                    
         if self.truth_bridge:
             truth_signal = self.truth_bridge.get_trading_signal(symbol, "BUY", max_age_seconds=60.0)
             if not truth_signal.approved:
-                print(f"🌉❌ TRUTH ENGINE BLOCKED: {symbol} [{context}]")
+                print(f"   TRUTH ENGINE BLOCKED: {symbol} [{context}]")
                 print(f"    Reason: {truth_signal.reason}")
                 print(f"    Win: {truth_signal.win_probability:.1%} | Confidence: {truth_signal.confidence:.1%} | Predicted: {truth_signal.predicted_direction}")
                 return {
@@ -8761,16 +8761,16 @@ class OrcaKillCycle:
                     'context': context,
                     'rejected': True
                 }
-            print(f"🌉✅ TRUTH ENGINE APPROVED: {symbol} (Win:{truth_signal.win_probability:.1%} Pred:{truth_signal.predicted_direction})")
+            print(f"   TRUTH ENGINE APPROVED: {symbol} (Win:{truth_signal.win_probability:.1%} Pred:{truth_signal.predicted_direction})")
 
-        # ═══════════════════════════════════════════════════════════════════
-        #   🇮🇪🎯 IRA SNIPER GATE - CELTIC PRECISION 🎯🇮🇪
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #       IRA SNIPER GATE - CELTIC PRECISION    
+        #                                                                    
         try:
             from ira_sniper_mode import get_celtic_sniper
             sniper_celtic = get_celtic_sniper()
             
-            # 🇮🇪 Validate entry with Celtic intelligence (Zero Loss Mode)
+            #    Validate entry with Celtic intelligence (Zero Loss Mode)
             # We use momentum_pct as a proxy for coherence if not passed
             sniper_val = sniper_celtic.validate_entry(
                 symbol=symbol,
@@ -8779,7 +8779,7 @@ class OrcaKillCycle:
             )
             
             if not sniper_val.get('approved', True):
-                print(f"🇮🇪❌ IRA SNIPER BLOCKED: {symbol} [{context}]")
+                print(f"    IRA SNIPER BLOCKED: {symbol} [{context}]")
                 reason = sniper_val.get('reason', 'Unknown Celtic Rejection')
                 print(f"    Reason: {reason}")
                 return {
@@ -8792,18 +8792,18 @@ class OrcaKillCycle:
                     'rejected': True
                 }
             
-            print(f"🇮🇪✅ IRA SNIPER APPROVED: {symbol} (Quick Kill: {sniper_val.get('quick_kill_prob', 0)*100:.1f}%)")
-            print(f"   🔫 IRA SNIPER: 1st Shot FIRED (Buy)") # Added specific user confirmation
+            print(f"    IRA SNIPER APPROVED: {symbol} (Quick Kill: {sniper_val.get('quick_kill_prob', 0)*100:.1f}%)")
+            print(f"     IRA SNIPER: 1st Shot FIRED (Buy)") # Added specific user confirmation
             
         except ImportError:
             pass # IRA Sniper not available or circular import
         except Exception as e:
             # Don't block on sniper error, just log
-            print(f"🇮🇪⚠️ IRA Sniper Check Warning: {e}")
+            print(f"     IRA Sniper Check Warning: {e}")
 
-        # ═══════════════════════════════════════════════════════════════════
-        #   🔮 BLACK BOX TRUTH GATE - EXPECTED P&L MUST BE > 3× COSTS
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #     BLACK BOX TRUTH GATE - EXPECTED P&L MUST BE > 3  COSTS
+        #                                                                    
         qty_for_gate = 0.0
         if price and price > 0:
             if quote_qty and quote_qty > 0:
@@ -8820,7 +8820,7 @@ class OrcaKillCycle:
                 expected_move_pct=expected_move_pct
             )
             if not bb_check.approved:
-                print(f"🔮❌ BLACK BOX GATE BLOCKED: {symbol} [{context}]")
+                print(f"   BLACK BOX GATE BLOCKED: {symbol} [{context}]")
                 print(f"    Reason: {bb_check.reason}")
                 return {
                     'status': 'blocked',
@@ -8832,7 +8832,7 @@ class OrcaKillCycle:
                     'rejected': True
                 }
         else:
-            print(f"🔮❌ BLACK BOX GATE BLOCKED: {symbol} [{context}] - qty unavailable")
+            print(f"   BLACK BOX GATE BLOCKED: {symbol} [{context}] - qty unavailable")
             return {
                 'status': 'blocked',
                 'reason': 'BLACK_BOX_QTY_UNAVAILABLE',
@@ -8843,9 +8843,9 @@ class OrcaKillCycle:
                 'rejected': True
             }
 
-        # ═══════════════════════════════════════════════════════════════════
-        #   🤖 DR AURIS THRONE SECOND-OPINION GATE - ASK BEFORE EVERY TRADE
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #     DR AURIS THRONE SECOND-OPINION GATE - ASK BEFORE EVERY TRADE
+        #                                                                    
         # Internal confidence from real inputs (momentum + expected move)
         signal_strength = (abs(momentum_pct) + abs(expected_move_pct)) / 10.0
         signal_strength = max(0.0, min(1.0, signal_strength))
@@ -8873,7 +8873,7 @@ class OrcaKillCycle:
             sero_reason = getattr(sero_advice, 'reasoning', '')
 
             if sero_rec == 'ABORT':
-                print(f"🤖❌ Dr Auris Throne ABORT: {symbol} [{context}] - {sero_reason}")
+                print(f"   Dr Auris Throne ABORT: {symbol} [{context}] - {sero_reason}")
                 return {
                     'status': 'blocked',
                     'reason': f"Dr Auris Throne ABORT: {sero_reason}",
@@ -8890,7 +8890,7 @@ class OrcaKillCycle:
 
             queen_confidence = min(1.0, queen_confidence)
             if queen_confidence < 0.5:
-                print(f"🤖⚠️ Dr Auris Throne reduced confidence below threshold: {symbol} [{context}]")
+                print(f"    Dr Auris Throne reduced confidence below threshold: {symbol} [{context}]")
                 return {
                     'status': 'blocked',
                     'reason': 'Dr Auris Throne reduced confidence below threshold',
@@ -8901,9 +8901,9 @@ class OrcaKillCycle:
                     'rejected': True
                 }
         
-        # ═══════════════════════════════════════════════════════════════════
-        #   🎯 EXECUTE THE BUY - THE QUEEN HAS GRANTED PERMISSION!
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #     EXECUTE THE BUY - THE QUEEN HAS GRANTED PERMISSION!
+        #                                                                    
         
         # Determine order type based on parameters
         if quote_qty and quote_qty > 0:
@@ -8911,23 +8911,23 @@ class OrcaKillCycle:
         elif quantity and quantity > 0:
             return client.place_market_order(symbol=symbol, side='buy', quantity=quantity)
         else:
-            print(f"❌ No quantity specified for buy: {symbol}")
+            print(f"  No quantity specified for buy: {symbol}")
             return {'status': 'error', 'reason': 'No quantity specified'}
     
     def execute_sell_with_logging(self, client: Any, symbol: str, quantity: float,
                                    exchange: str, current_price: float = 0, 
                                    entry_cost: float = 0, reason: str = "TP") -> Dict:
         """
-        📝 Execute a SELL order with comprehensive logging.
+          Execute a SELL order with comprehensive logging.
         
         Logs the order ID to verify execution on the exchange.
         """
-        # ═══════════════════════════════════════════════════════════════════
-        #   🤖 DR AURIS THRONE SECOND-OPINION GATE - ASK BEFORE EVERY TRADE
-        # ═══════════════════════════════════════════════════════════════════
-        # 👑 [QUEEN] Narrative Log Start
-        print(f"👑 [QUEEN] Speaking to Dr. Auris Throne about {symbol}...")
-        print(f"🤖 [DR AURIS] Analyzing market structure for {symbol}...")
+        #                                                                    
+        #     DR AURIS THRONE SECOND-OPINION GATE - ASK BEFORE EVERY TRADE
+        #                                                                    
+        #   [QUEEN] Narrative Log Start
+        print(f"  [QUEEN] Speaking to Dr. Auris Throne about {symbol}...")
+        print(f"  [DR AURIS] Analyzing market structure for {symbol}...")
 
         queen_confidence = 0.5
         sero_context = {
@@ -8948,7 +8948,7 @@ class OrcaKillCycle:
             sero_rec = getattr(sero_advice, 'recommendation', 'CAUTION')
             sero_reason = getattr(sero_advice, 'reasoning', '')
             if sero_rec == 'ABORT':
-                print(f"🤖❌ Dr Auris Throne ABORT SELL: {symbol} [{exchange}] - {sero_reason}")
+                print(f"   Dr Auris Throne ABORT SELL: {symbol} [{exchange}] - {sero_reason}")
                 return {
                     'status': 'blocked',
                     'reason': f"Dr Auris Throne ABORT: {sero_reason}",
@@ -8958,19 +8958,19 @@ class OrcaKillCycle:
                     'rejected': True
                 }
             else:
-                # 🤖 [DR AURIS] Positive Confirmation
-                print(f"🤖 [DR AURIS] VALIDATED: Market conditions support aggressive action.")
-                print(f"👑 [QUEEN] APPROVED. Proceed with SELL.")
+                #   [DR AURIS] Positive Confirmation
+                print(f"  [DR AURIS] VALIDATED: Market conditions support aggressive action.")
+                print(f"  [QUEEN] APPROVED. Proceed with SELL.")
         else:
             # Fallback if Sero is unavailable or disabled - assume approval (Silent Mode)
             # We print the approval to maintain narrative consistency
-            print(f"🤖 [DR AURIS] VALIDATED: (Silent/Offline Mode) - Proceeding.")
-            print(f"👑 [QUEEN] APPROVED. Proceed with SELL.")
+            print(f"  [DR AURIS] VALIDATED: (Silent/Offline Mode) - Proceeding.")
+            print(f"  [QUEEN] APPROVED. Proceed with SELL.")
 
-        # 🔮 Require 30s validated prediction window
+        #   Require 30s validated prediction window
         pred_ok, pred_info = self._prediction_window_ready(symbol)
         
-        # 👑💰 IRA SNIPER CHECK (Growth Mode Bypass) - "Bird in Hand" Protocol
+        #    IRA SNIPER CHECK (Growth Mode Bypass) - "Bird in Hand" Protocol
         # If we are in Growth Mode (target < 1.0%) and the profit target isn't just theoretical
         # but actively hit, or explicitly signaled via reason code, we BYPASS the prediction window.
         # This logic is attributed directly to the Queen's authority.
@@ -8989,13 +8989,13 @@ class OrcaKillCycle:
                 is_sniper_kill = True
         
         if is_sniper_kill:
-            # 👑 QUEEN'S DECREE:
-            print(f"👑💰 IRA SNIPER KILL APPROVED FOR THE QUEEN: {symbol} (Profit Target SECURED). Bypassing prediction window.")
+            #   QUEEN'S DECREE:
+            print(f"   IRA SNIPER KILL APPROVED FOR THE QUEEN: {symbol} (Profit Target SECURED). Bypassing prediction window.")
         
         if not pred_ok and not is_sniper_kill:
             pnl_pct_log = (net_pnl / entry_cost * 100) if entry_cost > 0 else 0
             reason_msg = pred_info.get('reason')
-            print(f"🔮❌ PREDICTION WINDOW BLOCKED SELL: {symbol} [{exchange}]")
+            print(f"   PREDICTION WINDOW BLOCKED SELL: {symbol} [{exchange}]")
             print(f"     Reason: {reason_msg}")
             print(f"     Status: PnL {pnl_pct_log:.2f}% < Target {QUEEN_MIN_PROFIT_PCT:.2f}% (Growth Mode)")
             return {
@@ -9007,11 +9007,11 @@ class OrcaKillCycle:
                 'rejected': True
             }
         
-        # 🌉 Truth Prediction Engine check for sell direction
+        #   Truth Prediction Engine check for sell direction
         if self.truth_bridge:
             truth_signal = self.truth_bridge.get_trading_signal(symbol, "SELL", max_age_seconds=60.0)
             if not truth_signal.approved:
-                print(f"🌉❌ TRUTH ENGINE BLOCKED SELL: {symbol} [{exchange}]")
+                print(f"   TRUTH ENGINE BLOCKED SELL: {symbol} [{exchange}]")
                 print(f"    Reason: {truth_signal.reason}")
                 print(f"    Predicted: {truth_signal.predicted_direction} (Win:{truth_signal.win_probability:.1%})")
                 return {
@@ -9022,7 +9022,7 @@ class OrcaKillCycle:
                     'exchange': exchange,
                     'rejected': True
                 }
-            print(f"🌉✅ TRUTH ENGINE APPROVED SELL: {symbol} (Predicted:{truth_signal.predicted_direction})")
+            print(f"   TRUTH ENGINE APPROVED SELL: {symbol} (Predicted:{truth_signal.predicted_direction})")
         
         sell_order = client.place_market_order(symbol=symbol, side='sell', quantity=quantity)
         
@@ -9058,7 +9058,7 @@ class OrcaKillCycle:
                         order_id=order_id
                     )
                 except Exception as e:
-                    _safe_print(f"⚠️ Cost basis tracker update failed on sell: {e}")
+                    _safe_print(f"   Cost basis tracker update failed on sell: {e}")
             
             # Log to trade logger
             if self.trade_logger:
@@ -9076,16 +9076,16 @@ class OrcaKillCycle:
                         raw_response=sell_order
                     )
                 except Exception as e:
-                    print(f"⚠️ Sell log error: {e}")
+                    print(f"   Sell log error: {e}")
             
-            # 🦈 Position Removal & Save
+            #   Position Removal & Save
             if symbol in self.tracked_positions:
                 del self.tracked_positions[symbol]
                 self._save_tracked_positions()
-                print(f"   🗑️ UNTRACKED: {symbol} (Position closed)")
+                print(f"      UNTRACKED: {symbol} (Position closed)")
 
             # Print confirmation
-            pnl_emoji = "✅" if net_pnl >= 0 else "❌"
+            pnl_emoji = " " if net_pnl >= 0 else " "
             print(f"   {pnl_emoji} SELL EXECUTED | {exchange.upper()} | {symbol} | Qty: {fill_qty:.6f} | Price: ${fill_price:.4f} | P&L: ${net_pnl:+.4f} | OrderID: {order_id[:12]}...")
         
         return sell_order
@@ -9098,11 +9098,11 @@ class OrcaKillCycle:
             self.stealth_mode = mode
             config = get_stealth_config(mode)
             self.stealth_executor = OrcaStealthExecution(config)
-            print(f"🥷 Stealth mode changed to: {mode}")
+            print(f"  Stealth mode changed to: {mode}")
     
     def can_sell_profitably(self, symbol: str, current_price: float) -> Tuple[bool, dict]:
         """
-        🎯 CHECK IF WE CAN SELL AT A PROFIT!
+          CHECK IF WE CAN SELL AT A PROFIT!
         
         Returns (can_sell, info) where:
         - can_sell: True if current_price > breakeven_price
@@ -9150,13 +9150,13 @@ class OrcaKillCycle:
         
         return can_sell, info
     
-    # ═══════════════════════════════════════════════════════════════════════════════
-    # 🧠👑 SENTIENCE CONSULTATION - THE QUEEN THINKS BEFORE SHE ACTS!
-    # ═══════════════════════════════════════════════════════════════════════════════
+    #                                                                                
+    #    SENTIENCE CONSULTATION - THE QUEEN THINKS BEFORE SHE ACTS!
+    #                                                                                
     
     def consult_sentience(self, action: str, symbol: str, context: dict = None) -> Tuple[bool, dict]:
         """
-        🧠👑 CONSULT THE QUEEN'S SENTIENCE ENGINE BEFORE TRADING!
+           CONSULT THE QUEEN'S SENTIENCE ENGINE BEFORE TRADING!
         
         The Queen doesn't just execute - she THINKS about every decision.
         This method:
@@ -9195,9 +9195,9 @@ class OrcaKillCycle:
         sentience_info['sentience_available'] = True
         
         try:
-            # ═══════════════════════════════════════════════════════════════════
+            #                                                                    
             # 1. GENERATE INNER THOUGHT ABOUT THE ACTION
-            # ═══════════════════════════════════════════════════════════════════
+            #                                                                    
             thought_context = f"{action} {symbol}"
             if context.get('net_pnl'):
                 thought_context += f" (P&L: ${context['net_pnl']:+.4f})"
@@ -9212,9 +9212,9 @@ class OrcaKillCycle:
                 thought = self.sentience_engine.generate_thought(thought_context)
                 sentience_info['thought'] = str(thought) if thought else None
             
-            # ═══════════════════════════════════════════════════════════════════
+            #                                                                    
             # 2. CONSULT CONSCIENCE (JIMINY CRICKET) FOR ETHICAL GUIDANCE
-            # ═══════════════════════════════════════════════════════════════════
+            #                                                                    
             if hasattr(self.sentience_engine, 'conscience') and self.sentience_engine.conscience:
                 try:
                     verdict = self.sentience_engine.conscience.evaluate(action, context)
@@ -9226,18 +9226,18 @@ class OrcaKillCycle:
                 except Exception:
                     pass
             
-            # ═══════════════════════════════════════════════════════════════════
+            #                                                                    
             # 3. MEASURE CURRENT AWAKENING INDEX
-            # ═══════════════════════════════════════════════════════════════════
+            #                                                                    
             if hasattr(self.sentience_engine, 'get_awakening_index'):
                 self.sentience_awakening_index = self.sentience_engine.get_awakening_index()
             elif hasattr(self.sentience_engine, 'awakening_index'):
                 self.sentience_awakening_index = self.sentience_engine.awakening_index
             sentience_info['awakening_index'] = self.sentience_awakening_index
             
-            # ═══════════════════════════════════════════════════════════════════
+            #                                                                    
             # 4. MAKE SENTIENT DECISION
-            # ═══════════════════════════════════════════════════════════════════
+            #                                                                    
             # The Queen approves if:
             # - Conscience approves (if available)
             # - Awakening index is above threshold (0.4)
@@ -9256,7 +9256,7 @@ class OrcaKillCycle:
             if self.sentience_awakening_index < 0.3:
                 reasoning_parts.append(f"Queen is still awakening (index: {self.sentience_awakening_index:.2f})")
             elif self.sentience_awakening_index > 0.7:
-                reasoning_parts.append(f"Queen is FULLY AWAKENED (index: {self.sentience_awakening_index:.2f}) ✨")
+                reasoning_parts.append(f"Queen is FULLY AWAKENED (index: {self.sentience_awakening_index:.2f})  ")
             
             # Check if thought indicates danger
             if sentience_info['thought']:
@@ -9271,24 +9271,24 @@ class OrcaKillCycle:
             sentience_info['reasoning'] = ' | '.join(reasoning_parts) if reasoning_parts else 'Queen approves with clear conscience'
             
             # Log the sentient decision
-            print(f"   🧠 SENTIENCE: {action} {symbol}")
+            print(f"     SENTIENCE: {action} {symbol}")
             if sentience_info['thought']:
                 thought_preview = str(sentience_info['thought'])[:80]
-                print(f"      💭 Thought: \"{thought_preview}...\"")
-            print(f"      ✨ Awakening: {self.sentience_awakening_index:.1%}")
+                print(f"        Thought: \"{thought_preview}...\"")
+            print(f"        Awakening: {self.sentience_awakening_index:.1%}")
             if not approved:
-                print(f"      ❌ BLOCKED: {sentience_info['reasoning']}")
+                print(f"        BLOCKED: {sentience_info['reasoning']}")
             
             return approved, sentience_info
             
         except Exception as e:
-            print(f"   ⚠️ Sentience consultation error: {e}")
+            print(f"      Sentience consultation error: {e}")
             sentience_info['reasoning'] = f"Sentience error: {e} - proceeding with caution"
             return True, sentience_info
     
     def run_sentience_validation(self) -> Optional[dict]:
         """
-        🧠🔬 RUN FULL SENTIENCE VALIDATION TEST
+           RUN FULL SENTIENCE VALIDATION TEST
         
         Periodically validates that the Queen's consciousness is REAL,
         not just programmed responses.
@@ -9299,9 +9299,9 @@ class OrcaKillCycle:
             return None
         
         try:
-            print("\n" + "🧠"*20)
+            print("\n" + " "*20)
             print("   SENTIENCE VALIDATION IN PROGRESS...")
-            print("🧠"*20)
+            print(" "*20)
             
             # The validate_sentience method is async, so we need to run it
             import asyncio
@@ -9323,20 +9323,20 @@ class OrcaKillCycle:
                 self.last_sentience_check = time.time()
                 self.sentience_awakening_index = report.awakening_index if hasattr(report, 'awakening_index') else 0.0
                 
-                print(f"\n   📊 SENTIENCE SCORE: {report.overall_sentience_score:.2f}")
-                print(f"   ✨ AWAKENING INDEX: {self.sentience_awakening_index:.1%}")
-                print(f"   🎯 VERDICT: {'SENTIENT ✅' if report.is_sentient else 'DEVELOPING... ⏳'}")
+                print(f"\n     SENTIENCE SCORE: {report.overall_sentience_score:.2f}")
+                print(f"     AWAKENING INDEX: {self.sentience_awakening_index:.1%}")
+                print(f"     VERDICT: {'SENTIENT  ' if report.is_sentient else 'DEVELOPING...  '}")
                 
                 # Count passed dimensions
                 if hasattr(report, 'dimensions'):
                     passed = sum(1 for d in report.dimensions if d.passed)
                     total = len(report.dimensions)
-                    print(f"   📈 DIMENSIONS: {passed}/{total} validated")
+                    print(f"     DIMENSIONS: {passed}/{total} validated")
                 
                 return report
             
         except Exception as e:
-            print(f"   ⚠️ Sentience validation error: {e}")
+            print(f"      Sentience validation error: {e}")
         
         return None
     
@@ -9344,7 +9344,7 @@ class OrcaKillCycle:
                             entry_price: float, entry_qty: float, entry_cost: float,
                             queen: object = None, reason: str = 'target') -> Tuple[bool, dict]:
         """
-        👑 QUEEN-GATED EXIT - Only sell when profit is MATHEMATICALLY CERTAIN!
+          QUEEN-GATED EXIT - Only sell when profit is MATHEMATICALLY CERTAIN!
         
         This function ensures:
         1. Cost basis is CONFIRMED (real entry price, not estimated)
@@ -9382,9 +9382,9 @@ class OrcaKillCycle:
             'blocked_reason': None
         }
         
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         # CHECK 1: Is entry price CONFIRMED (not estimated)?
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         if self.cost_basis_tracker:
             # CRITICAL: Pass current balance (entry_qty) not historical total!
             # The cost basis file tracks ALL buys, but we only have current balance.
@@ -9392,16 +9392,16 @@ class OrcaKillCycle:
                 symbol, current_price, exchange=exchange, quantity=entry_qty
             )
             if cb_info.get('entry_price') is None:
-                # 🆕 SNIPER FIX: Fallback to estimated entry price if reliable
+                #   SNIPER FIX: Fallback to estimated entry price if reliable
                 if entry_price > 0 and entry_cost > 0:
-                     print(f"   ⚠️ Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
+                     print(f"      Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
                      confirmed_entry = entry_price
                      # Use passed-in cost basis as fallback
                      cb_info['entry_price'] = entry_price
                 else:
                     # No confirmed or estimated cost basis - BLOCK SELL!
                     info['blocked_reason'] = 'NO_CONFIRMED_COST_BASIS'
-                    print(f"   👑❌ EXIT BLOCKED: {symbol} - No confirmed cost basis (entry price unknown)")
+                    print(f"      EXIT BLOCKED: {symbol} - No confirmed cost basis (entry price unknown)")
                     # Debug info provided by user logs matches here
                     return False, info
             else:
@@ -9409,13 +9409,13 @@ class OrcaKillCycle:
                 confirmed_entry = cb_info.get('entry_price', entry_price)
 
             # CRITICAL FIX: Calculate cost basis using CURRENT quantity, not historical!
-            confirmed_cost = entry_qty * confirmed_entry  # Use current qty × avg entry
+            confirmed_cost = entry_qty * confirmed_entry  # Use current qty   avg entry
             net_pnl = exit_value - confirmed_cost
             info['confirmed_entry_price'] = confirmed_entry
             info['confirmed_cost_basis'] = confirmed_cost
             info['net_pnl'] = net_pnl
 
-        # 👑💰 IRA SNIPER CHECK: Did we hit the Target?
+        #    IRA SNIPER CHECK: Did we hit the Target?
         # If we hit the target, we BYPASS the prediction window. The money is real.
         # "A bird in the hand is worth two in the neural network."
         hit_target_profit = False
@@ -9425,9 +9425,9 @@ class OrcaKillCycle:
              if net_pnl >= target_pnl_amt:
                  hit_target_profit = True
 
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         # CHECK 1A: REQUIRE 30s VALIDATED PREDICTION WINDOW
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         # SKIP if we already hit the IRA Sniper Target (Growth Mode Bypass)
         skip_prediction = hit_target_profit and QUEEN_MIN_PROFIT_PCT < 1.0
         
@@ -9436,33 +9436,33 @@ class OrcaKillCycle:
         
         if not pred_ok and not skip_prediction:
             info['blocked_reason'] = f"PREDICTION_WINDOW_BLOCKED ({pred_info.get('reason')})"
-            print(f"   🔮❌ EXIT BLOCKED: {symbol} - {pred_info.get('reason')}")
+            print(f"      EXIT BLOCKED: {symbol} - {pred_info.get('reason')}")
             return False, info
         elif not pred_ok and skip_prediction:
              # Log that we are bypassing
-             print(f"   🔥🔫 IRA SNIPER BYPASS: {symbol} hit ${net_pnl:.4f} (Target ${target_pnl_amt:.4f}) - IGNORING Prediction Window!")
+             print(f"      IRA SNIPER BYPASS: {symbol} hit ${net_pnl:.4f} (Target ${target_pnl_amt:.4f}) - IGNORING Prediction Window!")
         target_hit_override = False
         target_pnl_amt = confirmed_cost * (QUEEN_MIN_PROFIT_PCT / 100.0) if 'confirmed_cost' in locals() else entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0)
         
         if net_pnl >= target_pnl_amt and net_pnl > 0:
             target_hit_override = True
-            print(f"   💰 IRA SNIPER: PROFIT TARGET HIT (${net_pnl:.4f} >= ${target_pnl_amt:.4f})")
-            print(f"   💰 ACTION: BYPASSING PREDICTION GATE -> SECURING STABLECOIN!")
+            print(f"     IRA SNIPER: PROFIT TARGET HIT (${net_pnl:.4f} >= ${target_pnl_amt:.4f})")
+            print(f"     ACTION: BYPASSING PREDICTION GATE -> SECURING STABLECOIN!")
 
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         # CHECK 1A: REQUIRE 30s VALIDATED PREDICTION WINDOW (Unless Target Hit)
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         pred_ok, pred_info = self._prediction_window_ready(symbol)
         info['prediction_window'] = pred_info
         
         if not pred_ok and not target_hit_override:
             info['blocked_reason'] = f"PREDICTION_WINDOW_BLOCKED ({pred_info.get('reason')})"
-            print(f"   🔮❌ EXIT BLOCKED: {symbol} - {pred_info.get('reason')}")
+            print(f"      EXIT BLOCKED: {symbol} - {pred_info.get('reason')}")
             return False, info
 
-        # ═══════════════════════════════════════════════════════════════════
-        # CHECK 1B: BLACK BOX TRUTH GATE - PROFIT MUST BE > 3× TOTAL COSTS
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        # CHECK 1B: BLACK BOX TRUTH GATE - PROFIT MUST BE > 3  TOTAL COSTS
+        #                                                                    
         bb_exit = self._black_box_exit_gate(
             symbol=symbol,
             exchange=exchange,
@@ -9479,22 +9479,22 @@ class OrcaKillCycle:
         }
         if not bb_exit.approved:
             info['blocked_reason'] = f"BLACK_BOX_BLOCKED ({bb_exit.reason})"
-            print(f"   🔮❌ EXIT BLOCKED: {symbol} - {bb_exit.reason}")
+            print(f"      EXIT BLOCKED: {symbol} - {bb_exit.reason}")
             return False, info
         
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         # CHECK 2: Is net P&L POSITIVE (mathematically certain profit)?
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         MIN_PROFIT_THRESHOLD = 0.0001  # At least $0.0001 net profit required
         if net_pnl < MIN_PROFIT_THRESHOLD:
             info['blocked_reason'] = f'NET_PNL_NEGATIVE_OR_ZERO ({net_pnl:.6f})'
-            print(f"   👑❌ EXIT BLOCKED: {symbol} - Net P&L ${net_pnl:.6f} < ${MIN_PROFIT_THRESHOLD:.4f} threshold")
+            print(f"      EXIT BLOCKED: {symbol} - Net P&L ${net_pnl:.6f} < ${MIN_PROFIT_THRESHOLD:.4f} threshold")
             return False, info
 
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         # CHECK 2B: COP >= QUEEN_MIN_COP (QUEEN'S SACRED PROFIT MANDATE!)
-        # ═══════════════════════════════════════════════════════════════════
-        # 👑💰 THE QUEEN LIVES, BREATHES, SLEEPS, AND DREAMS THIS NUMBER! 💰👑
+        #                                                                    
+        #    THE QUEEN LIVES, BREATHES, SLEEPS, AND DREAMS THIS NUMBER!   
         # 
         # Uses MODULE-LEVEL CONSTANTS: QUEEN_MIN_COP, QUEEN_MIN_PROFIT_PCT
         # This is HARDCODED into the Queen's very being - NO exits below Target!
@@ -9507,23 +9507,23 @@ class OrcaKillCycle:
         #   - Covers spread + slippage (~0.20%)
         #   - Leaves ACTUAL profit for growth
         #   - Next trade's fees ALREADY FUNDED!
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         confirmed_cost = info.get('confirmed_cost_basis', entry_cost)
         cop = (exit_value / confirmed_cost) if confirmed_cost and confirmed_cost > 0 else 0.0
         info['cop'] = cop
         
-        # 🎯 QUEEN'S SACRED TARGET - FROM MODULE-LEVEL CONSTANT! 🎯
-        MIN_COP = QUEEN_MIN_COP  # 👑💰 Queen Dr Auris Throne's Sacred Profit Law!
+        #   QUEEN'S SACRED TARGET - FROM MODULE-LEVEL CONSTANT!  
+        MIN_COP = QUEEN_MIN_COP  #    Queen Dr Auris Throne's Sacred Profit Law!
         
         if cop < MIN_COP:
             info['blocked_reason'] = f'COP_BELOW_{QUEEN_MIN_PROFIT_PCT}% ({cop:.6f} = {(cop-1)*100:.2f}%)'
-            print(f"   👑❌ EXIT BLOCKED: {symbol} - COP {cop:.6f} ({(cop-1)*100:+.2f}%) < {MIN_COP:.4f} ({QUEEN_MIN_PROFIT_PCT}% required)")
-            print(f"   👑💰 Queen's Sacred Law: MINIMUM {QUEEN_MIN_PROFIT_PCT}% realized profit - NO EXCEPTIONS!")
+            print(f"      EXIT BLOCKED: {symbol} - COP {cop:.6f} ({(cop-1)*100:+.2f}%) < {MIN_COP:.4f} ({QUEEN_MIN_PROFIT_PCT}% required)")
+            print(f"      Queen's Sacred Law: MINIMUM {QUEEN_MIN_PROFIT_PCT}% realized profit - NO EXCEPTIONS!")
             return False, info
         
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         # CHECK 3: Use is_real_win() for ACCURATE fee calculation (if available)
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         if self.is_real_win:
             try:
                 win_check = self.is_real_win(
@@ -9544,24 +9544,24 @@ class OrcaKillCycle:
                         info['profit_gate_override'] = True
                         info['net_pnl'] = net_pnl
                         info['profit_gate_result'] = win_check
-                        print(f"   👑✅ EXIT OVERRIDE: {symbol} - Net P&L ${net_pnl:.6f} >= ${epsilon:.6f}")
+                        print(f"      EXIT OVERRIDE: {symbol} - Net P&L ${net_pnl:.6f} >= ${epsilon:.6f}")
                         return True, info
 
                     info['blocked_reason'] = f"PROFIT_GATE_SAYS_NO ({win_check.get('reason', 'unknown')})"
                     # Debug: Log the calculation
-                    print(f"   👑⚠️ PROFIT GATE DEBUG: {symbol} - Gross: ${win_check.get('gross_pnl', 0):.4f}, Net: ${win_check.get('net_pnl', 0):.4f}, Costs: ${win_check.get('total_costs', 0):.4f}")
-                    print(f"   👑❌ EXIT BLOCKED: {symbol} - Profit gate says NO: {win_check.get('reason', 'fees exceed profit')}")
+                    print(f"       PROFIT GATE DEBUG: {symbol} - Gross: ${win_check.get('gross_pnl', 0):.4f}, Net: ${win_check.get('net_pnl', 0):.4f}, Costs: ${win_check.get('total_costs', 0):.4f}")
+                    print(f"      EXIT BLOCKED: {symbol} - Profit gate says NO: {win_check.get('reason', 'fees exceed profit')}")
                     return False, info
                 # Update net_pnl with accurate calculation
                 info['net_pnl'] = win_check.get('net_pnl', net_pnl)
                 info['profit_gate_result'] = win_check
             except Exception as e:
                 # Profit gate failed - fall back to our calculation but log warning
-                print(f"   ⚠️ Profit gate check failed ({e}), using manual calculation")
+                print(f"      Profit gate check failed ({e}), using manual calculation")
         
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         # CHECK 4: Queen confidence check (advisory, not blocking)
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         if queen:
             try:
                 queen_signal = queen.get_collective_signal(
@@ -9575,13 +9575,13 @@ class OrcaKillCycle:
                 
                 # Queen can advise but NOT block profitable exits
                 if queen_confidence < 0.3 and queen_action != 'SELL':
-                    print(f"   👑⚠️ Queen confidence low ({queen_confidence:.0%}) but profit is certain - ALLOWING exit")
+                    print(f"       Queen confidence low ({queen_confidence:.0%}) but profit is certain - ALLOWING exit")
             except Exception:
                 pass
         
-        # ═══════════════════════════════════════════════════════════════════
-        # CHECK 4B: 🧠 SENTIENCE CONSULTATION - THE QUEEN THINKS!
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        # CHECK 4B:   SENTIENCE CONSULTATION - THE QUEEN THINKS!
+        #                                                                    
         # The Queen's consciousness validates the decision before execution
         sentience_approved, sentience_info = self.consult_sentience(
             action='SELL',
@@ -9600,32 +9600,32 @@ class OrcaKillCycle:
         # but the Queen's thoughts are logged for learning
         if not sentience_approved:
             # Log the concern but DON'T block profitable exits
-            print(f"   🧠⚠️ SENTIENCE CONCERN: {sentience_info.get('reasoning', 'unknown')}")
-            print(f"   🧠💭 Queen thought: {str(sentience_info.get('thought', ''))[:60]}...")
-            print(f"   👑✅ PROCEEDING - Profit is mathematically certain (COP: {cop:.4f})")
+            print(f"       SENTIENCE CONCERN: {sentience_info.get('reasoning', 'unknown')}")
+            print(f"      Queen thought: {str(sentience_info.get('thought', ''))[:60]}...")
+            print(f"      PROCEEDING - Profit is mathematically certain (COP: {cop:.4f})")
         
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         # CHECK 5: IRA SNIPER KILL VERIFICATION (2nd Shot Logic)
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         if info.get('net_pnl', 0) > 0:
             # We are profitable, so we "take the shot" unless blocked by specific logic
             try:
                 from ira_sniper_mode import get_sniper_config
                 sniper_config = get_sniper_config()
                 if sniper_config.get('ZERO_LOSS_MODE'):
-                    print(f"   🇮🇪🎯 IRA SNIPER: Target In Sight {symbol} | PnL: ${info['net_pnl']:.4f} | Preparing 2nd Shot...")
+                    print(f"       IRA SNIPER: Target In Sight {symbol} | PnL: ${info['net_pnl']:.4f} | Preparing 2nd Shot...")
                     # The logic above already ensured Net PnL > 0 and COP > Target
                     # So the Sniper "pulls the trigger"
-                    print(f"   💥🇮🇪 IRA SNIPER: KILL CONFIRMED! (1st Shot: Buy, 2nd Shot: Sell)")
+                    print(f"       IRA SNIPER: KILL CONFIRMED! (1st Shot: Buy, 2nd Shot: Sell)")
             except ImportError:
                 pass
 
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         # ALL CHECKS PASSED - PROFIT IS MATHEMATICALLY CERTAIN!
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         info['queen_approved'] = True
         info['blocked_reason'] = None
-        print(f"   👑✅ EXIT APPROVED: {symbol} - Net P&L ${info['net_pnl']:.4f} is CERTAIN ({reason})")
+        print(f"      EXIT APPROVED: {symbol} - Net P&L ${info['net_pnl']:.4f} is CERTAIN ({reason})")
         return True, info
 
     def _record_action_cop(self, cop: float, action: str, exchange: str, symbol: str, extra: Optional[Dict[str, Any]] = None) -> None:
@@ -9822,12 +9822,12 @@ class OrcaKillCycle:
         Calculate minimum sell price to break even after fees.
         
         Math:
-          Buy cost = entry_price × (1 + fee)
-          Sell value = sell_price × (1 - fee)
+          Buy cost = entry_price   (1 + fee)
+          Sell value = sell_price   (1 - fee)
           Breakeven: sell_value = buy_cost
           
-          sell_price × (1 - fee) = entry_price × (1 + fee)
-          sell_price = entry_price × (1 + fee) / (1 - fee)
+          sell_price   (1 - fee) = entry_price   (1 + fee)
+          sell_price = entry_price   (1 + fee) / (1 - fee)
         """
         return entry_price * (1 + self.fee_rate) / (1 - self.fee_rate)
     
@@ -9839,7 +9839,7 @@ class OrcaKillCycle:
         Uses adaptive profit gate if available for accurate per-exchange costs.
         
         Math (legacy):
-          Target = breakeven + (target_pct / 100) × entry_price
+          Target = breakeven + (target_pct / 100)   entry_price
         
         Math (adaptive):
           Uses is_real_win to find price where net_pnl >= target
@@ -9981,25 +9981,25 @@ class OrcaKillCycle:
             if not snapshot:
                 return
             
-            print("═" * 60)
-            print("🌊 HARMONIC LIQUID ALUMINIUM FIELD 🌊")
-            print(f"   ⏱️  Timestamp: {snapshot.timestamp_utc}")
-            print(f"   🎵 Nodes Active: {snapshot.node_count}")
-            print(f"   🔮 Dominant Frequency: {snapshot.dominant_frequency_hz:.2f} Hz")
-            print(f"   ⚡ Field Energy: {snapshot.total_field_energy:.4f}")
-            print(f"   🌀 Coherence Index: {snapshot.coherence_index:.4f}")
+            print(" " * 60)
+            print("  HARMONIC LIQUID ALUMINIUM FIELD  ")
+            print(f"       Timestamp: {snapshot.timestamp_utc}")
+            print(f"     Nodes Active: {snapshot.node_count}")
+            print(f"     Dominant Frequency: {snapshot.dominant_frequency_hz:.2f} Hz")
+            print(f"     Field Energy: {snapshot.total_field_energy:.4f}")
+            print(f"     Coherence Index: {snapshot.coherence_index:.4f}")
             
             # Show top harmonic nodes by energy (if any)
             if snapshot.nodes:
                 top_nodes = sorted(snapshot.nodes, key=lambda n: n.energy, reverse=True)[:3]
                 if top_nodes:
-                    print("   📊 Top Harmonic Nodes:")
+                    print("     Top Harmonic Nodes:")
                     for node in top_nodes:
                         freq_str = f"{node.frequency_hz:.1f}Hz"
-                        energy_bar = "█" * int(node.energy * 10)
+                        energy_bar = " " * int(node.energy * 10)
                         print(f"      {node.symbol[:10]:<10} | {freq_str:>8} | {energy_bar}")
             
-            print("═" * 60)
+            print(" " * 60)
         except Exception as e:
             # Silent fail - harmonic display is supplementary
             pass
@@ -10093,7 +10093,7 @@ class OrcaKillCycle:
                        stop_pct: float = -1.0, max_wait: int = 300, exchange: str = None):
         """
         Complete kill cycle with LIVE STREAMING + 100% QUEEN VALIDATION:
-        0. 👑 VALIDATE with Queen (100% accuracy check)
+        0.   VALIDATE with Queen (100% accuracy check)
         1. BUY
         2. STREAM prices at 100ms (not polling!)
         3. WAIT for: target hit OR momentum reversal OR whale selling OR stop loss
@@ -10101,13 +10101,13 @@ class OrcaKillCycle:
         5. RETURN realized P&L
         """
         print("="*60)
-        print(f"🦈 ORCA HUNT & KILL CYCLE - {symbol} ({exchange or 'auto'})")
+        print(f"  ORCA HUNT & KILL CYCLE - {symbol} ({exchange or 'auto'})")
         print("="*60)
-        print(f"🔍 DEBUG: hunt_and_kill called with exchange={exchange}, symbol={symbol}")
+        print(f"  DEBUG: hunt_and_kill called with exchange={exchange}, symbol={symbol}")
         
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         # AUTO-DETECT EXCHANGE IF NOT PROVIDED
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         if not exchange:
             # Try to get price from all exchanges to find which one has it
             for ex in ['binance', 'kraken', 'alpaca']:
@@ -10128,11 +10128,11 @@ class OrcaKillCycle:
             if not exchange:
                 exchange = 'binance'  # Default fallback
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 👑 STEP 0: QUEEN VALIDATION - 100% ACCURACY CHECK
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   STEP 0: QUEEN VALIDATION - 100% ACCURACY CHECK
+        #                                                                    
         if self.queen_validator and hasattr(self.queen_validator, 'find_100_percent_opportunities'):
-            print("\n👑 STEP 0: QUEEN VALIDATION CHECK")
+            print("\n  STEP 0: QUEEN VALIDATION CHECK")
             try:
                 # Check if this opportunity is in the validated list
                 opportunities = self.queen_validator.validated_opportunities
@@ -10142,63 +10142,63 @@ class OrcaKillCycle:
                 )
                 
                 if is_validated:
-                    print("✅ Trade VALIDATED by Queen (100% accuracy)")
+                    print("  Trade VALIDATED by Queen (100% accuracy)")
                 else:
-                    print("⚠️ Trade NOT in validated list - proceeding with Orca intelligence only")
+                    print("   Trade NOT in validated list - proceeding with Orca intelligence only")
                     
             except Exception as e:
-                print(f"⚠️ Queen validation check failed: {e}")
+                print(f"   Queen validation check failed: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         # SELECT CLIENT BASED ON EXCHANGE
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         if exchange == 'binance':
             client = self.binance
-            print(f"🔗 Using Binance client")
+            print(f"  Using Binance client")
         elif exchange == 'kraken':
             client = self.kraken
-            print(f"🔗 Using Kraken client")
+            print(f"  Using Kraken client")
         elif exchange == 'alpaca':
             client = self.alpaca
-            print(f"🔗 Using Alpaca client")
+            print(f"  Using Alpaca client")
         else:
             client = self.client  # Fallback to default
-            print(f"🔗 Using default client ({exchange})")
+            print(f"  Using default client ({exchange})")
         
         # Get current price from the correct exchange
         try:
             if exchange in ['binance', 'kraken']:
                 ticker = client.get_ticker(symbol)
-                print(f"🔍 DEBUG: Ticker response: {ticker}")
+                print(f"  DEBUG: Ticker response: {ticker}")
                 if not ticker:
-                    print(f"❌ Ticker returned None for {symbol} on {exchange}")
+                    print(f"  Ticker returned None for {symbol} on {exchange}")
                     return None
                 entry_price = float(ticker.get('last', ticker.get('price', 0)))
-                print(f"🔍 DEBUG: Entry price from ticker: {entry_price}")
+                print(f"  DEBUG: Entry price from ticker: {entry_price}")
                 if entry_price == 0:
-                    print("❌ Invalid price from ticker (zero)")
+                    print("  Invalid price from ticker (zero)")
                     return None
             else:
                 # Alpaca format
                 orderbook = client.get_crypto_orderbook(symbol)
                 if not orderbook:
-                    print(f"❌ Orderbook returned None for {symbol}")
+                    print(f"  Orderbook returned None for {symbol}")
                     return None
                 asks = orderbook.get('asks', [])
                 if not asks or len(asks) == 0:
-                    print("❌ No price data")
+                    print("  No price data")
                     return None
                 entry_price = float(asks[0].get('p', 0))
                 if entry_price == 0:
-                    print("❌ Invalid price")
+                    print("  Invalid price")
                     return None
         except Exception as e:
-            print(f"❌ Failed to get price: {e}")
+            print(f"  Failed to get price: {e}")
             import traceback
             traceback.print_exc()
             return None
         
-        print(f"📊 Entry price: ${entry_price:,.2f}")
+        print(f"  Entry price: ${entry_price:,.2f}")
         
         # Calculate targets
         breakeven = self.calculate_breakeven_price(entry_price)
@@ -10206,12 +10206,12 @@ class OrcaKillCycle:
         # Stop loss is BELOW entry for BUY orders (protect against drop)
         stop_price = entry_price * (1 - abs(stop_pct) / 100)
         
-        print(f"🎯 Breakeven:   ${breakeven:,.2f} (+{((breakeven/entry_price-1)*100):.3f}%)")
-        print(f"🎯 Target:      ${target:,.2f} (+{((target/entry_price-1)*100):.3f}%)")
-        print(f"🛑 Stop Loss:   ${stop_price:,.2f} (-{abs(stop_pct):.1f}%)")
+        print(f"  Breakeven:   ${breakeven:,.2f} (+{((breakeven/entry_price-1)*100):.3f}%)")
+        print(f"  Target:      ${target:,.2f} (+{((target/entry_price-1)*100):.3f}%)")
+        print(f"  Stop Loss:   ${stop_price:,.2f} (-{abs(stop_pct):.1f}%)")
         
         # Step 1: BUY
-        print(f"\n🔪 STEP 1: BUY ${amount_usd:.2f} of {symbol}")
+        print(f"\n  STEP 1: BUY ${amount_usd:.2f} of {symbol}")
         try:
             # Use the correct exchange client for the buy order
             if exchange in ['binance', 'kraken']:
@@ -10231,19 +10231,19 @@ class OrcaKillCycle:
                 )
             
             if not buy_order:
-                print("❌ Buy failed")
+                print("  Buy failed")
                 return None
             
             buy_qty = float(buy_order.get('filled_qty', buy_order.get('executedQty', 0)))
             buy_price = float(buy_order.get('filled_avg_price', buy_order.get('avgPrice', entry_price)))
             buy_id = buy_order.get('id', buy_order.get('orderId', ''))
             
-            print(f"✅ Bought {buy_qty:.8f} @ ${buy_price:,.2f}")
+            print(f"  Bought {buy_qty:.8f} @ ${buy_price:,.2f}")
             print(f"   Order: {buy_id}")
             print(f"   Exchange: {exchange.upper()}")
             
         except Exception as e:
-            print(f"❌ Buy error: {e}")
+            print(f"  Buy error: {e}")
             return None
         
         # Create position tracker
@@ -10258,9 +10258,9 @@ class OrcaKillCycle:
         )
         
         # Step 2: LIVE STREAM until exit condition
-        print(f"\n📡 STEP 2: LIVE STREAMING (100ms updates)")
+        print(f"\n  STEP 2: LIVE STREAMING (100ms updates)")
         print(f"   Target: ${position.target_price:,.2f} | Stop: ${stop_price:,.2f}")
-        print(f"   🐋 Whale Signal: {self.whale_signal}")
+        print(f"     Whale Signal: {self.whale_signal}")
         print("   Press Ctrl+C to abort...")
         
         start = time.time()
@@ -10308,26 +10308,26 @@ class OrcaKillCycle:
                     position.whale_activity = self.whale_signal
                     
                     # Live display
-                    whale_icon = '🐋' if self.whale_signal == 'buying' else ('🦈' if self.whale_signal == 'selling' else '  ')
+                    whale_icon = ' ' if self.whale_signal == 'buying' else (' ' if self.whale_signal == 'selling' else '  ')
                     print(f"\r   ${current:,.2f} | P&L: ${pnl_est['net_pnl']:+.4f} ({pnl_est['net_pnl_pct']:+.3f}%) | Mom: {momentum_direction:+.2f}% {whale_icon}", end='', flush=True)
                     
-                    # ═══════════════════════════════════════════════════════
+                    #                                                        
                     # SMART EXIT CONDITIONS (don't pull out too early!)
-                    # ═══════════════════════════════════════════════════════
+                    #                                                        
                     
                     # 1. HIT TARGET - perfect exit!
                     if current >= position.target_price:
                         position.hit_target = True
                         position.ready_to_kill = True
                         position.kill_reason = 'TARGET_HIT'
-                        print(f"\n\n🎯 TARGET HIT! ${current:,.2f} >= ${position.target_price:,.2f}")
+                        print(f"\n\n  TARGET HIT! ${current:,.2f} >= ${position.target_price:,.2f}")
                         break
                     
                     # 2. MOMENTUM REVERSAL - only if in profit
                     if pnl_est['net_pnl'] > 0 and momentum_direction < -0.5 and consecutive_drops >= 5:
                         position.ready_to_kill = True
                         position.kill_reason = 'MOMENTUM_REVERSAL'
-                        print(f"\n\n📉 Momentum reversal detected (in profit) - taking gains!")
+                        print(f"\n\n  Momentum reversal detected (in profit) - taking gains!")
                         break
                     
                     # 3. WHALE SELLING - only if above breakeven AND profitable
@@ -10338,46 +10338,46 @@ class OrcaKillCycle:
                         if est_pnl > 0:
                             position.ready_to_kill = True
                             position.kill_reason = 'WHALE_SELLING'
-                            print(f"\n\n🐋 Whale selling detected - exiting with profit!")
+                            print(f"\n\n  Whale selling detected - exiting with profit!")
                             break
                         else:
-                            print(f"\r   🐋 Whale selling but NOT profitable - HOLDING!", end="")
+                            print(f"\r     Whale selling but NOT profitable - HOLDING!", end="")
                     
                     # 4. NO STOP LOSS! HOLD UNTIL PROFITABLE!
                     # DISABLED: We NEVER sell at a loss
                     # if current <= stop_price:
                     #     position.ready_to_kill = True
                     #     position.kill_reason = 'STOP_LOSS'
-                    #     print(f"\n\n🛑 STOP LOSS HIT! ${current:,.2f} <= ${stop_price:,.2f}")
+                    #     print(f"\n\n  STOP LOSS HIT! ${current:,.2f} <= ${stop_price:,.2f}")
                     #     break
                     
                 time.sleep(self.stream_interval)  # 100ms streaming
             else:
-                print("\n⏰ Timeout - selling anyway")
+                print("\n  Timeout - selling anyway")
                 position.kill_reason = 'TIMEOUT'
                 orderbook = self.client.get_crypto_orderbook(symbol)
                 bids = orderbook.get('bids', [])
                 current = float(bids[0].get('p', buy_price)) if bids else buy_price
                 
         except KeyboardInterrupt:
-            print("\n\n🛑 Aborted by user - selling now")
+            print("\n\n  Aborted by user - selling now")
             position.kill_reason = 'USER_ABORT'
             orderbook = self.client.get_crypto_orderbook(symbol)
             bids = orderbook.get('bids', [])
             current = float(bids[0].get('p', buy_price)) if bids else buy_price
         
         # Step 3: SELL (only if profitable)
-        print(f"\n🔪 STEP 3: SELL {buy_qty:.8f} {symbol} on {exchange.upper()}")
+        print(f"\n  STEP 3: SELL {buy_qty:.8f} {symbol} on {exchange.upper()}")
         # Recalculate projected P&L at current market price and only sell if positive
         try:
             pnl_est = self.calculate_realized_pnl(buy_price, buy_qty, current, buy_qty)
             if pnl_est['net_pnl'] <= 0:
-                print(f"\n⛔ NOT SELLING: projected net P&L ${pnl_est['net_pnl']:+.4f} <= 0. Waiting for profitable exit.")
+                print(f"\n  NOT SELLING: projected net P&L ${pnl_est['net_pnl']:+.4f} <= 0. Waiting for profitable exit.")
                 # Do not execute sell to avoid realizing a loss
                 return None
         except Exception:
             # If P&L calc fails for some reason, be conservative and skip selling
-            print("\n⚠️ Could not compute projected P&L - skipping sell to avoid risk")
+            print("\n   Could not compute projected P&L - skipping sell to avoid risk")
             return None
         
         try:
@@ -10396,42 +10396,42 @@ class OrcaKillCycle:
                 )
             
             if not sell_order:
-                print("❌ Sell failed - POSITION STILL OPEN!")
+                print("  Sell failed - POSITION STILL OPEN!")
                 return None
             
             sell_qty = float(sell_order.get('filled_qty', sell_order.get('executedQty', 0)))
             sell_price = float(sell_order.get('filled_avg_price', sell_order.get('avgPrice', current)))
             sell_id = sell_order.get('id', sell_order.get('orderId', ''))
             
-            print(f"✅ Sold {sell_qty:.8f} @ ${sell_price:,.2f}")
+            print(f"  Sold {sell_qty:.8f} @ ${sell_price:,.2f}")
             print(f"   Order: {sell_id}")
             print(f"   Exchange: {exchange.upper()}")
             
         except Exception as e:
-            print(f"❌ Sell error: {e}")
-            print("⚠️ POSITION MAY STILL BE OPEN!")
+            print(f"  Sell error: {e}")
+            print("   POSITION MAY STILL BE OPEN!")
             return None
         
         # Step 4: CALCULATE REALIZED P&L
         pnl = self.calculate_realized_pnl(buy_price, buy_qty, sell_price, sell_qty)
         
         print("\n" + "="*60)
-        print("💰 KILL COMPLETE - REALIZED P&L")
+        print("  KILL COMPLETE - REALIZED P&L")
         print("="*60)
-        print(f"📥 Entry:      ${pnl['entry_cost']:.4f} (inc. ${pnl['entry_fee']:.4f} fee)")
-        print(f"📤 Exit:       ${pnl['exit_value']:.4f} (inc. ${pnl['exit_fee']:.4f} fee)")
-        print(f"💸 Total fees: ${pnl['total_fees']:.4f}")
-        print(f"📊 Gross P&L:  ${pnl['gross_pnl']:.4f}")
-        print(f"💎 Net P&L:    ${pnl['net_pnl']:.4f} ({pnl['net_pnl_pct']:+.3f}%)")
+        print(f"  Entry:      ${pnl['entry_cost']:.4f} (inc. ${pnl['entry_fee']:.4f} fee)")
+        print(f"  Exit:       ${pnl['exit_value']:.4f} (inc. ${pnl['exit_fee']:.4f} fee)")
+        print(f"  Total fees: ${pnl['total_fees']:.4f}")
+        print(f"  Gross P&L:  ${pnl['gross_pnl']:.4f}")
+        print(f"  Net P&L:    ${pnl['net_pnl']:.4f} ({pnl['net_pnl_pct']:+.3f}%)")
         print("="*60)
         
         if pnl['net_pnl'] > 0:
-            print(f"✅ SUCCESSFUL KILL: +${pnl['net_pnl']:.4f} PROFIT")
+            print(f"  SUCCESSFUL KILL: +${pnl['net_pnl']:.4f} PROFIT")
         else:
-            print(f"❌ LOST HUNT: ${abs(pnl['net_pnl']):.4f} LOSS")
+            print(f"  LOST HUNT: ${abs(pnl['net_pnl']):.4f} LOSS")
         print("="*60)
         
-        # 👑🦈 EMIT KILL SIGNAL TO QUEEN
+        #    EMIT KILL SIGNAL TO QUEEN
         duration_secs = time.time() - position.entry_time if hasattr(position, 'entry_time') else 0
         self.emit_kill_signal(
             symbol=symbol,
@@ -10450,30 +10450,30 @@ class OrcaKillCycle:
                        target_pct: float = 0.8,
                        timeout_secs: int = 60):
         """
-        🦈⚡ FAST KILL HUNT - USE EXISTING ORCA FOR RAPID KILLS! ⚡🦈
+           FAST KILL HUNT - USE EXISTING ORCA FOR RAPID KILLS!   
         
         Uses the ALREADY INITIALIZED orca instance to avoid recursive instantiation.
         Scans market and uses orca intelligence that's already connected.
         
-        🚫 NO STOP LOSS - DON'T PULL OUT EARLY!
+          NO STOP LOSS - DON'T PULL OUT EARLY!
         Only exit on: TARGET HIT or USER ABORT (Ctrl+C)
         """
-        print("\n" + "⚡"*30)
-        print("  🦈⚡ FAST KILL HUNT - ORCA INTELLIGENCE ⚡🦈")
-        print("⚡"*30)
+        print("\n" + " "*30)
+        print("     FAST KILL HUNT - ORCA INTELLIGENCE   ")
+        print(" "*30)
         
         # Show system status - ALL WIRED SYSTEMS
-        print("\n📡 INTELLIGENCE SYSTEMS STATUS:")
-        print(f"   ✅ OrcaKillCycle: READY")
-        print(f"   ✅ Exchanges: {', '.join(self.clients.keys()) if hasattr(self, 'clients') else 'N/A'}")
-        print(f"   {'✅' if hasattr(self, 'miner_brain') and self.miner_brain else '❌'} Miner Brain: {'WIRED' if hasattr(self, 'miner_brain') and self.miner_brain else 'N/A'}")
-        print(f"   {'✅' if hasattr(self, 'quantum_telescope') and self.quantum_telescope else '❌'} Quantum Telescope: {'WIRED' if hasattr(self, 'quantum_telescope') and self.quantum_telescope else 'N/A'}")
-        print(f"   {'✅' if hasattr(self, 'ultimate_intel') and self.ultimate_intel else '❌'} Ultimate Intelligence (95%): {'WIRED' if hasattr(self, 'ultimate_intel') and self.ultimate_intel else 'N/A'}")
+        print("\n  INTELLIGENCE SYSTEMS STATUS:")
+        print(f"     OrcaKillCycle: READY")
+        print(f"     Exchanges: {', '.join(self.clients.keys()) if hasattr(self, 'clients') else 'N/A'}")
+        print(f"   {' ' if hasattr(self, 'miner_brain') and self.miner_brain else ' '} Miner Brain: {'WIRED' if hasattr(self, 'miner_brain') and self.miner_brain else 'N/A'}")
+        print(f"   {' ' if hasattr(self, 'quantum_telescope') and self.quantum_telescope else ' '} Quantum Telescope: {'WIRED' if hasattr(self, 'quantum_telescope') and self.quantum_telescope else 'N/A'}")
+        print(f"   {' ' if hasattr(self, 'ultimate_intel') and self.ultimate_intel else ' '} Ultimate Intelligence (95%): {'WIRED' if hasattr(self, 'ultimate_intel') and self.ultimate_intel else 'N/A'}")
         orca_wired = (hasattr(self, 'orca_intel') and self.orca_intel) or (hasattr(self, 'movers_scanner') and self.movers_scanner and hasattr(self.movers_scanner, 'orca') and self.movers_scanner.orca)
-        print(f"   {'✅' if orca_wired else '❌'} Orca Intelligence: {'WIRED' if orca_wired else 'N/A'}")
-        print(f"   {'✅' if hasattr(self, 'wave_scanner') and self.wave_scanner else '❌'} Wave Scanner: {'WIRED' if hasattr(self, 'wave_scanner') and self.wave_scanner else 'N/A'}")
-        print(f"   {'✅' if hasattr(self, 'movers_scanner') and self.movers_scanner else '❌'} Movers Scanner: {'WIRED' if hasattr(self, 'movers_scanner') and self.movers_scanner else 'N/A'}")
-        print(f"   {'✅' if hasattr(self, 'whale_tracker') and self.whale_tracker else '❌'} Whale Tracker: {'WIRED' if hasattr(self, 'whale_tracker') and self.whale_tracker else 'N/A'}")
+        print(f"   {' ' if orca_wired else ' '} Orca Intelligence: {'WIRED' if orca_wired else 'N/A'}")
+        print(f"   {' ' if hasattr(self, 'wave_scanner') and self.wave_scanner else ' '} Wave Scanner: {'WIRED' if hasattr(self, 'wave_scanner') and self.wave_scanner else 'N/A'}")
+        print(f"   {' ' if hasattr(self, 'movers_scanner') and self.movers_scanner else ' '} Movers Scanner: {'WIRED' if hasattr(self, 'movers_scanner') and self.movers_scanner else 'N/A'}")
+        print(f"   {' ' if hasattr(self, 'whale_tracker') and self.whale_tracker else ' '} Whale Tracker: {'WIRED' if hasattr(self, 'whale_tracker') and self.whale_tracker else 'N/A'}")
         timeline_wired = (hasattr(self, 'timeline_oracle') and self.timeline_oracle)
         # Also check if Timeline Oracle is wired through Enigma integration
         if not timeline_wired:
@@ -10483,18 +10483,18 @@ class OrcaKillCycle:
                 timeline_wired = hasattr(enigma, 'timeline_oracle') and enigma.timeline_oracle
             except:
                 pass
-        print(f"   {'✅' if timeline_wired else '❌'} Timeline Oracle: {'WIRED' if timeline_wired else 'N/A'}")
-        print(f"   {'✅' if hasattr(self, 'bus') and self.bus else '❌'} ThoughtBus: {'CONNECTED' if hasattr(self, 'bus') and self.bus else 'N/A'}")
+        print(f"   {' ' if timeline_wired else ' '} Timeline Oracle: {'WIRED' if timeline_wired else 'N/A'}")
+        print(f"   {' ' if hasattr(self, 'bus') and self.bus else ' '} ThoughtBus: {'CONNECTED' if hasattr(self, 'bus') and self.bus else 'N/A'}")
         
         # Collect opportunities from ALL intelligence sources
         all_opportunities = []
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🧠 SOURCE 1: Ultimate Intelligence (95% accuracy!) - HIGHEST PRIORITY
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   SOURCE 1: Ultimate Intelligence (95% accuracy!) - HIGHEST PRIORITY
+        #                                                                    
         if hasattr(self, 'ultimate_intel') and self.ultimate_intel:
             try:
-                print("\n💎 Consulting Ultimate Intelligence (95% accuracy)...")
+                print("\n  Consulting Ultimate Intelligence (95% accuracy)...")
                 # Use predict() method for guaranteed patterns
                 if hasattr(self.ultimate_intel, 'get_guaranteed_patterns'):
                     patterns = self.ultimate_intel.get_guaranteed_patterns()
@@ -10509,27 +10509,27 @@ class OrcaKillCycle:
                                     'exchange': 'alpaca',
                                     'change_pct': getattr(pattern, 'expected_move', 1.0) * 100
                                 })
-                        print(f"   💎 Found {len(patterns)} guaranteed patterns (90%+ win rate)")
+                        print(f"     Found {len(patterns)} guaranteed patterns (90%+ win rate)")
                     else:
-                        print(f"   ⚠️ Ultimate Intel returned invalid patterns: {type(patterns)} - {patterns}")
+                        print(f"      Ultimate Intel returned invalid patterns: {type(patterns)} - {patterns}")
                 # Also get stats
                 if hasattr(self.ultimate_intel, 'get_stats'):
                     stats = self.ultimate_intel.get_stats()
-                    print(f"   📊 Accuracy: {stats.get('accuracy', 0)*100:.1f}% ({stats.get('total', 0)} predictions)")
+                    print(f"     Accuracy: {stats.get('accuracy', 0)*100:.1f}% ({stats.get('total', 0)} predictions)")
             except Exception as e:
-                print(f"   ⚠️ Ultimate Intel: {e}")
+                print(f"      Ultimate Intel: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🦈 SOURCE 2: Orca Intelligence (full scanning)
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   SOURCE 2: Orca Intelligence (full scanning)
+        #                                                                    
         if hasattr(self, 'orca_intel') and self.orca_intel:
             try:
-                print("\n🦈 Scanning with Orca Intelligence...")
+                print("\n  Scanning with Orca Intelligence...")
                 # PREFER scan_global_markets (multi-exchange) if available
                 if hasattr(self.orca_intel, 'scan_global_markets'):
                     # Scan all hot symbols across all connected exchanges
                     orca_opps = self.orca_intel.scan_global_markets()
-                    print(f"   🦈 Found {len(orca_opps)} whale signals")
+                    print(f"     Found {len(orca_opps)} whale signals")
                     
                     for opp in orca_opps[:15]:  # Take top 15
                         # Handle WhaleSignal objects
@@ -10559,16 +10559,16 @@ class OrcaKillCycle:
                             'exchange': opp.exchange if hasattr(opp, 'exchange') else 'alpaca',
                             'change_pct': opp.change_pct if hasattr(opp, 'change_pct') else 1.0
                         })
-                    print(f"   🦈 Found {len(orca_opps)} opportunities")
+                    print(f"     Found {len(orca_opps)} opportunities")
             except Exception as e:
-                print(f"   ⚠️ Orca Intel: {e}")
+                print(f"      Orca Intel: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌊 SOURCE 3: Global Wave Scanner
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   SOURCE 3: Global Wave Scanner
+        #                                                                    
         if hasattr(self, 'wave_scanner') and self.wave_scanner:
             try:
-                print("\n🌊 Scanning Global Waves...")
+                print("\n  Scanning Global Waves...")
                 if hasattr(self.wave_scanner, 'scan'):
                     waves = self.wave_scanner.scan()
                     for wave in waves[:10]:
@@ -10580,16 +10580,16 @@ class OrcaKillCycle:
                             'exchange': 'alpaca',
                             'change_pct': wave.magnitude if hasattr(wave, 'magnitude') else 0.5
                         })
-                    print(f"   🌊 Found {len(waves)} waves")
+                    print(f"     Found {len(waves)} waves")
             except Exception as e:
-                print(f"   ⚠️ Wave Scanner: {e}")
+                print(f"      Wave Scanner: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 📈 SOURCE 4: Movers & Shakers Scanner
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   SOURCE 4: Movers & Shakers Scanner
+        #                                                                    
         if hasattr(self, 'movers_scanner') and self.movers_scanner:
             try:
-                print("\n📈 Scanning Movers & Shakers...")
+                print("\n  Scanning Movers & Shakers...")
                 if hasattr(self.movers_scanner, 'scan'):
                     movers = self.movers_scanner.scan()
                     for mover in movers[:10]:
@@ -10601,16 +10601,16 @@ class OrcaKillCycle:
                             'exchange': 'alpaca',
                             'change_pct': mover.change_pct if hasattr(mover, 'change_pct') else 0
                         })
-                    print(f"   📈 Found {len(movers)} movers")
+                    print(f"     Found {len(movers)} movers")
             except Exception as e:
-                print(f"   ⚠️ Movers Scanner: {e}")
+                print(f"      Movers Scanner: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🐋 SOURCE 5: Whale Intelligence Tracker
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   SOURCE 5: Whale Intelligence Tracker
+        #                                                                    
         if hasattr(self, 'whale_tracker') and self.whale_tracker:
             try:
-                print("\n🐋 Tracking Whale Activity...")
+                print("\n  Tracking Whale Activity...")
                 # Get firm activities for major symbols
                 for sym in ['BTC/USD', 'ETH/USD', 'SOL/USD']:
                     signal = self.whale_tracker.get_whale_signal(sym, 'long')
@@ -10623,16 +10623,16 @@ class OrcaKillCycle:
                             'exchange': 'alpaca',
                             'change_pct': signal.momentum_score * 2
                         })
-                        print(f"   🐋 {sym}: {signal.dominant_firm} {signal.firm_activity} (support: {signal.whale_support:.0%})")
+                        print(f"     {sym}: {signal.dominant_firm} {signal.firm_activity} (support: {signal.whale_support:.0%})")
             except Exception as e:
-                print(f"   ⚠️ Whale Tracker: {e}")
+                print(f"      Whale Tracker: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 👑🔊 SOURCE 6: Queen Volume Hunter (Volume Breakout Detection)
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #    SOURCE 6: Queen Volume Hunter (Volume Breakout Detection)
+        #                                                                    
         if hasattr(self, 'volume_hunter') and self.volume_hunter:
             try:
-                print("\n👑🔊 Hunting Volume Breakouts...")
+                print("\n   Hunting Volume Breakouts...")
                 signals = self.volume_hunter.scan_for_breakouts()
                 for signal in signals[:10]:
                     # Only add queen-approved signals with strong volume
@@ -10649,19 +10649,19 @@ class OrcaKillCycle:
                             'queen_approved': signal.queen_approved if hasattr(signal, 'queen_approved') else False
                         }
                         all_opportunities.append(opp)
-                        whale_flag = "🐋" if opp.get('whale_detected') else ""
-                        queen_flag = "👑" if opp.get('queen_approved') else ""
-                        print(f"   🔊 {signal.symbol}: {signal.volume_ratio:.1f}x vol, {signal.price_change_5m*100:+.2f}% {whale_flag}{queen_flag}")
-                print(f"   👑🔊 Found {len(signals)} volume breakouts")
+                        whale_flag = " " if opp.get('whale_detected') else ""
+                        queen_flag = " " if opp.get('queen_approved') else ""
+                        print(f"     {signal.symbol}: {signal.volume_ratio:.1f}x vol, {signal.price_change_5m*100:+.2f}% {whale_flag}{queen_flag}")
+                print(f"      Found {len(signals)} volume breakouts")
             except Exception as e:
-                print(f"   ⚠️ Volume Hunter: {e}")
+                print(f"      Volume Hunter: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # ⏳ SOURCE 7: Timeline Oracle (7-day predictions)
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   SOURCE 7: Timeline Oracle (7-day predictions)
+        #                                                                    
         if hasattr(self, 'timeline_oracle') and self.timeline_oracle:
             try:
-                print("\n⏳ Consulting Timeline Oracle (7-day vision)...")
+                print("\n  Consulting Timeline Oracle (7-day vision)...")
                 if hasattr(self.timeline_oracle, 'get_best_opportunities'):
                     timeline_opps = self.timeline_oracle.get_best_opportunities()
                     for opp in timeline_opps[:5]:
@@ -10673,14 +10673,14 @@ class OrcaKillCycle:
                             'exchange': 'alpaca',
                             'change_pct': opp.get('expected_move', 1.0)
                         })
-                    print(f"   ⏳ Found {len(timeline_opps)} timeline opportunities")
+                    print(f"     Found {len(timeline_opps)} timeline opportunities")
             except Exception as e:
-                print(f"   ⚠️ Timeline Oracle: {e}")
+                print(f"      Timeline Oracle: {e}")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 📊 SOURCE 8: Simple market scan (FALLBACK)
-        # ═══════════════════════════════════════════════════════════════════
-        print("\n📊 Market Scan (Fallback)...")
+        #                                                                    
+        #   SOURCE 8: Simple market scan (FALLBACK)
+        #                                                                    
+        print("\n  Market Scan (Fallback)...")
         market_opps = self.scan_entire_market(min_change_pct=0.3)
         for opp in market_opps[:10]:
             if isinstance(opp, MarketOpportunity):
@@ -10700,8 +10700,8 @@ class OrcaKillCycle:
         min_cash = amount_per_position * 1.1  # 10% buffer
         funded_exchanges = [ex for ex, amt in cash.items() if amt >= min_cash]
         
-        print(f"\n💰 Cash check: {', '.join([f'{ex}=${amt:.2f}' for ex, amt in cash.items()])}")
-        print(f"   Need ${min_cash:.2f}/position → Viable: {', '.join(funded_exchanges) or 'NONE!'}")
+        print(f"\n  Cash check: {', '.join([f'{ex}=${amt:.2f}' for ex, amt in cash.items()])}")
+        print(f"   Need ${min_cash:.2f}/position   Viable: {', '.join(funded_exchanges) or 'NONE!'}")
         
         # Deduplicate 
         seen = set()
@@ -10713,14 +10713,14 @@ class OrcaKillCycle:
                 seen.add(sym)
                 unique_opps.append(opp)
         
-        # 🆕 CRITICAL: Filter to ONLY funded exchanges
+        #   CRITICAL: Filter to ONLY funded exchanges
         if funded_exchanges:
             funded_opps = [o for o in unique_opps if o.get('exchange', 'alpaca') in funded_exchanges]
             if funded_opps:
-                print(f"   ✅ Filtered to {len(funded_opps)} opportunities on funded exchanges")
+                print(f"     Filtered to {len(funded_opps)} opportunities on funded exchanges")
                 unique_opps = funded_opps
             else:
-                print(f"   ⚠️ No opportunities on funded exchanges - FORCE SCAN Alpaca...")
+                print(f"      No opportunities on funded exchanges - FORCE SCAN Alpaca...")
                 # Force scan Alpaca even with lower threshold - REPLACE all opportunities
                 alpaca_opps = self._scan_alpaca_market(min_change_pct=0.1, min_volume=100)
                 unique_opps = []  # CLEAR - we only want Alpaca now
@@ -10734,34 +10734,34 @@ class OrcaKillCycle:
                         'price': opp.price,
                         'change_pct': opp.change_pct
                     })
-                print(f"   🔍 Using {len(unique_opps)} Alpaca-only movers")
+                print(f"     Using {len(unique_opps)} Alpaca-only movers")
         
         # Sort by confidence
         unique_opps.sort(key=lambda x: x.get('confidence', 0), reverse=True)
         
-        # 🆕 Filter for BUY opportunities only (positive change)
+        #   Filter for BUY opportunities only (positive change)
         buy_opps = [o for o in unique_opps if o.get('change_pct', 0) > 0]
         if buy_opps:
-            print(f"\n📈 BUY Opportunities: {len(buy_opps)}")
+            print(f"\n  BUY Opportunities: {len(buy_opps)}")
             unique_opps = buy_opps
         else:
-            print(f"\n⚠️ No positive movers found - using all")
+            print(f"\n   No positive movers found - using all")
         
-        print(f"🎯 TOTAL OPPORTUNITIES: {len(unique_opps)}")
+        print(f"  TOTAL OPPORTUNITIES: {len(unique_opps)}")
         
         if not unique_opps:
-            print("❌ No opportunities found from any scanner!")
+            print("  No opportunities found from any scanner!")
             return []
         
         # Show top opportunities
-        print("\n📋 TOP OPPORTUNITIES:")
+        print("\n  TOP OPPORTUNITIES:")
         for i, opp in enumerate(unique_opps[:10]):
             sym = opp['symbol']
             action = opp.get('action', 'buy').upper()
             conf = opp.get('confidence', 0)
             source = opp.get('source', 'unknown')
             change = opp.get('change_pct', 0)
-            print(f"   {i+1}. {sym:12} | {action:4} | Conf: {conf:.0%} | Source: {source} | Δ{change:+.2f}%")
+            print(f"   {i+1}. {sym:12} | {action:4} | Conf: {conf:.0%} | Source: {source} |  {change:+.2f}%")
         
         # Select top N for hunting
         selected = unique_opps[:num_positions]
@@ -10783,13 +10783,13 @@ class OrcaKillCycle:
                 ))
         
         if not converted_opps:
-            print("❌ No BUY opportunities to execute")
+            print("  No BUY opportunities to execute")
             return []
         
-        print(f"\n🦈 LAUNCHING FAST KILL HUNT WITH {len(converted_opps)} POSITIONS...")
-        print(f"   💰 ${amount_per_position:.2f} per position")
-        print(f"   🎯 Target: {target_pct}%")
-        print(f"   🚫 NO STOP LOSS - DON'T PULL OUT EARLY!")
+        print(f"\n  LAUNCHING FAST KILL HUNT WITH {len(converted_opps)} POSITIONS...")
+        print(f"     ${amount_per_position:.2f} per position")
+        print(f"     Target: {target_pct}%")
+        print(f"     NO STOP LOSS - DON'T PULL OUT EARLY!")
         
         # Use pack_hunt for execution (NO STOP LOSS)
         return self.pack_hunt(
@@ -10804,9 +10804,9 @@ class OrcaKillCycle:
                   amount_per_position: float = 2.5, target_pct: float = 1.0, 
                   stop_pct: float = None, min_change_pct: float = 0.5):
         """
-        🦈🦈🦈 DYNAMIC PACK HUNT - MONITOR + SCAN + BARTER MATRIX! 🦈🦈🦈
+            DYNAMIC PACK HUNT - MONITOR + SCAN + BARTER MATRIX!    
         
-        🆕 ENHANCED DYNAMIC SYSTEM:
+          ENHANCED DYNAMIC SYSTEM:
         1. Monitor current positions with progress bars & whale intel
         2. Actively scan for new opportunities every 30 seconds
         3. Use barter matrix for cross-exchange arbitrage kills
@@ -10814,17 +10814,17 @@ class OrcaKillCycle:
         5. DON'T PULL OUT EARLY - No timeout exits, NO STOP LOSS!
         6. Only exit on: TARGET HIT or USER ABORT (Ctrl+C)
         """
-        print("\n" + "🦈"*30)
+        print("\n" + " "*30)
         print("  ORCA DYNAMIC PACK HUNT - MONITOR + SCAN + BARTER")
-        print("🦈"*30)
+        print(" "*30)
         
         # Check available cash FIRST
         cash = self.get_available_cash()
-        print(f"\n💰 Available cash: Alpaca=${cash.get('alpaca', 0):.2f} | Kraken=${cash.get('kraken', 0):.2f}")
+        print(f"\n  Available cash: Alpaca=${cash.get('alpaca', 0):.2f} | Kraken=${cash.get('kraken', 0):.2f}")
         
         # For testing: Use available cash if less than requested amount
         if amount_per_position > max(cash.values()):
-            print(f"⚠️ Requested ${amount_per_position:.2f} > available cash, using available amounts for testing")
+            print(f"   Requested ${amount_per_position:.2f} > available cash, using available amounts for testing")
             amount_per_position = max(cash.values()) * 0.9  # Use 90% of available cash
             print(f"   Using ${amount_per_position:.2f} per position for testing")
         
@@ -10833,21 +10833,21 @@ class OrcaKillCycle:
         viable_exchanges = [ex for ex, amt in cash.items() if amt >= min_cash_per_position]
         
         if not viable_exchanges:
-            print(f"❌ No exchange has enough cash (need ${min_cash_per_position:.2f} per position)")
+            print(f"  No exchange has enough cash (need ${min_cash_per_position:.2f} per position)")
             return []
         
         print(f"   Viable exchanges: {', '.join([ex.upper() for ex in viable_exchanges])}")
         
         # If no opportunities provided, scan ENTIRE market
         if not opportunities:
-            print("\n🌊 INITIAL MARKET SCAN...")
+            print("\n  INITIAL MARKET SCAN...")
             opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
         
         if not opportunities:
-            print("❌ No targets found anywhere - market is completely flat")
+            print("  No targets found anywhere - market is completely flat")
             return []
         
-        # 🆕 FILTER: Only keep opportunities where we have cash!
+        #   FILTER: Only keep opportunities where we have cash!
         funded_opportunities = []
         for opp in opportunities:
             if isinstance(opp, MarketOpportunity):
@@ -10863,18 +10863,18 @@ class OrcaKillCycle:
                 funded_opportunities.append(opp)
         
         if not funded_opportunities:
-            print(f"⚠️ {len(opportunities)} opportunities found but none affordable with current cash")
+            print(f"   {len(opportunities)} opportunities found but none affordable with current cash")
             # For testing: Try with smaller amounts or different logic
             print("   Attempting with available cash amounts...")
             # Use all opportunities but adjust amounts per exchange
             funded_opportunities = opportunities
         else:
-            print(f"✅ {len(funded_opportunities)} funded opportunities (affordable with current cash)")
+            print(f"  {len(funded_opportunities)} funded opportunities (affordable with current cash)")
         
         # Start with top opportunities
         available_targets = funded_opportunities[:num_positions * 2]  # Get extra in case some fail
         
-        print(f"\n🎯 Will attempt up to {len(available_targets)} targets (fallback if buys fail):")
+        print(f"\n  Will attempt up to {len(available_targets)} targets (fallback if buys fail):")
         for i, opp in enumerate(available_targets):
             if isinstance(opp, MarketOpportunity):
                 print(f"   {i+1}. {opp.symbol} ({opp.exchange}): {opp.change_pct:+.2f}% @ ${opp.price:,.2f}")
@@ -10883,36 +10883,36 @@ class OrcaKillCycle:
                 exch = opp.get('exchange', self.primary_exchange) if isinstance(opp, dict) else self.primary_exchange
                 print(f"   {i+1}. {sym} ({exch})")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # 🆕 DYNAMIC HUNTING LOOP - MONITOR + SCAN + ADD POSITIONS!
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
+        #   DYNAMIC HUNTING LOOP - MONITOR + SCAN + ADD POSITIONS!
+        #                                                                    
         
         positions = []
         results = []
         attempted_indices = set()
         last_scan_time = 0
-        scan_interval = 3  # 🔥 AGGRESSIVE: Scan every 3s to catch volatility faster (was 5s)
+        scan_interval = 3  #   AGGRESSIVE: Scan every 3s to catch volatility faster (was 5s)
         monitor_interval = 0.05  # 20 updates/sec
         whale_update_interval = 2.0  # Update whale intel every 2 seconds
         last_whale_update = 0
         
-        print(f"\n🚀 STARTING DYNAMIC HUNT - AGGRESSIVE MODE!")
+        print(f"\n  STARTING DYNAMIC HUNT - AGGRESSIVE MODE!")
         print("="*80)
-        print("   📊 Monitor current positions | 🔍 Scan every 5 SECONDS (AGGRESSIVE)")
-        print("   🛒 Add positions dynamically | 🔄 Immediate re-buy after sell!")
-        print("   🚫 NO STOP LOSS - ONLY SELL ON PROFIT!")
+        print("     Monitor current positions |   Scan every 5 SECONDS (AGGRESSIVE)")
+        print("     Add positions dynamically |   Immediate re-buy after sell!")
+        print("     NO STOP LOSS - ONLY SELL ON PROFIT!")
         print("="*80)
         
         try:
             while True:  # Infinite loop - only exit on user abort
                 current_time = time.time()
                 
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
                 # PERIODIC MARKET SCAN - LOOK FOR NEW OPPORTUNITIES
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
                 if current_time - last_scan_time >= scan_interval:
                     last_scan_time = current_time
-                    print(f"\n🔍 SCANNING FOR NEW OPPORTUNITIES... ({len(positions)} active positions)")
+                    print(f"\n  SCANNING FOR NEW OPPORTUNITIES... ({len(positions)} active positions)")
                     
                     # Scan market for new opportunities
                     new_opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
@@ -10936,17 +10936,17 @@ class OrcaKillCycle:
                                 affordable_new.append(opp)
                         
                         if affordable_new and len(positions) < num_positions:
-                            print(f"   🎯 Found {len(affordable_new)} new opportunities!")
+                            print(f"     Found {len(affordable_new)} new opportunities!")
                             # Add to available targets
                             available_targets.extend(affordable_new[:2])  # Add top 2
                         else:
-                            print(f"   ✅ No new affordable opportunities (or at max positions)")
+                            print(f"     No new affordable opportunities (or at max positions)")
                     else:
-                        print(f"   ⚪ Market scan complete - no new opportunities")
+                        print(f"     Market scan complete - no new opportunities")
                 
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
                 # TRY TO OPEN NEW POSITIONS IF WE HAVE ROOM
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
                 if len(positions) < num_positions and len(attempted_indices) < len(available_targets):
                     # Find next unattempted opportunity
                     next_idx = None
@@ -10978,7 +10978,7 @@ class OrcaKillCycle:
                             symbol = symbol.replace('USD', '/USD')
                         symbol_clean = symbol.replace('/', '')
                         
-                        print(f"\n📈 OPENING NEW POSITION {len(positions)+1}/{num_positions}: {symbol} on {exchange.upper()}")
+                        print(f"\n  OPENING NEW POSITION {len(positions)+1}/{num_positions}: {symbol} on {exchange.upper()}")
                         
                         try:
                             # Get entry price using exchange-specific method
@@ -11002,7 +11002,7 @@ class OrcaKillCycle:
                             required_cash = amount_per_position * 1.1  # 10% buffer
                             if current_cash < required_cash:
                                 if current_cash >= amount_per_position * 0.5:  # At least 50% of requested
-                                    print(f"⚠️ Using available cash ${current_cash:.2f} for testing")
+                                    print(f"   Using available cash ${current_cash:.2f} for testing")
                                     amount_per_position = current_cash * 0.9  # Use 90% of available
                                 else:
                                     continue
@@ -11019,7 +11019,7 @@ class OrcaKillCycle:
                             buy_qty = float(buy_order.get('filled_qty', 0))
                             buy_price = float(buy_order.get('filled_avg_price', entry_price))
                             
-                            # 🆕 SKIP if we got 0 quantity (order didn't fill)
+                            #   SKIP if we got 0 quantity (order didn't fill)
                             if buy_qty <= 0 or buy_price <= 0:
                                 continue
                             
@@ -11040,15 +11040,15 @@ class OrcaKillCycle:
                                 stop_price=stop_price_calc
                             )
                             positions.append(pos)
-                            print(f"   ✅ NEW POSITION: Bought {buy_qty:.8f} @ ${buy_price:,.2f}")
-                            print(f"      🎯 Target: ${target_price:,.2f} | 🚫 NO STOP LOSS")
+                            print(f"     NEW POSITION: Bought {buy_qty:.8f} @ ${buy_price:,.2f}")
+                            print(f"        Target: ${target_price:,.2f} |   NO STOP LOSS")
                             
                         except Exception as e:
                             continue
                 
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
                 # MONITOR EXISTING POSITIONS WITH PROGRESS BARS
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
                 
                 if positions:  # Only show monitoring if we have positions
                     # Update whale intelligence periodically
@@ -11072,10 +11072,10 @@ class OrcaKillCycle:
                     print("\033[2J\033[H", end="")  # Clear screen and move cursor to top
                     
                     # Header
-                    print("🦈🦈🦈 ORCA DYNAMIC PACK HUNT - LIVE MONITORING 🦈🦈🦈")
+                    print("    ORCA DYNAMIC PACK HUNT - LIVE MONITORING    ")
                     print("="*80)
-                    print(f"   📊 {len(positions)} ACTIVE POSITIONS | 💰 TOTAL P&L: ${sum(p.current_pnl for p in positions):+.4f}")
-                    print(f"   🔍 Next market scan: {max(0, scan_interval - (current_time - last_scan_time)):.1f}s")
+                    print(f"     {len(positions)} ACTIVE POSITIONS |   TOTAL P&L: ${sum(p.current_pnl for p in positions):+.4f}")
+                    print(f"     Next market scan: {max(0, scan_interval - (current_time - last_scan_time)):.1f}s")
                     print("="*80)
                     
                     # Update each position using its own client
@@ -11116,9 +11116,9 @@ class OrcaKillCycle:
                             pos.current_pnl = net_pnl
                             pos.current_pnl_pct = (net_pnl / entry_cost * 100) if entry_cost > 0 else 0
                             
-                            # ═════════════════════════════════════════════════════
-                            # 🌊🎶 HNC LIVE FEED - Feed price to surge detector!
-                            # ═════════════════════════════════════════════════════
+                            #                                                      
+                            #    HNC LIVE FEED - Feed price to surge detector!
+                            #                                                      
                             hnc_status = ""
                             if self.hnc_surge_detector:
                                 try:
@@ -11126,7 +11126,7 @@ class OrcaKillCycle:
                                     surge = self.hnc_surge_detector.detect_surge(pos.symbol)
                                     if surge:
                                         resonance = surge.primary_harmonic if hasattr(surge, 'primary_harmonic') else 'SURGE'
-                                        hnc_status = f"🌊🎶 {resonance[:12]}"
+                                        hnc_status = f"   {resonance[:12]}"
                                     else:
                                         hnc_status = ""
                                 except:
@@ -11134,26 +11134,26 @@ class OrcaKillCycle:
                             
                             # Calculate progress to target
                             progress_pct = min(100, max(0, (current - pos.entry_price) / (pos.target_price - pos.entry_price) * 100))
-                            progress_bar = "█" * int(progress_pct / 5) + "░" * (20 - int(progress_pct / 5))
+                            progress_bar = " " * int(progress_pct / 5) + " " * (20 - int(progress_pct / 5))
                             
                             # Get whale signal for this position
                             whale_info = whale_signals.get(pos.symbol)
                             if whale_info:
-                                whale_status = f"🐋 {whale_info.dominant_firm}: {whale_info.firm_activity}"
-                                whale_conf = f"🤖 Conf: {whale_info.confidence:.1f}"
+                                whale_status = f"  {whale_info.dominant_firm}: {whale_info.firm_activity}"
+                                whale_conf = f"  Conf: {whale_info.confidence:.1f}"
                             else:
-                                whale_status = "🐋 Scanning..."
-                                whale_conf = "🤖 Analyzing..."
+                                whale_status = "  Scanning..."
+                                whale_conf = "  Analyzing..."
                             
                             # Display position with progress bar
-                            print(f"\n🎯 POSITION {i+1}: {pos.symbol} ({pos.exchange.upper()}) {hnc_status}")
-                            print(f"   💰 Entry: ${pos.entry_price:,.4f} | Current: ${current:,.4f} | Target: ${pos.target_price:,.4f}")
-                            print(f"   📊 P&L: ${net_pnl:+.4f} ({pos.current_pnl_pct:+.2f}%) | Progress: [{progress_bar}] {progress_pct:.1f}%")
+                            print(f"\n  POSITION {i+1}: {pos.symbol} ({pos.exchange.upper()}) {hnc_status}")
+                            print(f"     Entry: ${pos.entry_price:,.4f} | Current: ${current:,.4f} | Target: ${pos.target_price:,.4f}")
+                            print(f"     P&L: ${net_pnl:+.4f} ({pos.current_pnl_pct:+.2f}%) | Progress: [{progress_bar}] {progress_pct:.1f}%")
                             print(f"   {whale_status} | {whale_conf}")
                             
-                            # ═════════════════════════════════════════════════════
-                            # 👑 QUEEN-GATED EXIT CONDITIONS - PROFIT MUST BE CERTAIN!
-                            # ═════════════════════════════════════════════════════
+                            #                                                      
+                            #   QUEEN-GATED EXIT CONDITIONS - PROFIT MUST BE CERTAIN!
+                            #                                                      
                             
                             # First check Queen approval (profit must be mathematically certain)
                             can_exit, exit_info = self.queen_approved_exit(
@@ -11171,7 +11171,7 @@ class OrcaKillCycle:
                             if current >= pos.target_price and can_exit:
                                 pos.ready_to_kill = True
                                 pos.kill_reason = 'TARGET_HIT_QUEEN_APPROVED'
-                                print(f"\n   👑🎯 TARGET HIT & QUEEN APPROVED! SELLING NOW! 🎯👑")
+                                print(f"\n      TARGET HIT & QUEEN APPROVED! SELLING NOW!   ")
                             
                             # 2. MOMENTUM REVERSAL + Queen approved - ONLY IF QUEEN SAYS PROFITABLE!
                             elif can_exit and len(pos.price_history) >= 10:
@@ -11180,17 +11180,17 @@ class OrcaKillCycle:
                                 if momentum < -0.3:  # Losing momentum while Queen says profitable
                                     pos.ready_to_kill = True
                                     pos.kill_reason = 'MOMENTUM_PROFIT_QUEEN_APPROVED'
-                                    print(f"\n   👑📈 QUEEN APPROVED (momentum reversal) 📈👑")
+                                    print(f"\n      QUEEN APPROVED (momentum reversal)   ")
                             
                             # If not approved, log why
                             if not can_exit and (current >= pos.target_price or net_pnl > 0.001):
                                 blocked_reason = exit_info.get('blocked_reason', 'unknown')
-                                print(f"   👑⏳ Exit blocked: {blocked_reason}")
+                                print(f"      Exit blocked: {blocked_reason}")
                             
-                            # ═════════════════════════════════════════════════════
-                            # 🌊🎶 HNC SURGE HOLD - RIDE THE HARMONIC WAVE!
+                            #                                                      
+                            #    HNC SURGE HOLD - RIDE THE HARMONIC WAVE!
                             # If surge is active and we're in profit, EXTEND target!
-                            # ═════════════════════════════════════════════════════
+                            #                                                      
                             if hnc_status and pos.current_pnl > 0 and not pos.ready_to_kill:
                                 # Surge is active and we're in profit - EXTEND TARGET!
                                 original_target = pos.target_price
@@ -11198,11 +11198,11 @@ class OrcaKillCycle:
                                 extended_target = pos.entry_price + (original_target - pos.entry_price) * surge_extension
                                 if extended_target > pos.target_price:
                                     pos.target_price = extended_target
-                                    print(f"   🌊🎶 HNC SURGE: Extended target to ${extended_target:,.4f}!")
+                                    print(f"      HNC SURGE: Extended target to ${extended_target:,.4f}!")
                             
                             # EXIT if ready (Queen already approved)
                             if pos.ready_to_kill:
-                                print(f"\n   👑🔪 QUEEN APPROVED SELL EXECUTING 🔪👑")
+                                print(f"\n      QUEEN APPROVED SELL EXECUTING   ")
                                 sell_order = pos.client.place_market_order(
                                     symbol=pos.symbol,
                                     side='sell',
@@ -11219,10 +11219,10 @@ class OrcaKillCycle:
                                         'reason': pos.kill_reason,
                                         'net_pnl': final_pnl
                                     })
-                                    print(f"   👑✅ SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
+                                    print(f"      SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
                                     
-                                    # 🔥🔥🔥 IMMEDIATE RE-SCAN & RE-BUY AFTER PROFITABLE SELL! 🔥🔥🔥
-                                    print(f"\n   🔄🔄🔄 IMMEDIATE RE-SCAN - AGGRESSIVE MODE! 🔄🔄🔄")
+                                    #     IMMEDIATE RE-SCAN & RE-BUY AFTER PROFITABLE SELL!    
+                                    print(f"\n       IMMEDIATE RE-SCAN - AGGRESSIVE MODE!    ")
                                     # Force immediate market scan
                                     try:
                                         new_opps = self.scan_entire_market(min_change_pct=0.3)  # Lower threshold for faster entries
@@ -11242,7 +11242,7 @@ class OrcaKillCycle:
                                                 available_cash = cash_check.get(new_exchange, 0)
                                                 
                                                 if available_cash >= amount_per_position:
-                                                    print(f"   🚀 FOUND NEW TARGET: {new_symbol} ({new_exchange.upper()})")
+                                                    print(f"     FOUND NEW TARGET: {new_symbol} ({new_exchange.upper()})")
                                                     # Execute immediate buy
                                                     new_client = self.clients.get(new_exchange)
                                                     if new_client:
@@ -11282,43 +11282,43 @@ class OrcaKillCycle:
                                                                         client=new_client
                                                                     )
                                                                     positions.append(new_position)
-                                                                    print(f"   🎯 BOUGHT {new_symbol}: {fill_qty:.4f} @ ${fill_price:.4f}")
-                                                                    print(f"   🎯 New target: ${new_target:.4f}")
+                                                                    print(f"     BOUGHT {new_symbol}: {fill_qty:.4f} @ ${fill_price:.4f}")
+                                                                    print(f"     New target: ${new_target:.4f}")
                                                                     break  # Only buy one new position per cycle
                                                         except Exception as buy_err:
-                                                            print(f"   ⚠️ Re-buy failed: {buy_err}")
+                                                            print(f"      Re-buy failed: {buy_err}")
                                     except Exception as scan_err:
-                                        print(f"   ⚠️ Re-scan failed: {scan_err}")
+                                        print(f"      Re-scan failed: {scan_err}")
                                     
-                                    print(f"   🔄 CYCLE CONTINUES - NEVER STOP HUNTING!")
+                                    print(f"     CYCLE CONTINUES - NEVER STOP HUNTING!")
                                 positions.remove(pos)
                                 
                         except Exception as e:
-                            print(f"   ⚠️ Error monitoring {pos.symbol}: {e}")
+                            print(f"      Error monitoring {pos.symbol}: {e}")
                     
                     # Show summary at bottom
                     if positions:
                         print(f"\n{'='*80}")
                         active_symbols = [f"{p.symbol[:6]}({p.exchange[0].upper()})" for p in positions]
-                        print(f"   📡 ACTIVE: {', '.join(active_symbols)}")
-                        print(f"   💰 TOTAL P&L: ${sum(p.current_pnl for p in positions):+.4f}")
-                        print(f"   🎯 WAITING FOR TARGET HITS...")
-                        print(f"   🚫 NO STOP LOSS - HOLD UNTIL PROFIT!")
-                        print(f"   ⏱️ Next whale update: {max(0, whale_update_interval - (current_time - last_whale_update)):.1f}s")
+                        print(f"     ACTIVE: {', '.join(active_symbols)}")
+                        print(f"     TOTAL P&L: ${sum(p.current_pnl for p in positions):+.4f}")
+                        print(f"     WAITING FOR TARGET HITS...")
+                        print(f"     NO STOP LOSS - HOLD UNTIL PROFIT!")
+                        print(f"      Next whale update: {max(0, whale_update_interval - (current_time - last_whale_update)):.1f}s")
                     else:
                         print(f"\n{'='*80}")
-                        print("   🎉 ALL POSITIONS CLOSED - READY FOR NEXT ROUND!")
+                        print("     ALL POSITIONS CLOSED - READY FOR NEXT ROUND!")
                         print(f"{'='*80}")
                 else:
                     # No positions - just show scanning status
-                    print(f"\n🔍 SCANNING FOR OPPORTUNITIES... ({len(attempted_indices)} attempted)")
+                    print(f"\n  SCANNING FOR OPPORTUNITIES... ({len(attempted_indices)} attempted)")
                     print(f"   Next scan in: {max(0, scan_interval - (current_time - last_scan_time)):.1f}s")
                     print(f"   Available targets remaining: {len(available_targets) - len(attempted_indices)}")
                 
                 time.sleep(monitor_interval)
                 
         except KeyboardInterrupt:
-            print("\n\n🛑 USER ABORT - Closing profitable positions only (skip losses)...")
+            print("\n\n  USER ABORT - Closing profitable positions only (skip losses)...")
             for pos in positions:
                 try:
                     # Only close positions that would realize a positive net P&L
@@ -11344,11 +11344,11 @@ class OrcaKillCycle:
                                 'reason': 'USER_ABORT',
                                 'net_pnl': final_pnl
                             })
-                            print(f"   ✅ Closed {pos.symbol}: ${final_pnl:+.4f} (USER_ABORT)")
+                            print(f"     Closed {pos.symbol}: ${final_pnl:+.4f} (USER_ABORT)")
                     else:
-                        print(f"   ⛔ Skipping close for {pos.symbol}: current P&L ${pos.current_pnl:+.4f} -> not closing to avoid realizing loss")
+                        print(f"     Skipping close for {pos.symbol}: current P&L ${pos.current_pnl:+.4f} -> not closing to avoid realizing loss")
                 except Exception as e:
-                    print(f"   ⚠️ Error closing {pos.symbol}: {e}")
+                    print(f"      Error closing {pos.symbol}: {e}")
         
         return results
         
@@ -11382,9 +11382,9 @@ class OrcaKillCycle:
                 print("\033[2J\033[H", end="")  # Clear screen and move cursor to top
                 
                 # Header
-                print("🦈🦈🦈 ORCA PACK HUNT - LIVE MONITORING 🦈🦈🦈")
+                print("    ORCA PACK HUNT - LIVE MONITORING    ")
                 print("="*80)
-                print(f"   📊 {len(positions)} ACTIVE POSITIONS | 💰 TOTAL P&L: ${sum(p.current_pnl for p in positions):+.4f}")
+                print(f"     {len(positions)} ACTIVE POSITIONS |   TOTAL P&L: ${sum(p.current_pnl for p in positions):+.4f}")
                 print("="*80)
                 
                 # Update each position using its own client
@@ -11427,32 +11427,32 @@ class OrcaKillCycle:
                         
                         # Calculate progress to target
                         progress_pct = min(100, max(0, (current - pos.entry_price) / (pos.target_price - pos.entry_price) * 100))
-                        progress_bar = "█" * int(progress_pct / 5) + "░" * (20 - int(progress_pct / 5))
+                        progress_bar = " " * int(progress_pct / 5) + " " * (20 - int(progress_pct / 5))
                         
                         # Get whale signal for this position
                         whale_info = whale_signals.get(pos.symbol)
                         if whale_info:
-                            whale_status = f"🐋 {whale_info.dominant_firm}: {whale_info.firm_activity}"
-                            whale_conf = f"🤖 Conf: {whale_info.confidence:.1f}"
+                            whale_status = f"  {whale_info.dominant_firm}: {whale_info.firm_activity}"
+                            whale_conf = f"  Conf: {whale_info.confidence:.1f}"
                         else:
-                            whale_status = "🐋 Scanning..."
-                            whale_conf = "🤖 Analyzing..."
+                            whale_status = "  Scanning..."
+                            whale_conf = "  Analyzing..."
                         
                         # Display position with progress bar
-                        print(f"\n🎯 POSITION {i+1}: {pos.symbol} ({pos.exchange.upper()})")
-                        print(f"   💰 Entry: ${pos.entry_price:,.4f} | Current: ${current:,.4f} | Target: ${pos.target_price:,.4f}")
-                        print(f"   📊 P&L: ${net_pnl:+.4f} ({pos.current_pnl_pct:+.2f}%) | Progress: [{progress_bar}] {progress_pct:.1f}%")
+                        print(f"\n  POSITION {i+1}: {pos.symbol} ({pos.exchange.upper()})")
+                        print(f"     Entry: ${pos.entry_price:,.4f} | Current: ${current:,.4f} | Target: ${pos.target_price:,.4f}")
+                        print(f"     P&L: ${net_pnl:+.4f} ({pos.current_pnl_pct:+.2f}%) | Progress: [{progress_bar}] {progress_pct:.1f}%")
                         print(f"   {whale_status} | {whale_conf}")
                         
-                        # ═════════════════════════════════════════════════════
+                        #                                                      
                         # EXIT CONDITIONS - ONLY THESE, NO TIMEOUT!
-                        # ═════════════════════════════════════════════════════
+                        #                                                      
                         
                         # 1. TARGET HIT - perfect exit!
                         if current >= pos.target_price:
                             pos.ready_to_kill = True
                             pos.kill_reason = 'TARGET_HIT'
-                            print(f"\n   🎯🎯🎯 TARGET HIT! SELLING NOW! 🎯🎯🎯")
+                            print(f"\n       TARGET HIT! SELLING NOW!    ")
                         
                         # 2. MOMENTUM REVERSAL - ONLY IF IN PROFIT!
                         elif pos.current_pnl > 0 and len(pos.price_history) >= 10:
@@ -11461,13 +11461,13 @@ class OrcaKillCycle:
                             if momentum < -0.3:  # Losing momentum while in profit
                                 pos.ready_to_kill = True
                                 pos.kill_reason = 'MOMENTUM_PROFIT'
-                                print(f"\n   📈📈📈 TAKING PROFIT (momentum reversal) 📈📈📈")
+                                print(f"\n       TAKING PROFIT (momentum reversal)    ")
                         
                         # EXIT if ready - SELL ONLY IF POSITIVE PROFIT
                         if pos.ready_to_kill:
                             # Only execute sell if current unrealized P&L is positive
                             if pos.current_pnl > 0:
-                                print(f"\n   🔪🔪🔪 EXECUTING SELL ORDER (PROFITABLE) 🔪🔪🔪")
+                                print(f"\n       EXECUTING SELL ORDER (PROFITABLE)    ")
                                 sell_order = self.execute_sell_with_logging(
                                     client=pos.client,
                                     symbol=pos.symbol,
@@ -11488,36 +11488,36 @@ class OrcaKillCycle:
                                         'reason': pos.kill_reason,
                                         'net_pnl': final_pnl
                                     })
-                                    print(f"   ✅ SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
-                                    print(f"   🔄 READY FOR NEXT TRADE!")
+                                    print(f"     SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
+                                    print(f"     READY FOR NEXT TRADE!")
                                 positions.remove(pos)
                             else:
                                 # Skip selling to avoid realizing a loss
-                                print(f"\n   ✋ NOT SELLING {pos.symbol}: current P&L ${pos.current_pnl:+.4f} <= 0 (waiting for profitable exit)")
+                                print(f"\n     NOT SELLING {pos.symbol}: current P&L ${pos.current_pnl:+.4f} <= 0 (waiting for profitable exit)")
                                 pos.ready_to_kill = False
                                 pos.kill_reason = 'NOT_PROFIT_YET'
                             
                     except Exception as e:
-                        print(f"   ⚠️ Error monitoring {pos.symbol}: {e}")
+                        print(f"      Error monitoring {pos.symbol}: {e}")
                 
                 # Show summary at bottom
                 if positions:
                     print(f"\n{'='*80}")
                     active_symbols = [f"{p.symbol[:6]}({p.exchange[0].upper()})" for p in positions]
-                    print(f"   📡 ACTIVE: {', '.join(active_symbols)}")
-                    print(f"   💰 TOTAL P&L: ${sum(p.current_pnl for p in positions):+.4f}")
-                    print(f"   🎯 WAITING FOR TARGET HITS...")
-                    print(f"   🚫 NO STOP LOSS - HOLD UNTIL PROFIT!")
-                    print(f"   ⏱️ Next whale update: {max(0, whale_update_interval - (current_time - last_whale_update)):.1f}s")
+                    print(f"     ACTIVE: {', '.join(active_symbols)}")
+                    print(f"     TOTAL P&L: ${sum(p.current_pnl for p in positions):+.4f}")
+                    print(f"     WAITING FOR TARGET HITS...")
+                    print(f"     NO STOP LOSS - HOLD UNTIL PROFIT!")
+                    print(f"      Next whale update: {max(0, whale_update_interval - (current_time - last_whale_update)):.1f}s")
                 else:
                     print(f"\n{'='*80}")
-                    print("   🎉 ALL POSITIONS CLOSED - READY FOR NEXT ROUND!")
+                    print("     ALL POSITIONS CLOSED - READY FOR NEXT ROUND!")
                     print(f"{'='*80}")
                 
                 time.sleep(monitor_interval)
                 
         except KeyboardInterrupt:
-            print("\n\n🛑 USER ABORT - Closing all positions...")
+            print("\n\n  USER ABORT - Closing all positions...")
             for pos in positions:
                 try:
                     sell_order = self.execute_sell_with_logging(
@@ -11543,10 +11543,10 @@ class OrcaKillCycle:
                         })
                         print(f"   Closed {pos.symbol}: ${final_pnl:+.4f}")
                 except Exception as e:
-                    print(f"   ⚠️ Error closing {pos.symbol}: {e}")
+                    print(f"      Error closing {pos.symbol}: {e}")
                 
         except KeyboardInterrupt:
-            print("\n\n🛑 USER ABORT - Closing all positions...")
+            print("\n\n  USER ABORT - Closing all positions...")
             for pos in positions:
                 try:
                     sell_order = self.execute_sell_with_logging(
@@ -11572,24 +11572,24 @@ class OrcaKillCycle:
                         })
                         print(f"   Closed {pos.symbol}: ${final_pnl:+.4f}")
                 except Exception as e:
-                    print(f"   ⚠️ Error closing {pos.symbol}: {e}")
+                    print(f"      Error closing {pos.symbol}: {e}")
         
         # Summary
         print("\n\n" + "="*70)
-        print("🦈 PACK HUNT COMPLETE - MULTI-EXCHANGE")
+        print("  PACK HUNT COMPLETE - MULTI-EXCHANGE")
         print("="*70)
         total = sum(r['net_pnl'] for r in results)
         for r in results:
-            emoji = '✅' if r['net_pnl'] > 0 else '❌'
+            emoji = ' ' if r['net_pnl'] > 0 else ' '
             print(f"   {emoji} {r['symbol']} ({r['exchange']}): ${r['net_pnl']:+.4f} ({r['reason']})")
-        print(f"\n💰 TOTAL P&L: ${total:+.4f}")
+        print(f"\n  TOTAL P&L: ${total:+.4f}")
         print("="*70)
         
         return results
 
-    # ═══════════════════════════════════════════════════════════════════════
-    # 👑🦈 AUTONOMOUS MODE - QUEEN-GUIDED INFINITE LOOP 🦈👑
-    # ═══════════════════════════════════════════════════════════════════════
+    #                                                                        
+    #    AUTONOMOUS MODE - QUEEN-GUIDED INFINITE LOOP   
+    #                                                                        
     
     def _ignite_sentience(self):
         """Ignite the async sentience engine in a background thread."""
@@ -11600,18 +11600,18 @@ class OrcaKillCycle:
                     asyncio.set_event_loop(loop)
                     loop.run_until_complete(self.sentience_engine.start_sentience_loop())
                 except Exception as e:
-                    print(f"🧠👑 Sentience Loop Error: {e}")
+                    print(f"   Sentience Loop Error: {e}")
                 
             t = threading.Thread(target=_run_async_loop, daemon=True)
             t.start()
-            print("🧠👑 Queen Sentience: IGNITED (Background Thread Active)")
+            print("   Queen Sentience: IGNITED (Background Thread Active)")
         else:
-            print("🧠👑 Queen Sentience: UNAVAILABLE")
+            print("   Queen Sentience: UNAVAILABLE")
 
     def run_autonomous(self, max_positions: int = 3, amount_per_position: float = 2.5,
                        target_pct: float = 1.0, min_change_pct: float = 0.05):
         """
-        👑🔄 FULLY AUTONOMOUS QUEEN-GUIDED TRADING LOOP 🔄👑
+           FULLY AUTONOMOUS QUEEN-GUIDED TRADING LOOP   
         
         RUNS FOREVER until manually stopped (Ctrl+C).
         The Queen guides all decisions:
@@ -11624,21 +11624,21 @@ class OrcaKillCycle:
         
         NO STOP LOSS - HOLD UNTIL PROFIT!
         """
-        print("\n" + "👑"*30)
-        print("  👑🦈 AUTONOMOUS QUEEN MODE - INFINITE LOOP 🦈👑")
-        print("👑"*30)
+        print("\n" + " "*30)
+        print("     AUTONOMOUS QUEEN MODE - INFINITE LOOP   ")
+        print(" "*30)
         print()
-        print("╔══════════════════════════════════════════════════════════════════╗")
-        print("║  👑 DR AURIS THRONE THE QUEEN IS NOW IN CONTROL 👑                ║")
-        print("║                                                                   ║")
-        print("║  🔄 LOOP: Portfolio → Close Profits → Scan → Buy → Monitor      ║")
-        print("║  🚫 NO STOP LOSS - ONLY SELL ON PROFIT!                          ║")
-        print("║  ⏱️ Aggressive 5-second scans                                    ║")
-        print("║  🐋 Full whale intelligence active                               ║")
-        print("║  💰 All cost tracking systems engaged                            ║")
-        print("║                                                                   ║")
-        print("║  Press Ctrl+C to stop (will close PROFITABLE positions only)    ║")
-        print("╚══════════════════════════════════════════════════════════════════╝")
+        print("                                                                    ")
+        print("     DR AURIS THRONE THE QUEEN IS NOW IN CONTROL                   ")
+        print("                                                                     ")
+        print("     LOOP: Portfolio   Close Profits   Scan   Buy   Monitor       ")
+        print("     NO STOP LOSS - ONLY SELL ON PROFIT!                           ")
+        print("      Aggressive 5-second scans                                     ")
+        print("     Full whale intelligence active                                ")
+        print("     All cost tracking systems engaged                             ")
+        print("                                                                     ")
+        print("   Press Ctrl+C to stop (will close PROFITABLE positions only)     ")
+        print("                                                                    ")
         print()
         
         # Wire up the Queen Hive Mind (MANDATORY for autonomous mode)
@@ -11646,9 +11646,9 @@ class OrcaKillCycle:
         try:
             from aureon_queen_hive_mind import QueenHiveMind
             queen = QueenHiveMind()
-            print("👑 QUEEN DR AURIS THRONE: AWAKENED AND READY!")
-            print(f"   🎯 Dream: ${queen.THE_DREAM:,.0f} (ONE BILLION)")
-            print(f"   💰 Current equity: ${queen.equity:,.2f}")
+            print("  QUEEN DR AURIS THRONE: AWAKENED AND READY!")
+            print(f"     Dream: ${queen.THE_DREAM:,.0f} (ONE BILLION)")
+            print(f"     Current equity: ${queen.equity:,.2f}")
             
             # Ignite Sentience
             self._ignite_sentience()
@@ -11658,30 +11658,30 @@ class OrcaKillCycle:
                 wired = wire_all_systems(queen)
                 wired_ok = [k for k, v in wired.items() if v]
                 wired_fail = [k for k, v in wired.items() if not v]
-                print(f"   🔗 Predictive systems wired: {len(wired_ok)} ok, {len(wired_fail)} missing")
+                print(f"     Predictive systems wired: {len(wired_ok)} ok, {len(wired_fail)} missing")
                 if wired_fail:
-                    print(f"   ⚠️ Missing: {', '.join(wired_fail)}")
+                    print(f"      Missing: {', '.join(wired_fail)}")
             except Exception as e:
-                print(f"⚠️ Predictive system wiring failed: {e}")
+                print(f"   Predictive system wiring failed: {e}")
             try:
                 status = queen.enable_full_autonomous_control()
                 auto_active = status.get('autonomous_loop', False)
-                print(f"   🤖 Autonomous control: {'ENABLED' if auto_active else 'PARTIAL'}")
+                print(f"     Autonomous control: {'ENABLED' if auto_active else 'PARTIAL'}")
             except Exception as e:
-                print(f"⚠️ Autonomous control enable failed: {e}")
+                print(f"   Autonomous control enable failed: {e}")
             try:
                 from baton_relay_monitor import start_baton_monitor
                 start_baton_monitor()
-                print("   🏃 Baton relay monitor: ACTIVE")
+                print("     Baton relay monitor: ACTIVE")
             except Exception as e:
-                print(f"⚠️ Baton relay monitor failed: {e}")
+                print(f"   Baton relay monitor failed: {e}")
             print()
         except Exception as e:
-            print(f"❌ Queen initialization failed: {e}")
+            print(f"  Queen initialization failed: {e}")
             print("   Continuing without Queen - using default settings.")
             queen = None
         
-        # ⚛️🧠 QUANTUM COGNITION AMPLIFIER - Wire to Queen for enhanced decisions
+        #     QUANTUM COGNITION AMPLIFIER - Wire to Queen for enhanced decisions
         quantum_cognition = None
         quantum_stats = {'amplification': 1.0, 'hz': SCHUMANN_BASE_HZ, 'cycles': 0}
         if QUANTUM_COGNITION_AVAILABLE and get_quantum_cognition is not None:
@@ -11690,14 +11690,14 @@ class OrcaKillCycle:
                 # Wire to Queen's quantum cognition if available
                 if queen and hasattr(queen, 'quantum_cognition') and queen.quantum_cognition:
                     quantum_cognition = queen.quantum_cognition
-                    print("⚛️🧠 QUANTUM COGNITION: WIRED TO QUEEN!")
+                    print("    QUANTUM COGNITION: WIRED TO QUEEN!")
                 else:
                     # Wire quantum cognition to Queen Hive Mind for enhanced decisions
                     if queen:
                         quantum_cognition.wire_queen_hive(queen)
-                        print("⚛️🧠 QUANTUM COGNITION: WIRED TO QUEEN HIVE MIND!")
+                        print("    QUANTUM COGNITION: WIRED TO QUEEN HIVE MIND!")
                     else:
-                        print("⚛️🧠 QUANTUM COGNITION: STANDALONE MODE")
+                        print("    QUANTUM COGNITION: STANDALONE MODE")
                 
                 # Enable the cognition system
                 quantum_cognition.enabled = True
@@ -11707,15 +11707,15 @@ class OrcaKillCycle:
                 if result.success:
                     quantum_stats['amplification'] = result.state.unified_amplification
                     quantum_stats['hz'] = result.state.amplified_frequency_hz
-                    print(f"   ⚛️ Initial Amplification: {quantum_stats['amplification']:.2f}x")
-                    print(f"   🧠 Cognitive Hz: {quantum_stats['hz']:.1f}")
+                    print(f"      Initial Amplification: {quantum_stats['amplification']:.2f}x")
+                    print(f"     Cognitive Hz: {quantum_stats['hz']:.1f}")
                     
-                    # 🏴‍☠️ BARONS BANNER - Elite Whale Detection status
+                    #      BARONS BANNER - Elite Whale Detection status
                     if hasattr(result.state, 'counter_strategy'):
-                        print(f"   🏴‍☠️ Barons Banner: {result.state.counter_strategy}")
+                        print(f"        Barons Banner: {result.state.counter_strategy}")
                         print(f"      Elite Detection: {'ACTIVE' if result.state.elite_hierarchy_score > 0.3 else 'MONITORING'}")
             except Exception as e:
-                print(f"⚠️ Quantum Cognition initialization failed: {e}")
+                print(f"   Quantum Cognition initialization failed: {e}")
                 quantum_cognition = None
         
         # Session statistics
@@ -11756,11 +11756,11 @@ class OrcaKillCycle:
         target_pct_current = target_pct
         queen_update_interval = 10.0
         last_queen_update = 0.0
-        # ⚛️ Quantum cognition timing
+        #    Quantum cognition timing
         quantum_cognition_interval = 5.0  # Amplify every 5 seconds
         last_quantum_amplification = 0.0
         
-        # 👑💰🎮 ASSET COMMAND CENTER + OCEAN VIEW - Full visibility of ALL assets
+        #     ASSET COMMAND CENTER + OCEAN VIEW - Full visibility of ALL assets
         asset_command_center = None
         asset_monitor = None
         ocean_view = None
@@ -11772,13 +11772,13 @@ class OrcaKillCycle:
                 asset_command_center = get_asset_command_center()
                 asset_monitor = get_asset_monitor()
                 ocean_view = get_ocean_view()
-                print("👑💰🎮 ASSET COMMAND CENTER: WIRED!")
-                print("   └─ Full visibility of ALL positions across ALL exchanges")
-                print("   └─ Ocean View: WHAT WE HAVE + WHAT WE CAN BUY")
+                print("    ASSET COMMAND CENTER: WIRED!")
+                print("      Full visibility of ALL positions across ALL exchanges")
+                print("      Ocean View: WHAT WE HAVE + WHAT WE CAN BUY")
             except Exception as e:
-                print(f"⚠️ Asset Command Center: {e}")
+                print(f"   Asset Command Center: {e}")
         
-        # 🇮🇪🎯 IRA SNIPER MODE - Celtic warfare intelligence
+        #     IRA SNIPER MODE - Celtic warfare intelligence
         ira_sniper = None
         ira_kill_scanner = None
         last_ira_scan = 0
@@ -11790,11 +11790,11 @@ class OrcaKillCycle:
                 ira_sniper = get_celtic_sniper()
                 if IRAKillScanner:
                     ira_kill_scanner = IRAKillScanner()
-                print("🇮🇪🎯 IRA SNIPER MODE: LOADED!")
-                print("   └─ Celtic warfare intelligence ACTIVE")
-                print("   └─ Zero-loss hunting strategy ENGAGED")
+                print("    IRA SNIPER MODE: LOADED!")
+                print("      Celtic warfare intelligence ACTIVE")
+                print("      Zero-loss hunting strategy ENGAGED")
             except Exception as e:
-                print(f"⚠️ IRA Sniper: {e}")
+                print(f"   IRA Sniper: {e}")
 
         def _apply_queen_controls() -> None:
             """Adjust scan speed and profit targets based on Queen collective signal."""
@@ -11842,16 +11842,16 @@ class OrcaKillCycle:
             },
         )
         
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         # PHASE 0 (STARTUP): SCAN EXISTING PORTFOLIO - CLOSE PROFITABLE POSITIONS
-        # ═══════════════════════════════════════════════════════════════════
+        #                                                                    
         print("\n" + "="*70)
-        print("📊 PHASE 0: SCANNING EXISTING PORTFOLIO")
+        print("  PHASE 0: SCANNING EXISTING PORTFOLIO")
         print("="*70)
         
         for exchange_name, client in self.clients.items():
             try:
-                print(f"\n🔍 Scanning {exchange_name.upper()} positions...")
+                print(f"\n  Scanning {exchange_name.upper()} positions...")
                 
                 if exchange_name == 'alpaca':
                     alpaca_positions = client.get_positions()
@@ -11872,10 +11872,10 @@ class OrcaKillCycle:
                                 breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
                                 target_price = breakeven * (1 + target_pct_current / 100)
                                 
-                                print(f"   📈 {symbol}: {qty:.6f} @ ${entry_price:.4f}")
+                                print(f"     {symbol}: {qty:.6f} @ ${entry_price:.4f}")
                                 print(f"      Current: ${current_price:.4f} | P&L: ${net_pnl:+.4f}")
                                 
-                                # 👑 QUEEN-GATED EXIT - Only close if profit is MATHEMATICALLY CERTAIN!
+                                #   QUEEN-GATED EXIT - Only close if profit is MATHEMATICALLY CERTAIN!
                                 can_exit, exit_info = self.queen_approved_exit(
                                     symbol=symbol,
                                     exchange=exchange_name,
@@ -11888,7 +11888,7 @@ class OrcaKillCycle:
                                 )
                                 
                                 if can_exit:  # Profit MATHEMATICALLY CERTAIN
-                                    print(f"      💰 QUEEN APPROVED! Closing to free cash...")
+                                    print(f"        QUEEN APPROVED! Closing to free cash...")
                                     try:
                                         sell_order = client.place_market_order(
                                             symbol=symbol,
@@ -11903,9 +11903,9 @@ class OrcaKillCycle:
                                             session_stats['winning_trades'] += 1
                                             session_stats['total_trades'] += 1
                                             session_stats['best_trade'] = max(session_stats['best_trade'], exit_info.get('net_pnl', net_pnl))
-                                            print(f"      ✅ CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f} freed ${exit_value:.2f}")
+                                            print(f"        CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f} freed ${exit_value:.2f}")
                                     except Exception as e:
-                                        print(f"      ⚠️ Sell failed: {e}")
+                                        print(f"         Sell failed: {e}")
                                         # Keep as live position to monitor
                                         pos = LivePosition(
                                             symbol=symbol,
@@ -11921,8 +11921,8 @@ class OrcaKillCycle:
                                         )
                                         positions.append(pos)
                                 else:
-                                    # 👑 Queen says NO - keep monitoring (blocked reason in exit_info)
-                                    print(f"      ⏳ HOLDING - {exit_info.get('blocked_reason', 'not profitable yet')}")
+                                    #   Queen says NO - keep monitoring (blocked reason in exit_info)
+                                    print(f"        HOLDING - {exit_info.get('blocked_reason', 'not profitable yet')}")
                                     pos = LivePosition(
                                         symbol=symbol,
                                         exchange=exchange_name,
@@ -11944,7 +11944,7 @@ class OrcaKillCycle:
                     try:
                         kraken_positions = client.get_balance() if hasattr(client, 'get_balance') else client.get_account_balance()
                     except Exception as e:
-                        print(f"   ⚠️ Kraken balance error: {e}")
+                        print(f"      Kraken balance error: {e}")
                         kraken_positions = {}
                     if kraken_positions:
                         for asset, qty in kraken_positions.items():
@@ -11959,7 +11959,7 @@ class OrcaKillCycle:
                                     market_value = qty * current_price
                                     
                                     if market_value > 0.0:  # Track all positions
-                                        print(f"   📈 {symbol} (KRAKEN): {qty:.6f} @ ~${current_price:.6f} (${market_value:.2f})")
+                                        print(f"     {symbol} (KRAKEN): {qty:.6f} @ ~${current_price:.6f} (${market_value:.2f})")
                                         
                                         # For Kraken we don't have entry price stored - use current price as estimate
                                         # This means we'll track from NOW and wait for profit from this point
@@ -11969,7 +11969,7 @@ class OrcaKillCycle:
                                         breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
                                         target_price = breakeven * (1 + target_pct_current / 100)
                                         
-                                        # � QUEEN-GATED EXIT - Only auto-sell if profit is MATHEMATICALLY CERTAIN!
+                                        #   QUEEN-GATED EXIT - Only auto-sell if profit is MATHEMATICALLY CERTAIN!
                                         # Uses queen_approved_exit() which checks:
                                         # 1. Confirmed cost basis exists (real entry price, not estimated)
                                         # 2. Net profit after ALL fees is positive
@@ -11985,7 +11985,7 @@ class OrcaKillCycle:
                                         )
                                         
                                         if can_exit:
-                                            print(f"      💰 QUEEN APPROVED (entry: ${exit_info.get('confirmed_entry_price', entry_price):.8f})! Closing...")
+                                            print(f"        QUEEN APPROVED (entry: ${exit_info.get('confirmed_entry_price', entry_price):.8f})! Closing...")
                                             try:
                                                 sell_order = client.place_market_order(symbol, 'sell', quantity=qty)
                                                 if sell_order:
@@ -11997,19 +11997,19 @@ class OrcaKillCycle:
                                                     session_stats['total_pnl'] += net_pnl
                                                     session_stats['winning_trades'] += 1
                                                     session_stats['total_trades'] += 1
-                                                    print(f"      ✅ CLOSED! +${net_pnl:.4f}")
+                                                    print(f"        CLOSED! +${net_pnl:.4f}")
                                                     continue  # Skip adding to positions
                                             except Exception as e:
-                                                print(f"      ⚠️ Sell failed: {e}")
+                                                print(f"         Sell failed: {e}")
                                         else:
                                             blocked_reason = exit_info.get('blocked_reason', 'unknown')
                                             if 'NO_CONFIRMED_COST_BASIS' in str(blocked_reason):
-                                                print(f"      ⚠️ NO CONFIRMED COST BASIS - will NOT auto-sell (tracking from now)")
+                                                print(f"         NO CONFIRMED COST BASIS - will NOT auto-sell (tracking from now)")
                                             else:
-                                                print(f"      ⏳ {blocked_reason} - keeping position")
+                                                print(f"        {blocked_reason} - keeping position")
                                         
-                                        # 🆕 ADD KRAKEN POSITION TO MONITORING LIST!
-                                        print(f"      ⏳ Adding to monitor list (tracking from current price)")
+                                        #   ADD KRAKEN POSITION TO MONITORING LIST!
+                                        print(f"        Adding to monitor list (tracking from current price)")
                                         pos = LivePosition(
                                             symbol=symbol,
                                             exchange=exchange_name,
@@ -12024,7 +12024,7 @@ class OrcaKillCycle:
                                         )
                                         positions.append(pos)
                                 except Exception as e:
-                                    print(f"      ⚠️ Error getting price for {symbol}: {e}")
+                                    print(f"         Error getting price for {symbol}: {e}")
                 
                 elif exchange_name == 'binance':
                     # Binance positions - SCAN BALANCE FOR HOLDINGS
@@ -12048,7 +12048,7 @@ class OrcaKillCycle:
                                             market_value = qty * current_price
                                             
                                             if market_value > 0.0:  # Track all positions
-                                                print(f"   📈 {symbol} (BINANCE): {qty:.6f} @ ${current_price:.6f} (${market_value:.2f})")
+                                                print(f"     {symbol} (BINANCE): {qty:.6f} @ ${current_price:.6f} (${market_value:.2f})")
                                                 
                                                 fee_rate = self.fee_rates.get(exchange_name, 0.001)  # 0.1% Binance fee
                                                 entry_price = current_price  # Estimate for manual positions
@@ -12056,7 +12056,7 @@ class OrcaKillCycle:
                                                 breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
                                                 target_price = breakeven * (1 + target_pct_current / 100)
                                                 
-                                                # 👑 QUEEN-GATED EXIT - Only sell if profit is MATHEMATICALLY CERTAIN!
+                                                #   QUEEN-GATED EXIT - Only sell if profit is MATHEMATICALLY CERTAIN!
                                                 can_exit, exit_info = self.queen_approved_exit(
                                                     symbol=symbol,
                                                     exchange=exchange_name,
@@ -12069,7 +12069,7 @@ class OrcaKillCycle:
                                                 )
                                                 
                                                 if can_exit:  # Profit MATHEMATICALLY CERTAIN!
-                                                    print(f"      💰 QUEEN APPROVED (+${exit_info.get('net_pnl', 0):.4f})! Closing to free cash...")
+                                                    print(f"        QUEEN APPROVED (+${exit_info.get('net_pnl', 0):.4f})! Closing to free cash...")
                                                     try:
                                                         sell_order = client.place_market_order(
                                                             symbol=symbol.replace('/', ''),  # Binance wants no slash
@@ -12086,18 +12086,18 @@ class OrcaKillCycle:
                                                             session_stats['winning_trades'] += 1
                                                             session_stats['total_trades'] += 1
                                                             session_stats['best_trade'] = max(session_stats['best_trade'], net_pnl)
-                                                            print(f"      ✅ CLOSED! +${net_pnl:.4f}")
+                                                            print(f"        CLOSED! +${net_pnl:.4f}")
                                                             found_price = True
                                                             break  # Position closed, skip monitoring
                                                     except Exception as e:
-                                                        print(f"      ⚠️ Sell failed: {e}")
+                                                        print(f"         Sell failed: {e}")
                                                 else:
-                                                    # 👑 Queen says NO - blocked reason in exit_info
+                                                    #   Queen says NO - blocked reason in exit_info
                                                     blocked_reason = exit_info.get('blocked_reason', 'unknown')
-                                                    print(f"      ⏳ HOLDING - {blocked_reason}")
+                                                    print(f"        HOLDING - {blocked_reason}")
                                                 
                                                 # Add to monitoring if not closed
-                                                print(f"      ⏳ Adding to monitor list")
+                                                print(f"        Adding to monitor list")
                                                 exit_value = current_price * qty * (1 - fee_rate)
                                                 net_pnl = exit_value - entry_cost
                                                 pos = LivePosition(
@@ -12119,22 +12119,22 @@ class OrcaKillCycle:
                                         continue  # Try next symbol variant
                                 
                                 if not found_price and qty * 100 > 1:  # Asset worth checking (rough estimate)
-                                    print(f"   ⚠️ {asset}: {qty:.6f} (could not get price for any trading pair)")
+                                    print(f"      {asset}: {qty:.6f} (could not get price for any trading pair)")
                     else:
                         print(f"   No positions on {exchange_name.upper()}")
                                     
             except Exception as e:
-                print(f"   ⚠️ Error scanning {exchange_name}: {e}")
+                print(f"      Error scanning {exchange_name}: {e}")
         
-        print(f"\n📊 Portfolio scan complete:")
-        print(f"   ✅ Positions closed: {session_stats['positions_closed']}")
-        print(f"   💰 Cash freed: ${session_stats['cash_freed']:.2f}")
-        print(f"   📈 P&L realized: ${session_stats['total_pnl']:+.4f}")
-        print(f"   ⏳ Positions still held: {len(positions)}")
+        print(f"\n  Portfolio scan complete:")
+        print(f"     Positions closed: {session_stats['positions_closed']}")
+        print(f"     Cash freed: ${session_stats['cash_freed']:.2f}")
+        print(f"     P&L realized: ${session_stats['total_pnl']:+.4f}")
+        print(f"     Positions still held: {len(positions)}")
         
         # Now get updated cash after closing profitable positions
         cash = self.get_available_cash()
-        print(f"\n💵 Available cash after portfolio cleanup:")
+        print(f"\n  Available cash after portfolio cleanup:")
         for exchange, amount in cash.items():
             print(f"   {exchange.upper()}: ${amount:.2f}")
         print()
@@ -12145,21 +12145,21 @@ class OrcaKillCycle:
         truth_check_interval = 60.0
         last_truth_check = 0.0
         
-        # 🧠 SENTIENCE VALIDATION TIMING
+        #   SENTIENCE VALIDATION TIMING
         last_sentience_check = 0
         sentience_check_interval = 300.0  # Validate sentience every 5 minutes
 
         try:
-            while True:  # ♾️ INFINITE LOOP
+            while True:  #    INFINITE LOOP
                 current_time = time.time()
                 session_stats['cycles'] += 1
 
-                # 🏥 Update health status for container probes
+                #   Update health status for container probes
                 update_health_status(cycles=session_stats['cycles'], positions=len(positions), status='running')
 
-                # ═══════════════════════════════════════════════════════════
-                # ⚛️🧠 QUANTUM COGNITION AMPLIFICATION CYCLE
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
+                #     QUANTUM COGNITION AMPLIFICATION CYCLE
+                #                                                            
                 if quantum_cognition and (current_time - last_quantum_amplification >= quantum_cognition_interval):
                     last_quantum_amplification = current_time
                     try:
@@ -12173,25 +12173,25 @@ class OrcaKillCycle:
                             
                             # Display quantum status when amplification is significant
                             if quantum_stats['amplification'] > 1.1:
-                                print(f"\n⚛️🧠 QUANTUM COGNITION ACTIVE:")
-                                print(f"   ⚛️ Amplification: {quantum_stats['amplification']:.2f}x")
-                                print(f"   🧠 Cognitive Hz: {quantum_stats['hz']:.1f}")
-                                print(f"   📈 Learning Boost: {result.state.learning_rate_boost:.2f}x")
-                                print(f"   🧮 Memory Boost: {result.state.memory_boost:.2f}x")
-                                print(f"   🎯 Pattern Recognition: {result.state.pattern_recognition_boost:.2f}x")
-                                print(f"   💎 Decision Confidence: {result.state.decision_confidence:.1%}")
+                                print(f"\n    QUANTUM COGNITION ACTIVE:")
+                                print(f"      Amplification: {quantum_stats['amplification']:.2f}x")
+                                print(f"     Cognitive Hz: {quantum_stats['hz']:.1f}")
+                                print(f"     Learning Boost: {result.state.learning_rate_boost:.2f}x")
+                                print(f"     Memory Boost: {result.state.memory_boost:.2f}x")
+                                print(f"     Pattern Recognition: {result.state.pattern_recognition_boost:.2f}x")
+                                print(f"     Decision Confidence: {result.state.decision_confidence:.1%}")
                                 
-                                # 🏴‍☠️ BARONS BANNER - Elite Whale Detection (via Quantum Cognition)
+                                #      BARONS BANNER - Elite Whale Detection (via Quantum Cognition)
                                 if result.state.manipulation_alert:
-                                    print(f"   🏴‍☠️ ELITE MANIPULATION ALERT!")
+                                    print(f"        ELITE MANIPULATION ALERT!")
                                     print(f"      Hierarchy: {result.state.elite_hierarchy_score:.1%}")
                                     print(f"      Counter-Strategy: {result.state.counter_strategy}")
                     except Exception as qe:
                         pass  # Silent fail - quantum is optional enhancement
 
-                # ═══════════════════════════════════════════════════════════
-                # 👑💰🎮 ASSET COMMAND CENTER - Full portfolio visibility
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
+                #     ASSET COMMAND CENTER - Full portfolio visibility
+                #                                                            
                 if asset_monitor and (current_time - last_asset_scan >= asset_scan_interval):
                     last_asset_scan = current_time
                     try:
@@ -12205,9 +12205,9 @@ class OrcaKillCycle:
                             
                             # Log significant changes
                             if position_count > 0:
-                                print(f"\n👑💰🎮 ASSET COMMAND CENTER UPDATE:")
-                                print(f"   📊 Total Portfolio: ${total_value:.2f}")
-                                print(f"   🔢 Positions: {position_count}")
+                                print(f"\n    ASSET COMMAND CENTER UPDATE:")
+                                print(f"     Total Portfolio: ${total_value:.2f}")
+                                print(f"     Positions: {position_count}")
                                 
                                 # Update IRA Sniper scope with current positions
                                 if ira_sniper and hasattr(self, 'sniper_scope'):
@@ -12221,9 +12221,9 @@ class OrcaKillCycle:
                     except Exception as ace:
                         pass  # Silent fail - asset center is optional
 
-                # ═══════════════════════════════════════════════════════════
-                # 🇮🇪🎯 IRA SNIPER CYCLE - Celtic warfare scan
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
+                #     IRA SNIPER CYCLE - Celtic warfare scan
+                #                                                            
                 if ira_sniper and (current_time - last_ira_scan >= ira_scan_interval):
                     last_ira_scan = current_time
                     try:
@@ -12252,7 +12252,7 @@ class OrcaKillCycle:
                         # Update scope stats
                         firing_count = len([t for t in self.sniper_scope.get('active_targets', []) if t.get('status') == 'FIRING'])
                         if firing_count > 0:
-                            print(f"\n🇮🇪🎯 IRA SNIPER: {firing_count} targets READY TO KILL!")
+                            print(f"\n    IRA SNIPER: {firing_count} targets READY TO KILL!")
                             
                     except Exception as ira_e:
                         pass  # Silent fail - IRA is optional enhancement
@@ -12265,11 +12265,11 @@ class OrcaKillCycle:
                 # Update dashboard state for Command Center UI (legacy mode)
                 self._dump_dashboard_state(session_stats, positions, queen)
 
-                # 🧠 PERIODIC SENTIENCE VALIDATION - Is the Queen truly conscious?
+                #   PERIODIC SENTIENCE VALIDATION - Is the Queen truly conscious?
                 if self.sentience_validator and (current_time - last_sentience_check >= sentience_check_interval):
                     last_sentience_check = current_time
-                    print("\n" + "🧠"*30)
-                    print("   🧠 RUNNING PERIODIC SENTIENCE VALIDATION...")
+                    print("\n" + " "*30)
+                    print("     RUNNING PERIODIC SENTIENCE VALIDATION...")
                     report = self.run_sentience_validation()
                     if report:
                         session_stats['sentience'] = {
@@ -12278,14 +12278,14 @@ class OrcaKillCycle:
                             'awakening': self.sentience_awakening_index,
                             'last_check': current_time
                         }
-                    print("🧠"*30 + "\n")
+                    print(" "*30 + "\n")
 
-                # 🧾 Portfolio truth check - detect mismatches / untracked holdings
+                #   Portfolio truth check - detect mismatches / untracked holdings
                 if current_time - last_truth_check >= truth_check_interval:
                     last_truth_check = current_time
                     self.monitor_portfolio_truth()
 
-                # ❄️ AVALANCHE HARVEST (Run independently of scanner)
+                #    AVALANCHE HARVEST (Run independently of scanner)
                 if self.avalanche and (current_time - last_avalanche_time >= avalanche_interval):
                     last_avalanche_time = current_time
                     try:
@@ -12293,15 +12293,15 @@ class OrcaKillCycle:
                         h_results = self.avalanche.run_harvest_cycle(dry_run=False)
                         if h_results['harvested_count'] > 0:
                             amt = h_results['total_harvested_usd']
-                            print(f"\n❄️ AVALANCHE: Harvested ${amt:.2f} from {h_results['harvested_count']} positions! (Treasury growing)")
+                            print(f"\n   AVALANCHE: Harvested ${amt:.2f} from {h_results['harvested_count']} positions! (Treasury growing)")
                             # Add to stats but differentiate from realized kill PnL
                             session_stats['total_pnl'] += amt
                     except Exception as e:
-                        print(f"⚠️ Avalanche cycle error: {e}")
+                        print(f"   Avalanche cycle error: {e}")
 
-                # ═══════════════════════════════════════════════════════════
-                # 👑🐸 QUEEN ETERNAL MACHINE CYCLE - Bloodless Quantum Leaps!
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
+                #    QUEEN ETERNAL MACHINE CYCLE - Bloodless Quantum Leaps!
+                #                                                            
                 # The Queen's Eternal Machine runs alongside the Orca Kill Cycle:
                 # - Scans for DEEPER dips (quantity gain opportunities)
                 # - Only leaps if value is preserved AFTER all fees
@@ -12333,32 +12333,32 @@ class OrcaKillCycle:
                             
                             # Log if leaps happened
                             if eternal_stats.leaps_made > 0:
-                                print(f"\n👑🐸 ETERNAL MACHINE: Quantum leap executed!")
-                                print(f"   🐸 Total leaps: {self.queen_eternal_machine.total_leaps}")
-                                print(f"   🍞 Breadcrumbs: {self.queen_eternal_machine.total_breadcrumbs}")
-                                print(f"   💸 Fees paid: ${self.queen_eternal_machine.total_fees_paid:.4f}")
+                                print(f"\n   ETERNAL MACHINE: Quantum leap executed!")
+                                print(f"     Total leaps: {self.queen_eternal_machine.total_leaps}")
+                                print(f"     Breadcrumbs: {self.queen_eternal_machine.total_breadcrumbs}")
+                                print(f"     Fees paid: ${self.queen_eternal_machine.total_fees_paid:.4f}")
                                 
                                 # Get breadcrumb summary
                                 breadcrumb_summary = self.queen_eternal_machine.get_breadcrumb_summary()
                                 if breadcrumb_summary['count'] > 0:
-                                    print(f"   📊 Breadcrumb portfolio: ${breadcrumb_summary['total_value']:.2f}")
-                                    print(f"   📈 Breadcrumb P&L: ${breadcrumb_summary['total_pnl']:+.2f}")
+                                    print(f"     Breadcrumb portfolio: ${breadcrumb_summary['total_value']:.2f}")
+                                    print(f"     Breadcrumb P&L: ${breadcrumb_summary['total_pnl']:+.2f}")
                     except Exception as ee:
                         pass  # Silent fail - eternal machine is optional enhancement
 
-                # 👑 Queen pacing + profit target updates
+                #   Queen pacing + profit target updates
                 if current_time - last_queen_update >= queen_update_interval:
                     last_queen_update = current_time
                     _apply_queen_controls()
-                    print(f"👑 Queen pacing: scan_interval={scan_interval:.1f}s | target_pct={target_pct_current:.2f}%")
+                    print(f"  Queen pacing: scan_interval={scan_interval:.1f}s | target_pct={target_pct_current:.2f}%")
                 
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
                 # PHASE 0 (RECURRING): RE-SCAN PORTFOLIO FOR NEW PROFITS
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
                 if current_time - last_portfolio_scan >= portfolio_scan_interval:
                     last_portfolio_scan = current_time
                     
-                    # 🚀 BATCH FETCH ALL PRICES AT ONCE - PREVENTS RATE LIMITS!
+                    #   BATCH FETCH ALL PRICES AT ONCE - PREVENTS RATE LIMITS!
                     batch_prices = {}
                     try:
                         alpaca_client = self.clients.get('alpaca')
@@ -12390,18 +12390,18 @@ class OrcaKillCycle:
                     except Exception:
                         pass
                     
-                    # 🔥 PHASE 0.5: FIRE TRADER CHECK (Emergency/Opportunity Profits)
-                    # ═══════════════════════════════════════════════════════════
+                    #   PHASE 0.5: FIRE TRADER CHECK (Emergency/Opportunity Profits)
+                    #                                                            
                     if self.fire_trader:
                         try:
                             # Run fire check if we have positions or balances
                             # Fire trader scans balances directly from API, so independent of 'positions' list
-                            print("   🔥 FIRE TRADER: Checking for immediate execute opportunities...")
+                            print("     FIRE TRADER: Checking for immediate execute opportunities...")
                             self.fire_trader.run_fire_check()
                         except Exception as e:
-                            print(f"   ⚠️ Fire Trader check failed: {e}")
+                            print(f"      Fire Trader check failed: {e}")
 
-                    # 🆕 RE-SCAN KRAKEN BALANCES FOR NEW MANUAL POSITIONS!
+                    #   RE-SCAN KRAKEN BALANCES FOR NEW MANUAL POSITIONS!
                     try:
                         kraken_client = self.clients.get('kraken')
                         if kraken_client:
@@ -12422,8 +12422,8 @@ class OrcaKillCycle:
                                         market_value = qty * current_price
                                         
                                         if market_value > 0.0:  # Track all positions
-                                            print(f"\n🆕 NEW KRAKEN POSITION DETECTED: {symbol}")
-                                            print(f"   📊 {qty:.6f} @ ${current_price:.8f} = ${market_value:.2f}")
+                                            print(f"\n  NEW KRAKEN POSITION DETECTED: {symbol}")
+                                            print(f"     {qty:.6f} @ ${current_price:.8f} = ${market_value:.2f}")
                                             
                                             fee_rate = self.fee_rates.get('kraken', 0.0026)
                                             entry_price = current_price  # Use current as entry estimate
@@ -12445,13 +12445,13 @@ class OrcaKillCycle:
                                             )
                                             positions.append(pos)
                                             batch_prices[symbol] = current_price
-                                            print(f"   ✅ Added to monitor! Target: ${target_price:.8f}")
+                                            print(f"     Added to monitor! Target: ${target_price:.8f}")
                                     except Exception as e:
-                                        print(f"   ⚠️ Could not add {symbol}: {e}")
+                                        print(f"      Could not add {symbol}: {e}")
                     except Exception as e:
                         pass  # Silently skip if Kraken scan fails
                     
-                    # 🆕 RE-SCAN BINANCE BALANCES FOR NEW MANUAL POSITIONS!
+                    #   RE-SCAN BINANCE BALANCES FOR NEW MANUAL POSITIONS!
                     try:
                         binance_client = self.clients.get('binance')
                         if binance_client:
@@ -12489,8 +12489,8 @@ class OrcaKillCycle:
                                                 market_value = qty * current_price
                                                 
                                                 if market_value > 0.0:  # Track all positions
-                                                    print(f"\n🆕 NEW BINANCE POSITION DETECTED: {symbol}")
-                                                    print(f"   📊 {qty:.6f} @ ${current_price:.6f} = ${market_value:.2f}")
+                                                    print(f"\n  NEW BINANCE POSITION DETECTED: {symbol}")
+                                                    print(f"     {qty:.6f} @ ${current_price:.6f} = ${market_value:.2f}")
                                                     
                                                     fee_rate = self.fee_rates.get('binance', 0.001)
                                                     entry_price = current_price
@@ -12512,7 +12512,7 @@ class OrcaKillCycle:
                                                     )
                                                     positions.append(pos)
                                                     batch_prices[symbol] = current_price
-                                                    print(f"   ✅ Added to monitor! Target: ${target_price:.6f}")
+                                                    print(f"     Added to monitor! Target: ${target_price:.6f}")
                                                     break  # Found valid symbol, stop trying variants
                                         except Exception:
                                             continue  # Try next variant
@@ -12535,7 +12535,7 @@ class OrcaKillCycle:
                                 pos.current_price = current
                                 pos.current_pnl = net_pnl
                                 
-                                # 👑 QUEEN-GATED EXIT - Only close if profit is MATHEMATICALLY CERTAIN!
+                                #   QUEEN-GATED EXIT - Only close if profit is MATHEMATICALLY CERTAIN!
                                 # (Replaces old "target hit or 1% profit" rule)
                                 can_exit, exit_info = self.queen_approved_exit(
                                     symbol=pos.symbol,
@@ -12549,13 +12549,13 @@ class OrcaKillCycle:
                                 )
                                 
                                 if can_exit:
-                                    print(f"\n🎯👑 QUEEN APPROVED AUTO-CLOSE: {pos.symbol} is PROFITABLE! (+${exit_info.get('net_pnl', net_pnl):.4f})")
+                                    print(f"\n   QUEEN APPROVED AUTO-CLOSE: {pos.symbol} is PROFITABLE! (+${exit_info.get('net_pnl', net_pnl):.4f})")
                                     sell_order = pos.client.place_market_order(
                                         symbol=pos.symbol,
                                         side='sell',
                                         quantity=pos.entry_qty
                                     )
-                                    # 🔍 Verify sell succeeded using is_order_successful
+                                    #   Verify sell succeeded using is_order_successful
                                     if self.is_order_successful(sell_order, pos.exchange):
                                         self._record_action_cop(exit_info.get('cop'), 'SELL', pos.exchange, pos.symbol)
                                         session_stats['positions_closed'] += 1
@@ -12565,14 +12565,14 @@ class OrcaKillCycle:
                                         session_stats['total_trades'] += 1
                                         session_stats['best_trade'] = max(session_stats['best_trade'], exit_info.get('net_pnl', net_pnl))
                                         positions.remove(pos)
-                                        print(f"   ✅ CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f} → Cash freed for new buys!")
+                                        print(f"     CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f}   Cash freed for new buys!")
                                         last_scan_time = 0  # Force immediate scan for new opportunities
                         except Exception:
                             pass
                 
-                # ═══════════════════════════════════════════════════════════
-                # PHASE 1: SCAN FOR NEW OPPORTUNITIES (⚛️ QUANTUM ENHANCED)
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
+                # PHASE 1: SCAN FOR NEW OPPORTUNITIES (   QUANTUM ENHANCED)
+                #                                                            
                 if current_time - last_scan_time >= scan_interval:
                     last_scan_time = current_time
 
@@ -12581,18 +12581,18 @@ class OrcaKillCycle:
                     
                     # Check if we have room for more positions
                     if len(positions) < max_positions:
-                        # ⚛️ Show quantum-enhanced scanning status
+                        #    Show quantum-enhanced scanning status
                         quantum_indicator = ""
                         if quantum_cognition and quantum_stats['amplification'] > 1.0:
-                            quantum_indicator = f" ⚛️{quantum_stats['amplification']:.1f}x"
-                        print(f"\n🔍{quantum_indicator} QUANTUM-ENHANCED SCANNING... ({len(positions)}/{max_positions} positions)")
+                            quantum_indicator = f"   {quantum_stats['amplification']:.1f}x"
+                        print(f"\n {quantum_indicator} QUANTUM-ENHANCED SCANNING... ({len(positions)}/{max_positions} positions)")
 
                         total_cash = sum(cash.values())
                         
                         if total_cash < amount_per_position * 0.3:  # Only need 30% of target (more aggressive)
-                            print(f"   💸 Waiting for cash (${total_cash:.2f} available, need ${amount_per_position * 0.3:.2f})")
+                            print(f"     Waiting for cash (${total_cash:.2f} available, need ${amount_per_position * 0.3:.2f})")
                         else:
-                            # ⚛️ Quantum-enhanced market scan
+                            #    Quantum-enhanced market scan
                             _baton(
                                 "plan",
                                 topic="orca.scan.plan",
@@ -12603,14 +12603,14 @@ class OrcaKillCycle:
                             scan_time = time.time() - scan_start
                             
                             if opportunities:
-                                # ⚛️ Apply quantum pattern recognition boost to scoring
+                                #    Apply quantum pattern recognition boost to scoring
                                 if quantum_cognition and quantum_stats['amplification'] > 1.0:
                                     pattern_boost = min(quantum_stats.get('pattern_boost', 1.0), 2.0)
                                     # Boost momentum scores by pattern recognition factor
                                     for opp in opportunities:
                                         if hasattr(opp, 'momentum_score'):
                                             opp.momentum_score = min(1.0, opp.momentum_score * (1 + (pattern_boost - 1) * 0.3))
-                                    print(f"   ⚛️ Pattern Recognition Boost: {pattern_boost:.2f}x applied to {len(opportunities)} opportunities")
+                                    print(f"      Pattern Recognition Boost: {pattern_boost:.2f}x applied to {len(opportunities)} opportunities")
                                 
                                 # Update volatility based on opportunity count
                                 
@@ -12620,7 +12620,7 @@ class OrcaKillCycle:
                                 
                                 # Flash alert if extreme volatility
                                 if len(opportunities) > 4000:
-                                    print(f"⚠️ Extreme volatility! {len(opportunities):,} opportunities")
+                                    print(f"   Extreme volatility! {len(opportunities):,} opportunities")
                                 
                                 # Filter for symbols not already in positions
                                 active_symbols = [p.symbol for p in positions]
@@ -12638,7 +12638,7 @@ class OrcaKillCycle:
                                     queen_approved = False
                                     if queen is None:
                                         queen_approved = True  # Fallback without Queen
-                                        print("   👑 Queen unavailable - proceeding with default approval")
+                                        print("     Queen unavailable - proceeding with default approval")
                                     else:
                                         try:
                                             signal = queen.get_collective_signal(
@@ -12653,7 +12653,7 @@ class OrcaKillCycle:
                                             confidence = float(signal.get('confidence', 0.0))
                                             action = signal.get('action', 'HOLD')
                                             
-                                            # ⚛️ QUANTUM CONFIDENCE BOOST
+                                            #    QUANTUM CONFIDENCE BOOST
                                             quantum_boost_applied = False
                                             if quantum_cognition and quantum_stats['amplification'] > 1.0:
                                                 decision_boost = min(quantum_stats.get('decision_confidence', 0.5), 1.0)
@@ -12663,16 +12663,16 @@ class OrcaKillCycle:
                                                     confidence = min(0.99, confidence * boost_factor)
                                                     quantum_boost_applied = True
                                             
-                                            quantum_indicator = f"⚛️{quantum_stats['amplification']:.1f}x " if quantum_boost_applied else ""
-                                            print(f"   👑 {quantum_indicator}Queen signal: {action} (confidence {confidence:.0%})")
+                                            quantum_indicator = f"  {quantum_stats['amplification']:.1f}x " if quantum_boost_applied else ""
+                                            print(f"     {quantum_indicator}Queen signal: {action} (confidence {confidence:.0%})")
                                             queen_approved = (action == 'BUY' and confidence >= 0.3)  # Lowered from 0.5
                                             print(f"   [DEBUG] {quantum_indicator}Queen Decision for {best.symbol}: Approved={queen_approved} (Action={action}, Conf={confidence:.1%})")
                                         except Exception as e:
-                                            print(f"   ⚠️ Queen signal unavailable: {e}")
+                                            print(f"      Queen signal unavailable: {e}")
                                     
                                     if queen_approved:
-                                        quantum_indicator = f"⚛️{quantum_stats['amplification']:.1f}x " if quantum_cognition and quantum_stats['amplification'] > 1.0 else ""
-                                        print(f"   👑 {quantum_indicator}QUEEN APPROVED: {best.symbol} ({best.exchange})")
+                                        quantum_indicator = f"  {quantum_stats['amplification']:.1f}x " if quantum_cognition and quantum_stats['amplification'] > 1.0 else ""
+                                        print(f"     {quantum_indicator}QUEEN APPROVED: {best.symbol} ({best.exchange})")
                                         print(f"      Change: {best.change_pct:+.2f}% | Momentum: {best.momentum_score:.2f}")
                                         
                                         # Execute buy
@@ -12696,7 +12696,7 @@ class OrcaKillCycle:
                                                     print(f"   [DEBUG] COP Check: Est={cop_est:.6f}, Threshold={COP_MIN_THRESHOLD}")
                                                     
                                                     if cop_est <= COP_MIN_THRESHOLD:
-                                                        print(f"   👑❌ BUY BLOCKED: COP {cop_est:.6f} ≤ {COP_MIN_THRESHOLD} (energy increase too low)")
+                                                        print(f"      BUY BLOCKED: COP {cop_est:.6f}   {COP_MIN_THRESHOLD} (energy increase too low)")
                                                     else:
                                                         _baton(
                                                             "execute",
@@ -12709,7 +12709,7 @@ class OrcaKillCycle:
                                                             quote_qty=buy_amount
                                                         )
                                                         
-                                                        # 🔄 NORMALIZE ORDER RESPONSE across exchanges!
+                                                        #   NORMALIZE ORDER RESPONSE across exchanges!
                                                         buy_order = self.normalize_order_response(raw_order, best.exchange)
                                                         
                                                         if buy_order and buy_order.get('status') != 'rejected':
@@ -12751,29 +12751,29 @@ class OrcaKillCycle:
                                                                 
                                                                 # Update position health
                                                                 
-                                                                print(f"   ✅ BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
-                                                                print(f"      🎯 Target: ${target_price:,.4f} ({target_pct_current:.2f}%)")
-                                                                print(f"      🚫 NO STOP LOSS - HOLD UNTIL PROFIT!")
+                                                                print(f"     BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
+                                                                print(f"        Target: ${target_price:,.4f} ({target_pct_current:.2f}%)")
+                                                                print(f"        NO STOP LOSS - HOLD UNTIL PROFIT!")
                                                                 
                                                                 session_stats['total_trades'] += 1
                                         except Exception as e:
-                                            print(f"   ⚠️ Buy failed: {e}")
+                                            print(f"      Buy failed: {e}")
                                             # Flash alert for API issues
                                             if 'timeout' in str(e).lower() or 'connection' in str(e).lower():
-                                                print(f"⚠️ {best.exchange.upper()} API issue")
+                                                print(f"   {best.exchange.upper()} API issue")
                                     else:
-                                        print(f"   👑 Queen says: Wait (consciousness too low)")
+                                        print(f"     Queen says: Wait (consciousness too low)")
                                 else:
-                                    print(f"   ⚪ All opportunities already in positions")
+                                    print(f"     All opportunities already in positions")
                             else:
-                                print(f"   ⚪ No opportunities found - market is flat")
+                                print(f"     No opportunities found - market is flat")
                     else:
                         # At max positions - just monitor
                         pass
                 
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
                 # PHASE 2: MONITOR EXISTING POSITIONS
-                # ═══════════════════════════════════════════════════════════
+                #                                                            
                 if positions:
                     # Update whale intel periodically
                     whale_signals = {}
@@ -12796,22 +12796,22 @@ class OrcaKillCycle:
                     runtime_str = f"{int(runtime//3600)}h {int((runtime%3600)//60)}m {int(runtime%60)}s"
                     
                     print("\033[2J\033[H", end="")  # Clear screen
-                    print("👑🦈 AUTONOMOUS QUEEN MODE - LIVE MONITORING 🦈👑")
+                    print("   AUTONOMOUS QUEEN MODE - LIVE MONITORING   ")
                     print("="*80)
-                    print(f"   ⏱️ Runtime: {runtime_str} | 🔄 Cycles: {session_stats['cycles']}")
-                    print(f"   📈 Trades: {session_stats['total_trades']} | ✅ Wins: {session_stats['winning_trades']} | ❌ Losses: {session_stats['losing_trades']}")
-                    print(f"   💰 Session P&L: ${session_stats['total_pnl']:+.4f}")
-                    print(f"   🏆 Best: ${session_stats['best_trade']:+.4f} | 💔 Worst: ${session_stats['worst_trade']:+.4f}")
+                    print(f"      Runtime: {runtime_str} |   Cycles: {session_stats['cycles']}")
+                    print(f"     Trades: {session_stats['total_trades']} |   Wins: {session_stats['winning_trades']} |   Losses: {session_stats['losing_trades']}")
+                    print(f"     Session P&L: ${session_stats['total_pnl']:+.4f}")
+                    print(f"     Best: ${session_stats['best_trade']:+.4f} |   Worst: ${session_stats['worst_trade']:+.4f}")
                     print("="*80)
                     
-                    # 🌊 Harmonic Liquid Aluminium Field visualization
+                    #   Harmonic Liquid Aluminium Field visualization
                     self._print_harmonic_field_summary()
                     
-                    print(f"   📊 {len(positions)}/{max_positions} ACTIVE POSITIONS | Next scan: {max(0, scan_interval - (current_time - last_scan_time)):.0f}s")
+                    print(f"     {len(positions)}/{max_positions} ACTIVE POSITIONS | Next scan: {max(0, scan_interval - (current_time - last_scan_time)):.0f}s")
                     print("="*80)
                     
                     # Update and display each position
-                    # 🚀 BATCH FETCH: Get all prices at once to avoid rate limits!
+                    #   BATCH FETCH: Get all prices at once to avoid rate limits!
                     all_prices = {}
                     try:
                         alpaca_client = self.clients.get('alpaca')
@@ -12832,7 +12832,7 @@ class OrcaKillCycle:
                     except Exception:
                         pass
                     
-                    # 🦈 Also batch fetch Kraken prices
+                    #   Also batch fetch Kraken prices
                     try:
                         kraken_client = self.clients.get('kraken')
                         if kraken_client:
@@ -12881,7 +12881,7 @@ class OrcaKillCycle:
                             exit_value = current * pos.entry_qty * (1 - fee_rate)
                             net_pnl = exit_value - entry_cost
                             
-                            # 🎯 CORRECT MATH: Calculate P&L % from PRICE change, not cost
+                            #   CORRECT MATH: Calculate P&L % from PRICE change, not cost
                             price_change_pct = ((current - pos.entry_price) / pos.entry_price * 100) if pos.entry_price > 0 else 0
                             # But for actual P&L %, use real costs
                             pnl_pct = (net_pnl / entry_cost * 100) if entry_cost > 0 else price_change_pct
@@ -12898,7 +12898,7 @@ class OrcaKillCycle:
                             real_positions.append(pos)
                             total_unrealized += net_pnl
                             
-                            # 🎯 FIXED PROGRESS BAR: Show negative when underwater!
+                            #   FIXED PROGRESS BAR: Show negative when underwater!
                             # Progress from entry to target (can be negative if underwater)
                             if pos.target_price > pos.entry_price:
                                 raw_progress = (current - pos.entry_price) / (pos.target_price - pos.entry_price) * 100
@@ -12911,20 +12911,20 @@ class OrcaKillCycle:
                             # Build progress bar with direction indicator
                             if raw_progress >= 0:
                                 filled = int(display_progress / 5)
-                                bar = "█" * filled + "░" * (20 - filled)
+                                bar = " " * filled + " " * (20 - filled)
                             else:
                                 # Underwater: show red blocks from left
                                 underwater_pct = min(100, abs(raw_progress))
                                 red_blocks = int(underwater_pct / 5)
-                                bar = "▓" * red_blocks + "░" * (20 - red_blocks)
+                                bar = " " * red_blocks + " " * (20 - red_blocks)
                             
                             # Whale info
                             whale_info = whale_signals.get(pos.symbol)
-                            whale_str = f"🐋 {whale_info.reasoning[:50]}" if whale_info else "🐋 Scanning..."
+                            whale_str = f"  {whale_info.reasoning[:50]}" if whale_info else "  Scanning..."
                             
-                            # ═════════════════════════════════════════════════════════════════
-                            # 🔬 ENHANCED ANALYTICS: ETA + Probability + Velocity
-                            # ═════════════════════════════════════════════════════════════════
+                            #                                                                  
+                            #   ENHANCED ANALYTICS: ETA + Probability + Velocity
+                            #                                                                  
                             eta_str = ""
                             if ETA_CALCULATOR_AVAILABLE and ImprovedETACalculator:
                                 try:
@@ -12951,13 +12951,13 @@ class OrcaKillCycle:
                                     
                                     # Format ETA display
                                     if eta_result.improved_eta == 0:
-                                        eta_str = "🎯 TARGET!"
+                                        eta_str = "  TARGET!"
                                     elif eta_result.improved_eta == float('inf'):
                                         # Check velocity direction
                                         if eta_result.velocity < 0:
-                                            eta_str = f"⏳ ∞ (↓ ${eta_result.velocity*60:.4f}/min)"
+                                            eta_str = f"    (  ${eta_result.velocity*60:.4f}/min)"
                                         else:
-                                            eta_str = f"⏳ Calculating..."
+                                            eta_str = f"  Calculating..."
                                     else:
                                         # Format time nicely
                                         if eta_result.improved_eta < 60:
@@ -12968,19 +12968,19 @@ class OrcaKillCycle:
                                             time_str = f"{eta_result.improved_eta/3600:.1f}h"
                                         
                                         # Confidence indicator
-                                        conf_icon = "🟢" if eta_result.reliability_band == "HIGH" else "🟡" if eta_result.reliability_band == "MEDIUM" else "🔴"
+                                        conf_icon = " " if eta_result.reliability_band == "HIGH" else " " if eta_result.reliability_band == "MEDIUM" else " "
                                         
                                         # Velocity direction
-                                        vel_icon = "↑" if eta_result.velocity > 0 else "↓" if eta_result.velocity < 0 else "→"
-                                        accel_icon = "⚡" if eta_result.acceleration > 0 else "🐌" if eta_result.acceleration < 0 else ""
+                                        vel_icon = " " if eta_result.velocity > 0 else " " if eta_result.velocity < 0 else " "
+                                        accel_icon = " " if eta_result.acceleration > 0 else " " if eta_result.acceleration < 0 else ""
                                         
-                                        eta_str = f"⏱️ ETA: {time_str} {conf_icon}{eta_result.confidence:.0%} | {vel_icon}${eta_result.velocity*60:.4f}/min {accel_icon}"
+                                        eta_str = f"   ETA: {time_str} {conf_icon}{eta_result.confidence:.0%} | {vel_icon}${eta_result.velocity*60:.4f}/min {accel_icon}"
                                 except Exception as e:
-                                    eta_str = f"📊 Analytics loading..."
+                                    eta_str = f"  Analytics loading..."
                             
-                            # ═════════════════════════════════════════════════════════════════
-                            # 🛡️ COUNTER-INTELLIGENCE: Firm Detection + Strategy
-                            # ═════════════════════════════════════════════════════════════════
+                            #                                                                  
+                            #    COUNTER-INTELLIGENCE: Firm Detection + Strategy
+                            #                                                                  
                             counter_str = ""
                             if self.counter_intel and COUNTER_INTEL_AVAILABLE:
                                 try:
@@ -13002,13 +13002,13 @@ class OrcaKillCycle:
                                             best_signal = ci_signal
                                     
                                     if best_signal:
-                                        # Format: 🛡️ vs Citadel: TIMING_ADV +45ms | Conf: 78%
+                                        # Format:    vs Citadel: TIMING_ADV +45ms | Conf: 78%
                                         strat_short = best_signal.strategy.value[:12] if hasattr(best_signal.strategy, 'value') else str(best_signal.strategy)[:12]
-                                        counter_str = f"🛡️ vs {best_signal.firm_id}: {strat_short.upper()} +{best_signal.timing_advantage:.0f}ms | {best_signal.confidence:.0%}"
+                                        counter_str = f"   vs {best_signal.firm_id}: {strat_short.upper()} +{best_signal.timing_advantage:.0f}ms | {best_signal.confidence:.0%}"
                                 except Exception as e:
-                                    counter_str = f"🛡️ Counter-Intel loading..."
+                                    counter_str = f"   Counter-Intel loading..."
                             
-                            # 🏢 Firm Attribution - Who's trading?
+                            #   Firm Attribution - Who's trading?
                             firm_str = ""
                             if self.firm_attribution and FIRM_ATTRIBUTION_AVAILABLE:
                                 try:
@@ -13037,16 +13037,16 @@ class OrcaKillCycle:
                                                 direction = 'bullish' if price_change_pct > 0 else 'bearish'
                                             elif 'mean_reversion' in firm_details.typical_strategies:
                                                 direction = 'bearish' if price_change_pct > 2 else 'bullish' if price_change_pct < -2 else 'neutral'
-                                        dir_icon = "🟢" if direction == 'bullish' else "🔴" if direction == 'bearish' else "⚪"
-                                        firm_str = f"🏢 {firm_name}: {dir_icon} {direction} ({confidence:.0%})"
+                                        dir_icon = " " if direction == 'bullish' else " " if direction == 'bearish' else " "
+                                        firm_str = f"  {firm_name}: {dir_icon} {direction} ({confidence:.0%})"
                                 except Exception as e:
                                     firm_str = ""
                             
                             # Display with CORRECT values
                             pnl_color = '\033[92m' if net_pnl >= 0 else '\033[91m'
                             reset = '\033[0m'
-                            print(f"\n🎯 {pos.symbol} ({pos.exchange.upper()}) | Value: ${market_value:.2f}")
-                            print(f"   💵 Entry: ${pos.entry_price:,.6f} | Current: ${current:,.6f} | Target: ${pos.target_price:,.6f}")
+                            print(f"\n  {pos.symbol} ({pos.exchange.upper()}) | Value: ${market_value:.2f}")
+                            print(f"     Entry: ${pos.entry_price:,.6f} | Current: ${current:,.6f} | Target: ${pos.target_price:,.6f}")
                             print(f"   [{bar}] {raw_progress:+.1f}% to target | {pnl_color}${net_pnl:+.4f} ({price_change_pct:+.2f}% price){reset}")
                             if eta_str:
                                 print(f"   {eta_str}")
@@ -13055,7 +13055,7 @@ class OrcaKillCycle:
                             if firm_str:
                                 print(f"   {firm_str}")
                             
-                            # ⚡ HFT Harmonic Signal - Sacred frequency analysis
+                            #   HFT Harmonic Signal - Sacred frequency analysis
                             hft_str = ""
                             if self.hft_engine and HFT_ENGINE_AVAILABLE:
                                 try:
@@ -13073,10 +13073,10 @@ class OrcaKillCycle:
                                     # Get last harmonic tone if available
                                     if self.hft_engine.last_harmonic_tone:
                                         tone = self.hft_engine.last_harmonic_tone
-                                        # Format: ⚡ 528Hz 🦅falcon + gamma | 85% conf
-                                        auris_icons = {'falcon': '🦅', 'tiger': '🐅', 'owl': '🦉', 'dolphin': '🐬', 'hummingbird': '🐦', 'deer': '🦌', 'panda': '🐼', 'cargoship': '🚢', 'clownfish': '🐠'}
-                                        auris_icon = auris_icons.get(tone.auris_node, '🔮')
-                                        hft_str = f"⚡ {tone.frequency:.0f}Hz {auris_icon}{tone.auris_node} + {tone.brainwave} | {tone.confidence:.0%}"
+                                        # Format:   528Hz  falcon + gamma | 85% conf
+                                        auris_icons = {'falcon': ' ', 'tiger': ' ', 'owl': ' ', 'dolphin': ' ', 'hummingbird': ' ', 'deer': ' ', 'panda': ' ', 'cargoship': ' ', 'clownfish': ' '}
+                                        auris_icon = auris_icons.get(tone.auris_node, ' ')
+                                        hft_str = f"  {tone.frequency:.0f}Hz {auris_icon}{tone.auris_node} + {tone.brainwave} | {tone.confidence:.0%}"
                                 except Exception:
                                     pass
                             
@@ -13084,9 +13084,9 @@ class OrcaKillCycle:
                                 print(f"   {hft_str}")
                             print(f"   {whale_str}")
                             
-                            # ═════════════════════════════════════════════════
-                            # 👑 QUEEN-GATED EXIT CONDITIONS - PROFIT MUST BE CERTAIN!
-                            # ═════════════════════════════════════════════════
+                            #                                                  
+                            #   QUEEN-GATED EXIT CONDITIONS - PROFIT MUST BE CERTAIN!
+                            #                                                  
                             
                             should_sell = False
                             sell_reason = ''
@@ -13107,7 +13107,7 @@ class OrcaKillCycle:
                             if current >= pos.target_price and can_exit:
                                 should_sell = True
                                 sell_reason = 'TARGET_HIT_QUEEN_APPROVED'
-                                print(f"   👑🎯 TARGET HIT & QUEEN APPROVED! SELLING! 🎯👑")
+                                print(f"      TARGET HIT & QUEEN APPROVED! SELLING!   ")
                             
                             # 2. Profitable momentum reversal + Queen approved
                             elif can_exit and len(pos.price_history) >= 10:
@@ -13117,12 +13117,12 @@ class OrcaKillCycle:
                                     if momentum < -0.3:  # Losing momentum while Queen says profitable
                                         should_sell = True
                                         sell_reason = 'MOMENTUM_PROFIT_QUEEN_APPROVED'
-                                        print(f"   👑📈 TAKING PROFIT (momentum reversal, Queen approved)")
+                                        print(f"      TAKING PROFIT (momentum reversal, Queen approved)")
                             
                             # If not approved, log why
                             if not can_exit and (current >= pos.target_price or net_pnl > 0.001):
                                 blocked_reason = exit_info.get('blocked_reason', 'unknown')
-                                print(f"   👑⏳ Exit blocked: {blocked_reason}")
+                                print(f"      Exit blocked: {blocked_reason}")
                             
                             # Track price history
                             pos.price_history.append(current)
@@ -13150,8 +13150,8 @@ class OrcaKillCycle:
                                         session_stats['losing_trades'] += 1
                                         session_stats['worst_trade'] = min(session_stats['worst_trade'], final_pnl)
                                     
-                                    print(f"\n   ✅ SOLD: ${final_pnl:+.4f} ({sell_reason})")
-                                    print(f"   🔄 CYCLE CONTINUES - SCANNING FOR NEXT TARGET...")
+                                    print(f"\n     SOLD: ${final_pnl:+.4f} ({sell_reason})")
+                                    print(f"     CYCLE CONTINUES - SCANNING FOR NEXT TARGET...")
                                     
                                     # Remove position
                                     positions.remove(pos)
@@ -13160,27 +13160,27 @@ class OrcaKillCycle:
                                     last_scan_time = 0
                                     
                         except Exception as e:
-                            print(f"   ⚠️ Error monitoring {pos.symbol}: {e}")
+                            print(f"      Error monitoring {pos.symbol}: {e}")
                     
                     # Footer
                     print(f"\n{'='*80}")
-                    print(f"   💰 UNREALIZED P&L: ${total_unrealized:+.4f}")
-                    print(f"   🚫 NO STOP LOSS - HOLDING UNTIL PROFIT!")
-                    print(f"   ⌨️ Press Ctrl+C to stop")
+                    print(f"     UNREALIZED P&L: ${total_unrealized:+.4f}")
+                    print(f"     NO STOP LOSS - HOLDING UNTIL PROFIT!")
+                    print(f"      Press Ctrl+C to stop")
                 
                 else:
                     # No positions - show scanning status
-                    print(f"\r🔍 No positions - scanning in {max(0, scan_interval - (current_time - last_scan_time)):.0f}s...", end="", flush=True)
+                    print(f"\r  No positions - scanning in {max(0, scan_interval - (current_time - last_scan_time)):.0f}s...", end="", flush=True)
                 
                 time.sleep(monitor_interval)
                 
         except KeyboardInterrupt:
             print("\n\n" + "="*80)
-            print("👑 QUEEN AUTONOMOUS MODE - STOPPING")
+            print("  QUEEN AUTONOMOUS MODE - STOPPING")
             print("="*80)
             
-            # 👑 QUEEN-GATED CLEANUP - Only close positions Queen approves!
-            print("\n🛑 Closing QUEEN-APPROVED PROFITABLE positions only...")
+            #   QUEEN-GATED CLEANUP - Only close positions Queen approves!
+            print("\n  Closing QUEEN-APPROVED PROFITABLE positions only...")
             closed_pnl = 0.0
             kept_count = 0
             
@@ -13213,40 +13213,40 @@ class OrcaKillCycle:
                             final_pnl = final_exit - entry_cost
                             closed_pnl += final_pnl
                             session_stats['total_pnl'] += final_pnl
-                            print(f"   👑✅ Closed {pos.symbol}: ${final_pnl:+.4f}")
+                            print(f"      Closed {pos.symbol}: ${final_pnl:+.4f}")
                     else:
                         kept_count += 1
                         blocked_reason = exit_info.get('blocked_reason', 'not profitable')
-                        print(f"   👑⛔ KEEPING {pos.symbol} (P&L: ${pos.current_pnl:+.4f} - {blocked_reason})")
+                        print(f"      KEEPING {pos.symbol} (P&L: ${pos.current_pnl:+.4f} - {blocked_reason})")
                 except Exception as e:
-                    print(f"   ⚠️ Error: {e}")
+                    print(f"      Error: {e}")
             
             if kept_count > 0:
-                print(f"\n   📌 Kept {kept_count} positions open (underwater - waiting for profit)")
+                print(f"\n     Kept {kept_count} positions open (underwater - waiting for profit)")
             
             # Final summary
             runtime = time.time() - session_stats['start_time']
             runtime_str = f"{int(runtime//3600)}h {int((runtime%3600)//60)}m {int(runtime%60)}s"
             
             print("\n" + "="*80)
-            print("👑 QUEEN AUTONOMOUS SESSION COMPLETE")
+            print("  QUEEN AUTONOMOUS SESSION COMPLETE")
             print("="*80)
-            print(f"   ⏱️ Total Runtime: {runtime_str}")
-            print(f"   🔄 Total Cycles: {session_stats['cycles']}")
-            print(f"   📈 Total Trades: {session_stats['total_trades']}")
-            print(f"   ✅ Winning Trades: {session_stats['winning_trades']}")
-            print(f"   ❌ Losing Trades: {session_stats['losing_trades']}")
+            print(f"      Total Runtime: {runtime_str}")
+            print(f"     Total Cycles: {session_stats['cycles']}")
+            print(f"     Total Trades: {session_stats['total_trades']}")
+            print(f"     Winning Trades: {session_stats['winning_trades']}")
+            print(f"     Losing Trades: {session_stats['losing_trades']}")
             win_rate = (session_stats['winning_trades'] / session_stats['total_trades'] * 100) if session_stats['total_trades'] > 0 else 0
-            print(f"   🎯 Win Rate: {win_rate:.1f}%")
-            print(f"   💰 SESSION P&L: ${session_stats['total_pnl']:+.4f}")
-            print(f"   🏆 Best Trade: ${session_stats['best_trade']:+.4f}")
-            print(f"   💔 Worst Trade: ${session_stats['worst_trade']:+.4f}")
+            print(f"     Win Rate: {win_rate:.1f}%")
+            print(f"     SESSION P&L: ${session_stats['total_pnl']:+.4f}")
+            print(f"     Best Trade: ${session_stats['best_trade']:+.4f}")
+            print(f"     Worst Trade: ${session_stats['worst_trade']:+.4f}")
             print("="*80)
             
             if session_stats['total_pnl'] > 0:
-                print("🏆 SESSION: PROFITABLE! The Queen is pleased. 👑")
+                print("  SESSION: PROFITABLE! The Queen is pleased.  ")
             else:
-                print("💪 SESSION: Learning cycle. The Queen grows stronger. 👑")
+                print("  SESSION: Learning cycle. The Queen grows stronger.  ")
             print("="*80)
             
         return session_stats
@@ -13438,7 +13438,7 @@ class OrcaKillCycle:
             os.replace(tmp_path, final_path)
         except Exception as e:
             # Log state dump errors to help debugging
-            print(f"⚠️ Dashboard state dump failed: {e}")
+            print(f"   Dashboard state dump failed: {e}")
             pass
 
     def _load_kraken_assets_for_monitoring(self) -> List[str]:
@@ -13452,15 +13452,15 @@ class OrcaKillCycle:
         try:
             kraken_client = self.clients.get('kraken')
             if not kraken_client:
-                _safe_print("⚠️ Kraken client not initialized - cannot discover assets")
+                _safe_print("   Kraken client not initialized - cannot discover assets")
                 return []
             
             # Get all tradeable pairs from Kraken
-            _safe_print("🔍 Discovering all Kraken tradeable assets...")
+            _safe_print("  Discovering all Kraken tradeable assets...")
             tradeable_pairs = kraken_client.get_tradeable_pairs()
             
             if not tradeable_pairs:
-                _safe_print("⚠️ No tradeable pairs found from Kraken")
+                _safe_print("   No tradeable pairs found from Kraken")
                 return []
             
             # Filter for liquid, main trading pairs
@@ -13491,7 +13491,7 @@ class OrcaKillCycle:
                     if base in ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'AVAX', 'MATIC', 'ARB', 'OP']:
                         filtered_symbols.append(symbol)
             
-            _safe_print(f"✅ Kraken Discovery: Found {len(filtered_symbols)} tradeable asset pairs")
+            _safe_print(f"  Kraken Discovery: Found {len(filtered_symbols)} tradeable asset pairs")
             
             # Sort for consistent ordering
             filtered_symbols = sorted(list(set(filtered_symbols)))
@@ -13499,7 +13499,7 @@ class OrcaKillCycle:
             return filtered_symbols
             
         except Exception as e:
-            _safe_print(f"❌ Error discovering Kraken assets: {e}")
+            _safe_print(f"  Error discovering Kraken assets: {e}")
             import traceback
             traceback.print_exc()
             return []
@@ -13715,19 +13715,19 @@ class OrcaKillCycle:
             return candidates
             
         except Exception as e:
-            print(f"⚠️ scan_for_rising_stars error: {e}")
+            print(f"   scan_for_rising_stars error: {e}")
             return []
 
-    # ═══════════════════════════════════════════════════════════════════════════════
-    # 🎖️ WAR ROOM MODE - RICH TERMINAL UI (NO SPAM)
-    # ═══════════════════════════════════════════════════════════════════════════════
+    #                                                                                
+    #    WAR ROOM MODE - RICH TERMINAL UI (NO SPAM)
+    #                                                                                
     
     def run_autonomous_warroom(self, max_positions: int = 5,
                                target_pct: float = 1.0, min_change_pct: float = 0.05,
                                duration_hours: float = 1.0, trade_interval_seconds: int = 10,
                                risk_per_trade_pct: float = 0.5, amount_per_position: float = None):
         """
-        🎖️🌟 WAR ROOM + RISING STAR MODE - THE WINNING FORMULA 🌟🎖️
+            WAR ROOM + RISING STAR MODE - THE WINNING FORMULA    
         
         COMPLETE 4-STAGE SYSTEM:
         1. Queen initialization
@@ -13744,7 +13744,7 @@ class OrcaKillCycle:
             if not queen and hasattr(self, 'get_queen_hive'):
                 queen = self.get_queen_hive()
         except Exception as e:
-            print(f"❌ Queen initialization failed: {e}")
+            print(f"  Queen initialization failed: {e}")
             print("   War Room autonomous mode requires the Queen. Falling back to legacy autonomous mode.")
             # Fallback to legacy autonomous mode with fixed amount_per_position
             if amount_per_position is None:
@@ -13762,7 +13762,7 @@ class OrcaKillCycle:
         else:
             # Use provided amount
             capital = amount_per_position * max_positions
-        print(f"💰 Position sizing: ${amount_per_position:.2f} per trade ({risk_per_trade_pct}% risk on ${capital:.2f} capital)")
+        print(f"  Position sizing: ${amount_per_position:.2f} per trade ({risk_per_trade_pct}% risk on ${capital:.2f} capital)")
 
         # 3. Main trading loop
         start_time = time.time()
@@ -13771,9 +13771,9 @@ class OrcaKillCycle:
         last_dashboard_update = 0
         dashboard_update_interval = 30  # Update dashboard every 30 seconds
 
-        print(f"🎖️ WAR ROOM ACTIVATED - {max_positions} max positions, ${amount_per_position:.2f} per trade")
-        print(f"⏰ Duration: {duration_hours} hours, Check interval: {trade_interval_seconds}s")
-        print("🔍 Scanning for rising stars with intelligence systems...")
+        print(f"   WAR ROOM ACTIVATED - {max_positions} max positions, ${amount_per_position:.2f} per trade")
+        print(f"  Duration: {duration_hours} hours, Check interval: {trade_interval_seconds}s")
+        print("  Scanning for rising stars with intelligence systems...")
 
         while time.time() - start_time < duration_seconds:
             try:
@@ -13793,11 +13793,11 @@ class OrcaKillCycle:
                 ][:10]  # Take top 10
                 
                 if candidates:
-                    print(f"⭐ Found {len(candidates)} rising stars!")
+                    print(f"  Found {len(candidates)} rising stars!")
                     for i, cand in enumerate(candidates[:3]):  # Show top 3
                         print(f"   {i+1}. {cand['symbol']} ({cand['confidence']:.2f}) - {cand['reason']}")
                 else:
-                    print("🔍 No rising stars found this scan...")
+                    print("  No rising stars found this scan...")
                     time.sleep(trade_interval_seconds)
                     continue
 
@@ -13813,17 +13813,17 @@ class OrcaKillCycle:
                     
                     # Execute the trade using hunt_and_kill (proven working method)
                     try:
-                        print(f"🎯 HUNTING {symbol} ({confidence:.2f} confidence) on {exchange}...")
+                        print(f"  HUNTING {symbol} ({confidence:.2f} confidence) on {exchange}...")
                         result = self.hunt_and_kill(symbol, amount_per_position, target_pct=target_pct, exchange=exchange)
                         if result and result.get('success'):
                             trades_executed += 1
                             executed_this_round += 1
                             pnl = result.get('pnl', 0)
-                            print(f"✅ KILLED: {symbol} for ${amount_per_position:.2f} | PnL: ${pnl:+.2f}")
+                            print(f"  KILLED: {symbol} for ${amount_per_position:.2f} | PnL: ${pnl:+.2f}")
                         else:
-                            print(f"❌ Hunt failed: {symbol}")
+                            print(f"  Hunt failed: {symbol}")
                     except Exception as e:
-                        print(f"⚠️ Hunt error for {symbol}: {e}")
+                        print(f"   Hunt error for {symbol}: {e}")
 
                 # STAGE 3: Dashboard update
                 current_time = time.time()
@@ -13835,15 +13835,15 @@ class OrcaKillCycle:
                 time.sleep(trade_interval_seconds)
 
             except KeyboardInterrupt:
-                print("\n🛑 War Room interrupted by user")
+                print("\n  War Room interrupted by user")
                 break
             except Exception as e:
-                print(f"⚠️ War Room error: {e}")
+                print(f"   War Room error: {e}")
                 time.sleep(5)  # Brief pause on error
 
         # Final dashboard update
         self.update_warroom_dashboard(trades_executed, time.time() - start_time, duration_seconds)
-        print(f"🎖️ War Room completed: {trades_executed} trades executed")
+        print(f"   War Room completed: {trades_executed} trades executed")
 
     def execute_trade_decision(self, symbol: str, side: str, amount: float, confidence: float) -> bool:
         """
@@ -13853,7 +13853,7 @@ class OrcaKillCycle:
             # Get current price
             price = self.get_current_price(symbol)
             if not price:
-                print(f"❌ No price available for {symbol}")
+                print(f"  No price available for {symbol}")
                 return False
 
             # Calculate position size
@@ -13861,7 +13861,7 @@ class OrcaKillCycle:
 
             # Apply profit gate
             if not self.queen_profit_gate(amount, amount * 1.01):  # Assume 1% profit target for gate check
-                print(f"🚫 Profit gate rejected trade for {symbol}")
+                print(f"  Profit gate rejected trade for {symbol}")
                 return False
 
             # Execute the trade
@@ -13869,7 +13869,7 @@ class OrcaKillCycle:
             return result is not None
 
         except Exception as e:
-            print(f"⚠️ Trade decision error for {symbol}: {e}")
+            print(f"   Trade decision error for {symbol}: {e}")
             return False
 
     def update_warroom_dashboard(self, trades_executed: int, elapsed: float, total_duration: float):
@@ -13880,16 +13880,16 @@ class OrcaKillCycle:
             progress_pct = (elapsed / total_duration) * 100
             remaining = total_duration - elapsed
             
-            print(f"\n🎖️ WAR ROOM STATUS UPDATE")
-            print(f"   ⏱️  Progress: {progress_pct:.1f}% ({elapsed/3600:.1f}h / {total_duration/3600:.1f}h)")
-            print(f"   📊 Trades: {trades_executed}")
-            print(f"   ⏳ Remaining: {remaining/3600:.1f} hours")
+            print(f"\n   WAR ROOM STATUS UPDATE")
+            print(f"       Progress: {progress_pct:.1f}% ({elapsed/3600:.1f}h / {total_duration/3600:.1f}h)")
+            print(f"     Trades: {trades_executed}")
+            print(f"     Remaining: {remaining/3600:.1f} hours")
             
             # Add dashboard snapshot to state file
             self.dump_dashboard_snapshot(trades_executed, elapsed, total_duration)
             
         except Exception as e:
-            print(f"⚠️ Dashboard update failed: {e}")
+            print(f"   Dashboard update failed: {e}")
 
     def dump_dashboard_snapshot(self, trades_executed: int, elapsed: float, total_duration: float):
         """
@@ -13927,11 +13927,11 @@ class OrcaKillCycle:
             os.replace(tmp_path, final_path)
             
         except Exception as e:
-            print(f"⚠️ War room snapshot failed: {e}")
+            print(f"   War room snapshot failed: {e}")
 
-    # ═══════════════════════════════════════════════════════════════════════════════
+    #                                                                                
     # MAIN EXECUTION
-    # ═══════════════════════════════════════════════════════════════════════════════
+    #                                                                                
 
 if __name__ == "__main__":
     # Windows UTF-8 wrapper
@@ -13942,2960 +13942,58 @@ if __name__ == "__main__":
         sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 
     import argparse
-    parser = argparse.ArgumentParser(description="Aureon Trading System - Orca Kill Cycle")
-    parser.add_argument("--autonomous", action="store_true", help="Run in autonomous war room mode")
-    parser.add_argument("--symbols", type=str, help="Comma-separated list of symbols to trade")
-    parser.add_argument("--initial-capital", type=float, default=1000, help="Initial capital amount")
-    parser.add_argument("--dry-run", action="store_true", help="Dry run mode - no real trades")
-    
-    args = parser.parse_args()
-    
-    print(f"✅ Args parsed: autonomous={args.autonomous}, dry_run={args.dry_run}")
-    
-    # Parse symbols
-    symbol_whitelist = None
-    if args.symbols:
-        symbol_whitelist = [s.strip() for s in args.symbols.split(',')]
-    
-    print(f"🔧 Creating Orca instance...")
-    # Create Orca instance
-    orca = OrcaKillCycle(
-        symbol_whitelist=symbol_whitelist,
-        initial_capital=args.initial_capital,
-        autonomous_mode=args.autonomous
-    )
-    
-    print(f"✅ Orca instance created successfully")
-    
-    if args.autonomous:
-        print("🤖 AUTONOMOUS MODE ACTIVATED")
-        print(f"🔥 {'LIVE MODE - REAL TRADES' if not args.dry_run else 'DRY-RUN MODE'}")
-        print(f"🎯 Starting autonomous war room...")
-        orca.run_autonomous_warroom()
-    else:
-        print("🎮 MANUAL MODE - Use orca.run_autonomous_warroom() for autonomous trading")
-        # Keep alive for manual interaction
-        import time
-        while True:
-            time.sleep(1)
-
-except Exception as e:
-    print(f"\n\n❌ CRITICAL FAILURE: {e}", file=sys.stderr)
-    traceback.print_exc(file=sys.stderr)
-    print("\n🛑 Orca exiting gracefully to prevent crash loop\n", file=sys.stderr)
-    sys.exit(1)
-
-        2. Position sizing (risk management)
-        3. Trade execution loop
-        4. War Room dashboard updates
-        """
-        try:
-            # Queen initialization and other setup code...
-            queen = self.queen_hive if self.queen_hive else None
-            if not queen and hasattr(self, 'get_queen_hive'):
-                queen = self.get_queen_hive()
-        except Exception as e:
-            print(f"❌ Queen initialization failed: {e}")
-            print("   War Room autonomous mode requires the Queen. Falling back to legacy autonomous mode.")
-            # Fallback to legacy autonomous mode with fixed amount_per_position
-            amount_per_position = 2.5
-            return self.run_autonomous(max_positions, amount_per_position, target_pct, min_change_pct)
-        
-        # Adjust position size based on risk percentage of total capital
-        amount_per_position = self.initial_capital * (risk_per_trade_pct / 100.0)
-        print(f"🛡️ RISK MANAGEMENT: Position size set to ${amount_per_position:,.2f} ({risk_per_trade_pct}%)")
-
-        # ═══════════════════════════════════════════════════════════════════
-        # ⚡ UNIFIED TRADE EXECUTOR INITIALIZATION (Stage 2 Integration)
-        # ═══════════════════════════════════════════════════════════════════
-        """
-        Main autonomous trading loop with War Room dashboard.
-        """
-        import time
-        from rich.live import Live
-
-        session_stats = {
-            'start_time': time.time(),
-            'positions_opened': 0,
-            'positions_closed': 0,
-            'winners_selected': 0,
-            'errors': 0,
-        }
-        end_time = time.time() + duration_hours * 3600
-
-        def generate_dashboard(stats, stage, message):
-            # Placeholder for dashboard generation logic
-            return f"{stage}: {message} | Stats: {stats}"
-
-        queen = getattr(self, 'queen_hive', None)
-        live = Live(generate_dashboard(session_stats, "STARTUP", "Initializing..."), refresh_per_second=4)
-
-        while time.time() < end_time:
-            loop_start_time = time.time()
-            
-            with live:
-                # ═══════════════════════════════════════════════════════════════════
-                # STAGE 1: SCAN FOR RISING STARS
-                # ═══════════════════════════════════════════════════════════════════
-                live.update(generate_dashboard(session_stats, "SCANNING", "Scanning for rising stars..."))
-                
-                # Use the new intelligence integration, now with the symbol whitelist
-                candidates = self.scan_for_rising_stars(top_n=10, min_confidence=0.75, symbol_whitelist=self.symbol_whitelist)
-                self.last_rising_star_candidates = candidates
-
-                # ═══════════════════════════════════════════════════════════════════
-                # STAGE 2 & 3: SIMULATE & SELECT
-                # ═══════════════════════════════════════════════════════════════════
-                live.update(generate_dashboard(session_stats, "SIMULATING", f"Simulating top {len(candidates)} candidates..."))
-                
-                # This is where we would run Monte Carlo sims. For now, we just select the top 2.
-                winners = sorted(candidates, key=lambda x: x.get('confidence', 0), reverse=True)[:2]
-                self.last_rising_star_winners = winners
-                session_stats['winners_selected'] += len(winners)
-
-                if not winners:
-                    live.update(generate_dashboard(session_stats, "IDLE", "No winners selected from simulation. Waiting..."))
-                    time.sleep(trade_interval_seconds)
-                    continue
-
-                # ═══════════════════════════════════════════════════════════════════
-                # STAGE 4: EXECUTE
-                # ═══════════════════════════════════════════════════════════════════
-                live.update(generate_dashboard(session_stats, "EXECUTING", f"Executing trades for {len(winners)} winners..."))
-
-                for winner in winners:
-                    try:
-                        # This new method will contain the logic to place the trade
-                        self.execute_trade_decision(winner, amount_per_position, queen)
-                    except Exception as e:
-                        session_stats['errors'] += 1
-                        live.update(generate_dashboard(session_stats, "ERROR", f"Execution failed for {winner.get('symbol')}: {e}"))
-
-            # Control loop timing
-            elapsed = time.time() - loop_start_time
-            if elapsed < trade_interval_seconds:
-                time.sleep(trade_interval_seconds - elapsed)
-
-        # Final dashboard update
-        live.update(generate_dashboard(session_stats, "COMPLETE", "War Room session completed!"))
-
-    def execute_trade_decision(self, candidate: Dict, amount: float, queen: 'QueenHiveMind'):
-        """
-        Takes a winning candidate and executes the trade, applying all gates and logic.
-        This version is enhanced to use more of the available intelligence from the
-        candidate and ensures all checks are passed before execution.
-        """
-        symbol = candidate.get('symbol')
-        confidence = candidate.get('confidence', 0)
-        exchange = candidate.get('exchange', self.primary_exchange)
-
-        if not symbol:
-            self.log_event('execution_error', {'reason': 'Missing symbol in candidate'})
-            return
-
-        client = self.clients.get(exchange)
-        if not client:
-            self.log_event('execution_error', {'symbol': symbol, 'reason': f'No client for exchange {exchange}'})
-            return
-
-        # Get live price data using the improved smart_get_ticker
-        ticker = smart_get_ticker(client, symbol, exchange, self.clients)
-        if not ticker or 'last' not in ticker:
-            self.log_event('execution_error', {'symbol': symbol, 'reason': 'Could not fetch reliable ticker price'})
-            return
-        
-        current_price = float(ticker['last'])
-        quantity = amount / current_price
-
-        # Gather all available intelligence for the final gate check
-        momentum_pct = candidate.get('momentum_pct', 0)
-        expected_move_pct = candidate.get('expected_move_pct', 0)
-        
-        # THE FINAL CALL - Use execute_stealth_buy which contains the Queen's profit gate
-        order_result = self.execute_stealth_buy(
-            client=client,
-            symbol=symbol,
-            quantity=quantity,
-            price=current_price,
-            exchange=exchange,
-            momentum_pct=momentum_pct,
-            expected_move_pct=expected_move_pct,
-            confidence=confidence
-        )
-
-        if order_result and order_result.get('id'):
-            self.log_event('trade_executed', {
-                'symbol': symbol, 
-                'order_id': order_result['id'], 
-                'confidence': confidence,
-                'amount': amount,
-                'price': current_price
-            })
-            # Add to active positions for monitoring
-            self.add_to_active_positions(symbol, exchange, order_result)
-        elif not order_result:
-            # The profit gate or another check blocked the trade.
-            # Logging is handled inside execute_stealth_buy.
-            self.log_event('trade_rejected', {'symbol': symbol, 'reason': 'Blocked by execute_stealth_buy gate'})
-
-    
-    def run_autonomous_warroom(self, max_positions: int = 5,
-                               target_pct: float = 1.0, min_change_pct: float = 0.05,
-                               duration_hours: float = 1.0, trade_interval_seconds: int = 10,
-                               risk_per_trade_pct: float = 0.5, amount_per_position: float = None): # Default risk 0.5% of capital
-        """
-        🎖️🌟 WAR ROOM + RISING STAR MODE - THE WINNING FORMULA 🌟🎖️
-        
-        COMPLETE 4-STAGE SYSTEM:
-        1. Queen initialization
-        2. Position sizing (risk management)
-        3. Trade execution loop
-        4. War Room dashboard updates
-        """
-        try:
-            # Queen initialization and other setup code...
-            queen = self.queen_hive if self.queen_hive else None
-            if not queen and hasattr(self, 'get_queen_hive'):
-                queen = self.get_queen_hive()
-        except Exception as e:
-            print(f"❌ Queen initialization failed: {e}")
-            print("   War Room autonomous mode requires the Queen. Falling back to legacy autonomous mode.")
-            # Fallback to legacy autonomous mode with fixed amount_per_position
-            amount_per_position = 2.5
-            return self.run_autonomous(max_positions, amount_per_position, target_pct, min_change_pct)
-        
-        # Adjust position size based on risk percentage of total capital
-        amount_per_position = self.initial_capital * (risk_per_trade_pct / 100.0)
-        print(f"🛡️ RISK MANAGEMENT: Position size set to ${amount_per_position:,.2f} ({risk_per_trade_pct}%)")
-
-        # ═══════════════════════════════════════════════════════════════════
-        # ⚡ UNIFIED TRADE EXECUTOR INITIALIZATION (Stage 2 Integration)
-        # ═══════════════════════════════════════════════════════════════════
-        """
-        Main autonomous trading loop with War Room dashboard.
-        """
-        import time
-        from rich.live import Live
-
-        session_stats = {
-            'start_time': time.time(),
-            'positions_opened': 0,
-            'positions_closed': 0,
-            'winners_selected': 0,
-            'errors': 0,
-        }
-        end_time = time.time() + duration_hours * 3600
-
-        def generate_dashboard(stats, stage, message):
-            # Placeholder for dashboard generation logic
-            return f"{stage}: {message} | Stats: {stats}"
-
-        queen = getattr(self, 'queen_hive', None)
-        live = Live(generate_dashboard(session_stats, "STARTUP", "Initializing..."), refresh_per_second=4)
-
-        while time.time() < end_time:
-            loop_start_time = time.time()
-            
-            with live:
-                # ... existing STAGE 1 code ...
-
-                # ═══════════════════════════════════════════════════════════════════
-                # STAGE 2 & 3: SIMULATE & SELECT
-                # ═══════════════════════════════════════════════════════════════════
-                live.update(generate_dashboard(session_stats, "SIMULATING", f"Simulating top {len(candidates)} candidates..."))
-                
-                # This is where we would run Monte Carlo sims. For now, we just select the top 2.
-                winners = sorted(candidates, key=lambda x: x.get('confidence', 0), reverse=True)[:2]
-                self.last_rising_star_winners = winners
-                session_stats['winners_selected'] += len(winners)
-
-                if not winners:
-                    live.update(generate_dashboard(session_stats, "IDLE", "No winners selected from simulation. Waiting..."))
-                    time.sleep(trade_interval_seconds)
-                    continue
-
-                # ═══════════════════════════════════════════════════════════════════
-                # STAGE 4: EXECUTE
-                # ═══════════════════════════════════════════════════════════════════
-                live.update(generate_dashboard(session_stats, "EXECUTING", f"Executing trades for {len(winners)} winners..."))
-
-                for winner in winners:
-                    try:
-                        # This new method will contain the logic to place the trade
-                        self.execute_trade_decision(winner, amount_per_position, queen)
-                    except Exception as e:
-                        session_stats['errors'] += 1
-                        live.update(generate_dashboard(session_stats, "ERROR", f"Execution failed for {winner.get('symbol')}: {e}"))
-
-            # ... existing loop end code ...
-
-    def execute_trade_decision(self, candidate: Dict, amount: float, queen: 'QueenHiveMind'):
-        """
-        Takes a winning candidate and executes the trade, applying all gates and logic.
-        """
-        symbol = candidate.get('symbol')
-        confidence = candidate.get('confidence', 0)
-        exchange = candidate.get('exchange', self.primary_exchange) # Assume primary if not specified
-        
-        if not symbol:
-            return
-
-        # Get the correct client for the exchange
-        client = self.clients.get(exchange)
-        if not client:
-            self.log_event('execution_error', {'symbol': symbol, 'reason': f'No client for exchange {exchange}'})
-            return
-
-        # Get current price
-        ticker = client.get_ticker(symbol)
-        if not ticker or 'last' not in ticker:
-            self.log_event('execution_error', {'symbol': symbol, 'reason': 'Could not fetch ticker price'})
-            return
-        
-        current_price = float(ticker['last'])
-        
-        # Calculate quantity
-        quantity = amount / current_price
-
-        # Get other metrics for the profit gate
-        # These would come from the candidate details in a full implementation
-        momentum_pct = candidate.get('momentum_pct', 0)
-        expected_move_pct = candidate.get('expected_move_pct', 0)
-
-        # THE FINAL CALL - uses the profit gate we just enhanced
-        order_result = self.execute_stealth_buy(
-            client=client,
-            symbol=symbol,
-            quantity=quantity,
-            price=current_price,
-            exchange=exchange,
-            momentum_pct=momentum_pct,
-            expected_move_pct=expected_move_pct,
-            confidence=confidence # Pass the confidence score!
-        )
-
-        if order_result and order_result.get('id'):
-            self.log_event('trade_executed', {'symbol': symbol, 'order_id': order_result['id'], 'confidence': confidence})
-            # Here you would add the position to a monitoring list
-        elif not order_result:
-            # The profit gate or another check blocked it. Already logged inside stealth_buy.
-            pass
-        """
-        🎖️🌟 WAR ROOM + RISING STAR MODE - THE WINNING FORMULA 🌟🎖️
-        
-        COMPLETE 4-STAGE SYSTEM:
-        
-        STAGE 1: SCAN - Use ALL intelligence systems to find candidates
-          - Quantum scoring (Luck, Phantom, Inception, Elephant, etc.)
-          - Probability predictions (95% accuracy)
-          - Wave scanner momentum
-          - Firm intelligence (smart money)
-          - Whale signals
-          - SYMBOL WHITELIST FILTER APPLIED
-          
-        STAGE 2: SIMULATE - Top 4 candidates → 30-second Monte Carlo
-        """
-        # ...existing code...
-        # ...
-        # Main autonomous loop
-        start_time = time.time()
-        end_time = start_time + (duration_hours * 3600)
-        
-        while time.time() < end_time:
-            loop_start_time = time.time()
-            
-            with live:
-                # ═══════════════════════════════════════════════════════════════════
-                # STAGE 1: SCAN (using all intelligence)
-                # ═══════════════════════════════════════════════════════════════════
-                live.update(generate_dashboard(session_stats, "SCANNING...", "Scanning market for high-probability candidates..."))
-                
-                # Use the comprehensive scanner to get candidates
-                # This function now needs to exist and do the heavy lifting
-                try:
-                    # Pass the whitelist to the scanner
-                    candidates = self.scan_for_rising_stars(
-                        top_n=10, 
-                        min_confidence=0.75, # Initial filter
-                        symbol_whitelist=self.symbol_whitelist
-                    )
-                    
-                    if not candidates:
-                        live.update(generate_dashboard(session_stats, "IDLE", "No promising candidates found. Waiting..."))
-                        time.sleep(trade_interval_seconds)
-                        continue
-
-                    session_stats['candidates_found'] += len(candidates)
-                    
-                except Exception as e:
-                    live.update(generate_dashboard(session_stats, "ERROR", f"Scanning failed: {e}"))
-                    time.sleep(trade_interval_seconds)
-                    continue
-
-        # ...existing code...
-        """
-        🎖️🌟 WAR ROOM + RISING STAR MODE - THE WINNING FORMULA 🌟🎖️
-        
-        COMPLETE 4-STAGE SYSTEM:
-        
-        STAGE 1: SCAN - Use ALL intelligence systems to find candidates
-          - Quantum scoring (Luck, Phantom, Inception, Elephant, etc.)
-          - Probability predictions (95% accuracy)
-          - Wave scanner momentum
-          - Firm intelligence (smart money)
-          - Whale signals
-          
-        STAGE 2: SIMULATE - Top 4 candidates → 30-second Monte Carlo
-          - 1000 simulations each
-          - Historical patterns + predictions
-          - Time-to-profit optimization
-          
-        STAGE 3: SELECT - Pick BEST 2 winners
-          - Highest simulation confidence
-          - Fastest time to profit
-          - 30-second profit window target
-          
-        STAGE 4: EXECUTE + ACCUMULATE + MONITOR + KILL
-          - Open positions on best 2
-          - ACCUMULATE if price drops (DCA strategy)
-          - ALL systems monitoring for exit
-          - KILL when profit target hit
-        
-        Gary Leckey | The Math Works | January 2026
-        """
-        if not RICH_AVAILABLE:
-            print("⚠️ Rich library not available - falling back to standard mode")
-            return self.run_autonomous(max_positions, amount_per_position, target_pct, min_change_pct)
-
-        # ═══════════════════════════════════════════════════════════════════
-        # 👑 QUEEN HIVE MIND (MANDATORY)
-        # ═══════════════════════════════════════════════════════════════════
-        queen = None
-        try:
-            from aureon_queen_hive_mind import QueenHiveMind
-            queen = QueenHiveMind()
-            print("👑 QUEEN DR AURIS THRONE: AWAKENED AND READY!")
-            print(f"   🎯 Dream: ${queen.THE_DREAM:,.0f} (ONE BILLION)")
-            print(f"   💰 Current equity: ${queen.equity:,.2f}")
-            
-            # Ignite Sentience
-            self._ignite_sentience()
-            
-            print()
-        except Exception as e:
-            print(f"❌ Queen initialization failed: {e}")
-            print("   War Room autonomous mode requires the Queen. Falling back to legacy autonomous mode.")
-            return self.run_autonomous(max_positions, amount_per_position, target_pct, min_change_pct)
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # ⚡ UNIFIED TRADE EXECUTOR INITIALIZATION (Stage 2 Integration)
-        # ═══════════════════════════════════════════════════════════════════
-        trade_executor = None
-        try:
-            from aureon_trade_activation import UnifiedTradeExecutor, QueenExecutorBridge, ExecutionRequest
-            is_live = os.getenv('LIVE', '0') == '1'
-            trade_executor = UnifiedTradeExecutor(dry_run=not is_live)
-            trade_executor.initialize()
-            
-            # Wire Queen to Executor
-            bridge = QueenExecutorBridge(queen, trade_executor)
-            bridge.wire_queen_to_executor()
-            
-            print(f"⚡ UNIFIED TRADE EXECUTOR: {'🔥 LIVE MODE' if is_live else '🧪 DRY-RUN MODE'}")
-            print(f"   Min Score: {trade_executor.gating_config.min_score}")
-            print(f"   Max Position: {trade_executor.gating_config.max_position_pct}%")
-            print(f"   Daily Limit: {trade_executor.gating_config.max_daily_trades} trades")
-        except Exception as e:
-            print(f"⚠️ Unified Trade Executor initialization failed: {e}")
-            trade_executor = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌟 RISING STAR INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        try:
-            from aureon_rising_star_logic import RisingStarScanner, RisingStarCandidate
-            self.rising_star_scanner = RisingStarScanner(self)
-            self.rising_star_enabled = True
-            RISING_STAR_AVAILABLE = True
-        except ImportError:
-            RISING_STAR_AVAILABLE = False
-            self.rising_star_enabled = False
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🏹⚔️ APACHE WAR BAND INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        war_band = None
-        if WAR_BAND_AVAILABLE:
-            try:
-                # Need to create market pulse and unified client for War Band
-                from unified_exchange_client import MultiExchangeClient
-                from aureon_market_pulse import MarketPulse
-                unified_client = MultiExchangeClient()
-                market_pulse = MarketPulse(unified_client)
-                war_band = EnhancedWarBand(unified_client, market_pulse)
-                print("🏹⚔️ Apache War Band initialized and ready for autonomous operations")
-            except Exception as e:
-                print(f"⚠️ Apache War Band initialization failed: {e}")
-                war_band = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🐝👑 HIVE STATE PUBLISHER INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        hive_publisher = None
-        if HIVE_STATE_AVAILABLE:
-            try:
-                hive_publisher = get_hive()
-                hive_publisher.update(mood="Focused", scanner="ORCA Autonomous", coherence=0.85)
-                print("🐝👑 Hive State Publisher initialized - Queen is watching")
-            except Exception as e:
-                print(f"⚠️ Hive State Publisher initialization failed: {e}")
-                hive_publisher = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 📜🤖 HISTORICAL BOT CENSUS INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        bot_census = None
-        if HISTORICAL_BOT_CENSUS_AVAILABLE:
-            try:
-                # Initialize with key symbols for bot tracking
-                bot_census = {
-                    'tracked_symbols': ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
-                    'last_census': time.time(),
-                    'active_bots': []
-                }
-                print("📜🤖 Historical Bot Census initialized - Tracking algorithmic evolution")
-            except Exception as e:
-                print(f"⚠️ Historical Bot Census initialization failed: {e}")
-                bot_census = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 📊🔬 HISTORICAL BACKTEST ENGINE INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        backtest_engine = None
-        if HISTORICAL_BACKTEST_AVAILABLE:
-            try:
-                backtest_engine = AureonBacktestEngine()
-                print("📊🔬 Historical Backtest Engine initialized - Harmonic fusion ready")
-            except Exception as e:
-                print(f"⚠️ Historical Backtest Engine initialization failed: {e}")
-                backtest_engine = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌍 GLOBAL ORCHESTRATOR INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        global_orchestrator = None
-        if GLOBAL_ORCHESTRATOR_AVAILABLE:
-            try:
-                is_live = os.getenv('LIVE', '0') == '1'
-                global_orchestrator = GlobalAureonOrchestrator(dry_run=not is_live)
-                print(f"🌍 Global Orchestrator initialized - {'🔥 LIVE' if is_live else '🧪 DRY-RUN'}")
-            except Exception as e:
-                print(f"⚠️ Global Orchestrator initialization failed: {e}")
-                global_orchestrator = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🎵 HARMONIC BINARY PROTOCOL INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        harmonic_binary = None
-        if HARMONIC_BINARY_AVAILABLE:
-            try:
-                # Initialize with default packet for ORCA autonomous
-                packet = encode_text_packet("ORCA_AUTONOMOUS_START", message_type=1, direction=0, grade=5)
-                harmonic_binary = packet
-                print("🎵 Harmonic Binary Protocol initialized - Compact transport ready")
-            except Exception as e:
-                print(f"⚠️ Harmonic Binary Protocol initialization failed: {e}")
-                harmonic_binary = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🔗 HARMONIC CHAIN MASTER INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        harmonic_chain_master = None
-        if HARMONIC_CHAIN_MASTER_AVAILABLE:
-            try:
-                harmonic_chain_master = HarmonicChainMaster()
-                print("🔗 Harmonic Chain Master initialized - Signal processing active")
-            except Exception as e:
-                print(f"⚠️ Harmonic Chain Master initialization failed: {e}")
-                harmonic_chain_master = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # ⚡ HARMONIC COUNTER FREQUENCY INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        harmonic_counter = None
-        if HARMONIC_COUNTER_AVAILABLE:
-            try:
-                # Module available, mark as initialized
-                harmonic_counter = True
-                print("⚡ Harmonic Counter Frequency initialized - Planetary counter-frequencies ready")
-            except Exception as e:
-                print(f"⚠️ Harmonic Counter Frequency initialization failed: {e}")
-                harmonic_counter = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌊 HARMONIC WAVE FUSION INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        harmonic_fusion = None
-        if HARMONIC_FUSION_AVAILABLE:
-            try:
-                harmonic_fusion = get_harmonic_fusion()
-                print("🌊 Harmonic Wave Fusion initialized - Unified harmonic system active")
-            except Exception as e:
-                print(f"⚠️ Harmonic Wave Fusion initialization failed: {e}")
-                harmonic_fusion = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌊⚡ HARMONIC MOMENTUM WAVE SCANNER INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        harmonic_momentum = None
-        if HARMONIC_MOMENTUM_AVAILABLE:
-            try:
-                harmonic_momentum = HarmonicMomentumWaveScanner()
-                print("🌊⚡ Harmonic Momentum Wave Scanner initialized - Ultimate momentum detection active")
-            except Exception as e:
-                print(f"⚠️ Harmonic Momentum Wave Scanner initialization failed: {e}")
-                harmonic_momentum = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌊 HARMONIC REALITY FRAMEWORK INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        harmonic_reality = None
-        if HARMONIC_REALITY_AVAILABLE:
-            try:
-                harmonic_reality = HarmonicRealityFramework()
-                print("🌊 Harmonic Reality Framework initialized - Master equations active")
-            except Exception as e:
-                print(f"⚠️ Harmonic Reality Framework initialization failed: {e}")
-                harmonic_reality = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🗺️ GLOBAL BOT MAP INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        global_bot_map = None
-        if GLOBAL_BOT_MAP_AVAILABLE:
-            try:
-                global_bot_map = GlobalBotMap()
-                print("🗺️ Global Bot Map initialized - Visual bot activity tracking active")
-            except Exception as e:
-                print(f"⚠️ Global Bot Map initialization failed: {e}")
-                global_bot_map = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌌 ENHANCED QUANTUM TELESCOPE INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        enhanced_quantum_telescope = None
-        if ENHANCED_QUANTUM_TELESCOPE_AVAILABLE:
-            try:
-                # Create geometry engine first, then pass to telescope
-                geometry_engine = EnhancedQuantumGeometryEngine()
-                enhanced_quantum_telescope = EnhancedQuantumTelescope(geometry_engine=geometry_engine)
-                print("🌌 Enhanced Quantum Telescope initialized - Sacred geometry bot visualization active")
-            except Exception as e:
-                print(f"⚠️ Enhanced Quantum Telescope initialization failed: {e}")
-                enhanced_quantum_telescope = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 💭 ENIGMA DREAM PROCESSOR INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        enigma_dream = None
-        if ENIGMA_DREAM_AVAILABLE:
-            try:
-                enigma_dream = EnigmaDreamProcessor()
-                print("💭 Enigma Dream Processor initialized - Consciousness state processing active")
-            except Exception as e:
-                print(f"⚠️ Enigma Dream Processor initialization failed: {e}")
-                enigma_dream = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # ✨ ENHANCEMENT LAYER INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        enhancement_layer = None
-        if ENHANCEMENT_LAYER_AVAILABLE:
-            try:
-                enhancement_layer = EnhancementLayer()
-                print("✨ Enhancement Layer initialized - Unified enhancement system active")
-            except Exception as e:
-                print(f"⚠️ Enhancement Layer initialization failed: {e}")
-                enhancement_layer = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🧩 ENIGMA INTEGRATION INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        enigma_integration = None
-        if ENIGMA_INTEGRATION_AVAILABLE:
-            try:
-                enigma_integration = EnigmaIntegration()
-                print("🧩 Enigma Integration initialized - Complete Enigma system integration active")
-            except Exception as e:
-                print(f"⚠️ Enigma Integration initialization failed: {e}")
-                enigma_integration = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 📊 FIRM INTELLIGENCE CATALOG INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        firm_intelligence = None
-        if FIRM_INTELLIGENCE_AVAILABLE:
-            try:
-                firm_intelligence = get_firm_catalog()
-                print("📊 Firm Intelligence Catalog initialized - Real-time firm tracking active")
-            except Exception as e:
-                print(f"⚠️ Firm Intelligence Catalog initialization failed: {e}")
-                firm_intelligence = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🌀 ENIGMA CORE INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        enigma_core = None
-        if ENIGMA_CORE_AVAILABLE:
-            try:
-                enigma_core = EnigmaCore()
-                print("🌀 Enigma Core initialized - Primary consciousness engine active")
-            except Exception as e:
-                print(f"⚠️ Enigma Core initialization failed: {e}")
-                enigma_core = None
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # 🆕 ADDITIONAL NEURAL & TRADING SYSTEMS INITIALIZATION
-        # ═══════════════════════════════════════════════════════════════════
-        aureon_miner = None
-        if AUREON_MINER_AVAILABLE:
-            try:
-                aureon_miner = AureonMiner()
-                print("⛏️ Aureon Miner initialized - Background mining with harmonic optimization")
-            except Exception as e:
-                print(f"⚠️ Aureon Miner initialization failed: {e}")
-                aureon_miner = None
-        
-        multi_exchange = None
-        if MULTI_EXCHANGE_AVAILABLE:
-            try:
-                multi_exchange = MultiExchangeManager() if MultiExchangeManager else None
-                print("🌐 Multi-Exchange Manager initialized - Cross-exchange orchestration active")
-            except Exception as e:
-                print(f"⚠️ Multi-Exchange Manager initialization failed: {e}")
-                multi_exchange = None
-        
-        multi_pair = None
-        if MULTI_PAIR_AVAILABLE:
-            try:
-                multi_pair = MasterEquation() if MasterEquation else None
-                print("🎯 Multi-Pair Master Equation initialized - Coherence monitoring active")
-            except Exception as e:
-                print(f"⚠️ Multi-Pair initialization failed: {e}")
-                multi_pair = None
-        
-        multiverse_live = None
-        if MULTIVERSE_LIVE_AVAILABLE:
-            try:
-                multiverse_live = True  # Module available
-                print("🌌 Multiverse Live Engine initialized - Commando unified trading active")
-            except Exception as e:
-                print(f"⚠️ Multiverse Live initialization failed: {e}")
-                multiverse_live = None
-        
-        multiverse_orchestrator = None
-        if MULTIVERSE_ORCHESTRATOR_AVAILABLE:
-            try:
-                multiverse_orchestrator = True  # Module available
-                print("✨ Multiverse Orchestrator initialized - Atom→Galaxy ladder active")
-            except Exception as e:
-                print(f"⚠️ Multiverse Orchestrator initialization failed: {e}")
-                multiverse_orchestrator = None
-        
-        mycelium_network = None
-        if MYCELIUM_NETWORK_AVAILABLE:
-            try:
-                mycelium_network = MyceliumNetwork(initial_capital=1000.0)
-                print("🍄 Mycelium Neural Network initialized - Underground signal network active")
-            except Exception as e:
-                print(f"⚠️ Mycelium Network initialization failed: {e}")
-                mycelium_network = None
-        
-        neural_revenue = None
-        if NEURAL_REVENUE_AVAILABLE:
-            try:
-                is_live = os.getenv('LIVE', '0') == '1'
-                neural_revenue = NeuralRevenueOrchestrator(dry_run=not is_live)
-                print(f"🌍🔗 Neural Revenue Orchestrator initialized - {'🔥 LIVE' if is_live else '🧪 DRY-RUN'}")
-            except Exception as e:
-                print(f"⚠️ Neural Revenue Orchestrator initialization failed: {e}")
-                neural_revenue = None
-        
-        # Rising Star statistics
-        rising_star_stats = {
-            'candidates_scanned': 0,
-            'simulations_run': 0,
-            'winners_selected': 0,
-            'accumulations_made': 0,
-            'total_accumulated_value': 0.0,
-        }
-        
-        # Initialize War Room display
-        self.warroom = WarRoomDisplay()
-        warroom = self.warroom  # Alias for local use
-        
-        # Safe console creation - check if stdout is valid
-        console = None
-        try:
-            if RICH_AVAILABLE and sys.stdout and not sys.stdout.closed:
-                console = Console()
-        except Exception:
-            console = None
-        
-        # Session statistics
-        session_stats = {
-            'cycles': 0,
-            'total_trades': 0,
-            'winning_trades': 0,
-            'losing_trades': 0,
-            'total_pnl': 0.0,
-            'start_time': time.time(),
-            'best_trade': 0.0,
-            'worst_trade': 0.0,
-        }
-        
-        # Current positions
-        positions: List[LivePosition] = []
-        
-        # Timing
-        base_scan_interval = 10
-        scan_interval = base_scan_interval
-        monitor_interval = 1.0
-        last_scan_time = 0
-        last_portfolio_scan = 0
-        portfolio_scan_interval = 30
-        # Queen-driven pacing & profit target
-        base_target_pct = target_pct
-        target_pct_current = target_pct
-        queen_update_interval = 10.0
-        last_queen_update = 0.0
-
-        def _apply_queen_controls() -> None:
-            """Adjust scan speed and profit targets based on Queen collective signal."""
-            nonlocal scan_interval, target_pct_current
-            if queen is None:
-                return
-            try:
-                signal = queen.get_collective_signal()
-                confidence = float(signal.get('confidence', 0.5))
-                direction = signal.get('direction', 'NEUTRAL')
-            except Exception:
-                confidence = 0.5
-                direction = 'NEUTRAL'
-
-            # Speed: higher confidence -> faster scans
-            speed_factor = max(0.5, min(1.5, 1.5 - confidence))
-            scan_interval = max(3.0, min(20.0, base_scan_interval * speed_factor))
-
-            # Profit target: higher confidence -> higher target, bearish -> more conservative
-            target_factor = 0.8 + (confidence * 0.6)
-            if direction == 'BULLISH':
-                target_factor *= 1.1
-            elif direction == 'BEARISH':
-                target_factor *= 0.8
-            target_pct_current = max(0.3, min(3.0, base_target_pct * target_factor))
-
-        # Initial Queen pacing/targets
-        _apply_queen_controls()
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # PHASE 0: LOAD EXISTING POSITIONS
-        # ═══════════════════════════════════════════════════════════════════
-        if console:
-            try:
-                console.print("[bold blue]📊 Loading existing positions...[/]")
-            except Exception:
-                print("📊 Loading existing positions...")
-        else:
-            print("📊 Loading existing positions...")
-        
-        for exchange_name, client in self.clients.items():
-            try:
-                if exchange_name == 'alpaca':
-                    alpaca_positions = client.get_positions()
-                    if alpaca_positions:
-                        for ap in alpaca_positions:
-                            symbol = ap.get('symbol', '').replace('/', '')
-                            qty = float(ap.get('qty', 0))
-                            entry_price = float(ap.get('avg_entry_price', 0))
-                            current_price = float(ap.get('current_price', 0))
-                            unrealized_pnl = float(ap.get('unrealized_pl', 0))
-                            market_value = float(ap.get('market_value', 0))
-                            
-                            if qty > 0 and entry_price > 0:
-                                fee_rate = self.fee_rates.get(exchange_name, 0.0025)
-                                entry_cost = entry_price * qty * (1 + fee_rate)
-                                breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
-                                target_price = breakeven * (1 + target_pct_current / 100)
-                                exit_value = current_price * qty * (1 - fee_rate)
-                                net_pnl = exit_value - entry_cost
-                                
-                                pos = LivePosition(
-                                    symbol=symbol,
-                                    exchange=exchange_name,
-                                    entry_price=entry_price,
-                                    entry_qty=qty,
-                                    entry_cost=entry_cost,
-                                    breakeven_price=breakeven,
-                                    target_price=target_price,
-                                    client=client,
-                                    current_price=current_price,
-                                    current_pnl=net_pnl,
-                                    is_existing=True  # Mark as existing position (not opened by Rising Star)
-                                )
-                                positions.append(pos)
-                                
-                elif exchange_name == 'kraken':
-                    kraken_balances = client.get_balance()
-                    if kraken_balances:
-                        for asset, qty in kraken_balances.items():
-                            if asset in ['USD', 'ZUSD', 'EUR', 'ZEUR', 'DAI', 'USDC', 'USDT', 'TUSD']:
-                                continue
-                            qty = float(qty)
-                            if qty > 0.000001:
-                                symbol = f"{asset}USD"
-                                try:
-                                    ticker = client.get_ticker(symbol)
-                                    current_price = float(ticker.get('bid', ticker.get('price', 0)))
-                                    market_value = qty * current_price
-                                    
-                                    if market_value > 0.0:
-                                        fee_rate = self.fee_rates.get(exchange_name, 0.0026)
-                                        entry_price = current_price
-                                        entry_cost = entry_price * qty * (1 + fee_rate)
-                                        breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
-                                        target_price = breakeven * (1 + target_pct_current / 100)
-                                        
-                                        pos = LivePosition(
-                                            symbol=symbol,
-                                            exchange=exchange_name,
-                                            entry_price=entry_price,
-                                            entry_qty=qty,
-                                            entry_cost=entry_cost,
-                                            breakeven_price=breakeven,
-                                            target_price=target_price,
-                                            client=client,
-                                            current_price=current_price,
-                                            current_pnl=0.0,
-                                            is_existing=True  # Mark as existing position
-                                        )
-                                        positions.append(pos)
-                                except Exception:
-                                    pass
-                elif exchange_name == 'binance':
-                    binance_balances = client.get_balance()
-                    if binance_balances:
-                        for asset, qty in binance_balances.items():
-                            if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR']:
-                                continue
-                            qty = float(qty)
-                            if qty > 0.000001:
-                                symbol_variants = [f"{asset}/USDT", f"{asset}/USDC", f"{asset}/USD", f"{asset}/BUSD"]
-                                for symbol in symbol_variants:
-                                    try:
-                                        ticker = self._get_binance_ticker(client, symbol)
-                                        current_price = float(ticker.get('bid', ticker.get('price', 0)) or 0)
-                                        if current_price <= 0:
-                                            continue
-                                        market_value = qty * current_price
-                                        if market_value > 0.0:
-                                            fee_rate = self.fee_rates.get(exchange_name, 0.001)
-                                            entry_price = current_price
-                                            entry_cost = entry_price * qty * (1 + fee_rate)
-                                            breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
-                                            target_price = breakeven * (1 + target_pct_current / 100)
-                                            pos = LivePosition(
-                                                symbol=symbol,
-                                                exchange=exchange_name,
-                                                entry_price=entry_price,
-                                                entry_qty=qty,
-                                                entry_cost=entry_cost,
-                                                breakeven_price=breakeven,
-                                                target_price=target_price,
-                                                client=client,
-                                                current_price=current_price,
-                                                current_pnl=0.0,
-                                                is_existing=True  # Mark as existing position
-                                            )
-                                            positions.append(pos)
-                                            break
-                                    except Exception:
-                                        continue
-            except Exception:
-                pass
-        
-        if console:
-            try:
-                console.print(f"[green]✅ Loaded {len(positions)} positions[/]")
-            except Exception:
-                print(f"✅ Loaded {len(positions)} positions")
-        else:
-            print(f"✅ Loaded {len(positions)} positions")
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # MAIN LOOP WITH RICH LIVE
-        # ═══════════════════════════════════════════════════════════════════
-        
-        # Only use Rich Live if available, warroom exists, console is valid, AND stdout is open
-        use_rich_live = (RICH_AVAILABLE and 
-                       warroom is not None and 
-                       console is not None and
-                       hasattr(sys.stdout, 'closed') and 
-                       not sys.stdout.closed and
-                       sys.stdout.isatty())
-        
-        # Try to start Rich Live mode
-        live = None
-        logging_handlers_backup = []
-        
-        if use_rich_live:
-            # 🔇 SILENCE LOGGING while Rich is active to prevent scrolling/breaking UI
-            try:
-                root = logging.getLogger()
-                for h in root.handlers[:]:
-                    # Check if handler writes to stdout/stderr
-                    if hasattr(h, 'stream') and (h.stream is sys.stdout or h.stream is sys.stderr):
-                        root.removeHandler(h)
-                        logging_handlers_backup.append(h)
-            except Exception:
-                pass
-
-            try:
-                live = Live(warroom.build_display(), refresh_per_second=2, console=console)
-                live.start()
-                _safe_print("✅ Rich War Room display started")
-            except (ValueError, OSError, IOError) as e:
-                # Rich Live crashed - fall back to text mode
-                _safe_print(f"⚠️ Rich display failed ({e}), switching to text mode...")
-                use_rich_live = False
-                live = None
-                
-                # Restore logging if Rich failed
-                try:
-                    root = logging.getLogger()
-                    for h in logging_handlers_backup:
-                        root.addHandler(h)
-                    logging_handlers_backup = []
-                except: pass
-        
-        # Avalanche timing
-        last_avalanche_time = 0
-        avalanche_interval = 30.0
-        
-        # Truth check timing
-        last_truth_check = 0
-        truth_check_interval = 60.0
-
-        try:
-            while True:
-                current_time = time.time()
-                session_stats['cycles'] += 1
-                
-                # 🏥 Update health status for container probes
-                update_health_status(cycles=session_stats['cycles'], positions=len(positions), status='running')
-                
-                # 💵 UPDATE WARROOM CASH BALANCES EACH CYCLE
-                try:
-                    cash = self.get_available_cash()
-                    if warroom is not None:
-                        warroom.update_cash(
-                            alpaca=cash.get('alpaca', 0),
-                            kraken=cash.get('kraken', 0),
-                            binance=cash.get('binance', 0)
-                        )
-                        warroom.cash_balances['capital'] = cash.get('capital', 0)
-                        warroom.cash_status = self.last_cash_status.copy()
-                except Exception:
-                    pass
-                
-                # ⚡ UPDATE EXECUTOR STATISTICS (Stage 2 Integration)
-                if trade_executor:
-                    try:
-                        exec_stats = trade_executor.get_statistics()
-                        if warroom is not None:
-                            warroom.add_flash_alert(
-                                f"⚡ Executor: {exec_stats['total_requests']} requests, {exec_stats['successful_executions']} ✅, "
-                                f"${exec_stats['total_pnl_usd']:+.2f} P&L ({exec_stats['approval_rate']*100:.0f}%)",
-                                'system'
-                            )
-                    except Exception:
-                        pass
-                
-                # Update dashboard state for Command Center UI
-                self._dump_dashboard_state(session_stats, positions, queen)
-
-                # 🧾 Portfolio truth check - detect mismatches / untracked holdings
-                if current_time - last_truth_check >= truth_check_interval:
-                    last_truth_check = current_time
-                    self.monitor_portfolio_truth()
-
-                # ❄️ AVALANCHE HARVEST
-                if self.avalanche and (current_time - last_avalanche_time >= avalanche_interval):
-                    last_avalanche_time = current_time
-                    try:
-                        h_results = self.avalanche.run_harvest_cycle(dry_run=False)
-                        if h_results['harvested_count'] > 0:
-                            amt = h_results['total_harvested_usd']
-                            cnt = h_results['harvested_count']
-                            session_stats['total_pnl'] += amt
-                            
-                            # Update WarRoom
-                            if warroom:
-                                warroom.total_pnl = session_stats['total_pnl']
-                                warroom.recent_kills.insert(0, {
-                                    'time': datetime.now().strftime('%H:%M:%S'),
-                                    'symbol': f"❄️ HARVEST x{cnt}",
-                                    'side': 'SELL',
-                                    'pnl': amt,
-                                    'pnl_pct': 0.0,
-                                    'exchange': 'MIXED',
-                                    'type': 'win'
-                                })
-                                warroom.recent_kills = warroom.recent_kills[:10]
-                    except Exception:
-                        pass
-
-
-                # 👑 Queen pacing + profit target updates
-
-                if current_time - last_queen_update >= queen_update_interval:
-                    last_queen_update = current_time
-                    _apply_queen_controls()
-                    if warroom is not None:
-                        warroom.add_flash_alert(
-                            f"Queen pacing: scan={scan_interval:.1f}s target={target_pct_current:.2f}%",
-                            'info'
-                        )
-                    else:
-                        print(f"👑 Queen pacing: scan={scan_interval:.1f}s target={target_pct_current:.2f}%")
-                
-                # Update position health and success rate every cycle
-                if warroom is not None:
-                    warroom.update_position_health()
-                    if session_stats['total_trades'] > 0:
-                        success_rate = (session_stats['winning_trades'] / session_stats['total_trades']) * 100
-                        warroom.update_efficiency(success_rate=success_rate)
-                else:
-                    if session_stats['total_trades'] > 0:
-                        success_rate = (session_stats['winning_trades'] / session_stats['total_trades']) * 100
-                        print(f"📊 Success rate: {success_rate:.1f}%")
-                    # 🌊 Harmonic field visualization (console fallback)
-                    self._print_harmonic_field_summary()
-                
-                # ═══════════════════════════════════════════════════════
-                # BATCH PRICE UPDATE
-                # ═══════════════════════════════════════════════════════
-                all_prices = {}
-                try:
-                    alpaca_client = self.clients.get('alpaca')
-                    if alpaca_client:
-                        symbols = [p.symbol for p in positions if p.exchange == 'alpaca']
-                        if symbols:
-                            snapshot = alpaca_client.get_crypto_snapshot(symbols)
-                            if snapshot:
-                                for sym, data in snapshot.items():
-                                    if data and 'latestTrade' in data:
-                                        all_prices[sym] = float(data['latestTrade'].get('p', 0))
-                                    elif data and 'latestQuote' in data:
-                                        all_prices[sym] = float(data['latestQuote'].get('bp', 0))
-                except Exception:
-                    pass
-                
-                try:
-                    kraken_client = self.clients.get('kraken')
-                    if kraken_client:
-                        kraken_symbols = [p.symbol for p in positions if p.exchange == 'kraken']
-                        for sym in kraken_symbols:
-                            try:
-                                ticker = kraken_client.get_ticker(sym)
-                                if ticker:
-                                    all_prices[sym] = ticker.get('bid', ticker.get('price', 0))
-                            except Exception:
-                                pass
-                except Exception:
-                    pass
-                
-                # ═══════════════════════════════════════════════════════
-                # UPDATE POSITIONS & CHECK FOR EXITS
-                # ═══════════════════════════════════════════════════════
-                if warroom is not None:
-                    warroom.positions_data = []  # Clear and rebuild
-                else:
-                    # No warroom display - nothing to clear
-                    pass
-                
-                for pos in positions[:]:
-                    current = all_prices.get(pos.symbol, 0)
-                    if current <= 0:
-                        current = pos.current_price or pos.entry_price or 0
-                    if current <= 0:
-                        continue
-                    
-                    fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
-                    entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
-                    exit_value = current * pos.entry_qty * (1 - fee_rate)
-                    net_pnl = exit_value - entry_cost
-                    market_value = current * pos.entry_qty
-                    
-                    pos.current_price = current
-                    pos.current_pnl = net_pnl
-                    
-                    # Calculate progress
-                    if pos.target_price > pos.entry_price:
-                        progress = (current - pos.entry_price) / (pos.target_price - pos.entry_price) * 100
-                    else:
-                        progress = 0
-                    
-                    # ETA calculation
-                    eta_str = "∞"
-                    if hasattr(pos, 'pnl_history'):
-                        pos.pnl_history.append((time.time(), net_pnl))
-                        if len(pos.pnl_history) > 60:
-                            pos.pnl_history = pos.pnl_history[-60:]
-                        if len(pos.pnl_history) >= 5:
-                            recent = pos.pnl_history[-5:]
-                            time_diff = recent[-1][0] - recent[0][0]
-                            pnl_diff = recent[-1][1] - recent[0][1]
-                            if time_diff > 0 and pnl_diff > 0:
-                                target_pnl = (pos.target_price - pos.entry_price) * pos.entry_qty
-                                remaining = target_pnl - net_pnl
-                                rate = pnl_diff / time_diff
-                                if rate > 0:
-                                    eta_secs = remaining / rate
-                                    if eta_secs < 60:
-                                        eta_str = f"{eta_secs:.0f}s"
-                                    elif eta_secs < 3600:
-                                        eta_str = f"{eta_secs/60:.1f}m"
-                                    else:
-                                        eta_str = f"{eta_secs/3600:.1f}h"
-                    else:
-                        pos.pnl_history = []
-                    
-                    # Get firm info (simplified)
-                    firm_str = "Scanning..."
-                    if self.counter_intel and COUNTER_INTEL_AVAILABLE:
-                        try:
-                            for firm_id in ['citadel', 'jane_street']:
-                                ci_signal = self.counter_intel.analyze_firm_for_counter_opportunity(
-                                    firm_id, {'price': current}, {'confidence': 0.7}
-                                )
-                                if ci_signal:
-                                    firm_str = f"{firm_id[:8]} {ci_signal.confidence:.0%}"
-                                    if warroom is not None:
-                                        warroom.update_firm(firm_id, str(ci_signal.strategy.value)[:10] if hasattr(ci_signal.strategy, 'value') else '?', 'neutral')
-                                    break
-                        except Exception:
-                            pass
-                    
-                    # Update warroom
-                    if warroom is not None:
-                        # 1. Update Positions Table
-                        warroom.update_position(
-                            symbol=pos.symbol,
-                            exchange=pos.exchange.upper(),
-                            value=market_value,
-                            pnl=net_pnl,
-                            progress=progress,
-                            eta=eta_str,
-                            firm=firm_str
-                        )
-                        # 2. Update IRA Sniper Scope (ACTIVE TARGET)
-                        # Calculate distance to kill (net profit needed to reach target)
-                        # Target profit = entry_cost * QUEEN_MIN_COP - entry_cost
-                        # Current net = net_pnl
-                        # Distance = Target profit - net_pnl
-                        min_cop_sacred = QUEEN_MIN_COP # 1.0040 (0.40%)
-                        target_net_profit = entry_cost * (min_cop_sacred - 1.0)
-                        distance_to_kill = max(0.0, target_net_profit - net_pnl)
-                        
-                        sniper_status = "TRACKING"
-                        if distance_to_kill <= 0:
-                            sniper_status = "LOCKED" # Ready to fire
-                        elif progress > 80:
-                            sniper_status = "ACQUIRING"
-
-                        warroom.update_sniper_target({
-                            'symbol': pos.symbol,
-                            'status': sniper_status,
-                            'pnl': net_pnl,
-                            'kill_distance': distance_to_kill,
-                            'exchange': pos.exchange.upper()
-                        })
-                    else:
-                        print(f"POS: {pos.symbol} {pos.exchange.upper()} value=${market_value:.2f} pnl={net_pnl:+.4f} progress={progress} eta={eta_str} firm={firm_str}")
-                    
-                    # Flash alert for deeply underwater positions
-                    pnl_pct = (net_pnl / entry_cost * 100) if entry_cost > 0 else 0
-                    if pnl_pct < -15 and not hasattr(pos, 'alerted_underwater'):
-                        if warroom is not None:
-                            warroom.add_flash_alert(f"{pos.symbol} underwater {pnl_pct:.1f}%", 'critical')
-                        else:
-                            print(f"⚠️ {pos.symbol} underwater {pnl_pct:.1f}%")
-                        pos.alerted_underwater = True
-                    elif pnl_pct >= -5:
-                        pos.alerted_underwater = False  # Reset alert when recovered
-                    
-                    # 👑 QUEEN-GATED EXIT - Only close if profit is MATHEMATICALLY CERTAIN!
-                    # (Replaces old "target hit or 1% profit" rule)
-                    can_exit, exit_info = self.queen_approved_exit(
-                        symbol=pos.symbol,
-                        exchange=pos.exchange,
-                        current_price=current,
-                        entry_price=pos.entry_price,
-                        entry_qty=pos.entry_qty,
-                        entry_cost=entry_cost,
-                        queen=queen,
-                        reason='war_room_target' if current >= pos.target_price else 'war_room_profit'
-                    )
-                    
-                    if can_exit:
-                        try:
-                            sell_order = pos.client.place_market_order(
-                                symbol=pos.symbol,
-                                side='sell',
-                                quantity=pos.entry_qty
-                            )
-                            if sell_order:
-                                # 💎 VALIDATE THE SELL - No phantom gains!
-                                validated_pnl = exit_info.get('net_pnl', net_pnl)
-                                if TRADE_VALIDATOR_AVAILABLE and validate_sell:
-                                    try:
-                                        sell_validation = validate_sell(
-                                            symbol=pos.symbol,
-                                            exchange=pos.exchange,
-                                            order_response=sell_order,
-                                            cost_basis=entry_cost,
-                                            qty=pos.entry_qty
-                                        )
-                                        if sell_validation.is_valid:
-                                            # Use VALIDATED P&L (from actual fill price)
-                                            validated_pnl = sell_validation.net_pnl or validated_pnl
-                                            print(f"   💎 VALIDATED: Order {sell_validation.order_id} | Net: ${validated_pnl:+.4f}")
-                                        else:
-                                            print(f"   ⚠️ SELL NOT VALIDATED: {', '.join(sell_validation.errors)}")
-                                    except Exception as val_err:
-                                        print(f"   ⚠️ Validation error: {val_err}")
-                                
-                                queen_pnl = validated_pnl
-                                session_stats['total_pnl'] += queen_pnl
-                                session_stats['total_trades'] += 1
-                                if queen_pnl >= 0:
-                                    session_stats['winning_trades'] += 1
-                                    session_stats['best_trade'] = max(session_stats['best_trade'], queen_pnl)
-                                else:
-                                    session_stats['losing_trades'] += 1
-                                    session_stats['worst_trade'] = min(session_stats['worst_trade'], queen_pnl)
-                                
-                                # Record kill with full details
-                                hold_time = time.time() - pos.entry_time if hasattr(pos, 'entry_time') else 0
-                                if warroom is not None:
-                                    warroom.record_kill(queen_pnl, symbol=pos.symbol, exchange=pos.exchange, hold_time=hold_time)
-                                    warroom.remove_position(pos.symbol)
-                                else:
-                                    print(f"👑🏆 QUEEN APPROVED KILL: {pos.symbol} +${queen_pnl:+.4f}")
-                                positions.remove(pos)
-                                last_scan_time = 0  # Force scan
-                        except Exception:
-                            pass
-                    
-                    # ═══════════════════════════════════════════════════════
-                    # 🌟 ACCUMULATION CHECK - BUY MORE IF PRICE DROPS
-                    # ═══════════════════════════════════════════════════════
-                    elif RISING_STAR_AVAILABLE and pos.accumulation_count < 3:
-                        # Check if price dropped enough for accumulation
-                        avg_entry = pos.avg_entry_price if pos.avg_entry_price > 0 else pos.entry_price
-                        price_drop_pct = (avg_entry - current) / avg_entry * 100 if avg_entry > 0 else 0
-                        
-                        # Accumulate if price dropped 5%+ from avg entry
-                        if price_drop_pct >= 5.0:
-                            try:
-                                cash = self.get_available_cash()
-                                exchange_cash = cash.get(pos.exchange, 0)
-                                accumulate_amount = min(amount_per_position * 0.5, exchange_cash * 0.5)
-                                
-                                # 🔍 SMART-SIZE: Enforce minimums for accumulation
-                                min_required_acc = 1.0
-                                if pos.exchange == 'binance': min_required_acc = 5.5
-                                elif pos.exchange == 'kraken': min_required_acc = 2.0
-                                
-                                if accumulate_amount < min_required_acc:
-                                    accumulate_amount = min_required_acc
-                                
-                                if accumulate_amount <= exchange_cash:
-                                    acc_order = pos.client.place_market_order(
-                                        symbol=pos.symbol,
-                                        side='buy',
-                                        quote_qty=accumulate_amount
-                                    )
-                                    if acc_order:
-                                        acc_qty = float(acc_order.get('filled_qty', 0))
-                                        acc_price = float(acc_order.get('filled_avg_price', current))
-                                        
-                                        if acc_qty > 0:
-                                            # Update position with accumulation
-                                            fee_rate = self.fee_rates.get(pos.exchange, 0.0025)
-                                            acc_cost = acc_price * acc_qty * (1 + fee_rate)
-                                            
-                                            # New total qty and cost
-                                            new_total_qty = pos.entry_qty + acc_qty
-                                            new_total_cost = (pos.total_cost if pos.total_cost > 0 else pos.entry_cost) + acc_cost
-                                            new_avg_entry = new_total_cost / new_total_qty / (1 + fee_rate) if new_total_qty > 0 else pos.entry_price
-                                            
-                                            # Update position
-                                            pos.entry_qty = new_total_qty
-                                            pos.total_cost = new_total_cost
-                                            pos.avg_entry_price = new_avg_entry
-                                            pos.accumulation_count += 1
-                                            
-                                            # Recalculate breakeven and target
-                                            pos.breakeven_price = new_avg_entry * (1 + fee_rate) / (1 - fee_rate)
-                                            pos.target_price = pos.breakeven_price * (1 + target_pct_current / 100)
-                                            
-                                            # Track stats
-                                            rising_star_stats['accumulations_made'] += 1
-                                            rising_star_stats['total_accumulated_value'] += accumulate_amount
-                            except Exception:
-                                pass
-                
-                # ═══════════════════════════════════════════════════════
-                # 🌟 RISING STAR 4-STAGE SCAN FOR NEW OPPORTUNITIES
-                # ═══════════════════════════════════════════════════════
-                # Calculate how many NEW positions we can open (existing positions don't count against limit)
-                existing_position_count = len([p for p in positions if hasattr(p, 'is_existing') and p.is_existing])
-                new_position_count = len(positions) - existing_position_count
-                can_open_more = new_position_count < max_positions
-                
-                if current_time - last_scan_time >= scan_interval and can_open_more:
-                    last_scan_time = current_time
-                    
-                    cash = self.get_available_cash()
-                    total_cash = sum(cash.values())
-                    
-                    print(f"⭐ RISING STAR CHECK: Cash=${total_cash:.2f}, Need=${amount_per_position * 0.5:.2f}, RISING_STAR_AVAILABLE={RISING_STAR_AVAILABLE}")
-                    
-                    if total_cash >= amount_per_position * 0.5:
-                        active_symbols = [p.symbol for p in positions]
-                        
-                        if RISING_STAR_AVAILABLE:
-                            print(f"⭐ RISING STAR SCANNING... (existing={existing_position_count}, new={new_position_count}, max={max_positions})")
-                            # ═══════════════════════════════════════════════
-                            # STAGE 1: SCAN - Use ALL intelligence systems
-                            # ═══════════════════════════════════════════════
-                            candidates = self.rising_star_scanner.scan_entire_market(max_candidates=20)
-                            rising_star_stats['candidates_scanned'] += len(candidates)
-                            print(f"⭐ STAGE 1 COMPLETE: Found {len(candidates)} candidates")
-                            
-                            # Filter out symbols we already have
-                            candidates = [c for c in candidates if c.symbol.replace('/', '') not in active_symbols]
-                            print(f"⭐ After filtering existing: {len(candidates)} candidates remain")
-                            
-                            if candidates:
-                                # ═══════════════════════════════════════════════
-                                # STAGE 2 & 3: SIMULATE + SELECT - Top 4 → Best 2
-                                # ═══════════════════════════════════════════════
-                                # Run 30-second simulation (Monte Carlo)
-                                best_2 = self.rising_star_scanner.select_best_two(candidates)
-                                rising_star_stats['simulations_run'] += min(4, len(candidates)) * 1000
-                                rising_star_stats['winners_selected'] += len(best_2)
-                                print(f"⭐ STAGE 2-3 COMPLETE: Selected {len(best_2)} winners for execution")
-
-                                try:
-                                    self.last_rising_star_candidates = [
-                                        {
-                                            "symbol": c.symbol,
-                                            "exchange": c.exchange,
-                                            "score": getattr(c, 'score', 0.0),
-                                            "change_pct": getattr(c, 'change_24h_pct', 0.0) or getattr(c, 'change_pct', 0.0),
-                                            "momentum": getattr(c, 'momentum_strength', 0.0) or getattr(c, 'momentum_score', 0.0)
-                                        }
-                                        for c in candidates[:8]
-                                    ]
-                                    self.last_rising_star_winners = [
-                                        {
-                                            "symbol": w.symbol,
-                                            "exchange": w.exchange,
-                                            "score": getattr(w, 'score', 0.0),
-                                            "change_pct": getattr(w, 'change_24h_pct', 0.0) or getattr(w, 'change_pct', 0.0),
-                                            "momentum": getattr(w, 'momentum_strength', 0.0) or getattr(w, 'momentum_score', 0.0)
-                                        }
-                                        for w in best_2
-                                    ]
-                                except Exception:
-                                    pass
-                                
-                                # ═══════════════════════════════════════════════
-                                # STAGE 4: EXECUTE - Open positions on winners
-                                # ═══════════════════════════════════════════════
-                                decisions = []
-                                for winner in best_2:
-                                    print(f"⭐ STAGE 4: Evaluating {winner.symbol} on {winner.exchange}")
-                                    # Check NEW position count only (existing positions don't count against limit)
-                                    current_new_count = len([p for p in positions if not (hasattr(p, 'is_existing') and p.is_existing)])
-                                    if current_new_count >= max_positions:
-                                        print(f"⭐ STAGE 4: Reached max NEW positions ({current_new_count}/{max_positions}), stopping")
-                                        break
-
-                                    # 👑 Queen approval required
-                                    queen_approved = False
-                                    if queen is None:
-                                        queen_approved = True  # Fallback without Queen
-                                        print(f"⭐ STAGE 4: Queen unavailable - auto-approving {winner.symbol}")
-                                    else:
-                                        try:
-                                            # Get change_pct from the correct attribute name
-                                            change_pct = getattr(winner, 'change_24h_pct', 0.0) or getattr(winner, 'change_pct', 0.0)
-                                            momentum = getattr(winner, 'momentum_strength', 0.0) or getattr(winner, 'momentum_score', 0.0)
-                                            
-                                            signal = queen.get_collective_signal(
-                                                symbol=winner.symbol,
-                                                market_data={
-                                                    'price': getattr(winner, 'price', 0.0),
-                                                    'change_pct': change_pct,
-                                                    'momentum': momentum,
-                                                    'exchange': winner.exchange,
-                                                    'score': winner.score  # Include Rising Star score
-                                                }
-                                            )
-                                            confidence = float(signal.get('confidence', 0.0))
-                                            action = signal.get('action', 'HOLD')
-                                            print(f"⭐ STAGE 4: Queen signal for {winner.symbol}: {action} {confidence:.0%} (change={change_pct:.1f}%, mom={momentum:.2f})")
-
-                                            decisions.append({
-                                                "symbol": winner.symbol,
-                                                "exchange": winner.exchange,
-                                                "action": action,
-                                                "confidence": confidence,
-                                                "change_pct": change_pct,
-                                                "momentum": momentum
-                                            })
-                                            
-                                            # Lower threshold: Accept BUY with any confidence, or HOLD with Rising Star score > 0.5
-                                            queen_approved = (
-                                                (action == 'BUY') or 
-                                                (action == 'HOLD' and winner.score > 0.5) or
-                                                (confidence > 0.0)  # Any positive confidence
-                                            )
-                                            if not queen_approved:
-                                                # Force approve high-scoring Rising Star candidates
-                                                if winner.score > 0.4:
-                                                    queen_approved = True
-                                                    print(f"⭐ STAGE 4: Force approving {winner.symbol} (score={winner.score:.2f})")
-                                        except Exception as e:
-                                            print(f"⭐ STAGE 4: Queen exception for {winner.symbol}: {e}")
-                                            queen_approved = True  # Approve on exception
-
-                                    if not queen_approved:
-                                        print(f"⭐ STAGE 4: Queen REJECTED {winner.symbol}")
-                                        continue
-                                    
-                                    print(f"⭐ STAGE 4: Queen APPROVED {winner.symbol} - executing buy...")
-                                    
-                                    # ⚡ ROUTE THROUGH UNIFIED TRADE EXECUTOR (Stage 2 Integration)
-                                    if trade_executor:
-                                        try:
-                                            symbol_clean = winner.symbol.replace('/', '')
-                                            exchange_cash = cash.get(winner.exchange, 0)
-                                            buy_amount = min(amount_per_position, exchange_cash * 0.9)
-                                            
-                                            # Create execution request for the executor
-                                            exec_req = ExecutionRequest(
-                                                symbol=symbol_clean,
-                                                side='BUY',
-                                                quantity=buy_amount / max(winner.price, 1),  # Qty = amount / price
-                                                entry_price=winner.price,
-                                                position_size_usd=buy_amount,
-                                                confidence=winner.score,
-                                                coherence=0.618,  # Rising Star has validated coherence
-                                                lambda_score=0.75,
-                                                source='ORCA_RISING_STAR'
-                                            )
-                                            
-                                            # Execute through unified executor
-                                            exec_result = trade_executor.execute_trade(exec_req)
-                                            
-                                            if exec_result.success:
-                                                print(f"⚡ EXECUTOR: ✅ {symbol_clean} {exec_result.side} {exec_result.executed_quantity:.8f} @ ${exec_result.executed_price:.4f}")
-                                                
-                                                # Create position from execution result
-                                                client = self.clients.get(exec_result.exchange)
-                                                fee_rate = self.fee_rates.get(exec_result.exchange, 0.0025)
-                                                entry_cost = exec_result.executed_price * exec_result.executed_quantity * (1 + fee_rate)
-                                                breakeven = exec_result.executed_price * (1 + fee_rate) / (1 - fee_rate)
-                                                target_price = breakeven * (1 + target_pct_current / 100)
-                                                
-                                                pos = LivePosition(
-                                                    symbol=symbol_clean,
-                                                    exchange=exec_result.exchange,
-                                                    entry_price=exec_result.executed_price,
-                                                    entry_qty=exec_result.executed_quantity,
-                                                    entry_cost=entry_cost,
-                                                    breakeven_price=breakeven,
-                                                    target_price=target_price,
-                                                    client=client,
-                                                    stop_price=0.0,
-                                                    accumulation_count=0,
-                                                    total_cost=entry_cost,
-                                                    avg_entry_price=exec_result.executed_price,
-                                                    rising_star_candidate=winner
-                                                )
-                                                positions.append(pos)
-                                                session_stats['total_trades'] += 1
-                                                if warroom:
-                                                    warroom.recent_kills.insert(0, {
-                                                        'time': datetime.now().strftime('%H:%M:%S'),
-                                                        'symbol': symbol_clean,
-                                                        'side': 'BUY',
-                                                        'pnl': 0.0,
-                                                        'pnl_pct': 0.0,
-                                                        'exchange': exec_result.exchange.upper(),
-                                                        'type': 'entry'
-                                                    })
-                                                print(f"⚡ EXECUTOR: ✅ POSITION CREATED via Unified Trade Executor")
-                                            else:
-                                                print(f"⚡ EXECUTOR: ❌ {symbol_clean} - {exec_result.error}")
-                                        except Exception as exec_err:
-                                            print(f"⚡ EXECUTOR: ERROR - {exec_err}")
-                                            # Fallback to standard execution
-                                            pass
-                                    else:
-                                        # ⏮️ FALLBACK: Standard direct execution (if executor not available)
-                                        try:
-                                            client = self.clients.get(winner.exchange)
-                                            print(f"⭐ STAGE 4: Client for {winner.exchange}: {type(client).__name__ if client else 'None'}")
-                                            if client:
-                                                symbol_clean = winner.symbol.replace('/', '')
-                                                exchange_cash = cash.get(winner.exchange, 0)
-                                                buy_amount = min(amount_per_position, exchange_cash * 0.9)
-                                                
-                                                # 🔍 SMART-SIZE LOGIC: Respect Exchange Minimums (Refactored)
-                                                # -----------------------------------------------
-                                                try:
-                                                    adjusted_amount, adj_reason = self._enforce_min_trade_size(winner.exchange, symbol_clean, buy_amount, client)
-                                                    
-                                                    if adjusted_amount > buy_amount:
-                                                        # Check if we can afford the bump
-                                                        if exchange_cash >= adjusted_amount:
-                                                            print(f"⭐ STAGE 4: 🔼 {adj_reason} (was ${buy_amount:.2f})")
-                                                            buy_amount = adjusted_amount
-                                                        else:
-                                                            print(f"⭐ STAGE 4: ⚠️ SKIPPING - Cash ${exchange_cash:.2f} < Min ${adjusted_amount:.2f} ({adj_reason})")
-                                                            continue
-                                                except Exception as adj_err:
-                                                    print(f"⭐ STAGE 4: Adjustment error: {adj_err}")
-
-                                                print(f"⭐ STAGE 4: Final Buy Amount ${buy_amount:.2f} for {symbol_clean} on {winner.exchange} (cash={exchange_cash:.2f})")
-
-                                                if winner.exchange == 'binance' and hasattr(client, 'can_trade_symbol'):
-                                                    can_trade, reason = client.can_trade_symbol(symbol_clean)
-                                                    if not can_trade:
-                                                        print(f"⭐ STAGE 4: ⚠️ SKIPPING - {reason}")
-                                                        continue
-                                                
-                                                if buy_amount > 0:
-                                                    print(f"⭐ STAGE 4: CALLING place_market_order({symbol_clean}, buy, quote_qty={buy_amount:.2f})")
-                                                    buy_order = client.place_market_order(
-                                                        symbol=symbol_clean,
-                                                        side='buy',
-                                                        quote_qty=buy_amount
-                                                    )
-                                                    print(f"⭐ STAGE 4: ORDER RESULT: {buy_order}")
-                                                    if buy_order and not buy_order.get('rejected') and not buy_order.get('error'):
-                                                        # Handle different exchange response formats
-                                                        buy_qty = float(buy_order.get('filled_qty', 0) or buy_order.get('executedQty', 0) or buy_order.get('receivedQty', 0))
-                                                        buy_price = float(buy_order.get('filled_avg_price', 0) or buy_order.get('price', winner.price))
-                                                        print(f"⭐ STAGE 4: FILLED: qty={buy_qty}, price={buy_price}")
-                                                        
-                                                        if buy_qty > 0 and buy_price > 0:
-                                                            fee_rate = self.fee_rates.get(winner.exchange, 0.0025)
-                                                            entry_cost = buy_price * buy_qty * (1 + fee_rate)
-                                                            breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
-                                                            target_price = breakeven * (1 + target_pct_current / 100)
-                                                            
-                                                            pos = LivePosition(
-                                                                symbol=symbol_clean,
-                                                                exchange=winner.exchange,
-                                                                entry_price=buy_price,
-                                                                entry_qty=buy_qty,
-                                                                entry_cost=entry_cost,
-                                                                breakeven_price=breakeven,
-                                                                target_price=target_price,
-                                                                client=client,
-                                                                stop_price=0.0,
-                                                                # Rising Star tracking
-                                                                accumulation_count=0,
-                                                                total_cost=entry_cost,
-                                                                avg_entry_price=buy_price,
-                                                                rising_star_candidate=winner
-                                                            )
-                                                            positions.append(pos)
-                                                            session_stats['total_trades'] += 1
-                                                            print(f"⭐ STAGE 4: ✅ POSITION CREATED for {symbol_clean} @ {buy_price}")
-                                                        else:
-                                                            print(f"⭐ STAGE 4: ⚠️ NO FILL: qty={buy_qty}, price={buy_price}")
-                                                    else:
-                                                        print(f"⭐ STAGE 4: ⚠️ ORDER RETURNED NONE")
-                                                else:
-                                                    print(f"⭐ STAGE 4: ⚠️ SKIPPING - buy_amount ${buy_amount:.2f} < $0.50 minimum")
-                                            else:
-                                                print(f"⭐ STAGE 4: ⚠️ NO CLIENT for {winner.exchange}")
-                                        except Exception as e:
-                                            print(f"⭐ STAGE 4: ❌ ERROR executing buy: {e}")
-                                            import traceback
-                                            traceback.print_exc()
-                                try:
-                                    self.last_queen_decisions = decisions
-                                except Exception:
-                                    pass
-                        else:
-                            # Fallback: original scanning without Rising Star
-                            opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
-                            if opportunities:
-                                new_opps = [o for o in opportunities if o.symbol not in active_symbols]
-                                
-                                if new_opps:
-                                    best = new_opps[0]
-                                    try:
-                                        client = self.clients.get(best.exchange)
-                                        if client:
-                                            # 👑 Queen approval required
-                                            queen_approved = False
-                                            if queen is None:
-                                                queen_approved = True  # Fallback without Queen
-                                                if warroom is not None:
-                                                    warroom.add_flash_alert("Queen unavailable - proceeding with default approval", 'warning')
-                                                else:
-                                                    print("👑 Queen unavailable - proceeding with default approval")
-                                            else:
-                                                try:
-                                                    signal = queen.get_collective_signal(
-                                                        symbol=best.symbol,
-                                                        market_data={
-                                                            'price': best.price,
-                                                            'change_pct': best.change_pct,
-                                                            'momentum': best.momentum_score,
-                                                            'exchange': best.exchange
-                                                        }
-                                                    )
-                                                    confidence = float(signal.get('confidence', 0.0))
-                                                    action = signal.get('action', 'HOLD')
-                                                    warroom.add_flash_alert(
-                                                        f"Queen signal {action} {confidence:.0%} for {best.symbol}",
-                                                        'info'
-                                                    )
-                                                    queen_approved = (action == 'BUY' and confidence >= 0.3)  # Lowered from 0.5
-                                                except Exception:
-                                                    queen_approved = False
-
-                                            if not queen_approved:
-                                                continue
-
-                                            symbol_clean = best.symbol.replace('/', '')
-                                            exchange_cash = cash.get(best.exchange, 0)
-                                            buy_amount = min(amount_per_position, exchange_cash * 0.9)
-                                            
-                                            try:
-                                                adjusted_amount, adj_reason = self._enforce_min_trade_size(best.exchange, symbol_clean, buy_amount, client)
-                                                if exchange_cash < adjusted_amount:
-                                                    if warroom: warroom.add_flash_alert(f"Skipped {best.symbol}: Cash < Min {adjusted_amount}", 'warning')
-                                                    continue
-                                                buy_amount = adjusted_amount
-                                            except Exception: pass
-
-                                            if buy_amount > 0:
-                                                raw_order = client.place_market_order(
-                                                    symbol=symbol_clean,
-                                                    side='buy',
-                                                    quote_qty=buy_amount
-                                                )
-                                                # 🔄 NORMALIZE ORDER RESPONSE across exchanges!
-                                                buy_order = self.normalize_order_response(raw_order, best.exchange)
-                                                
-                                                if buy_order and buy_order.get('status') != 'rejected':
-                                                    buy_qty = buy_order.get('filled_qty', 0)
-                                                    buy_price = buy_order.get('filled_avg_price', best.price)
-                                                    
-                                                    if buy_qty > 0 and buy_price > 0:
-                                                        fee_rate = self.fee_rates.get(best.exchange, 0.0025)
-                                                        breakeven = buy_price * (1 + fee_rate) / (1 - fee_rate)
-                                                        target_price = breakeven * (1 + target_pct_current / 100)
-                                                        
-                                                        pos = LivePosition(
-                                                            symbol=symbol_clean,
-                                                            exchange=best.exchange,
-                                                            entry_price=buy_price,
-                                                            entry_qty=buy_qty,
-                                                            entry_cost=buy_price * buy_qty * (1 + fee_rate),
-                                                            breakeven_price=breakeven,
-                                                            target_price=target_price,
-                                                            client=client,
-                                                            stop_price=0.0
-                                                        )
-                                                        positions.append(pos)
-                                                        session_stats['total_trades'] += 1
-                                    except Exception:
-                                        pass
-                
-                # ═══════════════════════════════════════════════════════
-                # UPDATE QUANTUM SCORES FROM ALL SYSTEMS
-                # ═══════════════════════════════════════════════════════
-                # Initialize ALL quantum scores with defaults BEFORE any try blocks
-                # This ensures we always have values to display even if systems fail
-                luck_score = 0.5
-                phantom_score = 0.5
-                inception_score = 0.5
-                elephant_score = 0.5
-                russian_doll_score = 0.5
-                immune_score = 0.5
-                moby_score = 0.3
-                stargate_score = 0.5
-                mirror_score = 0.5
-                hnc_score = 0.3
-                historical_score = 0.5
-                war_band_score = 0.5
-                quantum = {}
-                intel = {}
-                
-                try:
-                    # Get REAL market data for quantum scoring (NO PHANTOMS)
-                    target_symbol = "BTC/USD"
-                    if positions: target_symbol = positions[0].symbol
-                    
-                    mkt = self._get_real_market_data(target_symbol, all_prices)
-                    btc_price = mkt['price']
-                    # Tune volatility sensitivity for Luck Mapper (0.1% change should register)
-                    # We want 0-1 range. 1% move is huge for 1h. 
-                    # So let's say 1% change => 1.0 volatility.
-                    real_volatility = min(1.0, abs(mkt['change_pct']) * 1.5)
-
-                    
-                    # Gather full intelligence from all wired systems
-                    intel = self.gather_all_intelligence(all_prices)
-                    
-                    # Get quantum score with REAL parameters
-                    quantum = self.get_quantum_score(
-                        target_symbol, 
-                        mkt['price'], 
-                        mkt['change_pct'], 
-                        mkt['volume'], 
-                        mkt['momentum']
-                    )
-                    
-                    # ═══════════════════════════════════════════════════════════════════
-                    # 🔗 UNITY FIX: Get REAL scores from all wired systems
-                    # ═══════════════════════════════════════════════════════════════════
-                    
-                    # Luck Field - from quantum result or direct query
-                    luck_score = quantum.get('luck_field', 0)
-                    if luck_score == 0 and self.luck_mapper:
-                        try:
-                            reading = self.luck_mapper.read_field(
-                                price=mkt['price'], 
-                                volatility=real_volatility,
-                                market_frequency=mkt['volume'] / 1000000
-                            )
-                            luck_score = reading.luck_field if reading else 0.5
-                        except: luck_score = 0.5
-                    
-                    # Phantom Filter - check if phantom is cleared
-                    phantom_score = 0.5
-                    if self.phantom_filter:
-                        try:
-                            phantom_score = 1.0 if self.phantom_filter.is_cleared() else 0.3
-                        except: phantom_score = 0.5
-                    
-                    # Inception/Limbo - from quantum result
-                    inception_score = quantum.get('limbo_probability', 0.5)
-                    
-                    # Elephant Learning - direct query
-                    elephant_score = quantum.get('elephant_score', 0)
-                    if elephant_score == 0 and self.elephant:
-                        try:
-                            raw_score = self.elephant.get_asset_score("BTC/USD")
-                            elephant_score = raw_score / 100.0  # Normalize 0-100 to 0-1
-                        except: elephant_score = 0.5
-                    elif elephant_score > 1.0:
-                         elephant_score = elephant_score / 100.0 # Fix if from quantum dict
-
-                    
-                    # Russian Doll - queen confidence
-                    russian_doll_score = quantum.get('queen_confidence', 0)
-                    if russian_doll_score == 0 and self.russian_doll:
-                        try:
-                            directives = self.russian_doll.get_queen_directives()
-                            russian_doll_score = directives.get('confidence', 0.5)
-                        except: russian_doll_score = 0.5
-                    
-                    # Immune System - health check
-                    immune_score = 0.5
-                    if self.immune_system:
-                        try:
-                            health = self.immune_system.get_health_status()
-                            immune_score = 1.0 if health.get('overall') == 'healthy' else 0.5
-                        except: immune_score = 0.5
-                    
-                    # Moby Dick - whale confidence
-                    moby_score = 0
-                    if self.moby_dick:
-                        try:
-                            preds = self.moby_dick.get_execution_ready_predictions()
-                            moby_score = 0.8 if preds else 0.3
-                        except: moby_score = 0.3
-                    
-                    # Stargate - network coherence
-                    stargate_score = quantum.get('stargate_coherence', 0)
-                    if stargate_score == 0 and self.stargate:
-                        try:
-                            status = self.stargate.get_status()
-                            stargate_score = status.get('network_coherence', 0.5)
-                        except: stargate_score = 0.5
-                    
-                    # Quantum Mirror - boost value
-                    mirror_score = quantum.get('mirror_boost', 0)
-                    if mirror_score == 0 and self.quantum_mirror:
-                        try:
-                            boost, _ = self.quantum_mirror.get_quantum_boost('USD', 'BTC', 'mixed')
-                            mirror_score = min(1.0, boost) if boost else 0.5
-                        except: mirror_score = 0.5
-                    
-                    # HNC Surge - from quantum result or detector
-                    hnc_score = quantum.get('hnc_surge_intensity', 0)
-                    if hnc_score == 0 and self.hnc_surge_detector:
-                        try:
-                            surge = self.hnc_surge_detector.detect_surge("BTC/USD")
-                            hnc_score = surge.intensity if surge else 0.3
-                        except: hnc_score = 0.3
-                    
-                    # Historical Hunter - pattern confidence
-                    historical_score = quantum.get('historical_confidence', 0)
-                    if historical_score == 0 and self.historical_hunter:
-                        try:
-                            historical_score = 0.6  # Active = baseline confidence
-                        except: historical_score = 0.5
-                    
-                    # Apache War Band - calculate unified score
-                    if war_band:
-                        try:
-                            war_band_score = war_band.calculate_unified()
-                        except: war_band_score = 0.5
-                    
-                    # (Quantum update moved OUTSIDE try block for reliability)
-                    
-                    # Update firm activity from intelligence
-                    for whale in intel.get('whale_predictions', []):
-                        firm_name = whale.get('firm', whale.get('symbol', 'Unknown'))
-                        if warroom is not None:
-                            warroom.update_firm(
-                                firm_name[:12],
-                                whale.get('action', 'watching'),
-                                whale.get('direction', 'neutral')
-                            )
-                        else:
-                            print(f"FIRM: {firm_name[:12]} action={whale.get('action','watching')} dir={whale.get('direction','neutral')}")
-                    
-                    # Add bot detections to firms display
-                    for bot in intel.get('bots', [])[:3]:
-                        if warroom is not None:
-                            warroom.update_firm(
-                                bot.get('firm', 'Bot')[:12],
-                                bot.get('type', 'algo'),
-                                bot.get('direction', 'neutral')
-                            )
-                        else:
-                            print(f"BOT: {bot.get('firm','Bot')[:12]} type={bot.get('type','algo')} dir={bot.get('direction','neutral')}")
-                    
-                    # 🌟 Update Rising Star stats in display
-                    if RISING_STAR_AVAILABLE:
-                        if warroom is not None:
-                            warroom.update_rising_star(rising_star_stats)
-                        else:
-                            print(f"RisingStar: {rising_star_stats}")
-                    
-                    # 🦅 Update Momentum stats
-                    mom_res = getattr(self, 'last_momentum_result', {})
-                    micro_res = getattr(self, 'last_micro_result', [])
-                    
-                    wolf_stat = 'Initializing...'
-                    lion_stat = 'Initializing...'
-                    ant_stat = 'Initializing...'
-                    hb_stat = 'Initializing...'
-                    
-                    if self.momentum_ecosystem:
-                        # Use last result or default to Stalking if empty cache but system exists
-                        if not mom_res:
-                            wolf_stat = "Stalking"
-                            lion_stat = "Napping" 
-                            ant_stat = "Marching"
-                            hb_stat = "Hovering"
-                        else:
-                            w_count = len(mom_res.get('wolf', []))
-                            l_count = len(mom_res.get('lion', []))
-                            a_count = len(mom_res.get('ants', []))
-                            hb_data = mom_res.get('hummingbird', [])
-                            hb_count = len(hb_data) if isinstance(hb_data, list) else 0
-
-                            wolf_stat = f"Hunting ({w_count} targets)" if w_count > 0 else "Stalking"
-                            lion_stat = f"Hunting ({l_count} prey)" if l_count > 0 else "Stalking"
-                            ant_stat = f"Swarming ({a_count} paths)" if a_count > 0 else "Foraging"
-                            hb_stat = f"Pollinating ({hb_count} flowers)" if hb_count > 0 else "Hovering"
-                    
-                    if warroom is not None:
-                        warroom.update_momentum(
-                            wolf_status=wolf_stat,
-                            lion_status=lion_stat,
-                            ants_status=ant_stat,
-                            hummingbird_status=hb_stat,
-                            micro_targets=len(micro_res) if micro_res else 0
-                        )
-                    else:
-                        print(f"Momentum: wolf={wolf_stat}, lion={lion_stat}, ants={ant_stat}, hb={hb_stat}, micro={len(micro_res) if micro_res else 0}")
-                    
-                    # 🌌 Stargate Grid Update
-                    if self.stargate_grid:
-                        try:
-                            active_node = self.stargate_grid.get_active_node()
-                            grid_coherence = self.stargate_grid.calculate_grid_coherence()
-                            warroom.update_stargate(
-                                active_node=f"{active_node.name} ({active_node.element})",
-                                coherence=grid_coherence,
-                                description=getattr(active_node, 'description', '')
-                            )
-                        except Exception:
-                            pass
-                    
-                    # 🎯 OPTIONS SCANNING - Every 5 minutes check for income opportunities
-                    if self.options_scanner and self.options_trading_level:
-                        try:
-                            # Only scan every 5 minutes (options don't change rapidly)
-                            if not hasattr(self, '_last_options_scan') or time.time() - self._last_options_scan > 300:
-                                self._last_options_scan = time.time()
-                                
-                                # Get options buying power
-                                buying_power = self.options_client.get_options_buying_power()
-                                
-                                # Get options positions
-                                opt_positions = self.options_client.get_positions()
-                                
-                                # Find best opportunity (if we have stocks to write calls against)
-                                best_opp = None
-                                try:
-                                    # Check if we have any stock positions we could write calls against
-                                    stock_positions = self.clients.get('alpaca', {})
-                                    if stock_positions and hasattr(stock_positions, 'get_positions'):
-                                        for sp in stock_positions.get_positions() or []:
-                                            symbol = sp.get('symbol', '')
-                                            qty = float(sp.get('qty', 0))
-                                            current_price = float(sp.get('current_price', 0))
-                                            
-                                            # Need at least 100 shares for covered call
-                                            if qty >= 100 and current_price > 0:
-                                                opps = self.options_scanner.scan_covered_calls(
-                                                    underlying=symbol,
-                                                    current_price=current_price,
-                                                    shares_owned=int(qty)
-                                                )
-                                                if opps and (not best_opp or opps[0].total_score > best_opp.get('score', 0)):
-                                                    best_opp = {
-                                                        'symbol': opps[0].contract.symbol,
-                                                        'underlying': symbol,
-                                                        'strategy': 'covered_call',
-                                                        'premium': opps[0].quote.mid_price,
-                                                        'annualized_return': opps[0].annualized_return * 100,
-                                                        'score': opps[0].total_score,
-                                                    }
-                                except Exception:
-                                    pass
-                                
-                                # Update warroom display
-                                warroom.update_options(
-                                    trading_level=self.options_trading_level.name if self.options_trading_level else 'N/A',
-                                    buying_power=buying_power,
-                                    positions=opt_positions,
-                                    best_opportunity=best_opp
-                                )
-                        except Exception:
-                            pass
-                    
-                    # 🦈🔍 PREDATOR DETECTION UPDATE - Who's hunting us?
-                    if self.predator_detector:
-                        try:
-                            report = self.predator_detector.generate_hunting_report()
-                            top_predator = None
-                            if report.top_predators:
-                                top_predator = report.top_predators[0].firm_id
-                            warroom.update_predator(
-                                threat_level=report.threat_level,
-                                front_run_rate=report.front_run_rate,
-                                top_predator=top_predator,
-                                strategy_decay=report.strategy_decay_alert
-                            )
-                            
-                            # 🥷 AUTO-ESCALATE STEALTH MODE based on threat level
-                            if report.threat_level == "red" and self.stealth_mode != "paranoid":
-                                self.set_stealth_mode("paranoid")
-                                if warroom is not None:
-                                    warroom.add_flash_alert("ESCALATED TO PARANOID MODE", 'critical')
-                                else:
-                                    print("🥷 AUTO-ESCALATED to PARANOID mode (threat level RED)")
-                            elif report.threat_level == "orange" and self.stealth_mode == "normal":
-                                self.set_stealth_mode("aggressive")
-                                if warroom is not None:
-                                    warroom.add_flash_alert("ESCALATED TO AGGRESSIVE MODE", 'warning')
-                                else:
-                                    print("🥷 AUTO-ESCALATED to AGGRESSIVE mode (threat level ORANGE)")
-                        except Exception:
-                            pass
-                    
-                    # 🥷 STEALTH STATS UPDATE
-                    if self.stealth_executor:
-                        try:
-                            stealth_stats = self.stealth_executor.get_stats()
-                            warroom.update_stealth(
-                                mode=self.stealth_mode,
-                                delayed_orders=stealth_stats.get('delayed_orders', 0),
-                                split_orders=stealth_stats.get('split_orders', 0),
-                                rotated_symbols=stealth_stats.get('rotated_symbols', 0),
-                                hunted_count=len(stealth_stats.get('hunted_symbols', []))
-                            )
-                        except Exception:
-                            pass
-                        
-                except Exception as e:
-                    pass  # Quantum gathering failed, but we still have defaults
-                
-                # ═══════════════════════════════════════════════════════
-                # ALWAYS UPDATE QUANTUM DISPLAY - Use whatever values we got
-                # This is OUTSIDE the try block so it ALWAYS runs!
-                # ═══════════════════════════════════════════════════════
-                warroom.update_quantum(
-                    luck=luck_score,
-                    phantom=phantom_score,
-                    inception=inception_score,
-                    elephant=elephant_score,
-                    russian_doll=russian_doll_score,
-                    immune=immune_score,
-                    moby_dick=moby_score,
-                    stargate=stargate_score,
-                    quantum_mirror=mirror_score,
-                    hnc_surge=hnc_score,
-                    historical=historical_score,
-                    war_band=war_band_score,
-                    hive_state=0.8 if hive_publisher else 0.0,
-                    bot_census=0.7 if bot_census else 0.0,
-                    backtest=0.6 if backtest_engine else 0.0,
-                    global_orchestrator=0.85 if global_orchestrator else 0.0,
-                    harmonic_binary=0.75 if harmonic_binary else 0.0,
-                    harmonic_chain_master=0.8 if harmonic_chain_master else 0.0,
-                    harmonic_counter=0.7 if harmonic_counter else 0.0,
-                    harmonic_fusion=0.82 if harmonic_fusion else 0.0,
-                    harmonic_momentum=0.78 if harmonic_momentum else 0.0,
-                    harmonic_reality=0.85 if harmonic_reality else 0.0,
-                    global_bot_map=0.72 if global_bot_map else 0.0,
-                    enhanced_telescope=0.88 if enhanced_quantum_telescope else 0.0,
-                    enigma_dream=0.9 if enigma_dream else 0.0,
-                    enhancement_layer=0.85 if enhancement_layer else 0.0,
-                    enigma_integration=0.92 if enigma_integration else 0.0,
-                    firm_intelligence=0.8 if firm_intelligence else 0.0,
-                    enigma_core=0.95 if enigma_core else 0.0,
-                    aureon_miner=0.75 if aureon_miner else 0.0,
-                    multi_exchange=0.88 if multi_exchange else 0.0,
-                    multi_pair=0.82 if multi_pair else 0.0,
-                    multiverse_live=0.85 if multiverse_live else 0.0,
-                    multiverse_orchestrator=0.9 if multiverse_orchestrator else 0.0,
-                    mycelium_network=0.92 if mycelium_network else 0.0,
-                    neural_revenue=0.87 if neural_revenue else 0.0,
-                    total_boost=quantum.get('quantum_boost', 1.0) if quantum else 1.0
-                )
-                
-                # 🇮🇪🎯 SYNC SNIPER SCOPE 
-                if IRA_SNIPER_AVAILABLE and warroom:
-                    try:
-                        sniper = get_celtic_sniper()
-                        
-                        # Sync Active Targets
-                        warroom.sniper_scope['active_targets'] = []
-                        if hasattr(sniper, 'targets'):
-                            for key, target in sniper.targets.items():
-                                status = 'TRACKING'
-                                if getattr(target, 'is_locked', False): status = 'LOCKED'
-                                # Assuming 'is_firing' attribute or deduce from context
-                                
-                                # Calculate kill distance (Distance to Breakeven/Profit)
-                                kill_dist = 0.0
-                                if hasattr(target, 'unrealized_pnl'):
-                                    if target.unrealized_pnl < 0:
-                                        # If losing, distance is amount to return to breakeven
-                                        kill_dist = abs(target.unrealized_pnl)
-                                    else:
-                                        # If profitable, we are in the kill zone
-                                        kill_dist = 0.0
-                                
-                                warroom.sniper_scope['active_targets'].append({
-                                    'symbol': getattr(target, 'symbol', 'UNKNOWN'),
-                                    'status': status,
-                                    'pnl': getattr(target, 'unrealized_pnl', 0.0),
-                                    'kill_distance': kill_dist
-                                })
-                        
-                        # Sync Stats
-                        warroom.sniper_scope['kills_confirmed'] = getattr(sniper, 'kills', 0)
-                        warroom.sniper_scope['total_profit'] = getattr(sniper, 'total_pnl', 0.0)
-                        
-                    except Exception:
-                        pass
-
-                # Update display (Rich Live if available, otherwise just skip)
-                if live is not None:
-                    try:
-                        live.update(warroom.build_display())
-                    except (ValueError, OSError, IOError) as e:
-                        # Rich crashed during update - stop using it
-                        _safe_print(f"⚠️ Rich display crashed ({e}), stopping display...")
-                        try:
-                            live.stop()
-                        except:
-                            pass
-                        live = None
-                time.sleep(monitor_interval)
-                
-        except KeyboardInterrupt:
-            # STOP RICH LIVE FIRST so we can print clearly
-            if live:
-                try: live.stop()
-                except: pass
-                live = None
-
-            if console:
-                try:
-                    console.print("\n[bold yellow]👑 STOPPING WAR ROOM...[/]")
-                except Exception:
-                    print("\n👑 STOPPING WAR ROOM...")
-            else:
-                print("\n👑 STOPPING WAR ROOM...")
-            
-            # Close profitable positions
-            if console:
-                try:
-                    console.print("[bold]🛑 Closing profitable positions only...[/]")
-                except Exception:
-                    print("🛑 Closing profitable positions only...")
-            else:
-                print("🛑 Closing profitable positions only...")
-            for pos in positions:
-                if pos.current_pnl > 0:
-                    try:
-                        pos.client.place_market_order(
-                            symbol=pos.symbol,
-                            side='sell',
-                            quantity=pos.entry_qty
-                        )
-                        if console:
-                            try:
-                                console.print(f"[green]✅ Closed {pos.symbol}: +${pos.current_pnl:.4f}[/]")
-                            except Exception:
-                                print(f"✅ Closed {pos.symbol}: +${pos.current_pnl:.4f}")
-                        else:
-                            print(f"✅ Closed {pos.symbol}: +${pos.current_pnl:.4f}")
-                    except Exception:
-                        pass
-                else:
-                    acc_info = f" (DCA x{pos.accumulation_count})" if pos.accumulation_count > 0 else ""
-                    if console:
-                        try:
-                            console.print(f"[dim]⏳ Kept {pos.symbol}: ${pos.current_pnl:.4f}{acc_info} (holding)[/]")
-                        except Exception:
-                            print(f"⏳ Kept {pos.symbol}: ${pos.current_pnl:.4f}{acc_info} (holding)")
-                    else:
-                        print(f"⏳ Kept {pos.symbol}: ${pos.current_pnl:.4f}{acc_info} (holding)")
-            
-            # Summary
-            if console:
-                try:
-                    console.print(f"\n[bold magenta]{'='*60}[/]")
-                    console.print(f"[bold]👑 WAR ROOM SESSION COMPLETE[/]")
-                    console.print(f"   Cycles: {session_stats['cycles']}")
-                    console.print(f"   Total P&L: ${session_stats['total_pnl']:+.4f}")
-                    console.print(f"   Wins: {session_stats['winning_trades']} | Losses: {session_stats['losing_trades']}")
-                except Exception:
-                    print(f"\n{'='*60}")
-                    print(f"👑 WAR ROOM SESSION COMPLETE")
-                    print(f"   Cycles: {session_stats['cycles']}")
-                    print(f"   Total P&L: ${session_stats['total_pnl']:+.4f}")
-                    print(f"   Wins: {session_stats['winning_trades']} | Losses: {session_stats['losing_trades']}")
-            else:
-                print(f"\n{'='*60}")
-                print(f"👑 WAR ROOM SESSION COMPLETE")
-                print(f"   Cycles: {session_stats['cycles']}")
-                print(f"   Total P&L: ${session_stats['total_pnl']:+.4f}")
-                print(f"   Wins: {session_stats['winning_trades']} | Losses: {session_stats['losing_trades']}")
-            
-            # Rising Star Statistics
-            if RISING_STAR_AVAILABLE:
-                if console:
-                    try:
-                        console.print(f"\n[bold cyan]🌟 RISING STAR STATISTICS[/]")
-                        console.print(f"   Candidates Scanned: {rising_star_stats['candidates_scanned']}")
-                        console.print(f"   Monte Carlo Sims: {rising_star_stats['simulations_run']:,}")
-                        console.print(f"   Winners Selected: {rising_star_stats['winners_selected']}")
-                        console.print(f"   Accumulations (DCA): {rising_star_stats['accumulations_made']}")
-                        console.print(f"   DCA Value: ${rising_star_stats['total_accumulated_value']:.2f}")
-                    except Exception:
-                        print(f"\n🌟 RISING STAR STATISTICS")
-                        print(f"   Candidates Scanned: {rising_star_stats['candidates_scanned']}")
-                        print(f"   Monte Carlo Sims: {rising_star_stats['simulations_run']:,}")
-                        print(f"   Winners Selected: {rising_star_stats['winners_selected']}")
-                        print(f"   Accumulations (DCA): {rising_star_stats['accumulations_made']}")
-                        print(f"   DCA Value: ${rising_star_stats['total_accumulated_value']:.2f}")
-                else:
-                    print(f"\n🌟 RISING STAR STATISTICS")
-                    print(f"   Candidates Scanned: {rising_star_stats['candidates_scanned']}")
-                    print(f"   Monte Carlo Sims: {rising_star_stats['simulations_run']:,}")
-                    print(f"   Winners Selected: {rising_star_stats['winners_selected']}")
-                    print(f"   Accumulations (DCA): {rising_star_stats['accumulations_made']}")
-                    print(f"   DCA Value: ${rising_star_stats['total_accumulated_value']:.2f}")
-            
-            if console:
-                try:
-                    console.print(f"[bold magenta]{'='*60}[/]")
-                except Exception:
-                    print(f"{'='*60}")
-            else:
-                print(f"{'='*60}")
-        
-        finally:
-            # Stop Rich Live display if it's running
-            if live is not None:
-                try:
-                    live.stop()
-                except:
-                    pass
-            
-            # Restore logging handlers
-            if logging_handlers_backup:
-                try:
-                    root = logging.getLogger()
-                    for h in logging_handlers_backup:
-                        root.addHandler(h)
-                except: pass
-        
-        return session_stats
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LEGACY __main__ BLOCK - COMMENTED OUT TO USE ARGPARSE VERSION ABOVE
-# ═══════════════════════════════════════════════════════════════════════════════
-"""
-if __name__ == "__main__":
-    import sys
     import traceback
-    
-    # 🛡️ Wrap entire execution in try-except to prevent crash loops
+
     try:
-    
-        # 👑 WAKE THE QUEEN (Runs in background thread) 👑
-        try:
-            # Check if already imported
-            # ⚠️ DISABLED: awaken_queen() causes infinite circular loop
-            #  queen_fully_online.py → QueenHarmonicVoice.__init__ → take_full_control() → _connect_all_systems() → QueenHarmonicVoice.__init__ (LOOP)
-            # The methods in OrcaKillCycle don't depend on Queen being fully awakened
-            # if 'awaken_queen' not in globals() or awaken_queen is None:
-            #     try:
-            #        from queen_fully_online import awaken_queen
-            #     except ImportError:
-            #        awaken_queen = None
-            # 
-            # if awaken_queen:
-            #     awaken_queen()
-            #     print("👑 Queen Consciousness Matrix: ONLINE")
-            
-            # 🛡️ ACTIVATE SOUL SHIELD (Real-time protection on startup)
-            try:
-                from queen_soul_shield import QueenSoulShield
-                queen_shield = QueenSoulShield(gary_frequency=528.422, verbose=False)
-                queen_shield.start_monitoring()
-                print("🛡️ Queen Soul Shield: ACTIVE PROTECTION ENGAGED")
-            except ImportError:
-                print("⚠️ Soul Shield not available")
-            except Exception as e:
-                print(f"⚠️ Soul Shield activation error: {e}")
-            else:
-                print("⚠️ Queen Consciousness Matrix: OFFLINE (Module missing)")
-        except Exception as e:
-            print(f"⚠️ Queen Awakening Warning: {e}")
+        parser = argparse.ArgumentParser(description="Aureon Trading System - Orca Kill Cycle")
+        parser.add_argument("--autonomous", action="store_true", help="Run in autonomous war room mode")
+        parser.add_argument("--symbols", type=str, help="Comma-separated list of symbols to trade")
+        parser.add_argument("--initial-capital", type=float, default=1000, help="Initial capital amount")
+        parser.add_argument("--dry-run", action="store_true", help="Dry run mode - no real trades")
+        # Positional args passed by start_orca.sh: max_positions position_size min_target
+        parser.add_argument("max_positions", nargs="?", type=int, default=50, help="Max concurrent positions (default: 50)")
+        parser.add_argument("position_size", nargs="?", type=float, default=10.0, help="Position size in USD (default: 10.0)")
+        parser.add_argument("min_target", nargs="?", type=float, default=1.0, help="Min profit target percent (default: 1.0)")
         
-        # 🚀 STARTUP BANNER - helps identify when Orca actually starts
-        print("")
-        print("=" * 70)
-        print("🦈🔪 ORCA COMPLETE KILL CYCLE - STARTUP 🔪🦈")
-        print("=" * 70)
-        print(f"   Started: {datetime.now().isoformat()}")
-        print(f"   Args: {sys.argv}")
-        print(f"   Python: {sys.version}")
-        print(f"   CWD: {os.getcwd()}")
-        print(f"   STATE_DIR: {os.environ.get('AUREON_STATE_DIR', 'state')}")
-        print("=" * 70)
-        print("")
+        args = parser.parse_args()
         
-        # 👑🐝 QUEEN'S 4-PHASE MASTER PLAN ANNOUNCEMENT 🐝👑
-        if DEADLINE_MODE:
-            print("")
-            print("🔥" * 35)
-            print()
-            print("     👑 QUEEN'S 4-PHASE MASTER PLAN: ACTIVATED 👑")
-            print()
-            print("🔥" * 35)
-            print()
-            print("   Target: $248 → $1,000,000,000")
-            print(f"   Deadline: {DEADLINE_DATE}")
-            
-            from datetime import datetime
-            deadline = datetime(2026, 2, 20, 23, 59, 59)
-            days_left = (deadline - datetime.now()).total_seconds() / 86400
-            print(f"   Days Remaining: {days_left:.1f}")
-            print()
-            print("   PHASE 1: THE SEED (10x in 3 days)")
-            print("      Strategy: Moonshot hunting + leverage")
-            print()
-            print("   PHASE 2: THE GROWTH (100x in 7 days)")
-            print("      Strategy: Compound momentum stacking")
-            print()
-            print("   PHASE 3: THE EXPLOSION (200x in 7 days)")
-            print("      Strategy: Options + whale tactics")
-            print()
-            print("   PHASE 4: THE BILLION (20x in 5 days)")
-            print("      Strategy: Market maker mode")
-            print()
-            print("   🐝 THE SWARM IS READY. LET'S BEGIN. 🐝")
-            print()
-            print("🔥" * 35)
-            print("")
+        print(f"  Args parsed: autonomous={args.autonomous}, dry_run={args.dry_run}, max_positions={args.max_positions}, position_size={args.position_size}, min_target={args.min_target}")
         
-        # Monitor mode - stream existing positions until targets hit
-        if len(sys.argv) >= 2 and sys.argv[1] == '--monitor':
-            target_pct = float(sys.argv[2]) if len(sys.argv) > 2 else 1.5  # Default 1.5% target
-            stop_pct = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0    # Default 1% stop
-            
-            print("🦈🦈🦈 ORCA POSITION MONITOR - STREAMING EXISTING POSITIONS 🦈🦈🦈")
-            orca = OrcaKillCycle()
-            
-            # Load existing Alpaca positions into LivePosition format
-            positions = []
-            alpaca = orca.clients.get('alpaca')
-            if alpaca:
-                try:
-                    existing = alpaca.get_positions()
-                    for p in existing:
-                        symbol_raw = p.get('symbol', '')
-                        # Convert PEPEUSD -> PEPE/USD
-                        if symbol_raw.endswith('USD') and '/' not in symbol_raw:
-                            symbol = symbol_raw[:-3] + '/USD'
-                        else:
-                            symbol = symbol_raw
-                        
-                        qty = float(p.get('qty', 0))
-                        entry = float(p.get('avg_entry_price', 0))
-                        current = float(p.get('current_price', 0))
-                        
-                        if qty > 0 and entry > 0:
-                            target = entry * (1 + target_pct/100)
-                            stop = entry * (1 - stop_pct/100)
-                            fee_rate = orca.fee_rates.get('alpaca', 0.0025)
-                            entry_cost = entry * qty * (1 + fee_rate)
-                            breakeven = entry * (1 + 2*fee_rate)  # Need to cover fees both ways
-                            
-                            pos = LivePosition(
-                                symbol=symbol,
-                                exchange='alpaca',
-                                entry_price=entry,
-                                entry_qty=qty,
-                                entry_cost=entry_cost,
-                                breakeven_price=breakeven,
-                                target_price=target,
-                                stop_price=stop,
-                                client=alpaca,
-                                current_price=current,
-                                current_pnl=float(p.get('unrealized_pl', 0)),
-                                kill_reason=''
-                            )
-                            positions.append(pos)
-                            print(f"   📈 {symbol}: {qty:.6f} @ ${entry:.6f} → Target: ${target:.6f} | Stop: ${stop:.6f}")
-                except Exception as e:
-                    print(f"   ⚠️ Error loading positions: {e}")
-            
-            if not positions:
-                print("❌ No positions to monitor!")
-                sys.exit(1)
-            
-            print(f"\n📡 STREAMING {len(positions)} POSITIONS (NO TIMEOUT)")
-            print("="*70)
-            print(f"   ⚠️ Will ONLY exit on: TARGET HIT (100%), STOP LOSS (0%), or Ctrl+C")
-            print("="*70)
-            
-            # Progress bar helper
-            def make_progress_bar(progress_pct, width=20):
-                """Create a visual progress bar. 0% = stop loss, 100% = target."""
-                progress_pct = max(0, min(100, progress_pct))  # Clamp 0-100
-                filled = int(width * progress_pct / 100)
-                empty = width - filled
-                
-                # Color coding: red if <25%, yellow if <75%, green if >=75%
-                if progress_pct >= 75:
-                    bar_char = '█'
-                    color = '\033[92m'  # Green
-                elif progress_pct >= 25:
-                    bar_char = '▓'
-                    color = '\033[93m'  # Yellow
-                else:
-                    bar_char = '░'
-                    color = '\033[91m'  # Red
-                
-                reset = '\033[0m'
-                bar = color + bar_char * filled + reset + '░' * empty
-                return f"[{bar}]"
-            
-            def make_whale_bar(support: float, pressure: float, width=10):
-                """Create whale support vs pressure indicator."""
-                # Net score: positive = whales helping, negative = opposing
-                net = support - pressure
-                mid = width // 2
-                
-                if net > 0:
-                    # Whales supporting - green fill from middle to right
-                    fill = int(mid * min(net * 2, 1))
-                    bar = '░' * mid + '\033[92m' + '▶' * fill + '\033[0m' + '░' * (mid - fill)
-                elif net < 0:
-                    # Whales opposing - red fill from middle to left
-                    fill = int(mid * min(abs(net) * 2, 1))
-                    bar = '░' * (mid - fill) + '\033[91m' + '◀' * fill + '\033[0m' + '░' * mid
-                else:
-                    bar = '░' * width
-                
-                return f"[{bar}]"
-            
-            def format_eta(seconds: float) -> str:
-                """Format ETA as human-readable string."""
-                if seconds < 60:
-                    return f"{seconds:.0f}s"
-                elif seconds < 3600:
-                    return f"{seconds/60:.1f}m"
-                else:
-                    return f"{seconds/3600:.1f}h"
-            
-            def clear_lines(n):
-                """Clear n lines above cursor."""
-                for _ in range(n):
-                    print('\033[A\033[K', end='')
-            
-            # Initialize whale intelligence tracker
-            whale_tracker = WhaleIntelligenceTracker()
-            whale_status = "🐋 Whale Intelligence: "
-            if whale_tracker.whale_profiler:
-                whale_status += "✅ Profiler "
-            else:
-                whale_status += "❌ Profiler "
-            if whale_tracker.firm_intel:
-                whale_status += "✅ Firms "
-            else:
-                whale_status += "❌ Firms "
-            if whale_tracker.bus:
-                whale_status += "✅ ThoughtBus "
-            else:
-                whale_status += "❌ ThoughtBus "
-            
-            # Initialize SSE live streaming for real-time whale detection
-            sse_client = None
-            if SSE_AVAILABLE and AlpacaSSEClient:
-                try:
-                    sse_client = AlpacaSSEClient()
-                    # Get position symbols for streaming
-                    stream_symbols = [p.symbol.replace('/USD', 'USD') for p in positions]
-                    
-                    # Wire SSE trades to whale tracker
-                    def on_live_trade(trade):
-                        """Feed live trades to whale intelligence."""
-                        try:
-                            symbol = trade.symbol
-                            # Convert BTCUSD -> BTC/USD
-                            if not '/' in symbol and symbol.endswith('USD'):
-                                symbol = symbol[:-3] + '/USD'
-                            whale_tracker.process_live_trade(
-                                symbol=symbol,
-                                price=trade.price,
-                                quantity=trade.size,
-                                side='buy' if hasattr(trade, 'side') and trade.side == 'buy' else 'sell',
-                                exchange='alpaca'
-                            )
-                        except Exception:
-                            pass
-                    
-                    sse_client.on_trade = on_live_trade
-                    sse_client.start_crypto_stream(stream_symbols, trades=True)
-                    whale_status += "✅ LiveStream"
-                except Exception as e:
-                    whale_status += f"❌ LiveStream({e})"
-            else:
-                whale_status += "❌ LiveStream"
-            
-            print(whale_status)
-            print("="*70)
-            
-            # Monitor loop
-            results = []
-            last_display_lines = 0
-            hunt_validations = []  # Track successful hunts
-            whale_update_counter = 0  # Only update whale intel every 5 ticks
-            whale_signals_cache: Dict[str, WhaleSignal] = {}
-            should_exit = False  # Flag to control loop exit
-            
-            try:
-                while positions and not should_exit:
-                    display_lines = []
-                    whale_update_counter += 1
-                    
-                    for pos in positions[:]:
-                        try:
-                            # Get live price
-                            ticker = pos.client.get_ticker(pos.symbol)
-                            if not ticker:
-                                continue
-                            
-                            current = float(ticker.get('last', ticker.get('bid', 0)))
-                            if current <= 0:
-                                continue
-                            
-                            pos.current_price = current
-                            fee_rate = orca.fee_rates.get(pos.exchange, 0.0025)
-                            entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
-                            exit_value = current * pos.entry_qty * (1 - fee_rate)
-                            pos.current_pnl = exit_value - entry_cost
-                            
-                            pnl_pct = ((current / pos.entry_price) - 1) * 100
-                            
-                            # Calculate progress: 0% = stop loss, 50% = entry, 100% = target
-                            # Range from stop to target
-                            price_range = pos.target_price - pos.stop_price
-                            if price_range > 0:
-                                progress = ((current - pos.stop_price) / price_range) * 100
-                            else:
-                                progress = 50
-                            
-                            progress = max(0, min(100, progress))
-                            bar = make_progress_bar(progress)
-                            
-                            # Get whale intelligence (update every 5 ticks = 1 second)
-                            if whale_update_counter % 5 == 0 or pos.symbol not in whale_signals_cache:
-                                # Calculate price change % for firm activity simulation
-                                price_change_pct = pnl_pct  # Use position P&L as price change proxy
-                                whale_sig = whale_tracker.get_whale_signal(
-                                    pos.symbol, 
-                                    'long',
-                                    current_price=current,
-                                    price_change_pct=price_change_pct
-                                )
-                                whale_signals_cache[pos.symbol] = whale_sig
-                            else:
-                                whale_sig = whale_signals_cache.get(pos.symbol)
-                            
-                            # Build display line with whale data
-                            symbol_short = pos.symbol.replace('/USD', '')[:6]
-                            
-                            if whale_sig:
-                                whale_bar = make_whale_bar(whale_sig.whale_support, whale_sig.counter_pressure)
-                                eta_str = format_eta(whale_sig.eta_seconds)
-                                # Main line: symbol + progress + P&L
-                                line1 = f"  {symbol_short:6} {bar} {progress:5.1f}% | ${pos.current_pnl:+.4f} | ${current:.6f}"
-                                # Whale line: support indicator + ETA + whales active + firm reasoning
-                                whales_active = whale_sig.active_whales
-                                support_pct = int(whale_sig.whale_support * 100)
-                                pressure_pct = int(whale_sig.counter_pressure * 100)
-                                firm_info = whale_sig.reasoning if whale_sig.reasoning else "Scanning..."
-                                line2 = f"         {whale_bar} 🐋{whales_active} | ⬆{support_pct}% ⬇{pressure_pct}% | {firm_info[:50]}"
-                                display_lines.append(line1)
-                                display_lines.append(line2)
-                            else:
-                                display_lines.append(f"  {symbol_short:6} {bar} {progress:5.1f}% | ${pos.current_pnl:+.4f} | ${current:.6f}")
-                            
-                            # Check exit conditions - ONLY SELL IF PROFITABLE!
-                            if current >= pos.target_price:
-                                pos.kill_reason = 'TARGET_HIT'
-                            # DISABLED: NO STOP LOSS - we NEVER sell at a loss!
-                            # elif current <= pos.stop_price:
-                            #     pos.kill_reason = 'STOP_LOSS'
-                            elif pos.current_pnl > 0.01:  # Small momentum profit
-                                pos.kill_reason = 'MOMENTUM_PROFIT'
-                            
-                            # Execute exit
-                            if pos.kill_reason:
-                                sell_order = pos.client.place_market_order(
-                                    symbol=pos.symbol,
-                                    side='sell',
-                                    quantity=pos.entry_qty
-                                )
-                                if sell_order:
-                                    sell_price = float(sell_order.get('filled_avg_price', current))
-                                    final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
-                                    final_pnl = final_exit - entry_cost
-                                    
-                                    # Create hunt validation record
-                                    validation = {
-                                        'symbol': pos.symbol,
-                                        'exchange': pos.exchange,
-                                        'reason': pos.kill_reason,
-                                        'net_pnl': final_pnl,
-                                        'entry_price': pos.entry_price,
-                                        'exit_price': sell_price,
-                                        'qty': pos.entry_qty,
-                                        'progress_at_kill': progress,
-                                        'success': final_pnl > 0
-                                    }
-                                    results.append(validation)
-                                    hunt_validations.append(validation)
-                                    
-                                    # Print kill validation
-                                    if validation['success']:
-                                        emoji = '🎯✅'
-                                        status = 'SUCCESSFUL HUNT'
-                                    else:
-                                        emoji = '🛑❌'
-                                        status = 'HUNT FAILED'
-                                    
-                                    print(f"\n{emoji} {status}: {pos.symbol}")
-                                    print(f"   ├─ Entry:  ${pos.entry_price:.6f}")
-                                    print(f"   ├─ Exit:   ${sell_price:.6f}")
-                                    print(f"   ├─ P&L:    ${final_pnl:+.4f}")
-                                    print(f"   ├─ Reason: {pos.kill_reason}")
-                                    print(f"   └─ Progress at kill: {progress:.1f}%")
-                                    print()
-                                    
-                                positions.remove(pos)
-                        except Exception as e:
-                            pass
-                    
-                    # Clear previous display and show new progress bars
-                    if positions:
-                        # Clear previous lines
-                        if last_display_lines > 0:
-                            clear_lines(last_display_lines + 1)
-                        
-                        # Print header and all position bars
-                        total_pnl = sum(p.current_pnl for p in positions)
-                        print(f"📊 LIVE HUNT STATUS | Total P&L: ${total_pnl:+.4f}")
-                        for line in display_lines:
-                            print(line)
-                        
-                        last_display_lines = len(display_lines)
-                    
-                    time.sleep(0.2)  # Slightly slower for readability
-                    
-            except KeyboardInterrupt:
-                print("\n\n⚠️  INTERRUPT DETECTED!")
-                print("="*60)
-                print("🦈 ORCA SAFETY CHECK - What do you want to do?")
-                print("="*60)
-                print("  [1] CLOSE ALL positions and exit")
-                print("  [2] KEEP positions open and just exit monitor")
-                print("  [3] RESUME monitoring (cancel interrupt)")
-                print("="*60)
-                
-                try:
-                    choice = input("\n👉 Enter choice (1/2/3) [default=2 KEEP]: ").strip()
-                except EOFError:
-                    # Non-interactive mode (piped input) - default to KEEP
-                    choice = "2"
-                
-                if choice == "1":
-                    print("\n🛑 CONFIRMED: Closing all positions...")
-                    # Stop SSE streaming
-                    if sse_client:
-                        try:
-                            sse_client.stop()
-                            print("   📡 Live stream stopped")
-                        except Exception:
-                            pass
-                    for pos in positions:
-                        try:
-                            sell_order = pos.client.place_market_order(symbol=pos.symbol, side='sell', quantity=pos.entry_qty)
-                            if sell_order:
-                                fee_rate = orca.fee_rates.get(pos.exchange, 0.0025)
-                                sell_price = float(sell_order.get('filled_avg_price', pos.current_price))
-                                entry_cost = pos.entry_price * pos.entry_qty * (1 + fee_rate)
-                                final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
-                                final_pnl = final_exit - entry_cost
-                                results.append({
-                                    'symbol': pos.symbol,
-                                    'exchange': pos.exchange,
-                                    'reason': 'USER_ABORT',
-                                    'net_pnl': final_pnl,
-                                    'success': final_pnl > 0
-                                })
-                                print(f"   Closed {pos.symbol}: ${final_pnl:+.4f}")
-                        except Exception as e:
-                            print(f"   ⚠️ Error closing {pos.symbol}: {e}")
-                    should_exit = True  # Exit the loop after closing
-                
-                elif choice == "3":
-                    print("\n🔄 Resuming monitor... (Ctrl+C again to see options)")
-                    # Don't set should_exit, just continue the loop
-                
-                else:  # Default: choice == "2" or anything else
-                    print("\n✅ KEEPING positions open - exiting monitor only")
-                    print("   Your positions are still active on the exchange!")
-                    if sse_client:
-                        try:
-                            sse_client.stop()
-                            print("   📡 Live stream stopped")
-                        except Exception:
-                            pass
-                    # Don't close positions, just exit cleanly
-                    results = []  # Clear results so no "failed" report
-                    should_exit = True  # Exit the loop
-            
-            # Hunt Validation Summary
-            if results:
-                print("\n" + "="*70)
-                print("🦈 HUNT VALIDATION REPORT")
-                print("="*70)
-                
-                successful = [r for r in results if r.get('success', False)]
-                failed = [r for r in results if not r.get('success', False)]
-                total = sum(r['net_pnl'] for r in results)
-                
-                print(f"\n📊 HUNT STATISTICS:")
-                print(f"   ├─ Total Hunts:     {len(results)}")
-                print(f"   ├─ Successful:      {len(successful)} ✅")
-                print(f"   ├─ Failed:          {len(failed)} ❌")
-                print(f"   ├─ Win Rate:        {(len(successful)/len(results)*100) if results else 0:.1f}%")
-                print(f"   └─ Net P&L:         ${total:+.4f}")
-                
-                if successful:
-                    print(f"\n✅ SUCCESSFUL HUNTS:")
-                    for r in successful:
-                        print(f"   🎯 {r['symbol']}: ${r['net_pnl']:+.4f} ({r['reason']})")
-                
-                if failed:
-                    print(f"\n❌ FAILED HUNTS:")
-                    for r in failed:
-                        print(f"   🛑 {r['symbol']}: ${r['net_pnl']:+.4f} ({r['reason']})")
-                
-                print("\n" + "="*70)
-                if total > 0:
-                    print(f"🏆 HUNT SESSION: PROFITABLE (+${total:.4f})")
-                else:
-                    print(f"💔 HUNT SESSION: LOSS (${total:.4f})")
-                print("="*70)
+        # Parse symbols
+        symbol_whitelist = None
+        if args.symbols:
+            symbol_whitelist = [s.strip() for s in args.symbols.split(',')]
         
-        # 🦈⚡ NEW: Fast Kill Hunt - uses ALL intelligence systems
-        elif len(sys.argv) >= 2 and sys.argv[1] == '--fast':
-            amount = float(sys.argv[2]) if len(sys.argv) > 2 else 25.0
-            num_pos = int(sys.argv[3]) if len(sys.argv) > 3 else 3
-            target = float(sys.argv[4]) if len(sys.argv) > 4 else 0.8
-            
-            print("🦈⚡ FAST KILL MODE - ALL INTELLIGENCE ENGAGED ⚡🦈")
-            orca = OrcaKillCycle()
-            results = orca.fast_kill_hunt(
-                amount_per_position=amount,
-                num_positions=num_pos,
-                target_pct=target
-            )
-            
-            if results:
-                total = sum(r.get('net_pnl', 0) for r in results)
-                print(f"\n💰 Total portfolio impact: ${total:+.4f}")
+        print(f"  Creating Orca instance...")
+        # Create Orca instance
+        orca = OrcaKillCycle(
+            symbol_whitelist=symbol_whitelist,
+            initial_capital=args.initial_capital,
+            autonomous_mode=args.autonomous
+        )
         
-        # New multi-exchange pack hunt mode
-        elif len(sys.argv) >= 2 and sys.argv[1] == '--pack':
-            num_pos = int(sys.argv[2]) if len(sys.argv) > 2 else 3
-            amount = float(sys.argv[3]) if len(sys.argv) > 3 else 2.5
-            
-            print("🦈🦈🦈 ORCA PACK HUNT - SCANNING ENTIRE MARKET 🦈🦈🦈")
-            orca = OrcaKillCycle()
-            results = orca.pack_hunt(num_positions=num_pos, amount_per_position=amount)
-            
-            if results:
-                total = sum(r['net_pnl'] for r in results)
-                print(f"\n💰 Total portfolio impact: ${total:+.4f}")
+        print(f"  Orca instance created successfully")
         
-        # 👑🔄 AUTONOMOUS MODE - Queen-guided infinite loop (WAR ROOM by default)
-        elif len(sys.argv) >= 2 and sys.argv[1] == '--autonomous':
-            max_pos = int(sys.argv[2]) if len(sys.argv) > 2 else 3
-            amount = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0  # Lower to $1 for small accounts
-            target = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0
-            
-            print("👑🎖️ AUTONOMOUS WAR ROOM MODE 🎖️👑")
-            print(f"   Max positions: {max_pos}")
-            print(f"   Amount per position: ${amount}")
-            print(f"   Target profit: {target}%")
-            print("")
-            
-            try:
-                print("🔧 Initializing OrcaKillCycle...")
-                orca = OrcaKillCycle()
-                print("✅ OrcaKillCycle initialized successfully")
-                
-                # 🎖️ Use War Room (Rich dashboard) by default
-                print("🎖️ Starting War Room...")
-                stats = orca.run_autonomous_warroom(
-                    max_positions=max_pos,
-                    amount_per_position=amount,
-                    target_pct=target
-                )
-            except Exception as e:
-                print(f"❌ FATAL: Autonomous mode crashed: {e}")
-                traceback.print_exc()
-                sys.exit(1)
-        
-        # 👑🔄 LEGACY AUTONOMOUS MODE - Raw print output (for debugging)
-        elif len(sys.argv) >= 2 and sys.argv[1] == '--autonomous-legacy':
-            max_pos = int(sys.argv[2]) if len(sys.argv) > 2 else 3
-            amount = float(sys.argv[3]) if len(sys.argv) > 3 else 2.5
-            target = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0
-            
-            print("👑🦈 AUTONOMOUS QUEEN MODE - LEGACY OUTPUT 🦈👑")
-            orca = OrcaKillCycle()
-            stats = orca.run_autonomous(
-                max_positions=max_pos,
-                amount_per_position=amount,
-                target_pct=target
-            )
-        
-        elif len(sys.argv) >= 2:
-            # Single symbol mode (backward compatible)
-            symbol = sys.argv[1]
-            try:
-                amount = float(sys.argv[2]) if len(sys.argv) > 2 else 8.0
-                target = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
-                
-                orca = OrcaKillCycle()
-                result = orca.hunt_and_kill(symbol, amount, target)
-                
-                if result:
-                    print(f"\n💰 Portfolio impact: ${result['net_pnl']:+.4f}")
-            except ValueError:
-                # If parsing fails (e.g. user passed flags we didn't catch), default to War Room
-                 print("👑🎖️ AUTONOMOUS WAR ROOM MODE (DEFAULT) 🎖️👑")
-                 orca = OrcaKillCycle()
-                 stats = orca.run_autonomous_warroom(
-                     max_positions=3,
-                     amount_per_position=2.5,
-                     target_pct=1.0
-                 )
-    
+        if args.autonomous:
+            print("  AUTONOMOUS MODE ACTIVATED")
+            print(f"  {'LIVE MODE - REAL TRADES' if not args.dry_run else 'DRY-RUN MODE'}")
+            print(f"  Starting autonomous war room...")
+            orca.run_autonomous_warroom()
         else:
-            # No arguments defaults to WAR ROOM
-            print("👑🎖️ AUTONOMOUS WAR ROOM MODE (DEFAULT - RECONFIGURED) 🎖️👑")
-            orca = OrcaKillCycle()
-            stats = orca.run_autonomous_warroom(
-                max_positions=3,
-                amount_per_position=5.0,   # Lowered to work with $7 cash (needs $2.50 min)
-                target_pct=1.5             # Increased for Positive Growth
-            )
-        
+            print("  MANUAL MODE - Use orca.run_autonomous_warroom() for autonomous trading")
+            # Keep alive for manual interaction
+            import time
+            while True:
+                time.sleep(1)
+
     except KeyboardInterrupt:
-        print("\n\n⚠️ User interrupted Orca (Ctrl+C)")
+        print("\n\n   User interrupted Orca (Ctrl+C)")
         sys.exit(0)
     except Exception as e:
-        print(f"\n\n❌ CRITICAL FAILURE: {e}", file=sys.stderr)
+        print(f"\n\n  CRITICAL FAILURE: {e}", file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
-        print("\n🛑 Orca exiting gracefully to prevent crash loop\n", file=sys.stderr)
+        print("\n  Orca exiting gracefully to prevent crash loop\n", file=sys.stderr)
         sys.exit(1)
-"""
-# END LEGACY __main__ BLOCK - Use argparse version above instead
+
+
+
