@@ -250,7 +250,7 @@ class AvalancheHarvester:
         """Lazy load Binance client."""
         if self._binance_client is None:
             try:
-                from binance_client import BinanceClient
+                from binance_client import BinanceClient, get_binance_client
                 self._binance_client = get_binance_client()
                 logger.info("✓ Binance client loaded")
             except Exception as e:

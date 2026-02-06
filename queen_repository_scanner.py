@@ -129,9 +129,8 @@ class QueenRepositoryScanner:
             if self.thought_bus:
                 self.thought_bus.publish(Thought(
                     source="QUEEN_REPO_SCANNER",
-                    thought_type="WISDOM_UPDATE",
-                    priority=2,
-                    content={"wisdom_factor": self.wisdom_factor, "files_scanned": file_count}
+                    topic="WISDOM_UPDATE",
+                    payload={"wisdom_factor": self.wisdom_factor, "files_scanned": file_count}
                 ))
             
         except Exception as e:

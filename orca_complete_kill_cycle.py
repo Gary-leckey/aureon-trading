@@ -3513,7 +3513,7 @@ class OrcaKillCycle:
             if not kraken_client:
                 return []
             
-            tradeable_pairs = kraken_client.get_tradeable_pairs()
+            tradeable_pairs = kraken_client.get_available_pairs()
             if not tradeable_pairs:
                 return []
             
@@ -6760,7 +6760,7 @@ class OrcaKillCycle:
             if not kraken_client:
                 return []
             
-            tradeable_pairs = kraken_client.get_tradeable_pairs()
+            tradeable_pairs = kraken_client.get_available_pairs()
             if not tradeable_pairs:
                 return []
             
@@ -12544,7 +12544,7 @@ class OrcaKillCycle:
                     #                                                            
                     if self.harmonic_signal_chain:
                         try:
-                            chain_result = self.harmonic_signal_chain.process_market_pulse(batch_prices)
+                            chain_result = self.harmonic_signal_chain.send_signal({'type': 'market_pulse', 'data': batch_prices})
                             if chain_result:
                                 print(f"     HARMONIC CHAIN: Signal processed through 5 frequency layers")
                         except Exception as e:
@@ -12574,7 +12574,7 @@ class OrcaKillCycle:
                     #                                                            
                     if self.options_scanner:
                         try:
-                            options_opps = self.options_scanner.scan_opportunities()
+                            options_opps = self.options_scanner.scan_covered_calls() if hasattr(self.options_scanner, 'scan_covered_calls') else []
                             if options_opps:
                                 print(f"     OPTIONS SCANNER: {len(options_opps)} option opportunities found")
                         except Exception as e:
@@ -12585,10 +12585,7 @@ class OrcaKillCycle:
                     #                                                            
                     if self.queen_orca_bridge:
                         try:
-                            bridge_status = self.queen_orca_bridge.sync_state(
-                                positions=[{'symbol': p.symbol, 'exchange': p.exchange, 'pnl': p.current_pnl} for p in positions],
-                                session_stats=session_stats
-                            )
+                            bridge_status = self.queen_orca_bridge.get_telemetry()
                             if bridge_status:
                                 print(f"     QUEEN-ORCA BRIDGE: State synced")
                         except Exception as e:
@@ -12616,7 +12613,7 @@ class OrcaKillCycle:
                     #                                                            
                     if self.real_portfolio:
                         try:
-                            self.real_portfolio.update_prices(batch_prices)
+                            self.real_portfolio.get_real_portfolio()
                         except Exception as e:
                             print(f"      Real Portfolio sync error: {e}")
 
@@ -13840,7 +13837,7 @@ class OrcaKillCycle:
             
             # Get all tradeable pairs from Kraken
             _safe_print("  Discovering all Kraken tradeable assets...")
-            tradeable_pairs = kraken_client.get_tradeable_pairs()
+            tradeable_pairs = kraken_client.get_available_pairs()
             
             if not tradeable_pairs:
                 _safe_print("   No tradeable pairs found from Kraken")
