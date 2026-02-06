@@ -106,10 +106,10 @@
         "source": "portfolio_truth_check"
     },
     "USD": {
-        "exchange": "binance",
+        "exchange": "kraken",
         "buy_price": 0.0,
-        "quantity": 4.96428274,
-        "buy_timestamp": "2026-01-29T15:15:33.127179",
+        "quantity": 1.4501,
+        "buy_timestamp": "2026-02-06T23:17:34.104509",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     },
@@ -505,6 +505,182 @@
         "buy_price": 0.0,
         "quantity": 10.67672,
         "buy_timestamp": "2026-02-05T20:54:56.053524",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDZECUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 0.01362354,
+        "buy_timestamp": "2026-02-06T23:12:58.165424",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDLPTUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 0.47245875,
+        "buy_timestamp": "2026-02-06T23:12:58.166483",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDAXSUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 1.91488108,
+        "buy_timestamp": "2026-02-06T23:12:58.167242",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDROSEUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 2014.27311705,
+        "buy_timestamp": "2026-02-06T23:12:58.167996",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDSSVUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 1.23473704,
+        "buy_timestamp": "2026-02-06T23:12:58.168720",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDBEAMXUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 1739.36368525,
+        "buy_timestamp": "2026-02-06T23:12:58.169475",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDZROUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 5.67324252,
+        "buy_timestamp": "2026-02-06T23:12:58.170224",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDKAIAUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 21.69265169,
+        "buy_timestamp": "2026-02-06T23:12:58.171026",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDPENGUUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 1678.24067102,
+        "buy_timestamp": "2026-02-06T23:12:58.171813",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDSHELLUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 78.04928755,
+        "buy_timestamp": "2026-02-06T23:12:58.172619",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDSTOUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 244.52583282,
+        "buy_timestamp": "2026-02-06T23:12:58.173455",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDRESOLVUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 54.37492094,
+        "buy_timestamp": "2026-02-06T23:12:58.174297",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDSOMIUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 52.30356167,
+        "buy_timestamp": "2026-02-06T23:12:58.175159",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDAVNTUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 68.16042157,
+        "buy_timestamp": "2026-02-06T23:12:58.176002",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDNOMUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 506.45182414,
+        "buy_timestamp": "2026-02-06T23:12:58.176817",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDENSOUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 3.67481332,
+        "buy_timestamp": "2026-02-06T23:12:58.177680",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDTURTLEUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 404.43316397,
+        "buy_timestamp": "2026-02-06T23:12:58.178556",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDFUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 790.04350434,
+        "buy_timestamp": "2026-02-06T23:12:58.179439",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "LDBREVUSD": {
+        "exchange": "binance",
+        "buy_price": 0.0,
+        "quantity": 257.65681686,
+        "buy_timestamp": "2026-02-06T23:12:58.180317",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "ADA.SUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 27.90370799,
+        "buy_timestamp": "2026-02-06T23:17:34.101285",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "SCRT21.SUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 437.91345493,
+        "buy_timestamp": "2026-02-06T23:17:34.102683",
+        "auto_tracked": true,
+        "source": "portfolio_truth_check"
+    },
+    "SOL03.SUSD": {
+        "exchange": "kraken",
+        "buy_price": 0.0,
+        "quantity": 0.0083389591,
+        "buy_timestamp": "2026-02-06T23:17:34.103577",
         "auto_tracked": true,
         "source": "portfolio_truth_check"
     }
