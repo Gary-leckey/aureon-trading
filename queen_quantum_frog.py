@@ -7715,6 +7715,7 @@ class OrcaKillCycle:
 
         return '', 0.0, {}
 
+
     def _normalize_base_asset(self, symbol: str) -> str:
         """Normalize symbol to base asset for cross-checking balances."""
         if not symbol:
@@ -9613,22 +9614,30 @@ class OrcaKillCycle:
             can_sell, cb_info = self.cost_basis_tracker.can_sell_profitably(
                 symbol, current_price, exchange=exchange, quantity=entry_qty
             )
-            if cb_info.get('entry_price') is None:
-                # 🆕 SNIPER FIX: Fallback to estimated entry price if reliable
-                if entry_price > 0 and entry_cost > 0:
-                     print(f"   ⚠️ Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
-                     confirmed_entry = entry_price
-                     # Use passed-in cost basis as fallback
-                     cb_info['entry_price'] = entry_price
+            confirmed_from_tracker = float(cb_info.get('entry_price', 0) or 0)
+            if confirmed_from_tracker <= 0:
+                recovered_cb = self._recover_cost_basis_from_exchange(symbol, exchange, quantity=entry_qty)
+                if recovered_cb and float(recovered_cb.get('entry_price', 0) or 0) > 0:
+                    confirmed_entry = float(recovered_cb['entry_price'])
+                    cb_info['entry_price'] = confirmed_entry
+                    src = recovered_cb.get('source', 'exchange_api')
+                    first_trade = recovered_cb.get('first_trade')
+                    last_trade = recovered_cb.get('last_trade')
+                    print(f"   🛰️ Cost basis recovered for {symbol} from {src}: ${confirmed_entry:.8f}")
+                    if first_trade or last_trade:
+                        print(f"      Trade window(ms): first={first_trade} last={last_trade}")
+                # fallback to estimate only if no API/tracker recovery
+                elif entry_price > 0 and entry_cost > 0:
+                    print(f"   ⚠️ Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
+                    confirmed_entry = entry_price
+                    cb_info['entry_price'] = entry_price
                 else:
-                    # No confirmed or estimated cost basis - BLOCK SELL!
                     info['blocked_reason'] = 'NO_CONFIRMED_COST_BASIS'
                     print(f"   👑❌ EXIT BLOCKED: {symbol} - No confirmed cost basis (entry price unknown)")
-                    # Debug info provided by user logs matches here
                     return False, info
             else:
                 # Use confirmed entry price for accurate P&L
-                confirmed_entry = cb_info.get('entry_price', entry_price)
+                confirmed_entry = confirmed_from_tracker
 
             # CRITICAL FIX: Calculate cost basis using CURRENT quantity, not historical!
             confirmed_cost = entry_qty * confirmed_entry  # Use current qty × avg entry
