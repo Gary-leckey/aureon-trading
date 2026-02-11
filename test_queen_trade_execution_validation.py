@@ -14,13 +14,16 @@ from aureon_queen_autonomous_control import (
 class MockQueenExecutor:
     def __init__(self, result):
         self.result = result
+        self.calls = []
 
     def execute_trade(self, symbol, side, amount, exchange):
+        self.calls.append({"symbol": symbol, "side": side, "amount": amount, "exchange": exchange})
         data = dict(self.result)
         data.setdefault("symbol", symbol)
         data.setdefault("side", side)
         data.setdefault("amount", amount)
         data.setdefault("exchange", exchange)
+        data.setdefault("order_id", f"{side}-{len(self.calls)}")
         return data
 
 
@@ -85,6 +88,37 @@ class QueenTradeExecutionValidationTests(unittest.TestCase):
 
         self.assertFalse(result["success"])
         self.assertEqual(result["reason"], "Required Queen subsystems offline")
+
+    def test_force_cycle_executes_buy_sell_convert_with_neuron_online(self):
+        control = self._build_control()
+        control.systems["queen_neuron"] = SystemState(name="queen_neuron", status="ONLINE")
+        control.queen = MockQueenExecutor({"success": True})
+
+        result = control.force_buy_sell_convert_cycle(
+            symbol="ETH/USD",
+            amount=15,
+            exchange="kraken",
+            convert_symbol="ETH/BTC",
+        )
+
+        self.assertTrue(result["success"])
+        self.assertEqual(result["cycle"], ["BUY", "SELL", "CONVERT"])
+        self.assertEqual([c["side"] for c in control.queen.calls], ["BUY", "SELL", "CONVERT"])
+        self.assertEqual(len(result["trades"]), 3)
+        self.assertTrue(all(t.get("validated") for t in result["trades"]))
+
+    def test_force_cycle_requires_deep_learning_subsystem(self):
+        control = self._build_control()
+        control.queen = MockQueenExecutor({"success": True})
+
+        result = control.force_buy_sell_convert_cycle(
+            symbol="ETH/USD",
+            amount=15,
+            exchange="kraken",
+        )
+
+        self.assertFalse(result["success"])
+        self.assertIn("queen_neuron", result["subsystems"]["missing"])
 
 
 if __name__ == "__main__":

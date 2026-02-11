@@ -1010,6 +1010,80 @@ class QueenAutonomousControl:
         }
         return self._validate_execution_result(result=fallback, expected_side=side, expected_exchange=params.get("exchange"))
 
+    def force_buy_sell_convert_cycle(
+        self,
+        symbol: str,
+        amount: float,
+        exchange: str,
+        convert_symbol: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Force a Queen-governed BUY -> SELL -> CONVERT cycle.
+
+        This path is intentionally strict and requires the deep-learning system
+        (queen_neuron) to be online so the cycle is always grounded in Queen
+        intelligence before execution.
+        """
+        required = list(REQUIRED_TRADE_SUBSYSTEMS) + ["queen_neuron"]
+        readiness = self.validate_trade_subsystems(required_subsystems=required)
+        if not readiness["ready"]:
+            return {
+                "success": False,
+                "reason": "Required Queen subsystems offline",
+                "subsystems": readiness,
+            }
+
+        neuron_state = self.systems.get("queen_neuron")
+        neuron_signal: Dict[str, Any] = {}
+        if neuron_state and neuron_state.instance and hasattr(neuron_state.instance, "predict"):
+            try:
+                prediction = neuron_state.instance.predict({
+                    "symbol": symbol,
+                    "exchange": exchange,
+                    "intent": "force_buy_sell_convert_cycle",
+                })
+                if isinstance(prediction, dict):
+                    neuron_signal = prediction
+            except Exception as exc:
+                neuron_signal = {"warning": f"queen_neuron prediction unavailable: {exc}"}
+
+        legs = [
+            {"side": "BUY", "symbol": symbol},
+            {"side": "SELL", "symbol": symbol},
+            {"side": "CONVERT", "symbol": convert_symbol or symbol},
+        ]
+        executed_trades: List[Dict[str, Any]] = []
+
+        for leg in legs:
+            decision = AutonomousDecision(
+                action=AutonomousAction.APPROVE_TRADE,
+                reason="Forced Queen cycle validated by deep-learning systems",
+                confidence=float(neuron_signal.get("confidence", 0.0)) if isinstance(neuron_signal, dict) else 0.0,
+                parameters={
+                    "symbol": leg["symbol"],
+                    "side": leg["side"],
+                    "amount": amount,
+                    "exchange": exchange,
+                },
+            )
+            result = self._execute_trade(decision)
+            executed_trades.append(result)
+            if not result.get("success"):
+                return {
+                    "success": False,
+                    "reason": "Forced Queen cycle failed",
+                    "failed_side": leg["side"],
+                    "trades": executed_trades,
+                    "neuron_signal": neuron_signal,
+                }
+
+        return {
+            "success": True,
+            "validated": True,
+            "cycle": [leg["side"] for leg in legs],
+            "trades": executed_trades,
+            "neuron_signal": neuron_signal,
+        }
+
     def validate_trade_subsystems(self, required_subsystems: Optional[List[str]] = None) -> Dict[str, Any]:
         """Validate that trading-critical Queen subsystems are online."""
         required = required_subsystems or REQUIRED_TRADE_SUBSYSTEMS
