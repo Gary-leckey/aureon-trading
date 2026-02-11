@@ -119,7 +119,7 @@ capital = 76.00
 target = 100000.00
 positions = []
 trades_today = 0
-pdt_limit = 3
+pdt_limit = None  # NO LIMITS - Full production autonomous trading
 iteration = 0
 
 # Unified Ecosystem Components
@@ -205,7 +205,7 @@ if SNIPER_AVAILABLE:
 print("\n💎 UNIFIED ECOSYSTEM STATUS:")
 print(f"  💰 Starting Capital: £{capital:.2f}")
 print(f"  🎯 Target: £{target:,.2f}")
-print(f"  📊 PDT Limit: {pdt_limit} trades/day")
+print(f"  📊 PDT Limit: UNLIMITED (no limits - full production mode)")
 print(f"  🔮 Elite Patterns: {len(ELITE_PATTERNS)} loaded")
 print(f"  📈 Average Win Rate: {sum(p['win_rate'] for p in ELITE_PATTERNS) / len(ELITE_PATTERNS) * 100:.1f}%")
 print(f"  🐙 Unified Components: {sum([unified_client is not None, thought_bus is not None, mycelium is not None, immune_system is not None, memory_core is not None, scout is not None, sniper is not None])} active")
@@ -354,8 +354,8 @@ async def execute_trade(opp: Dict) -> bool:
         except:
             pass
     
-    # Check PDT limit
-    if trades_today >= pdt_limit:
+    # NO PDT LIMIT - Full production autonomous trading
+    if False:  # PDT limit removed - unlimited trading
         return False
     
     # Position size: 10% of capital, scaled by confidence
@@ -483,7 +483,7 @@ def print_status():
     print(f"🔮 Patterns Detected: {stats['patterns_detected']}")
     print(f"💰 Trades Executed: {stats['trades_executed']}")
     print(f"🎯 Sniper Kills: {stats['kills']}")
-    print(f"🏹 Day Trades Used: {trades_today}/{pdt_limit}")
+    print(f"🏹 Day Trades Used: {trades_today} (UNLIMITED)")
     print(f"📈 Open Positions: {len([p for p in positions if p['status'] == 'open'])}")
     print(f"\n🐙 Unified Ecosystem Stats:")
     print(f"   💎 Probability Predictions: {stats['ecosystem_predictions']}")
@@ -493,8 +493,7 @@ def print_status():
     # Milestone checks
     if capital >= 2000:
         print(f"   🎉 MARGIN UNLOCKED! 4x leverage available")
-    if capital >= 25000:
-        print(f"   🎉 PDT UNLOCKED! Unlimited day trades")
+    print(f"   🎉 UNLIMITED DAY TRADES - No PDT restrictions")
     
     print("="*80 + "\n")
 

@@ -120,7 +120,7 @@ class AureonLive:
         self.target = 100000.00
         self.positions = []
         self.trades_today = 0
-        self.pdt_limit = 3
+        self.pdt_limit = None  # NO LIMITS - Full production autonomous trading
         self.iteration = 0
         
         # Stats
@@ -184,7 +184,7 @@ class AureonLive:
         print("\n💎 ALL SYSTEMS READY! 💎\n")
         print(f"💰 Starting Capital: £{self.capital:.2f}")
         print(f"🎯 Target: £{self.target:,.2f}")
-        print(f"📊 PDT Rules: {self.trades_today}/{self.pdt_limit} day trades used")
+        print(f"📊 PDT Rules: UNLIMITED (no limits - full production mode)")
         print(f"🔮 Elite Patterns: {len(ELITE_PATTERNS)} loaded (87-94% win rates)")
         print("\n" + "="*80 + "\n")
     
@@ -301,10 +301,7 @@ class AureonLive:
             except:
                 pass
         
-        # Check PDT limit
-        if self.trades_today >= self.pdt_limit:
-            print(f"  ⚠️  PDT limit reached ({self.pdt_limit}/day)")
-            return False
+        # NO PDT LIMIT - Full production autonomous trading
         
         # Calculate position size (10% of capital max)
         position_value = min(self.capital * 0.10, self.capital * opp['confidence'])
@@ -333,7 +330,7 @@ class AureonLive:
         print(f"     Entry: £{opp['entry_price']:.2f}")
         print(f"     Target: £{opp['target_price']:.2f} (+{((opp['target_price']/opp['entry_price']-1)*100):.1f}%)")
         print(f"     Position: £{position_value:.2f}")
-        print(f"     Day Trades: {self.trades_today}/{self.pdt_limit}\n")
+        print(f"     Day Trades: {self.trades_today} (UNLIMITED)\n")
         
         # Store in Memory
         if self.memory:
@@ -411,7 +408,7 @@ class AureonLive:
         print(f"🎯 Sniper Kills: {self.stats['sniper_kills']}")
         print(f"🍄 Mycelium Boosts: {self.stats['mycelium_boosts']}")
         print(f"🛡️  Immune Blocks: {self.stats['immune_blocks']}")
-        print(f"🏹 Day Trades Used: {self.trades_today}/{self.pdt_limit}")
+        print(f"🏹 Day Trades Used: {self.trades_today} (UNLIMITED)")
         print(f"📈 Open Positions: {len([p for p in self.positions if p['status'] == 'open'])}")
         print("="*80 + "\n")
     
