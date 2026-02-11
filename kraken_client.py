@@ -18,6 +18,7 @@ except ImportError:
 KRAKEN_BASE = "https://api.kraken.com"
 
 ASSETPAIR_CACHE_TTL = 300  # seconds
+KRAKEN_TRADES_PAGE_SIZE = 50
 
 # 🔐 CROSS-PROCESS NONCE MANAGER
 # Prevents "Invalid nonce" errors when multiple processes share the same API key
@@ -122,6 +123,36 @@ class KrakenClient:
         self._private_lock = threading.Lock()
         self._min_call_interval: float = 0.5  # 500ms between private API calls
 
+    def _normalize_asset_name(self, asset: str) -> str:
+        asset_up = (asset or "").upper()
+        alias_map = {
+            "XBT": "BTC",
+            "XXBT": "BTC",
+            "XDG": "DOGE",
+            "XXDG": "DOGE",
+            "XETH": "ETH",
+            "XXETH": "ETH",
+            "ZUSD": "USD",
+            "ZEUR": "EUR",
+            "ZGBP": "GBP",
+            "ZCAD": "CAD",
+        }
+        if asset_up in alias_map:
+            return alias_map[asset_up]
+        if asset_up.startswith(("X", "Z")) and len(asset_up) > 3:
+            return asset_up[1:]
+        return asset_up
+
+    def _pair_base_quote(self, pair: str) -> Tuple[str, str]:
+        pairs = self._load_asset_pairs()
+        internal = pair if pair in pairs else self._alt_to_int.get(pair) or self._alt_to_int.get(pair.upper())
+        if not internal or internal not in pairs:
+            return "", ""
+        info = pairs[internal]
+        base = self._normalize_asset_name(info.get("base", ""))
+        quote = self._normalize_asset_name(info.get("quote", ""))
+        return base, quote
+
     # ──────────────────────────────────────────────────────────────────────
     # Private signing helpers (only if we later enable non-dry-run)
     # ──────────────────────────────────────────────────────────────────────
@@ -192,6 +223,74 @@ class KrakenClient:
             self._alt_to_int[alt] = internal
             self._int_to_alt[internal] = alt
         return pairs
+
+    def get_ledgers(self, since: int | None = None, max_records: int = 1000) -> List[Dict[str, Any]]:
+        if self.dry_run:
+            return []
+        data: Dict[str, Any] = {"ofs": 0}
+        if since:
+            data["start"] = int(since)
+        ledgers: List[Dict[str, Any]] = []
+        total = None
+        while True:
+            res = self._private("/0/private/Ledgers", data)
+            batch = res.get("ledger", {}) or {}
+            count = int(res.get("count", 0) or 0)
+            if total is None:
+                total = count
+            for ledger_id, entry in batch.items():
+                entry = dict(entry)
+                entry["id"] = ledger_id
+                entry["asset"] = self._normalize_asset_name(entry.get("asset", ""))
+                ledgers.append(entry)
+                if len(ledgers) >= max_records:
+                    break
+            if len(ledgers) >= max_records or not batch:
+                break
+            data["ofs"] += len(batch)
+            if total is not None and data["ofs"] >= total:
+                break
+        ledgers.sort(key=lambda x: x.get("time", 0))
+        return ledgers
+
+    def get_trades_history(self, since: int | None = None, max_records: int = 1000) -> List[Dict[str, Any]]:
+        if self.dry_run:
+            return []
+        data: Dict[str, Any] = {"ofs": 0}
+        if since:
+            data["start"] = int(since)
+        trades: List[Dict[str, Any]] = []
+        total = None
+        while True:
+            res = self._private("/0/private/TradesHistory", data)
+            batch = res.get("trades", {}) or {}
+            count = int(res.get("count", 0) or 0)
+            if total is None:
+                total = count
+            for trade_id, trade in batch.items():
+                pair = trade.get("pair", "")
+                base, quote = self._pair_base_quote(pair)
+                trades.append({
+                    "id": trade_id,
+                    "pair": pair,
+                    "base": base,
+                    "quote": quote,
+                    "type": trade.get("type", ""),
+                    "price": float(trade.get("price", 0) or 0),
+                    "vol": float(trade.get("vol", 0) or 0),
+                    "cost": float(trade.get("cost", 0) or 0),
+                    "fee": float(trade.get("fee", 0) or 0),
+                    "time": float(trade.get("time", 0) or 0),
+                })
+                if len(trades) >= max_records:
+                    break
+            if len(trades) >= max_records or not batch:
+                break
+            data["ofs"] += len(batch)
+            if total is not None and data["ofs"] >= total:
+                break
+        trades.sort(key=lambda x: x.get("time", 0))
+        return trades
 
     def _normalize_symbol(self, symbol: str) -> List[str]:
         """

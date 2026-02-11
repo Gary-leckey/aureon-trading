@@ -334,7 +334,7 @@ class UnifiedExchangeClient:
             self.client = get_kraken_client()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "binance":
-            from binance_client import BinanceClient
+            from binance_client import BinanceClient, get_binance_client
             self.client = get_binance_client()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "alpaca":
