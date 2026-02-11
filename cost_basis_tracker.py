@@ -646,17 +646,37 @@ class CostBasisTracker:
         """
         pos = None
         matched_key = None
+
+        def _is_open_position(candidate: Optional[Dict[str, Any]]) -> bool:
+            """Ignore stale/closed snapshots so they don't shadow real open positions."""
+            if not candidate:
+                return False
+            try:
+                qty = float(candidate.get('total_quantity', 0) or 0)
+            except (TypeError, ValueError):
+                return False
+            return qty > 0.0000001
+
+        def _exchange_matches(candidate_key: str, candidate: Optional[Dict[str, Any]]) -> bool:
+            """When exchange context is provided, don't cross-match to another venue."""
+            if not exchange:
+                return True
+            normalized_exchange = exchange.lower()
+            if candidate_key.startswith(f"{normalized_exchange}:"):
+                return True
+            candidate_exchange = str((candidate or {}).get('exchange', '')).lower()
+            return candidate_exchange == normalized_exchange
         
         # Strategy 1: Direct match with exchange context
         if exchange:
             position_key = f"{exchange.lower()}:{symbol}"
             pos = self.positions.get(position_key)
-            if pos:
+            if _is_open_position(pos):
                 return (pos, position_key)
         
         # Strategy 2: Try without exchange prefix
         pos = self.positions.get(symbol)
-        if pos:
+        if _is_open_position(pos) and _exchange_matches(symbol, pos):
             return (pos, symbol)
         
         # Strategy 3: Try normalized (no slashes)
@@ -664,11 +684,11 @@ class CostBasisTracker:
         if exchange:
             norm_key = f"{exchange.lower()}:{norm_symbol}"
             pos = self.positions.get(norm_key)
-            if pos:
+            if _is_open_position(pos):
                 return (pos, norm_key)
-        
+
         pos = self.positions.get(norm_symbol)
-        if pos:
+        if _is_open_position(pos) and _exchange_matches(norm_symbol, pos):
             return (pos, norm_symbol)
         
         # Strategy 4: Try swapping quote currencies (USDT ↔ USDC ↔ USD)
@@ -693,13 +713,13 @@ class CostBasisTracker:
                         if exchange:
                             test_key = f"{exchange.lower()}:{test_symbol}"
                             pos = self.positions.get(test_key)
-                            if pos:
+                            if _is_open_position(pos):
                                 # Debug message
                                 # print(f"   ✓ Matched via quote swap: {symbol} → {test_key}")
                                 return (pos, test_key)
-                        
+
                         pos = self.positions.get(test_symbol)
-                        if pos:
+                        if _is_open_position(pos) and _exchange_matches(test_symbol, pos):
                             # Debug message
                             # print(f"   ✓ Matched via quote swap: {symbol} → {test_symbol}")
                             return (pos, test_symbol)
@@ -713,8 +733,15 @@ class CostBasisTracker:
                 break
         
         for s, p in self.positions.items():
-            stored_symbol = p.get('symbol', s)
-            if stored_symbol.startswith(base_asset):
+            stored_symbol = p.get('symbol') or s
+            # Strip exchange prefix (e.g., kraken:EUL -> EUL) before base matching
+            symbol_part = stored_symbol.split(':', 1)[1] if ':' in stored_symbol else stored_symbol
+            normalized_symbol = symbol_part.replace('/', '')
+            if (
+                normalized_symbol.startswith(base_asset)
+                and _is_open_position(p)
+                and _exchange_matches(s, p)
+            ):
                 return (p, s)
         
         return (None, None)
