@@ -47,8 +47,13 @@ import time
 import threading
 import logging
 import argparse
+import json
+import signal
+import subprocess
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict
+from urllib.request import urlopen
 
 logger = logging.getLogger(__name__)
 
@@ -450,14 +455,19 @@ def run_autonomous_trading(engine=None, hub=None):
         queen.trading_enabled = True
         
         labyrinth = MicroProfitLabyrinth()
-        labyrinth.dry_run = False  # 🔴 LIVE MODE - NO DRY RUN
+        # Default stays "live" unless explicitly disabled (e.g. production-safe mode).
+        live_trading = os.getenv("AUREON_LIVE_TRADING", "1") in ("1", "true", "TRUE", "yes", "YES")
+        labyrinth.dry_run = not live_trading
+        if labyrinth.dry_run:
+            print("🔒 DRY-RUN MODE: Active (AUREON_LIVE_TRADING=0)")
+        else:
+            print("🔴 LIVE MODE: Active (AUREON_LIVE_TRADING=1)")
 
         # Wire Queen to ALL critical systems
         wiring_summary = wire_queen_systems(queen, labyrinth)
         
         print("✅ Queen Hive Mind: ONLINE (Full Authority)")
         print("✅ Micro Profit Labyrinth: ONLINE")
-        print("🔴 LIVE MODE: Active (dry_run=False)")
         print("✅ All systems wired and ready\n")
         if wiring_summary:
             logger.info(f"Wiring summary: {wiring_summary}")
@@ -679,6 +689,231 @@ def run_autonomous_trading(engine=None, hub=None):
         print(f"   Duration: {cycle_count}s")
 
 
+def _http_ok(url: str, timeout_s: float = 1.5) -> bool:
+    try:
+        with urlopen(url, timeout=timeout_s) as resp:
+            status = getattr(resp, "status", 200)
+            return 200 <= status < 300
+    except Exception:
+        return False
+
+
+class _ManagedProcess:
+    def __init__(self, name: str, cmd: list[str], cwd: str | None = None, env: dict[str, str] | None = None):
+        self.name = name
+        self.cmd = cmd
+        self.cwd = cwd
+        self.env = env or {}
+        self.proc: subprocess.Popen | None = None
+
+    def start(self) -> None:
+        if self.proc and self.proc.poll() is None:
+            return
+        child_env = os.environ.copy()
+        child_env.update(self.env)
+        self.proc = subprocess.Popen(self.cmd, cwd=self.cwd, env=child_env)
+
+    def alive(self) -> bool:
+        return bool(self.proc and self.proc.poll() is None)
+
+    def terminate(self, timeout_s: float = 10.0) -> None:
+        if not self.proc or self.proc.poll() is not None:
+            return
+        self.proc.terminate()
+        try:
+            self.proc.wait(timeout=timeout_s)
+        except Exception:
+            self.proc.kill()
+
+
+def _print_progress(step: str, current: int, total: int) -> None:
+    pct = int((current / max(total, 1)) * 100)
+    bar_w = 24
+    filled = int((pct / 100) * bar_w)
+    bar = "#" * filled + "-" * (bar_w - filled)
+    print(f"[{bar}] {pct:3d}% | {step}")
+
+
+def run_production_orchestrator(*, live_trading: bool, spawn_command_center: bool, spawn_market_feeds: bool) -> None:
+    """
+    Unified production entry (single brain, managed heads):
+    - Spawns UI/data heads (dashboard/feeds/command center) as subprocesses.
+    - Boots intelligence + Queen + wiring in-process.
+    - Runs dry-run validation/monitoring by default; enable live execution explicitly.
+    """
+    print_banner()
+
+    if not live_trading:
+        print("\n🔒 PRODUCTION SAFE MODE: DRY-RUN (no real orders)")
+        print("   Set `AUREON_LIVE_TRADING=1` or pass `--live` to enable execution.\n")
+
+    managed: list[_ManagedProcess] = []
+
+    total_steps = 6
+    step = 0
+
+    # 1) Dashboard first so /health comes up immediately.
+    step += 1
+    dash_port = os.getenv("PORT", "8080")
+    _print_progress(f"Starting Aureon Pro Dashboard ({dash_port})", step, total_steps)
+    dash = _ManagedProcess(
+        name="aureon-pro-dashboard",
+        cmd=[sys.executable, "-u", "aureon_pro_dashboard.py"],
+        env={"PORT": dash_port},
+    )
+    dash.start()
+    managed.append(dash)
+
+    for _ in range(40):
+        if _http_ok(f"http://127.0.0.1:{dash_port}/health"):
+            break
+        time.sleep(0.25)
+
+    # 2) Optional market feeds (free-first).
+    if spawn_market_feeds:
+        step += 1
+        _print_progress("Starting Binance WS market cache", step, total_steps)
+        cache_env = {"MARKET_CACHE_DIR": os.getenv("MARKET_CACHE_DIR", "ws_cache")}
+        mkt = _ManagedProcess(
+            name="unified-market-cache",
+            cmd=[sys.executable, "-u", "unified_market_cache.py", "--write-interval", "1.0"],
+            env=cache_env,
+        )
+        mkt.start()
+        managed.append(mkt)
+
+        step += 1
+        _print_progress("Starting Kraken cache (backup)", step, total_steps)
+        krk = _ManagedProcess(
+            name="kraken-cache",
+            cmd=[sys.executable, "-u", "kraken_cache_feeder.py", "--interval-s", "120"],
+        )
+        krk.start()
+        managed.append(krk)
+    else:
+        step += 2
+        _print_progress("Skipping external market feeds", step, total_steps)
+
+    # 3) Optional command center.
+    if spawn_command_center:
+        step += 1
+        cc_port = os.getenv("COMMAND_CENTER_PORT", "8800")
+        _print_progress(f"Starting Command Center ({cc_port})", step, total_steps)
+        cc = _ManagedProcess(
+            name="command-center",
+            cmd=[sys.executable, "-u", "aureon_command_center_ui.py"],
+            env={"PORT": cc_port},
+        )
+        cc.start()
+        managed.append(cc)
+    else:
+        step += 1
+        _print_progress("Skipping Command Center", step, total_steps)
+
+    # 4) Boot the in-process "brain" components.
+    step += 1
+    _print_progress("Booting Queen + intelligence + wiring", step, total_steps)
+    engine = launch_real_intelligence()
+    hub = launch_feed_hub()
+    wiring_status = launch_system_wiring()
+    sonar = launch_whale_sonar()
+    queen = launch_queen_runner()
+    launch_api_server()
+
+    # Production-safe execution toggles (best-effort; methods vary by Queen implementation).
+    try:
+        queen.has_full_control = True
+    except Exception:
+        pass
+    try:
+        queen.trading_enabled = bool(live_trading)
+    except Exception:
+        pass
+
+    # 5) Preflight: verify market cache exists (if enabled) + run flight check once.
+    print("\n✈️ PRE-FLIGHT CHECK")
+    if spawn_market_feeds:
+        cache_dir = Path(os.getenv("MARKET_CACHE_DIR", "ws_cache"))
+        price_file = cache_dir / "unified_prices.json"
+        for _ in range(30):
+            if price_file.exists() and price_file.stat().st_size > 0:
+                break
+            time.sleep(0.5)
+        print(f"   Market cache file: {'OK' if price_file.exists() else 'MISSING'} ({price_file})")
+        if price_file.exists():
+            try:
+                json.loads(price_file.read_text(encoding='utf-8') or "{}")
+                print("   Market cache JSON: OK")
+            except Exception:
+                print("   Market cache JSON: INVALID (continuing)")
+
+    intel = {}
+    try:
+        if hub and hasattr(hub, "gather_all_intelligence"):
+            intel = hub.gather_all_intelligence()
+    except Exception:
+        intel = {}
+
+    status = {}
+    try:
+        from aureon_system_wiring import get_wiring_status as _get_wiring_status
+        status = _get_wiring_status()
+    except Exception:
+        status = {}
+
+    try:
+        from micro_profit_labyrinth import MicroProfitLabyrinth
+        labyrinth = MicroProfitLabyrinth()
+        labyrinth.dry_run = not live_trading
+        wire_queen_systems(queen, labyrinth)
+        flight = run_system_flight_check(queen, labyrinth, intel, status)
+        ok = bool(flight.get("chirp_bus")) and bool(flight.get("micro_labyrinth"))
+        print(f"   Critical path: {'OK' if ok else 'DEGRADED'}")
+    except Exception as e:
+        print(f"   Flight check skipped: {e}")
+
+    print_status_summary(engine, hub, wiring_status, sonar)
+
+    # Ensure children shut down cleanly in containers.
+    shutting_down = {"value": False}
+
+    def _shutdown(signum, frame):  # noqa: ARG001
+        if shutting_down["value"]:
+            return
+        shutting_down["value"] = True
+        print("\n🛑 Shutdown requested - terminating managed processes...")
+        for p in reversed(managed):
+            try:
+                p.terminate()
+            except Exception:
+                pass
+
+    signal.signal(signal.SIGTERM, _shutdown)
+    signal.signal(signal.SIGINT, _shutdown)
+
+    # Restart child heads if they crash.
+    def _child_watchdog():
+        while not shutting_down["value"]:
+            for p in managed:
+                if not p.alive():
+                    print(f"\n⚠️ {p.name} exited - restarting")
+                    try:
+                        p.start()
+                    except Exception as e:
+                        print(f"   restart failed: {e}")
+            time.sleep(2.0)
+
+    threading.Thread(target=_child_watchdog, daemon=True).start()
+
+    # 6) Run the unified runtime.
+    os.environ["AUREON_LIVE_TRADING"] = "1" if live_trading else "0"
+    if not live_trading:
+        test_force_trade()
+        print("\n✅ Dry-run validated; switching to monitoring loop.")
+        run_live_monitoring()
+    else:
+        run_autonomous_trading(engine=engine, hub=hub)
+
 
 def test_force_trade():
     """
@@ -785,10 +1020,25 @@ def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description='Aureon Master Launcher')
     parser.add_argument('--test', action='store_true', help='Run force trade test in dry-run mode')
+    parser.add_argument('--production', action='store_true', help='Unified production orchestrator (spawns UI/data heads)')
+    parser.add_argument('--live', action='store_true', help='Enable live execution (use with --production)')
+    parser.add_argument('--no-command-center', action='store_true', help='Do not spawn the command center in production mode')
+    parser.add_argument('--no-market-feeds', action='store_true', help='Do not spawn market feed processes in production mode')
     args = parser.parse_args()
     
     if args.test:
         test_force_trade()
+        return
+
+    if args.production:
+        # Production defaults to dry-run unless explicitly enabled.
+        env_live = os.getenv("AUREON_LIVE_TRADING", "0") in ("1", "true", "TRUE", "yes", "YES")
+        live_trading = bool(args.live) or env_live
+        run_production_orchestrator(
+            live_trading=live_trading,
+            spawn_command_center=not args.no_command_center,
+            spawn_market_feeds=not args.no_market_feeds,
+        )
         return
     
     # Setup logging

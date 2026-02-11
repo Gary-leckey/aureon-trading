@@ -12140,8 +12140,7 @@ class OrcaKillCycle:
                     binance_positions = client.get_balance()
                     if binance_positions:
                         for asset, qty in binance_positions.items():
-                            # Skip stablecoins, fiat, and LD* (Binance Simple Earn/Locked - not spot tradeable)
-                            if asset in ['USD', 'USDT', 'USDC', 'BUSD', 'TUSD', 'DAI', 'FDUSD', 'GBP', 'EUR'] or asset.startswith('LD'):
+
                                 continue
                             qty = float(qty)
                             if qty > 0.000001:
@@ -14406,6 +14405,5 @@ if __name__ == "__main__":
         traceback.print_exc(file=sys.stderr)
         print("\n  Orca exiting gracefully to prevent crash loop\n", file=sys.stderr)
         sys.exit(1)
-
 
 
