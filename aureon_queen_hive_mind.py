@@ -14073,12 +14073,36 @@ Sero 👑🐝
             if self.clownfish is not None and market_state is not None:
                 try:
                     cf_result = self.clownfish.compute(market_state)
-                    clownfish_signal = cf_result.get('signal', 0.5)
-                    clownfish_micro_signals = cf_result.get('micro_signals', {})
+                    if isinstance(cf_result, dict):
+                        clownfish_signal = cf_result.get('signal', 0.5)
+                        clownfish_micro_signals = cf_result.get('micro_signals', {})
+                    elif isinstance(cf_result, (int, float)):
+                        # Some clownfish implementations return only the signal
+                        clownfish_signal = float(cf_result)
+                        clownfish_micro_signals = {}
+                    else:
+                        clownfish_signal = 0.5
+                        clownfish_micro_signals = {}
+
+                    def _as_signal_strength(value: Any) -> Optional[float]:
+                        """Normalize clownfish micro-signal values to a scalar in [0, 1]."""
+                        if isinstance(value, (int, float)):
+                            return float(value)
+                        if isinstance(value, dict):
+                            for key in ('signal', 'score', 'value', 'strength'):
+                                nested = value.get(key)
+                                if isinstance(nested, (int, float)):
+                                    return float(nested)
+                        return None
+
+                    micro_signal_values = [
+                        sig for sig in (_as_signal_strength(v) for v in clownfish_micro_signals.values())
+                        if sig is not None
+                    ]
                     
                     # Count strong/danger signals from 12 factors
-                    strong_count = sum(1 for v in clownfish_micro_signals.values() if v > 0.7)
-                    danger_count = sum(1 for v in clownfish_micro_signals.values() if v < 0.3)
+                    strong_count = sum(1 for v in micro_signal_values if v > 0.7)
+                    danger_count = sum(1 for v in micro_signal_values if v < 0.3)
                     
                     # Calculate boost/penalty for neural input
                     if strong_count >= 4:
