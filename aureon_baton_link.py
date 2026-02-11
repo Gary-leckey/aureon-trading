@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import time
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -29,6 +30,52 @@ _LAST_PING: Optional[float] = None
 _AUTO_CONTROL_DONE = False
 _LAST_HANDOFF: Optional[tuple[str, float]] = None
 _BATON_LOG_PATH = Path("state/baton_relay.jsonl")
+
+
+def _stream_is_broken(stream) -> bool:
+    if stream is None:
+        return True
+    try:
+        if getattr(stream, "closed", False):
+            return True
+    except Exception:
+        return True
+    try:
+        stream.write("")  # Probe; some wrappers raise ValueError if underlying handle is invalid.
+        stream.flush()
+        return False
+    except Exception:
+        return True
+
+
+def _open_console_stream(name: str):
+    # Windows: recover from broken stdout/stderr by reopening the console handles.
+    if sys.platform == "win32":
+        try:
+            return open(name, "w", encoding="utf-8", errors="replace", buffering=1)
+        except Exception:
+            return None
+    return None
+
+
+def _ensure_stdio() -> None:
+    """
+    Some Windows execution paths can leave sys.stdout/sys.stderr as closed or invalid
+    during import-time side effects. Repair them so module-level prints don't crash.
+    """
+    try:
+        if _stream_is_broken(sys.stdout):
+            repaired = _open_console_stream("CONOUT$") or open(os.devnull, "w")
+            sys.stdout = repaired
+    except Exception:
+        pass
+
+    try:
+        if _stream_is_broken(sys.stderr):
+            repaired = _open_console_stream("CONERR$") or open(os.devnull, "w")
+            sys.stderr = repaired
+    except Exception:
+        pass
 
 
 def _log_baton_event(payload: dict) -> None:
@@ -56,6 +103,7 @@ def _should_ping(now: float) -> bool:
 
 def link_system(module_name: str) -> None:
     """Publish a baton heartbeat and ensure Mycelium sonar is wired."""
+    _ensure_stdio()
     if module_name in _LINKED:
         return
     _LINKED.add(module_name)
