@@ -118,7 +118,12 @@ def main():
     print("  ✅ Logging system active")
     print("\n⚠️  THIS WILL EXECUTE REAL TRADES WITH REAL MONEY")
     
-    confirmation = input("\n🔴 Type 'ENABLE LIVE TRADING' to confirm: ")
+    auto_confirm = os.getenv("LIVE_TRADING_AUTO_CONFIRM", "").strip()
+    if auto_confirm == "ENABLE LIVE TRADING":
+        confirmation = auto_confirm
+        print("\n🔴 Type 'ENABLE LIVE TRADING' to confirm: ENABLE LIVE TRADING")
+    else:
+        confirmation = input("\n🔴 Type 'ENABLE LIVE TRADING' to confirm: ")
     
     if confirmation != "ENABLE LIVE TRADING":
         print("\n❌ Live trading NOT enabled. Exiting...")
