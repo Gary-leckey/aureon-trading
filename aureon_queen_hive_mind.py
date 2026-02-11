@@ -14062,7 +14062,42 @@ Sero 👑🐝
         """
         if not NeuralInput:
             return None
+
+        def _coerce_scalar(value: Any, default: float, min_val: float, max_val: float) -> float:
+            """Extract a numeric signal from nested payloads and clamp to range."""
+            scalar = value
+
+            if isinstance(scalar, dict):
+                for key in (
+                    'signal',
+                    'score',
+                    'value',
+                    'strength',
+                    'confidence',
+                    'coherence',
+                    'probability',
+                ):
+                    nested = scalar.get(key)
+                    if isinstance(nested, (int, float)) and not isinstance(nested, bool):
+                        scalar = nested
+                        break
+                else:
+                    scalar = default
+
+            if not isinstance(scalar, (int, float)) or isinstance(scalar, bool):
+                scalar = default
+
+            scalar = float(scalar)
+            return max(min_val, min(max_val, scalar))
         
+        # Normalize inbound payloads early (autonomous loops may pass dict payloads)
+        probability_score = _coerce_scalar(probability_score, 0.5, 0.0, 1.0)
+        wisdom_score = _coerce_scalar(wisdom_score, 0.5, 0.0, 1.0)
+        quantum_signal = _coerce_scalar(quantum_signal, 0.0, -1.0, 1.0)
+        gaia_resonance = _coerce_scalar(gaia_resonance, 0.5, 0.0, 1.0)
+        emotional_coherence = _coerce_scalar(emotional_coherence, 0.5, 0.0, 1.0)
+        mycelium_signal = _coerce_scalar(mycelium_signal, 0.0, -1.0, 1.0)
+
         # 🐠 CLOWNFISH MICRO-CHANGE SIGNAL
         clownfish_signal = 0.5  # Default neutral
         clownfish_boost = 1.0
@@ -14074,11 +14109,11 @@ Sero 👑🐝
                 try:
                     cf_result = self.clownfish.compute(market_state)
                     if isinstance(cf_result, dict):
-                        clownfish_signal = cf_result.get('signal', 0.5)
+                        clownfish_signal = _coerce_scalar(cf_result.get('signal', 0.5), 0.5, 0.0, 1.0)
                         clownfish_micro_signals = cf_result.get('micro_signals', {})
                     elif isinstance(cf_result, (int, float)):
                         # Some clownfish implementations return only the signal
-                        clownfish_signal = float(cf_result)
+                        clownfish_signal = _coerce_scalar(cf_result, 0.5, 0.0, 1.0)
                         clownfish_micro_signals = {}
                     else:
                         clownfish_signal = 0.5
@@ -14165,12 +14200,12 @@ Sero 👑🐝
                 pass
 
             # Clamp all values to valid ranges
-            prob = max(0.0, min(1.0, probability_score))
-            wisdom = max(0.0, min(1.0, wisdom_score))
-            quantum = max(-1.0, min(1.0, quantum_signal))
-            gaia = max(0.0, min(1.0, gaia_resonance))
-            emotion = max(0.0, min(1.0, emotional_coherence))
-            myc = max(-1.0, min(1.0, mycelium_signal))
+            prob = _coerce_scalar(probability_score, 0.5, 0.0, 1.0)
+            wisdom = _coerce_scalar(wisdom_score, 0.5, 0.0, 1.0)
+            quantum = _coerce_scalar(quantum_signal, 0.0, -1.0, 1.0)
+            gaia = _coerce_scalar(gaia_resonance, 0.5, 0.0, 1.0)
+            emotion = _coerce_scalar(emotional_coherence, 0.5, 0.0, 1.0)
+            myc = _coerce_scalar(mycelium_signal, 0.0, -1.0, 1.0)
             
             return NeuralInput(
                 probability_score=prob,
