@@ -1215,7 +1215,7 @@ def get_queen_phase(current_capital: float) -> dict:
             'target': 2500,
             'strategy': 'MOONSHOT_HUNTING',
             'min_cop': 1.10,  # Accept 10%+ gains for quick compounding
-            'max_positions': 3,
+            'max_positions': 50,  # NO LIMITS - Full production autonomous trading
             'prefer_volatile': True,
             'new_listings': True,
             'leverage_ok': True,
@@ -1228,7 +1228,7 @@ def get_queen_phase(current_capital: float) -> dict:
             'target': 250_000,
             'strategy': 'COMPOUND_MOMENTUM',
             'min_cop': 1.05,  # Accept 5%+ gains, compound rapidly
-            'max_positions': 5,
+            'max_positions': 50,  # NO LIMITS - Full production autonomous trading
             'prefer_volatile': True,
             'leverage_ok': True,
             'split_positions': True,
@@ -1241,7 +1241,7 @@ def get_queen_phase(current_capital: float) -> dict:
             'target': 50_000_000,
             'strategy': 'WHALE_TACTICS',
             'min_cop': 1.03,  # Accept 3%+ gains with large size
-            'max_positions': 8,
+            'max_positions': 50,  # NO LIMITS - Full production autonomous trading
             'options_preferred': True,
             'arbitrage_active': True,
             'catalyst_hunting': True,
@@ -1254,7 +1254,7 @@ def get_queen_phase(current_capital: float) -> dict:
             'target': 1_000_000_000,
             'strategy': 'MARKET_MAKER',
             'min_cop': 1.02,  # Accept 2%+ gains with massive size
-            'max_positions': 10,
+            'max_positions': 50,  # NO LIMITS - Full production autonomous trading
             'market_making': True,
             'mega_leverage': True,
             'priority_access': True,
@@ -11695,7 +11695,7 @@ class OrcaKillCycle:
         else:
             print("   Queen Sentience: UNAVAILABLE")
 
-    def run_autonomous(self, max_positions: int = 3, amount_per_position: float = 2.5,
+    def run_autonomous(self, max_positions: int = 50, amount_per_position: float = 10.0,
                        target_pct: float = 1.0, min_change_pct: float = 0.05):
         """
            FULLY AUTONOMOUS QUEEN-GUIDED TRADING LOOP   
@@ -14105,9 +14105,9 @@ class OrcaKillCycle:
     #    WAR ROOM MODE - RICH TERMINAL UI (NO SPAM)
     #                                                                                
     
-    def run_autonomous_warroom(self, max_positions: int = 5,
+    def run_autonomous_warroom(self, max_positions: int = 50,
                                target_pct: float = 1.0, min_change_pct: float = 0.05,
-                               duration_hours: float = 1.0, trade_interval_seconds: int = 10,
+                               duration_hours: float = float('inf'), trade_interval_seconds: int = 10,
                                risk_per_trade_pct: float = 0.5, amount_per_position: float = None):
         """
             WAR ROOM + RISING STAR MODE - THE WINNING FORMULA    
