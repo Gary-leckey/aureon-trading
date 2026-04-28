@@ -1,0 +1,21 @@
+# These are supported funding model platforms
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+
+# GitHub Sponsors — adds the "💖 Sponsor" button at the top of the repo.
+# REQUIRES enabling GitHub Sponsors on your account first:
+#   1. Go to https://github.com/sponsors
+#   2. Click "Join the waitlist" / "Set up GitHub Sponsors"
+#   3. Complete: identity verification → Stripe Connect (bank info) → tax forms
+#   4. Once approved, this line activates the Sponsor button.
+github: Gary-leckey
+
+# SumUp donation link — works immediately, listed under "Other ways to sponsor".
+custom:
+  - "https://pay.sumup.com/b2c/QFTPOX6U"
+
+# Other platforms supported (uncomment when set up):
+# patreon: USERNAME
+# ko_fi: USERNAME
+# open_collective: PROJECT
+# liberapay: USERNAME
+# buy_me_a_coffee: USERNAME
