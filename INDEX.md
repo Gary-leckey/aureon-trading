@@ -28,8 +28,8 @@
 
 | Document | Purpose | Audience | Time |
 |----------|---------|----------|------|
-| **[ARCHITECTURE.md](ARCHITECTURE.md)** | PEFCφS formalism, layer design, mathematical foundation | Engineers, researchers | 30 min |
-| **[STRUCTURE_GUIDE.md](STRUCTURE_GUIDE.md)** | Navigate the codebase, file organization | Developers, builders | 20 min |
+| **[ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)** | PEFCφS formalism, layer design, mathematical foundation | Engineers, researchers | 30 min |
+| **[docs/MODULES_AT_A_GLANCE.md](docs/MODULES_AT_A_GLANCE.md)** | Navigate the codebase, file organization | Developers, builders | 20 min |
 | **[docs/NAVIGATION_GUIDE.md](docs/NAVIGATION_GUIDE.md)** | Curated paths by role (trader/dev/researcher) | All audiences | 15 min |
 
 ### Navigation & Reference
@@ -219,8 +219,8 @@ See [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) for:
 4. Try a command from QUICK_START
 
 ### For Developers
-1. Read [STRUCTURE_GUIDE.md](STRUCTURE_GUIDE.md) — How is it organized?
-2. Read [ARCHITECTURE.md](ARCHITECTURE.md) — What's the design?
+1. Read [docs/MODULES_AT_A_GLANCE.md](docs/MODULES_AT_A_GLANCE.md) — How is it organized?
+2. Read [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) — What's the design?
 3. Read [DATA_FLOW.md](DATA_FLOW.md) — How does data move?
 4. Explore the code in `aureon/` (the active package — 715 modules across 24 domains)
 
@@ -231,7 +231,7 @@ See [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) for:
 4. Explore research/ and docs/research/
 
 ### For Architects
-1. Read [ARCHITECTURE.md](ARCHITECTURE.md) — The PEFCφS formalism
+1. Read [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) — The PEFCφS formalism
 2. Read [DATA_FLOW.md](DATA_FLOW.md) — Complete system flow
 3. Read [docs/architecture/THEORY_TO_CODE.md](docs/architecture/THEORY_TO_CODE.md) — HNC equations → Python mapping
 4. Study the active code under `aureon/` (715 modules) and the HNC harmonic implementation
@@ -261,7 +261,7 @@ See [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) for:
 | **How do I run it?** | See [**RUNNING.md**](RUNNING.md) |
 | Does it actually work? | See [LIVE_PROOF.md](LIVE_PROOF.md) with real data |
 | Where is file Y? | `find aureon -name "Y"` or `grep -r "Y" aureon/` |
-| How is it organized? | See [STRUCTURE_GUIDE.md](STRUCTURE_GUIDE.md) and [docs/MODULES_AT_A_GLANCE.md](docs/MODULES_AT_A_GLANCE.md) |
+| How is it organized? | See [docs/MODULES_AT_A_GLANCE.md](docs/MODULES_AT_A_GLANCE.md) and [docs/MODULES_AT_A_GLANCE.md](docs/MODULES_AT_A_GLANCE.md) |
 | What's the strategy? | See [SWOT_ANALYSIS.md](SWOT_ANALYSIS.md) |
 | How does data flow? | See [DATA_FLOW.md](DATA_FLOW.md) |
 | What's the theory? | See [docs/HNC_UNIFIED_WHITE_PAPER.md](docs/HNC_UNIFIED_WHITE_PAPER.md) |
@@ -281,8 +281,8 @@ Root-Level Entry Points:
 ├─ DATA_FLOW.md           ← Architecture diagrams
 ├─ AUDIT_SUMMARY.md       ← Consolidated analysis
 ├─ INDEX.md               ← You are here
-├─ ARCHITECTURE.md        ← PEFCφS formalism
-├─ STRUCTURE_GUIDE.md     ← Layer & directory navigation
+├─ docs/architecture/ARCHITECTURE.md  ← PEFCφS formalism
+├─ docs/MODULES_AT_A_GLANCE.md        ← Module reference (715 modules)
 └─ CLAUDE.md              ← AI-assistant onboarding
 
 Active Codebase:

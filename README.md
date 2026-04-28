@@ -57,8 +57,8 @@ This README is a complete tour of Aureon — the trading system, the research, t
 | **1. INTRO** | [What is this?](#-what-is-this) · [Growth Stats](#-growth-stats--december-2025--march-2026) · [Live Trading](#-live-now--watch-the-wizard-trade-in-real-time) · [Discord](#-join-the-community--discord) · [Support](#-support-the-project) · [Navigate by Role](#-navigate-by-role) · [Beta Testers](#-beta-testers-wanted) | First impressions · what this is · how to join |
 | **2. RUN THE SYSTEM** | [`RUNNING.md`](RUNNING.md) (canonical) · [Architecture Overview](#architecture-overview) · [Project Structure (715 modules)](#project-structure--715-modules-across-24-domains) · [Core Components](#core-components) · [Execution Flow](#execution-flow) · [Configuration](#configuration) · [Quick Start (War Room)](#quick-start-war-room-dashboard) · [Queen's 4-Phase Plan](#-queens-4-phase-master-plan) · [Unity Integration](#-new-unity-integration-v20261) · [Windows Plug & Play](#-windows-plug--play-legacy) · [Docker Deployment](#-docker-deployment-advanced) | Get hands on the code · understand how it runs |
 | **3. DEPLOYMENT & SAFETY** | [Key Files](#key-files) · [Production Deployment (DigitalOcean)](#-production-deployment-digitalocean) · [Safety](#safety) | Take it live · risk controls |
-| **4. RESEARCH & EVIDENCE** | [Latest Research](#-latest-research--fresh-off-the-press) · [System at a Glance](#️-system-at-a-glance) · [The Ancient Convergence (4,100-year chain)](#-the-ancient-convergence-they-were-never-separated) · [The $33.5T Exposure](#-the-complete-exposure-335-trillion-extracted-from-humanity) · [Extraction Timeline](#️-extraction-timeline-event-by-event) · [The Perpetrator Network](#-the-perpetrator-network-who-knows-who) · [The Bot Army (23 algorithms)](#-the-bot-army-23-algorithms-exposed) · [37 Global Predators](#-the-37-global-predators-who-owns-the-bots) · [The Extraction Playbook](#-the-extraction-playbook-how-they-do-it) · [Planetary Damage Assessment](#-planetary-damage-assessment) · [Name & Shame · Rogues' Gallery](#-name-and-shame-the-individuals-who-rigged-the-global-economy) · [Bot Ownership Registry](#-bot-ownership-registry-who-controls-the-algorithms) · [Coordination Network (Jan 2026)](#-current-coordination-network-january-2026) · [Findings Summary](#-findings-summary) · [Counter-Measures](#integrated-counter-measures) · [Methodology & Reproducibility](#methodology--reproducibility) · [Implications](#implications) · [Evidence File Reference](#evidence-file-reference) · [Citations](#citations--further-reading) · [Cognitive Framework & Moral Alignment](#cognitive-framework--moral-alignment) · [The Unified Field](#-the-unified-field-connecting-all-the-dots) | The core research · forensic evidence · methodology |
-| **5. TOOLS & ACTION** | [Market Intelligence Tools](#-market-intelligence--manipulation-detection-tools) · [Understanding the Implications](#-understanding-the-implications) · [Counter-Strategies — How to Fight Back](#️-counter-strategies-how-to-fight-back) · [Complete Evidence File Index](#-complete-evidence-file-index) · [Reproduction Commands](#-reproduction-commands) · [The Bottom Line](#-the-bottom-line) · [Global Predator Map](#️-global-predator-map-see-who-owns-what) · [On the Right Side of History](#🔥-we-are-on-the-right-side-of-history) | What to do with the findings · reproduce the work |
+| **4. RESEARCH & EVIDENCE** | [Latest Research](#-latest-research--fresh-off-the-press) · [System at a Glance](#-system-at-a-glance) · [The Ancient Convergence (4,100-year chain)](#-the-ancient-convergence-they-were-never-separated) · [The $33.5T Exposure](#-the-complete-exposure-335-trillion-extracted-from-humanity) · [Extraction Timeline](#-extraction-timeline-event-by-event) · [The Perpetrator Network](#-the-perpetrator-network-who-knows-who) · [The Bot Army (23 algorithms)](#-the-bot-army-23-algorithms-exposed) · [37 Global Predators](#-the-37-global-predators-who-owns-the-bots) · [The Extraction Playbook](#-the-extraction-playbook-how-they-do-it) · [Planetary Damage Assessment](#-planetary-damage-assessment) · [Name & Shame · Rogues' Gallery](#-name-and-shame-the-individuals-who-rigged-the-global-economy) · [Bot Ownership Registry](#-bot-ownership-registry-who-controls-the-algorithms) · [Coordination Network (Jan 2026)](#-current-coordination-network-january-2026) · [Findings Summary](#-findings-summary) · [Counter-Measures](#integrated-counter-measures) · [Methodology & Reproducibility](#methodology--reproducibility) · [Implications](#implications) · [Evidence File Reference](#evidence-file-reference) · [Citations](#citations--further-reading) · [Cognitive Framework & Moral Alignment](#cognitive-framework--moral-alignment) · [The Unified Field](#-the-unified-field-connecting-all-the-dots) | The core research · forensic evidence · methodology |
+| **5. TOOLS & ACTION** | [Market Intelligence Tools](#-market-intelligence--manipulation-detection-tools) · [Understanding the Implications](#-understanding-the-implications) · [Counter-Strategies — How to Fight Back](#-counter-strategies-how-to-fight-back) · [Complete Evidence File Index](#-complete-evidence-file-index) · [Reproduction Commands](#-reproduction-commands) · [The Bottom Line](#-the-bottom-line) · [Global Predator Map](#-global-predator-map-see-who-owns-what) · [On the Right Side of History](#-we-are-on-the-right-side-of-history) | What to do with the findings · reproduce the work |
 | **6. DOCS & LICENSE** | [Documentation & Resources (180+ docs)](#-documentation--resources) · [Connect with Aureon](#-connect-with-aureon) · [License](#license) | Where to read more · how to reach us |
 
 </div>
@@ -601,7 +601,7 @@ cp .env.example .env  # Add API keys
 python aureon/exchanges/unified_market_trader.py
 
 # 3. Or: Launch Queen's War Room (Orca Kill Cycle)
-python aureon/trading/orca_complete_kill_cycle.py
+python aureon/bots/orca_complete_kill_cycle.py
 ```
 
 ### 🪟 Windows (PowerShell)
@@ -1423,7 +1423,7 @@ python3 -m pytest tests/ -q --tb=line
 python3 aureon_planetary_harmonic_sweep.py
 
 # Run historical manipulation analysis
-python3 aureon_historical_manipulation_hunter.py
+python aureon/analytics/aureon_historical_manipulation_hunter.py
 ```
 
 #### What We Invite Peer Reviewers To Do
@@ -2365,10 +2365,10 @@ The probability of this occurring by chance: **p < 0.0001**
 **Reproduction Command:**
 ```bash
 # Run bot detection across all symbols
-python aureon_historical_bot_census.py
+python aureon/analytics/aureon_historical_bot_census.py
 
 # Run cultural/timezone attribution
-python aureon_cultural_bot_fingerprinting.py
+python aureon/bots_intelligence/aureon_cultural_bot_fingerprinting.py
 
 # View results
 cat bot_cultural_attribution.json | jq '.BTCUSDT[0]'
@@ -2462,7 +2462,7 @@ cat bot_cultural_attribution.json | jq '.BTCUSDT[0]'
 
 **Reproducibility:**
 ```bash
-python aureon_planetary_harmonic_sweep.py --symbols BTC/USD,ETH/USD,SOL/USD,XRP/USD,BNB/USD
+python aureon/harmonic/aureon_planetary_harmonic_sweep.py --symbols BTC/USD,ETH/USD,SOL/USD,XRP/USD,BNB/USD
 ```
 
 **Quantitative Metrics:**
@@ -2494,7 +2494,7 @@ python aureon_planetary_harmonic_sweep.py --symbols BTC/USD,ETH/USD,SOL/USD,XRP/
 
 **Reproducibility:**
 ```bash
-python aureon_strategic_warfare_scanner.py
+python aureon/scanners/aureon_strategic_warfare_scanner.py
 ```
 
 ---
@@ -2546,7 +2546,7 @@ python aureon_strategic_warfare_scanner.py
 
 **Reproducibility:**
 ```bash
-python aureon_ghost_dance_protocol.py
+python aureon/wisdom/aureon_ghost_dance_protocol.py
 ```
 
 ---

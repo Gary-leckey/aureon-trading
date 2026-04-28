@@ -310,7 +310,7 @@ cat 1_substrate/frequencies/sacred_frequencies.json
 cat 1_substrate/frequencies/planetary_harmonic_network.json
 
 # 4. Check φ² bridge alignment
-python3 1_substrate/frequencies/aureon_phi_squared_coherence_bridge.py
+python aureon/harmonic/phi_bridge.py
 ```
 
 **System delivers:**

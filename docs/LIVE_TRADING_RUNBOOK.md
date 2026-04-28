@@ -19,7 +19,7 @@ export $(cat .env | grep -v '^#' | xargs)
 pip install -r requirements.txt
 
 # Run Stage 0
-python aureon/trading/aureon_live.py --stage 0 --symbol BTCUSDT --trades 1
+python scripts/aureon_ignition.py
 ```
 
 **Expected Output:**
@@ -40,8 +40,8 @@ python aureon/trading/aureon_live.py --stage 0 --symbol BTCUSDT --trades 1
 # Switch to real testnet orders
 export BINANCE_DRY_RUN=false
 
-# Run Stage 1 (still on testnet)
-python aureon/trading/aureon_live.py --stage 1 --symbol BTCUSDT --trades 3
+# Run Stage 1 (still on testnet — places real testnet orders)
+python scripts/aureon_ignition.py --live
 ```
 
 **Expected Behavior:**
@@ -69,8 +69,8 @@ export BINANCE_USE_TESTNET=false
 # Enable live confirmation
 export CONFIRM_LIVE=yes
 
-# Run Stage 2 with conservative trade count
-python aureon/trading/aureon_live.py --stage 2 --symbol BTCUSDT --trades 1
+# Run Stage 2 (mainnet + real money)
+python scripts/aureon_ignition.py --live
 ```
 
 **⚠️ WARNING:** Real capital will be spent. Verify you have:

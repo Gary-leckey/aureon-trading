@@ -12,15 +12,15 @@ python scripts/diagnostics/check_live_environment.py
 
 # 3. RUN STAGE 0 (testnet + dry-run, NO real money)
 export BINANCE_USE_TESTNET=true BINANCE_DRY_RUN=true
-python aureon/trading/aureon_live.py --stage 0 --symbol BTCUSDT
+python scripts/aureon_ignition.py
 
 # 4. RUN STAGE 1 (testnet + real orders, testnet money)
 export BINANCE_USE_TESTNET=true BINANCE_DRY_RUN=false
-python aureon/trading/aureon_live.py --stage 1 --symbol BTCUSDT --trades 3
+python scripts/aureon_ignition.py --live
 
 # 5. RUN STAGE 2 (mainnet + real money — ONLY after 1+ hrs on testnet)
 export BINANCE_USE_TESTNET=false CONFIRM_LIVE=yes
-python aureon/trading/aureon_live.py --stage 2 --symbol BTCUSDT
+python scripts/aureon_ignition.py --live
 ```
 
 ---
@@ -32,7 +32,8 @@ python aureon/trading/aureon_live.py --stage 2 --symbol BTCUSDT
 | `python scripts/diagnostics/check_live_environment.py` | Pre-flight validation |
 | `python aureon/exchanges/binance_trade_sample.py` | Test order placement logic |
 | `python aureon/exchanges/binance_get_address.py BTC` | Retrieve deposit address |
-| `python aureon/trading/aureon_live.py --stage 0 --symbol BTCUSDT` | Validate strategy (dry-run) |
+| `python scripts/aureon_ignition.py` | Validate strategy (default safe dry-run) |
+| `python scripts/aureon_ignition.py --live` | Live trading (testnet or mainnet, controlled via env vars) |
 | `tail -f trade_audit.log` | Monitor live trades in real-time |
 
 ---
@@ -120,7 +121,7 @@ grep "✅ Trade executed" trade_audit.log
 |------|------|---------|
 | `.env` | Config | Store API keys (gitignored) |
 | `binance_client.py` | Module | Core Binance client |
-| `aureon_live.py` | Script | Main trading engine |
+| `scripts/aureon_ignition.py` | Script | Master launcher (canonical entry point) |
 | `trade_audit.log` | Log | All trades recorded here |
 | `LIVE_TRADING_RUNBOOK.md` | Guide | Full setup instructions |
 | `SECURITY_TRADING.md` | Reference | Risk & key management |

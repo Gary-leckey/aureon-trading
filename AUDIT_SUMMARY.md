@@ -283,10 +283,10 @@ All documentation now in place to understand the complete system architecture.
 → [`DATA_FLOW.md`](DATA_FLOW.md) → See architecture
 
 **For "What's the theory?"**
-→ [`ARCHITECTURE.md`](ARCHITECTURE.md) → See PEFCφS formalism
+→ [`ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) → See PEFCφS formalism
 
 **For "What are the layers?"**
-→ [`STRUCTURE_GUIDE.md`](STRUCTURE_GUIDE.md) → Navigate 4 layers
+→ [`docs/MODULES_AT_A_GLANCE.md`](docs/MODULES_AT_A_GLANCE.md) → Navigate 715 modules
 
 **For "What are the domains?"**
 → [`docs/MODULES_AT_A_GLANCE.md`](docs/MODULES_AT_A_GLANCE.md) → See 24 domains across 715 modules
