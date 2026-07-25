@@ -123,11 +123,14 @@ class TestDynamicCostEstimator(unittest.TestCase):
             )
         
         estimate = self.estimator.estimate_cost('BTC/USD', 'buy', 100.0)
-        
-        # Should be capped at maximums
-        self.assertLessEqual(estimate.estimated_fee_pct, 0.30)  # MAX_FEE_PCT
-        self.assertLessEqual(estimate.estimated_spread_pct, 0.20)  # MAX_SPREAD_PCT
-        self.assertLessEqual(estimate.estimated_slippage_pct, 0.10)  # MAX_SLIPPAGE_PCT
+
+        # Should be capped at the estimator's OWN maximums — hardcoding the
+        # numbers froze an old tuning (MAX_SLIPPAGE_PCT was deliberately raised
+        # to 0.65 to allow extreme-slippage learning) and turned a config change
+        # into a false alarm. The ceiling contract is what matters.
+        self.assertLessEqual(estimate.estimated_fee_pct, DynamicCostEstimator.MAX_FEE_PCT)
+        self.assertLessEqual(estimate.estimated_spread_pct, DynamicCostEstimator.MAX_SPREAD_PCT)
+        self.assertLessEqual(estimate.estimated_slippage_pct, DynamicCostEstimator.MAX_SLIPPAGE_PCT)
     
     def test_time_weighted_averaging(self):
         """Recent samples should weigh more than old samples."""

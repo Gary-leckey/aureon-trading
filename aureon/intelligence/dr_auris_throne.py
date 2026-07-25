@@ -99,6 +99,19 @@ class CosmicState:
     reasoning: List[str] = field(default_factory=list)
     timestamp: float = 0.0
 
+    # Provenance. Every numeric field above has a plausible default (7.83 Hz, coherence
+    # 0.5, cosmic_score 0.5), so a state assembled with no source connected looked exactly
+    # like a quiet, measured sky. These say which sources actually answered this cycle, so
+    # a consumer can tell a reading from a default — and ``data_available`` is False when
+    # nothing answered at all.
+    sources_live: List[str] = field(default_factory=list)
+    sources_unavailable: List[str] = field(default_factory=list)
+
+    @property
+    def data_available(self) -> bool:
+        """True when at least one real planetary source answered this cycle."""
+        return bool(self.sources_live)
+
 
 # ============================================================================
 # DR. AURIS THRONE ENGINE
@@ -230,7 +243,9 @@ class DrAurisThrone:
         reasoning = []
 
         # --- 1. Space Weather (NOAA/NASA) ---
-        if self._space_weather_fn:
+        if not self._space_weather_fn:
+            state.sources_unavailable.append("space_weather")
+        else:
             try:
                 sw = self._space_weather_fn()
                 if isinstance(sw, dict):
@@ -248,24 +263,34 @@ class DrAurisThrone:
                         reasoning.append(f"Southward Bz ({state.bz_component:.1f} nT) — substorm risk")
                     if state.solar_flares_24h > 0:
                         reasoning.append(f"{state.solar_flares_24h} solar flares in 24h")
+                    state.sources_live.append("space_weather")
                 elif isinstance(sw, (int, float)):
                     state.cosmic_score = float(sw)
+                    state.sources_live.append("space_weather")
+                else:
+                    state.sources_unavailable.append("space_weather")
             except Exception as e:
                 logger.debug(f"Space weather unavailable: {e}")
+                state.sources_unavailable.append("space_weather")
 
         # --- 2. Schumann Resonance ---
-        if self._schumann_fn:
+        if not self._schumann_fn:
+            state.sources_unavailable.append("earth_blessing")
+        else:
             try:
                 blessing, msg = self._schumann_fn()
                 state.earth_blessing = blessing
+                state.sources_live.append("earth_blessing")
                 if blessing < 0.4:
                     reasoning.append(f"Earth field disturbed (blessing={blessing:.2f})")
                 elif blessing > 0.7:
                     reasoning.append(f"Earth field coherent (blessing={blessing:.2f})")
             except Exception:
-                pass
+                state.sources_unavailable.append("earth_blessing")
 
-        if self._schumann_reading_fn:
+        if not self._schumann_reading_fn:
+            state.sources_unavailable.append("schumann")
+        else:
             try:
                 reading = self._schumann_reading_fn()
                 if isinstance(reading, dict):
@@ -273,27 +298,42 @@ class DrAurisThrone:
                     state.schumann_coherence = reading.get("coherence", 0.5)
                     state.schumann_amplitude = reading.get("amplitude", 0)
                     state.earth_disturbance = reading.get("earth_disturbance_level", 0)
+                    state.sources_live.append("schumann")
                 elif hasattr(reading, "fundamental_hz"):
                     state.schumann_hz = getattr(reading, "fundamental_hz", 7.83)
                     state.schumann_coherence = getattr(reading, "quality", 0.5)
                     state.schumann_amplitude = getattr(reading, "amplitude", 0)
                     state.earth_disturbance = getattr(reading, "earth_disturbance_level", 0)
+                    state.sources_live.append("schumann")
+                else:
+                    state.sources_unavailable.append("schumann")
             except Exception:
-                pass
+                state.sources_unavailable.append("schumann")
 
         # --- 3. Earth Resonance Gate ---
-        if self._earth_gate_fn:
+        if not self._earth_gate_fn:
+            state.sources_unavailable.append("earth_gate")
+        else:
             try:
                 gate = self._earth_gate_fn()
                 if isinstance(gate, dict):
                     state.gate_open = gate.get("gate_open", True)
+                    state.sources_live.append("earth_gate")
                     if not state.gate_open:
                         reasoning.append(f"Earth resonance gate CLOSED: {gate.get('reason', '?')}")
+                else:
+                    state.sources_unavailable.append("earth_gate")
             except Exception:
-                pass
+                state.sources_unavailable.append("earth_gate")
 
         # --- 4. HNC Lambda Engine ---
-        if self._lambda_engine:
+        # Only run on real readings. The engine was fed cosmic_score / earth_blessing /
+        # earth_disturbance unconditionally, so with no source connected it computed a Λ(t)
+        # out of the dataclass defaults (0.5, 0.5, 0.0) and published it as the cosmic
+        # sub-field — a fabricated contribution to the organism's shared HNC consensus.
+        if self._lambda_engine and not state.data_available:
+            reasoning.append("Λ(t) not computed: no planetary source answered")
+        elif self._lambda_engine:
             try:
                 from aureon.core.aureon_lambda_engine import SubsystemReading
 
@@ -383,6 +423,11 @@ class DrAurisThrone:
                 "advisory": state.advisory,
                 "reasoning": state.reasoning,
                 "cycle": self._cycle_count,
+                # Provenance travels with the reading, so a consumer never has to assume
+                # the numbers above came from the sky rather than from a default.
+                "data_available": state.data_available,
+                "sources_live": list(state.sources_live),
+                "sources_unavailable": list(state.sources_unavailable),
             }
             self._thought_bus.publish(Thought(
                 source="dr_auris_throne",

@@ -51,18 +51,21 @@ def test_s5_system():
         profit = path[2] * random.uniform(0.5, 1.5)
         fee = profit * 0.001  # 0.1% fee
         
-        network.record_conversion_profit(
-            from_asset=path[0],
-            to_asset=path[1],
-            gross_profit=profit,
-            fees_paid=fee,
-            exchange='binance'
-        )
+        # The production API takes one conversion_data dict (aureon_mycelium.py:975) —
+        # this call had drifted onto a kwargs form that never existed there.
+        network.record_conversion_profit({
+            'from_asset': path[0],
+            'to_asset': path[1],
+            'exchange': 'binance',
+            'fees': fee,
+            'net_profit': profit - fee,
+            'success': True,
+        })
         time.sleep(0.01)  # Small delay to simulate real trading
     
     stats = network.get_conversion_stats()
     print(f"  Total Conversions: {stats['total_conversions']}")
-    print(f"  Net Profit: ${stats['net_profit']:.4f}")
+    print(f"  Net Profit: ${stats['net_conversion_profit']:.4f}")  # real stats key
     print(f"  Velocity: ${stats['s5']['velocity']:.4f}/hour")
     print(f"  Acceleration: ${stats['s5']['acceleration']:.6f}/hour²")
     print(f"  Phase: {stats['s5']['phase']}")

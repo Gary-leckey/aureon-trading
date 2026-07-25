@@ -2049,7 +2049,14 @@ class GroundingReality:
         # Λ(t) = S(t) + O(t) + E(t)
         # We average them to keep it normalized
         lambda_t = (signal_score + obs_mapped + environment_score) / 3.0
-        
+
+        # Reconcile with the canonical HNC field: the shared Γ can only tighten
+        # this live gate, never loosen it (b46 order-path wiring).
+        try:
+            from aureon.core.hnc_field import reconcile_gamma
+            lambda_t = reconcile_gamma(lambda_t)
+        except Exception:
+            pass
         return lambda_t
 
     def calculate_gravity_signal(self, price_change_pct: float, volume: float) -> float:

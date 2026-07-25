@@ -134,9 +134,16 @@ class MasterEquation:
         lambda_t = s_t + o_t + e_t
         self.lambda_history.append(lambda_t)
         
-        # Coherence Γ = alignment measure (variance normalized)
+        # Coherence Γ = alignment measure (variance normalized), reconciled
+        # conservatively with the organism's canonical field — the shared Γ can
+        # only tighten this live gate, never loosen it (b46 order-path wiring).
         variance = max(abs(market_data['high'] - market_data['low']) / market_data['price'], 0.001)
         coherence = max(1 - (variance / 10), 0.0)
+        try:
+            from aureon.core.hnc_field import reconcile_gamma
+            coherence = reconcile_gamma(coherence)
+        except Exception:
+            pass
         
         return {
             'lambda': lambda_t,

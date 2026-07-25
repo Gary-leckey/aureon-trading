@@ -88,10 +88,15 @@ def test_queen_hive_mind_integration():
     # Create queen with initial capital
     queen = create_queen_hive_mind(initial_capital=100.0)
     
-    # 1. Take full control
+    # 1. Take full control. Under AUREON_AUDIT_MODE the queen deliberately answers
+    # AUDIT_SAFE (trading disabled, side-effectful takeovers skipped) — that is the
+    # production contract for audit runs, not a failure.
+    import os
+    audit = os.getenv('AUREON_AUDIT_MODE', '').strip().lower() in {'1', 'true', 'yes', 'on'}
+    expected_level = 'AUDIT_SAFE' if audit else 'FULL'
     result = queen.take_full_control()
     assert result['success'], "Should take full control"
-    assert result['control_level'] == 'FULL', "Control level should be FULL"
+    assert result['control_level'] == expected_level, f"Control level should be {expected_level}"
     print(f"   ✅ Queen took full control of {len(result['systems_controlled'])} systems")
     
     # 2. Check harmonic systems are in controlled systems

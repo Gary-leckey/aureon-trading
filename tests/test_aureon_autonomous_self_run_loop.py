@@ -170,7 +170,8 @@ def test_goal_contract_dispatcher_queues_safe_code_when_route_is_code(tmp_path: 
 
 
 def test_production_launcher_supervises_autonomous_self_run_loop() -> None:
-    script = Path("AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1").read_text(encoding="utf-8")
+    # The launcher moved to scripts/launchers/ in the repository reorganisation.
+    script = Path("scripts/launchers/AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1").read_text(encoding="utf-8")
 
     assert "SkipAutonomousSelfRun" in script
     assert "SelfRunIntervalSec" in script

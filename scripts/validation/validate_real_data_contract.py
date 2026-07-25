@@ -76,7 +76,10 @@ QUARANTINE_EXACT_PATHS = {
     "aureon/trading/aureon_kraken_ecosystem.py",
     "aureon/trading/aureon_omega.py",
     "aureon/trading/aureon_queen_execute.py",
-    "aureon/trading/aureon_queen_live_runner.py",
+    # aureon/trading/aureon_queen_live_runner.py was here. Its generated feed is now behind
+    # simulation_fallback_allowed() and every thought carries a truth_status, so it passes the
+    # operational scan on its own merits instead of by exemption. Do not re-add it — that
+    # would hide the next regression rather than fix it.
     "aureon/trading/aureon_the_play.py",
     "aureon/trading/aureon_the_play_old.py",
     "aureon/trading/aureon_tsx_trader.py",

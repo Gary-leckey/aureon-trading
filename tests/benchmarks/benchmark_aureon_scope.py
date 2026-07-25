@@ -3388,6 +3388,94 @@ def b45_saas_coverage(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b46_logic_train(tmp_root: Path) -> Dict[str, Any]:
+    """EVERY decision site on the harmonic logic train is discovered by reading the tree and checked
+    for its wire to the one canonical field — not taken from a hand-written list. b41 asks the right
+    question of five named consumers; this asks it of all ~1,090 modules under `aureon/`, classifying
+    each as authority (defines the field), producer (computes a local field, must publish it),
+    consumer (decides on a field, must read canonical) or inert (names it, decides nothing). What is
+    still unwired is pinned by name in `KNOWN_UNWIRED`, so a NEWLY added unwired decision site lands
+    in `unexpected_unwired` and fails — the ratchet — while the remaining gap stays a literal list
+    that can only shrink by a visible diff. Order-path gaps (trading / exchanges / portfolio) are
+    flagged as such rather than averaged into a percentage. Deterministic; artifacts byte-identical.
+    """
+    import json
+
+    from aureon.cognition import logic_train_audit as lta
+
+    report = lta.compute_logic_train()
+    out_md = tmp_root / "logic_train.md"
+    out_json = tmp_root / "logic_train.json"
+    lta.write_logic_train_report(report, out_md, out_json)
+
+    loaded = json.loads(out_json.read_text(encoding="utf-8")) if out_json.exists() else {}
+    md = out_md.read_text(encoding="utf-8") if out_md.exists() else ""
+
+    out_md2 = tmp_root / "logic_train2.md"
+    lta.write_logic_train_report(lta.compute_logic_train(), out_md2)
+    determinism = out_md.read_bytes() == out_md2.read_bytes()
+
+    # The ratchet's own proof: an injected private-coherence decision site must be caught.
+    probe_root = tmp_root / "probe"
+    sneaky = probe_root / "aureon" / "probe" / "private_gate.py"
+    sneaky.parent.mkdir(parents=True, exist_ok=True)
+    sneaky.write_text(
+        "def decide():\n"
+        "    symbolic_life_score = 0.7\n"
+        "    if symbolic_life_score > 0.5:\n"
+        "        return 'approve'\n"
+        "    return 'veto'\n",
+        encoding="utf-8",
+    )
+    probe = lta.compute_logic_train(repo_root=probe_root)
+    ratchet_bites = "aureon/probe/private_gate.py" in probe.unexpected_unwired
+
+    relevant = report.n_producer + report.n_consumer + report.n_authority
+    order_path = [m for m in report.unwired
+                  if any(seg in m for seg in ("/trading/", "/exchanges/", "/portfolio/"))]
+
+    invariants = {
+        "discovers_whole_tree": report.n_scanned > 900,
+        "every_module_has_exactly_one_role": (
+            report.n_authority + report.n_producer + report.n_consumer + report.n_inert
+            == report.n_scanned),
+        "no_unexpected_gaps": report.unexpected_unwired == [],
+        "no_stale_pinned_gaps": report.retired_gaps == [],
+        "ratchet_catches_a_new_unwired_site": ratchet_bites,
+        "verdict_tracks_the_gap_count": report.train_connected is (report.n_unwired == 0),
+        "order_path_gaps_flagged": all(
+            "LIVE ORDER PATH" in lta.KNOWN_UNWIRED.get(m, "") for m in order_path),
+        "artifact_names_the_gaps": all(m in md for m in report.unwired[:3]),
+        "deterministic": determinism,
+        "json_round_trips": loaded.get("n_unwired") == report.n_unwired,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Logic-train audit (repo-wide, one field)",
+        "module": "aureon/cognition/logic_train_audit.py",
+        "passed": passed,
+        "metrics": {
+            "scanned": report.n_scanned,
+            "relevant": relevant,
+            "wired": report.n_wired,
+            "unwired": report.n_unwired,
+            "order_path_gaps": len(order_path),
+            "wired_fraction": round(report.wired_fraction, 4),
+        },
+        "evidence": (
+            f"discovered {report.n_scanned} modules → {relevant} on the harmonic train "
+            f"({report.n_authority} authority / {report.n_producer} producer / "
+            f"{report.n_consumer} consumer); {report.n_wired} wired "
+            f"({report.wired_fraction:.1%}), {report.n_unwired} unwired with "
+            f"{len(order_path)} on the live order path; every gap pinned by name with a reason; "
+            f"0 unexpected and 0 stale entries; an injected private-coherence decision site is "
+            f"caught by the ratchet; deterministic md+JSON"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3439,6 +3527,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Runtime direction (load-bearing)", b43_direction_runtime),
     ("Brain-reply membrane (outbound)",   b44_brain_reply_membrane),
     ("SaaS repo-wide coverage (38/38)",    b45_saas_coverage),
+    ("Logic-train audit (repo-wide)",       b46_logic_train),
 ]
 
 

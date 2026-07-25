@@ -1,10 +1,15 @@
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from aureon_thought_bus import Thought, get_thought_bus
 from mycelium_whale_sonar import WhaleSonar
+
+# The bus deliberately keeps sonar auto-wiring inert under AUREON_AUDIT_MODE
+# (audit probes must not start background threads). These tests verify the
+# NORMAL runtime path, so they clear the audit flag around bus construction.
+_RUNTIME_ENV = {"AUREON_AUDIT_MODE": ""}
 
 
 class TestWhaleSonar(unittest.TestCase):
@@ -39,14 +44,17 @@ class TestWhaleSonar(unittest.TestCase):
         tb._memory.clear()
 
         ws = WhaleSonar(thought_bus=tb, sample_window=2.0, agg_interval=0.5)
-        # inject a fake enigma integration with a decode method
+        # inject a fake enigma integration with a decode method.
+        # enigma_integration is a read-only lazy property now, so the injection
+        # seam is the backing fields, not the property itself.
         mock_enigma = MagicMock()
         fake_decoded = MagicMock()
         fake_decoded.grade.name = 'MAGIC'
         fake_decoded.confidence = 0.77
         fake_decoded.message = 'decoded-intel'
         mock_enigma.enigma.decode.return_value = fake_decoded
-        ws.enigma_integration = mock_enigma
+        ws._enigma_integration = mock_enigma
+        ws._enigma_checked = True
 
         ws.start()
         for _ in range(3):
@@ -62,24 +70,33 @@ class TestWhaleSonar(unittest.TestCase):
         ws.stop()
 
     def test_get_thought_bus_auto_wires_sonar(self):
-        # Ensure that calling get_thought_bus auto-attaches and starts a Sonar
-        from aureon_thought_bus import get_thought_bus
-        tb = get_thought_bus(persist_path=None)
-        self.assertTrue(hasattr(tb, '_sonar'))
-        sonar = getattr(tb, '_sonar')
-        self.assertIsNotNone(sonar)
+        # Ensure that a bus created in normal runtime auto-attaches and starts a Sonar.
+        # The global singleton may have been built under audit mode (sonar inert by
+        # design), so build a fresh singleton with the audit flag cleared and restore
+        # the original afterwards.
+        import aureon_thought_bus as bus_mod
+        original = bus_mod._thought_bus_instance
+        try:
+            bus_mod._thought_bus_instance = None
+            with patch.dict('os.environ', _RUNTIME_ENV):
+                tb = bus_mod.get_thought_bus(persist_path=None)
+            self.assertTrue(hasattr(tb, '_sonar'))
+            sonar = getattr(tb, '_sonar')
+            self.assertIsNotNone(sonar)
 
-        # publish messages and confirm sonar emits whale.sonar.<source>
-        for _ in range(6):
-            tb.publish(Thought(source='auto_kraken', topic='system.health', payload={'message':'ok', 'priority':'high'}))
-        time.sleep(1.2)
-        thoughts = tb.recall(limit=500)
-        sonar_thoughts = [t for t in thoughts if t['topic'].startswith('whale.sonar.auto_kraken')]
-        self.assertTrue(len(sonar_thoughts) >= 1)
+            # publish messages and confirm sonar emits whale.sonar.<source>
+            for _ in range(6):
+                tb.publish(Thought(source='auto_kraken', topic='system.health', payload={'message': 'ok', 'priority': 'high'}))
+            time.sleep(1.2)
+            thoughts = tb.recall(limit=500)
+            sonar_thoughts = [t for t in thoughts if t['topic'].startswith('whale.sonar.auto_kraken')]
+            self.assertTrue(len(sonar_thoughts) >= 1)
 
-        # cleanup
-        if hasattr(tb, '_sonar') and getattr(tb, '_sonar'):
-            getattr(tb, '_sonar').stop()
+            # cleanup
+            if hasattr(tb, '_sonar') and getattr(tb, '_sonar'):
+                getattr(tb, '_sonar').stop()
+        finally:
+            bus_mod._thought_bus_instance = original
 
     def test_queen_alert_on_loud_whale(self):
         tb = get_thought_bus(persist_path=None)
@@ -99,10 +116,11 @@ class TestWhaleSonar(unittest.TestCase):
     def test_direct_instantiation_wires_sonar(self):
         """Test that instantiating ThoughtBus directly also attaches sonar."""
         from aureon_thought_bus import ThoughtBus
-        
-        # Create a fresh bus (detached from global singleton)
-        tb = ThoughtBus(persist_path=None)
-        
+
+        # Create a fresh bus (detached from global singleton) in normal runtime mode
+        with patch.dict('os.environ', _RUNTIME_ENV):
+            tb = ThoughtBus(persist_path=None)
+
         # Should have _sonar attached
         self.assertTrue(hasattr(tb, '_sonar'))
         self.assertIsNotNone(tb._sonar)
