@@ -20,7 +20,7 @@ else falls back to "is the package importable".
 from __future__ import annotations
 
 import importlib.util
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 # The 6 product domains the frontend console presents.
 PRODUCT_DOMAINS: List[str] = [
@@ -128,16 +128,83 @@ def probe_domain(fs_domain: str) -> Dict[str, object]:
         "product_domain": product_domain_for(fs_domain),
         "entry_point": entry,
         "kind": kind,
+        "has_adapter": fs_domain in _ADAPTERS,
         "available": available,
     }
 
 
-def domain_report(fs_domains: List[str] | None = None) -> List[Dict[str, object]]:
-    """Reachability report across the known filesystem domains."""
+def _rollup_by_domain(catalog: Dict[str, Any] | None) -> Dict[str, Dict[str, Any]]:
+    """Roll the catalog's per-module scan up into a real operational summary per filesystem
+    domain — module / dashboard / Queen-wired / bus-wired counts, total LOC, and the distinct
+    capability categories present. All derived from the honest filesystem scan; nothing fabricated."""
+    roll: Dict[str, Dict[str, Any]] = {}
+    cats = catalog.get("categories", {}) if isinstance(catalog, dict) else {}
+    for cat_name, cat in cats.items():
+        for s in cat.get("systems", []) if isinstance(cat, dict) else []:
+            d = str(s.get("fs_domain", "core"))
+            r = roll.setdefault(d, {
+                "system_count": 0, "dashboards": 0, "queen_integrated": 0,
+                "bus_wired": 0, "wired_count": 0, "total_loc": 0, "capabilities": set(),
+            })
+            r["system_count"] += 1
+            r["dashboards"] += 1 if s.get("is_dashboard") else 0
+            r["queen_integrated"] += 1 if s.get("has_queen_integration") else 0
+            r["bus_wired"] += 1 if s.get("has_thought_bus") else 0
+            r["wired_count"] += 1 if (s.get("has_thought_bus") or s.get("has_queen_integration")) else 0
+            r["total_loc"] += int(s.get("loc", 0) or 0)
+            r["capabilities"].add(cat_name)
+    return roll
+
+
+def _finalize_health(r: Dict[str, Any] | None) -> Dict[str, Any] | None:
+    """Shape one raw rollup bucket into the public ``health`` dict (sorted, fractions rounded)."""
+    if r is None:
+        return None
+    n = int(r["system_count"])
+    return {
+        "system_count": n,
+        "dashboards": int(r["dashboards"]),
+        "queen_integrated": int(r["queen_integrated"]),
+        "bus_wired": int(r["bus_wired"]),
+        "wired_count": int(r["wired_count"]),
+        "wired_fraction": round(r["wired_count"] / n, 3) if n else 0.0,
+        "total_loc": int(r["total_loc"]),
+        "capabilities": sorted(r["capabilities"]),
+    }
+
+
+def domain_health(fs_domain: str, catalog: Dict[str, Any] | None) -> Dict[str, Any] | None:
+    """The real operational rollup for one domain from the catalog scan, or ``None`` when the
+    catalog carries no systems for it (honest — never a fabricated zero-with-confidence)."""
+    return _finalize_health(_rollup_by_domain(catalog).get(fs_domain))
+
+
+def domain_report(
+    fs_domains: List[str] | None = None,
+    catalog: Dict[str, Any] | None = None,
+) -> List[Dict[str, object]]:
+    """Reachability + operational-depth report across the known filesystem domains.
+
+    Each domain carries the cheap import-reachability probe; when a ``catalog`` (from
+    ``build_catalog``) is supplied, every domain also carries a real ``health`` rollup derived
+    from the filesystem scan (module/dashboard/wiring counts, LOC, capabilities) — so all 38
+    domains report operational depth, not just "is the package importable"."""
     domains = fs_domains if fs_domains is not None else sorted(
         set(_FS_TO_PRODUCT) | set(_ADAPTERS)
     )
-    return [probe_domain(d) for d in domains]
+    roll = _rollup_by_domain(catalog) if catalog else {}
+    report: List[Dict[str, object]] = []
+    for d in domains:
+        rec = probe_domain(d)
+        if catalog is not None:
+            rec["health"] = _finalize_health(roll.get(d))
+        report.append(rec)
+    return report
+
+
+def known_fs_domains() -> List[str]:
+    """The filesystem domains the taxonomy knows about (taxonomy ∪ adapters), sorted."""
+    return sorted(set(_FS_TO_PRODUCT) | set(_ADAPTERS))
 
 
 __all__ = [
@@ -145,5 +212,7 @@ __all__ = [
     "product_domain_for",
     "fs_domain_from_path",
     "probe_domain",
+    "domain_health",
     "domain_report",
+    "known_fs_domains",
 ]

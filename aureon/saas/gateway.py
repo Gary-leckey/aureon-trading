@@ -186,7 +186,12 @@ def register_saas_routes(app: Any) -> Any:
 
     from aureon.saas.catalog import build_catalog, render_manifests, write_frontend_manifests
     from aureon.saas.cognitive import provenance_block
-    from aureon.saas.domains import PRODUCT_DOMAINS, domain_report, probe_domain
+    from aureon.saas.domains import (
+        PRODUCT_DOMAINS,
+        domain_health,
+        domain_report,
+        probe_domain,
+    )
     from aureon.saas.status import get_platform_status
 
     def _stamp(payload: Dict[str, Any], truth_status: str) -> Dict[str, Any]:
@@ -226,8 +231,12 @@ def register_saas_routes(app: Any) -> Any:
     @app.get("/api/domains")
     @_guarded
     def saas_domains():
+        # Every domain carries a real operational health rollup (module/dashboard/wiring counts,
+        # LOC, capabilities) derived from the filesystem scan — not just import-reachability.
+        catalog = build_catalog(use_cache=True)
         return jsonify(_stamp(
-            {"product_domains": PRODUCT_DOMAINS, "domains": domain_report()}, "real_derived"))
+            {"product_domains": PRODUCT_DOMAINS, "domains": domain_report(catalog=catalog)},
+            "real_derived"))
 
     @app.get("/api/domains/<domain>")
     @_guarded
@@ -239,7 +248,17 @@ def register_saas_routes(app: Any) -> Any:
         ]
         return jsonify(_stamp(
             {"domain": domain, "entry": probe_domain(domain),
+             "health": domain_health(domain, catalog),
              "system_count": len(systems), "systems": systems[:200]}, "real_derived"))
+
+    @app.get("/api/coverage")
+    @_guarded
+    def saas_coverage():
+        # Repo-wide coverage audit: reconciles the real aureon/ package tree against the SaaS
+        # taxonomy + catalog, proving every domain is surfaced (no uncovered, no phantom).
+        from aureon.saas.coverage import build_coverage_audit
+
+        return jsonify(_stamp(build_coverage_audit(), "real_derived"))
 
     @app.get("/api/status")
     @_guarded

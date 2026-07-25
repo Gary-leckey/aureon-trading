@@ -3311,6 +3311,83 @@ def b44_brain_reply_membrane(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b45_saas_coverage(tmp_root: Path) -> Dict[str, Any]:
+    """The SaaS covers the WHOLE repo, and every domain reports real operational depth: the coverage
+    audit (`aureon/saas/coverage.py`) reconciles the real `aureon/` package tree against the SaaS
+    taxonomy + catalog and proves every package is surfaced — no uncovered (on-disk-but-unmapped) and
+    no phantom (mapped-but-absent) domains. Each covered domain carries a real health rollup
+    (module / dashboard / Queen-wired / bus-wired counts, LOC, capabilities) derived from the honest
+    filesystem scan, so `/api/domains` reports depth, not just import-reachability. Deterministic; a
+    durable md + JSON artifact round-trips byte-identical; no person-reading surface exists.
+    """
+    import json
+
+    from aureon.saas import coverage as cov
+
+    audit = cov.build_coverage_audit()
+    out_md = tmp_root / "saas_coverage.md"
+    out_json = tmp_root / "saas_coverage.json"
+    cov.write_coverage_report(audit, out_md, out_json)
+
+    loaded = json.loads(out_json.read_text(encoding="utf-8")) if out_json.exists() else {}
+    md = out_md.read_text(encoding="utf-8") if out_md.exists() else ""
+    row_lines = [ln for ln in md.splitlines() if ln.startswith("| ") and "---" not in ln]
+
+    out_md2 = tmp_root / "saas_coverage2.md"
+    out_json2 = tmp_root / "saas_coverage2.json"
+    cov.write_coverage_report(audit, out_md2, out_json2)
+
+    determinism = cov.build_coverage_audit() == audit
+
+    domains = audit.get("domains", [])
+    every_covered_has_health = bool(domains) and all(
+        isinstance(x.get("health"), dict) and int(x["health"].get("system_count", 0)) > 0
+        for x in domains
+    )
+
+    surface = [n.lower() for n in dir(cov)]
+    banned = ("face", "speaker", "pose", "emotion", "biometric")
+
+    invariants = {
+        "all_covered": audit.get("all_covered") is True,
+        "coverage_fraction_1_0": audit.get("coverage_fraction") == 1.0,
+        "no_uncovered": audit.get("uncovered") == [],
+        "no_phantom": audit.get("phantom") == [],
+        "repo_wide_38_plus": int(audit.get("fs_package_count", 0)) >= 38,
+        "every_covered_domain_has_health": every_covered_has_health,
+        "has_deep_adapters": int(audit.get("adapter_deep_count", 0)) >= 7,
+        "deterministic": determinism,
+        "both_files_nonempty": out_md.exists() and out_md.stat().st_size > 0
+        and out_json.exists() and out_json.stat().st_size > 0,
+        "json_round_trips": loaded.get("all_covered") == audit.get("all_covered")
+        and loaded.get("fs_package_count") == audit.get("fs_package_count"),
+        "has_metric_rows": len(row_lines) >= 38,
+        "byte_identical_on_rewrite": out_md2.read_bytes() == out_md.read_bytes()
+        and out_json2.read_bytes() == out_json.read_bytes(),
+        "no_person_surface": not any(b in n for b in banned for n in surface),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "SaaS repo-wide coverage (38/38 domains, deep health)",
+        "module": "aureon/saas/coverage.py",
+        "passed": passed,
+        "metrics": {
+            "fs_package_count": audit.get("fs_package_count"),
+            "covered": len(audit.get("covered", [])),
+            "adapter_deep_count": audit.get("adapter_deep_count"),
+        },
+        "evidence": (
+            f"repo-wide SaaS coverage: {len(audit.get('covered', []))}/{audit.get('fs_package_count')} "
+            f"aureon/ packages covered (fraction {audit.get('coverage_fraction')}); uncovered "
+            f"{audit.get('uncovered')}; phantom {audit.get('phantom')}; every covered domain carries a "
+            f"real health rollup; {audit.get('adapter_deep_count')} deep adapters; deterministic; durable "
+            f"md+JSON byte-identical; no person surface"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3361,6 +3438,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("MCP transport (live membrane)",    b42_mcp_transport),
     ("Runtime direction (load-bearing)", b43_direction_runtime),
     ("Brain-reply membrane (outbound)",   b44_brain_reply_membrane),
+    ("SaaS repo-wide coverage (38/38)",    b45_saas_coverage),
 ]
 
 
