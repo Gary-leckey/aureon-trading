@@ -1,6 +1,6 @@
 {
   "civilization": "Chinese I Ching",
-  "last_updated": "2026-01-02T14:11:50.378290",
+  "last_updated": "2026-07-25T21:40:48.704843",
   "version": "1.0.0",
   "sources": [
     "hardcoded",
@@ -591,6 +591,14 @@
     },
     {
       "timestamp": "2026-01-02T14:11:50.378273",
+      "insights_found": 0,
+      "sources_used": [
+        "Wikipedia",
+        "Sacred-Texts"
+      ]
+    },
+    {
+      "timestamp": "2026-07-25T21:40:48.704820",
       "insights_found": 0,
       "sources_used": [
         "Wikipedia",
