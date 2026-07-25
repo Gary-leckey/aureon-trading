@@ -130,7 +130,7 @@ code was already truthful:
 | Finding | Status |
 |---|---|
 | `python -m compileall aureon scripts tests` | **clean** — nothing is syntactically broken |
-| 2 test modules imported `pypdf` at module scope; it is declared only in `Kings_Accounting_Suite/requirements.txt` and the runtime imports it lazily | **fixed** — they `importorskip`, so a root-only install collects instead of erroring |
+| 2 test modules imported `pypdf` at module scope; it is declared only in `Kings_Accounting_Suite/requirements.txt` and the runtime imports it lazily. Pytest aborts the **whole run** on a collection error, so on a root-only install `pytest tests/` executed **zero tests** — `Interrupted: 2 errors during collection`, exit 2. Measured on a pristine `main` worktree with every root-declared dependency installed. | **fixed** — they `importorskip`, so the suite collects and runs |
 | 13 test modules need `python-dotenv`, 2 need `psutil` | **environment, not repo** — both are declared in `requirements.txt` and `pyproject.toml`; install them and the modules collect |
 | Dead unreachable `return bots` after a `return` in `_estimate_timing` | removed |
 
