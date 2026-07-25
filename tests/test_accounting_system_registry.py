@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from Kings_Accounting_Suite.tools.accounting_system_registry import (
     build_accounting_system_registry,
     write_registry_artifacts,
@@ -10,6 +12,13 @@ from Kings_Accounting_Suite.tools.accounting_system_registry import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+# The combined bank data counts are derived from the operator's REAL statement
+# corpus (uploads/, "bussiness accounts"). That corpus is personal financial
+# data and is deliberately NOT committed; without it the registry honestly
+# reports zero sources, so the source-count assertions only run where the
+# corpus exists.
+_CORPUS_PRESENT = (REPO_ROOT / "uploads").exists() or (REPO_ROOT / "bussiness accounts").exists()
 
 
 def test_accounting_system_registry_discovers_full_accounting_surface() -> None:
@@ -41,14 +50,19 @@ def test_accounting_system_registry_discovers_full_accounting_surface() -> None:
     assert registry.summary["nonstandard_surfaces"]["accounting_vault_memory"] is True
     assert registry.summary["nonstandard_surfaces"]["root_aureon_financial_analytics"] is True
     assert registry.summary["nonstandard_surfaces"]["root_aureon_compound_projection"] is True
-    assert registry.combined_bank_data["csv_source_count"] >= 4
-    assert registry.combined_bank_data["pdf_source_count"] >= 30
-    assert registry.combined_bank_data["transaction_source_count"] >= 30
-    assert registry.combined_bank_data["unique_rows_in_period"] >= 1000
-    assert "business_gbp_monthly" in registry.combined_bank_data["source_accounts"]
-    assert registry.combined_bank_data["source_provider_summary"]["zempler"]["rows"] >= 1000
-    assert registry.combined_bank_data["source_provider_summary"]["revolut"]["rows"] >= 20
-    assert registry.combined_bank_data["flow_provider_summary"]["sumup"]["rows"] >= 10
+    if _CORPUS_PRESENT:
+        assert registry.combined_bank_data["csv_source_count"] >= 4
+        assert registry.combined_bank_data["pdf_source_count"] >= 30
+        assert registry.combined_bank_data["transaction_source_count"] >= 30
+        assert registry.combined_bank_data["unique_rows_in_period"] >= 1000
+        assert "business_gbp_monthly" in registry.combined_bank_data["source_accounts"]
+        assert registry.combined_bank_data["source_provider_summary"]["zempler"]["rows"] >= 1000
+        assert registry.combined_bank_data["source_provider_summary"]["revolut"]["rows"] >= 20
+        assert registry.combined_bank_data["flow_provider_summary"]["sumup"]["rows"] >= 10
+    else:
+        # honest empty state when the personal statement corpus is absent
+        assert registry.combined_bank_data["csv_source_count"] == 0
+        assert registry.combined_bank_data["transaction_source_count"] == 0
     assert registry.safe_boundaries["official_hmrc_submission"] == "manual_only"
 
 
