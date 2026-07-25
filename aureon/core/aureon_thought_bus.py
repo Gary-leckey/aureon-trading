@@ -397,6 +397,22 @@ class ThoughtBus:
         with self._lock:
             self._subs.setdefault(topic, []).append(handler)
 
+    def unsubscribe(self, topic: str, handler: Subscriber) -> bool:
+        """Remove one handler from ``topic``; True when it was there.
+
+        Subscribing had no counterpart, so a short-lived observer — the MCP boundary's
+        publish watch, a test probe — had to leak its handler for the process's life or
+        reach into ``_subs``. Idempotent: removing an absent handler is False, not an error.
+        """
+        with self._lock:
+            handlers = self._subs.get(topic)
+            if not handlers or handler not in handlers:
+                return False
+            handlers.remove(handler)
+            if not handlers:
+                self._subs.pop(topic, None)
+            return True
+
     def list_subscribed_topics(self) -> List[str]:
         """Return the topic patterns that currently have at least one
         subscriber. Read-only introspection — used by BusFlightCheck to

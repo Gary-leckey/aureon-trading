@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
 import uuid
 from dataclasses import asdict, dataclass, replace
@@ -241,11 +242,10 @@ def list_capabilities(registry: Any = None, *, sequence: int = 0) -> dict[str, A
 def _interior_fingerprint() -> int | None:
     """A cheap, read-only fingerprint of the organism's interior — the ThoughtBus memory depth.
 
-    A read-only tool must not publish, so this count is invariant across a benign call; if a call ever
-    mutated the interior (e.g. a future surface widening that let ``publish_thought`` through), the
-    fingerprint would move and ``interior_unchanged`` would read False. Returns ``None`` when the bus is
-    unavailable (offline / suppressed) — the caller treats an unavailable fingerprint as "cannot
-    disprove change", i.e. not proven unchanged. Never raises, never publishes.
+    Kept as the fallback measure for when the call's own publishes cannot be watched (see
+    :class:`_PublishWatch`). Returns ``None`` when the bus is unavailable (offline /
+    suppressed) — the caller treats an unavailable fingerprint as "cannot disprove change",
+    i.e. not proven unchanged. Never raises, never publishes.
     """
     try:
         from aureon.core.aureon_thought_bus import get_thought_bus
@@ -257,6 +257,55 @@ def _interior_fingerprint() -> int | None:
         return len(recent) if isinstance(recent, list) else None
     except Exception:  # noqa: BLE001 - fingerprinting is best-effort and strictly read-only
         return None
+
+
+class _PublishWatch:
+    """Watches whether THIS call published anything, rather than whether the bus moved.
+
+    Bus depth before/after was the original measure, and on a live organism it is not a
+    measure of this call at all: the mycelium, the nexus and a dozen other producers publish
+    from their own threads while the call is in flight, so the depth moves and
+    ``interior_unchanged`` reads False. That is a **false accusation** — it reports the
+    boundary as leaking when nothing crossed it. Observed as soon as the full dependency set
+    is installed and those producers actually start: the read-only ``read_state`` call came
+    back ``laminar=False``.
+
+    ThoughtBus invokes subscribers synchronously in the publishing thread, so a wildcard
+    subscription can attribute each publish to a thread. A read-only tool that published
+    would do so on the dispatch thread; a producer on another thread is not this call's doing.
+    Strictly read-only: it subscribes, counts, and unsubscribes.
+    """
+
+    def __init__(self) -> None:
+        self.bus: Any = None
+        self.thread_id = threading.get_ident()
+        self.published_here = 0
+        self.watching = False
+
+    def __enter__(self) -> _PublishWatch:
+        try:
+            from aureon.core.aureon_thought_bus import get_thought_bus
+
+            bus = get_thought_bus()
+            if bus is not None and hasattr(bus, "subscribe") and hasattr(bus, "unsubscribe"):
+                bus.subscribe("*", self._observe)
+                self.bus = bus
+                self.watching = True
+        except Exception:  # noqa: BLE001 — watching is best-effort; failure means "not proven"
+            self.bus = None
+            self.watching = False
+        return self
+
+    def __exit__(self, *_exc: Any) -> None:
+        try:
+            if self.bus is not None:
+                self.bus.unsubscribe("*", self._observe)
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _observe(self, _thought: Any) -> None:
+        if threading.get_ident() == self.thread_id:
+            self.published_here += 1
 
 
 def _canonical_request(name: str, arguments: dict[str, Any], external_note: str | None) -> str:
@@ -325,29 +374,38 @@ def handle_mcp_call(
             encrypted=False, sealed=empty.to_dict(), result=None, refusal=refusal,
         )
 
-    # ── Interior snapshot (before) — a read-only call must leave this depth untouched ─────────────
-    interior_before = _interior_fingerprint()
+    # ── Interior watch — this call must publish nothing ───────────────────────────────────────────
+    # Watched per calling thread, not by bus depth: on a live organism a dozen producers publish
+    # from their own threads while the call is in flight, and blaming the call for their traffic
+    # reported the boundary as leaking when nothing had crossed it.
+    with _PublishWatch() as watch:
+        interior_before = None if watch.watching else _interior_fingerprint()
 
-    # Guarded dispatch — the authority boundary applies to external callers too.
-    reg = registry if registry is not None else get_registry()
-    if reg is None:
-        result_str = json.dumps({"error": "no tool registry available"})
-        ok = False
-    else:
-        try:
-            result_str = reg.execute(name, args)
-            ok = "\"error\"" not in result_str and "\"blocked\"" not in result_str
-        except Exception as exc:  # noqa: BLE001
-            result_str = json.dumps({"error": f"dispatch failed: {exc}"})
+        # Guarded dispatch — the authority boundary applies to external callers too.
+        reg = registry if registry is not None else get_registry()
+        if reg is None:
+            result_str = json.dumps({"error": "no tool registry available"})
             ok = False
+        else:
+            try:
+                result_str = reg.execute(name, args)
+                ok = "\"error\"" not in result_str and "\"blocked\"" not in result_str
+            except Exception as exc:  # noqa: BLE001
+                result_str = json.dumps({"error": f"dispatch failed: {exc}"})
+                ok = False
 
-    # ── Interior snapshot (after) — proven-unchanged only when both reads succeed and match ───────
-    interior_after = _interior_fingerprint()
-    interior_unchanged = (
-        interior_before is not None
-        and interior_after is not None
-        and interior_before == interior_after
-    )
+        if watch.watching:
+            # Proven: the dispatch thread published nothing across the crossing.
+            interior_unchanged = watch.published_here == 0
+        else:
+            # Fallback when the bus cannot be watched — depth before/after, which can only prove
+            # anything on a quiet bus. Unavailable reads stay "not proven", never "unchanged".
+            interior_after = _interior_fingerprint()
+            interior_unchanged = (
+                interior_before is not None
+                and interior_after is not None
+                and interior_before == interior_after
+            )
 
     # Egress seal (+ optional confidentiality) and self-verify (laminar check).
     payload_text, encrypted = maybe_encrypt(result_str)
