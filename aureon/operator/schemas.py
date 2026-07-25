@@ -92,6 +92,7 @@ class OperatorResponse:
     conscience_verdict: str = "APPROVED"
     conscience_message: str = ""
     blocked: bool = False                # True when the conscience vetoed
+    reply_contained: bool = False        # True when the flagship reply tripped the brain-reply membrane
     phase_thought_ids: Dict[str, str] = field(default_factory=dict)
     elapsed_ms: float = 0.0
     errors: List[Dict[str, Any]] = field(default_factory=list)
@@ -109,6 +110,7 @@ class OperatorResponse:
             "conscience_verdict": self.conscience_verdict,
             "conscience_message": self.conscience_message,
             "blocked": self.blocked,
+            "reply_contained": self.reply_contained,
             "phase_thought_ids": dict(self.phase_thought_ids),
             "elapsed_ms": round(float(self.elapsed_ms), 2),
             "errors": list(self.errors),

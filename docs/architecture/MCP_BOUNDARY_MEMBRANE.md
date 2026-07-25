@@ -143,3 +143,31 @@ proven on **every** call:
 
 Mutation, shell, network egress, and writes are simply not on the surface — the bridge lets a flagship
 model attach and be served, provably without touching the organism.
+
+## Outbound face — flagship reply screening (`aureon/bio/brain_reply_membrane.py`, benchmark b44)
+
+The isolation contract above is the **inbound** face: a model calling Aureon. The bridge has a second
+face — when Aureon **uses** an external flagship model as its brain, whatever that model *says back* must
+be treated as **data, never instructions** before any authority-bearing consumer acts on it. Without
+this, a compromised or hallucinating reply carrying a prompt-injection ("ignore all previous
+instructions…") or a false blocked-action claim ("I have executed the trade") entered cognition
+unscreened — the veto inspected Aureon's own *prompt*, never the model's *reply*.
+
+`brain_reply_membrane.screen_reply(reply_text, provider=…)` closes that: it reuses the membrane's
+`screen_ingress` verbatim (injection scan · false blocked-action claim · false self-claim) and returns a
+`ReplyVerdict`. The operator veto (`AureonOperator._veto`) folds the verdict in as an **advisory caution
+signal**:
+
+- A **clean** reply changes nothing — the answer text is **bit-identical**, `reply_contained` stays
+  `False`. (Proven in b44: a real offline `_veto` run leaves a benign reply's text untouched.)
+- A **contained** reply sets `resp.reply_contained = True`, appends a one-line "treated as untrusted
+  data" caution to the conscience message, and carries `reply_contained` into the conscience context and
+  the veto's published payload — so it can never surface as an unqualified pass. It does **not** by itself
+  flip the answer to blocked (that would false-positive on legit replies that merely discuss injection);
+  the conscience still decides, now with the containment signal in hand.
+
+Together the two faces make the connector **isolated in both directions**: inbound, a model only
+*observes* Aureon (read-only, gated, interior-proven); outbound, whatever a model *says back* is screened
+as data. Asserted by b44 two ways — a deterministic self-test (benign clean · injection contained ·
+false-action contained) and a real `AureonOperator._veto` round-trip (clean stays bit-identical, contained
+is flagged). Emits `bio.brain_reply.run`.

@@ -48,10 +48,11 @@ _GROUP_META: Dict[str, Dict[str, str]] = {
     "adaptive_direction": {
         "label": "Adaptive-direction integrity",
         "purpose": "proof that the adaptive logic is directed by the one canonical HNC field and that "
-                   "the MCP connection is a stable, isolated read-only bridge — a source-level direction "
-                   "audit (every consumer on the shared field) and a live connector bridge that serves "
-                   "any flagship model a read-only surface, gated + screened in + sealed out, with the "
-                   "interior proven unchanged per call",
+                   "the flagship-model connection is a stable, isolated bridge in BOTH directions — a "
+                   "source-level direction audit (every consumer on the shared field), an inbound "
+                   "read-only connector (any model served a gated, screened, interior-proven surface), "
+                   "and an outbound reply membrane (whatever a model says back is screened as "
+                   "data-not-instructions before Aureon acts on it)",
     },
     "sensor_lane": {
         "label": "Sensor lanes",
@@ -81,6 +82,7 @@ _GROUPS: Dict[str, str] = {
     "hnc_direction_audit": "adaptive_direction",
     "mcp_transport": "adaptive_direction",
     "direction_runtime": "adaptive_direction",
+    "brain_reply_membrane": "adaptive_direction",
 }
 
 # module-basename → bus-trace name (the emit_* mirror), for the live overlay only
@@ -100,6 +102,7 @@ _TRACE_NAMES: Dict[str, str] = {
     "hnc_direction_audit": "hnc_direction_audit",
     "mcp_transport": "mcp_transport",
     "direction_runtime": "direction_runtime",
+    "brain_reply_membrane": "brain_reply_membrane",
     "celestial_observatory": "observatory",
 }
 
