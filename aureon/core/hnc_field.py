@@ -32,6 +32,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+
 #: How old a field row may be and still count as "the current field", in seconds.
 #: Tunable via ``AUREON_HNC_FIELD_MAX_AGE_S``; the default is deliberately short —
 #: the HNC daemon pulses continuously, so anything older than a few minutes means the
