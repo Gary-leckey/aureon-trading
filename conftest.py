@@ -15,6 +15,8 @@ import inspect
 import os
 import sys
 
+import pytest
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 AUREON = os.path.join(ROOT, "aureon")
 
@@ -26,6 +28,42 @@ for dirpath, dirnames, _filenames in os.walk(AUREON):
 
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
+
+
+# (module_name, attribute) pairs of process-wide singletons that leak between
+# test MODULES when one module builds them and never tears them down — the
+# root cause of the order-dependent failures found in the B1 triage. The bus
+# module is importable under two names (bare via the sys.path shim above, and
+# as the package path), and each name holds its own singleton slot, so both
+# are covered. Snapshot/restore is per-module: tests inside one module keep
+# their shared state; the NEXT module starts from whatever existed before.
+_LEAKY_SINGLETONS = (
+    ("aureon_thought_bus", "_thought_bus_instance"),
+    ("aureon.core.aureon_thought_bus", "_thought_bus_instance"),
+    ("aureon.observer", "_observer_singleton"),
+)
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _restore_process_singletons():
+    saved = []
+    for mod_name, attr in _LEAKY_SINGLETONS:
+        mod = sys.modules.get(mod_name)
+        if mod is not None and hasattr(mod, attr):
+            saved.append((mod, attr, getattr(mod, attr)))
+    yield
+    for mod_name, attr in _LEAKY_SINGLETONS:
+        mod = sys.modules.get(mod_name)
+        if mod is None or not hasattr(mod, attr):
+            continue
+        for smod, sattr, value in saved:
+            if smod is mod and sattr == attr:
+                setattr(mod, attr, value)
+                break
+        else:
+            # the module was imported DURING this test module; clear whatever
+            # singleton it created so it cannot leak forward
+            setattr(mod, attr, None)
 
 
 def pytest_pyfunc_call(pyfuncitem):
