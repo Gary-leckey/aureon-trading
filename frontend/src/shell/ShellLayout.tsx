@@ -46,7 +46,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { HASH_REDIRECTS, VISIBLE_NAV_SECTIONS, navItemForPath, sectionForPath } from "./nav";
+import { HASH_REDIRECTS, navItemForPath, navSectionsForPlane, sectionForPath } from "./nav";
+import { useIdentity } from "@/hooks/useIdentity";
 import { BrandMark } from "./Brand";
 import { PageSkeleton, RouteErrorBoundary } from "./Page";
 import { BackendStatusBanner } from "@/components/BackendStatusBanner";
@@ -103,6 +104,10 @@ function StatusIndicator() {
 }
 
 function CommandPalette() {
+  // Hide the instance-control surfaces from a signed-in end user: their routes are operator-only,
+  // so offering them here would only lead to a 403. Defaults to the full nav until identity resolves.
+  const { identity } = useIdentity();
+  const sections = navSectionsForPlane(identity.isAdmin);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -141,7 +146,7 @@ function CommandPalette() {
         <CommandInput placeholder="Search every surface in the platform…" />
         <CommandList>
           <CommandEmpty>No surface found.</CommandEmpty>
-          {VISIBLE_NAV_SECTIONS.map((section) => (
+          {sections.map((section) => (
             <CommandGroup key={section.label} heading={section.label}>
               {section.items.map((item) => (
                 <CommandItem key={item.path} value={`${section.label} ${item.label}`} onSelect={() => go(item.path)}>
@@ -159,6 +164,8 @@ function CommandPalette() {
 }
 
 function ShellSidebar() {
+  const { identity } = useIdentity();
+  const sections = navSectionsForPlane(identity.isAdmin);
   const location = useLocation();
   return (
     <Sidebar collapsible="icon">
@@ -172,7 +179,7 @@ function ShellSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        {VISIBLE_NAV_SECTIONS.map((section) => (
+        {sections.map((section) => (
           <SidebarGroup key={section.label}>
             <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
             <SidebarGroupContent>

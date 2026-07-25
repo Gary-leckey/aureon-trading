@@ -260,6 +260,9 @@ input.addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
 # The failure mode is now "a tenant feature 403s until it is added here", which is loud and safe,
 # instead of "an instance route leaks until an auditor finds it".
 _TENANT_OWN_PLANE = {
+    # Who am I / what may I do. Reports the caller's own identity and nothing about the instance,
+    # so the console can render the right plane instead of discovering it by collecting 403s.
+    ("GET", "/api/me"),
     # The user's own data: their keys, their reasoning, their billing.
     ("GET", "/api/providers"), ("POST", "/api/providers/<provider_id>"),
     ("DELETE", "/api/providers/<provider_id>"), ("POST", "/api/providers/<provider_id>/test"),
@@ -389,6 +392,35 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
             resp.headers["Service-Worker-Allowed"] = "/"
             resp.headers["Cache-Control"] = "no-cache"
         return resp
+
+    @app.get("/api/me")
+    def whoami():
+        """Who is this caller, and what may they do? The one identity call a TENANT may make.
+
+        The console needs this to render honestly: without it a signed-in end user is shown the
+        operator's navigation and discovers the boundary by collecting 403s. Deliberately says
+        nothing about the instance — no provider line-up, no switchboard, no counts — so it is safe
+        on the tenant plane, unlike ``/api/pulse`` which is operator-only for exactly that reason.
+
+        The tenant id is reported as a **label** (a short hash), never the raw JWT ``sub``: it is
+        enough for the user to confirm which account they are on and for support to correlate a
+        report, without echoing the subject identifier back into the page or the logs.
+        """
+        kind = str(getattr(g, "identity_kind", "open") or "open")
+        tenant = getattr(g, "tenant", None)
+        is_admin = bool(getattr(g, "is_admin", True))
+        return jsonify({
+            "kind": kind,                       # "open" | "admin" | "tenant"
+            "is_admin": is_admin,
+            "tenant_label": _tenant_label(tenant) if tenant else None,
+            "plane": "instance" if is_admin else "account",
+            "tenancy_enabled": bool(_jwt_secret),
+            "auth_required": bool(_sec.api_key or _jwt_secret),
+            # What this caller may reach, so the console can hide what would 403 rather than
+            # letting the user find the boundary by trial and error.
+            "allowed_routes": (None if is_admin else
+                               sorted(f"{m} {r}" for m, r in _TENANT_ALLOWED)),
+        })
 
     @app.get("/api/pulse")
     def pulse():

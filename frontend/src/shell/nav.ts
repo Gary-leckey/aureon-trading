@@ -39,6 +39,7 @@ import {
   Sparkles,
   Sun,
   TerminalSquare,
+  UserCircle,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -54,6 +55,12 @@ export interface NavItem {
   /** Retired from the sidebar/command palette but still routable (deep links
    *  and legacy hash redirects keep working). */
   hidden?: boolean;
+  /** Manages the INSTANCE rather than the signed-in user's own account, so its backing routes are
+   *  operator-only and would 403 for a tenant (see docs/architecture/MULTI_TENANT_AUTH.md).
+   *  Hidden from the sidebar for a signed-in end user so they are not invited to click into a
+   *  refusal. This is a curated list, not derived — the backend gate is the actual enforcer, so a
+   *  missing flag costs a confusing error, never an exposure. */
+  operatorOnly?: boolean;
 }
 
 export interface NavSection {
@@ -106,6 +113,15 @@ export const NAV_SECTIONS: NavSection[] = [
         description: "Turn every system feature on/off at human discretion",
         icon: SlidersHorizontal,
         Component: lazy(() => import("./pages/SwitchboardPage")),
+        live: true,
+        operatorOnly: true,
+      },
+      {
+        path: "/account",
+        label: "Account & Session",
+        description: "Your plane, your keys, your billing, and how to sign out",
+        icon: UserCircle,
+        Component: lazy(() => import("./pages/AccountPage")),
         live: true,
       },
       {
@@ -303,6 +319,7 @@ export const NAV_SECTIONS: NavSection[] = [
         description: "Work-order execution and burndown",
         icon: ListChecks,
         Component: lazyNamed(() => import("@/components/generated/AureonWorkOrderExecutionConsole"), "AureonWorkOrderExecutionConsole"),
+        operatorOnly: true,
       },
       {
         path: "/coding/director",
@@ -310,6 +327,7 @@ export const NAV_SECTIONS: NavSection[] = [
         description: "Director-to-build capability bridge",
         icon: Compass,
         Component: lazyNamed(() => import("@/components/generated/AureonDirectorCapabilityBridgeConsole"), "AureonDirectorCapabilityBridgeConsole"),
+        operatorOnly: true,
       },
     ],
   },
@@ -330,6 +348,7 @@ export const NAV_SECTIONS: NavSection[] = [
         description: "Gold and capital intelligence company",
         icon: Coins,
         Component: lazyNamed(() => import("@/components/generated/AureonGoldCapitalIntelligenceConsole"), "AureonGoldCapitalIntelligenceConsole"),
+        operatorOnly: true,
       },
       {
         path: "/ops/affect",
@@ -398,6 +417,20 @@ export const ALL_NAV_ITEMS: NavItem[] = NAV_SECTIONS.flatMap((s) => s.items);
 export const VISIBLE_NAV_SECTIONS: NavSection[] = NAV_SECTIONS
   .map((s) => ({ ...s, items: s.items.filter((i) => !i.hidden) }))
   .filter((s) => s.items.length > 0);
+
+/** The nav surface for a given plane.
+ *
+ *  A signed-in end user does not get the instance-control pages: their backing routes are
+ *  operator-only, so showing them would only invite a click into a 403. Routes stay generated from
+ *  ALL_NAV_ITEMS, so nothing becomes unreachable by URL — this is presentation, and the backend gate
+ *  remains the enforcer. `isAdmin` defaults true so any caller that has not resolved an identity
+ *  yet (or an older backend with no `/api/me`) sees exactly today's nav. */
+export function navSectionsForPlane(isAdmin: boolean): NavSection[] {
+  if (isAdmin) return VISIBLE_NAV_SECTIONS;
+  return VISIBLE_NAV_SECTIONS
+    .map((s) => ({ ...s, items: s.items.filter((i) => !i.operatorOnly) }))
+    .filter((s) => s.items.length > 0);
+}
 
 export function navItemForPath(pathname: string): NavItem | undefined {
   return ALL_NAV_ITEMS.find((i) => i.path === pathname);

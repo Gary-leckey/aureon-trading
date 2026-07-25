@@ -673,3 +673,60 @@ def test_no_route_escapes_the_gate_prefixes(app_env):
         "these routes bypass the auth gate entirely and would be served to anyone: "
         f"{sorted(unexpected)}"
     )
+
+
+# ── the one identity call a tenant may make ────────────────────────────────────
+
+def test_tenant_can_read_their_own_identity(app_env):
+    """The console needs this to render the right plane. Without it a signed-in user is shown the
+    operator's navigation and discovers the boundary by collecting 403s."""
+    client, _srv, _ks = app_env
+    r = client.get("/api/me", headers=_tenant("tenant-aaa-0001"))
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["kind"] == "tenant"
+    assert body["is_admin"] is False
+    assert body["plane"] == "account"
+    assert body["tenancy_enabled"] is True
+    assert isinstance(body["allowed_routes"], list) and body["allowed_routes"]
+
+
+def test_identity_never_echoes_the_raw_jwt_subject(app_env):
+    """`tenant_label` is a short hash: enough to confirm which account you are on, without putting
+    the subject identifier into the page or the logs."""
+    client, _srv, _ks = app_env
+    sub = "tenant-aaa-0001"
+    body = client.get("/api/me", headers=_tenant(sub)).get_json()
+    assert sub not in json.dumps(body)
+    assert body["tenant_label"] and body["tenant_label"] != sub
+
+
+def test_identity_tells_the_operator_they_are_the_operator(app_env):
+    client, _srv, _ks = app_env
+    body = client.get("/api/me", headers=_ADMIN).get_json()
+    assert body["kind"] == "admin"
+    assert body["is_admin"] is True
+    assert body["plane"] == "instance"
+    assert body["tenant_label"] is None
+    assert body["allowed_routes"] is None      # an operator is not route-limited
+
+
+def test_identity_says_nothing_about_the_instance(app_env):
+    """`/api/pulse` is operator-only precisely because it names the instance's live providers and
+    switchboard. This endpoint has to be tenant-safe, so it must not leak the same thing sideways.
+
+    `allowed_routes` is excluded from the scan: it is route *patterns* describing what this caller may
+    reach (so it naturally contains the word "providers"), which is the tenant's own permission set,
+    not a statement about the instance.
+    """
+    client, _srv, _ks = app_env
+    body = client.get("/api/me", headers=_tenant("aaa")).get_json()
+    scanned = {k: v for k, v in body.items() if k != "allowed_routes"}
+    blob = json.dumps(scanned).lower()
+    for leak in ("provider", "switchboard", "adapter", "model", "equity", "balance", "kraken"):
+        assert leak not in blob, f"/api/me leaked instance detail: {leak}"
+    # and the route list must be patterns only — never a resolved value or a live name
+    for route in body["allowed_routes"]:
+        method, _, path = route.partition(" ")
+        assert method in {"GET", "POST", "DELETE", "PUT", "PATCH"}, route
+        assert path.startswith("/api/"), route
