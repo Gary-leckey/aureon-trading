@@ -33,39 +33,18 @@ additionally require a valid Supabase JWT (HS256) — stdlib verify, no new dep.
 
 from __future__ import annotations
 
-import base64
-import hashlib
-import hmac
-import json
 import logging
 import os
-import time
 from typing import Any, Dict
+
+from aureon.operator.identity import verify_supabase_jwt
 
 logger = logging.getLogger("aureon.saas.gateway")
 
 
 # ── Supabase JWT (optional, stdlib HS256) ─────────────────────────────────────
-
-def _b64url_decode(seg: str) -> bytes:
-    pad = "=" * (-len(seg) % 4)
-    return base64.urlsafe_b64decode(seg + pad)
-
-
-def verify_supabase_jwt(token: str, secret: str) -> Dict[str, Any] | None:
-    """Verify an HS256 Supabase JWT with the project secret. Returns claims or None."""
-    try:
-        header_b64, payload_b64, sig_b64 = token.split(".")
-        signing_input = f"{header_b64}.{payload_b64}".encode("ascii")
-        expected = hmac.new(secret.encode("utf-8"), signing_input, hashlib.sha256).digest()
-        if not hmac.compare_digest(expected, _b64url_decode(sig_b64)):
-            return None
-        claims = json.loads(_b64url_decode(payload_b64))
-        if isinstance(claims.get("exp"), (int, float)) and claims["exp"] < time.time():
-            return None
-        return claims
-    except Exception:  # noqa: BLE001 — any malformed token is simply invalid
-        return None
+# The verifier now lives in ``aureon.operator.identity`` so the operator gate and this gateway share
+# one implementation; re-exported here for backward compatibility (imports + tests unchanged).
 
 
 def build_organism_payload() -> Dict[str, Any]:

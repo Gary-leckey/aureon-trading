@@ -8,9 +8,22 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import { router } from "./shell/routes";
+import { setAuthTokenProvider } from "./services/apiClient";
+import { supabase } from "./integrations/supabase/client";
 
 // Initialize network monitoring before app renders
 initNetworkMonitoring();
+
+// Forward the end-user session token to every /api/* call so the operator can
+// identify the tenant. No session ⇒ no header ⇒ single-operator path unchanged.
+setAuthTokenProvider(async () => {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+});
 
 const queryClient = new QueryClient();
 

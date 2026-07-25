@@ -55,7 +55,7 @@ def _load_env_file() -> None:
         pass
 
 try:
-    from flask import Flask, Response, jsonify, request, send_from_directory
+    from flask import Flask, Response, g, jsonify, request, send_from_directory
 except Exception as exc:  # noqa: BLE001
     raise SystemExit(
         "Flask is required for the operator server (it is in requirements.txt): "
@@ -94,27 +94,9 @@ def _test_provider_adapter(info: Any, api_key: str, base_url: Any, model: str) -
     import time
 
     try:
-        kind = info.kind
-        if kind in ("openai", "openai_compat"):
-            from aureon.operator.providers import AureonOpenAIAdapter
+        from aureon.operator.providers import build_adapter
 
-            adapter = AureonOpenAIAdapter(api_key=api_key, base_url=base_url, model=model)
-        elif kind == "grok":
-            from aureon.operator.providers import AureonGrokAdapter
-
-            adapter = AureonGrokAdapter(api_key=api_key, base_url=base_url, model=model)
-        elif kind == "gemini":
-            from aureon.operator.providers import AureonGeminiAdapter
-
-            adapter = AureonGeminiAdapter(api_key=api_key, model=model, base_url=base_url)
-        elif kind == "anthropic":
-            from aureon.inhouse_ai.llm_adapter import AureonAnthropicAdapter
-
-            adapter = AureonAnthropicAdapter(api_key=api_key, model=model)
-        else:  # local / self-hosted (Ollama)
-            from aureon.inhouse_ai.llm_adapter import AureonLocalAdapter
-
-            adapter = AureonLocalAdapter(api_key=api_key, base_url=base_url, model=model)
+        adapter = build_adapter(info.kind, api_key=api_key, base_url=base_url, model=model)
 
         t0 = time.perf_counter()
         resp = adapter.prompt(
@@ -262,9 +244,14 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
     _operator = operator or AureonOperator()
 
     # ── Security envelope (auth + rate limit + body cap; off by default) ───────
-    from aureon.operator.security import SecurityConfig, TokenBucket, check_bearer
+    from aureon.operator.identity import resolve_identity
+    from aureon.operator.security import SecurityConfig, TokenBucket
 
     _sec = SecurityConfig.from_env()
+    # End-user tenancy (optional): a Supabase HS256 JWT identifies the caller as a tenant, so their
+    # provider/connection keys are namespaced to them. Off by default (secret unset) ⇒ the gate is
+    # identical to the single static-key path — see aureon.operator.identity.resolve_identity.
+    _jwt_secret = str(os.environ.get("AUREON_SUPABASE_JWT_SECRET", "") or "")
     _bucket = TokenBucket(_sec.rate_rps, _sec.burst)
     app.config["MAX_CONTENT_LENGTH"] = _sec.max_body_bytes
     _OPEN_PATHS = ("/", "/healthz", "/readyz", "/metrics", "/favicon.ico")
@@ -277,8 +264,16 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         path = request.path
         if path in _OPEN_PATHS or not (path.startswith("/api/") or path.startswith("/mcp/")):
             return None
-        if _sec.auth_enabled and not check_bearer(request.headers.get("Authorization"), _sec.api_key):
+        # Resolve identity once for the whole request. When neither the static key nor the JWT secret
+        # is set, this returns kind="open" (auth disabled) — byte-for-byte the pre-tenancy behavior.
+        ident = resolve_identity(
+            request.headers.get("Authorization"), operator_key=_sec.api_key, jwt_secret=_jwt_secret,
+        )
+        if not ident.ok:
             return _err(401, "missing or invalid bearer token")
+        # Downstream routes namespace per-user stores by g.tenant (None ⇒ admin/global plane).
+        g.tenant = ident.tenant
+        g.is_admin = ident.kind in ("admin", "open")
         if _sec.rate_enabled:
             client = request.headers.get("X-Forwarded-For", request.remote_addr or "anon").split(",")[0].strip()
             ok, retry = _bucket.check(client)
@@ -476,13 +471,19 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
             return ""
         return ("•" * 4) + value[-4:] if len(value) > 4 else "•" * len(value)
 
-    def _provider_view() -> list:
-        stored = _keystore.masked_view()
-        live_names = {p["name"] for p in describe_provider_set(_operator.providers)}
+    def _provider_view(tenant: str | None = None) -> list:
+        # A tenant sees ONLY their own isolated keystore — never the instance env keys, and never a
+        # "live" flag (their key does not drive the shared instance providers this increment). The
+        # global/admin view keeps its env-merged, instance-live semantics unchanged.
+        stored = _keystore.masked_view(tenant)
+        live_names = (
+            set() if tenant is not None
+            else {p["name"] for p in describe_provider_set(_operator.providers)}
+        )
         out = []
         for info in CATALOG:
             s = stored.get(info.id, {})
-            env_key = os.environ.get(info.key_env, "") if info.key_env else ""
+            env_key = "" if tenant is not None else (os.environ.get(info.key_env, "") if info.key_env else "")
             has_key = bool(s.get("has_key")) or bool(env_key)
             key_masked = s.get("key_masked") or (_mask_env(env_key) if env_key else "")
             source = "keystore" if s.get("has_key") else ("env" if env_key else "none")
@@ -500,12 +501,13 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
 
     @app.get("/api/providers")
     def providers_list():
-        return jsonify({"providers": _provider_view()})
+        return jsonify({"providers": _provider_view(getattr(g, "tenant", None))})
 
     @app.post("/api/providers/<provider_id>")
     def providers_set(provider_id: str):
         if get_provider(provider_id) is None:
             return _err(404, f"unknown provider: {provider_id}")
+        tenant = getattr(g, "tenant", None)
         body: Dict[str, Any] = request.get_json(silent=True) or {}
         try:
             _keystore.save_provider(
@@ -514,19 +516,24 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
                 base_url=body.get("base_url"),
                 model=body.get("model"),
                 enabled=body.get("enabled"),
+                tenant=tenant,
             )
         except KeyError:
             return _err(404, f"unknown provider: {provider_id}")
-        _rebuild_switchboard()
-        view = next((p for p in _provider_view() if p["id"] == provider_id), None)
+        # A tenant write must NEVER touch os.environ / the shared switchboard (the leak vector).
+        if tenant is None:
+            _rebuild_switchboard()
+        view = next((p for p in _provider_view(tenant) if p["id"] == provider_id), None)
         return jsonify({"ok": True, "provider": view})
 
     @app.delete("/api/providers/<provider_id>")
     def providers_delete(provider_id: str):
         if get_provider(provider_id) is None:
             return _err(404, f"unknown provider: {provider_id}")
-        _keystore.delete_provider(provider_id)
-        _rebuild_switchboard()
+        tenant = getattr(g, "tenant", None)
+        _keystore.delete_provider(provider_id, tenant=tenant)
+        if tenant is None:
+            _rebuild_switchboard()
         return jsonify({"ok": True, "provider_id": provider_id})
 
     @app.post("/api/providers/<provider_id>/test")
@@ -534,9 +541,12 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         info = get_provider(provider_id)
         if info is None:
             return _err(404, f"unknown provider: {provider_id}")
+        tenant = getattr(g, "tenant", None)
         body: Dict[str, Any] = request.get_json(silent=True) or {}
-        stored = _keystore.load().get(provider_id, {})
-        api_key = body.get("api_key") or stored.get("api_key") or os.environ.get(info.key_env, "")
+        stored = _keystore.load(tenant).get(provider_id, {})
+        # A tenant tests ONLY their own key — never fall back to the instance env key.
+        env_key = "" if tenant is not None else os.environ.get(info.key_env, "")
+        api_key = body.get("api_key") or stored.get("api_key") or env_key
         base_url = body.get("base_url") or stored.get("base_url") or info.default_base_url or None
         model = body.get("model") or stored.get("model") or info.default_model
         result = _test_provider_adapter(info, api_key, base_url, model)
@@ -577,56 +587,65 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
 
     @app.get("/api/connections")
     def connections_list():
-        return jsonify(_json_safe(_conn_api.build_view(_provider_view())))
+        return jsonify(_json_safe(_conn_api.build_view(_provider_view(getattr(g, "tenant", None)))))
 
     @app.get("/api/connections/readiness")
     def connections_readiness():
-        return jsonify(_json_safe(_conn_api.readiness(_provider_view())))
+        return jsonify(_json_safe(_conn_api.readiness(_provider_view(getattr(g, "tenant", None)))))
 
     @app.post("/api/connections/<conn_id>")
     def connections_set(conn_id: str):
+        tenant = getattr(g, "tenant", None)
         body: Dict[str, Any] = request.get_json(silent=True) or {}
         api_key = body.get("api_key")
         extra = body.get("extra") or {}
-        # LLM provider → keystore + switchboard rebuild (same as /api/providers)
+        # LLM provider → keystore (+ switchboard rebuild only on the global/admin plane)
         if get_provider(conn_id) is not None:
             _keystore.save_provider(
                 conn_id, api_key=api_key, base_url=body.get("base_url"),
-                model=body.get("model"), enabled=body.get("enabled"),
+                model=body.get("model"), enabled=body.get("enabled"), tenant=tenant,
             )
-            _rebuild_switchboard()
-            view = next((p for p in _provider_view() if p["id"] == conn_id), None)
+            if tenant is None:
+                _rebuild_switchboard()
+            view = next((p for p in _provider_view(tenant) if p["id"] == conn_id), None)
             return jsonify({"ok": True, "connection": view})
         conn = _get_conn(conn_id)
         if conn is None:
             return _err(404, f"unknown connection: {conn_id}")
-        if conn.category == "exchange":
+        # Exchange credentials on the global/admin plane validate + write the instance .env. A tenant
+        # instead stores the credential in isolation (never touching the shared .env / os.environ).
+        if tenant is None and conn.category == "exchange":
             result = _conn_api.set_exchange_credential(conn, api_key or "", extra)
             code = 200 if result.get("ok") else 502
             return jsonify(result), code
-        # operator-consumed data source → keystore + env
-        _keystore.save_provider(conn_id, api_key=api_key, enabled=body.get("enabled"), extra=extra)
-        _keystore.apply_to_env()
+        # data source (or any tenant credential) → keystore; apply_to_env only on the global plane.
+        _keystore.save_provider(conn_id, api_key=api_key, enabled=body.get("enabled"),
+                                extra=extra, tenant=tenant)
+        if tenant is None:
+            _keystore.apply_to_env()
         return jsonify({"ok": True, "connection": _conn_api.connection_public(
-            conn, _keystore.load(), {})})
+            conn, _keystore.load(tenant), {})})
 
     @app.post("/api/connections/<conn_id>/test")
     def connections_test(conn_id: str):
+        tenant = getattr(g, "tenant", None)
         body: Dict[str, Any] = request.get_json(silent=True) or {}
-        # LLM → real prompt round-trip; data source → connectivity probe
+        # LLM → real prompt round-trip; data source → connectivity probe. A tenant tests ONLY their
+        # own stored key — never the instance env key.
         info = get_provider(conn_id)
         if info is not None:
-            stored = _keystore.load().get(conn_id, {})
-            api_key = body.get("api_key") or stored.get("api_key") or os.environ.get(info.key_env, "")
+            stored = _keystore.load(tenant).get(conn_id, {})
+            env_key = "" if tenant is not None else os.environ.get(info.key_env, "")
+            api_key = body.get("api_key") or stored.get("api_key") or env_key
             base_url = body.get("base_url") or stored.get("base_url") or info.default_base_url or None
             model = body.get("model") or stored.get("model") or info.default_model
             return jsonify(_test_provider_adapter(info, api_key, base_url, model))
         conn = _get_conn(conn_id)
         if conn is None:
             return _err(404, f"unknown connection: {conn_id}")
-        stored = _keystore.load().get(conn_id, {})
-        api_key = body.get("api_key") or stored.get("api_key") or (
-            os.environ.get(conn.key_env, "") if conn.key_env else "")
+        stored = _keystore.load(tenant).get(conn_id, {})
+        env_key = "" if tenant is not None else (os.environ.get(conn.key_env, "") if conn.key_env else "")
+        api_key = body.get("api_key") or stored.get("api_key") or env_key
         return jsonify(_conn_api.probe(conn, api_key))
 
     # ── Grounded local-machine actions (the organism's hands) ──────────────────

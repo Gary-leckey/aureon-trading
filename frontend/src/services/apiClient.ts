@@ -9,11 +9,25 @@
  *     on any non-2xx or transport failure, so callers can distinguish "backend
  *     offline" from "backend said no" and degrade honestly (never fabricate).
  *   - a short timeout so a dead gateway surfaces as "offline" instead of hanging.
- *   - no embedded credentials: a secured operator gets its bearer injected by the
- *     dev proxy or the same-origin session, never hard-coded here.
+ *   - no embedded credentials, but an optional injected auth token: when an
+ *     end-user session exists, its bearer is attached to every `/api/*` call so
+ *     the backend can identify the tenant. With no session, no header is sent —
+ *     the single-operator/same-origin path is unchanged.
  *
  * Prefer this over bare `fetch("/api/...")` in new code.
  */
+
+/**
+ * An optional async provider of the current auth bearer token (e.g. the Supabase
+ * session access token). Injected once at app bootstrap via `setAuthTokenProvider`
+ * so this module stays decoupled from the auth library (and testable). When it
+ * returns null/throws, no `Authorization` header is attached — backward compatible.
+ */
+let authTokenProvider: (() => Promise<string | null>) | null = null;
+
+export function setAuthTokenProvider(fn: (() => Promise<string | null>) | null): void {
+  authTokenProvider = fn;
+}
 
 /** Thrown for any failed backend call. `offline` marks transport failures
  *  (gateway down / timeout / network) as opposed to a real HTTP error status. */
@@ -55,6 +69,16 @@ async function request<T>(
     else opts.signal.addEventListener("abort", () => controller.abort(), { once: true });
   }
 
+  // Attach the end-user session bearer when one exists (tenant identity). A missing
+  // provider, a null token, or a throw all mean "no auth header" — unchanged behavior.
+  let authHeader: Record<string, string> = {};
+  try {
+    const token = authTokenProvider ? await authTokenProvider() : null;
+    if (token) authHeader = { Authorization: `Bearer ${token}` };
+  } catch {
+    /* token resolution failed — proceed unauthenticated */
+  }
+
   let res: Response;
   try {
     res = await fetch(path, {
@@ -64,6 +88,7 @@ async function request<T>(
       headers: {
         Accept: "application/json",
         ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...authHeader,
         ...opts.headers,
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),

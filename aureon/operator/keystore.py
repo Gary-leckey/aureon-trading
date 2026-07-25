@@ -13,13 +13,24 @@ A disabled provider has its key env removed so its line drops out.
 
 Everything read back out is **masked** (last 4 only). No full key is ever
 returned or logged.
+
+**Per-tenant isolation.** Every function takes an optional ``tenant``. With
+``tenant=None`` (the single-operator default) the global store is used, exactly
+as before. With a tenant (a Supabase JWT ``sub``, set on ``g.tenant`` by the
+operator gate) the keys live in an isolated per-tenant file
+``~/.aureon/tenants/<tenant>/provider_keys.json.enc`` — one tenant can never read
+another's keys. Critically, ``apply_to_env()`` is **global-only and never takes a
+tenant**: injecting a tenant's key into the process ``os.environ`` would leak it
+into every other request, so a tenant write must never call it.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
+import re
 from pathlib import Path
 from typing import Any, Dict
 
@@ -30,8 +41,27 @@ logger = logging.getLogger("aureon.operator.keystore")
 CONFIG_DIR = Path.home() / ".aureon"
 KEY_PATH = CONFIG_DIR / "provider_keys.key"
 STORE_PATH = CONFIG_DIR / "provider_keys.json.enc"
+TENANTS_DIR = CONFIG_DIR / "tenants"
 
 _FIELDS = ("api_key", "base_url", "model", "enabled")
+_SAFE_TENANT = re.compile(r"[A-Za-z0-9_-]{1,128}")
+
+
+def _safe_tenant(tenant: str) -> str:
+    """A filesystem-safe directory name for a tenant id.
+
+    The tenant id is a JWT ``sub`` (normally a UUID). Even though the token is signed, defend against
+    path traversal: accept a strict whitelist verbatim, otherwise fall back to a SHA-256 hash — so a
+    crafted ``sub`` can never escape ``TENANTS_DIR``.
+    """
+    return tenant if _SAFE_TENANT.fullmatch(tenant) else hashlib.sha256(tenant.encode("utf-8")).hexdigest()
+
+
+def _store_path(tenant: str | None) -> Path:
+    """Where a store lives: the global file for ``None``, an isolated per-tenant file otherwise."""
+    if not tenant:
+        return STORE_PATH
+    return TENANTS_DIR / _safe_tenant(tenant) / "provider_keys.json.enc"
 
 
 def model_env(registry_name: str) -> str:
@@ -52,12 +82,16 @@ def _fernet():
     return Fernet(KEY_PATH.read_bytes())
 
 
-def load() -> Dict[str, Dict[str, Any]]:
-    """Decrypt and return the keystore, or ``{}`` if missing/unreadable."""
-    if not STORE_PATH.exists():
+def load(tenant: str | None = None) -> Dict[str, Dict[str, Any]]:
+    """Decrypt and return a keystore, or ``{}`` if missing/unreadable.
+
+    ``tenant=None`` reads the global store; a tenant reads only that tenant's isolated file.
+    """
+    path = _store_path(tenant)
+    if not path.exists():
         return {}
     try:
-        raw = _fernet().decrypt(STORE_PATH.read_bytes())
+        raw = _fernet().decrypt(path.read_bytes())
         data = json.loads(raw.decode("utf-8"))
         return data if isinstance(data, dict) else {}
     except Exception as exc:  # noqa: BLE001 — a corrupt store must not sink the operator
@@ -65,12 +99,13 @@ def load() -> Dict[str, Dict[str, Any]]:
         return {}
 
 
-def _persist(data: Dict[str, Dict[str, Any]]) -> None:
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+def _persist(data: Dict[str, Dict[str, Any]], tenant: str | None = None) -> None:
+    path = _store_path(tenant)
+    path.parent.mkdir(parents=True, exist_ok=True)
     token = _fernet().encrypt(json.dumps(data).encode("utf-8"))
-    STORE_PATH.write_bytes(token)
+    path.write_bytes(token)
     try:
-        STORE_PATH.chmod(0o600)
+        path.chmod(0o600)
     except OSError:  # pragma: no cover
         pass
 
@@ -92,13 +127,15 @@ def save_provider(
     model: str | None = None,
     enabled: bool | None = None,
     extra: Dict[str, str] | None = None,
+    tenant: str | None = None,
 ) -> Dict[str, Any]:
     """Merge the given fields into a provider's entry and persist. Only provided
     (non-None) fields change. ``extra`` holds secondary credential envs (e.g. a
-    Telegram chat id) as ``{ENV_VAR: value}``. Returns the stored entry."""
+    Telegram chat id) as ``{ENV_VAR: value}``. ``tenant`` scopes the write to that
+    tenant's isolated store (``None`` ⇒ the global store). Returns the stored entry."""
     if not _known(provider_id):
         raise KeyError(f"unknown provider: {provider_id}")
-    data = load()
+    data = load(tenant)
     entry = data.get(provider_id, {"enabled": True})
     if api_key is not None:
         entry["api_key"] = api_key.strip()
@@ -113,17 +150,21 @@ def save_provider(
         merged.update({k: str(v).strip() for k, v in extra.items() if v is not None})
         entry["extra"] = merged
     data[provider_id] = entry
-    _persist(data)
+    _persist(data, tenant)
     return entry
 
 
-def delete_provider(provider_id: str) -> None:
-    """Forget a provider's stored config and unset its env vars."""
-    data = load()
+def delete_provider(provider_id: str, *, tenant: str | None = None) -> None:
+    """Forget a provider's stored config. For the global store also unset its env
+    vars; a **tenant delete never touches ``os.environ``** (that is the leak vector)."""
+    data = load(tenant)
     entry = data.get(provider_id, {})
     if provider_id in data:
         del data[provider_id]
-        _persist(data)
+        _persist(data, tenant)
+    if tenant is not None:
+        # Tenant keys never enter the process env, so there is nothing to unset.
+        return
     info = get_provider(provider_id)
     if info:  # LLM provider
         for var in (info.key_env, info.base_url_env, model_env(info.registry_name)):
@@ -201,9 +242,10 @@ def mask(key: str) -> str:
 _mask = mask
 
 
-def masked_view() -> Dict[str, Dict[str, Any]]:
-    """Safe view of the keystore for the UI — never the full key."""
-    data = load()
+def masked_view(tenant: str | None = None) -> Dict[str, Dict[str, Any]]:
+    """Safe view of a keystore for the UI — never the full key. ``tenant`` scopes
+    it to that tenant's isolated store (``None`` ⇒ global)."""
+    data = load(tenant)
     view: Dict[str, Dict[str, Any]] = {}
     for provider_id, entry in data.items():
         key = str(entry.get("api_key", "") or "")

@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/services/apiClient";
 import { LiveDataNotice } from "@/shell/Page";
 
 interface Provider {
@@ -64,9 +65,7 @@ export default function ProvidersPage() {
 
   async function load() {
     try {
-      const r = await fetch("/api/providers");
-      if (!r.ok) throw new Error(String(r.status));
-      const data = await r.json();
+      const data = await api.get<{ providers?: Provider[] }>("/api/providers");
       const list: Provider[] = data.providers ?? [];
       setProviders(list);
       setDrafts((prev) => {
@@ -92,12 +91,7 @@ export default function ProvidersPage() {
     try {
       const body: Record<string, unknown> = { model: d.model, base_url: d.baseUrl, ...extra };
       if (d.apiKey.trim()) body.api_key = d.apiKey.trim();
-      const r = await fetch(`/api/providers/${p.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!r.ok) throw new Error(String(r.status));
+      await api.post(`/api/providers/${p.id}`, body);
       toast.success(`${p.label} saved`);
       patch(p.id, { apiKey: "" }); // never keep the raw key in the field
       await load();
@@ -114,12 +108,11 @@ export default function ProvidersPage() {
     try {
       const body: Record<string, unknown> = { model: d.model, base_url: d.baseUrl };
       if (d.apiKey.trim()) body.api_key = d.apiKey.trim();
-      const r = await fetch(`/api/providers/${p.id}/test`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const v = await r.json();
+      const v = await api.post<{ ok?: boolean; latency_ms?: number; sample?: string; error?: string }>(
+        `/api/providers/${p.id}/test`,
+        body,
+        { timeoutMs: 30000 },
+      );
       if (v.ok) toast.success(`${p.label} responded in ${v.latency_ms} ms`, { description: v.sample });
       else toast.error(`${p.label} test failed`, { description: v.error });
     } catch {
@@ -131,8 +124,7 @@ export default function ProvidersPage() {
 
   async function clearKey(p: Provider) {
     try {
-      const r = await fetch(`/api/providers/${p.id}`, { method: "DELETE" });
-      if (!r.ok) throw new Error(String(r.status));
+      await api.del(`/api/providers/${p.id}`);
       toast.success(`${p.label} cleared`);
       await load();
     } catch {

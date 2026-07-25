@@ -7,6 +7,11 @@ identifies source surfaces, end-user access paths, environment variables, auth
 boundaries, generated artifacts, and production gates that must stay visible for
 safe integration.
 
+> **End-user auth & per-tenant keys:** the identity model (open / admin / tenant),
+> the per-tenant encrypted keystore, and the no-cross-tenant-leak invariant are
+> documented in [`architecture/MULTI_TENANT_AUTH.md`](architecture/MULTI_TENANT_AUTH.md).
+> Turn tenancy on with `AUREON_SUPABASE_JWT_SECRET`; unset ⇒ single-operator, unchanged.
+
 Primary map: [`REPO_SITEMAP.md`](REPO_SITEMAP.md). Machine-readable map:
 [`repo_sitemap.json`](repo_sitemap.json).
 Machine-readable SaaS integration manifest:

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { api, ApiError } from "@/services/apiClient";
 import { LiveDataNotice } from "../Page";
 
 interface GroundingSource {
@@ -58,21 +59,24 @@ export default function OperatorChatPage() {
     setBusy(true);
     setTurns((t) => [...t, { role: "user", text: trimmed }]);
     try {
-      const r = await fetch("/api/cognition/reason", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: trimmed }),
-      });
-      if (!r.ok) throw new Error(`gateway returned ${r.status}`);
-      const reply = (await r.json()) as CognitionReply;
+      // Reasoning can take a while; allow a generous timeout. apiClient attaches the
+      // end-user session bearer when one exists (tenant identity).
+      const reply = await api.post<CognitionReply>(
+        "/api/cognition/reason",
+        { prompt: trimmed },
+        { timeoutMs: 60000 },
+      );
       setTurns((t) => [...t, { role: "aureon", text: reply.text || "(empty answer)", reply }]);
     } catch (err) {
+      const offline = err instanceof ApiError && err.offline;
       const message = err instanceof Error ? err.message : String(err);
       setTurns((t) => [
         ...t,
         {
           role: "error",
-          text: `Could not reach the cognition gateway (${message}). Start the operator service (:8790) or check the /api proxy.`,
+          text: offline
+            ? `Could not reach the cognition gateway (${message}). Start the operator service or check the /api proxy.`
+            : `The cognition gateway returned an error: ${message}`,
         },
       ]);
     } finally {
