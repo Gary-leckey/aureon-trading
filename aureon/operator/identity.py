@@ -86,7 +86,9 @@ def resolve_identity(auth_header: str | None, *, operator_key: str, jwt_secret: 
       3. else a valid Supabase JWT     → tenant(``sub``) — only reachable when ``jwt_secret`` is set.
       4. else                          → not ok (the gate returns 401).
     """
-    operator_key = operator_key or ""
+    # A key that is only whitespace is not a key — treat it as unset, or a stray space in the env
+    # would flip an open instance into permanently-locked-out (nothing could ever match it).
+    operator_key = (operator_key or "").strip()
     jwt_secret = jwt_secret or ""
 
     # 1 — nothing configured: auth disabled, exactly as before.
@@ -97,8 +99,10 @@ def resolve_identity(auth_header: str | None, *, operator_key: str, jwt_secret: 
     if not token:
         return Identity(kind="open", tenant=None, ok=False)
 
-    # 2 — the static instance key: the admin / operator plane.
-    if operator_key and hmac.compare_digest(token, operator_key):
+    # 2 — the static instance key: the admin / operator plane. compare_digest raises TypeError on
+    # non-ASCII str input, so compare bytes — a unicode Authorization header must be a clean 401,
+    # never an unhandled 500.
+    if operator_key and hmac.compare_digest(token.encode("utf-8"), operator_key.encode("utf-8")):
         return Identity(kind="admin", tenant=None, ok=True)
 
     # 3 — a Supabase JWT: the end-user / tenant plane. Unreachable when jwt_secret is empty.

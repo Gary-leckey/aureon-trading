@@ -116,7 +116,16 @@ def register_legacy_runtime_routes(app: Any) -> int:
         return jsonify({"trades": {}, "note": "no symbol-keyed trade source wired on the operator"})
 
     def _notifications_telegram() -> Any:
+        # Operator-only: the fallback credentials are the INSTANCE's Telegram bot. A signed-in end
+        # user must not send from the operator's identity (they may still pass their own botToken).
+        # g.is_admin is set by the operator gate; absent (bare app / tests) ⇒ permissive, unchanged.
+        from flask import g
+
         body = request.get_json(silent=True) or {}
+        own_token = str(body.get("botToken") or "").strip()
+        if not getattr(g, "is_admin", True) and not own_token:
+            return jsonify({"ok": False, "reason": "sending from the instance's Telegram bot is "
+                                                   "operator-only; supply your own botToken"}), 403
         token = str(body.get("botToken") or os.environ.get(_TG_TOKEN_ENV, "")).strip()
         chat_id = str(body.get("chatId") or os.environ.get(_TG_CHAT_ENV, "")).strip()
         message = str(body.get("message") or "").strip()

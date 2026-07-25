@@ -60,6 +60,24 @@ tenant token flows to the backend.
 isolation; the single-operator default unchanged; and **per-user live reasoning** — a signed-in user's
 own model drives their own `/api/cognition/reason` and `/api/operator/respond`.
 
+## The two planes (what a tenant may NOT do)
+
+`g.is_admin` is true for the admin bearer and for the open single-operator default; it is false only
+for a signed-in end user. The **instance control plane is operator-only** and enforced (not merely
+computed) — a tenant JWT gets `403` from:
+
+| Route | Why it's operator-only |
+|:---|:---|
+| `POST /api/switchboard/<flag>` | writes `os.environ`, can re-apply the instance's own keys, can **arm hard boundaries** (e.g. live trading) |
+| `POST /api/action` | touches the host machine |
+| `POST /api/approvals/<id>` | the director's desk — the human gate on big plays |
+| `POST /api/manifests/refresh` | instance-wide rebuild |
+| `POST /api/notifications/telegram` | the *instance's* bot identity (a tenant may still pass their own `botToken`) |
+
+An adversarial audit of this work confirmed that computing `g.is_admin` without enforcing it left every
+one of those reachable by any valid tenant token. The regression suite
+[`tests/test_operator_tenant_security.py`](../../tests/test_operator_tenant_security.py) pins each one.
+
 ### Per-user live reasoning
 
 When a request carries a tenant, `operator_server` builds a **request-scoped engine from that tenant's
@@ -67,13 +85,25 @@ keystore** via [`providers.build_provider_set_from_entries()`](../../aureon/oper
 reads explicit keys and never touches `os.environ`), and caches it per tenant in a **bounded LRU** (max 8).
 Three properties keep it safe and leak-free:
 
-- **Shared conscience** — every per-tenant engine reuses the one tenant-agnostic Queen conscience, so the
-  ethical gate is identical and never re-loaded per user.
-- **No bus-subscription leak** — the per-tenant cognition wraps the shared bus in a `_NoSubscribeBus` that
-  neuters `subscribe` (delegating every other call), so per-tenant engines can't accumulate organism-topic
-  callbacks. `join_mesh=False` keeps them out of the mesh.
-- **Honest keyless reply** — a signed-in user with no model of their own gets a clear "add a key" response,
-  **never** the instance's models (that would spend the operator's keys on a stranger).
+- **Read-only toolbelt — a hard boundary.** A tenant supplies their own `base_url`, so the model
+  answering their turn is a server **they** control, and whatever `tool_calls` it returns get dispatched
+  on the operator host. The conscience veto runs *after* the tool loop, so it cannot undo a side effect.
+  Therefore a tenant engine is built with `build_operator_tools(allow_writes=False, allow_shell=False)` —
+  `execute_shell`, `write_repo_file` and `patch_repo_file` **do not exist** on it. (Before this was
+  enforced, a hostile endpoint could have read the keystore's Fernet key and every tenant's store.)
+- **Isolated bus** — per-tenant engines get an `_IsolatedBus`: `subscribe` is a no-op (so cached engines
+  can't accumulate organism callbacks) *and* `publish`/`recall` are no-ops, so a tenant's prompt and
+  answer never land in the shared instance thought bus. `join_mesh=False` keeps them off the mesh.
+- **Tenant-plane conscience** — the ethical gate always runs, but the Queen publishes each verdict
+  (quoting the action, i.e. the user's prompt). So the tenant plane uses its own conscience instance with
+  `_thought_bus` detached: identical judgement, nothing written into shared instance memory.
+- **Honest keyless reply** — a signed-in user with no model of their own gets a clear "add a key" response
+  on **every** entrypoint — `reason`, `respond`, and both SSE streams — **never** the instance's models
+  (that would spend the operator's keys on a stranger). The same rule governs `*/test` probes: a tenant
+  with no stored key gets an honest verdict rather than an empty key, which the adapters would otherwise
+  resolve from the process env.
+- **Revocation takes effect at once** — every tenant credential write/delete drops that tenant's cached
+  engines, so a rotated or revoked key stops being spent on the next request.
 
 The admin/open plane (`g.tenant is None`) still uses the shared instance engine, byte-for-byte as before.
 

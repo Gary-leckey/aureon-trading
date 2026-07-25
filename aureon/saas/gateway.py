@@ -201,6 +201,21 @@ def register_saas_routes(app: Any) -> Any:
         wrapper.__name__ = fn.__name__
         return wrapper
 
+    def _admin_only(fn):
+        """Operator-only control-plane route: refuse a signed-in end user (tenant).
+
+        ``g.is_admin`` is set by the operator's request gate (admin bearer or the open
+        single-operator default ⇒ True). It is absent when these routes are mounted on a bare app
+        (e.g. the compliance audit), so the default is permissive and nothing changes there.
+        """
+        def wrapper(*a, **k):
+            if not getattr(g, "is_admin", True):
+                return jsonify({"error": {"code": 403, "message": "this control-plane route is "
+                                                                  "operator-only", "plane": "admin"}}), 403
+            return fn(*a, **k)
+        wrapper.__name__ = fn.__name__
+        return wrapper
+
     @app.get("/api/catalog")
     @_guarded
     def saas_catalog():
@@ -344,6 +359,7 @@ def register_saas_routes(app: Any) -> Any:
 
     @app.post("/api/approvals/<item_id>")
     @_guarded
+    @_admin_only
     def saas_approvals_decide(item_id: str):
         # Record Gary's approve/reject for a prepared big play. This is the human
         # gate — it records the decision and does NOT execute the irreversible move
@@ -520,6 +536,7 @@ def register_saas_routes(app: Any) -> Any:
 
     @app.post("/api/manifests/refresh")
     @_guarded
+    @_admin_only
     def saas_refresh():
         catalog = build_catalog()  # force rebuild; /api/manifests/<name> now serves fresh data
         manifests = render_manifests(catalog=catalog, status=get_platform_status())

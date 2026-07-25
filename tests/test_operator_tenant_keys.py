@@ -106,8 +106,10 @@ def test_tenant_keys_are_isolated(env):
     b_view = _openai_view(client.get("/api/providers", headers=_tenant("bbb")).get_json())
     assert a_view["has_key"] is True and a_view["key_masked"].endswith("1234")
     assert b_view["has_key"] is False           # tenant B can never see tenant A's key
-    # a tenant's key does not drive the shared instance line-up this increment
-    assert a_view["live"] is False
+    # "live" describes the plane that will answer THIS caller: A's own key now drives A's own
+    # engine (per-user live reasoning), and B — who has no key — sees nothing live.
+    assert a_view["live"] is True
+    assert b_view["live"] is False
 
 
 def test_tenant_write_never_mutates_os_environ(env):
