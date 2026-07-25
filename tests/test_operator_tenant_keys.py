@@ -147,6 +147,50 @@ def test_tenant_can_live_test_own_key(env):
     assert set(body) >= {"ok", "latency_ms", "model"}   # an honest verdict, not a 500
 
 
+# ── per-tenant live reasoning ────────────────────────────────────────────────────
+
+def test_tenant_without_key_gets_honest_keyless_reply(env):
+    # A signed-in user with no model of their own is answered honestly — NEVER the
+    # instance's models — on both reasoning entrypoints.
+    client, _ks, _cfg = env
+    for path in ("/api/cognition/reason", "/api/operator/respond"):
+        r = client.post(path, json={"prompt": "hello"}, headers=_tenant("nokey"))
+        assert r.status_code == 200
+        assert r.get_json().get("tenant_no_key") is True
+
+
+def test_tenant_with_key_reasons_on_own_model(env):
+    # After connecting a local model, the tenant reasons on THEIR engine (no keyless
+    # fallback), and no key leaks into the process env.
+    client, _ks, _cfg = env
+    client.post("/api/providers/ollama",
+                json={"api_key": "tok", "base_url": "http://x", "model": "llama3"},
+                headers=_tenant("aaa"))
+    r = client.post("/api/cognition/reason", json={"prompt": "say OK"}, headers=_tenant("aaa"))
+    assert r.status_code == 200
+    j = r.get_json()
+    assert not j.get("tenant_no_key")                    # the tenant engine answered
+    assert j.get("text")
+    assert os.environ.get("OLLAMA_API_KEY") is None      # no env leak from reasoning
+
+
+def test_tenant_reasoning_is_isolated(env):
+    # A connects a model; B (no key) still gets the honest keyless reply — never A's engine.
+    client, _ks, _cfg = env
+    client.post("/api/providers/ollama", json={"api_key": "tok"}, headers=_tenant("aaa"))
+    rb = client.post("/api/cognition/reason", json={"prompt": "hi"}, headers=_tenant("bbb"))
+    assert rb.get_json().get("tenant_no_key") is True
+
+
+def test_admin_reasoning_uses_shared_engine(env):
+    # The admin/global plane reasons on the instance engine exactly as before — no
+    # tenant scoping, no keyless gate.
+    client, _ks, _cfg = env
+    r = client.post("/api/cognition/reason", json={"prompt": "say OK"}, headers=_ADMIN)
+    assert r.status_code == 200
+    assert not r.get_json().get("tenant_no_key")
+
+
 # ── keystore unit isolation ─────────────────────────────────────────────────────
 
 def test_keystore_tenant_isolation_unit(tmp_path, monkeypatch):

@@ -57,19 +57,29 @@ tenant token flows to the backend.
 ## What ships now vs. what's next (honest)
 
 **Ships:** end-user identity end-to-end; each user's keys **stored, managed, and live-tested** in full
-isolation; the single-operator default unchanged.
+isolation; the single-operator default unchanged; and **per-user live reasoning** — a signed-in user's
+own model drives their own `/api/cognition/reason` and `/api/operator/respond`.
 
-**Deferred (immediate follow-up):** per-user **live reasoning** — `/api/cognition/reason` and
-`/api/operator/respond` still run on the *instance's* configured models, because the cognition engine is a
-process singleton (mesh join, thought-bus, Queen conscience) whose per-tenant lifecycle is a deeper
-refactor. The env-free seam is already in place —
-[`providers.build_provider_set_from_entries()`](../../aureon/operator/providers.py) builds a switchboard
-from a tenant's keys with **no `os.environ` touch** — so the follow-up is
-`AureonOperator(providers=build_provider_set_from_entries(keystore.load(tenant)))`, not an adapter rewrite.
+### Per-user live reasoning
 
-Other follow-ups: per-tenant crypto keys; SSE stream tenancy (`EventSource` cannot carry an Authorization
-header, so `/api/*/stream` stays on the admin/global plane — the console chat uses POST, which is covered);
-migrating the sign-up Binance-key capture off Supabase onto the tenant keystore.
+When a request carries a tenant, `operator_server` builds a **request-scoped engine from that tenant's
+keystore** via [`providers.build_provider_set_from_entries()`](../../aureon/operator/providers.py) (which
+reads explicit keys and never touches `os.environ`), and caches it per tenant in a **bounded LRU** (max 8).
+Three properties keep it safe and leak-free:
+
+- **Shared conscience** — every per-tenant engine reuses the one tenant-agnostic Queen conscience, so the
+  ethical gate is identical and never re-loaded per user.
+- **No bus-subscription leak** — the per-tenant cognition wraps the shared bus in a `_NoSubscribeBus` that
+  neuters `subscribe` (delegating every other call), so per-tenant engines can't accumulate organism-topic
+  callbacks. `join_mesh=False` keeps them out of the mesh.
+- **Honest keyless reply** — a signed-in user with no model of their own gets a clear "add a key" response,
+  **never** the instance's models (that would spend the operator's keys on a stranger).
+
+The admin/open plane (`g.tenant is None`) still uses the shared instance engine, byte-for-byte as before.
+
+**Deferred (follow-ups):** per-tenant crypto keys; SSE stream tenancy (`EventSource` cannot carry an
+Authorization header, so `/api/*/stream` stays on the admin/global plane — the console chat uses POST,
+which is covered); migrating the sign-up Binance-key capture off Supabase onto the tenant keystore.
 
 ## Configure
 

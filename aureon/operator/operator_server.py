@@ -419,7 +419,10 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         prompt = str(body.get("prompt", "")).strip()
         if not prompt:
             return jsonify({"error": "missing prompt"}), 400
-        resp = _operator.respond(prompt, session_id=body.get("session_id"))
+        op = _get_operator_for(getattr(g, "tenant", None))
+        if op is None:  # signed-in user with no model of their own — honest, never instance models
+            return jsonify(_NO_TENANT_KEY)
+        resp = op.respond(prompt, session_id=body.get("session_id"))
         return jsonify(resp.to_dict())
 
     # ── Agentic cognition mode (tools + repo-wide grounding + veto) ────────────
@@ -431,6 +434,88 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
 
             _cognition["engine"] = AureonCognition(join_mesh=True)
         return _cognition["engine"]
+
+    # ── Per-tenant live reasoning ──────────────────────────────────────────────
+    # A signed-in end user reasons on THEIR OWN model keys, in isolation. We build a
+    # request-scoped engine from the tenant's keystore (never os.environ), cache it per
+    # tenant (bounded LRU), share the one tenant-agnostic conscience, and skip the mesh
+    # join + bus subscription so per-tenant engines never leak or pile up. When a tenant
+    # has no key we answer honestly instead of falling back to the instance's models.
+    from collections import OrderedDict
+
+    class _NoSubscribeBus:
+        """Wraps the shared bus but neuters ``subscribe`` — a per-tenant engine must not
+        accumulate organism-topic callbacks. Every other call delegates to the real bus."""
+
+        def __init__(self, real: Any) -> None:
+            self._real = real
+
+        def subscribe(self, *args: Any, **kwargs: Any) -> None:
+            return None
+
+        def __getattr__(self, name: str) -> Any:
+            real = object.__getattribute__(self, "_real")
+            if real is None:
+                return lambda *a, **k: None
+            return getattr(real, name)
+
+    _TENANT_ENGINE_MAX = 8
+    _tenant_cog: OrderedDict[str, Any] = OrderedDict()
+    _tenant_op: OrderedDict[str, Any] = OrderedDict()
+    _NO_TENANT_KEY: Dict[str, Any] = {
+        "text": "No model is connected to your account yet. Add an API key in Providers "
+                "to reason with your own model.",
+        "grounded": False, "blocked": False, "conscience_verdict": "APPROVED",
+        "tenant_no_key": True,
+    }
+
+    def _shared_conscience() -> Any:
+        try:
+            return _get_cognition()._get_conscience()
+        except Exception:  # noqa: BLE001 — no conscience ⇒ APPROVED-by-default downstream
+            return None
+
+    def _tenant_provider_set(tenant: str) -> Dict[str, Any]:
+        from aureon.operator import keystore as _ks
+        from aureon.operator.providers import build_provider_set_from_entries
+
+        return build_provider_set_from_entries(_ks.load(tenant))
+
+    def _lru_put(cache: OrderedDict[str, Any], key: str, value: Any) -> None:
+        cache[key] = value
+        cache.move_to_end(key)
+        while len(cache) > _TENANT_ENGINE_MAX:
+            cache.popitem(last=False)
+
+    def _get_cognition_for(tenant: str | None) -> Any:
+        if tenant is None:
+            return _get_cognition()  # admin / open plane — unchanged
+        if tenant in _tenant_cog:
+            _tenant_cog.move_to_end(tenant)
+            return _tenant_cog[tenant]
+        providers = _tenant_provider_set(tenant)
+        if not providers:
+            return None
+        from aureon.operator.cognition import AureonCognition
+
+        adapter = next(iter(providers.values()))
+        eng = AureonCognition(adapter=adapter, bus=_NoSubscribeBus(_get_cognition().bus),
+                              join_mesh=False, conscience=_shared_conscience())
+        _lru_put(_tenant_cog, tenant, eng)
+        return eng
+
+    def _get_operator_for(tenant: str | None) -> Any:
+        if tenant is None:
+            return _operator  # admin / open plane — unchanged
+        if tenant in _tenant_op:
+            _tenant_op.move_to_end(tenant)
+            return _tenant_op[tenant]
+        providers = _tenant_provider_set(tenant)
+        if not providers:
+            return None
+        op = AureonOperator(providers=providers, conscience=_shared_conscience(), join_mesh=False)
+        _lru_put(_tenant_op, tenant, op)
+        return op
 
     @app.get("/api/cognition/stream")
     def cognition_stream():
@@ -452,7 +537,10 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         prompt = str(body.get("prompt", "")).strip()
         if not prompt:
             return jsonify({"error": "missing prompt"}), 400
-        return jsonify(_get_cognition().reason(prompt, session_id=body.get("session_id")).to_dict())
+        eng = _get_cognition_for(getattr(g, "tenant", None))
+        if eng is None:  # signed-in user with no model of their own — honest keyless reply
+            return jsonify(_NO_TENANT_KEY)
+        return jsonify(eng.reason(prompt, session_id=body.get("session_id")).to_dict())
 
     # ── Provider API-key management (instance-owned, encrypted keystore) ────────
     # BYO keys for every model. Keys are stored encrypted (keystore.py), masked on
