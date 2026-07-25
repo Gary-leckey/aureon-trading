@@ -3324,6 +3324,11 @@ class CapitalCFDTrader:
                     return 0.0, ""
                 lt = float(getattr(lstate, 'lambda_t', 1.0) or 1.0)
                 score *= max(0.3, min(1.5, 0.5 + abs(lt) * 0.5))
+                # The private engine's figure is reconciled against the organism's
+                # canonical field: a low shared Γ tightens the score, a missing
+                # field changes nothing (b46 order-path wiring).
+                from aureon.core.hnc_field import reconcile_gamma
+                score *= reconcile_gamma(1.0)
             except Exception:
                 pass
 

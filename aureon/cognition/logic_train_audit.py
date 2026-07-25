@@ -150,8 +150,6 @@ KNOWN_UNWIRED: Final[dict[str, str]] = {
         "measured unwired at pin time (role=producer, reads a field, no canonical wire)",
     "aureon/core/integrated_cognitive_system.py":
         "cognitive integrator computes its own Λ instead of reading the shared one",
-    "aureon/exchanges/capital_cfd_trader.py":
-        "LIVE ORDER PATH — venue adapter with a private coherence figure; highest priority",
     "aureon/harmonic/auris_voice_filter.py":
         "measured unwired at pin time (role=producer, reads a field, no canonical wire)",
     "aureon/harmonic/dj_resonance.py":
@@ -170,8 +168,6 @@ KNOWN_UNWIRED: Final[dict[str, str]] = {
         "measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
     "aureon/operator/local_action_bridge.py":
         "measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
-    "aureon/portfolio/aureon_profit_now.py":
-        "LIVE ORDER PATH — measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
     "aureon/queen/being_model.py":
         "measured unwired at pin time (role=producer, reads a field, no canonical wire)",
     "aureon/queen/meaning_resolver.py":
@@ -196,22 +192,6 @@ KNOWN_UNWIRED: Final[dict[str, str]] = {
         "measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
     "aureon/swarm_motion/swarm_hive.py":
         "measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
-    "aureon/trading/aureon_live.py":
-        "LIVE ORDER PATH — measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
-    "aureon/trading/aureon_mesh_live.py":
-        "LIVE ORDER PATH — measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
-    "aureon/trading/aureon_multi_pair_live.py":
-        "LIVE ORDER PATH — measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
-    "aureon/trading/aureon_the_play.py":
-        "LIVE ORDER PATH — measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
-    "aureon/trading/aureon_the_play_old.py":
-        "LIVE ORDER PATH — measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
-    "aureon/trading/aureon_unified_ecosystem.py":
-        "LIVE ORDER PATH — measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
-    "aureon/trading/micro_profit_labyrinth.py":
-        "LIVE ORDER PATH — measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
-    "aureon/trading/parallel_strategy_unity.py":
-        "LIVE ORDER PATH — measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
     "aureon/utils/aureon_miner.py":
         "measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
     "aureon/vault/auris_metacognition.py":

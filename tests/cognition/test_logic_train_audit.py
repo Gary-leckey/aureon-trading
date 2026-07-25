@@ -182,12 +182,16 @@ def test_every_pinned_gap_carries_a_reason_and_no_invented_ones(report):
 
 def test_the_live_order_path_gaps_are_called_out_by_name(report):
     """A private coherence number inside a venue adapter or a live trader is the highest-stakes
-    case in the list, so it must be visible as such rather than averaged into a percentage."""
+    case in the list. The b46 burn-down wired all ten order-path sites onto the canonical field
+    (reconcile_gamma — the shared Γ can only tighten a live gate), so the healthy state is ZERO
+    order-path gaps. Should one ever reappear, it must be pinned with the LIVE ORDER PATH flag,
+    never averaged into a percentage."""
     order_path = [m for m in report.unwired if any(seg in m for seg in _ORDER_PATH)]
-    assert order_path, "expected the measured order-path gaps to be present"
     for module in order_path:
-        assert "LIVE ORDER PATH" in KNOWN_UNWIRED[module], (
+        assert module in KNOWN_UNWIRED and "LIVE ORDER PATH" in KNOWN_UNWIRED[module], (
             f"{module} is on the order path but not flagged as such")
+    assert not order_path, (
+        f"order-path modules regressed off the canonical field: {order_path}")
 
 
 def test_the_verdict_is_not_quietly_true_while_gaps_remain(report):

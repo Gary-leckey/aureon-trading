@@ -113,6 +113,13 @@ class MasterEquation:
         # Coherence is derived from Lambda stability (simplified here to be inverse of variance)
         # For this aggressive strategy, we map lambda directly to coherence potential
         coherence = min(max(lambda_t, 0.0), 1.0)
+        # Reconcile with the canonical HNC field: the shared Γ can only tighten
+        # this live gate, never loosen it (b46 order-path wiring).
+        try:
+            from aureon.core.hnc_field import reconcile_gamma
+            coherence = reconcile_gamma(coherence)
+        except Exception:
+            pass
         return coherence
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -20346,6 +20346,13 @@ class AureonKrakenEcosystem:
             sl = (self._last_cognitive_report or {}).get("source_law", {})
             market_gamma = (self._last_cognitive_report or {}).get("coherence_gamma", 0.0)
             effective_coherence = max(sl.get("coherence_gamma", 0.0), market_gamma)
+            # Reconcile with the canonical HNC field: the shared Γ can only
+            # tighten this entry gate, never loosen it (b46 order-path wiring).
+            try:
+                from aureon.core.hnc_field import reconcile_gamma
+                effective_coherence = reconcile_gamma(effective_coherence)
+            except Exception:
+                pass
             if effective_coherence < ENTRY_COHERENCE:
                 print(f"   ☉🛑 SOURCE LAW BLOCKED {symbol}: effective_coherence={effective_coherence:.3f} < {ENTRY_COHERENCE}")
                 self._emit_mycelium_event('entry.blocked_source_law', {
