@@ -391,18 +391,38 @@ def register_mcp_routes(app: Any) -> int:
     operator enables them, via the ``/mcp/`` prefix in the request gate):
       * ``GET  /mcp/tools`` — the sealed, read-only capability list.
       * ``POST /mcp/call``  — ``{"name","arguments","external_note"}`` → membrane-wrapped result.
+
+    Both are **operator-only**. Authentication alone is not enough here: ``get_registry()`` is a single
+    process-wide INSTANCE-plane registry, so there is no tenant plane for MCP at all. Before this guard,
+    any valid end-user token read the operator's live trading state through ``read_state`` /
+    ``read_positions``, and ``repo_search`` returned raw lines from the repository — including ``.env``
+    and the shared thought-bus journal. A counter-audit reproduced both.
     """
     try:
-        from flask import jsonify, request
+        from flask import g, jsonify, request
     except Exception:  # noqa: BLE001 - no Flask → no transport routes, but import stays safe
         return 0
 
     subscribe_membrane_topic()
 
+    def _admin_denied() -> Any:
+        """Refuse a tenant. Permissive when ``g.is_admin`` is unset (bare-app mounts, self-tests)."""
+        if not getattr(g, "is_admin", True):
+            return jsonify({"error": {"code": 403,
+                                      "message": "the MCP surface is operator-only",
+                                      "plane": "admin"}}), 403
+        return None
+
     def _mcp_tools() -> Any:
+        denied = _admin_denied()
+        if denied is not None:
+            return denied
         return jsonify(list_capabilities())
 
     def _mcp_call() -> Any:
+        denied = _admin_denied()
+        if denied is not None:
+            return denied
         body = request.get_json(silent=True) or {}
         name = str(body.get("name", ""))
         if not name:

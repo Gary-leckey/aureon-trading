@@ -263,7 +263,7 @@ def _run_tier_a(fast: bool = False) -> Dict[str, Any]:
                     failures.append(str(label))
             except Exception as exc:  # noqa: BLE001 - a raising benchmark is a failure, not a crash
                 failures.append(f"{label}: {type(exc).__name__}")
-    return {"passed": passed, "total": len(tier_a), "failures": failures, "mode": "live"}
+    return {"passed": passed, "total": len(benchmarks), "failures": failures, "mode": "live"}
 
 
 # ── Orchestration ──────────────────────────────────────────────────────────────────────────────

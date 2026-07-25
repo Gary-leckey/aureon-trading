@@ -246,3 +246,172 @@ def test_whitespace_only_operator_key_is_treated_as_unset():
 
     ident = resolve_identity(None, operator_key="   ", jwt_secret="")
     assert ident.kind == "open" and ident.ok is True
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Round 2 — a COUNTER-audit attacked the round-1 patches and defeated several.
+# Each test below pins one of those reproduced bypasses.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── CRITICAL: the round-1 "lockdown" was a denylist and left 14 of 17 tools ────
+
+def test_tenant_toolbelt_is_an_allowlist_not_a_denylist():
+    """Dropping shell+writes is not a lockdown. The retained tools were themselves the exploit:
+    ``web_fetch`` = outbound HTTP from the operator's IP (SSRF onto co-located instance services
+    and cloud metadata), ``touch_module`` = import anything, ``publish_thought`` = write the
+    process-global thought bus, ``read_state``/``read_positions``/``read_prices`` = the instance's
+    live trading state, ``repo_search``/``read_repo_file``/``list_repo`` = repository contents."""
+    from aureon.operator.tools import TENANT_ALLOWED_TOOLS, build_operator_tools
+
+    tenant = set(build_operator_tools(allow_writes=False, allow_shell=False,
+                                      allowlist=TENANT_ALLOWED_TOOLS).names())
+    forbidden = {"execute_shell", "write_repo_file", "patch_repo_file", "web_fetch", "web_search",
+                 "publish_thought", "touch_module", "read_state", "read_positions", "read_prices",
+                 "repo_search", "read_repo_file", "list_repo", "sense_organism", "list_organism"}
+    assert not (tenant & forbidden), f"tenant belt must hold none of these: {sorted(tenant & forbidden)}"
+    assert tenant, "the belt must still be a usable registry, not empty"
+    # zero regression: the instance/admin belt keeps every capability
+    assert {"execute_shell", "write_repo_file", "web_fetch"} <= set(build_operator_tools().names())
+
+
+def test_allowlist_is_a_final_filter_so_new_builtins_cannot_widen_the_belt():
+    """The filter runs last, so a tool registered by any future path is still excluded."""
+    from aureon.operator.tools import build_operator_tools
+
+    reg = build_operator_tools(allowlist={"code_validate"})
+    assert set(reg.names()) == {"code_validate"}
+
+
+# ── CRITICAL: the one route that moves money had no guard ──────────────────────
+
+def test_tenant_cannot_charge_a_fee_to_another_tenant(app_env, monkeypatch):
+    """POST /api/billing/charge-fee took ``user_id`` from the request BODY and signed the deduct
+    call with the instance's Supabase service-role key — so any signed-in user could debit any
+    other user's gas tank and fabricate audited fee events against them."""
+    monkeypatch.setenv("AUREON_BILLING_CHARGE_ENABLED", "1")
+    client, _srv, _ks = app_env
+    r = client.post("/api/billing/charge-fee",
+                    json={"user_id": "VICTIM-TENANT", "profit": 99999.0}, headers=_tenant("aaa"))
+    assert r.status_code == 403
+    assert r.get_json()["error"]["plane"] == "admin"
+
+
+# ── CRITICAL: the MCP surface is instance-plane only ──────────────────────────
+
+def test_tenant_cannot_reach_the_mcp_surface(app_env):
+    """``get_registry()`` is one process-wide INSTANCE registry — there is no tenant plane for MCP.
+    Authentication alone let a tenant read the operator's live trading state via ``read_positions``,
+    and ``repo_search`` returned raw repository lines."""
+    client, _srv, _ks = app_env
+    assert client.get("/mcp/tools", headers=_tenant("aaa")).status_code == 403
+    assert client.post("/mcp/call", json={"name": "read_positions", "arguments": {}},
+                       headers=_tenant("aaa")).status_code == 403
+
+
+def test_admin_can_still_use_the_mcp_surface(app_env):
+    client, _srv, _ks = app_env
+    assert client.get("/mcp/tools", headers=_ADMIN).status_code == 200
+
+
+def test_repo_search_never_returns_secret_file_contents(tmp_path, monkeypatch):
+    """Defense in depth on every plane: repo_search echoes matching lines verbatim, so without a
+    path filter a pattern like ``API_KEY=`` hands back the instance's .env in plaintext."""
+    import aureon.inhouse_ai.tool_registry as tr
+
+    (tmp_path / ".env").write_text('KRAKEN_API_KEY="LIVE-kraken-abc123"\n', encoding="utf-8")
+    (tmp_path / "ok.py").write_text('X = "API_KEY=placeholder"\n', encoding="utf-8")
+    monkeypatch.setattr(tr, "_repo_root", lambda: str(tmp_path))
+    out = tr._builtin_repo_search({"pattern": "API_KEY=", "limit": 10})
+    assert "LIVE-kraken-abc123" not in out
+    assert ".env" not in json.dumps(json.loads(out)["hits"])
+    assert "ok.py" in out            # ordinary files still searchable
+
+
+# ── HIGH: the connections surface leaked the instance's credential posture ────
+
+def test_tenant_never_sees_instance_connection_credentials(app_env, monkeypatch):
+    """The round-1 fork reached the LLM rows only. The exchange / data-source rows — where the real
+    money keys are — were still built from the GLOBAL keystore plus ``os.environ``, so a tenant
+    enumerated which instance credentials exist, their source, and the last 4 characters."""
+    client, _srv, _ks = app_env
+    monkeypatch.setenv("KRAKEN_API_KEY", "INSTANCE-SECRET-9876")
+    body = client.get("/api/connections", headers=_tenant("aaa")).get_json()
+    rows = [c for s in body["categories"] for c in s["connections"]]
+    kraken = next(c for c in rows if c["id"] == "kraken")
+    assert kraken["has_key"] is False
+    assert kraken["key_source"] == "none"
+    assert kraken["key_masked"] == ""
+    assert "9876" not in json.dumps(body)
+    # the admin plane is unchanged — it still sees its own env credential
+    admin_rows = [c for s in client.get("/api/connections", headers=_ADMIN).get_json()["categories"]
+                  for c in s["connections"]]
+    admin_kraken = next(c for c in admin_rows if c["id"] == "kraken")
+    assert admin_kraken["has_key"] is True and admin_kraken["key_source"] == "env"
+
+
+def test_tenant_readiness_does_not_report_instance_keys_present(app_env, monkeypatch):
+    client, _srv, _ks = app_env
+    monkeypatch.setenv("KRAKEN_API_KEY", "INSTANCE-SECRET-9876")
+    items = client.get("/api/connections/readiness", headers=_tenant("aaa")).get_json()["items"]
+    leaked = [i for i in items
+              if i.get("category") not in ("ai_llm",) and i.get("present") and i.get("requirement") != "keyless"]
+    assert not leaked, f"instance credentials reported present to a tenant: {leaked}"
+
+
+def test_tenant_cannot_read_the_instance_credential_posture(app_env):
+    """GET /api/env-credentials enumerates which of the operator's exchange keys are configured —
+    the instance's security state, and a target list."""
+    client, _srv, _ks = app_env
+    assert client.get("/api/env-credentials", headers=_tenant("aaa")).status_code == 403
+    assert client.get("/api/env-credentials", headers=_ADMIN).status_code == 200
+
+
+# ── the round-1 guards locked the OPERATOR out too (a real regression) ────────
+
+def test_admin_can_still_decide_approvals_under_tenancy(app_env):
+    """``@_guarded`` requires a valid *Supabase JWT*; the admin static bearer is not one. Stacking it
+    over ``@_admin_only`` 401s the operator before the admin check is reached — so with tenancy on,
+    NO identity could decide an approval."""
+    client, _srv, _ks = app_env
+    r = client.post("/api/approvals/some-id", json={"decision": "approve"}, headers=_ADMIN)
+    assert r.status_code != 401, "the operator must not be locked out of their own control plane"
+    assert r.status_code != 403
+
+
+# ── MEDIUM: tenant turns must not radiate onto shared instance memory ────────
+
+def test_tenant_engines_do_not_broadcast_onto_the_shared_mycelium(app_env, monkeypatch):
+    """``join_mesh=False`` only skips INBOUND membership; the outbound ``broadcast_to_mesh`` calls
+    fired regardless, carrying the conscience verdict (which quotes the user's prompt)."""
+    client, _srv, _ks = app_env
+    seen: list = []
+    import aureon.operator.cognition as cog
+
+    monkeypatch.setattr(cog, "broadcast_to_mesh", lambda topic, payload: seen.append(topic))
+    _connect_model(client, _tenant("aaa"))
+    client.post("/api/cognition/reason", json={"prompt": "hello"}, headers=_tenant("aaa"))
+    assert seen == [], f"tenant turn broadcast onto the shared mesh: {seen}"
+
+
+def test_tenant_conscience_is_not_a_subscriber_on_the_shared_bus(app_env):
+    """QueenConscience.__init__ subscribes to "symbolic.life.pulse" before we can detach it, which
+    left the tenant-plane conscience receiving the INSTANCE's substrate pulses (an inbound
+    cross-plane read) and pinned a callback on the shared bus forever."""
+    client, _srv, _ks = app_env
+    _connect_model(client, _tenant("aaa"))
+    client.post("/api/cognition/reason", json={"prompt": "hi"}, headers=_tenant("aaa"))
+    try:
+        from aureon.core.aureon_thought_bus import get_thought_bus
+
+        bus = get_thought_bus()
+    except Exception:  # pragma: no cover - no bus in this env ⇒ nothing to subscribe to
+        return
+    subs = getattr(bus, "_subs", None)
+    if not isinstance(subs, dict):
+        return
+    from aureon.queen.queen_conscience import QueenConscience
+
+    still = [h for handlers in subs.values() for h in handlers
+             if isinstance(getattr(h, "__self__", None), QueenConscience)
+             and getattr(h.__self__, "_thought_bus", "set") is None]
+    assert not still, "the detached tenant conscience is still subscribed to the shared bus"

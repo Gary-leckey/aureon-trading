@@ -477,6 +477,17 @@ def _repo_root() -> str:
     return here
 
 
+# Files whose PATH marks them as secret material. repo_search returns matching source lines
+# verbatim, so without this filter a pattern like "API_KEY=" hands back live credentials in
+# plaintext — the instance's .env is exactly where set_exchange_credential writes exchange keys.
+# Directory pruning alone never covered it: dotfiles at the repo root are walked like any other.
+_SECRET_FILE_RE = re.compile(
+    r"(^|/)\.env|(^|/)id_rsa|\.pem$|\.key$|(^|/)provider_keys|"
+    r"(^|/)secrets?\.(json|ya?ml|toml|ini|txt)$|(^|/)credentials?(\.|$)",
+    re.IGNORECASE,
+)
+
+
 def _builtin_repo_search(args: Dict[str, Any]) -> str:
     pattern = str(args.get("pattern", "")).strip()
     directory = str(args.get("directory", ".") or ".").strip()
@@ -499,6 +510,9 @@ def _builtin_repo_search(args: Dict[str, Any]) -> str:
             if len(hits) >= limit:
                 break
             path = os.path.join(walk_root, filename)
+            rel = os.path.relpath(path, root).replace("\\", "/")
+            if _SECRET_FILE_RE.search(rel):
+                continue          # never echo secret material back as a search hit
             try:
                 with open(path, "r", encoding="utf-8", errors="replace") as fh:
                     for line_no, line in enumerate(fh, start=1):

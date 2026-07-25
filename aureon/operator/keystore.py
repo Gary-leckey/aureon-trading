@@ -48,13 +48,21 @@ _SAFE_TENANT = re.compile(r"[A-Za-z0-9_-]{1,128}")
 
 
 def _safe_tenant(tenant: str) -> str:
-    """A filesystem-safe directory name for a tenant id.
+    """A filesystem-safe, collision-free directory name for a tenant id.
 
     The tenant id is a JWT ``sub`` (normally a UUID). Even though the token is signed, defend against
     path traversal: accept a strict whitelist verbatim, otherwise fall back to a SHA-256 hash — so a
     crafted ``sub`` can never escape ``TENANTS_DIR``.
+
+    The two forms are kept in **disjoint namespaces** by prefix. Without that, they share one
+    directory space and collide: a SHA-256 hex digest itself matches the whitelist, so a tenant whose
+    ``sub`` is literally the digest of another tenant's crafted ``sub`` would be handed that tenant's
+    store — reading their keys and taking over their rotations. ``v_`` (verbatim) and ``h_`` (hashed)
+    can never produce the same name, because a verbatim id is always re-prefixed.
     """
-    return tenant if _SAFE_TENANT.fullmatch(tenant) else hashlib.sha256(tenant.encode("utf-8")).hexdigest()
+    if _SAFE_TENANT.fullmatch(tenant):
+        return f"v_{tenant}"
+    return f"h_{hashlib.sha256(tenant.encode('utf-8')).hexdigest()}"
 
 
 def _store_path(tenant: str | None) -> Path:

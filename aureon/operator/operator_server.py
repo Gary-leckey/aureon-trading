@@ -26,6 +26,7 @@ docs/architecture/AUREON_OPERATOR_SWITCHBOARD.md), not localhost.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import os
@@ -519,11 +520,34 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
             from aureon.queen.queen_conscience import QueenConscience
 
             obj = QueenConscience()
+            # __init__ subscribes to "symbolic.life.pulse" on the shared bus before we can detach it,
+            # which leaves the tenant-plane conscience receiving the INSTANCE's substrate pulses and
+            # feeding them into tenant verdicts — an inbound cross-plane read, and a callback the
+            # shared bus would hold forever. Detach the subscription, then cut publishing.
+            _detach_from_shared_bus(obj)
             obj._thought_bus = None  # verdicts judged, never published to shared memory
         except Exception:  # noqa: BLE001
             obj = _shared_conscience()
         _tenant_conscience["obj"] = obj
         return obj
+
+    def _detach_from_shared_bus(obj: Any) -> None:
+        """Remove every subscription ``obj`` registered on the shared thought bus. Best-effort."""
+        bus = getattr(obj, "_thought_bus", None)
+        subs = getattr(bus, "_subs", None)
+        if not isinstance(subs, dict):
+            return
+        try:
+            lock = getattr(bus, "_lock", None)
+            ctx = lock if lock is not None else contextlib.nullcontext()
+            with ctx:
+                for handlers in subs.values():
+                    if not isinstance(handlers, list):
+                        continue
+                    for h in [h for h in handlers if getattr(h, "__self__", None) is obj]:
+                        handlers.remove(h)
+        except Exception:  # noqa: BLE001 — a detached conscience is best-effort hardening
+            logger.debug("tenant conscience: shared-bus detach failed", exc_info=True)
 
     def _tenant_provider_set(tenant: str) -> Dict[str, Any]:
         from aureon.operator import keystore as _ks
@@ -549,17 +573,24 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         _tenant_op.pop(tenant, None)
 
     def _tenant_tools() -> Any:
-        """The toolbelt a TENANT's engine may use: read-only — no shell, no repo writes.
+        """The toolbelt a TENANT's engine may use: an ALLOWLIST of pure-compute tools only.
 
         This is a hard boundary, not a preference. A tenant supplies their own ``base_url``, so the
         model answering their turn is a server THEY control; whatever ``tool_calls`` it returns are
-        dispatched on the operator host. With shell/write tools attached, a hostile endpoint could
-        read the keystore's Fernet key and every other tenant's encrypted store. The conscience veto
-        runs after the tool loop, so it cannot undo such a side effect — the tools must never exist.
-        """
-        from aureon.operator.tools import build_operator_tools
+        dispatched on the operator host. The conscience veto runs after the tool loop, so it cannot
+        undo a side effect — the tools must never exist.
 
-        return build_operator_tools(allow_writes=False, allow_shell=False)
+        A *denylist* is not enough here, and a counter-audit proved it: dropping shell + repo writes
+        still left ``web_fetch`` (outbound HTTP from the operator's IP → SSRF onto co-located instance
+        services and cloud metadata), ``touch_module`` (import anything), ``publish_thought`` (writes
+        the process-global thought bus, going around ``_IsolatedBus``) and the instance's live trading
+        state readers. So the belt is pinned positively — see
+        :data:`~aureon.operator.tools.TENANT_ALLOWED_TOOLS`.
+        """
+        from aureon.operator.tools import TENANT_ALLOWED_TOOLS, build_operator_tools
+
+        return build_operator_tools(allow_writes=False, allow_shell=False,
+                                    allowlist=TENANT_ALLOWED_TOOLS)
 
     def _get_cognition_for(tenant: str | None) -> Any:
         if tenant is None:
@@ -574,6 +605,7 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
 
         adapter = next(iter(providers.values()))
         eng = AureonCognition(adapter=adapter, bus=_IsolatedBus(), join_mesh=False,
+                              mesh_broadcast=False,
                               conscience=_tenant_plane_conscience(), tools=_tenant_tools(),
                               allow_writes=False, allow_shell=False,
                               source=f"aureon.cognition.tenant:{_tenant_label(tenant)}")
@@ -590,7 +622,7 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         if not providers:
             return None
         op = AureonOperator(providers=providers, conscience=_tenant_plane_conscience(), join_mesh=False,
-                            bus=_IsolatedBus(),
+                            mesh_broadcast=False, bus=_IsolatedBus(),
                             source=f"aureon.operator.tenant:{_tenant_label(tenant)}")
         _lru_put(_tenant_op, tenant, op)
         return op
@@ -785,11 +817,15 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
 
     @app.get("/api/connections")
     def connections_list():
-        return jsonify(_json_safe(_conn_api.build_view(_provider_view(getattr(g, "tenant", None)))))
+        # `tenant` must reach build_view itself, not just the LLM rows it is handed: the non-LLM
+        # (exchange / data-source) rows are built inside from the keystore + os.environ.
+        tenant = getattr(g, "tenant", None)
+        return jsonify(_json_safe(_conn_api.build_view(_provider_view(tenant), tenant=tenant)))
 
     @app.get("/api/connections/readiness")
     def connections_readiness():
-        return jsonify(_json_safe(_conn_api.readiness(_provider_view(getattr(g, "tenant", None)))))
+        tenant = getattr(g, "tenant", None)
+        return jsonify(_json_safe(_conn_api.readiness(_provider_view(tenant), tenant=tenant)))
 
     @app.post("/api/connections/<conn_id>")
     def connections_set(conn_id: str):
@@ -826,7 +862,7 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         else:
             _invalidate_tenant_engines(tenant)
         return jsonify({"ok": True, "connection": _conn_api.connection_public(
-            conn, _keystore.load(tenant), {})})
+            conn, _keystore.load(tenant), {}, allow_env=tenant is None)})
 
     @app.post("/api/connections/<conn_id>/test")
     def connections_test(conn_id: str):

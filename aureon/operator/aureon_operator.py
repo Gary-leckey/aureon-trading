@@ -203,7 +203,12 @@ class AureonOperator:
         cache: ResponseCache | None = None,
         source: str = "aureon.operator",
         join_mesh: bool = False,
+        mesh_broadcast: bool = True,
     ) -> None:
+        # ``join_mesh`` is inbound membership; ``mesh_broadcast`` is the outbound signal. Kept
+        # separate so the default stays exactly today's behavior (this class already ships
+        # ``join_mesh=False`` while still broadcasting). A per-tenant operator passes False.
+        self._mesh_broadcast = bool(mesh_broadcast)
         self.config = config or OperatorConfig.from_env()
         self.last_mesh_message: Dict[str, Any] = {}
         if join_mesh:
@@ -279,10 +284,11 @@ class AureonOperator:
         self._cache_set(resp)
         self._metrics.request("blocked" if resp.blocked else "ok", resp.elapsed_ms)
         self._publish(resp, "complete", resp.to_dict())
-        broadcast_to_mesh(
-            "operator.answer",
-            {"trace_id": resp.trace_id, "blocked": resp.blocked, "verdict": resp.conscience_verdict},
-        )
+        if self._mesh_broadcast:
+            broadcast_to_mesh(
+                "operator.answer",
+                {"trace_id": resp.trace_id, "blocked": resp.blocked, "verdict": resp.conscience_verdict},
+            )
         return resp
 
     def receive_mycelium_message(self, message_type: str, payload: Dict[str, Any]) -> None:

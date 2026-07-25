@@ -184,6 +184,13 @@ def register_saas_routes(app: Any) -> Any:
         """When a Supabase JWT secret is configured, require a valid tenant token."""
         if not jwt_secret:
             return True  # tenancy bridge disabled
+        # The admin/operator bearer is NOT a Supabase JWT, so it can never satisfy the check below.
+        # Without this branch, stacking @_guarded over @_admin_only 401s the operator before the
+        # admin check is even reached — locking every identity out of those control-plane routes.
+        # ``g.is_admin`` is set only by the operator gate, which has already authenticated the
+        # bearer in constant time; absent (bare-app mount) ⇒ False ⇒ the JWT path below, unchanged.
+        if getattr(g, "is_admin", False):
+            return True
         auth = request.headers.get("Authorization", "")
         if not auth.startswith("Bearer "):
             return False

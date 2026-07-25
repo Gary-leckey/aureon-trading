@@ -73,10 +73,46 @@ computed) — a tenant JWT gets `403` from:
 | `POST /api/approvals/<id>` | the director's desk — the human gate on big plays |
 | `POST /api/manifests/refresh` | instance-wide rebuild |
 | `POST /api/notifications/telegram` | the *instance's* bot identity (a tenant may still pass their own `botToken`) |
+| `POST /api/billing/charge-fee` | **moves money** — charges `body["user_id"]` using the instance's Supabase service-role key |
+| `GET /mcp/tools` · `POST /mcp/call` | one process-wide **instance-plane** tool registry; there is no tenant plane for MCP |
+| `GET /api/env-credentials` | enumerates the instance's exchange-credential posture (a target list) |
 
 An adversarial audit of this work confirmed that computing `g.is_admin` without enforcing it left every
 one of those reachable by any valid tenant token. The regression suite
 [`tests/test_operator_tenant_security.py`](../../tests/test_operator_tenant_security.py) pins each one.
+
+### What the counter-audit found (round 2)
+
+The round-1 patches were then attacked in turn, and several fell. Recording them because the
+*shape* of each mistake is the reusable lesson:
+
+- **A denylist is not a lockdown.** `build_operator_tools(allow_writes=False, allow_shell=False)`
+  removed 3 of 17 tools. The 14 that remained were themselves the exploit: `web_fetch` (arbitrary
+  outbound HTTP *from the operator's host* — SSRF onto co-located instance services and cloud
+  metadata, plus an unattributed egress relay), `touch_module` (import any module), `publish_thought`
+  (writes the process-global thought bus, going straight around `_IsolatedBus`), `read_state` /
+  `read_positions` / `read_prices` (the instance's live trading state), and `repo_search` /
+  `read_repo_file` / `list_repo` (repository contents). The belt is now an **allowlist**
+  ([`TENANT_ALLOWED_TOOLS`](../../aureon/operator/tools.py)) applied as a *final filter*, so a
+  built-in added upstream can never silently widen the tenant surface.
+- **The enumeration missed the one route that moves money.** `charge-fee`'s own docstring called it
+  "operator-authenticated"; the env gate and the audit trail existed, the authentication did not.
+- **A guard on the LLM half is not a guard on the whole surface.** `/api/connections` and
+  `/api/connections/readiness` still built their exchange / data-source rows from the *global*
+  keystore plus `os.environ` — exactly where the real money keys are.
+- **Guards can lock out the operator too.** Stacking `@_guarded` (which requires a valid *Supabase
+  JWT*) over `@_admin_only` meant the admin static bearer — not a JWT — got `401` before the admin
+  check ran, so **no** identity could decide an approval. Fixed by having `_tenant_ok` accept an
+  identity the operator gate already authenticated.
+- **Two namespaces sharing one directory space collide.** `_safe_tenant` used a whitelisted `sub`
+  verbatim and hashed the rest — but a SHA-256 digest itself satisfies the whitelist, so a tenant
+  could be handed another tenant's store. The forms are now prefixed `v_` / `h_`, provably disjoint.
+- **Detaching a bus after construction is too late.** `QueenConscience.__init__` subscribes before
+  `_thought_bus = None` runs, leaving the tenant-plane conscience fed by the instance's substrate
+  pulses. It is now explicitly unsubscribed.
+- **`join_mesh=False` only governed inbound membership.** The outbound `broadcast_to_mesh` calls
+  fired regardless, carrying the conscience verdict (which quotes the user's prompt). Outbound is now
+  its own flag, `mesh_broadcast`, default `True` so the instance engine is unchanged.
 
 ### Per-user live reasoning
 
@@ -85,15 +121,17 @@ keystore** via [`providers.build_provider_set_from_entries()`](../../aureon/oper
 reads explicit keys and never touches `os.environ`), and caches it per tenant in a **bounded LRU** (max 8).
 Three properties keep it safe and leak-free:
 
-- **Read-only toolbelt — a hard boundary.** A tenant supplies their own `base_url`, so the model
+- **Allowlisted toolbelt — a hard boundary.** A tenant supplies their own `base_url`, so the model
   answering their turn is a server **they** control, and whatever `tool_calls` it returns get dispatched
   on the operator host. The conscience veto runs *after* the tool loop, so it cannot undo a side effect.
-  Therefore a tenant engine is built with `build_operator_tools(allow_writes=False, allow_shell=False)` —
-  `execute_shell`, `write_repo_file` and `patch_repo_file` **do not exist** on it. (Before this was
-  enforced, a hostile endpoint could have read the keystore's Fernet key and every tenant's store.)
+  Therefore a tenant engine is built with `allowlist=TENANT_ALLOWED_TOOLS` — pure-compute tools only
+  (`code_validate`: `ast.parse`, no I/O, no network, no shared state). No shell, no repo write, and
+  equally no network egress, no module import, no bus write, and no instance-state read. The filter is
+  applied *last*, so nothing registered upstream can widen it.
 - **Isolated bus** — per-tenant engines get an `_IsolatedBus`: `subscribe` is a no-op (so cached engines
   can't accumulate organism callbacks) *and* `publish`/`recall` are no-ops, so a tenant's prompt and
-  answer never land in the shared instance thought bus. `join_mesh=False` keeps them off the mesh.
+  answer never land in the shared instance thought bus. `join_mesh=False` keeps them off the mesh
+  inbound, and `mesh_broadcast=False` keeps their turns from radiating outward onto it.
 - **Tenant-plane conscience** — the ethical gate always runs, but the Queen publishes each verdict
   (quoting the action, i.e. the user's prompt). So the tenant plane uses its own conscience instance with
   `_thought_bus` detached: identical judgement, nothing written into shared instance memory.

@@ -129,8 +129,10 @@ def test_tenant_write_never_mutates_os_environ(env):
 def test_tenant_write_lands_in_isolated_file(env):
     client, ks, cfg = env
     client.post("/api/providers/openai", json={"api_key": "sk-AAAA1234"}, headers=_tenant("aaa"))
-    assert (cfg / "tenants" / "aaa" / "provider_keys.json.enc").exists()
-    assert not (cfg / "tenants" / "bbb").exists()
+    # "v_" marks the verbatim namespace — kept disjoint from the "h_" hashed one so the two can
+    # never name the same directory (see test_safe_tenant_namespaces_cannot_collide).
+    assert (cfg / "tenants" / "v_aaa" / "provider_keys.json.enc").exists()
+    assert not (cfg / "tenants" / "v_bbb").exists()
     assert ks.load(tenant="bbb") == {}                 # B's store is empty
     assert "openai" in ks.load(tenant="aaa")
 
@@ -225,7 +227,26 @@ def test_safe_tenant_defends_against_traversal():
 
     safe = ks._safe_tenant("../../etc/evil")
     assert "/" not in safe and ".." not in safe
-    assert len(safe) == 64                              # hashed, not the raw path
+    assert safe.startswith("h_") and len(safe) == 66     # hashed, not the raw path
+
+
+def test_safe_tenant_namespaces_cannot_collide():
+    """The verbatim and hashed forms must live in disjoint namespaces.
+
+    A SHA-256 hex digest itself satisfies the verbatim whitelist. Without distinct prefixes, a tenant
+    whose ``sub`` happens to be the digest of another tenant's crafted ``sub`` would be handed that
+    tenant's store — reading their keys and hijacking their rotations.
+    """
+    import hashlib
+
+    import aureon.operator.keystore as ks
+
+    crafted = "../../etc/evil"
+    digest = hashlib.sha256(crafted.encode("utf-8")).hexdigest()
+    assert ks._safe_tenant(digest) != ks._safe_tenant(crafted)
+    # and the two forms are separable by construction, for every input
+    assert ks._safe_tenant(digest).startswith("v_")
+    assert ks._safe_tenant(crafted).startswith("h_")
 
 
 # ── backward compatibility (no secrets ⇒ open) ──────────────────────────────────

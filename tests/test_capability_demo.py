@@ -91,3 +91,35 @@ def test_cli_main_exits_zero(tmp_path):
     out = tmp_path / "cap.md"
     assert cd.main(["--fast", "--report", str(out)]) == 0
     assert out.exists() and out.read_text(encoding="utf-8").startswith("# Aureon OS — capability demonstration")
+
+def test_live_tier_a_branch_reports_a_real_total(monkeypatch):
+    """Guards the LIVE Tier-A path, not just ``--fast``.
+
+    Every other test here runs ``fast=True``, which returns from the committed-report branch before
+    reaching the live loop — so a NameError in that loop shipped undetected (the default CLI
+    invocation, with no ``--fast``, crashed with UnboundLocalError). A stub module keeps this cheap:
+    two fake benchmarks exercise the same code path as all 45.
+    """
+    class _StubModule:
+        TIER_A = [("fake_pass", lambda root: {"passed": True}),
+                  ("fake_fail", lambda root: {"passed": False})]
+
+    monkeypatch.setattr(cd, "_load_benchmark_module", lambda: _StubModule())
+    out = cd._run_tier_a(fast=False)
+    assert out["mode"] == "live"
+    assert out["total"] == 2          # counted from the benchmarks actually run
+    assert out["passed"] == 1
+    assert out["failures"] == ["fake_fail"]
+
+
+def test_live_tier_a_counts_a_raising_benchmark_as_a_failure(monkeypatch):
+    def _boom(root):
+        raise RuntimeError("nope")
+
+    class _StubModule:
+        TIER_A = [("explodes", _boom)]
+
+    monkeypatch.setattr(cd, "_load_benchmark_module", lambda: _StubModule())
+    out = cd._run_tier_a(fast=False)
+    assert out["total"] == 1 and out["passed"] == 0
+    assert out["failures"] == ["explodes: RuntimeError"]
