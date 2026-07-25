@@ -1451,8 +1451,14 @@ class QueenHiveMind:
         # 🪆👑 RUSSIAN DOLL ANALYTICS - Fractal Measurement System 🪆👑
         # Queen (macro) → Hive (system) → Bee (micro) analytics flow
         # Data flows A→Z (directives down) and Z→A (insights up)
-        self.russian_doll = None
-        if RUSSIAN_DOLL_QUEEN_AVAILABLE and get_analytics is not None:
+        #
+        # NOTE: every optional system below must be guarded so _ensure_core_state stays
+        # idempotent. It used to reassign unconditionally, and because _register_child
+        # calls back into here, wire_hft_engine() had its freshly wired engine clobbered
+        # and replaced with a new default one before the wiring call even returned.
+        if not hasattr(self, 'russian_doll'):
+            self.russian_doll = None
+        if self.russian_doll is None and RUSSIAN_DOLL_QUEEN_AVAILABLE and get_analytics is not None:
             try:
                 self.russian_doll = get_analytics()
                 logger.info("🪆👑 Russian Doll Analytics connected - Fractal measurement ACTIVE!")
@@ -1464,8 +1470,9 @@ class QueenHiveMind:
         # �🔬👑 QUEEN RESEARCH NEURON - News & Wikipedia Intelligence 📰🔬👑
         # The Queen's research system for gathering external knowledge
         # Sources: World News API, Wikipedia, RSS Feeds
-        self.research_neuron = None
-        if RESEARCH_NEURON_AVAILABLE and create_queen_research_neuron is not None:
+        if not hasattr(self, 'research_neuron'):
+            self.research_neuron = None
+        if self.research_neuron is None and RESEARCH_NEURON_AVAILABLE and create_queen_research_neuron is not None:
             try:
                 self.research_neuron = create_queen_research_neuron(
                     thought_bus=self.thought_bus
@@ -1480,27 +1487,31 @@ class QueenHiveMind:
         # �🔪 COUNTER-INTELLIGENCE SYSTEM - Beat Trading Firms at Their Own Game 🔪🧠
         # The Queen's counter-intelligence weapon against major trading firms
         # Uses firm intelligence data to counter-trade Citadel, Jane Street, etc.
-        self.counter_intelligence = None
-        self.counter_intel_active = False
-        try:
-            from aureon.utils.aureon_queen_counter_intelligence import queen_counter_intelligence
-            from aureon.bots_intelligence.aureon_global_firm_intelligence import get_attribution_engine
-            self.counter_intelligence = queen_counter_intelligence
-            self.firm_attribution_engine = get_attribution_engine()
-            self.counter_intel_active = True
-            logger.info("🧠🔪 Queen Counter-Intelligence ARMED!")
-            logger.info("   🎯 Target: Major trading firms (Citadel, Jane Street, Two Sigma)")
-            logger.info("   ⚡ Timing advantage: 30-200ms faster execution")
-            logger.info("   📊 Strategy: Pattern exploitation + momentum counter")
-        except Exception as e:
-            logger.warning(f"🧠⚠️ Could not initialize Counter-Intelligence: {e}")
+        if not hasattr(self, 'counter_intelligence'):
+            self.counter_intelligence = None
+            self.counter_intel_active = False
+        if self.counter_intelligence is None:
+            try:
+                from aureon.utils.aureon_queen_counter_intelligence import queen_counter_intelligence
+                from aureon.bots_intelligence.aureon_global_firm_intelligence import get_attribution_engine
+                self.counter_intelligence = queen_counter_intelligence
+                self.firm_attribution_engine = get_attribution_engine()
+                self.counter_intel_active = True
+                logger.info("🧠🔪 Queen Counter-Intelligence ARMED!")
+                logger.info("   🎯 Target: Major trading firms (Citadel, Jane Street, Two Sigma)")
+                logger.info("   ⚡ Timing advantage: 30-200ms faster execution")
+                logger.info("   📊 Strategy: Pattern exploitation + momentum counter")
+            except Exception as e:
+                logger.warning(f"🧠⚠️ Could not initialize Counter-Intelligence: {e}")
         
         # �🦈🔪 HFT HARMONIC MYCELIUM ENGINE - High Frequency Trading 🦈🔪
         # The Queen's high-frequency trading system using Mycelium + Harmonic Alphabet
         # Target latency: <10ms signal-to-order execution
-        self.hft_engine = None
-        self.order_router = None
-        if HFT_ENGINE_AVAILABLE and get_hft_engine is not None:
+        if not hasattr(self, 'hft_engine'):
+            self.hft_engine = None
+        if not hasattr(self, 'order_router'):
+            self.order_router = None
+        if self.hft_engine is None and HFT_ENGINE_AVAILABLE and get_hft_engine is not None:
             try:
                 self.hft_engine = get_hft_engine()
                 logger.info("🦈🔪 HFT Harmonic Mycelium Engine AWAKENED!")
