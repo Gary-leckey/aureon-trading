@@ -71,15 +71,22 @@ def test_canonical_field_crosses_process_via_trace_file(monkeypatch, tmp_path):
     """The field reaches a process whose local bus is empty by falling back to
     the HNC daemon's persisted trace — the cross-process bridge."""
     import json
+    import time
 
     from aureon.core.aureon_thought_bus import ThoughtBus
     from aureon.core.hnc_field import read_canonical_field
 
+    # Rows carry `ts`, as the live daemon's _append_trace writes them (it stamps
+    # state_dict["timestamp"], which the Λ engine sets to time.time()). Unstamped rows are
+    # refused now: a trace file cannot say how old it is, and this test's original unstamped
+    # rows were the exact shape that let a stopped daemon's last reading be served as the
+    # live field — see tests/test_hnc_field_freshness.py.
     trace = tmp_path / "hnc_live_trace.jsonl"
     trace.write_text(
-        json.dumps({"symbolic_life_score": 0.1, "coherence_gamma": 0.2}) + "\n"
+        json.dumps({"symbolic_life_score": 0.1, "coherence_gamma": 0.2,
+                    "ts": time.time()}) + "\n"
         + json.dumps({"symbolic_life_score": 0.66, "coherence_gamma": 0.7,
-                      "consciousness_level": "AWARE"}) + "\n",
+                      "consciousness_level": "AWARE", "ts": time.time()}) + "\n",
         encoding="utf-8")
     monkeypatch.setenv("AUREON_HNC_TRACE_PATH", str(trace))
 

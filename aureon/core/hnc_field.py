@@ -220,15 +220,37 @@ def read_subfields(bus: Any = None) -> dict[str, dict[str, Any]]:
     view of every field its producers are computing."""
     out: dict[str, dict[str, Any]] = {}
 
-    def _absorb(src: Any, p: dict[str, Any]) -> None:
-        # Freshness is checked per row, not per file: one live producer must not make a
-        # long-dead producer's last reading look current just by sharing the trace.
-        if src and _row_is_fresh(p):
-            out[str(src)] = {
-                "symbolic_life_score": p.get("symbolic_life_score"),
-                "coherence_gamma": p.get("coherence_gamma"),
-                "consciousness_level": p.get("consciousness_level"),
-            }
+    def _absorb(src: Any, p: dict[str, Any], *, require_ts: bool) -> None:
+        """Absorb one sub-field row.
+
+        Freshness is checked per row, not per file: one live producer must not make a
+        long-dead producer's last reading look current just by sharing the trace.
+
+        ``require_ts`` differs by TRANSPORT, because what is knowable differs:
+
+        * a **persisted trace row** carries no evidence of its own age, so an unstamped
+          one is refused — that was the observed defect (75 rows, none stamped, served as
+          the live field in a process with no producer running);
+        * a **bus payload** arrives through ``recall(limit=…)`` on an in-memory ring
+          buffer, so the bus itself bounds recency. Demanding a stamp there was stricter
+          than the defect warranted and silently dropped live in-process producers out of
+          the blend. A stamp is still honoured when present: a bus payload that says it
+          is stale is refused.
+        """
+        if not src:
+            return
+        if require_ts:
+            if not _row_is_fresh(p):
+                return
+        else:
+            ts = p.get("ts", p.get("timestamp", p.get("time")))
+            if isinstance(ts, (int, float)) and not _row_is_fresh(p):
+                return
+        out[str(src)] = {
+            "symbolic_life_score": p.get("symbolic_life_score"),
+            "coherence_gamma": p.get("coherence_gamma"),
+            "consciousness_level": p.get("consciousness_level"),
+        }
 
     # Cross-process sub-fields first (oldest), so same-process (freshest) wins on
     # collision — a producer in another process still reaches the blend.
@@ -236,7 +258,7 @@ def read_subfields(bus: Any = None) -> dict[str, dict[str, Any]]:
         from aureon.core.bus_trace import read_trace
 
         for row in read_trace("symbolic_subfield", limit=200):
-            _absorb(row.get("source"), row)
+            _absorb(row.get("source"), row, require_ts=True)
     except Exception:  # noqa: BLE001
         pass
     try:
@@ -246,7 +268,7 @@ def read_subfields(bus: Any = None) -> dict[str, dict[str, Any]]:
         if b is not None and hasattr(b, "recall"):
             for t in b.recall("symbolic.life.subfield", limit=200) or []:
                 p = payload_of(t)
-                _absorb(p.get("source"), p)
+                _absorb(p.get("source"), p, require_ts=False)
     except Exception:  # noqa: BLE001
         pass
     return out
