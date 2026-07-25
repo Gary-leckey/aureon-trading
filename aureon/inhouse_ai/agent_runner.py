@@ -11,6 +11,7 @@ Manages the full conversation lifecycle for an Agent:
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 from dataclasses import dataclass, field
@@ -20,6 +21,27 @@ from aureon.inhouse_ai.llm_adapter import LLMAdapter, StreamChunk
 from aureon.inhouse_ai.tool_registry import ToolRegistry
 
 logger = logging.getLogger("aureon.inhouse_ai.runner")
+
+# Bounds on what ONE model response may ask this host to do. These sit here, not in the HTTP layer,
+# because tool calls come from the model endpoint — which on the tenant plane is a server the user
+# controls — so the request-body cap never applied to them.
+_MAX_TOOL_CALLS_PER_RESPONSE = 16
+_MAX_TOOL_ARG_BYTES = 64 * 1024
+
+
+def _oversized_argument(arguments: Dict[str, Any] | None) -> str | None:
+    """Name of the first argument whose serialized form exceeds the cap, else None."""
+    for key, value in (arguments or {}).items():
+        if isinstance(value, str):
+            size = len(value.encode("utf-8", "replace"))
+        else:
+            try:
+                size = len(json.dumps(value, default=str).encode("utf-8", "replace"))
+            except Exception:  # noqa: BLE001 — unserializable ⇒ treat as oversized, not as a crash
+                return str(key)
+        if size > _MAX_TOOL_ARG_BYTES:
+            return str(key)
+    return None
 
 
 @dataclass
@@ -62,7 +84,10 @@ class AgentRunner:
         max_history: int = 50,
     ):
         self.adapter = adapter
-        self.tools = tools or ToolRegistry(include_builtins=True)
+        # `is not None`, NOT `or`: ToolRegistry defines __len__, so an intentionally empty registry is
+        # falsy and `or` would substitute the full built-in belt — a fail-open for any caller that
+        # passes a deliberately narrowed toolbelt.
+        self.tools = tools if tools is not None else ToolRegistry(include_builtins=True)
         self.system_prompt = system_prompt
         self.max_turns = max_turns
         self.max_history = max_history
@@ -135,7 +160,34 @@ class AgentRunner:
 
             # Dispatch tool calls
             tool_results = []
-            for tc in response.tool_calls:
+            for idx, tc in enumerate(response.tool_calls):
+                # Tool calls arrive in the MODEL's response, not the caller's request, so the server's
+                # MAX_CONTENT_LENGTH never bounded them. When the model endpoint belongs to the user
+                # (a tenant supplies their own base_url), one reply can therefore ask for unlimited
+                # work on this host: thousands of calls, or a single multi-megabyte argument fed to a
+                # parser. Bound both, and report the refusal as an ordinary tool result so the loop
+                # continues honestly instead of raising.
+                if idx >= _MAX_TOOL_CALLS_PER_RESPONSE:
+                    tool_results.append({
+                        "type": "tool_result", "tool_use_id": tc.id,
+                        "content": json.dumps({
+                            "blocked": True,
+                            "reason": f"too many tool calls in one response "
+                                      f"(limit {_MAX_TOOL_CALLS_PER_RESPONSE})",
+                        }),
+                    })
+                    continue
+                oversized = _oversized_argument(tc.arguments)
+                if oversized is not None:
+                    tool_results.append({
+                        "type": "tool_result", "tool_use_id": tc.id,
+                        "content": json.dumps({
+                            "blocked": True,
+                            "reason": f"argument '{oversized}' exceeds "
+                                      f"{_MAX_TOOL_ARG_BYTES} bytes",
+                        }),
+                    })
+                    continue
                 if self.on_tool_call:
                     self.on_tool_call(tc.name, tc.arguments)
                 logger.info("Tool dispatch: %s(%s)", tc.name, tc.arguments)

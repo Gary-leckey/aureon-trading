@@ -468,3 +468,208 @@ def test_jwt_verifier_rejects_dangerous_tokens():
     ok = resolve_identity(f"Bearer {_tok({'sub': 'legit', 'exp': live, 'role': 'authenticated'})}",
                           operator_key="ADMIN", jwt_secret=secret)
     assert (ok.kind, ok.tenant, ok.ok) == ("tenant", "legit", True)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Round 3 — the SAME defect class appeared a third time: the write sibling of a
+# route pair was guarded and the read sibling kept serving. These pin the
+# structural fix (central default-deny) rather than the individual routes.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Every instance route round 3 found open to a tenant, plus the ones round 2 closed by hand — all
+# must now be refused by the gate, and all must still answer the operator.
+_INSTANCE_ONLY_GETS = [
+    "/api/terminal-state",   # instance equity, exchange account id, open positions, session PnL
+    "/api/flight-test",      # the instance .env path + which exchange keys were written
+    "/api/reboot-advice",    # same payload as flight-test
+    "/api/switchboard",      # all flags incl. the 7 hard boundaries' armed state
+    "/api/pulse",            # instance live provider/model line-up
+    "/api/action/status",    # whether the host's hands are armed
+    "/api/approvals",        # pending big plays: venue, notional, account, item ids
+    "/api/env-credentials",  # closed in round 2; flight-test was leaking the same thing
+    "/api/status",
+    "/api/trades",
+    "/api/bots",
+    "/mcp/tools",
+]
+
+
+@pytest.mark.parametrize("path", _INSTANCE_ONLY_GETS)
+def test_tenant_cannot_read_instance_state(app_env, path):
+    client, _srv, _ks = app_env
+    r = client.get(path, headers=_tenant("aaa"))
+    assert r.status_code == 403, f"{path} served a tenant (HTTP {r.status_code})"
+
+
+@pytest.mark.parametrize("path", _INSTANCE_ONLY_GETS)
+def test_admin_can_still_read_instance_state(app_env, path):
+    """Invariant (1). Round 2 shipped a guard that locked the OPERATOR out of their own approvals
+    desk; this is the assertion that would have caught it."""
+    client, _srv, _ks = app_env
+    assert client.get(path, headers=_ADMIN).status_code != 403
+
+
+def test_every_route_is_classified(app_env):
+    """Proves the gate really enforces default-deny across the whole surface.
+
+    Walk the real url_map: every `/api` or `/mcp` rule must be either listed in `_TENANT_ALLOWED` or
+    actually refused to a tenant — no third state. This is what makes the defect class structural
+    rather than per-route: a route added later is closed to tenants by construction, because it is
+    absent from the allowlist, so nobody has to remember to guard it.
+
+    (This test does NOT catch "someone added a route and forgot to classify it" — under default-deny
+    that case is already safe. The case it does catch is the gate silently stopping enforcing, e.g.
+    the tenant branch being reordered, short-circuited, or dropped.)
+    """
+    client, srv, _ks = app_env
+    app = srv.create_app()
+    unclassified = []
+    for rule in app.url_map.iter_rules():
+        if not (rule.rule.startswith("/api/") or rule.rule.startswith("/mcp/")):
+            continue
+        for method in sorted(rule.methods - {"HEAD", "OPTIONS"}):
+            if (method, rule.rule) in srv_tenant_allowed(srv):
+                continue
+            # Not allowlisted ⇒ a tenant must actually be refused. Probe a concrete path.
+            probe = rule.rule.replace("<provider_id>", "openai").replace("<conn_id>", "kraken")
+            probe = probe.replace("<item_id>", "x").replace("<domain>", "queen")
+            probe = probe.replace("<name>", "x")
+            if "<" in probe:
+                continue  # unusual converter — cannot synthesize a path, skip rather than false-fail
+            resp = client.open(probe, method=method, headers=_tenant("aaa"), json={})
+            if resp.status_code != 403:
+                unclassified.append(f"{method} {rule.rule} -> {resp.status_code}")
+    assert not unclassified, (
+        "these routes are neither tenant-allowlisted nor refused to a tenant — classify them in "
+        "_TENANT_ALLOWED or confirm they should 403:\n  " + "\n  ".join(sorted(unclassified))
+    )
+
+
+def srv_tenant_allowed(srv_module):
+    """The gate's real allowlist — imported, not re-derived, so the test cannot drift from it."""
+    pairs = srv_module._TENANT_ALLOWED
+    assert pairs, "operator_server._TENANT_ALLOWED is empty"
+    return pairs
+
+
+def test_tenant_can_still_reach_their_own_plane_and_the_showcase(app_env):
+    """Default-deny must not dark the console: everything allowlisted stays reachable."""
+    client, srv, _ks = app_env
+    # Telegram is allowlisted at the GATE but the view is deliberately stricter: a tenant may send
+    # only with their OWN botToken, never the instance's bot identity. So probe it with that body —
+    # a 403 for a tenant supplying no token is correct behavior, not a darked route.
+    bodies = {"/api/notifications/telegram": {"botToken": "t", "chatId": "c", "message": "hi"}}
+    denied = []
+    for method, rule in sorted(srv_tenant_allowed(srv)):
+        probe = rule.replace("<provider_id>", "openai").replace("<conn_id>", "kraken")
+        probe = probe.replace("<domain>", "queen")
+        if "<" in probe:
+            continue
+        resp = client.open(probe, method=method, headers=_tenant("aaa"), json=bodies.get(rule, {}))
+        if resp.status_code == 403:
+            denied.append(f"{method} {rule} -> {resp.get_json()}")
+    assert not denied, f"allowlisted routes refused a tenant: {denied}"
+
+
+# ── the allowlist mechanism must fail CLOSED ────────────────────────────────────
+
+def test_an_empty_allowlist_yields_an_empty_belt_not_the_full_one():
+    """ToolRegistry defines __len__, so a registry pruned to zero tools is FALSY — and
+    ``self.tools = tools or build_operator_tools(...)`` would then hand back the FULL instance
+    toolbelt, exactly inverting what an empty allowlist asks for. That is a fail-open in the
+    mechanism that protects the tenant plane, so it is pinned here."""
+    from aureon.operator.cognition import AureonCognition
+    from aureon.operator.tools import build_operator_tools
+
+    empty = build_operator_tools(allow_writes=False, allow_shell=False, allowlist=frozenset())
+    assert list(empty.names()) == []
+    assert not empty, "precondition: an empty registry is falsy (that is the whole hazard)"
+
+    eng = AureonCognition(adapter=object(), tools=empty, join_mesh=False, mesh_broadcast=False)
+    assert list(eng.tools.names()) == [], "an empty toolbelt was silently replaced by the full one"
+
+
+def test_tenant_conscience_never_falls_back_to_the_shared_bus_attached_one(app_env, monkeypatch):
+    """If a private conscience cannot be built, the tenant plane must run WITHOUT one rather than
+    borrow the instance's — the shared object publishes each verdict (which quotes the action, i.e.
+    the user's prompt) onto the shared thought bus, and it would be cached for the whole tenant
+    plane. Asserts the invariant that actually matters: even with the constructor failing, a tenant
+    prompt does not reach shared instance memory.
+    """
+    import aureon.queen.queen_conscience as qc
+
+    def _boom(*a, **k):
+        raise RuntimeError("no conscience available")
+
+    monkeypatch.setattr(qc, "QueenConscience", _boom)
+
+    client, srv, _ks = app_env
+    app = srv.create_app()          # fresh app so the tenant-conscience cache is built under _boom
+    c2 = app.test_client()
+    _connect_model(c2, _tenant("aaa"))
+    marker = "tenant-private-marker-conscience-fallback-4417"
+    r = c2.post("/api/cognition/reason", json={"prompt": marker}, headers=_tenant("aaa"))
+    assert r.status_code == 200, "a missing conscience must not break the tenant plane"
+
+    try:
+        from aureon.core.aureon_thought_bus import get_thought_bus
+
+        bus = get_thought_bus()
+    except Exception:  # pragma: no cover - no bus in this env ⇒ nothing to leak into
+        return
+    if bus is None:
+        return
+    recent = bus.get_recent(limit=500) or []
+    assert marker not in json.dumps(recent, default=str), (
+        "the tenant plane borrowed the shared bus-attached conscience and published the prompt"
+    )
+
+
+# ── one model response must not be able to exhaust the host ────────────────────
+
+def test_tool_call_arguments_from_the_model_are_bounded():
+    """Tool calls arrive in the MODEL's response, so MAX_CONTENT_LENGTH never bounded them. On the
+    tenant plane that model is a server the user controls, so one reply could request unlimited
+    parsing work on the operator host."""
+    from aureon.inhouse_ai.agent_runner import (
+        _MAX_TOOL_ARG_BYTES,
+        _MAX_TOOL_CALLS_PER_RESPONSE,
+        _oversized_argument,
+    )
+
+    assert _oversized_argument({"code": "x"}) is None
+    assert _oversized_argument({"code": "x" * (_MAX_TOOL_ARG_BYTES + 1)}) == "code"
+    assert _oversized_argument({"blob": ["y" * 1024] * 1024}) == "blob"   # non-str serialized
+    assert _oversized_argument(None) is None
+    assert _MAX_TOOL_CALLS_PER_RESPONSE > 0
+
+
+# The gate only inspects paths under /api/ or /mcp/ (operator_server _gate). Anything mounted at a
+# different prefix is served with NO credential at all — not even a 401. Verified: a route added at
+# /internal/... returned 200 with instance state to an unauthenticated caller. Today's non-gated set
+# is deliberate and benign, so pin it: a new prefix has to be a conscious decision, made here.
+_ROUTES_OUTSIDE_THE_GATE = {
+    "/",                          # the console shell
+    "/healthz", "/readyz",        # liveness probes
+    "/metrics",                   # scrape endpoint (also in _OPEN_PATHS)
+    "/static/<path:filename>",    # bundled assets
+    "/watch", "/watch/", "/watch/<path:asset>",   # the deliberately public showcase surface
+}
+
+
+def test_no_route_escapes_the_gate_prefixes(app_env):
+    """A route outside /api/ and /mcp/ is UNAUTHENTICATED — the gate never sees it.
+
+    So the set of such routes is a security decision, not an implementation detail. If this fails,
+    either move the new route under /api/ (where default-deny protects it) or add it here with a
+    reason, having confirmed it is safe to serve to anonymous callers.
+    """
+    _client, srv, _ks = app_env
+    app = srv.create_app()
+    outside = {r.rule for r in app.url_map.iter_rules()
+               if not (r.rule.startswith("/api/") or r.rule.startswith("/mcp/"))}
+    unexpected = outside - _ROUTES_OUTSIDE_THE_GATE
+    assert not unexpected, (
+        "these routes bypass the auth gate entirely and would be served to anyone: "
+        f"{sorted(unexpected)}"
+    )

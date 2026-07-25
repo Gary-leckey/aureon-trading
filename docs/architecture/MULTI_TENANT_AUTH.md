@@ -76,26 +76,63 @@ tenant token flows to the backend.
 isolation; the single-operator default unchanged; and **per-user live reasoning** — a signed-in user's
 own model drives their own `/api/cognition/reason` and `/api/operator/respond`.
 
-## The two planes (what a tenant may NOT do)
+## The two planes: default-deny, enforced once in the gate
 
-`g.is_admin` is true for the admin bearer and for the open single-operator default; it is false only
-for a signed-in end user. The **instance control plane is operator-only** and enforced (not merely
-computed) — a tenant JWT gets `403` from:
+**A tenant may reach only what is explicitly allowlisted.** The mechanism is a table —
+`_TENANT_OWN_PLANE | _TENANT_SHOWCASE` in
+[`operator_server.py`](../../aureon/operator/operator_server.py) — checked once in `_gate` against
+`request.url_rule.rule` (the *pattern*, so a crafted id cannot be read as another route). Anything
+absent returns `403` to a tenant. Admin and open planes skip the check entirely, which is what keeps
+the single-operator default byte-for-byte unchanged.
 
-| Route | Why it's operator-only |
+| Tenant may reach | What it covers |
 |:---|:---|
-| `POST /api/switchboard/<flag>` | writes `os.environ`, can re-apply the instance's own keys, can **arm hard boundaries** (e.g. live trading) |
-| `POST /api/action` | touches the host machine |
-| `POST /api/approvals/<id>` | the director's desk — the human gate on big plays |
-| `POST /api/manifests/refresh` | instance-wide rebuild |
-| `POST /api/notifications/telegram` | the *instance's* bot identity (a tenant may still pass their own `botToken`) |
-| `POST /api/billing/charge-fee` | **moves money** — charges `body["user_id"]` using the instance's Supabase service-role key |
-| `GET /mcp/tools` · `POST /mcp/call` | one process-wide **instance-plane** tool registry; there is no tenant plane for MCP |
-| `GET /api/env-credentials` | enumerates the instance's exchange-credential posture (a target list) |
+| **Own plane** | `/api/providers*`, `/api/connections*` (their keys), `/api/cognition/reason`, `/api/operator/respond` + both streams (their reasoning), `/api/billing/balance\|usage\|status` (their billing), `/api/notifications/telegram` — *the view is stricter than the table here: a tenant may send only with their own `botToken`* |
+| **Public showcase** | the read-only organism views already public via `/watch` and the Twitch stream: `/api/organism`, `/api/soul`, `/api/consciousness`, `/api/company`, `/api/org`, `/api/affect`, `/api/pursuit`, `/api/inner-work`, `/api/metacognition`, `/api/automation`, `/api/cognition*` (HNC), `/api/catalog`, `/api/domains*`, `/api/coverage`, `/api/defense` |
 
-An adversarial audit of this work confirmed that computing `g.is_admin` without enforcing it left every
-one of those reachable by any valid tenant token. The regression suite
-[`tests/test_operator_tenant_security.py`](../../tests/test_operator_tenant_security.py) pins each one.
+Everything else is operator-only **by omission** — including `/api/terminal-state`, `/api/flight-test`,
+`/api/reboot-advice`, `/api/env-credentials`, `/api/switchboard*`, `/api/approvals*`, `/api/action*`,
+`/api/pulse`, `/api/manifests/*`, `/api/billing/charge-fee`, `/mcp/*`, `/api/status`, `/api/trades`,
+`/api/bots`.
+
+### Why enumeration was abandoned
+
+Per-route guarding failed **three audits running, always the same way**: the write sibling got a guard
+and the read sibling kept serving.
+
+| Round | Found |
+|:---|:---|
+| 1 | unguarded `POST` routes (switchboard, action, approvals, manifests, telegram) |
+| 2 | fixed those — and `POST /api/billing/charge-fee`, `/mcp/*`, `/api/env-credentials`, plus a tenant toolbelt that was a denylist |
+| 3 | the matching **GETs**: `/api/terminal-state` (instance equity, exchange account id, open positions, PnL), `/api/flight-test` + `/api/reboot-advice` (the `.env` path and *which* exchange keys were written — the very disclosure round 2 had just closed on `/api/env-credentials`), `/api/approvals`, `/api/switchboard`, `/api/pulse`, `/api/action/status` |
+
+The cause is structural, not carelessness: the ~64 rules are mounted by **five different registrars**
+(`operator_server`, `saas/gateway`, `legacy_runtime_api`, `connections_api`,
+`autonomous/aureon_face_app`), so no file lists them and no reviewer sees them all. The gate *does* see
+them all — so the decision belongs there. With default-deny the failure mode inverts: a new route is
+closed to tenants by construction, and the worst outcome is "a tenant feature 403s until it is added to
+the table", which is loud and safe.
+
+Existing per-view `_admin_denied()` / `@_admin_only` calls are kept as defense-in-depth.
+
+### What the tests pin
+
+[`tests/test_operator_tenant_security.py`](../../tests/test_operator_tenant_security.py):
+every found route `403`s a tenant **and** still answers the operator (invariant 1 — round 2 shipped a
+guard that locked the operator out of their own approvals desk, and that assertion is what catches it);
+every allowlisted route stays reachable, so default-deny does not dark the console;
+`test_every_route_is_classified` walks the real `url_map` and admits no third state between
+allowlisted and refused, so the gate cannot silently stop enforcing; and
+`test_no_route_escapes_the_gate_prefixes` pins the set of routes outside `/api/` and `/mcp/` — those
+are served **unauthenticated**, verified, so adding one has to be a conscious decision.
+
+### Accepted, with the reason
+
+The grounding step (`_ground`, [`cognition.py`](../../aureon/operator/cognition.py)) runs
+`repo_search(prompt)` and splices snippets into the system prompt sent to the tenant's *own*
+`base_url`. That is left as-is: `repo_index._EXCLUDE` drops `state/` and `_INGEST` is only
+`.md/.py/.txt/.pdf`, so what travels is **already-public MIT source from a public GitHub repo**, not
+instance secrets. Worth knowing; not worth breaking Aureon-specific grounding over.
 
 ### What the counter-audit found (round 2)
 
@@ -143,7 +180,13 @@ Three properties keep it safe and leak-free:
   Therefore a tenant engine is built with `allowlist=TENANT_ALLOWED_TOOLS` — pure-compute tools only
   (`code_validate`: `ast.parse`, no I/O, no network, no shared state). No shell, no repo write, and
   equally no network egress, no module import, no bus write, and no instance-state read. The filter is
-  applied *last*, so nothing registered upstream can widen it.
+  applied *last*, so nothing registered upstream can widen it. And the plumbing must **fail closed**:
+  `ToolRegistry` defines `__len__`, so a registry pruned to zero is *falsy* and the old
+  `self.tools = tools or build_operator_tools(...)` would have silently restored the **full** belt —
+  now an explicit `is not None` check in both `cognition.py` and `agent_runner.py`.
+- **One model response cannot exhaust the host.** Tool calls arrive in the *model's* response, so the
+  256 KB request cap never applied to them. `agent_runner` bounds the calls per response and each
+  argument's size, refusing over-cap ones as ordinary blocked tool results.
 - **Isolated bus** — per-tenant engines get an `_IsolatedBus`: `subscribe` is a no-op (so cached engines
   can't accumulate organism callbacks) *and* `publish`/`recall` are no-ops, so a tenant's prompt and
   answer never land in the shared instance thought bus. `join_mesh=False` keeps them off the mesh

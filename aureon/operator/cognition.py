@@ -134,7 +134,12 @@ class AureonCognition:
         if prefer_local is None:
             prefer_local = str(os.environ.get("AUREON_COGNITION_PREFER_LOCAL", "") or "").strip().lower() in {"1", "true", "yes", "on"}
         self.adapter = adapter or self._default_adapter(prefer_local=prefer_local)
-        self.tools = tools or build_operator_tools(allow_writes=allow_writes, allow_shell=allow_shell)
+        # `is not None`, NOT `or`: ToolRegistry defines __len__, so a registry deliberately pruned to
+        # zero tools is FALSY, and `tools or build_operator_tools(...)` would silently hand back the
+        # FULL instance toolbelt — the exact opposite of what an empty allowlist asks for. That fails
+        # open on the tenant plane, inverting the allowlist guarantee.
+        self.tools = tools if tools is not None else build_operator_tools(
+            allow_writes=allow_writes, allow_shell=allow_shell)
         self.max_turns = max_turns
         self.source = source
         self._conscience = conscience

@@ -241,6 +241,53 @@ input.addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
 """
 
 
+# ── What a TENANT may reach: an ALLOWLIST, enforced once in the gate ──────────────────────────
+#
+# Default-deny. Any /api or /mcp route absent from this table is operator-only for a signed-in
+# end user, whichever registrar mounted it.
+#
+# This replaces per-route guarding because per-route guarding failed three audits running, always
+# the same way: the WRITE sibling got a guard and the READ sibling kept serving. Round 1 found
+# unguarded POSTs; round 2 guarded them; round 3 then found GET /api/terminal-state (instance
+# equity, exchange account id, open positions, PnL), GET /api/flight-test and /api/reboot-advice
+# (the instance .env path and which exchange keys were written — the very disclosure round 2 had
+# just closed on /api/env-credentials), GET /api/approvals, GET /api/switchboard, GET /api/pulse
+# and GET /api/action/status. The reason enumeration keeps missing routes is structural: the ~64
+# rules are mounted by five different registrars (this module, saas/gateway, legacy_runtime_api,
+# connections_api, autonomous/aureon_face_app), so no file lists them and no reviewer sees them
+# all. The gate does see them all — so the decision belongs here.
+#
+# The failure mode is now "a tenant feature 403s until it is added here", which is loud and safe,
+# instead of "an instance route leaks until an auditor finds it".
+_TENANT_OWN_PLANE = {
+    # The user's own data: their keys, their reasoning, their billing.
+    ("GET", "/api/providers"), ("POST", "/api/providers/<provider_id>"),
+    ("DELETE", "/api/providers/<provider_id>"), ("POST", "/api/providers/<provider_id>/test"),
+    ("GET", "/api/connections"), ("GET", "/api/connections/readiness"),
+    ("POST", "/api/connections/<conn_id>"), ("POST", "/api/connections/<conn_id>/test"),
+    ("POST", "/api/cognition/reason"), ("POST", "/api/operator/respond"),
+    ("GET", "/api/cognition/stream"), ("GET", "/api/operator/stream"),
+    ("GET", "/api/billing/balance"), ("GET", "/api/billing/usage"), ("GET", "/api/billing/status"),
+    # Listed, but the view is stricter than this table: it permits a tenant ONLY when they supply
+    # their own botToken, never the instance's bot identity.
+    ("POST", "/api/notifications/telegram"),
+}
+_TENANT_SHOWCASE = {
+    # Read-only views of the organism that are ALREADY public by design — the same material the
+    # /watch surface and the Twitch stream put in front of anonymous visitors. Withholding these
+    # from a signed-in user would protect nothing.
+    ("GET", "/api/catalog"), ("GET", "/api/domains"), ("GET", "/api/domains/<domain>"),
+    ("GET", "/api/coverage"), ("GET", "/api/defense"),
+    ("GET", "/api/organism"), ("GET", "/api/soul"), ("GET", "/api/consciousness"),
+    ("GET", "/api/company"), ("GET", "/api/org"), ("GET", "/api/affect"),
+    ("GET", "/api/pursuit"), ("GET", "/api/inner-work"), ("GET", "/api/metacognition"),
+    ("GET", "/api/automation"), ("GET", "/api/cognition"), ("GET", "/api/cognition/brain"),
+    ("GET", "/api/cognition/bus"), ("GET", "/api/cognition/connectome"),
+    ("GET", "/api/cognition/field"), ("GET", "/api/cognition/mycelium"),
+}
+_TENANT_ALLOWED = _TENANT_OWN_PLANE | _TENANT_SHOWCASE
+
+
 def create_app(operator: AureonOperator | None = None, cognition: Any = None) -> Flask:
     app = Flask("aureon-operator")
     _operator = operator or AureonOperator()
@@ -257,7 +304,6 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
     _bucket = TokenBucket(_sec.rate_rps, _sec.burst)
     app.config["MAX_CONTENT_LENGTH"] = _sec.max_body_bytes
     _OPEN_PATHS = ("/", "/healthz", "/readyz", "/metrics", "/favicon.ico")
-
     def _err(code: int, message: str, **extra):
         return jsonify({"error": {"code": code, "message": message, **extra}}), code
 
@@ -277,6 +323,14 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         g.tenant = ident.tenant
         g.is_admin = ident.kind in ("admin", "open")
         g.identity_kind = ident.kind
+        # Default-deny for tenants (see _TENANT_ALLOWED). Match the url RULE, not request.path, so a
+        # crafted id can never be read as a different route; an unmatched path (url_rule None ⇒ 404)
+        # falls through untouched so Flask still answers 404 rather than 403. Admin and open planes
+        # skip this entirely, which is what keeps the single-operator default byte-for-byte unchanged.
+        if ident.kind == "tenant":
+            rule = getattr(request.url_rule, "rule", None)
+            if rule is not None and (request.method, rule) not in _TENANT_ALLOWED:
+                return _err(403, "this route is operator-only", plane="admin")
         if _sec.rate_enabled:
             client = request.headers.get("X-Forwarded-For", request.remote_addr or "anon").split(",")[0].strip()
             ok, retry = _bucket.check(client)
@@ -516,8 +570,14 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         the Queen publishes each verdict (which quotes the action, i.e. the user's prompt) onto the
         shared thought bus, where other planes could recall it. So the tenant plane gets its own
         instance with ``_thought_bus`` detached: identical judgement, nothing written into shared
-        instance memory. Falls back to the shared conscience if a private one can't be built (a
-        working gate matters more than the provenance nicety).
+        instance memory.
+
+        If a private conscience cannot be built, fall back to **no conscience** (``None`` ⇒ the
+        downstream gate treats the turn as APPROVED without publishing anything) — never to the shared
+        one. Falling back to ``_shared_conscience()`` would cache the INSTANCE's bus-attached object
+        for the whole tenant plane, so every later tenant verdict would publish the quoted action —
+        the user's prompt — straight into shared instance memory, defeating the entire point of this
+        function. A single constructor failure must not silently downgrade the isolation guarantee.
         """
         if "obj" in _tenant_conscience:
             return _tenant_conscience["obj"]
@@ -532,8 +592,10 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
             # shared bus would hold forever. Detach the subscription, then cut publishing.
             _detach_from_shared_bus(obj)
             obj._thought_bus = None  # verdicts judged, never published to shared memory
-        except Exception:  # noqa: BLE001
-            obj = _shared_conscience()
+        except Exception:  # noqa: BLE001 — fail CLOSED on isolation, not open
+            logger.warning("tenant-plane conscience unavailable; tenant turns run without one "
+                           "rather than borrowing the instance's bus-attached conscience")
+            obj = None
         _tenant_conscience["obj"] = obj
         return obj
 
