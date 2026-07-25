@@ -1,6 +1,6 @@
 {
   "civilization": "Hindu Vedic",
-  "last_updated": "2026-01-02T14:12:38.980685",
+  "last_updated": "2026-07-25T21:41:28.758690",
   "version": "1.0.0",
   "sources": [
     "hardcoded",
@@ -568,6 +568,14 @@
     },
     {
       "timestamp": "2026-01-02T14:12:38.980663",
+      "insights_found": 0,
+      "sources_used": [
+        "Wikipedia",
+        "Sacred-Texts"
+      ]
+    },
+    {
+      "timestamp": "2026-07-25T21:41:28.758666",
       "insights_found": 0,
       "sources_used": [
         "Wikipedia",
