@@ -22,7 +22,7 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Sequence
 
 TRUTHY = {"1", "true", "yes", "y", "on"}
 
@@ -63,7 +63,7 @@ class DesktopBackend:
     """
 
     def __init__(self) -> None:
-        self.name: Optional[str] = None
+        self.name: str | None = None
         self._impl: Any = None
         preferred = str(os.getenv("AUREON_DESKTOP_INPUT_BACKEND") or "").strip().lower()
         order = [preferred] if preferred else []
@@ -120,7 +120,6 @@ class DesktopBackend:
     def screenshot(self, path: Path) -> bool:
         try:
             import PIL.ImageGrab  # noqa: F401  (pillow present?)
-
             from PIL import ImageGrab
 
             img = ImageGrab.grab()
@@ -171,10 +170,10 @@ class AzyraOperatorBridge:
         self,
         window_title: str = "Azyra",
         process_query: str = "msrdc",
-        allow_input: Optional[bool] = None,
-        allow_submit: Optional[bool] = None,
-        allow_focus: Optional[bool] = None,
-        remoteapp_keyboard_route_proven: Optional[bool] = None,
+        allow_input: bool | None = None,
+        allow_submit: bool | None = None,
+        allow_focus: bool | None = None,
+        remoteapp_keyboard_route_proven: bool | None = None,
     ) -> None:
         self.window_title = str(window_title or "Azyra")
         self.process_query = str(process_query or "")

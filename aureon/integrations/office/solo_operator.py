@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Sequence
 
 CYCLE_SCHEMA = "aureon-admin-cognitive-cycle-v1"
 DISPATCH_SCHEMA = "aureon-workweek-dispatch-tick-v1"
@@ -34,7 +34,7 @@ def _write_proof(proof_dir: Path, name: str, payload: Dict[str, Any]) -> str:
     return str(path)
 
 
-def _inspect_watched_paths(watched_paths: Optional[Sequence[str]]) -> List[Dict[str, Any]]:
+def _inspect_watched_paths(watched_paths: Sequence[str] | None) -> List[Dict[str, Any]]:
     """Real filesystem inspection of the watched inputs — existence, size, age."""
     rows: List[Dict[str, Any]] = []
     for raw in watched_paths or []:
@@ -120,7 +120,7 @@ def _build_queue(
 def run_logistics_office_solo_cycle(
     output_dir: Path,
     proof_dir: Path,
-    watched_paths: Optional[Sequence[str]] = None,
+    watched_paths: Sequence[str] | None = None,
     read_outlook: bool = False,
     include_read_items: bool = False,
     repeat_dispatch: bool = True,

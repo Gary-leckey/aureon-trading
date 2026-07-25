@@ -147,6 +147,10 @@ class HarmonicObserver:
         self._lock = threading.RLock()
         self._publish = publish_to_bus
         self._bus = bus  # late-bound below
+        # The FFT frequency grid must use the CONFIGURED sampling interval —
+        # using the module default regardless of configuration scaled every
+        # reported dominant_hz by default/actual (5× off for a 1s trace).
+        self._trace_interval_s = float(trace_interval_s) or DEFAULT_TRACE_INTERVAL_S
 
         # Compute buffer caps from window minutes / interval.
         fast_cap = max(8, int((fast_window_minutes * 60) / trace_interval_s))
@@ -412,9 +416,13 @@ class HarmonicObserver:
 
         # ── Band rock — dominant FFT frequency
         try:
-            windowed = arr * np.hanning(arr.size)
+            # Demean before windowing: Λ traces carry a large DC offset, and
+            # Hanning leakage from that DC component otherwise dominates bin 1
+            # and buries the true oscillation (every detection reported the
+            # lowest non-DC bin as "dominant").
+            windowed = (arr - arr.mean()) * np.hanning(arr.size)
             spec = np.abs(np.fft.rfft(windowed))
-            freqs = np.fft.rfftfreq(arr.size, d=DEFAULT_TRACE_INTERVAL_S)
+            freqs = np.fft.rfftfreq(arr.size, d=self._trace_interval_s)
             # Drop DC.
             if spec.size > 1:
                 spec[0] = 0.0
@@ -572,11 +580,16 @@ class HarmonicObserver:
     # ─── internal: ThoughtBus emission ─────────────────────────
 
     def _bus_lazy(self):
-        """Resolve and cache the ThoughtBus singleton on first publish."""
-        if self._bus is not None:
-            return self._bus
+        """Resolve and cache the ThoughtBus singleton on first publish.
+
+        The publish flag is checked FIRST: publish_to_bus=False must silence
+        the observer even when a bus instance was injected at construction —
+        the old order let the injected bus bypass the disable switch.
+        """
         if not self._publish:
             return None
+        if self._bus is not None:
+            return self._bus
         try:
             from aureon.core.aureon_thought_bus import get_thought_bus
             self._bus = get_thought_bus()

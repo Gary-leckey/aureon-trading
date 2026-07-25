@@ -15,7 +15,7 @@ import csv
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Sequence
 
 SCHEMA_VERSION = "aureon-logistics-admin-capability-matrix-v1"
 
@@ -131,7 +131,7 @@ def _sfg_admin_overlay() -> Dict[str, Any]:
     return {"rows": rows, "source": "SFG warehouse administration job map"}
 
 
-def _scan_proofs(proof_dirs: Optional[Sequence[Path]]) -> Dict[str, Any]:
+def _scan_proofs(proof_dirs: Sequence[Path] | None) -> Dict[str, Any]:
     """Scan real proof directories for known evidence schemas. No proof → unproven."""
     found: Dict[str, List[str]] = {marker: [] for marker in _PROOF_MARKERS}
     for directory in proof_dirs or []:
@@ -178,10 +178,10 @@ def _matrix_markdown(matrix: Dict[str, Any]) -> str:
 
 
 def build_logistics_admin_capability_matrix(
-    output_dir: Optional[Path] = None,
-    proof_dirs: Optional[Sequence[Path]] = None,
+    output_dir: Path | None = None,
+    proof_dirs: Sequence[Path] | None = None,
     persist: bool = True,
-    root: Optional[Path] = None,
+    root: Path | None = None,
 ) -> Dict[str, Any]:
     """Build (and optionally persist) the full admin capability matrix."""
     root = Path(root) if root else Path.cwd()

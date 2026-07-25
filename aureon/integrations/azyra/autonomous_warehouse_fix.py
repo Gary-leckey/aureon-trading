@@ -22,7 +22,7 @@ import json
 import re
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from aureon.integrations.azyra.operator_bridge import AzyraOperatorBridge
 
@@ -91,7 +91,7 @@ def _existing_closeouts(output_dir: Path) -> set[str]:
 
 def run_autonomous_warehouse_fix_pass(
     audit_path: Path,
-    output_dir: Optional[Path] = None,
+    output_dir: Path | None = None,
     execute_live: bool = False,
     create_work_orders: bool = True,
     max_manifest_items: int = 250,

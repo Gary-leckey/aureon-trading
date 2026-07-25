@@ -66,6 +66,10 @@ class CapitalClientResilienceTests(unittest.TestCase):
         self.assertEqual(response.json()["errorCode"], "session_unavailable")
 
 
+@unittest.skipIf(
+    binance_ws_mod.websocket is None,
+    "websocket-client not installed — production guards this import the same way",
+)
 class BinanceWebSocketClientTests(unittest.TestCase):
     @patch.dict(os.environ, {"BINANCE_WS_DISABLE": "false"}, clear=False)
     @patch.object(binance_ws_mod.websocket, "WebSocketApp")

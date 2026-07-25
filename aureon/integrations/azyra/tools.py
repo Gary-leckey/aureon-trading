@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from aureon.integrations.azyra.operator_bridge import AzyraOperatorBridge
 
@@ -25,7 +25,7 @@ AZYRA_OPERATOR_TOOL_NAMES = (
     "azyra_operator_run_workflow",
 )
 
-_bridge: Optional[AzyraOperatorBridge] = None
+_bridge: AzyraOperatorBridge | None = None
 
 
 def get_azyra_operator_bridge() -> AzyraOperatorBridge:
