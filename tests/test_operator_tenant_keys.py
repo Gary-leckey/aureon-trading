@@ -113,11 +113,17 @@ def test_tenant_keys_are_isolated(env):
 
 
 def test_tenant_write_never_mutates_os_environ(env):
-    """The core leak test: a tenant write must not touch the shared process env."""
+    """The core leak test: a tenant write must not touch the shared process env.
+
+    Asserted as a DELTA, not an absolute: another test in the session may legitimately have left
+    OPENAI_API_KEY set (e.g. an admin-plane ``apply_to_env``), and the invariant we care about is
+    that *this* tenant write changes nothing — which must hold whatever the starting value was.
+    """
     client, _ks, _cfg = env
-    assert os.environ.get("OPENAI_API_KEY") is None
+    before = os.environ.get("OPENAI_API_KEY")
     client.post("/api/providers/openai", json={"api_key": "sk-TENANTKEY"}, headers=_tenant("aaa"))
-    assert os.environ.get("OPENAI_API_KEY") is None   # never applied to env → no cross-tenant leak
+    assert os.environ.get("OPENAI_API_KEY") == before   # unchanged → no cross-tenant leak
+    assert os.environ.get("OPENAI_API_KEY") != "sk-TENANTKEY"
 
 
 def test_tenant_write_lands_in_isolated_file(env):
@@ -165,6 +171,7 @@ def test_tenant_with_key_reasons_on_own_model(env):
     # After connecting a local model, the tenant reasons on THEIR engine (no keyless
     # fallback), and no key leaks into the process env.
     client, _ks, _cfg = env
+    before = os.environ.get("OLLAMA_API_KEY")
     client.post("/api/providers/ollama",
                 json={"api_key": "tok", "base_url": "http://x", "model": "llama3"},
                 headers=_tenant("aaa"))
@@ -173,7 +180,9 @@ def test_tenant_with_key_reasons_on_own_model(env):
     j = r.get_json()
     assert not j.get("tenant_no_key")                    # the tenant engine answered
     assert j.get("text")
-    assert os.environ.get("OLLAMA_API_KEY") is None      # no env leak from reasoning
+    # delta, not absolute (see test_tenant_write_never_mutates_os_environ)
+    assert os.environ.get("OLLAMA_API_KEY") == before     # no env leak from reasoning
+    assert os.environ.get("OLLAMA_API_KEY") != "tok"
 
 
 def test_tenant_reasoning_is_isolated(env):
