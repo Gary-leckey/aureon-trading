@@ -8,14 +8,16 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Rocket, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   loadUnifiedFrontendState,
   type UnifiedFrontendState,
 } from "@/services/aureonAutonomousFrontend";
+import { useSetupStatus } from "@/hooks/useSetupStatus";
 import { NAV_SECTIONS } from "../nav";
 
 interface PlatformStatus {
@@ -130,6 +132,7 @@ export default function OverviewPage() {
 
   const domains = status?.product_domains ?? {};
   const surfaceCount = unified?.inventory?.summary?.surface_count;
+  const setup = useSetupStatus();
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
@@ -143,6 +146,28 @@ export default function OverviewPage() {
           the coding system, operations, and the platform itself.
         </p>
       </div>
+
+      {/* First-run nudge — only when the backend is reachable but no model is connected yet. */}
+      {!setup.loading && !setup.offline && !setup.hasProvider && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div className="flex items-start gap-3">
+              <Rocket className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+              <div>
+                <p className="text-sm font-medium">New here? Connect a model to begin.</p>
+                <p className="text-sm text-muted-foreground">
+                  Add an API key, test it, and start a grounded conversation — three steps.
+                </p>
+              </div>
+            </div>
+            <Button asChild size="sm">
+              <Link to="/start">
+                Get started <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Automation progress — the headline metric toward "fully automated" */}
       <Card className="border-primary/30">

@@ -31,6 +31,7 @@ import {
   MessageSquare,
   Radar,
   Radio,
+  Rocket,
   Satellite,
   ShieldCheck,
   Ship,
@@ -69,6 +70,14 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: "Platform",
     items: [
+      {
+        path: "/start",
+        label: "Get Started",
+        description: "Three steps to your first grounded conversation — connect a model, test, chat",
+        icon: Rocket,
+        Component: lazy(() => import("./pages/GetStartedPage")),
+        live: true,
+      },
       {
         path: "/console",
         label: "Overview",

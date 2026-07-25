@@ -7,12 +7,14 @@
  */
 
 import { useRef, useState } from "react";
-import { Brain, Send, ShieldAlert, ShieldCheck, Wrench } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Brain, KeyRound, Send, ShieldAlert, ShieldCheck, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { api, ApiError } from "@/services/apiClient";
+import { useSetupStatus } from "@/hooks/useSetupStatus";
 import { LiveDataNotice } from "../Page";
 
 interface GroundingSource {
@@ -51,6 +53,9 @@ export default function OperatorChatPage() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const setup = useSetupStatus();
+  // Gateway reachable but no model connected → guide the user instead of failing at send time.
+  const needsKey = !setup.loading && !setup.offline && !setup.hasProvider;
 
   const ask = async (prompt: string) => {
     const trimmed = prompt.trim();
@@ -104,7 +109,22 @@ export default function OperatorChatPage() {
 
       <div className="flex-1 overflow-y-auto rounded-lg border border-border/60" ref={scrollRef}>
         <div className="space-y-4 p-4">
-          {turns.length === 0 && (
+          {turns.length === 0 && needsKey && (
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <KeyRound className="h-8 w-8 text-muted-foreground" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Connect a model to start chatting</p>
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  Add an API key for any model and Aureon can reason for you. It takes a minute —
+                  your key is stored encrypted and, when you're signed in, kept to your account alone.
+                </p>
+              </div>
+              <Button asChild size="sm">
+                <Link to="/cognition/providers">Add a model key</Link>
+              </Button>
+            </div>
+          )}
+          {turns.length === 0 && !needsKey && (
             <div className="space-y-2 py-8 text-center">
               <p className="text-sm text-muted-foreground">Ask anything — from the repo to the cosmos.</p>
               <div className="flex flex-wrap justify-center gap-2">
