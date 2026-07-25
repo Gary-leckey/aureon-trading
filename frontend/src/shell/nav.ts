@@ -11,6 +11,7 @@ import {
   Activity,
   BarChart3,
   Bot,
+  Boxes,
   Brain,
   Briefcase,
   Building2,
@@ -81,6 +82,14 @@ export const NAV_SECTIONS: NavSection[] = [
         description: "Whole-repo systems map and capability routes",
         icon: Map,
         Component: lazyNamed(() => import("@/components/RepoNavigationPanel"), "RepoNavigationPanel"),
+      },
+      {
+        path: "/platform/coverage",
+        label: "Systems & Coverage",
+        description: "Live repo-wide coverage — every aureon/ package + per-domain health",
+        icon: Boxes,
+        Component: lazy(() => import("./pages/SystemsCoveragePage")),
+        live: true,
       },
       {
         path: "/platform/switchboard",
