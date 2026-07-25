@@ -48,9 +48,10 @@ _GROUP_META: Dict[str, Dict[str, str]] = {
     "adaptive_direction": {
         "label": "Adaptive-direction integrity",
         "purpose": "proof that the adaptive logic is directed by the one canonical HNC field and that "
-                   "the MCP connection is a real, integrity-checked wire — a source-level direction "
-                   "audit (every consumer on the shared field) and a live membrane transport (tool "
-                   "calls sealed out, screened in, guarded dispatch)",
+                   "the MCP connection is a stable, isolated read-only bridge — a source-level direction "
+                   "audit (every consumer on the shared field) and a live connector bridge that serves "
+                   "any flagship model a read-only surface, gated + screened in + sealed out, with the "
+                   "interior proven unchanged per call",
     },
     "sensor_lane": {
         "label": "Sensor lanes",

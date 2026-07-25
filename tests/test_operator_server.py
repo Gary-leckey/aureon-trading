@@ -103,6 +103,23 @@ def test_api_requires_bearer_when_key_set():
     assert c.get("/metrics").status_code == 200
 
 
+def test_mcp_bridge_requires_bearer_when_key_set():
+    # The inbound MCP connector bridge lives inside the security envelope: with a key set, both
+    # /mcp/tools and /mcp/call demand the bearer, and serve once it is presented.
+    c = _client(AUREON_LLM_OFFLINE="1", AUREON_OPERATOR_API_KEY="secret")
+    assert c.get("/mcp/tools").status_code == 401
+    assert c.post("/mcp/call", json={"name": "read_state", "arguments": {}}).status_code == 401
+    auth = {"Authorization": "Bearer secret"}
+    assert c.get("/mcp/tools", headers=auth).status_code == 200
+    assert c.post("/mcp/call", json={"name": "read_state", "arguments": {}},
+                  headers=auth).status_code == 200
+
+
+def test_mcp_bridge_open_when_no_key():
+    c = _client(AUREON_LLM_OFFLINE="1")
+    assert c.get("/mcp/tools").status_code == 200
+
+
 def test_api_rate_limited_returns_429():
     c = _client(AUREON_LLM_OFFLINE="1", AUREON_OPERATOR_RATE_RPS="0.5", AUREON_OPERATOR_RATE_BURST="1")
     # Use a fast /api endpoint: the rate gate fires in before_request (ahead of

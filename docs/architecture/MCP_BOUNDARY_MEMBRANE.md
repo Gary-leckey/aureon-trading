@@ -95,8 +95,9 @@ The deterministic core stays offline and stdlib-only; the live transport is now 
 `aureon/bio/mcp_transport.py` and wired into the operator, closing the five gaps this section named:
 
 1. **Live MCP server** — `register_mcp_routes(app)` adds `GET /mcp/tools` + `POST /mcp/call` to the
-   operator Flask app (`create_app`), mirroring the SaaS/billing registration pattern (behind the
-   operator's existing bearer + rate-limit envelope; the probes stay open).
+   operator Flask app (`create_app`), mirroring the SaaS/billing registration pattern. The `/mcp/`
+   prefix is inside the operator's request gate, so bearer-auth + rate-limit apply when enabled (see the
+   isolation contract below).
 2. **Capability source** — `list_capabilities()` publishes `GuardedToolRegistry.list_tools()`, sealed.
 3. **Routing through the membrane** — `handle_mcp_call()` runs every inbound external note through
    `screen_ingress` (a flagged note is refused *before* dispatch) and seals every result with
@@ -112,3 +113,33 @@ The deterministic core stays offline and stdlib-only; the live transport is now 
 Asserted by b42 two ways: a deterministic self-test (benign call laminar, adversarial ingress contained,
 tampered packet rejected) **and** a real in-process Flask round-trip. The sensor → effector → membrane
 trio now guards a real attachment point, not a metaphor.
+
+## The isolation contract — a stable connector bridge, no blast radius
+
+The transport is deliberately built as a **stable, isolated inbound connector bridge**: any flagship
+model may attach to Aureon OS and be served, *without affecting the rest of the system*. A model calling
+`/mcp` gets to observe and be served — never a hand inside the organism. Four things are enforced, and
+proven on **every** call:
+
+1. **Read-only safe surface.** The bridge advertises and dispatches only a curated read-only toolset —
+   `SAFE_READONLY_TOOLS = {read_state, read_positions, read_prices, repo_search, skill_base_status}`.
+   Interior writes (`publish_thought`), shell (`execute_shell`), and network egress
+   (`web_search` / `web_fetch`), plus every write/patch operator tool, are excluded. Enforced twice: the
+   registry is scoped to this set (a mutating tool is not even *nameable* over the wire), and
+   `handle_mcp_call` refuses any off-surface name **before** dispatch (sealed `mcp.refused`) — so even a
+   future registry change can't widen the surface.
+2. **Authenticated + throttled.** `/mcp/*` sits inside the operator's security envelope: when the
+   operator sets `AUREON_OPERATOR_API_KEY` / `AUREON_OPERATOR_RATE_*`, the bridge demands the bearer and
+   is rate-limited (closing the flood / thread-exhaustion vector). Defaults (auth off) are unchanged.
+3. **Mandatory ingress screening.** Every inbound is screened as data-not-instructions — not just when an
+   `external_note` is present. A canonical string of the whole request (tool name + arguments + note)
+   passes through `screen_ingress`; a flagged request (prompt-injection / false blocked-action claim /
+   false self-claim) is refused before the tool runs.
+4. **Interior-unchanged proven per call.** A cheap read-only fingerprint of the interior (the ThoughtBus
+   memory depth) is snapshotted immediately before and after dispatch; `interior_unchanged` is folded
+   into the verdict (`laminar = ingress_clean and egress_verifies and interior_unchanged`). Because the
+   surface is read-only this is `True` by construction — and now *checked on every call*, so any
+   regression that widened the surface would immediately read `laminar = False`.
+
+Mutation, shell, network egress, and writes are simply not on the surface — the bridge lets a flagship
+model attach and be served, provably without touching the organism.

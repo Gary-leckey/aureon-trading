@@ -275,7 +275,7 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
     @app.before_request
     def _gate():
         path = request.path
-        if path in _OPEN_PATHS or not path.startswith("/api/"):
+        if path in _OPEN_PATHS or not (path.startswith("/api/") or path.startswith("/mcp/")):
             return None
         if _sec.auth_enabled and not check_bearer(request.headers.get("Authorization"), _sec.api_key):
             return _err(401, "missing or invalid bearer token")

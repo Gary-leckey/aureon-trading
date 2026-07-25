@@ -62,7 +62,7 @@ The **sacred lattice** (`sacred_lattice_scan.py`) is how the repo maps the sky *
 
 The **harmonic core** (`harmonic_core_scan.py`) goes one level deeper still — to the frequency substrate the framework itself is built on: the HNC **Master Formula Λ(t)** modes, the **Celtic Ogham** φ-scaled tree-tones, and the **Ghost Dance** ancestral Solfeggio ladder, each scanned through the same engine. See [HARMONIC_CORE.md](HARMONIC_CORE.md).
 
-† b9 is the phenolic→cognition bridge; b10–b27 are the bio lanes; b28 is the signal-adapter conformance roll-up, b29 the family-wide false-positive-rate audit, b30 the detection-power sensitivity sweep, b31 the per-test null-calibration curve, b32 the multiplicity / family-wise-error audit, and b33 the false-discovery-rate / Benjamini–Hochberg audit (b29+b30 = the ROC picture; b31 the calibration foundation under both; b32+b33 = the two multiple-comparisons regimes, FWER and FDR, that close the statistical-validity dossier). b34–b39 are a different kind of check — not sensor lanes but the **cognitive immune layer**: sensor (b34 integrity guard) → effector (b35 swarm defense) → membrane (b36 MCP boundary) → counterfeit detector (b37 authenticity discriminator) → memory (b38 immune memory) → regulation (b39 immune regulation), see below. b40–b41 are the **HNC-direction dossier** — not sensor lanes but proof that the adaptive logic is directed by the one canonical field: b40 traces a live signal from `symbolic.life.pulse` to a decision on one trace_id; b41 audits that every adaptive consumer references the canonical-field wire (see below). b42 is the **live MCP transport**: it makes the b36 membrane a real wire — routing tool traffic through it over `GET /mcp/tools` + `POST /mcp/call`, sealed out / screened in / guarded dispatch. b43 is the **runtime companion** to b41 — it proves the field is load-bearing at every real consumer, not merely referenced (see below). Tier-A total: **43**.
+† b9 is the phenolic→cognition bridge; b10–b27 are the bio lanes; b28 is the signal-adapter conformance roll-up, b29 the family-wide false-positive-rate audit, b30 the detection-power sensitivity sweep, b31 the per-test null-calibration curve, b32 the multiplicity / family-wise-error audit, and b33 the false-discovery-rate / Benjamini–Hochberg audit (b29+b30 = the ROC picture; b31 the calibration foundation under both; b32+b33 = the two multiple-comparisons regimes, FWER and FDR, that close the statistical-validity dossier). b34–b39 are a different kind of check — not sensor lanes but the **cognitive immune layer**: sensor (b34 integrity guard) → effector (b35 swarm defense) → membrane (b36 MCP boundary) → counterfeit detector (b37 authenticity discriminator) → memory (b38 immune memory) → regulation (b39 immune regulation), see below. b40–b41 are the **HNC-direction dossier** — not sensor lanes but proof that the adaptive logic is directed by the one canonical field: b40 traces a live signal from `symbolic.life.pulse` to a decision on one trace_id; b41 audits that every adaptive consumer references the canonical-field wire (see below). b42 is the **stable read-only MCP connector bridge**: it makes the b36 membrane a real, isolated wire — any flagship model can attach over `GET /mcp/tools` + `POST /mcp/call` and be served a curated read-only surface, gated behind the operator security envelope, screened in / sealed out / interior-unchanged proven per call. b43 is the **runtime companion** to b41 — it proves the field is load-bearing at every real consumer, not merely referenced (see below). Tier-A total: **43**.
 
 ## Integrity / immune layer (not a sensor lane)
 
@@ -136,15 +136,21 @@ base Queen, conscience veto) and asks whether it references the canonical-field 
 RED baseline is recorded in [`HNC_AURIS_DIRECTION_AUDIT`](../research/audits/). b40 proves the signal
 *flows*; b41 proves the wire is *present at every consumer*. Emits `bio.hnc_direction_audit.run`.
 
-The **MCP transport** (`aureon/bio/mcp_transport.py`, benchmark **b42**) turns the b36 boundary membrane
-from a tested-but-siloed organ into a **live wire**: it attaches Aureon as an MCP-style server on the
-operator Flask app (`GET /mcp/tools`, `POST /mcp/call`) and routes every call through the membrane —
-capability lists and results sealed for egress (drift/tamper/replay detectable), inbound external notes
-screened as data (a prompt-injection note is refused before dispatch), and dispatch through the
-operator's `GuardedToolRegistry` so the authority boundary applies to external callers too. Integrity is
-always on; confidentiality is optional (transit key + AES). Asserted by a deterministic self-test AND a
-real in-process Flask round-trip; it also subscribes the previously-unheard `bio.mcp_membrane.run` topic.
-Emits `bio.mcp_transport.run`.
+The **MCP transport** (`aureon/bio/mcp_transport.py`, benchmark **b42**) is the **stable, isolated
+inbound connector bridge**: any flagship model may attach and be served without affecting the organism.
+It attaches Aureon as an MCP-style server on the operator Flask app (`GET /mcp/tools`, `POST /mcp/call`)
+and enforces a four-part isolation contract per call — (1) a curated **read-only safe surface** (state /
+positions / prices / repo-search / skill-status); interior writes, shell, and network egress are not even
+nameable over the wire, and any off-surface tool is refused before dispatch; (2) **mandatory ingress
+screening** over the whole request (tool name + arguments + note) as data-not-instructions — a prompt
+injection is refused before the tool runs, with or without an external note; (3) **interior-unchanged
+proven on every call** (the ThoughtBus memory depth is fingerprinted before and after dispatch); (4)
+every reply **integrity-sealed** (drift/tamper/replay detectable). Dispatch still runs through the
+operator's `GuardedToolRegistry`, and the routes sit **inside the operator security envelope** (bearer
+auth + rate limit when enabled). Integrity is always on; confidentiality is optional (transit key + AES).
+Asserted by a deterministic self-test AND a real in-process Flask round-trip (read-only surface, mutating
+tool refused, interior unchanged, adversarial refused); it also subscribes the previously-unheard
+`bio.mcp_membrane.run` topic. Emits `bio.mcp_transport.run`.
 
 The **runtime direction audit** (`aureon/bio/direction_runtime.py`, benchmark **b43**) is the
 load-bearing companion to b41: where b41 proves each adaptive consumer *references* the canonical field
