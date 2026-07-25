@@ -1,5 +1,5 @@
 {
-  "ts": "2026-07-25T19:46:25Z",
+  "ts": "2026-07-25T21:38:04Z",
   "tier_a": [
     {
       "name": "Standing-wave bonding (HashResonanceIndex)",
@@ -26,7 +26,7 @@
         "one_publish_per_crossing": true
       },
       "evidence": "21 identical events \u2192 1 bonded fingerprint (count=21, strength=0.6765 \u2248 0.6765; thresholds [3, 8, 21] published exactly once each)",
-      "wall_ms": 102.1
+      "wall_ms": 95.4
     },
     {
       "name": "Temporal lighthouse (\u03b2 \u039b(t-\u03c4) goal echo)",
@@ -57,7 +57,7 @@
         "summary_published_each_pulse": true
       },
       "evidence": "3 goals (1 starved, 1 completed, 1 abandoned) \u2192 completion_rate=0.333, orphan_rate=0.333, states={'PROPOSED': 0, 'ACKNOWLEDGED': 0, 'IN_PROGRESS': 0, 'COMPLETED': 1, 'ABANDONED': 1, 'ORPHANED': 1}",
-      "wall_ms": 51.1
+      "wall_ms": 52.1
     },
     {
       "name": "Symbolic life pillars (Auris Conjecture)",
@@ -85,7 +85,7 @@
         "symbolic_life_pulse_topic_landed": true
       },
       "evidence": "SLS=0.6393; \u03c8=0.7069 (CONNECTED); all 5 pillars in [0,1]; vault.current_symbolic_life_score=0.6393012290344635",
-      "wall_ms": 272.7
+      "wall_ms": 266.1
     },
     {
       "name": "Mesh convergence (PhiBridgeMesh, in-process LAN)",
@@ -97,7 +97,7 @@
         "peers_per_node": 3,
         "target_hash_count": 400,
         "cycles_to_converge": 3,
-        "wall_ms": 455.9,
+        "wall_ms": 459.1,
         "posts_issued": 180,
         "client_failures": 0,
         "min_size": 400,
@@ -109,8 +109,8 @@
         "every_vault_holds_identical_set": true,
         "no_routing_failures": true
       },
-      "evidence": "20 vaults converged to identical 400-hash set in 3 cycles (456 ms, 180 posts)",
-      "wall_ms": 499.4
+      "evidence": "20 vaults converged to identical 400-hash set in 3 cycles (459 ms, 180 posts)",
+      "wall_ms": 486.7
     },
     {
       "name": "Conscience VETO (HNC 4th-pass, substrate coherence)",
@@ -131,7 +131,7 @@
         "published_action_matches": true
       },
       "evidence": "SLS=0.05 < 0.20 cliff \u2192 VETO on 'Execute trade' (risk=0.08); message quotes stability cliff and symbolic_life_score; queen.conscience.verdict published",
-      "wall_ms": 9.6
+      "wall_ms": 16.2
     },
     {
       "name": "Pattern learning (PersonaMinerBridge)",
@@ -148,7 +148,7 @@
           "last_winning_skill_chain": [
             "compose_audit"
           ],
-          "last_seen_ts": 1785008575.829519
+          "last_seen_ts": 1785015277.307005
         },
         "persona_health": {
           "persona": "engineer",
@@ -160,7 +160,7 @@
           "completion_rate": 1.0,
           "abandon_rate": 0.0,
           "avg_sls_delta": 0.0,
-          "last_seen_ts": 1785008575.829519
+          "last_seen_ts": 1785015277.307005
         },
         "patterns_published": 3,
         "patterns": [
@@ -199,7 +199,7 @@
         "persona_completion_rate_is_1": true
       },
       "evidence": "5 (engineer, 'build the audit gate') successes \u2192 3 patterns learned (['audit', 'build', 'gate']), each published exactly once; (engineer, 'build').confidence=0.747",
-      "wall_ms": 14.4
+      "wall_ms": 18.2
     },
     {
       "name": "Skill execution \u2192 artefacts on disk",
@@ -212,9 +212,9 @@
           "summarise_findings"
         ],
         "artefacts_on_disk": [
-          "artefacts/20260725T194255-compose_audit-946b61.md",
-          "artefacts/20260725T194255-render_report-316caf.md",
-          "artefacts/20260725T194255-summarise_findings-d9a850.md"
+          "artefacts/20260725T213437-compose_audit-7b42ce.md",
+          "artefacts/20260725T213437-render_report-896478.md",
+          "artefacts/20260725T213437-summarise_findings-2285c9.md"
         ],
         "vault_skill_output_cards": 3,
         "completion_summary": "built 3 artefact(s) via 3 skill(s): compose_audit, render_report, summarise_findings",
@@ -225,7 +225,7 @@
           "failed": 0,
           "abandoned": 0,
           "subscribed": true,
-          "output_root": "/tmp/aureon-bench-tpqld7tt/a7/artefacts"
+          "output_root": "/tmp/aureon-bench-nbt551gl/a7/artefacts"
         }
       },
       "invariants": {
@@ -238,7 +238,7 @@
         "every_artefact_actually_exists": true
       },
       "evidence": "3 skills \u2192 3 files on disk + 3 vault cards; goal.completed: \"built 3 artefact(s) via 3 skill(s): compose_audit, render_report, summarise_findings\"",
-      "wall_ms": 17.0
+      "wall_ms": 14.5
     },
     {
       "name": "Meta-cognition reflection (\u03b1 tanh observer term)",
@@ -253,7 +253,7 @@
         "sls_after": 0.72,
         "sls_delta": 0.22,
         "downstream_event_count": 3,
-        "lambda_delta_t": 0.07721161842346191,
+        "lambda_delta_t": 0.07608962059020996,
         "reasoning_excerpt": "I, engineer, collapsed into decision 'goal.submit' with p=0.780. The window closed at outcome=COMPLETED. 3 downstream event(s) within the 0.050s window. SLS moved from 0.500 to 0.720 (\u0394+0.220)."
       },
       "invariants": {
@@ -268,7 +268,7 @@
         "downstream_effects_seen": true
       },
       "evidence": "persona.collapse(engineer) \u2192 goal.submit \u2192 goal.completed closes window with SLS \u0394+0.220; narrative quotes the persona",
-      "wall_ms": 86.6
+      "wall_ms": 89.1
     },
     {
       "name": "Phenolic fingerprint \u2192 cognition (bio\u2192vibe sense-making)",
@@ -296,7 +296,7 @@
         "trace_signal_written": true
       },
       "evidence": "AnalysisResult \u2192 emit_to_cognition publishes run + 3 compound Thoughts on one trace_id and mirrors a bus_trace; summary = 1/3 separable \u00b7 2/3 clustering-significant \u00b7 controls PASS",
-      "wall_ms": 12.6
+      "wall_ms": 13.6
     },
     {
       "name": "Bio derived-signal (UPE anchor + governance + convergence)",
@@ -317,7 +317,7 @@
         "convergence_semantics": true
       },
       "evidence": "broadband UPE non-separable; structured separable (A_p=0.01990049751243781); consent gate blocks; convergence 0/9 both-channel cells",
-      "wall_ms": 1963.5
+      "wall_ms": 1869.2
     },
     {
       "name": "Sky derived-signal (scan light from space; \u03c6 logic unchanged)",
@@ -338,7 +338,7 @@
         "scan_deterministic": true,
         "consent_gate_blocks": true
       },
-      "wall_ms": 1014.1
+      "wall_ms": 982.9
     },
     {
       "name": "NASA sky data (real host-star scan; \u03c6 logic unchanged)",
@@ -361,7 +361,7 @@
         "orbital_lane_valid": true,
         "consent_gate_blocks": true
       },
-      "wall_ms": 15391.3
+      "wall_ms": 16028.0
     },
     {
       "name": "Market derived-signal (scan a market series; \u03c6 logic unchanged)",
@@ -383,7 +383,7 @@
         "real_scan_deterministic": true,
         "consent_gate_blocks": true
       },
-      "wall_ms": 1127.8
+      "wall_ms": 1092.4
     },
     {
       "name": "Faint sky / UPE-from-the-sky (airglow + diffuse; \u03c6 logic unchanged)",
@@ -405,7 +405,7 @@
         "planted_positive_detected": true,
         "consent_gate_blocks": true
       },
-      "wall_ms": 1075.3
+      "wall_ms": 1010.7
     },
     {
       "name": "QGITA \u21c4 phenolic-\u03c6 calibration (golden lattice; engine unchanged)",
@@ -428,7 +428,7 @@
         "engine_thresholds_unchanged": true,
         "auris_governed": true
       },
-      "wall_ms": 3205.0
+      "wall_ms": 3193.4
     },
     {
       "name": "Sky map (real RA/Dec \u03c6-structure map; \u03c6 logic unchanged)",
@@ -451,7 +451,7 @@
         "consent_gate_blocks": true,
         "boundary_present": true
       },
-      "wall_ms": 15301.4
+      "wall_ms": 16251.6
     },
     {
       "name": "Cosmic sensors (Schumann + planetary + space-weather; \u03c6 logic unchanged)",
@@ -472,7 +472,7 @@
         "space_weather_valid": true,
         "consent_gate_blocks": true
       },
-      "wall_ms": 786.6
+      "wall_ms": 733.1
     },
     {
       "name": "Image derived-signal (colour \u2192 \u03c6 scan + overlay; \u03c6 logic unchanged)",
@@ -493,7 +493,7 @@
         "overlay_renders_on_valid": true,
         "no_person_surface": true
       },
-      "wall_ms": 666.5
+      "wall_ms": 611.1
     },
     {
       "name": "Coherence lane (DE440 coherence spectrum; \u03c6 logic unchanged)",
@@ -513,7 +513,7 @@
         "sim_control_valid": true,
         "consent_gate_blocks": true
       },
-      "wall_ms": 669.4
+      "wall_ms": 614.7
     },
     {
       "name": "\u03c6 Celestial Observatory (every sky lane, one engine; \u03c6 logic unchanged)",
@@ -532,7 +532,7 @@
         "deterministic": true,
         "boundary_present": true
       },
-      "wall_ms": 7701.4
+      "wall_ms": 8437.3
     },
     {
       "name": "Observatory \u2192 cognition (whole-sky picture on the ThoughtBus)",
@@ -550,7 +550,7 @@
         "boundary_in_summary": true,
         "emission_best_effort": true
       },
-      "wall_ms": 3297.1
+      "wall_ms": 3407.6
     },
     {
       "name": "Sacred lattice (repo's own Earth-grid sky map; \u03c6 logic unchanged)",
@@ -571,7 +571,7 @@
         "converged_semantics": true,
         "no_person_surface": true
       },
-      "wall_ms": 939.1
+      "wall_ms": 957.7
     },
     {
       "name": "Harmonic core (HNC \u039b(t) / Ogham / Ghost Dance; \u03c6 logic unchanged)",
@@ -591,7 +591,7 @@
         "ogham_phi_scaled": true,
         "no_person_surface": true
       },
-      "wall_ms": 578.2
+      "wall_ms": 616.0
     },
     {
       "name": "Counter-frequency (repo's \u03c6/Fibonacci canon; \u03c6 logic unchanged)",
@@ -611,7 +611,7 @@
         "phi_harmonic_present": true,
         "no_person_surface": true
       },
-      "wall_ms": 594.4
+      "wall_ms": 605.5
     },
     {
       "name": "Observatory evidence report (durable, deterministic cross-lane artifact)",
@@ -631,7 +631,7 @@
         "out_path_set": true,
         "byte_identical_on_rewrite": true
       },
-      "wall_ms": 8035.9
+      "wall_ms": 7981.0
     },
     {
       "name": "Audio signal adapter (waveform \u2192 folded tones; \u03c6 logic unchanged)",
@@ -651,7 +651,7 @@
         "consent_gate_blocks": true,
         "no_person_surface": true
       },
-      "wall_ms": 467.2
+      "wall_ms": 445.4
     },
     {
       "name": "Video signal adapter (per-frame luminance \u2192 folded tones; \u03c6 logic unchanged)",
@@ -671,7 +671,7 @@
         "consent_gate_blocks": true,
         "no_person_surface": true
       },
-      "wall_ms": 488.2
+      "wall_ms": 443.8
     },
     {
       "name": "Signal-adapter conformance suite (family roll-up; \u03c6 logic unchanged)",
@@ -693,7 +693,7 @@
         "byte_identical_on_rewrite": true,
         "no_person_surface": true
       },
-      "wall_ms": 2588.9
+      "wall_ms": 2346.4
     },
     {
       "name": "Null calibration (family-wide false-positive-rate audit; \u03c6 logic unchanged)",
@@ -719,7 +719,7 @@
         "byte_identical_on_rewrite": true,
         "no_person_surface": true
       },
-      "wall_ms": 16099.3
+      "wall_ms": 15840.3
     },
     {
       "name": "Detection power (sensitivity sweep; \u03c6 logic unchanged)",
@@ -743,7 +743,7 @@
         "byte_identical_on_rewrite": true,
         "no_person_surface": true
       },
-      "wall_ms": 26909.8
+      "wall_ms": 26576.7
     },
     {
       "name": "Calibration curve (per-test null calibration; \u03c6 logic unchanged)",
@@ -767,7 +767,7 @@
         "byte_identical_on_rewrite": true,
         "no_person_surface": true
       },
-      "wall_ms": 10961.2
+      "wall_ms": 9676.4
     },
     {
       "name": "Multiplicity (family-wise error-rate control; \u03c6 logic unchanged)",
@@ -791,7 +791,7 @@
         "byte_identical_on_rewrite": true,
         "no_person_surface": true
       },
-      "wall_ms": 29095.3
+      "wall_ms": 27587.2
     },
     {
       "name": "False discovery rate (Benjamini\u2013Hochberg control; \u03c6 logic unchanged)",
@@ -816,7 +816,7 @@
         "byte_identical_on_rewrite": true,
         "no_person_surface": true
       },
-      "wall_ms": 38667.1
+      "wall_ms": 37702.4
     },
     {
       "name": "Integrity guard (cognitive immune layer; \u03c6 logic unchanged)",
@@ -842,7 +842,7 @@
         "out_path_set": true,
         "no_person_surface": true
       },
-      "wall_ms": 857.2
+      "wall_ms": 866.2
     },
     {
       "name": "Swarm defense (leaderless bee-ball quorum; \u03c6 logic unchanged)",
@@ -868,7 +868,7 @@
         "byte_identical_on_rewrite": true,
         "no_person_surface": true
       },
-      "wall_ms": 4.6
+      "wall_ms": 4.2
     },
     {
       "name": "MCP boundary membrane (directional integrity gateway; \u03c6 logic unchanged)",
@@ -896,7 +896,7 @@
         "out_path_set": true,
         "no_person_surface": true
       },
-      "wall_ms": 492.6
+      "wall_ms": 493.0
     },
     {
       "name": "Authenticity discriminator (real vs synthetic + clone paradox; \u03c6 logic unchanged)",
@@ -926,7 +926,7 @@
         "out_path_set": true,
         "no_person_surface": true
       },
-      "wall_ms": 4827.4
+      "wall_ms": 5173.0
     },
     {
       "name": "Immune memory (recall + secondary response; \u03c6 logic unchanged)",
@@ -957,7 +957,7 @@
         "out_path_set": true,
         "no_person_surface": true
       },
-      "wall_ms": 6.8
+      "wall_ms": 6.5
     },
     {
       "name": "Immune regulation (homeostatic brake; \u03c6 logic unchanged)",
@@ -985,7 +985,7 @@
         "out_path_set": true,
         "no_person_surface": true
       },
-      "wall_ms": 4.2
+      "wall_ms": 3.8
     },
     {
       "name": "Logic-flow trace (HNC pulse \u2192 decision, one trace_id)",
@@ -1013,7 +1013,7 @@
         "out_path_set": true,
         "no_person_surface": true
       },
-      "wall_ms": 4.1
+      "wall_ms": 4.9
     },
     {
       "name": "HNC direction audit (adaptive logic on the one field)",
@@ -1038,7 +1038,7 @@
         "out_path_set": true,
         "no_person_surface": true
       },
-      "wall_ms": 6.5
+      "wall_ms": 6.2
     },
     {
       "name": "MCP transport (stable read-only connector bridge)",
@@ -1071,7 +1071,7 @@
         "out_path_set": true,
         "no_person_surface": true
       },
-      "wall_ms": 70.3
+      "wall_ms": 69.1
     },
     {
       "name": "Runtime direction audit (field is load-bearing)",
@@ -1094,7 +1094,7 @@
         "out_path_set": true,
         "no_person_surface": true
       },
-      "wall_ms": 40.2
+      "wall_ms": 40.0
     },
     {
       "name": "Brain-reply membrane (outbound flagship containment)",
@@ -1119,7 +1119,7 @@
         "out_path_set": true,
         "no_person_surface": true
       },
-      "wall_ms": 13.5
+      "wall_ms": 11.8
     },
     {
       "name": "SaaS repo-wide coverage (38/38 domains, deep health)",
@@ -1146,21 +1146,21 @@
         "byte_identical_on_rewrite": true,
         "no_person_surface": true
       },
-      "wall_ms": 387.7
+      "wall_ms": 391.0
     },
     {
       "name": "Logic-train audit (repo-wide, one field)",
       "module": "aureon/cognition/logic_train_audit.py",
       "passed": true,
       "metrics": {
-        "scanned": 1089,
+        "scanned": 1097,
         "relevant": 83,
-        "wired": 34,
-        "unwired": 49,
-        "order_path_gaps": 10,
-        "wired_fraction": 0.4096
+        "wired": 44,
+        "unwired": 39,
+        "order_path_gaps": 0,
+        "wired_fraction": 0.5301
       },
-      "evidence": "discovered 1089 modules \u2192 83 on the harmonic train (7 authority / 27 producer / 49 consumer); 34 wired (41.0%), 49 unwired with 10 on the live order path; every gap pinned by name with a reason; 0 unexpected and 0 stale entries; an injected private-coherence decision site is caught by the ratchet; deterministic md+JSON",
+      "evidence": "discovered 1097 modules \u2192 83 on the harmonic train (7 authority / 27 producer / 49 consumer); 44 wired (53.0%), 39 unwired with 0 on the live order path; every gap pinned by name with a reason; 0 unexpected and 0 stale entries; an injected private-coherence decision site is caught by the ratchet; deterministic md+JSON",
       "invariants": {
         "discovers_whole_tree": true,
         "every_module_has_exactly_one_role": true,
@@ -1173,7 +1173,7 @@
         "deterministic": true,
         "json_round_trips": true
       },
-      "wall_ms": 15080.7
+      "wall_ms": 15470.1
     }
   ],
   "tier_b": [
