@@ -49,6 +49,11 @@ def test_capability_forge_local_only_reference_patterns_and_no_external_calls(tm
 
 
 def test_capability_forge_video_job_produces_quality_gated_public_artifacts(tmp_path: Path, monkeypatch) -> None:
+    # The forge delegates video rendering to the cv2-only visual asset worker;
+    # without cv2 the quality gate honestly refuses handover ("do not hand it
+    # over unless the preview passes"), which is the contract, not a bug.
+    import pytest
+    pytest.importorskip("cv2")
     monkeypatch.setattr(
         "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
         _fake_expression_context,

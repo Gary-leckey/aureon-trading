@@ -298,6 +298,10 @@ def test_submit_coding_prompt_visual_artifact_wins_over_coding_ui_words(tmp_path
 
 
 def test_submit_coding_prompt_video_artifact_survives_scope_wrapper(tmp_path: Path, monkeypatch) -> None:
+    # video artifacts render through the cv2-only visual asset worker; without
+    # cv2 the pipeline honestly refuses handover instead of faking a video
+    import pytest
+    pytest.importorskip("cv2")
     monkeypatch.setattr(
         "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
         _fake_expression_context,

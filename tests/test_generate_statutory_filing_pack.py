@@ -7,6 +7,11 @@ from decimal import Decimal
 
 import pytest
 
+pytest.importorskip(
+    "reportlab",
+    reason="these suites assert rendered PDF artifacts; reportlab is the renderer",
+)
+
 # pypdf is declared in Kings_Accounting_Suite/requirements.txt but not the root install, and
 # the runtime imports it lazily (research_corpus_index.py) — so it is genuinely optional.
 # Skipping keeps a root-only install collecting instead of erroring on import.
