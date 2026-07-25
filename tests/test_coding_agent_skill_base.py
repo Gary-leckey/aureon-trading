@@ -130,6 +130,10 @@ def test_goal_engine_routes_visual_asset_prompt_without_agentcore(tmp_path: Path
 
 
 def test_goal_engine_routes_video_artifact_prompt_without_agentcore(tmp_path: Path, monkeypatch) -> None:
+    # mp4 rendering runs through OpenCV's VideoWriter; without cv2 the plan
+    # honestly fails rather than fabricating a video file.
+    import pytest
+    pytest.importorskip("cv2")
     _fake_repo(tmp_path)
     monkeypatch.chdir(tmp_path)
 
