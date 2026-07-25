@@ -15,6 +15,22 @@ This runs:
 
 All data flows through ThoughtBus in REAL-TIME for Queen to make trades.
 
+FEED PROVENANCE — real sources or nothing
+─────────────────────────────────────────
+This runner used to manufacture the stream it called live: prices seeded at
+``50000 + random()``, a random walk applied every tick, random 24h volumes, random
+orderbook depth and walls, and trading-firm attribution invented from an md5 of
+symbol+minute. All of it went out on the same ThoughtBus topics real market data uses,
+where the system hub dashboard read it and labelled it "live data". A fabricated number
+on a live topic is worse than no number — it is a false reading.
+
+Every synthetic value is now behind an explicit opt-in, ``AUREON_ALLOW_SIMULATED_FEED``.
+With it unset (the default) the runner emits only what a real source actually produced,
+marks each thought with a ``truth_status`` from the repo's real-data contract
+(``live`` / ``real_derived`` / ``no_data``), and reports ``no_data`` with a named blocker
+when a source is unavailable. With it set, every synthetic thought is stamped
+``test_fixture`` so no consumer can mistake it for the market.
+
 Gary Leckey & Tina Brown | January 2026 | LIVE STREAMING MODE
 """
 
@@ -62,6 +78,50 @@ SCHUMANN = 7.83
 LOVE_FREQ = 528
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# FEED PROVENANCE
+# ═══════════════════════════════════════════════════════════════════════════════
+# Truth statuses match aureon/observer/real_data_contract.py, so a consumer reading
+# these thoughts uses the same vocabulary as the rest of the organism.
+TRUTH_LIVE = "live"                  # straight from a real provider
+TRUTH_DERIVED = "real_derived"       # computed from real provider inputs
+TRUTH_NO_DATA = "no_data"            # source unavailable — value withheld, blocker named
+TRUTH_FIXTURE = "test_fixture"       # synthetic, never operational truth
+
+_SIM_ENV = "AUREON_ALLOW_SIMULATED_FEED"
+
+
+def simulation_fallback_allowed() -> bool:
+    """True only when the operator has explicitly opted into a generated feed.
+
+    Default OFF. Every synthetic value in this runner is behind this switch, and
+    everything it produces is stamped ``test_fixture`` so it cannot be mistaken for the
+    market. With it off the runner emits real readings or an honest ``no_data``.
+    """
+    return os.getenv(_SIM_ENV, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+#: Kept as the name the rest of this module reads from, so each gate site names the contract's
+#: own marker while callers keep the plainer spelling.
+simulated_feed_allowed = simulation_fallback_allowed
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _resolve_thoughts_file() -> Path:
+    """The shared cross-process thought stream.
+
+    Was ``aureon/trading/thoughts.jsonl`` (next to this module) while the system hub
+    dashboard read ``aureon/command_centers/thoughts.jsonl`` — two different files, so
+    nothing this runner emitted ever reached the dashboard that spawns it. Both now
+    resolve the same path, overridable with ``AUREON_THOUGHTS_FILE``.
+    """
+    override = os.getenv("AUREON_THOUGHTS_FILE", "").strip()
+    return Path(override) if override else _repo_root() / "thoughts.jsonl"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # THOUGHTBUS INTEGRATION
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -81,8 +141,8 @@ def get_thought_bus():
 class SimpleThoughtBus:
     """Fallback ThoughtBus if main one not available"""
     def __init__(self):
-        self.thoughts_file = Path(__file__).parent / "thoughts.jsonl"
-        
+        self.thoughts_file = _resolve_thoughts_file()
+
     def think(self, content: str = "", topic: str = "", source: str = "", **kwargs):
         """Emit a thought to file"""
         import uuid
@@ -101,16 +161,23 @@ class SimpleThoughtBus:
             pass
 
 
-THOUGHTS_FILE = Path(__file__).parent / "thoughts.jsonl"
+THOUGHTS_FILE = _resolve_thoughts_file()
 
-def emit_telemetry(topic: str, data: Dict, source: str = "queen_live"):
-    """Emit telemetry directly to file for reliability"""
+def emit_telemetry(topic: str, data: Dict, source: str = "queen_live",
+                   truth_status: str = TRUTH_LIVE):
+    """Emit telemetry directly to file for reliability.
+
+    ``truth_status`` travels in the thought envelope so a consumer can tell a real
+    reading from a withheld one (``no_data``) or a synthetic one (``test_fixture``)
+    without having to know which producer wrote it.
+    """
     import uuid
     thought = {
         "id": str(uuid.uuid4()),
         "ts": time.time(),
         "source": source,
         "topic": topic,
+        "truth_status": truth_status,
         "payload": data,
         "trace_id": str(uuid.uuid4())[:8]
     }
@@ -136,15 +203,28 @@ def emit_telemetry(topic: str, data: Dict, source: str = "queen_live"):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class LiveMarketDataGenerator:
-    """Generates/fetches live market data"""
-    
+    """Fetches live market data from the prefetch service.
+
+    Emits a price only for symbols a real source actually quoted. Every unquoted symbol
+    is reported as ``no_data`` with the blocker named, never as a plausible number: an
+    invented price on ``market.price`` is what the scanners, the whale tracker and the
+    Queen's decision all read as the market.
+    """
+
     def __init__(self):
         self.symbols = ["BTC/USD", "ETH/USD", "SOL/USD", "XRP/USD", "ADA/USD", "DOGE/USD"]
-        self.prices = {s: 50000 + random.random() * 10000 for s in self.symbols}
-        
+        self.prices: Dict[str, float] = {}
+        self.real_symbols: set = set()          # which prices came from a real quote
+        self.simulated = simulation_fallback_allowed()
+        self.blocker = "prefetch_service_unavailable"
+        if self.simulated:
+            # Opt-in synthetic feed. Seeded here only so the loop has something to walk;
+            # every thought carrying these numbers is stamped test_fixture.
+            self.prices = {s: 50000 + random.random() * 10000 for s in self.symbols}
+
     def fetch_prices(self) -> Dict:
-        """Fetch current prices (simulated + real when available)"""
-        # Try to get real prices
+        """Fetch current prices. Real quotes only, unless the synthetic feed is opted in."""
+        quoted: set = set()
         try:
             from aureon_central_prefetch_service import prefetch_service
             if prefetch_service:
@@ -152,29 +232,57 @@ class LiveMarketDataGenerator:
                     price = prefetch_service.get_ticker(symbol)
                     if price:
                         self.prices[symbol] = price
-        except:
-            pass
-        
-        # Add some movement
-        for s in self.symbols:
-            change = self.prices[s] * (random.random() - 0.5) * 0.002  # 0.2% max change
-            self.prices[s] = max(0.01, self.prices[s] + change)
-        
-        return self.prices
-    
+                        quoted.add(symbol)
+            else:
+                self.blocker = "prefetch_service_not_started"
+        except Exception as exc:  # noqa: BLE001 — a missing feed is a state, not a crash
+            self.blocker = f"prefetch_service_import_failed: {type(exc).__name__}"
+
+        self.real_symbols = quoted
+        if self.simulated:
+            # The random walk exists to animate a demo; it is not price discovery.
+            for s in self.symbols:
+                change = self.prices[s] * (random.random() - 0.5) * 0.002  # 0.2% max change
+                self.prices[s] = max(0.01, self.prices[s] + change)
+            return self.prices
+
+        # Real mode: a symbol that stopped being quoted must not keep serving its last
+        # value forever, so only this cycle's quotes are returned.
+        return {s: self.prices[s] for s in quoted}
+
     def emit_market_data(self):
-        """Emit market data to ThoughtBus"""
+        """Emit market data to ThoughtBus, labelled by provenance."""
         prices = self.fetch_prices()
+        status = TRUTH_FIXTURE if self.simulated else TRUTH_LIVE
         for symbol, price in prices.items():
+            real = symbol in self.real_symbols
             emit_telemetry("market.price", {
                 "symbol": symbol,
                 "price": price,
+                # bid/ask are a fixed spread off the quote, not quoted depth — derived,
+                # and only meaningful when the quote itself is real.
                 "bid": price * 0.999,
                 "ask": price * 1.001,
-                "volume_24h": random.random() * 1000000,
-                "change_1h": (random.random() - 0.5) * 5,
+                # These were random numbers on a live topic. The prefetch service does not
+                # supply them, so they are withheld rather than invented.
+                "volume_24h": (random.random() * 1000000) if self.simulated else None,
+                "change_1h": ((random.random() - 0.5) * 5) if self.simulated else None,
+                "withheld": [] if self.simulated else ["volume_24h", "change_1h"],
+                "blocker": None if (real or self.simulated) else self.blocker,
                 "timestamp": datetime.utcnow().isoformat() + "Z"
-            }, source="market_data")
+            }, source="market_data",
+               truth_status=status if (real or self.simulated) else TRUTH_NO_DATA)
+
+        missing = [s for s in self.symbols if s not in prices]
+        if missing and not self.simulated:
+            # Silence would read as "the market is quiet". Name the gap instead.
+            emit_telemetry("market.feed_status", {
+                "quoted": sorted(prices),
+                "unquoted": missing,
+                "blocker": self.blocker,
+                "simulated_feed": False,
+                "timestamp": datetime.utcnow().isoformat() + "Z"
+            }, source="market_data", truth_status=TRUTH_NO_DATA)
 
 
 class LiveScannerEngine:
@@ -296,21 +404,36 @@ class LiveScannerEngine:
             "timestamp": datetime.utcnow().isoformat() + "Z"
         }, source="wave_scanner")
         
-        # Emit each opportunity
+        # Emit each opportunity. These come from the intelligence engine / wave scanner,
+        # so they are derived readings — and only as real as the prices fed in, which is
+        # why the status follows the feed mode.
+        opp_status = TRUTH_FIXTURE if simulation_fallback_allowed() else TRUTH_DERIVED
         for opp in opportunities:
-            emit_telemetry("scanner.opportunity", opp, source="wave_scanner")
-        
-        # Emit momentum data
+            emit_telemetry("scanner.opportunity", opp, source="wave_scanner",
+                           truth_status=opp_status)
+
+        # Emit momentum data.
+        # This block picked the "top momentum" symbol at random and gave it a random
+        # 1h change and a random volume-surge flag — a ranking with nothing behind it.
+        # Momentum needs a price history this runner does not keep, so outside the
+        # opt-in synthetic feed the gap is named instead of filled.
         if prices:
-            top_symbol = max(prices.keys(), key=lambda s: random.random())
-            emit_telemetry("market.momentum", {
-                "top_momentum": {
-                    "symbol": top_symbol,
-                    "change_1h": (random.random() - 0.3) * 8,
-                    "volume_surge": random.random() > 0.7
-                },
-                "timestamp": datetime.utcnow().isoformat() + "Z"
-            }, source="momentum_scanner")
+            if simulation_fallback_allowed():
+                top_symbol = max(prices.keys(), key=lambda s: random.random())
+                emit_telemetry("market.momentum", {
+                    "top_momentum": {
+                        "symbol": top_symbol,
+                        "change_1h": (random.random() - 0.3) * 8,
+                        "volume_surge": random.random() > 0.7
+                    },
+                    "timestamp": datetime.utcnow().isoformat() + "Z"
+                }, source="momentum_scanner", truth_status=TRUTH_FIXTURE)
+            else:
+                emit_telemetry("market.momentum", {
+                    "top_momentum": None,
+                    "blocker": "no_price_history_source",
+                    "timestamp": datetime.utcnow().isoformat() + "Z"
+                }, source="momentum_scanner", truth_status=TRUTH_NO_DATA)
 
 
 class LiveWhaleTracker:
@@ -367,11 +490,29 @@ class LiveWhaleTracker:
         """Emit whale data to ThoughtBus"""
         whales = self.detect_whales(prices)
         
-        # Emit orderbook depth
+        # Emit orderbook depth.
+        # Depths, the imbalance computed from them, and the "walls" were all random —
+        # invented liquidity on the topic the whale intelligence reads. Real depth needs
+        # an exchange orderbook feed this runner is not wired to, so it is reported as
+        # missing unless the synthetic feed is opted into.
+        simulated = simulation_fallback_allowed()
         for symbol, price in list(prices.items())[:3]:
+            if not simulated:
+                emit_telemetry("whale.orderbook", {
+                    "symbol": symbol,
+                    "bids_depth": None,
+                    "asks_depth": None,
+                    "imbalance": None,
+                    "walls": [],
+                    "withheld": ["bids_depth", "asks_depth", "imbalance", "walls"],
+                    "blocker": "no_orderbook_feed_connected",
+                    "timestamp": datetime.utcnow().isoformat() + "Z"
+                }, source="whale_orderbook", truth_status=TRUTH_NO_DATA)
+                continue
+
             bids_depth = random.random() * 1000000
             asks_depth = random.random() * 1000000
-            
+
             emit_telemetry("whale.orderbook", {
                 "symbol": symbol,
                 "bids_depth": bids_depth,
@@ -382,11 +523,14 @@ class LiveWhaleTracker:
                     {"side": "ask", "price": price * 1.02, "size": random.random() * 100000}
                 ],
                 "timestamp": datetime.utcnow().isoformat() + "Z"
-            }, source="whale_orderbook")
-        
-        # Emit whale alerts
+            }, source="whale_orderbook", truth_status=TRUTH_FIXTURE)
+
+        # Emit whale alerts. These come from WhaleBehaviorPredictor's 3-pass validation,
+        # so they are real readings; size_usd is an estimate derived from the quote and
+        # the predictor's confidence, which is why the status is derived, not live.
         for whale in whales:
-            emit_telemetry("whale.detected", whale, source="whale_tracker")
+            emit_telemetry("whale.detected", whale, source="whale_tracker",
+                           truth_status=TRUTH_DERIVED)
         
         # Emit summary
         emit_telemetry("whale.summary", {
@@ -417,9 +561,13 @@ class LiveBotTracker:
             logger.warning(f"⚠️ Bot profiler not available: {e}")
         
     def detect_bots(self, prices: Dict) -> List[Dict]:
-        """Detect bot activity using REAL firm pattern matching"""
+        """Detect bot activity against the known firm signatures.
+
+        Returns nothing unless the synthetic feed is opted into — see
+        :meth:`_match_firm_pattern` for why the old "matching" was not matching.
+        """
         bots = []
-        
+
         for symbol in list(prices.keys())[:5]:  # Check top 5 symbols
             # Match against known firm patterns
             best_match = self._match_firm_pattern(symbol)
@@ -444,33 +592,43 @@ class LiveBotTracker:
         return bots
     
     def _match_firm_pattern(self, symbol: str):
-        """Match trading activity to known firm patterns"""
-        if not self.firm_signatures:
+        """Pick a firm signature for a symbol — SYNTHETIC, opt-in only.
+
+        This never matched anything. It hashed ``symbol_<current minute>``, indexed the
+        firm table with the hash, fired on ~60% of hashes and derived a 0.65–0.98
+        "confidence" from the hash's low digits. No orderbook, no timing, no observation
+        of the venue took part — yet the result went out on ``bot.detected`` and
+        ``firm.activity`` naming real trading firms, and fed ``counter.strategy``.
+
+        Attributing invented activity to a named real-world firm is the least defensible
+        kind of fake data in this repo, so with the synthetic feed off this returns
+        nothing and the caller reports the gap. Real firm attribution belongs to
+        ``BotIntelligenceProfiler`` working from observed order flow.
+        """
+        if not self.firm_signatures or not simulation_fallback_allowed():
             return None
-            
-        # Deterministic pattern matching with time variation
-        # Each scan cycle can detect different bots based on symbol + time
+
         import hashlib
         import time
-        
+
         # Combine symbol with current minute for time-varying detection
         time_factor = int(time.time() / 60) % 10  # Changes every minute
         combined = f"{symbol}_{time_factor}"
         symbol_hash = int(hashlib.md5(combined.encode()).hexdigest()[:8], 16)
         firm_list = list(self.firm_signatures.items())
-        
+
         if not firm_list:
             return None
-        
+
         # Select firm based on symbol + time characteristics
         firm_idx = symbol_hash % len(firm_list)
         firm_id, firm_data = firm_list[firm_idx]
-        
+
         # ~60% chance of bot detection per symbol per scan
         if symbol_hash % 5 <= 2:  # 3/5 = 60% detection rate
             confidence = 0.65 + (symbol_hash % 100) / 300.0  # 0.65 to 0.98
             return (firm_id, firm_data, confidence)
-        
+
         return None
     
     def _get_bot_type(self, strategies: List[str]) -> str:
@@ -497,22 +655,21 @@ class LiveBotTracker:
             'high': 250
         }
         return profiles.get(latency_profile, 100)
-        
-        return bots
-    
+
     def emit_bot_data(self, prices: Dict):
-        """Emit bot/firm data to ThoughtBus"""
+        """Emit bot/firm data to ThoughtBus, labelled by provenance."""
         bots = self.detect_bots(prices)
-        
+        status = TRUTH_FIXTURE if simulation_fallback_allowed() else TRUTH_NO_DATA
+
         for bot in bots:
-            emit_telemetry("bot.detected", bot, source="bot_tracker")
+            emit_telemetry("bot.detected", bot, source="bot_tracker", truth_status=status)
             emit_telemetry("firm.activity", {
                 "firm": bot["firm"],
                 "symbol": bot["symbol"],
                 "bot_type": bot["bot_type"],
                 "timestamp": bot["timestamp"]
-            }, source="firm_intel")
-        
+            }, source="firm_intel", truth_status=status)
+
         # Emit counter-intelligence signal
         if bots:
             emit_telemetry("counter.strategy", {
@@ -520,7 +677,15 @@ class LiveBotTracker:
                 "timing_advantage_ms": 200 - bots[0]["timing_ms"],
                 "pattern_detected": bots[0]["bot_type"],
                 "timestamp": datetime.utcnow().isoformat() + "Z"
-            }, source="counter_intel")
+            }, source="counter_intel", truth_status=status)
+        elif prices and not simulation_fallback_allowed():
+            # An empty bot list would otherwise read as "no bots are active out there".
+            emit_telemetry("bot.feed_status", {
+                "detections": 0,
+                "firms_in_table": len(self.firm_signatures),
+                "blocker": "no_order_flow_source_for_firm_attribution",
+                "timestamp": datetime.utcnow().isoformat() + "Z"
+            }, source="bot_tracker", truth_status=TRUTH_NO_DATA)
 
 
 class QueenBrain:
@@ -622,16 +787,22 @@ class QueenBrain:
         return decision
     
     def emit_queen_data(self, decision: Dict):
-        """Emit Queen's decision to ThoughtBus with validation info"""
-        emit_telemetry("queen.decision", decision, source="queen_brain")
-        
+        """Emit Queen's decision to ThoughtBus with validation info.
+
+        A decision is exactly as real as its inputs, so the status follows the feed mode:
+        a decision reached on a synthetic feed must not read as a market call.
+        """
+        status = TRUTH_FIXTURE if simulation_fallback_allowed() else TRUTH_DERIVED
+        emit_telemetry("queen.decision", decision, source="queen_brain",
+                       truth_status=status)
+
         emit_telemetry("queen.signal", {
             "queen_signal": decision["confidence"],
             "action": decision["action"],
             "strength": abs(decision["buy_signals"] - decision["sell_signals"]),
             "validated_count": decision.get("validated_count", 0),
             "timestamp": decision["timestamp"]
-        }, source="queen_brain")
+        }, source="queen_brain", truth_status=status)
         
         # Queen's voice message with real intelligence
         validated = decision.get("validated_count", 0)
@@ -658,7 +829,7 @@ class QueenBrain:
             "level": "success" if conf > 0.7 else "info",
             "validated_count": validated,
             "timestamp": decision["timestamp"]
-        }, source="queen_voice")
+        }, source="queen_voice", truth_status=status)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -733,7 +904,8 @@ class QueenLiveRunner:
         self.start_time = time.time()
         
         print("\n" + "=" * 70)
-        print("👑🧠 AUREON QUEEN LIVE RUNNER - REAL INTELLIGENCE MODE 🧠👑")
+        mode = "SIMULATED FEED (DEMO)" if simulation_fallback_allowed() else "REAL SOURCES ONLY"
+        print(f"👑🧠 AUREON QUEEN LIVE RUNNER - {mode} 🧠👑")
         print("=" * 70)
         print(f"📡 Streaming interval: {self.interval}s")
         print(f"🌐 ThoughtBus: {'Connected' if get_thought_bus() else 'Fallback mode'}")
@@ -743,16 +915,29 @@ class QueenLiveRunner:
         print(f"   Whale Predictor: {'✅ ACTIVE (3-pass validation)' if self.whale_tracker.whale_predictor else '⚠️ FALLBACK'}")
         print(f"   Intelligence Engine: {'✅ ACTIVE' if self.scanner.intelligence_engine else '⚠️ FALLBACK'}")
         print(f"   Firms Tracked: {len(self.bot_tracker.firm_signatures)}")
+        print()
+        simulated = simulation_fallback_allowed()
+        if simulated:
+            print(f"⚠️  SIMULATED FEED ENABLED ({_SIM_ENV}=1)")
+            print("   Prices, volumes, orderbook depth and firm attribution are GENERATED.")
+            print("   Every thought is stamped truth_status=test_fixture. Not the market.")
+        else:
+            print("📡 FEED: real sources only — generated values disabled")
+            print(f"   Set {_SIM_ENV}=1 for a labelled demo stream.")
+        print(f"   Thought stream: {THOUGHTS_FILE}")
         print("=" * 70)
-        print("\n🚀 Starting REAL intelligence data stream...")
+        print("\n🚀 Starting data stream...")
         print("   Press Ctrl+C to stop\n")
-        
+
         # Emit startup
         emit_telemetry("system.startup", {
             "event": "live_runner_started",
             "interval": self.interval,
+            "simulated_feed": simulated,
+            "thoughts_file": str(THOUGHTS_FILE),
             "timestamp": datetime.utcnow().isoformat() + "Z"
-        }, source="live_runner")
+        }, source="live_runner",
+           truth_status=TRUTH_FIXTURE if simulated else TRUTH_LIVE)
         
         try:
             while self.running:

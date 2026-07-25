@@ -14,12 +14,54 @@ Read path uses ``recall(topic_prefix)`` (filters by topic) so a high-volume bus
 (baton.link heartbeats, etc.) can never evict the pulse from a recency window. Fully
 guarded and offline-safe: with no bus / no pulse, ``read_canonical_field()`` returns
 an ``available=False`` field rather than raising.
+
+**Freshness is part of being real.** These readers cross process boundaries through
+persisted trace files, and a file on disk has no idea how old it is. Without a bound,
+``available=True`` meant only "a row exists somewhere", so a coherence figure written
+days ago was served to a dashboard as the organism's current state — a stale number
+presented as live is a false reading, not a cautious one. Every row is therefore
+stamped when published and ignored once older than :data:`FIELD_MAX_AGE_S`; a row with
+no timestamp has unknowable age and is refused. When nothing fresh is flowing the
+readers report ``available=False``, which is the honest answer.
 """
 
 from __future__ import annotations
 
+import os
+import time
 from dataclasses import dataclass
 from typing import Any
+
+#: How old a field row may be and still count as "the current field", in seconds.
+#: Tunable via ``AUREON_HNC_FIELD_MAX_AGE_S``; the default is deliberately short —
+#: the HNC daemon pulses continuously, so anything older than a few minutes means the
+#: producer has stopped and the honest report is "unavailable", not a stale number.
+def _max_age_s() -> float:
+    try:
+        v = float(os.environ.get("AUREON_HNC_FIELD_MAX_AGE_S", "") or 300.0)
+        return v if v > 0 else 300.0
+    except (TypeError, ValueError):
+        return 300.0
+
+
+FIELD_MAX_AGE_S = 300.0
+
+
+def _row_is_fresh(row: Any, now: float | None = None) -> bool:
+    """True when ``row`` carries a timestamp within the freshness window.
+
+    Fails CLOSED: a row with no timestamp, or an unparseable one, has unknowable age
+    and is refused. Being unable to prove a reading is current is not a reason to
+    present it as current.
+    """
+    if not isinstance(row, dict):
+        return False
+    ts = row.get("ts", row.get("timestamp", row.get("time")))
+    if not isinstance(ts, (int, float)):
+        return False
+    now = time.time() if now is None else now
+    age = now - float(ts)
+    return -60.0 <= age <= _max_age_s()      # small negative tolerance for clock skew
 
 
 @dataclass(frozen=True)
@@ -114,6 +156,11 @@ def _read_field_from_trace() -> CanonicalField:
         sls = row.get("symbolic_life_score")
         if sls is None:
             return _EMPTY
+        # A trace file cannot say how old it is. Without this the last line written —
+        # possibly days ago, by a daemon that has since stopped — was reported as the
+        # organism's live field.
+        if not _row_is_fresh(row):
+            return _EMPTY
         return CanonicalField(
             available=True,
             symbolic_life_score=float(sls),
@@ -140,6 +187,10 @@ def publish_subfield(source: str, state: Any, bus: Any = None) -> None:
     """
     payload = {
         "source": source,
+        # Stamped at publish so a reader can tell a live sub-field from a dead
+        # producer's last one. Rows without this are refused as unknowable-age, so
+        # omitting it would silently drop the producer out of the blend.
+        "ts": time.time(),
         "symbolic_life_score": getattr(state, "symbolic_life_score", None),
         "coherence_gamma": getattr(state, "coherence_gamma", None),
         "consciousness_level": getattr(state, "consciousness_level", None),
@@ -170,7 +221,9 @@ def read_subfields(bus: Any = None) -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
 
     def _absorb(src: Any, p: dict[str, Any]) -> None:
-        if src:
+        # Freshness is checked per row, not per file: one live producer must not make a
+        # long-dead producer's last reading look current just by sharing the trace.
+        if src and _row_is_fresh(p):
             out[str(src)] = {
                 "symbolic_life_score": p.get("symbolic_life_score"),
                 "coherence_gamma": p.get("coherence_gamma"),
