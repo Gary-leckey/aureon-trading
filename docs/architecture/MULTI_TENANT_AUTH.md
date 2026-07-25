@@ -20,6 +20,22 @@ per request and stashes on `g.tenant` / `g.is_admin`:
 reached — the gate behaves byte-for-byte like the old static-key `check_bearer`: open when no key is set,
 bearer-required when it is. Turning tenancy on is purely additive.
 
+### What the token verifier accepts
+
+`verify_supabase_jwt` **forces HS256** and never reads `alg` from the token header, so the classic
+algorithm-confusion attacks (`alg: none`, or an RS256 header verified with a public key as the HMAC
+secret) cannot apply — probed directly, both are refused. On top of the signature it requires:
+
+| Check | Why |
+|:---|:---|
+| `exp` **required**, not just honored-if-present | A signed token with no expiry never expires and cannot be revoked. Supabase always sets it; the gate refuses to *depend* on that. |
+| `nbf` honored when present | A not-yet-valid token is not accepted early (60 s clock-skew leeway). |
+| `role` not `anon` / `service_role` | Supabase signs its **project API keys** with the same secret, and the anon key is a *public, client-side* value. |
+| `sub` must be a non-empty `str` | A non-string `sub` (int, dict, null) never becomes a tenant id. |
+
+Pinned by `test_jwt_verifier_rejects_dangerous_tokens` in
+[`tests/test_operator_tenant_security.py`](../../tests/test_operator_tenant_security.py).
+
 ## Per-tenant key isolation
 
 Provider / connection keys live in [`aureon/operator/keystore.py`](../../aureon/operator/keystore.py),

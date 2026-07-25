@@ -415,3 +415,56 @@ def test_tenant_conscience_is_not_a_subscriber_on_the_shared_bus(app_env):
              if isinstance(getattr(h, "__self__", None), QueenConscience)
              and getattr(h.__self__, "_thought_bus", "set") is None]
     assert not still, "the detached tenant conscience is still subscribed to the shared bus"
+
+
+# ── token-validation hardening (probed directly, not claimed) ─────────────────
+
+def test_jwt_verifier_rejects_dangerous_tokens():
+    """HS256 is forced, so alg-confusion cannot apply; the claim checks close the rest.
+
+    A signed token with NO ``exp`` is the one that matters: it never expires and cannot be revoked,
+    so a single leaked bearer is permanent access. Supabase always sets exp — this refuses to depend
+    on the identity provider for a property the gate can enforce itself.
+    """
+    import hashlib as _h
+
+    from aureon.operator.identity import resolve_identity, verify_supabase_jwt
+
+    secret = "the-real-secret"
+
+    def _b(d: dict) -> str:
+        return base64.urlsafe_b64encode(json.dumps(d).encode()).rstrip(b"=").decode()
+
+    def _sign(h: str, p: str, sec: str) -> str:
+        return base64.urlsafe_b64encode(
+            hmac.new(sec.encode(), f"{h}.{p}".encode(), _h.sha256).digest()
+        ).rstrip(b"=").decode()
+
+    def _tok(payload: dict, *, alg: str = "HS256", sec: str = secret, sig: str | None = None) -> str:
+        h, p = _b({"alg": alg, "typ": "JWT"}), _b(payload)
+        return f"{h}.{p}.{sig if sig is not None else _sign(h, p, sec)}"
+
+    live = time.time() + 3600
+
+    # alg-confusion: unsigned tokens are refused whatever the header claims
+    assert verify_supabase_jwt(_tok({"sub": "x", "exp": live}, alg="none", sig=""), secret) is None
+    # a bad signature is refused
+    assert verify_supabase_jwt(_tok({"sub": "x", "exp": live}, sec="wrong-secret"), secret) is None
+    # no exp ⇒ refused (would otherwise be an eternal, unrevokable bearer)
+    assert verify_supabase_jwt(_tok({"sub": "x"}), secret) is None
+    # expired ⇒ refused
+    assert verify_supabase_jwt(_tok({"sub": "x", "exp": time.time() - 5}), secret) is None
+    # not yet valid ⇒ refused
+    assert verify_supabase_jwt(_tok({"sub": "x", "exp": live, "nbf": time.time() + 8000}), secret) is None
+    # a Supabase project API key is not an end user (the anon key is public!)
+    assert verify_supabase_jwt(_tok({"sub": "x", "exp": live, "role": "anon"}), secret) is None
+    assert verify_supabase_jwt(_tok({"sub": "x", "exp": live, "role": "service_role"}), secret) is None
+    # a non-string sub never becomes a tenant
+    for bad_sub in (12345, {"a": 1}, None, ["x"]):
+        ident = resolve_identity(f"Bearer {_tok({'sub': bad_sub, 'exp': live})}",
+                                 operator_key="ADMIN", jwt_secret=secret)
+        assert ident.tenant is None and ident.ok is False, f"sub={bad_sub!r} became a tenant"
+    # CONTROL: a well-formed user token still works, unchanged
+    ok = resolve_identity(f"Bearer {_tok({'sub': 'legit', 'exp': live, 'role': 'authenticated'})}",
+                          operator_key="ADMIN", jwt_secret=secret)
+    assert (ok.kind, ok.tenant, ok.ok) == ("tenant", "legit", True)

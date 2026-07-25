@@ -40,8 +40,30 @@ def _b64url_decode(seg: str) -> bytes:
     return base64.urlsafe_b64decode(seg + pad)
 
 
+#: Small leeway for clock drift between the token issuer and this host.
+_CLOCK_SKEW_S = 60.0
+
+#: Supabase signs its *project API keys* with the same project JWT secret as user tokens. The anon key
+#: is a public, client-side value — it must never be mistakable for an end user. They carry no ``sub``
+#: today (so the resolver already refuses them), but reject the roles explicitly rather than rely on
+#: that staying true.
+_API_KEY_ROLES = frozenset({"anon", "service_role"})
+
+
 def verify_supabase_jwt(token: str, secret: str) -> Dict[str, Any] | None:
-    """Verify an HS256 Supabase JWT with the project secret. Returns claims or None."""
+    """Verify an HS256 Supabase JWT with the project secret. Returns claims or None.
+
+    HS256 is **forced**, never read from the token header, so the classic algorithm-confusion attacks
+    (``alg: none``, or an RS256 header verified with a public key as an HMAC secret) cannot apply —
+    an attacker who cannot produce a valid HS256 signature cannot get past the compare below.
+
+    Claim checks, all deliberate:
+      * ``exp`` is **required**. A token without an expiry never expires and cannot be revoked; a
+        signed-but-eternal bearer is a worse failure than a rejected login. (Supabase always sets it —
+        this refuses to depend on that.)
+      * ``nbf``, when present, is honored, so a not-yet-valid token is not accepted early.
+      * project API-key roles are refused outright (see :data:`_API_KEY_ROLES`).
+    """
     try:
         header_b64, payload_b64, sig_b64 = token.split(".")
         signing_input = f"{header_b64}.{payload_b64}".encode("ascii")
@@ -49,7 +71,16 @@ def verify_supabase_jwt(token: str, secret: str) -> Dict[str, Any] | None:
         if not hmac.compare_digest(expected, _b64url_decode(sig_b64)):
             return None
         claims = json.loads(_b64url_decode(payload_b64))
-        if isinstance(claims.get("exp"), (int, float)) and claims["exp"] < time.time():
+        if not isinstance(claims, dict):
+            return None
+        now = time.time()
+        exp = claims.get("exp")
+        if not isinstance(exp, (int, float)) or exp < now:
+            return None
+        nbf = claims.get("nbf")
+        if isinstance(nbf, (int, float)) and nbf > now + _CLOCK_SKEW_S:
+            return None
+        if claims.get("role") in _API_KEY_ROLES:
             return None
         return claims
     except Exception:  # noqa: BLE001 — any malformed token is simply invalid
