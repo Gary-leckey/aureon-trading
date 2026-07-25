@@ -105,6 +105,40 @@ docker compose -f deploy/docker-compose.saas.yml up --build
 AUREON_LLM_OFFLINE=1 pytest tests/test_operator_*.py tests/test_saas_*.py tests/test_connectome.py -q
 ```
 
+### Full local test with live keys
+
+Everything that makes Aureon run is in this repo; the only things it cannot carry are **your**
+credentials and the optional heavy renderers. To prove the whole system on your own disk:
+
+```bash
+git clone https://github.com/RA-CONSULTING/Aureon-OS && cd Aureon-OS
+pip install -e '.[operator]'
+pip install reportlab opencv-python-headless websocket-client pypdf   # optional: PDF/video artifacts, Binance WS, statement parsing
+```
+
+Then put your keys in `.env` at the repo root (loaded via `python-dotenv`; encrypted-at-rest
+`hncqp1:` values are supported when `AUREON_HNC_PACKET_MASTER_KEY` is set):
+
+```bash
+# exchanges — each venue activates only when its pair is present
+BINANCE_API_KEY=… / BINANCE_API_SECRET=…
+KRAKEN_API_KEY=…  / KRAKEN_API_SECRET=…
+ALPACA_API_KEY=…  / ALPACA_SECRET_KEY=…
+CAPITAL_API_KEY=… / CAPITAL_IDENTIFIER=… / CAPITAL_PASSWORD=…
+
+# safety posture — the defaults keep first boot honest
+BINANCE_USE_TESTNET=true   BINANCE_DRY_RUN=true    # flip to false only when you mean it
+AUREON_OBSERVER_MODE=live                          # live is the default; dry_run/shadow for a softer first run
+```
+
+Missing keys are never guessed around: a venue without credentials reports `no_data` with a named
+blocker, dormant features stay visibly dormant, and live-mutation surfaces (Azyra desktop typing,
+outbound admin email, real orders) each sit behind their own explicit gate documented alongside the
+feature. The full boot sequence, per-daemon checklist, and every listener with the env var that
+closes it are in [`docs/QUICK_START.md`](docs/QUICK_START.md),
+[`docs/LIVE_TRADING_RUNBOOK.md`](docs/LIVE_TRADING_RUNBOOK.md), and
+[`docs/runbooks/GO_LIVE_HARDENING.md`](docs/runbooks/GO_LIVE_HARDENING.md).
+
 ### Running it for more than one person
 
 Aureon starts as a **single-operator** system and stays exactly that until you configure otherwise —
