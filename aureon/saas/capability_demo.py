@@ -288,7 +288,9 @@ def demonstrate(app: Any = None, *, fast: bool = False, run_tier_a: bool = True)
     ]
 
     suites, coverage = _rollup_suites()
-    tier_a = _run_tier_a(fast=fast) if run_tier_a else {
+    # Annotated so the skipped-run literal joins the live return as one dict type; without it
+    # the comparisons below widen to `object` and mypy cannot check them.
+    tier_a: Dict[str, Any] = _run_tier_a(fast=fast) if run_tier_a else {
         "passed": 0, "total": 0, "failures": [], "mode": "skipped"}
 
     all_proven = all(c["proven"] for c in classes)
