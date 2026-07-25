@@ -264,3 +264,80 @@ def test_open_mode_unchanged(tmp_path, monkeypatch):
     # open: no auth needed, and a stray JWT header is simply ignored (no tenant scoping)
     assert c.get("/api/providers").status_code == 200
     assert c.get("/api/providers", headers=_tenant("aaa")).status_code == 200
+
+
+# ── concurrency: a tenant's store must survive simultaneous writes ─────────────
+
+def test_concurrent_saves_for_one_tenant_do_not_lose_writes(tmp_path, monkeypatch):
+    """``save_provider`` is read-modify-write over the WHOLE store, so without a lock two concurrent
+    saves race and the loser's provider is silently dropped.
+
+    Reproduced before the fix: 24 threads saving two different providers for one tenant left exactly
+    ONE provider stored. A user connecting two models at once would lose one, with no error.
+    """
+    import threading
+
+    import aureon.operator.keystore as ks
+
+    importlib.reload(ks)
+    cfg = tmp_path / ".aureon"
+    monkeypatch.setattr(ks, "CONFIG_DIR", cfg)
+    monkeypatch.setattr(ks, "KEY_PATH", cfg / "provider_keys.key")
+    monkeypatch.setattr(ks, "STORE_PATH", cfg / "provider_keys.json.enc")
+    monkeypatch.setattr(ks, "TENANTS_DIR", cfg / "tenants")
+
+    errors: list = []
+
+    def writer(i: int) -> None:
+        try:
+            ks.save_provider("openai" if i % 2 else "ollama", api_key=f"key-{i}", tenant="aaa")
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"{type(exc).__name__}: {exc}")
+
+    threads = [threading.Thread(target=writer, args=(i,)) for i in range(24)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert not errors, f"concurrent saves raised: {errors[:3]}"
+    stored = ks.load(tenant="aaa")
+    assert set(stored) == {"openai", "ollama"}, f"a concurrent save was lost: kept {sorted(stored)}"
+
+
+def test_a_torn_store_write_cannot_silently_empty_the_keystore(tmp_path, monkeypatch):
+    """``_persist`` must be atomic. A partial Fernet token cannot be decrypted, and ``load`` reports
+    an unreadable store as ``{}`` — so a torn write does not raise, it silently empties the store, and
+    the next save then persists only its own entry, making the loss permanent.
+
+    Asserts the write leaves no half-written file behind under the real store name, and that a
+    temp-file crash is recoverable (the previous store is still intact).
+    """
+    import aureon.operator.keystore as ks
+
+    importlib.reload(ks)
+    cfg = tmp_path / ".aureon"
+    monkeypatch.setattr(ks, "CONFIG_DIR", cfg)
+    monkeypatch.setattr(ks, "KEY_PATH", cfg / "provider_keys.key")
+    monkeypatch.setattr(ks, "STORE_PATH", cfg / "provider_keys.json.enc")
+    monkeypatch.setattr(ks, "TENANTS_DIR", cfg / "tenants")
+
+    ks.save_provider("openai", api_key="sk-first", tenant="aaa")
+    path = ks._store_path("aaa")
+    before = path.read_bytes()
+
+    # A write that dies partway must not touch the live store.
+    real_replace = os.replace
+
+    def _boom(src, dst):  # noqa: ANN001
+        raise OSError("simulated crash between temp write and rename")
+
+    monkeypatch.setattr(os, "replace", _boom)
+    with pytest.raises(OSError):
+        ks.save_provider("ollama", api_key="sk-second", tenant="aaa")
+    monkeypatch.setattr(os, "replace", real_replace)
+
+    assert path.read_bytes() == before               # the live store is untouched
+    assert ks.load(tenant="aaa")["openai"]["api_key"] == "sk-first"   # and still decrypts
+    leftovers = [p.name for p in path.parent.iterdir() if p.name.endswith(".tmp")]
+    assert not leftovers, f"temp files left behind: {leftovers}"

@@ -31,6 +31,7 @@ import json
 import logging
 import os
 import re
+import threading
 from pathlib import Path
 from typing import Any, Dict
 
@@ -107,15 +108,37 @@ def load(tenant: str | None = None) -> Dict[str, Dict[str, Any]]:
         return {}
 
 
+#: Serializes every read-modify-write of a keystore. ``save_provider`` / ``delete_provider`` each
+#: ``load()`` the whole store, mutate one entry, and write it all back — so two concurrent writes race
+#: and the loser's change is silently discarded. Reproduced: 24 concurrent ``save_provider`` calls for
+#: one tenant left exactly ONE provider stored. A user connecting two models at once would lose one.
+#: Re-entrant because ``delete_provider`` calls ``load`` and ``_persist`` while already holding it.
+_WRITE_LOCK = threading.RLock()
+
+
 def _persist(data: Dict[str, Dict[str, Any]], tenant: str | None = None) -> None:
+    """Encrypt and write a store **atomically**.
+
+    A direct ``write_bytes`` truncates before it writes, so an interrupted write leaves a partial file
+    — and a partial Fernet token cannot be decrypted. ``load`` swallows that and returns ``{}``, so the
+    tenant's keys do not merely vanish: the next ``save_provider`` then persists only its own entry,
+    making the loss permanent. Write a sibling temp file and ``os.replace`` it into place instead —
+    atomic on POSIX within one filesystem, so a reader sees either the old store or the new one.
+    """
     path = _store_path(tenant)
     path.parent.mkdir(parents=True, exist_ok=True)
     token = _fernet().encrypt(json.dumps(data).encode("utf-8"))
-    path.write_bytes(token)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
     try:
-        path.chmod(0o600)
-    except OSError:  # pragma: no cover
-        pass
+        tmp.write_bytes(token)
+        try:
+            tmp.chmod(0o600)   # tighten before it becomes visible under the real name
+        except OSError:  # pragma: no cover
+            pass
+        os.replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 def _known(provider_id: str) -> bool:
@@ -143,33 +166,37 @@ def save_provider(
     tenant's isolated store (``None`` ⇒ the global store). Returns the stored entry."""
     if not _known(provider_id):
         raise KeyError(f"unknown provider: {provider_id}")
-    data = load(tenant)
-    entry = data.get(provider_id, {"enabled": True})
-    if api_key is not None:
-        entry["api_key"] = api_key.strip()
-    if base_url is not None:
-        entry["base_url"] = base_url.strip()
-    if model is not None:
-        entry["model"] = model.strip()
-    if enabled is not None:
-        entry["enabled"] = bool(enabled)
-    if extra:
-        merged = dict(entry.get("extra", {}))
-        merged.update({k: str(v).strip() for k, v in extra.items() if v is not None})
-        entry["extra"] = merged
-    data[provider_id] = entry
-    _persist(data, tenant)
-    return entry
+    # The lock must span load→mutate→persist, not just the write: the whole store is rewritten, so a
+    # concurrent save that read the same snapshot would drop this entry (or have its own dropped).
+    with _WRITE_LOCK:
+        data = load(tenant)
+        entry = data.get(provider_id, {"enabled": True})
+        if api_key is not None:
+            entry["api_key"] = api_key.strip()
+        if base_url is not None:
+            entry["base_url"] = base_url.strip()
+        if model is not None:
+            entry["model"] = model.strip()
+        if enabled is not None:
+            entry["enabled"] = bool(enabled)
+        if extra:
+            merged = dict(entry.get("extra", {}))
+            merged.update({k: str(v).strip() for k, v in extra.items() if v is not None})
+            entry["extra"] = merged
+        data[provider_id] = entry
+        _persist(data, tenant)
+        return entry
 
 
 def delete_provider(provider_id: str, *, tenant: str | None = None) -> None:
     """Forget a provider's stored config. For the global store also unset its env
     vars; a **tenant delete never touches ``os.environ``** (that is the leak vector)."""
-    data = load(tenant)
-    entry = data.get(provider_id, {})
-    if provider_id in data:
-        del data[provider_id]
-        _persist(data, tenant)
+    with _WRITE_LOCK:                      # same read-modify-write hazard as save_provider
+        data = load(tenant)
+        entry = data.get(provider_id, {})
+        if provider_id in data:
+            del data[provider_id]
+            _persist(data, tenant)
     if tenant is not None:
         # Tenant keys never enter the process env, so there is nothing to unset.
         return

@@ -30,6 +30,7 @@ import contextlib
 import json
 import logging
 import os
+import threading
 from typing import Any, Dict
 
 logger = logging.getLogger("aureon.operator.server")
@@ -488,6 +489,11 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
     _TENANT_ENGINE_MAX = 8
     _tenant_cog: OrderedDict[str, Any] = OrderedDict()
     _tenant_op: OrderedDict[str, Any] = OrderedDict()
+    # Flask serves requests on many threads, so these caches are shared mutable state. Individual
+    # dict operations are atomic under the GIL, but `if t in cache: cache.move_to_end(t)` is not —
+    # a concurrent credential write calling _invalidate_tenant_engines can pop the key inside that
+    # window, turning a request into a KeyError 500. Narrow, but it is a real interleaving.
+    _engine_lock = threading.RLock()
     _NO_TENANT_KEY: Dict[str, Any] = {
         "text": "No model is connected to your account yet. Add an API key in Providers "
                 "to reason with your own model.",
@@ -556,10 +562,19 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         return build_provider_set_from_entries(_ks.load(tenant))
 
     def _lru_put(cache: OrderedDict[str, Any], key: str, value: Any) -> None:
-        cache[key] = value
-        cache.move_to_end(key)
-        while len(cache) > _TENANT_ENGINE_MAX:
-            cache.popitem(last=False)
+        with _engine_lock:
+            cache[key] = value
+            cache.move_to_end(key)
+            while len(cache) > _TENANT_ENGINE_MAX:
+                cache.popitem(last=False)
+
+    def _lru_get(cache: OrderedDict[str, Any], key: str) -> Any:
+        """Fetch-and-promote atomically. Returns None on a miss (never raises on a concurrent evict)."""
+        with _engine_lock:
+            eng = cache.get(key)
+            if eng is not None:
+                cache.move_to_end(key)
+            return eng
 
     def _invalidate_tenant_engines(tenant: str | None) -> None:
         """Drop a tenant's cached engines so the NEXT request rebuilds from the keystore.
@@ -569,8 +584,9 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         """
         if tenant is None:
             return
-        _tenant_cog.pop(tenant, None)
-        _tenant_op.pop(tenant, None)
+        with _engine_lock:
+            _tenant_cog.pop(tenant, None)
+            _tenant_op.pop(tenant, None)
 
     def _tenant_tools() -> Any:
         """The toolbelt a TENANT's engine may use: an ALLOWLIST of pure-compute tools only.
@@ -595,9 +611,9 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
     def _get_cognition_for(tenant: str | None) -> Any:
         if tenant is None:
             return _get_cognition()  # admin / open plane — unchanged
-        if tenant in _tenant_cog:
-            _tenant_cog.move_to_end(tenant)
-            return _tenant_cog[tenant]
+        cached = _lru_get(_tenant_cog, tenant)
+        if cached is not None:
+            return cached
         providers = _tenant_provider_set(tenant)
         if not providers:
             return None
@@ -615,9 +631,9 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
     def _get_operator_for(tenant: str | None) -> Any:
         if tenant is None:
             return _operator  # admin / open plane — unchanged
-        if tenant in _tenant_op:
-            _tenant_op.move_to_end(tenant)
-            return _tenant_op[tenant]
+        cached = _lru_get(_tenant_op, tenant)
+        if cached is not None:
+            return cached
         providers = _tenant_provider_set(tenant)
         if not providers:
             return None
