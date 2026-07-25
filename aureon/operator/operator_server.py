@@ -683,6 +683,16 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
     except Exception as exc:  # noqa: BLE001 — the transport is optional; the operator must serve
         logger.warning("MCP transport routes not registered: %s", exc)
 
+    # ── legacy runtime surface (terminal-state / flight-test / bots / trades / …) ─
+    # Serves the older trading console's endpoints on the one gateway, read-only/notify-only and
+    # honest (real state or an explicit unavailable, never fabricated). Optional.
+    try:
+        from aureon.operator.legacy_runtime_api import register_legacy_runtime_routes
+
+        register_legacy_runtime_routes(app)
+    except Exception as exc:  # noqa: BLE001 — legacy surface is optional; the operator must serve
+        logger.warning("legacy runtime routes not registered: %s", exc)
+
     return app
 
 

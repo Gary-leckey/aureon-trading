@@ -12,14 +12,18 @@ import sys
 from aureon.saas import defense_catalog as dc
 
 
-def test_builds_three_groups_from_committed_report():
+def test_builds_four_groups_from_committed_report():
     cat = dc.build_defense_catalog()
-    assert cat["group_order"] == ["cognitive_immune_layer", "statistical_validity", "sensor_lane"]
+    assert cat["group_order"] == [
+        "cognitive_immune_layer", "statistical_validity", "adaptive_direction", "sensor_lane",
+    ]
     groups = cat["groups"]
     assert set(groups) == set(cat["group_order"])
-    # the immune layer's six organs and the six statistical modules are grouped exactly
+    # the immune layer's six organs, the six statistical modules, and the adaptive-direction dossier
+    # (source audit + inbound MCP transport + runtime audit + outbound brain-reply membrane) grouped exactly
     assert groups["cognitive_immune_layer"]["module_count"] == 6
     assert groups["statistical_validity"]["module_count"] == 6
+    assert groups["adaptive_direction"]["module_count"] == 4
     assert groups["sensor_lane"]["module_count"] >= 1
     assert cat["counts"]["total"] == sum(g["module_count"] for g in groups.values())
 
