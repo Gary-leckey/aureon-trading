@@ -197,6 +197,11 @@ organization (they reflect hosted runs, not the local gate):
 pip install -e '.[operator,dev]'
 ruff check aureon/operator/ aureon/saas/ && mypy aureon/operator/ aureon/saas/
 AUREON_LLM_OFFLINE=1 pytest tests/test_operator_*.py tests/test_saas_*.py tests/test_connectome.py -q
+
+# or prove the whole system in one command — boots the app, exercises the full
+# live capability surface, and rolls up every self-test incl. the 45 Tier-A invariants
+AUREON_LLM_OFFLINE=1 AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS=1 \
+  python -m aureon.saas.capability_demo --report docs/reports/CAPABILITY_DEMO.md
 ```
 
 ## Operating boundaries
