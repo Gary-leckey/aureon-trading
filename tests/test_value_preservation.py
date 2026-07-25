@@ -4,6 +4,20 @@ Final test: Frog ensures value is maintained through the leap strategy.
 Goal: Start with value, maintain it through leaps, and ensure recovery path exists.
 """
 
+
+# ── live-venue guard ──────────────────────────────────────────────────────────────
+# This is a LIVE-INTEGRATION test: it needs real Binance credentials and live quotes.
+# Without them it used to hard-fail every offline run (ValueError from BinanceClient /
+# KeyError on an empty market snapshot), which buried real regressions in expected noise.
+# With credentials configured it runs for real; without, it skips with this named reason.
+import os as _os
+
+import pytest as _pytest
+
+if not (_os.getenv("BINANCE_API_KEY") and _os.getenv("BINANCE_API_SECRET")):
+    _pytest.skip("live-venue test: requires BINANCE_API_KEY/BINANCE_API_SECRET",
+                 allow_module_level=True)
+
 import asyncio
 from datetime import datetime
 from queen_eternal_machine import QueenEternalMachine, MainPosition

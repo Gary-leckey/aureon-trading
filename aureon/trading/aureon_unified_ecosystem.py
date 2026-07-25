@@ -12796,7 +12796,13 @@ class Position:
     nexus_prob: float = 0.5  # Nexus prediction probability at entry
     nexus_edge: float = 0.0  # Nexus edge at entry
     nexus_patterns: List[str] = field(default_factory=list)  # Patterns triggered at entry
-    
+
+    # 🎚️ Signal tier at entry (FAST/STANDARD/PREMIUM). The tier-routing path constructed
+    # Position(signal_tier=...) and the sizing/exit code read getattr(pos, 'signal_tier',
+    # 'STANDARD') — but the field was never declared, so every tier-routed entry crashed
+    # with TypeError at the constructor. Live order path, real crash.
+    signal_tier: str = 'STANDARD'
+
     # 🚀 SERVER-SIDE ORDER IDs (Kraken/Alpaca native TP/SL - execute even if bot offline)
     server_sl_order_id: Optional[str] = None  # Kraken/Alpaca stop-loss order ID (or OCO ID for Alpaca)
     server_tp_order_id: Optional[str] = None  # Kraken take-profit order ID
