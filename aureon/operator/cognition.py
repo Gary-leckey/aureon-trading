@@ -121,14 +121,25 @@ class AureonCognition:
         allow_shell: bool = True,
         max_turns: int = 6,
         join_mesh: bool = True,
+        mesh_broadcast: bool = True,
         source: str = "aureon.cognition",
         prefer_local: bool | None = None,
     ) -> None:
+        # ``join_mesh`` governs INBOUND mesh membership only. Outbound broadcasts are separate and
+        # default on, so nothing changes for the instance engine; a per-tenant engine passes
+        # ``mesh_broadcast=False`` so a user's turn never radiates onto the shared mycelium (the
+        # verdict quotes the action, i.e. their prompt).
+        self._mesh_broadcast = bool(mesh_broadcast)
         self.config = config or OperatorConfig.from_env()
         if prefer_local is None:
             prefer_local = str(os.environ.get("AUREON_COGNITION_PREFER_LOCAL", "") or "").strip().lower() in {"1", "true", "yes", "on"}
         self.adapter = adapter or self._default_adapter(prefer_local=prefer_local)
-        self.tools = tools or build_operator_tools(allow_writes=allow_writes, allow_shell=allow_shell)
+        # `is not None`, NOT `or`: ToolRegistry defines __len__, so a registry deliberately pruned to
+        # zero tools is FALSY, and `tools or build_operator_tools(...)` would silently hand back the
+        # FULL instance toolbelt — the exact opposite of what an empty allowlist asks for. That fails
+        # open on the tenant plane, inverting the allowlist guarantee.
+        self.tools = tools if tools is not None else build_operator_tools(
+            allow_writes=allow_writes, allow_shell=allow_shell)
         self.max_turns = max_turns
         self.source = source
         self._conscience = conscience
@@ -195,8 +206,9 @@ class AureonCognition:
 
         res.elapsed_ms = (time.time() - started) * 1000.0
         self._publish(res, "complete", res.to_dict())
-        broadcast_to_mesh("cognition.answer", {"trace_id": res.trace_id, "grounded": res.grounded,
-                                               "verdict": res.conscience_verdict, "blocked": res.blocked})
+        if self._mesh_broadcast:
+            broadcast_to_mesh("cognition.answer", {"trace_id": res.trace_id, "grounded": res.grounded,
+                                                   "verdict": res.conscience_verdict, "blocked": res.blocked})
         return res
 
     def stream_events(self, prompt: str, session_id: str | None = None) -> Generator[Dict[str, Any], None, None]:
@@ -308,7 +320,8 @@ class AureonCognition:
         def _on_tool_call(name: str, args: Dict[str, Any]) -> None:
             res.tool_calls.append(ToolInvocation(tool=name, arguments=dict(args or {})))
             self._publish(res, "tool", {"tool": name, "arguments": args})
-            broadcast_to_mesh("cognition.tool", {"trace_id": res.trace_id, "tool": name})
+            if self._mesh_broadcast:
+                broadcast_to_mesh("cognition.tool", {"trace_id": res.trace_id, "tool": name})
 
         runner.on_tool_call = _on_tool_call
         try:

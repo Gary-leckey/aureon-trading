@@ -24,7 +24,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Iterable
 
 from aureon.inhouse_ai.llm_adapter import _llm_http_disabled
 from aureon.inhouse_ai.tool_registry import ToolRegistry
@@ -262,13 +262,35 @@ def _wrap_offline(orig_handler):
 
 _SCHEMA_STR = {"type": "object", "properties": {}, "required": [], "additionalProperties": False}
 
+# The ONLY tools a tenant-plane engine may hold.
+#
+# This is an ALLOWLIST, not a denylist, and that distinction is the whole security property. A tenant
+# supplies their own ``base_url``, so the model answering their turn is a server THEY control and every
+# ``tool_call`` it emits is dispatched on the operator host — the conscience veto runs *after* the tool
+# loop, so it cannot undo a side effect. An adversarial audit proved a denylist ("drop shell + writes")
+# left 14 of 17 tools reachable: ``web_fetch`` (arbitrary outbound HTTP from the operator's IP — SSRF to
+# co-located instance services and cloud metadata), ``touch_module`` (import any dotted module),
+# ``publish_thought`` (writes the process-global ThoughtBus, bypassing the per-tenant isolated bus),
+# ``read_state`` / ``read_positions`` / ``read_prices`` (the instance's live trading state), and
+# ``repo_search`` / ``read_repo_file`` / ``list_repo`` (repository contents).
+#
+# So the tenant belt is pinned positively to pure-compute tools only: ``code_validate`` is ``ast.parse``
+# plus an optional static check — no I/O, no network, no shared state. Applied as a *final filter*, so a
+# new built-in added upstream can never silently widen the tenant surface.
+TENANT_ALLOWED_TOOLS = frozenset({"code_validate"})
+
 
 def build_operator_tools(
     *,
     allow_writes: bool = True,
     allow_shell: bool = True,
+    allowlist: Iterable[str] | None = None,
 ) -> GuardedToolRegistry:
-    """Assemble the cognition's toolbelt. Read tools always on; writes/shell gated."""
+    """Assemble the cognition's toolbelt. Read tools always on; writes/shell gated.
+
+    ``allowlist`` — when given, the finished registry is pruned to exactly these names. Use
+    :data:`TENANT_ALLOWED_TOOLS` for any engine driven by a model the caller controls.
+    """
     reg = GuardedToolRegistry(include_builtins=True)
 
     # Offline-guard the network tools (built-ins don't check the guard today).
@@ -361,7 +383,13 @@ def build_operator_tools(
     if not allow_shell and "execute_shell" in reg:
         reg._tools.pop("execute_shell", None)
 
+    # Final positive filter — everything not explicitly allowed is removed, whatever registered it.
+    if allowlist is not None:
+        keep = set(allowlist)
+        for name in [n for n in reg.names() if n not in keep]:
+            reg._tools.pop(name, None)
+
     return reg
 
 
-__all__ = ["build_operator_tools", "GuardedToolRegistry", "CONSEQUENTIAL"]
+__all__ = ["build_operator_tools", "GuardedToolRegistry", "CONSEQUENTIAL", "TENANT_ALLOWED_TOOLS"]

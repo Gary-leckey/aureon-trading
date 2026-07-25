@@ -4076,11 +4076,13 @@ export type Database = {
           current_price: number | null
           entry_price: number
           execution_id: string | null
+          exit_price: number | null
           id: string
           opened_at: string
           position_value_usdt: number
           quantity: number
           realized_pnl: number | null
+          realized_pnl_pct: number | null
           side: string
           status: string
           stop_loss_price: number | null
@@ -4096,11 +4098,13 @@ export type Database = {
           current_price?: number | null
           entry_price: number
           execution_id?: string | null
+          exit_price?: number | null
           id?: string
           opened_at?: string
           position_value_usdt: number
           quantity: number
           realized_pnl?: number | null
+          realized_pnl_pct?: number | null
           side: string
           status?: string
           stop_loss_price?: number | null
@@ -4116,11 +4120,13 @@ export type Database = {
           current_price?: number | null
           entry_price?: number
           execution_id?: string | null
+          exit_price?: number | null
           id?: string
           opened_at?: string
           position_value_usdt?: number
           quantity?: number
           realized_pnl?: number | null
+          realized_pnl_pct?: number | null
           side?: string
           status?: string
           stop_loss_price?: number | null

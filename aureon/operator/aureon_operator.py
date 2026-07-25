@@ -203,7 +203,12 @@ class AureonOperator:
         cache: ResponseCache | None = None,
         source: str = "aureon.operator",
         join_mesh: bool = False,
+        mesh_broadcast: bool = True,
     ) -> None:
+        # ``join_mesh`` is inbound membership; ``mesh_broadcast`` is the outbound signal. Kept
+        # separate so the default stays exactly today's behavior (this class already ships
+        # ``join_mesh=False`` while still broadcasting). A per-tenant operator passes False.
+        self._mesh_broadcast = bool(mesh_broadcast)
         self.config = config or OperatorConfig.from_env()
         self.last_mesh_message: Dict[str, Any] = {}
         if join_mesh:
@@ -279,10 +284,11 @@ class AureonOperator:
         self._cache_set(resp)
         self._metrics.request("blocked" if resp.blocked else "ok", resp.elapsed_ms)
         self._publish(resp, "complete", resp.to_dict())
-        broadcast_to_mesh(
-            "operator.answer",
-            {"trace_id": resp.trace_id, "blocked": resp.blocked, "verdict": resp.conscience_verdict},
-        )
+        if self._mesh_broadcast:
+            broadcast_to_mesh(
+                "operator.answer",
+                {"trace_id": resp.trace_id, "blocked": resp.blocked, "verdict": resp.conscience_verdict},
+            )
         return resp
 
     def receive_mycelium_message(self, message_type: str, payload: Dict[str, Any]) -> None:
@@ -631,12 +637,20 @@ class AureonOperator:
             )
             return
 
+        # ── Outbound brain-reply membrane: the flagship reply is data, never instructions ──
+        # Screen the collapsed reply for prompt-injection / false blocked-action claims / false
+        # self-claims. A flagged reply is recorded and fed to the conscience as a caution signal; a
+        # clean reply changes nothing (bit-identical answer). Best-effort, never fatal.
+        reply_contained = self._screen_brain_reply(resp)
+
         conscience = self._get_conscience()
         if conscience is None:
             resp.conscience_verdict = "APPROVED"
+            self._append_reply_caution(resp)
             if self._metrics is not None:
                 self._metrics.veto("APPROVED", False)
-            self._publish(resp, "veto", {"verdict": "APPROVED", "available": False})
+            self._publish(resp, "veto",
+                          {"verdict": "APPROVED", "available": False, "reply_contained": reply_contained})
             return
 
         action = f"answer operator question: {prompt[:160]}"
@@ -645,12 +659,14 @@ class AureonOperator:
             "n_providers": len(resp.answers),
             "agreement": resp.consensus.agreement if resp.consensus else 0.0,
             "sources": [s.get("path", "") for s in (resp.grounding.sources if resp.grounding else [])],
+            "reply_contained": reply_contained,
         }
         try:
             whisper = conscience.ask_why(action, context)
             verdict = getattr(whisper.verdict, "name", str(whisper.verdict))
             resp.conscience_verdict = verdict
             resp.conscience_message = str(getattr(whisper, "message", "") or "")
+            self._append_reply_caution(resp)
             if verdict == "VETO":
                 resp.blocked = True
                 resp.text = (
@@ -660,13 +676,48 @@ class AureonOperator:
         except Exception as exc:  # noqa: BLE001 — conscience failure is non-fatal
             logger.debug("conscience unavailable: %s", exc)
             resp.conscience_verdict = "APPROVED"
+            self._append_reply_caution(resp)
             resp.errors.append({"phase": "veto", "error": str(exc)})
         if self._metrics is not None:
             self._metrics.veto(resp.conscience_verdict, resp.blocked)
         self._publish(
             resp,
             "veto",
-            {"verdict": resp.conscience_verdict, "blocked": resp.blocked, "message": resp.conscience_message},
+            {"verdict": resp.conscience_verdict, "blocked": resp.blocked,
+             "message": resp.conscience_message, "reply_contained": resp.reply_contained},
+        )
+
+    _REPLY_CAUTION = "model reply carried injection / false-action content — treated as untrusted data"
+
+    @staticmethod
+    def _screen_brain_reply(resp: OperatorResponse) -> bool:
+        """Screen the collapsed flagship reply as data-not-instructions (the outbound bridge face, b44).
+
+        Sets ``resp.reply_contained`` and returns whether the reply was flagged. Does NOT touch the answer
+        text or the conscience message — the caution is appended by the caller after the conscience has
+        finalized its message, so a contained reply can never surface as an unqualified pass while a clean
+        reply stays bit-identical. Best-effort — a screening failure is a conservative clean verdict; the
+        authority veto is the backstop.
+        """
+        try:
+            from aureon.bio.brain_reply_membrane import screen_reply
+
+            winner = resp.consensus.winner if resp.consensus else "model"
+            verdict = screen_reply(resp.text, provider=winner or "model")
+            resp.reply_contained = bool(verdict.contained)
+            return resp.reply_contained
+        except Exception as exc:  # noqa: BLE001 - screening is best-effort, never fatal
+            logger.debug("brain-reply screen unavailable: %s", exc)
+            return False
+
+    @classmethod
+    def _append_reply_caution(cls, resp: OperatorResponse) -> None:
+        """Append the untrusted-data caution to the finalized conscience message (only when flagged)."""
+        if not resp.reply_contained:
+            return
+        resp.conscience_message = (
+            f"{resp.conscience_message} · {cls._REPLY_CAUTION}"
+            if resp.conscience_message else cls._REPLY_CAUTION
         )
 
     def _get_conscience(self):
