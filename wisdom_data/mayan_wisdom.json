@@ -1,6 +1,6 @@
 {
   "civilization": "Mayan",
-  "last_updated": "2026-07-26T00:41:36.461105",
+  "last_updated": "2026-07-27T21:18:49.494190",
   "version": "1.0.0",
   "sources": [
     "hardcoded",
@@ -628,6 +628,14 @@
     },
     {
       "timestamp": "2026-07-26T00:41:36.461078",
+      "insights_found": 0,
+      "sources_used": [
+        "Wikipedia",
+        "Sacred-Texts"
+      ]
+    },
+    {
+      "timestamp": "2026-07-27T21:18:49.494165",
       "insights_found": 0,
       "sources_used": [
         "Wikipedia",
