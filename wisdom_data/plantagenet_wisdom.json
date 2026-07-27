@@ -1,6 +1,6 @@
 {
   "civilization": "Plantagenet",
-  "last_updated": "2026-07-26T00:38:08.258999",
+  "last_updated": "2026-07-27T21:15:21.334437",
   "version": "1.0.0",
   "sources": [
     "hardcoded",
@@ -652,6 +652,14 @@
     },
     {
       "timestamp": "2026-07-26T00:38:08.258975",
+      "insights_found": 0,
+      "sources_used": [
+        "Wikipedia",
+        "Sacred-Texts"
+      ]
+    },
+    {
+      "timestamp": "2026-07-27T21:15:21.334418",
       "insights_found": 0,
       "sources_used": [
         "Wikipedia",
