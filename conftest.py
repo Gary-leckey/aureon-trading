@@ -61,11 +61,15 @@ if ROOT not in sys.path:
 # with NO slot at all, depending on which test touched sys.path first
 # (measured: tests/test_whale_sonar.py AttributeError whenever an earlier
 # module pushed the repo root to sys.path[0]). One module object per organ.
+import aureon.core.aureon_chirp_bus as _canonical_chirp  # noqa: E402
 import aureon.core.aureon_mycelium as _canonical_mycelium  # noqa: E402
 import aureon.core.aureon_thought_bus as _canonical_bus  # noqa: E402
+import aureon.harmonic.aureon_hft_harmonic_mycelium as _canonical_hft  # noqa: E402
 
 sys.modules.setdefault("aureon_thought_bus", _canonical_bus)
 sys.modules.setdefault("aureon_mycelium", _canonical_mycelium)
+sys.modules.setdefault("aureon_chirp_bus", _canonical_chirp)
+sys.modules.setdefault("aureon_hft_harmonic_mycelium", _canonical_hft)
 
 
 # (module_name, attribute) pairs of process-wide singletons that leak between
