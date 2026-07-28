@@ -12,6 +12,13 @@ import os
 
 if sys.platform != 'win32':
     print("⚠️  This test is designed for Windows")
+    # Under pytest, a module-level sys.exit kills the whole session with
+    # INTERNALERROR (it only ever "worked" while test_crash.py had disarmed
+    # sys.exit process-wide — see conftest.py). Skip honestly instead; the
+    # script path (python tests/test_windows_cleanup.py) is unchanged.
+    if "pytest" in sys.modules:
+        import pytest
+        pytest.skip("Windows-only diagnostic", allow_module_level=True)
     sys.exit(1)
 
 # Test 1: Check Python version

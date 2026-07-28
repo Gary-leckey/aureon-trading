@@ -18,7 +18,7 @@ import threading
 
 import pytest
 
-# These eight are standalone diagnostic SCRIPTS, not pytest modules: each defines
+# These are standalone diagnostic SCRIPTS, not pytest modules: each defines
 # ZERO test functions and runs its whole scenario at module level, so the only
 # thing pytest collection gets from importing them is the side effects —
 # test_orca_quick boots an OrcaKillCycle (exchange clients, TheKing, stream
@@ -31,7 +31,19 @@ import pytest
 # the last order-dependent failures. Ignoring them here loses zero tests and
 # keeps the scripts byte-identical for their real use:
 #   python tests/test_orca_quick.py
+#
+# The second block is the sys.exit family (measured, B5 run 6): test_crash.py
+# permanently replaces sys.exit with a print-and-continue guard for the WHOLE
+# pytest process, and eleven sibling scripts call sys.exit at module level —
+# imports that only ever survived collection because test_crash ('c') imported
+# alphabetically before them and had already disarmed sys.exit. Any subset run
+# that starts after 'c' (bisections, split-half confirmations) crashed the
+# session with INTERNALERROR SystemExit, and every full run silently executed
+# those scripts' whole scenarios at collection time. Membership is the AST
+# audit of zero-test files with an unguarded module-level sys.exit; a
+# main-guarded sibling (test_profit_gate.py) stays collectable.
 collect_ignore = [
+    # thread-spawning scripts (B5 run 4)
     "tests/test_bot_intelligence_wiring.py",
     "tests/test_cost_basis_target.py",
     "tests/test_orca_quick.py",
@@ -40,6 +52,20 @@ collect_ignore = [
     "tests/test_queens_heart.py",
     "tests/test_scout_deployment.py",
     "tests/test_windows_startup.py",
+    # sys.exit family (B5 run 6)
+    "tests/test_binance_margin_dryrun.py",
+    "tests/test_crash.py",
+    "tests/test_fallback.py",
+    "tests/test_hive_mind_live.py",
+    "tests/test_live_tv_wiring.py",
+    "tests/test_operational_core.py",
+    "tests/test_orca_super_gate.py",
+    "tests/test_quantum_v11_amplification.py",
+    "tests/test_trade_capability.py",
+    "tests/test_unified_trading_logic.py",
+    "tests/test_why_no_trades.py",
+    "tests/vault/test_hnc_human_loop.py",
+    "tests/vault/test_temporal_ground.py",
 ]
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
