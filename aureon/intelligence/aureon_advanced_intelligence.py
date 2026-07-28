@@ -452,22 +452,39 @@ class DecisionFusion:
     """
     Fuses signals from multiple models/strategies.
     Weighted voting based on model confidence.
+
+    The "4-model ensemble" in generate_signal is a stand-in, not four trained
+    models: it adds random noise to each score and invents the confidence
+    (0.5 + random*0.4). Same doctrine as the QGITA DecisionFusion, which was
+    gated first: invented model output is opt-in (``allow_simulated_models``);
+    a caller that never opted in gets a (0.0, 0.0) no-signal and a named
+    blocker in the log instead of a coin-flip confidence.
     """
-    
-    def __init__(self, 
+
+    def __init__(self,
                  ensemble_weight: float = 0.6,
                  sentiment_weight: float = 0.2,
-                 coherence_weight: float = 0.2):
+                 coherence_weight: float = 0.2,
+                 allow_simulated_models: bool = False):
         self.ensemble_weight = ensemble_weight
         self.sentiment_weight = sentiment_weight
         self.coherence_weight = coherence_weight
+        self.allow_simulated_models = allow_simulated_models
+        self._blocked_logged = False
         self.models = ['lstm', 'randomForest', 'xgboost', 'transformer']
 
     def generate_signal(self, change: float, volatility: float, volume: float) -> Tuple[float, float]:
         """
         Generate ensemble signal score (-1 to 1) and confidence (0 to 1).
-        Simulates 4-model ensemble from Quantum Quackers.
+        Simulates 4-model ensemble from Quantum Quackers — opt-in only.
         """
+        if not self.allow_simulated_models:
+            if not self._blocked_logged:
+                from aureon.observer.live_data_policy import log_blocked_fallback
+                log_blocked_fallback("advanced_intelligence.DecisionFusion.generate_signal",
+                                     "simulated_model_ensemble_not_opted_in")
+                self._blocked_logged = True
+            return 0.0, 0.0
         # Normalize inputs
         vol = max(0.01, volatility)
         normalized_trend = math.tanh(change / vol)

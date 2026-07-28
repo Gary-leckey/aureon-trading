@@ -677,15 +677,28 @@ class DecisionFusion:
     Decision Fusion (4-model ensemble) from Quantum Quackers decisionFusion.ts
     Simulates ensemble model outputs based on market data heuristics.
     """
-    def __init__(self):
+    def __init__(self, allow_simulated_models: bool = False):
         self.models = ['lstm', 'randomForest', 'xgboost', 'transformer']
         # Weights for final decision
         self.weights = {'ensemble': 0.6, 'sentiment': 0.2, 'qgita': 0.2}
+        # Same doctrine as the QGITA DecisionFusion: the "ensemble" invents
+        # per-model noise and confidence, so it is opt-in; without the opt-in
+        # a caller gets an honest (0.0, 0.0) no-signal, never a coin flip.
+        self.allow_simulated_models = allow_simulated_models
+        self._blocked_logged = False
 
     def generate_signal(self, change: float, volatility: float, volume: float) -> Tuple[float, float]:
         """
         Generate ensemble signal score (-1 to 1) and confidence (0 to 1).
+        Simulated ensemble — opt-in only.
         """
+        if not self.allow_simulated_models:
+            if not self._blocked_logged:
+                from aureon.observer.live_data_policy import log_blocked_fallback
+                log_blocked_fallback("aureon_ultimate.DecisionFusion.generate_signal",
+                                     "simulated_model_ensemble_not_opted_in")
+                self._blocked_logged = True
+            return 0.0, 0.0
         # Normalize inputs
         vol = max(0.01, volatility)
         normalized_trend = math.tanh(change / vol)
