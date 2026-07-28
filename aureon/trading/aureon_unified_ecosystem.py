@@ -20825,11 +20825,18 @@ class AureonKrakenEcosystem:
                         'side': 'BUY',
                         'reason': reason,
                     })
+                    # 🔧 FIX #6: Release trade lock on rejected order — the lock is
+                    # process-wide (OPS_CORE singleton), so leaking it here blocked
+                    # the symbol for EVERY later entry until restart.
+                    if _lock_acquired and OPS_CORE_AVAILABLE and OPS_CORE is not None:
+                        OPS_CORE.trade_lock.release(symbol)
                     return
-                
+
                 # Handle Kraken volume minimum error
                 if res.get('error') == 'volume_minimum':
                     print(f"   ⚠️ Kraken volume minimum not met for {symbol} (need {res.get('ordermin')} units)")
+                    if _lock_acquired and OPS_CORE_AVAILABLE and OPS_CORE is not None:
+                        OPS_CORE.trade_lock.release(symbol)
                     return
 
                 if res.get('dryRun'):
@@ -20853,6 +20860,8 @@ class AureonKrakenEcosystem:
                                 print(f"      ↳ details: {safe_keys}")
                         else:
                             print(f"   ⚠️ Order failed for {symbol}: No order ID returned")
+                        if _lock_acquired and OPS_CORE_AVAILABLE and OPS_CORE is not None:
+                            OPS_CORE.trade_lock.release(symbol)
                         return
                     
                     # 🔥 CRITICAL FIX: Use ACTUAL fill price, not pre-order price!
