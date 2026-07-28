@@ -1,6 +1,6 @@
 {
   "civilization": "Celtic",
-  "last_updated": "2026-07-28T02:56:22.115073",
+  "last_updated": "2026-07-28T03:36:29.427227",
   "version": "1.0.0",
   "sources": [
     "hardcoded",
@@ -1744,6 +1744,14 @@
     },
     {
       "timestamp": "2026-07-28T02:56:22.115037",
+      "insights_found": 0,
+      "sources_used": [
+        "Wikipedia",
+        "Sacred-Texts"
+      ]
+    },
+    {
+      "timestamp": "2026-07-28T03:36:29.427186",
       "insights_found": 0,
       "sources_used": [
         "Wikipedia",
