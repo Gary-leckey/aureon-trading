@@ -20342,9 +20342,13 @@ class AureonKrakenEcosystem:
                 print(f"   ⚡🛑 FAST PATH BLOCKED {symbol}: coherence={opp.get('coherence', 0):.3f} < 0.85")
                 return None
         elif not is_force_scout:
-            # Full hard gates for STANDARD and PREMIUM
-            sl = (self._last_cognitive_report or {}).get("source_law", {})
-            market_gamma = (self._last_cognitive_report or {}).get("coherence_gamma", 0.0)
+            # Full hard gates for STANDARD and PREMIUM. getattr, not raw access:
+            # an ecosystem that has not produced a cognitive report yet crashed
+            # here with AttributeError (every other consumer in this file already
+            # uses the getattr pattern).
+            _cog_report = getattr(self, '_last_cognitive_report', None) or {}
+            sl = _cog_report.get("source_law", {})
+            market_gamma = _cog_report.get("coherence_gamma", 0.0)
             effective_coherence = max(sl.get("coherence_gamma", 0.0), market_gamma)
             # Reconcile with the canonical HNC field: the shared Γ can only
             # tighten this entry gate, never loosen it (b46 order-path wiring).
@@ -20361,7 +20365,7 @@ class AureonKrakenEcosystem:
                 })
                 return None
 
-            tg = (self._last_cognitive_report or {}).get("temporal_ground", {})
+            tg = _cog_report.get("temporal_ground", {})
             if tg and not tg.get('grounded', True):
                 print(f"   ⏳🛑 TEMPORAL GROUND BLOCKED {symbol}: ZPE de-grounded (dist={tg.get('zpe_distance',0):.4f})")
                 self._emit_mycelium_event('entry.blocked_zpe', {
@@ -20370,7 +20374,7 @@ class AureonKrakenEcosystem:
                 })
                 return None
 
-            auris = (self._last_cognitive_report or {}).get("auris", {})
+            auris = _cog_report.get("auris", {})
             if not auris.get('lighthouse_cleared', False):
                 print(f"   🔮🛑 AURIS BLOCKED {symbol}: lighthouse not cleared (conf={auris.get('confidence',0):.2f})")
                 self._emit_mycelium_event('entry.blocked_auris', {

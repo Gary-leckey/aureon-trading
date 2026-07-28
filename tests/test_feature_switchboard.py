@@ -62,7 +62,10 @@ def test_hard_boundary_flags_default_off():
 
 # ── store ───────────────────────────────────────────────────────────────────────
 
-def test_store_roundtrip_and_persist(temp_store):
+def test_store_roundtrip_and_persist(temp_store, monkeypatch):
+    # save_flag APPLIES the decision to os.environ by design; monkeypatch the
+    # var first so the process env is restored after the test.
+    monkeypatch.delenv("AUREON_CONNECTOME_SWEEP", raising=False)
     fs.save_flag("AUREON_CONNECTOME_SWEEP", False)
     assert fs.load()["AUREON_CONNECTOME_SWEEP"]["enabled"] is False
     # a fresh module-level read still sees it (persisted, encrypted)
@@ -118,7 +121,12 @@ def test_grouped_view_shape(temp_store):
 
 # ── pending-restart signal (decided_at vs last_awakened_at) ──────────────────────
 
-def test_save_flag_records_decided_at(temp_store):
+def test_save_flag_records_decided_at(temp_store, monkeypatch):
+    # save_flag applies AUREON_LIVE_TRADING=1 to os.environ — a HARD-BOUNDARY
+    # arm. Without this monkeypatch the whole remaining suite ran with live
+    # trading believed armed (measured: tests/test_grounded_action.py saw
+    # dry_run=False). monkeypatch restores the prior env at teardown.
+    monkeypatch.delenv("AUREON_LIVE_TRADING", raising=False)
     entry = fs.save_flag("AUREON_LIVE_TRADING", True)
     assert isinstance(entry["decided_at"], float)
     assert isinstance(fs.load()["AUREON_LIVE_TRADING"]["decided_at"], float)
@@ -126,6 +134,7 @@ def test_save_flag_records_decided_at(temp_store):
 
 def test_pending_restart_truth_table(temp_store, monkeypatch):
     flag = fs.get_flag("AUREON_LIVE_TRADING")  # a restart-tier hard-boundary flag
+    monkeypatch.delenv("AUREON_LIVE_TRADING", raising=False)  # save_flag applies to env
     fs.save_flag("AUREON_LIVE_TRADING", True)
     decided = fs.load()["AUREON_LIVE_TRADING"]["decided_at"]
 
@@ -143,6 +152,7 @@ def test_pending_restart_truth_table(temp_store, monkeypatch):
 
 
 def test_pending_restart_live_flag_never_pending(temp_store, monkeypatch):
+    monkeypatch.delenv("AUREON_LLM_OFFLINE", raising=False)  # save_flag applies to env
     fs.save_flag("AUREON_LLM_OFFLINE", True)  # effect == "live"
     monkeypatch.setattr(fs, "_last_awakened_at", lambda: 0.0)  # ancient boot
     assert fs.flag_view(fs.get_flag("AUREON_LLM_OFFLINE"))["pending_restart"] is False

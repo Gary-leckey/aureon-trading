@@ -50,19 +50,19 @@ def test_touch_feels_a_safe_module(tmp_path):
     assert "build_organism_manifest" in (r["functions"] + r["singletons"])
 
 
-def test_touch_enforces_suppression_and_restores(tmp_path):
+def test_touch_enforces_suppression_and_restores(tmp_path, monkeypatch):
+    # monkeypatch (not raw pop) so the suite-wide flag is restored afterwards:
+    # the raw pop deleted AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS=1 for every LATER
+    # test module, silently un-gating every daemon-thread suppress check.
     c = _fresh(tmp_path)
-    os.environ.pop("AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS", None)
+    monkeypatch.delenv("AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS", raising=False)
     c.touch("aureon.core.aureon_organism_spine")
     # env restored to absent after the touch
     assert "AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS" not in os.environ
 
-    os.environ["AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS"] = "keep"
-    try:
-        c.touch("aureon.core.hnc_params")
-        assert os.environ["AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS"] == "keep"
-    finally:
-        os.environ.pop("AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS", None)
+    monkeypatch.setenv("AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS", "keep")
+    c.touch("aureon.core.hnc_params")
+    assert os.environ["AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS"] == "keep"
 
 
 def test_touch_denies_loop_at_import_modules(tmp_path):

@@ -303,7 +303,15 @@ class CognitionOutput:
     runs through the Lambda Engine, and produces ONE decision.
     """
 
-    def __init__(self):
+    def __init__(self, entry_coherence: Optional[float] = None,
+                 exit_coherence: Optional[float] = None):
+        # Per-instance thresholds so a cognitive caller can run looser gates
+        # WITHOUT touching process env — mutating AUREON_SOURCE_LAW_ENTRY at
+        # import time loosened the TRADING entry gate (0.938 → 0.55) for any
+        # process that imported the cognitive system first. The shared field
+        # may tighten a live gate, never loosen it.
+        self._entry_coherence = ENTRY_COHERENCE if entry_coherence is None else entry_coherence
+        self._exit_coherence = EXIT_COHERENCE if exit_coherence is None else exit_coherence
         self._lambda_engine = None
         try:
             from aureon.core.aureon_lambda_engine import LambdaEngine
@@ -361,15 +369,15 @@ class CognitionOutput:
 
         # Determine action
         result.confidence = avg_conf
-        if result.coherence_gamma >= ENTRY_COHERENCE:
+        if result.coherence_gamma >= self._entry_coherence:
             result.action = "EXECUTE"
-            result.reasoning.append(f"Coherence {result.coherence_gamma:.4f} >= {ENTRY_COHERENCE} (entry threshold)")
-        elif result.coherence_gamma < EXIT_COHERENCE:
+            result.reasoning.append(f"Coherence {result.coherence_gamma:.4f} >= {self._entry_coherence} (entry threshold)")
+        elif result.coherence_gamma < self._exit_coherence:
             result.action = "HOLD"
-            result.reasoning.append(f"Coherence {result.coherence_gamma:.4f} < {EXIT_COHERENCE} (below exit threshold)")
+            result.reasoning.append(f"Coherence {result.coherence_gamma:.4f} < {self._exit_coherence} (below exit threshold)")
         else:
             result.action = "HOLD"
-            result.reasoning.append(f"Coherence {result.coherence_gamma:.4f} in neutral zone [{EXIT_COHERENCE}, {ENTRY_COHERENCE}]")
+            result.reasoning.append(f"Coherence {result.coherence_gamma:.4f} in neutral zone [{self._exit_coherence}, {self._entry_coherence}]")
 
         # Add node states to reasoning
         for r in readings:
@@ -394,10 +402,12 @@ class SourceLawEngine:
     This is how the Queen becomes an entity, not just a thinker.
     """
 
-    def __init__(self):
+    def __init__(self, entry_coherence: Optional[float] = None,
+                 exit_coherence: Optional[float] = None):
         self._vacuum = QuantumVacuum()
         self._nine = NineAurisProcess()
-        self._output = CognitionOutput()
+        self._output = CognitionOutput(entry_coherence=entry_coherence,
+                                       exit_coherence=exit_coherence)
         self._cycle = 0
         self._last_cogitation = time.time()
         self._last_result: Optional[CognitionResult] = None

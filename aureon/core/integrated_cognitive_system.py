@@ -18,12 +18,16 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger("aureon.core.ics")
 
 # Source Law coherence thresholds for cognitive execution.
-# Defaults are set for trading (0.938/0.934). The ICS lowers them to 0.5/0.45
+# Defaults are set for trading (0.938/0.934). The ICS lowers them to 0.55/0.45
 # because we're running user-requested cognitive goals, not autonomous trades.
-# Trading subsystems that import SourceLawEngine directly still use their own
-# thresholds via the env var override pattern.
-os.environ.setdefault("AUREON_SOURCE_LAW_ENTRY", "0.55")
-os.environ.setdefault("AUREON_SOURCE_LAW_EXIT", "0.45")
+# These are passed PER-INSTANCE to this system's own SourceLawEngine — never
+# via process env: the previous os.environ.setdefault here rebound
+# queen_source_law's import-time constants for the WHOLE process, silently
+# loosening the live trading entry gate (0.938 → 0.55) whenever the cognitive
+# system was imported before the trading stack. The shared field may tighten
+# a live gate, never loosen it.
+_COGNITIVE_ENTRY_COHERENCE = 0.55
+_COGNITIVE_EXIT_COHERENCE = 0.45
 
 # ---------------------------------------------------------------------------
 # Graceful imports — every subsystem wrapped in try/except
@@ -563,7 +567,10 @@ class IntegratedCognitiveSystem:
         def boot_source_law():
             if not _HAS_SOURCE_LAW:
                 raise RuntimeError("import failed")
-            self.source_law = SourceLawEngine()
+            self.source_law = SourceLawEngine(
+                entry_coherence=_COGNITIVE_ENTRY_COHERENCE,
+                exit_coherence=_COGNITIVE_EXIT_COHERENCE,
+            )
             self.source_law.start()
         _boot_phase("source_law", boot_source_law)
 
