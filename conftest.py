@@ -42,6 +42,25 @@ import pytest
 # those scripts' whole scenarios at collection time. Membership is the AST
 # audit of zero-test files with an unguarded module-level sys.exit; a
 # main-guarded sibling (test_profit_gate.py) stays collectable.
+#
+# The third block is the scenario-executing remainder (measured, B6 import
+# probe over every zero-test candidate, scratchpad probe_batch1/2): each file
+# defines ZERO collectable tests but runs its whole scenario at import, so
+# every pytest collection silently executed all of them — ~2.5 minutes of
+# script runtime per run, much of it live network (smoke_test boots the
+# Kraken ecosystem, 49s; test_ocean_whale_map fetches market data for 197+
+# coins, 29s; test_ecosystem_demo 24s; test_uk_binance boots
+# MicroProfitLabyrinth AND os.chdir()s the whole process). Two are worse than
+# waste: test_hnc_hub_publish pushed 60 SYNTHETIC BTC ticks into the real
+# feed-hub bus at every collection (fake data into a real pipe), and
+# smoke_test carries a module-level sys.exit(1) in its except branch — a
+# latent INTERNALERROR whenever Kraken init fails. Membership is measured:
+# elapsed >= ~2s or >= ~5KB of scenario output in the probe, AND zero
+# collectable tests confirmed against the collect-only census (which caught
+# that test_queen_trade_execution_validation's 6 tests live on a TestCase
+# subclass without the Test* name prefix — it stays collectable). Import-only
+# zero-test files (e.g. test_alpaca_capital_style, test_imports_debug) stay
+# collectable because their cost is shared module-cache warming.
 collect_ignore = [
     # thread-spawning scripts (B5 run 4)
     "tests/test_bot_intelligence_wiring.py",
@@ -66,6 +85,21 @@ collect_ignore = [
     "tests/test_why_no_trades.py",
     "tests/vault/test_hnc_human_loop.py",
     "tests/vault/test_temporal_ground.py",
+    # scenario-executing zero-test scripts (B6 import probe)
+    "tests/smoke_test.py",
+    "tests/test_ecosystem_demo.py",
+    "tests/test_full_cycle.py",
+    "tests/test_full_spectrum_flow.py",
+    "tests/test_hnc_hub_publish.py",
+    "tests/test_imports.py",
+    "tests/test_mountain_pilgrimage.py",
+    "tests/test_ocean_whale_map.py",
+    "tests/test_orca_in_main_loop.py",
+    "tests/test_orca_integration.py",
+    "tests/test_platform_trades.py",
+    "tests/test_queen_full_system_integration.py",
+    "tests/test_queen_live_location.py",
+    "tests/test_uk_binance.py",
 ]
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
