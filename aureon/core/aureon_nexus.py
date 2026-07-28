@@ -637,17 +637,26 @@ class AureonNexus:
                 self.queen_hive.initial_capital = btc_balance
                 self.queen_hive.current_capital = btc_balance
                 
-                # Initialize mycelium with USD equivalent
-                btc_price = 95000  # Default price
+                # Initialize mycelium with USD equivalent. The BTC price must
+                # be REAL: valuing a real balance at an invented price would
+                # seed the mycelium with fabricated capital. No price → the
+                # mycelium simply isn't connected this boot, and the blocker
+                # is named in the log.
+                btc_price = None
                 try:
                     price_data = self.binance.best_price("BTCUSDT")
-                    btc_price = float(price_data.get("price", 95000))
-                except:
-                    pass
-                
-                usd_capital = btc_balance * btc_price + usdt_balance
-                if self.use_mycelium and usd_capital > 0:
-                    self.connect_mycelium(usd_capital)
+                    btc_price = float(price_data.get("price") or 0) or None
+                except Exception as price_err:
+                    logger.warning(f"BTCUSDT price fetch failed: {price_err}")
+
+                if btc_price is None:
+                    from aureon.observer.live_data_policy import log_blocked_fallback
+                    log_blocked_fallback("aureon_nexus.connect.mycelium_seed",
+                                         "no_live_btc_price")
+                else:
+                    usd_capital = btc_balance * btc_price + usdt_balance
+                    if self.use_mycelium and usd_capital > 0:
+                        self.connect_mycelium(usd_capital)
                 
                 logger.info(f"💰 Balance: {btc_balance:.8f} BTC, {usdt_balance:.2f} USDT")
                 return True
@@ -690,7 +699,22 @@ class AureonNexus:
             return self._default_market_data()
     
     def _default_market_data(self) -> Dict[str, float]:
-        """Default market data when API unavailable"""
+        """Fallback when the API is unavailable.
+
+        The hardcoded 95000.0 BTC price this used to return is a fabricated
+        reading: everything downstream (mycelium seeding, ladder display,
+        Master Equation) would run on an invented number with no marker.
+        Production refuses — the fallback dict is only served when the
+        operator explicitly opted in via AUREON_ALLOW_SIM_FALLBACK, and it
+        is stamped as fallback-derived. Otherwise: honest no_data ({}).
+        """
+        from aureon.observer.live_data_policy import (
+            fallback_marker, log_blocked_fallback, simulation_fallback_allowed,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_nexus.get_market_data",
+                                 "binance_unavailable")
+            return {}
         return {
             "price": 95000.0,
             "volatility": 0.5,
@@ -701,6 +725,7 @@ class AureonNexus:
             "harmony": 0.5,
             "volume_ratio": 0.5,
             "correlation": 0.5,
+            "fallback": fallback_marker("aureon_nexus.get_market_data"),
         }
     
     def run_cycle(self) -> Dict[str, Any]:
@@ -758,16 +783,25 @@ class AureonNexus:
         consensus_signal, consensus_conf = NEXUS.get_consensus()
         logger.info(f"📊 Consensus: {consensus_signal} (confidence: {consensus_conf:.2%})")
         
-        # 7. Run Mycelium Neural Network step
+        # 7. Run Mycelium Neural Network step — only on a REAL price. Stepping
+        # the mesh on an invented 95000 would evolve agent fitness against
+        # fabricated market data; a cycle without live data skips the mesh and
+        # names the blocker instead.
         mycelium_result = None
         if self.mycelium:
-            mycelium_market = {
-                "price": market_data.get("price", 95000),
-                "momentum": market_data.get("momentum", 0),
-                "volatility": market_data.get("volatility", 0.5),
-                "trend": (1 if signal == 'BUY' else -1 if signal == 'SELL' else 0) * confidence
-            }
-            mycelium_result = self.mycelium.step(mycelium_market)
+            live_price = market_data.get("price") or 0
+            if live_price <= 0:
+                from aureon.observer.live_data_policy import log_blocked_fallback
+                log_blocked_fallback("aureon_nexus.run_cycle.mycelium_step",
+                                     "no_live_price_this_cycle")
+            else:
+                mycelium_market = {
+                    "price": live_price,
+                    "momentum": market_data.get("momentum", 0),
+                    "volatility": market_data.get("volatility", 0.5),
+                    "trend": (1 if signal == 'BUY' else -1 if signal == 'SELL' else 0) * confidence
+                }
+                mycelium_result = self.mycelium.step(mycelium_market)
             
             # Display mycelium status every 10 cycles
             if self.cycle_count % 10 == 0:
@@ -859,11 +893,16 @@ class AureonNexus:
                 
                 result = self.run_cycle()
                 
-                # Show ladder progress
-                btc_price = self.get_market_data().get("price", 95000)
-                capital_usd = self.queen_hive.current_capital * btc_price
-                level = get_ladder_level(capital_usd)
-                logger.info(f"🪜 Ladder: {level['emoji']} {level['name']} (${capital_usd:.2f})")
+                # Show ladder progress — a real capital figure needs a real
+                # price; without one the honest display is "unavailable",
+                # not a dollar amount computed from an invented 95000.
+                btc_price = self.get_market_data().get("price") or 0
+                if btc_price > 0:
+                    capital_usd = self.queen_hive.current_capital * btc_price
+                    level = get_ladder_level(capital_usd)
+                    logger.info(f"🪜 Ladder: {level['emoji']} {level['name']} (${capital_usd:.2f})")
+                else:
+                    logger.info("🪜 Ladder: unavailable (no live BTC price)")
                 
                 if i < cycles - 1:
                     time.sleep(interval)

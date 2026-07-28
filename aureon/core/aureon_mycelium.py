@@ -413,11 +413,22 @@ class Hive:
         # Aggregate in neuron
         hive_signal = self.neuron.activate(transmitted)
         
-        # Execute trades for agents with strong signals
+        # Execute trades for agents with strong signals. The price must come
+        # from the caller's real market_data — the old fallback silently ran
+        # every agent against an invented 95000 whenever the key was missing,
+        # evolving fitness on fabricated data. No price → no trades this step.
+        price = market_data.get("price") or 0
         results = []
+        if price <= 0:
+            return {
+                "hive_id": self.id,
+                "hive_signal": hive_signal,
+                "trades": 0,
+                "results": results,
+                "blocked": "no_live_price",
+            }
         for agent in self.agents:
             if agent.equity > 0 and agent.equity < self.target_per_agent:
-                price = market_data.get("price", 95000)
                 result = agent.execute_trade(hive_signal, price)
                 results.append(result)
                 self.trades += 1
