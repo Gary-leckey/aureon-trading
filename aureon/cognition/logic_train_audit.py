@@ -128,6 +128,8 @@ _AUTHORITY: Final[dict[str, str]] = {
     "aureon/bio/hnc_direction_audit.py": "audits the wire; computing a field here would be the sin it checks",
     "aureon/cognition/logic_train_audit.py": "this audit",
     "aureon/cognition/logic_flow.py": "traces the live signal across the bus (b40)",
+    "aureon/analytics/volatility_sentinel_benchmark.py":
+        "labeled-synthetic benchmark harness — measures the sentinel detector offline, decides nothing live",
 }
 
 #: Decision sites known to be unwired at the time of writing, each with the reason it is still open.
@@ -147,10 +149,6 @@ KNOWN_UNWIRED: Final[dict[str, str]] = {
     "aureon/core/cognitive_dashboard.py":
         "measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
     "aureon/core/goal_execution_engine.py":
-        "measured unwired at pin time (role=producer, reads a field, no canonical wire)",
-    "aureon/core/integrated_cognitive_system.py":
-        "cognitive integrator computes its own Λ instead of reading the shared one",
-    "aureon/harmonic/auris_voice_filter.py":
         "measured unwired at pin time (role=producer, reads a field, no canonical wire)",
     "aureon/harmonic/dj_resonance.py":
         "measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
@@ -191,8 +189,6 @@ KNOWN_UNWIRED: Final[dict[str, str]] = {
     "aureon/swarm_motion/swarm_hive.py":
         "measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
     "aureon/utils/aureon_miner.py":
-        "measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
-    "aureon/vault/auris_metacognition.py":
         "measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
     "aureon/vault/casimir_quantifier.py":
         "measured unwired at pin time (role=consumer, reads a field, no canonical wire)",

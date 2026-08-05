@@ -1018,6 +1018,28 @@ class IntegratedCognitiveSystem:
                         except Exception:
                             pass
 
+                    # ── THE SHARED FIELD JOINS THE LOCAL Λ (P5, Pattern A) ──
+                    # The integrator computed a private Λ that never saw the
+                    # canonical field — the exact silo the logic-train audit
+                    # pinned. The daemon's live field now enters as one
+                    # reading among the subsystem-health readings, so the
+                    # ICS's Λ is informed by the whole organism without
+                    # surrendering its per-instance computation. Only a
+                    # fresh, available field is merged — a dark field adds
+                    # nothing (never a placeholder).
+                    try:
+                        from aureon.core.hnc_field import read_canonical_field
+                        _cf = read_canonical_field()
+                        if getattr(_cf, "available", False) and _cf.symbolic_life_score is not None:
+                            readings.append(SubsystemReading(
+                                name="hnc_canonical_field",
+                                value=max(0.0, min(1.0, float(_cf.symbolic_life_score))),
+                                confidence=0.9,
+                                state=str(_cf.consciousness_level or "live"),
+                            ))
+                    except Exception:
+                        pass
+
                 ls = self.lambda_engine.step(readings=readings or None, vault=self.vault)
                 source_state = {
                     "lambda_t": ls.lambda_t,
@@ -1026,6 +1048,16 @@ class IntegratedCognitiveSystem:
                     "consciousness_level": ls.consciousness_level,
                     "symbolic_life_score": ls.symbolic_life_score,
                 }
+                # b46 tighten-only: the Γ every downstream ICS consumer reads
+                # (source-law gate, conscience, dashboard) is reconciled with
+                # the canonical field — the shared field can only TIGHTEN it,
+                # and with no field flowing the local figure passes unchanged.
+                try:
+                    from aureon.core.hnc_field import reconcile_gamma
+                    source_state["coherence_gamma"] = reconcile_gamma(
+                        source_state["coherence_gamma"])
+                except Exception:
+                    pass
             except Exception:
                 pass
         try:

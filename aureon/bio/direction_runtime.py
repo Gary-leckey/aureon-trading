@@ -205,6 +205,27 @@ def _run_volatility_gate() -> tuple[float, float]:
     return out(0.95), out(0.05)
 
 
+def _run_auris_trader() -> tuple[float, float]:
+    """Auris 9-node trading coherence (P5): the node blend is reconciled with
+    the canonical Γ, so a LOW field must pull the coherence down to the field
+    and a HIGH field must leave the (lower) node blend untouched — tighten-only
+    proven at runtime through the real engine."""
+    import time as _time
+
+    from aureon.trading.aureon_auris_trader import AurisEngine, MarketSnapshot
+
+    snap = MarketSnapshot(symbol="BTC/USD", price=100.0, volume=0.8,
+                          volatility=0.3, momentum=0.4, spread=0.2,
+                          timestamp=_time.time())
+    engine = AurisEngine()
+
+    def out(gamma: float) -> float:
+        with patch(_HNC_FIELD, lambda *a, **k: _field(gamma=gamma)):
+            return float(engine.calculate_coherence(snap))
+
+    return out(0.05), out(0.95)
+
+
 def consumer_specs() -> tuple[tuple[str, str, str, Callable[[], tuple[float, float]]], ...]:
     """The adaptive consumers, each with a runner returning (output_low, output_high)."""
     return (
@@ -221,6 +242,9 @@ def consumer_specs() -> tuple[tuple[str, str, str, Callable[[], tuple[float, flo
         ("volatility_gate", "aureon/core/aureon_operational_core.py",
          "SignalGate blocks entries when predicted volatility risk crosses the veto line "
          "(LIVE ORDER PATH)", _run_volatility_gate),
+        ("auris_trader", "aureon/trading/aureon_auris_trader.py",
+         "Auris 9-node trading coherence reconciled with the canonical Γ (tighten-only)",
+         _run_auris_trader),
     )
 
 

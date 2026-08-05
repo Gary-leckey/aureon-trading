@@ -216,6 +216,33 @@ def publish_subfield(source: str, state: Any, bus: Any = None) -> None:
         pass
 
 
+def canonical_field_reading(confidence: float = 0.9, bus: Any = None) -> Any:
+    """The canonical field as a ``SubsystemReading`` — the Pattern-A merge, shared.
+
+    Every local ``LambdaEngine`` producer (Queen cortex, source-law,
+    metacognition, sentient loop, mycelium mind, human loop, Auris throne,
+    pursuit, the ICS) closes its β·Λ(t−τ) loop by appending this reading to its
+    own inputs before ``step()`` — the shared field informs the local one
+    without replacing it. Returns ``None`` when the field is dark or stale
+    (freshness fails closed upstream) — never a placeholder, because Γ consumes
+    reading VALUES regardless of confidence.
+    """
+    try:
+        from aureon.core.aureon_lambda_engine import SubsystemReading
+
+        cf = read_canonical_field(bus)
+        if cf.available and cf.symbolic_life_score is not None:
+            return SubsystemReading(
+                name="hnc_canonical_field",
+                value=max(0.0, min(1.0, float(cf.symbolic_life_score))),
+                confidence=max(0.0, min(1.0, float(confidence))),
+                state=str(cf.consciousness_level or "live"),
+            )
+    except Exception:  # noqa: BLE001 — a missing field is a value, never a crash
+        pass
+    return None
+
+
 def read_subfields(bus: Any = None) -> dict[str, dict[str, Any]]:
     """All recently-published local sub-fields, keyed by source — the organism's
     view of every field its producers are computing."""

@@ -774,6 +774,20 @@ class OracleOfSpirits:
         elif self._auris_engine and details.get("node_scores"):
             _spirit_conf = 0.55
 
+        # P5 Pattern B: blend the spirits' score with the canonical field Γ
+        # (same 0.75/0.25 shape as OracleOfHarmony) so the Auris reading is
+        # grounded in the one shared field. Dark field → spirits unchanged.
+        score = max(0.0, min(1.0, score))
+        try:
+            from aureon.core.hnc_field import read_canonical_field
+            _cf = read_canonical_field()
+            if getattr(_cf, "available", False) and _cf.coherence_gamma is not None:
+                _g = max(0.0, min(1.0, float(_cf.coherence_gamma)))
+                score = 0.75 * score + 0.25 * _g
+                details["canonical_gamma"] = _g
+        except Exception:
+            pass
+
         return OracleReading(
             oracle="SPIRITS",
             timestamp=time.time(),
@@ -2582,7 +2596,31 @@ class OracleOfMaeshowe:
             except Exception as e:
                 logger.debug(f"OracleOfMaeshowe read error: {e}")
 
-        # Fallback: neutral reading when module unavailable
+        # P5: when the decoder module is unavailable, ground the fallback in
+        # the canonical HNC field — a REAL live Γ instead of an invented
+        # neutral. Uses the lattice's own thresholds for the phase label.
+        try:
+            from aureon.core.hnc_field import read_canonical_field
+            _cf = read_canonical_field()
+            if getattr(_cf, "available", False) and _cf.coherence_gamma is not None:
+                _g = max(0.0, min(1.0, float(_cf.coherence_gamma)))
+                _status = ("LIGHTHOUSE" if _g >= 0.945
+                           else "DEAD_FIELD" if _g < 0.35 else "ACTIVE_FIELD")
+                return OracleReading(
+                    oracle          = "MAESHOWE",
+                    timestamp       = time.time(),
+                    score           = _g,
+                    phase           = _status,
+                    dominant_signal = ("Maeshowe decoder unavailable — lattice Γ "
+                                       "read from the canonical HNC field"),
+                    details         = {"gamma": _g, "gamma_status": _status,
+                                       "source": "canonical_field"},
+                    confidence      = 0.5,
+                )
+        except Exception:
+            pass
+
+        # Fallback: neutral reading when module AND field are unavailable
         return OracleReading(
             oracle          = "MAESHOWE",
             timestamp       = time.time(),

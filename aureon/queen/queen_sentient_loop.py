@@ -522,6 +522,13 @@ class QueenSentientLoop:
                     if self._osde:
                         readings.append(SubsystemReading("open_source_data", 0.5, 0.7, "active"))
 
+                    # P5 Pattern A: the shared field enters the local Λ inputs —
+                    # the read half of the loop this producer only ever published.
+                    from aureon.core.hnc_field import canonical_field_reading
+                    _cfr = canonical_field_reading()
+                    if _cfr is not None:
+                        readings.append(_cfr)
+
                     # Compute Λ(t) — the heartbeat
                     lambda_state = self._lambda_engine.step(readings, volatility=0.05)
                     from aureon.core.hnc_field import publish_subfield

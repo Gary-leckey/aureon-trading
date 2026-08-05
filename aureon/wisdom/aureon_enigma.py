@@ -397,23 +397,35 @@ class RotorGamma(EnigmaRotor):
                 coherence_sum += alignment * weight
                 weight_sum += weight
                 
-            return coherence_sum / weight_sum if weight_sum > 0 else 0.5
-            
+            return self._reconcile(
+                coherence_sum / weight_sum if weight_sum > 0 else 0.5)
+
         # For Auris signals, use node states directly
         weighted_sum = 0
         weight_total = 0
-        
+
         for node_name, node_config in AURIS_NODES.items():
             state = self.node_states.get(node_name, 0.5)
             weight = node_config["weight"]
             weighted_sum += state * weight
             weight_total += weight
-            
+
         coherence = weighted_sum / weight_total if weight_total > 0 else 0.5
-        
+
         self.step()
         self.transform_history.append(coherence)
-        return min(1.0, max(0.0, coherence))
+        return self._reconcile(min(1.0, max(0.0, coherence)))
+
+    @staticmethod
+    def _reconcile(coherence: float) -> float:
+        """P5 Pattern C: the enigma's 9-node sweep is reconciled with the
+        canonical HNC field — the shared Γ can only TIGHTEN it (b46 min);
+        with no field flowing the node sweep passes unchanged."""
+        try:
+            from aureon.core.hnc_field import reconcile_gamma
+            return reconcile_gamma(coherence)
+        except Exception:
+            return coherence
 
 
 class RotorPsi(EnigmaRotor):

@@ -153,6 +153,10 @@ def direction_specs() -> tuple[tuple[str, str, str], ...]:
          "Queen 4th-pass substrate-coherence veto"),
         ("volatility_gate", "aureon/core/aureon_operational_core.py",
          "SignalGate predicted-volatility entry veto (LIVE ORDER PATH)"),
+        ("auris_trader", "aureon/trading/aureon_auris_trader.py",
+         "Auris 9-node trading coherence (P5 reconcile)"),
+        ("auris_hive_mind", "aureon/utils/aureon_queen_hive_mind.py",
+         "Queen hive-mind Auris Γ entry gate (P5 reconcile)"),
     )
 
 

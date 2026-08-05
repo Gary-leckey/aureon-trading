@@ -346,6 +346,13 @@ class DrAurisThrone:
                 readings.append(SubsystemReading(
                     "earth_disturbance", 1.0 - state.earth_disturbance, 0.7, "inverse"))
 
+                # P5 Pattern A: the shared field enters the local Λ inputs —
+                # the read half of the loop this producer only ever published.
+                from aureon.core.hnc_field import canonical_field_reading
+                _cfr = canonical_field_reading()
+                if _cfr is not None:
+                    readings.append(_cfr)
+
                 ls = self._lambda_engine.step(readings, volatility=state.earth_disturbance * 0.1)
                 state.lambda_t = ls.lambda_t
                 state.consciousness_psi = ls.consciousness_psi
