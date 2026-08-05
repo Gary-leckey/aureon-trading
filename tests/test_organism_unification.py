@@ -343,16 +343,25 @@ def test_broadcast_to_mesh_reaches_receive_mycelium_message():
 # ── lighthouse reaches the bus ───────────────────────────────────────────────
 
 def test_lighthouse_emits_to_bus():
+    from unittest.mock import patch
+
     from aureon.analytics.aureon_lighthouse import (
         LighthouseEvent,
         LighthouseEventType,
         LighthousePatternDetector,
     )
+    from aureon.core.hnc_field import CanonicalField
 
     d = LighthousePatternDetector()
-    d._emit_event(LighthouseEvent(
-        event_type=LighthouseEventType.COHERENCE_COLLAPSE, timestamp=0.0,
-        severity=0.9, symbols=["BTC"], message="unit collapse"))
+    # Pin the canonical field DARK so the P6 Γ-aware severity amplification
+    # stays out of frame — this test proves the BUS EMISSION carries the
+    # detector's severity; the amplification has its own dedicated tests
+    # (tests/test_lighthouse_gamma_severity.py).
+    with patch("aureon.core.hnc_field.read_canonical_field",
+               lambda *a, **k: CanonicalField()):
+        d._emit_event(LighthouseEvent(
+            event_type=LighthouseEventType.COHERENCE_COLLAPSE, timestamp=0.0,
+            severity=0.9, symbols=["BTC"], message="unit collapse"))
     got = _bus().recall("lighthouse.event", limit=1) or []
     assert got and payload_of(got[-1]).get("severity") == 0.9
 

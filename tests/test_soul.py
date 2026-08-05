@@ -34,6 +34,13 @@ def _isolate(tmp_path, monkeypatch):
     monkeypatch.setenv("AUREON_SOUL_CONTRACT_PATH", str(tmp_path / "contracts.json"))
     monkeypatch.delenv("AUREON_SOUL_ACT", raising=False)
     monkeypatch.delenv("AUREON_LOCAL_ACTIONS_ARMED", raising=False)
+    # Pin the offline posture EXPLICITLY: earlier tests can flip
+    # AUREON_LLM_OFFLINE in os.environ for the whole process (the feature
+    # switchboard applies flags directly). If it leaks in falsy, _self_author
+    # routes through AureonCognition — hijacking the determination text and
+    # booting pulse-publishing machinery that makes the blind soul "see".
+    # These tests assert the deterministic offline authorship path.
+    monkeypatch.setenv("AUREON_LLM_OFFLINE", "1")
     # reset every singleton the soul reads so tests are deterministic
     import aureon.core.affect_monitor as am
     import aureon.core.aureon_thought_bus as tb
