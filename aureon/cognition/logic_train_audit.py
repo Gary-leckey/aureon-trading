@@ -130,6 +130,8 @@ _AUTHORITY: Final[dict[str, str]] = {
     "aureon/cognition/logic_flow.py": "traces the live signal across the bus (b40)",
     "aureon/analytics/volatility_sentinel_benchmark.py":
         "labeled-synthetic benchmark harness — measures the sentinel detector offline, decides nothing live",
+    "aureon/analytics/historical_replay_validation.py":
+        "no-keys replay harness — drives the real components on recorded open data, decides nothing live",
 }
 
 #: Decision sites known to be unwired at the time of writing, each with the reason it is still open.
