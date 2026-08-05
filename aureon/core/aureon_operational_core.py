@@ -110,28 +110,52 @@ class SignalGate:
         """
         now = time.time()
 
-        # 1. Phase Transition Detector check
+        # 1. Phase Transition Detector check. The detector's API is
+        # ingest()/predict() — this block used to call update()/get_state()/
+        # get_curvature(), none of which exist, so every call raised into the
+        # except below and the PHASE_CRITICAL block had never once fired.
+        # Because arming a never-executed veto on live paths is itself a risk,
+        # the actual block follows the production_mode contract (acts in LIVE,
+        # audits would_have_blocked everywhere else).
         if self.phase_detector is not None:
             try:
                 if now - self._last_check_time > self._cache_ttl:
-                    # Feed price to detector
-                    self.phase_detector.update(price)
+                    self.phase_detector.ingest(price, now)
                     self._last_check_time = now
 
-                state = self.phase_detector.get_state()
-                self._last_phase_state = state
+                prediction = self.phase_detector.predict()
+                self._last_phase_state = prediction.state if prediction else None
 
-                # CRITICAL phase = market regime change detected = DO NOT ENTER
-                if hasattr(state, 'name') and state.name == 'CRITICAL':
-                    self._blocked_count += 1
-                    return False, f"PHASE_CRITICAL: Market regime change detected (state={state.name})"
-
-                # If phase detector reports high curvature, reduce to HOLD
-                if hasattr(self.phase_detector, 'get_curvature'):
-                    kappa = self.phase_detector.get_curvature()
-                    if kappa is not None and kappa > 10.0:
-                        self._blocked_count += 1
-                        return False, f"HIGH_CURVATURE: kappa={kappa:.2f} > 10.0 (geometric stress)"
+                if prediction is not None:
+                    is_critical = prediction.state.name == 'CRITICAL'
+                    high_kappa = prediction.curvature > 10.0
+                    if is_critical or high_kappa:
+                        from aureon.observer.production_mode import audit as _pm_audit
+                        from aureon.observer.production_mode import phase_veto_active
+                        veto = phase_veto_active()
+                        _pm_audit(
+                            "signal_gate_phase_check",
+                            {
+                                "symbol": symbol,
+                                "state": prediction.state.value,
+                                "probability": round(prediction.probability, 4),
+                                "curvature": round(prediction.curvature, 4),
+                            },
+                            decision="entry_veto",
+                            would_have_blocked=True,
+                            actually_blocked=veto,
+                        )
+                        if veto:
+                            self._blocked_count += 1
+                            if is_critical:
+                                return False, (
+                                    f"PHASE_CRITICAL: Market regime change detected "
+                                    f"(p={prediction.probability:.2f})"
+                                )
+                            return False, (
+                                f"HIGH_CURVATURE: kappa={prediction.curvature:.2f} "
+                                f"> 10.0 (geometric stress)"
+                            )
             except Exception as e:
                 logger.debug(f"Phase detector check failed (allowing trade): {e}")
 

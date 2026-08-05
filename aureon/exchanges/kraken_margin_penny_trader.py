@@ -4461,11 +4461,16 @@ class KrakenMarginArmyTrader:
             return result
         try:
             self.phase_transition_detector.ingest(current_price)
-            prediction = self.phase_transition_detector.predict()
+            # get_status() runs predict() internally — one call, not two, or the
+            # detector's state transitions fire twice per scoring pass. The real
+            # keys are state / current_prediction / navigation_signal; the old
+            # phase_state / transition_score reads left state pinned at UNKNOWN
+            # since this scorer shipped.
             status = self.phase_transition_detector.get_status()
-            state = str(status.get("phase_state", "UNKNOWN"))
-            t_score = float(status.get("transition_score", 0.0) or 0.0)
-            nav = str(status.get("navigation_signal", "hold")).lower()
+            state = str(status.get("state", "UNKNOWN"))
+            pred = status.get("current_prediction") or {}
+            t_score = float(pred.get("probability", 0.0) or 0.0)
+            nav = str(status.get("navigation_signal", "HOLD")).lower()
             bonus = 0.0
             if state == "STABLE":
                 bonus += 0.5
@@ -4475,9 +4480,12 @@ class KrakenMarginArmyTrader:
                 bonus -= 1.5
             elif state == "RECOVERY":
                 bonus += 0.25
-            if nav == side:
+            # navigation_signal speaks enter/exit; side speaks buy/sell — the
+            # old direct comparison could never match.
+            nav_side = {"enter": "buy", "exit": "sell"}.get(nav, nav)
+            if nav_side == side:
                 bonus += 0.5
-            elif nav not in {"hold", "unknown", ""}:
+            elif nav_side not in {"hold", "unknown", ""}:
                 bonus -= 0.5
             result.update({"bonus": max(-2.0, min(2.0, bonus)), "state": state, "score": t_score})
             self._phase_transition_snapshot = {"symbol": symbol, "state": state, "score": t_score, "nav": nav, "bonus": result["bonus"]}

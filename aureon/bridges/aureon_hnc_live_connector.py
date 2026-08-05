@@ -183,12 +183,32 @@ class HncLiveConnector:
                             # Stage 2: Lighthouse validation
                             lhe = self.qgita.lighthouse.validate_ftcp(strongest, values)
                             if lhe:
+                                # Forward the FULL LighthouseEvent — the payload
+                                # used to carry only 4 of its 12 fields, dropping
+                                # the structural signature (c_linear/c_nonlinear/
+                                # c_phi/g_eff/q_anomaly/regimes) every downstream
+                                # volatility consumer needs. Original keys are
+                                # unchanged; the additions are purely additive.
+                                _ftcp = getattr(lhe, 'ftcp', None)
                                 lhe_payload = {
                                     'symbol': surge.symbol,
                                     'lighthouse_intensity': lhe.lighthouse_intensity,
                                     'confidence': lhe.confidence,
                                     'event_type': lhe.event_type.value,
-                                    'timestamp': lhe.timestamp
+                                    'timestamp': lhe.timestamp,
+                                    'c_linear': lhe.c_linear,
+                                    'c_nonlinear': lhe.c_nonlinear,
+                                    'c_phi': lhe.c_phi,
+                                    'g_eff': lhe.g_eff,
+                                    'q_anomaly': lhe.q_anomaly,
+                                    'regime_before': lhe.regime_before,
+                                    'regime_after': lhe.regime_after,
+                                    'ftcp': {
+                                        'timestamp': getattr(_ftcp, 'timestamp', None),
+                                        'curvature': getattr(_ftcp, 'curvature', None),
+                                        'g_eff': getattr(_ftcp, 'g_eff', None),
+                                        'phi_match': getattr(_ftcp, 'phi_match', None),
+                                    } if _ftcp is not None else None,
                                 }
                                 # Publish validated Lighthouse event
                                 try:

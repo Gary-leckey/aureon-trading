@@ -496,16 +496,19 @@ class PhaseTransitionDetector:
             from aureon.core.aureon_thought_bus import get_thought_bus, Thought
             bus = get_thought_bus()
             if bus is not None:
+                # Thought carries payload/meta — the old data=/confidence= kwargs
+                # raised TypeError into the except below, so this topic had never
+                # actually been emitted.
                 bus.publish(Thought(
                     source="phase_transition_detector",
                     topic="phase.transition.detected",
-                    data={
+                    payload={
                         "from_state": event.from_state.value,
                         "to_state": event.to_state.value,
                         "curvature": event.curvature_at_transition,
                         "coherence": event.coherence_at_transition,
                     },
-                    confidence=0.8,
+                    meta={"confidence": 0.8},
                 ))
         except Exception:
             pass
