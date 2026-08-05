@@ -72,6 +72,7 @@ __all__ = [
     "SYMBOLS",
     "INTERVALS",
     "ABLATION_GATES",
+    "validate_dataset",
     "load_ohlc",
     "replay_symbol",
     "compute_replay_validation",
@@ -179,9 +180,56 @@ class ReplayValidationReport:
         return asdict(self)
 
 
+def validate_dataset(payload: dict[str, Any]) -> list[str]:
+    """Chronological + per-candle integrity checks on a loaded dataset.
+
+    Returns the list of violations (empty = clean). Enforced:
+    * timestamps strictly increasing, and every gap an exact positive
+      multiple of the declared interval (an exchange may omit a tradeless
+      candle — a real gap — but a misaligned or backwards timestamp means
+      the series is not the chronology it claims to be);
+    * every candle satisfies low ≤ open/close ≤ high with positive prices
+      and non-negative volume — the OHLC invariants real exchange data
+      cannot violate.
+    """
+    violations: list[str] = []
+    candles = payload.get("candles") or []
+    interval_s = int(payload.get("provenance", {}).get("interval_minutes", 60)) * 60
+    prev_ts: float | None = None
+    for i, c in enumerate(candles):
+        try:
+            ts = float(c["ts"])
+            o, h, lo, cl = (float(c["open"]), float(c["high"]),
+                            float(c["low"]), float(c["close"]))
+            vol = float(c["volume"])
+        except (KeyError, TypeError, ValueError):
+            violations.append(f"candle {i}: missing/non-numeric field")
+            continue
+        if prev_ts is not None:
+            gap = ts - prev_ts
+            if gap <= 0:
+                violations.append(f"candle {i}: timestamp not increasing ({gap:+.0f}s)")
+            elif gap % interval_s != 0:
+                violations.append(
+                    f"candle {i}: gap {gap:.0f}s is not a multiple of the "
+                    f"{interval_s}s interval")
+        prev_ts = ts
+        if not (0.0 < lo <= min(o, cl) and max(o, cl) <= h):
+            violations.append(
+                f"candle {i}: OHLC invariant broken (o={o} h={h} l={lo} c={cl})")
+        if vol < 0.0:
+            violations.append(f"candle {i}: negative volume {vol}")
+    return violations
+
+
 def load_ohlc(symbol: str, data_dir: Path | None = None,
               interval_minutes: int = 60) -> dict[str, Any] | None:
-    """Load one symbol's provenance-stamped real dataset. Missing → None."""
+    """Load one symbol's provenance-stamped real dataset.
+
+    Missing, corrupt, or integrity-violating data → None (a named blocker
+    upstream) — a dataset that fails chronology or OHLC invariants is never
+    replayed, because its results would not mean what they claim.
+    """
     path = (data_dir or DATA_DIR) / f"kraken_ohlc_{symbol}_{interval_minutes}m.json"
     if not path.exists():
         return None
@@ -190,6 +238,8 @@ def load_ohlc(symbol: str, data_dir: Path | None = None,
     except Exception:  # noqa: BLE001 — a corrupt dataset is a blocker, never fabricated
         return None
     if not payload.get("candles"):
+        return None
+    if validate_dataset(payload):
         return None
     return payload
 
@@ -527,8 +577,9 @@ def compute_replay_validation(
             payload = load_ohlc(sym, data_dir, interval_minutes=interval)
             if payload is None:
                 blockers.append(
-                    f"{sym}@{interval}m: dataset missing/unreadable at data/historical/"
-                    f"kraken_ohlc_{sym}_{interval}m.json — refetch with --refresh (no key needed)")
+                    f"{sym}@{interval}m: dataset missing/unreadable/failed integrity "
+                    f"checks at data/historical/kraken_ohlc_{sym}_{interval}m.json — "
+                    f"refetch with --refresh (no key needed)")
                 continue
             results.append(replay_symbol(payload))
 

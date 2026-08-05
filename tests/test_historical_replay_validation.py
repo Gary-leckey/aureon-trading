@@ -23,6 +23,7 @@ from aureon.analytics.historical_replay_validation import (
     compute_replay_validation,
     load_ohlc,
     replay_symbol,
+    validate_dataset,
 )
 
 _HAVE_DATA = all(
@@ -152,6 +153,52 @@ def test_corrupt_dataset_refused(tmp_path):
     bad = tmp_path / "kraken_ohlc_BTCUSD_60m.json"
     bad.write_text("{not json", encoding="utf-8")
     assert load_ohlc("BTCUSD", data_dir=tmp_path) is None
+
+
+def test_bundled_datasets_are_chronological_and_integral():
+    """Every bundled dataset passes chronology + OHLC integrity with zero
+    violations (measured: strictly ascending, zero gaps, invariants hold)."""
+    for sym in SYMBOLS:
+        for interval in INTERVALS:
+            payload = load_ohlc(sym, interval_minutes=interval)
+            assert payload is not None
+            assert validate_dataset(payload) == []
+            ts = [float(c["ts"]) for c in payload["candles"]]
+            # contiguous real series: every step exactly one interval
+            assert all(
+                b - a == interval * 60 for a, b in zip(ts[:-1], ts[1:], strict=True))
+
+
+def _tampered(payload, mutate):
+    doc = json.loads(json.dumps(payload))  # deep copy
+    mutate(doc["candles"])
+    return doc
+
+
+def test_tampered_chronology_or_ohlc_is_refused(tmp_path):
+    base = load_ohlc("BTCUSD")
+    assert base is not None
+
+    def swap_ts(cs):  # backwards timestamp
+        cs[5]["ts"], cs[6]["ts"] = cs[6]["ts"], cs[5]["ts"]
+
+    def break_ohlc(cs):  # high below low
+        cs[3]["high"] = cs[3]["low"] - 1.0
+
+    def negative_volume(cs):
+        cs[7]["volume"] = -1.0
+
+    def misaligned_gap(cs):  # timestamp off the interval grid
+        cs[9]["ts"] = float(cs[9]["ts"]) + 17.0
+
+    for i, mutate in enumerate((swap_ts, break_ohlc, negative_volume, misaligned_gap)):
+        doc = _tampered(base, mutate)
+        assert validate_dataset(doc), f"mutation {i} must be caught"
+        p = tmp_path / f"case{i}" / "kraken_ohlc_BTCUSD_60m.json"
+        p.parent.mkdir(parents=True)
+        p.write_text(json.dumps(doc), encoding="utf-8")
+        assert load_ohlc("BTCUSD", data_dir=p.parent) is None, (
+            f"mutation {i}: a tampered series must never replay")
 
 
 def test_artifact_written_by_cli_matches_module(tmp_path, bundled_report):
