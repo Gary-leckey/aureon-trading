@@ -85,6 +85,11 @@ CANONICAL_WIRE_TOKENS: Final[tuple[str, ...]] = (
     "blend_field",
     "hnc_field",
     "symbolic.life.pulse",
+    # P4: the volatility sentinel is the canonical field's spectral limb — a
+    # daemon Λ(t) source whose cross-process reader mirrors the hnc_field
+    # freshness contract (stamped rows, stale/unstamped refused). A consumer
+    # reading it is on the shared field chain, not a private number.
+    "volatility_sentinel",
 )
 
 HNC_DIRECTION_BOUNDARY: Final[str] = (
@@ -146,6 +151,8 @@ def direction_specs() -> tuple[tuple[str, str, str], ...]:
          "base Queen first-pass decision/routing"),
         ("queen_conscience", "aureon/queen/queen_conscience.py",
          "Queen 4th-pass substrate-coherence veto"),
+        ("volatility_gate", "aureon/core/aureon_operational_core.py",
+         "SignalGate predicted-volatility entry veto (LIVE ORDER PATH)"),
     )
 
 

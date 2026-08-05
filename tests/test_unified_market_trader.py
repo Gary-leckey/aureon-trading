@@ -2086,6 +2086,87 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         self.assertEqual(emitted.get("route_key"), "capital:cfd:GOLD:BUY")
         self.assertEqual(emitted.get("trace_id"), "life-1")
 
+    def test_fast_money_score_ranks_but_does_not_raise_gate_confidence(self):
+        """P4 inversion fix: fast_money_score (volatility-rewarding) may rank
+        opportunities but must not raise the published gate confidence, and the
+        separation is audited whenever the old max() would have scored higher."""
+        trader = self._make_trader()
+        trader._central_feed_targets = lambda: []  # type: ignore[method-assign]
+        payload = {
+            "shared_tradable_count": 1,
+            "active_order_flow": [
+                {
+                    "symbol": "BTCUSD",
+                    "side": "BUY",
+                    "confidence": 0.20,
+                    "profit_velocity_score": 0.30,
+                    "fast_money_score": 0.90,
+                    "candidate_id": "cand-2",
+                    "lifecycle_id": "life-2",
+                    "execution_routes": [
+                        {"venue": "kraken", "market_type": "margin", "symbol": "XXBTZUSD"}
+                    ],
+                }
+            ],
+        }
+        captured: dict = {}
+        audits: list = []
+
+        def fake_publish(phase, event_payload, **kwargs):
+            if phase == "signal_generated":
+                captured["payload"] = dict(event_payload)
+            return {"ok": True}
+
+        with patch.object(trader_mod, "publish_trade_flow_event", side_effect=fake_publish), \
+             patch("aureon.observer.production_mode.audit",
+                   side_effect=lambda event, p, **kw: audits.append((event, p, kw))):
+            trader._feed_shared_order_flow_to_decision_logic(payload)
+
+        emitted = captured.get("payload", {})
+        self.assertAlmostEqual(float(emitted.get("confidence", -1.0)), 0.30, places=6)
+        # The ranking signal still travels with the event — separated, not erased.
+        self.assertAlmostEqual(float(emitted.get("fast_money_score", -1.0)), 0.90, places=6)
+        separation = [a for a in audits if a[0] == "fast_money_gate_rank_separation"]
+        self.assertTrue(separation, "the dropped fast-money gate influence must be audited")
+        self.assertAlmostEqual(separation[0][1]["fast_money_score"], 0.90, places=6)
+        self.assertAlmostEqual(separation[0][1]["decision_score"], 0.30, places=6)
+
+    def test_fast_money_below_measured_confidence_emits_no_separation_audit(self):
+        """When measured confidence already wins, nothing was dropped — no audit noise."""
+        trader = self._make_trader()
+        trader._central_feed_targets = lambda: []  # type: ignore[method-assign]
+        payload = {
+            "shared_tradable_count": 1,
+            "active_order_flow": [
+                {
+                    "symbol": "BTCUSD",
+                    "side": "BUY",
+                    "confidence": 0.80,
+                    "profit_velocity_score": 0.30,
+                    "fast_money_score": 0.50,
+                    "execution_routes": [
+                        {"venue": "kraken", "market_type": "margin", "symbol": "XXBTZUSD"}
+                    ],
+                }
+            ],
+        }
+        captured: dict = {}
+        audits: list = []
+
+        def fake_publish(phase, event_payload, **kwargs):
+            if phase == "signal_generated":
+                captured["payload"] = dict(event_payload)
+            return {"ok": True}
+
+        with patch.object(trader_mod, "publish_trade_flow_event", side_effect=fake_publish), \
+             patch("aureon.observer.production_mode.audit",
+                   side_effect=lambda event, p, **kw: audits.append((event, p, kw))):
+            trader._feed_shared_order_flow_to_decision_logic(payload)
+
+        emitted = captured.get("payload", {})
+        self.assertAlmostEqual(float(emitted.get("confidence", -1.0)), 0.80, places=6)
+        self.assertFalse([a for a in audits if a[0] == "fast_money_gate_rank_separation"])
+
 
 if __name__ == "__main__":
     unittest.main()

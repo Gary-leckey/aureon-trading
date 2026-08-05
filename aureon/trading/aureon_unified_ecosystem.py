@@ -4339,29 +4339,42 @@ class MultiExchangeOrchestrator:
         }
         
     def _calculate_coherence(self, change: float, volume: float, ticker: Dict, asset_class: str) -> float:
-        """Calculate coherence with asset-class awareness."""
+        """Calculate coherence with asset-class awareness.
+
+        P4 inversion fix: the E (energy) term used to be raw range —
+        E = min(1, (high−low)/low / denom) — so a violent chop with zero net
+        direction RAISED coherence toward the entry threshold, rewarding
+        exactly the volatility the sentinel exists to veto. Energy is now the
+        range scaled by directional STRUCTURE (|net change| / range traversed,
+        the classic efficiency ratio): a clean directional move keeps its
+        energy, churn is discounted toward zero. structure ∈ [0,1] means
+        E_new ≤ E_old for identical inputs, so the resulting coherence can
+        only be lower — formula-level tighten-only (b46), proven by
+        regression test.
+        """
         high = ticker.get('high', ticker.get('price', 1))
         low = ticker.get('low', ticker.get('price', 1))
         price = ticker.get('price', 1)
-        
+
         volatility = ((high - low) / low * 100) if low > 0 else 0
-        
+        structure = min(1.0, abs(change) / volatility) if volatility > 0 else 0.0
+
         if asset_class == 'forex':
             S = min(1.0, volume / 50.0)
             O = min(1.0, abs(change) / 0.3)
-            E = min(1.0, volatility / 0.5)
+            E = min(1.0, volatility / 0.5) * structure
             Lambda = (S + O + E) / 3.0
             return 1 / (1 + math.exp(-6 * (Lambda - 0.35)))
         elif asset_class == 'indices':
             S = min(1.0, volume / 50.0)
             O = min(1.0, abs(change) / 1.0)
-            E = min(1.0, volatility / 2.0)
+            E = min(1.0, volatility / 2.0) * structure
             Lambda = (S + O + E) / 3.0
             return 1 / (1 + math.exp(-6 * (Lambda - 0.35)))
         else:  # crypto
             S = min(1.0, volume / 50000.0)
             O = min(1.0, abs(change) / 15.0)
-            E = min(1.0, volatility / 25.0)
+            E = min(1.0, volatility / 25.0) * structure
             Lambda = (S + O + E) / 3.0
             return 1 / (1 + math.exp(-5 * (Lambda - 0.5)))
             
@@ -20296,6 +20309,30 @@ class AureonKrakenEcosystem:
         # 🔥 FORCE TRADE MODE - Skip halt check
         if not is_force_scout and self.tracker.trading_halted:
             return None
+
+        # P4 bypass visibility: force-scout and fast-path remain operator
+        # tools, but every skip of the SignalGate (phase + volatility checks)
+        # is a named audit row — no silent doors. Layers 1–2 (canonical Γ,
+        # Kelly buffer) still cover bypassed entries.
+        if OPS_CORE_AVAILABLE and OPS_CORE is not None and (is_force_scout or is_fast_path):
+            try:
+                from aureon.observer.production_mode import audit as _pm_audit
+                _pm_audit(
+                    "signal_gate_bypass",
+                    {
+                        'symbol': symbol,
+                        'exchange': exchange,
+                        'bypass': 'force_scout' if is_force_scout else 'fast_path',
+                        'dominant_node': dominant_node,
+                        'signal_tier': signal_tier,
+                        'skipped_checks': 'phase_transition,queen_guidance,solar,volatility_sentinel',
+                    },
+                    decision="entry_gate_bypass",
+                    would_have_blocked=None,
+                    actually_blocked=False,
+                )
+            except Exception:
+                pass
 
         # 🔧 OPERATIONAL CORE: Signal Gate + Circuit Breaker + Trade Lock
         # This is THE connection between the analysis brain and execution body.

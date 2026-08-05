@@ -7277,7 +7277,31 @@ class UnifiedMarketTrader:
             confidence = max(0.0, min(1.0, float(item.get("confidence", 0.0) or 0.0)))
             profit_velocity_score = self._clamp01(item.get("profit_velocity_score", 0.0))
             fast_money_score = self._clamp01(item.get("fast_money_score", 0.0))
-            decision_score = max(confidence, profit_velocity_score, fast_money_score)
+            # P4 inversion fix: fast_money_score rewards raw volatility, which is
+            # a fine RANKING signal but must not raise the published gate
+            # confidence — downstream order-intent thresholds compare against
+            # this number. Ranking keeps the score (metadata below); the gate
+            # number is the max of measured confidence signals only. The change
+            # is audited whenever the old formula would have scored higher.
+            decision_score = max(confidence, profit_velocity_score)
+            if fast_money_score > decision_score:
+                try:
+                    from aureon.observer.production_mode import audit as _pm_audit
+                    _pm_audit(
+                        "fast_money_gate_rank_separation",
+                        {
+                            "symbol": symbol,
+                            "fast_money_score": round(fast_money_score, 4),
+                            "decision_score": round(decision_score, 4),
+                            "confidence": round(confidence, 4),
+                            "profit_velocity_score": round(profit_velocity_score, 4),
+                        },
+                        decision="signal_confidence",
+                        would_have_blocked=None,
+                        actually_blocked=None,
+                    )
+                except Exception:
+                    pass
             metadata = {
                 "source": "unified_market_trader.shared_order_flow",
                 "kraken_symbol": item.get("kraken_symbol"),

@@ -3,7 +3,7 @@
 
 The static audit (b41) proves each adaptive consumer *references* the one canonical field. That is
 necessary but not sufficient: a reference could be dead code. This module (b43) is the runtime companion
-that proves the wire is **load-bearing** — it drives each of the five real consumers with the field set
+that proves the wire is **load-bearing** — it drives each real consumer with the field set
 LOW and then HIGH, and asserts the consumer's real output *measurably changes*. A wire that is present
 but does not sway the decision would show ``sways=False`` here; a wire that governs shows a non-zero
 delta. Where b41 answers "is the wire connected?", b43 answers "does the field actually turn the wheel?"
@@ -15,6 +15,8 @@ What it drives (offline, deterministic — two fixed field values per consumer)
 * **seer_oracle** — ``OracleOfHarmony().read()``: ``score = 0.75·base + 0.25·Γ`` moves with Γ.
 * **miner_brain** — ``merge_canonical_into_qc``: the field fills the miner's Λ/Γ/Ψ context.
 * **queen_conscience** — ``ask_why(...)``: a low symbolic-life score VETOes, a higher one only CONCERNS.
+* **volatility_gate** — ``SignalGate.check_entry_allowed``: a high predicted volatility risk BLOCKS the
+  entry, a low risk allows it (the field here is the sentinel assessment, the spectral limb of Λ(t)).
 
 Each consumer is driven through its *real* resolution path: the field is injected by monkeypatching the
 one canonical read layer ``aureon.core.hnc_field.read_canonical_field`` (which every consumer imports at
@@ -171,8 +173,40 @@ def _run_queen_conscience() -> tuple[float, float]:
     return out(0.10), out(0.30)
 
 
+def _run_volatility_gate() -> tuple[float, float]:
+    """SignalGate volatility veto (P4): a HIGH predicted risk must flip the entry
+    to blocked, a LOW risk must leave it allowed. The assessment is injected via
+    the real cross-process read seam (``read_latest_assessment``), and the veto is
+    forced active (LIVE-equivalent) so the audit exercises the blocking wire, not
+    the mode gating. Encoded 0.0 = blocked, 1.0 = allowed — output_low is the
+    low-field (high-risk) state to match the other runners' direction."""
+    import time as _time
+
+    from aureon.core.aureon_operational_core import SignalGate
+    from aureon.intelligence.volatility_sentinel import (
+        FactorReading,
+        VolatilityAssessment,
+    )
+
+    def out(risk: float) -> float:
+        assessment = VolatilityAssessment(
+            status="ok", volatility_risk=risk, confidence=0.6,
+            factors=(FactorReading("ewma_vol", risk, 0.35, "ok", "probe"),
+                     FactorReading("phase_transition", risk, 0.25, "ok", "probe")),
+            blockers=(), symbol=None, ts=_time.time(),
+        )
+        with patch("aureon.intelligence.volatility_sentinel.read_latest_assessment",
+                   lambda *a, **k: assessment), \
+             patch("aureon.observer.production_mode.volatility_veto_active",
+                   lambda *a, **k: True):
+            allowed, _reason = SignalGate().check_entry_allowed("BTC/USD", 100.0)
+            return 1.0 if allowed else 0.0
+
+    return out(0.95), out(0.05)
+
+
 def consumer_specs() -> tuple[tuple[str, str, str, Callable[[], tuple[float, float]]], ...]:
-    """The five adaptive consumers, each with a runner returning (output_low, output_high)."""
+    """The adaptive consumers, each with a runner returning (output_low, output_high)."""
     return (
         ("queen_layer", "aureon/queen/queen_layer.py",
          "base Queen substrate field (Γ passthrough)", _run_queen_layer),
@@ -184,6 +218,9 @@ def consumer_specs() -> tuple[tuple[str, str, str, Callable[[], tuple[float, flo
          "adaptive cycle self-sources Λ/Γ/Ψ from the field", _run_miner_brain),
         ("queen_conscience", "aureon/queen/queen_conscience.py",
          "4th-pass veto tracks the symbolic-life score", _run_queen_conscience),
+        ("volatility_gate", "aureon/core/aureon_operational_core.py",
+         "SignalGate blocks entries when predicted volatility risk crosses the veto line "
+         "(LIVE ORDER PATH)", _run_volatility_gate),
     )
 
 

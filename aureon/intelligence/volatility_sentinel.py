@@ -54,6 +54,13 @@ VOL_TRACE_NAME = "volatility_sentinel"
 VOL_RISK_BLOCK = 0.85
 ESCALATION_RISK = 0.90
 
+#: Minimum factor-weight coverage an assessment needs before a consumer may
+#: act on it. The Kelly buffer (position sizing, tighten-only min) accepts a
+#: single strong factor; the SignalGate hard veto demands corroboration from
+#: at least two factors' weight before it may block an order.
+VOL_MIN_CONFIDENCE_KELLY = 0.3
+VOL_MIN_CONFIDENCE_GATE = 0.5
+
 #: RiskMetrics standard decay for the fast horizon (half-life ≈ 11 samples,
 #: ≈ 55 s at the daemon's 5 s cadence). Slow horizon ≈ 19 min baseline.
 #: Env-tunable for tick-fed cadences (≈0.97 at 1 s ticks).

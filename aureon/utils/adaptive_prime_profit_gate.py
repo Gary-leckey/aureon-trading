@@ -124,6 +124,28 @@ def _resolve_auto_observer_coherence() -> Optional[float]:
     except Exception:  # noqa: BLE001 — the canonical field is best-effort, never breaks the hot path
         canonical_gamma = None
 
+    # P4: the volatility sentinel's PREDICTED risk joins as a third candidate,
+    # vol_safety = 1 − risk. min() over a superset of candidates can only be
+    # ≤ the previous min — provably tighten-only (b46). Only a fresh, measured
+    # assessment with enough factor coverage counts; stale / no_data / thin
+    # coverage → no candidate, never a substituted value.
+    vol_safety: float | None = None
+    vol_risk: float | None = None
+    try:
+        from aureon.intelligence.volatility_sentinel import (
+            VOL_MIN_CONFIDENCE_KELLY,
+            read_latest_assessment,
+        )
+
+        _vol = read_latest_assessment()
+        if (_vol is not None and _vol.status == "ok"
+                and _vol.volatility_risk is not None
+                and _vol.confidence >= VOL_MIN_CONFIDENCE_KELLY):
+            vol_risk = max(0.0, min(1.0, float(_vol.volatility_risk)))
+            vol_safety = 1.0 - vol_risk
+    except Exception:  # noqa: BLE001 — the sentinel is best-effort, never breaks the hot path
+        vol_safety = None
+
     try:
         from aureon.observer import get_observer
         obs = get_observer()
@@ -134,9 +156,10 @@ def _resolve_auto_observer_coherence() -> Optional[float]:
                 s = 0.0
             obs_score = max(0.0, min(1.0, s))
 
-        # Reconcile: prefer the more conservative (lower) of the observer's rock coherence and the
-        # canonical field's Γ. Either alone is used when only one is available; None when neither is.
-        candidates = [c for c in (obs_score, canonical_gamma) if c is not None]
+        # Reconcile: the most conservative (lowest) of the observer's rock coherence, the canonical
+        # field's Γ, and the sentinel's predicted vol-safety. Whichever are available are used;
+        # None when none are.
+        candidates = [c for c in (obs_score, canonical_gamma, vol_safety) if c is not None]
         if not candidates:
             return None
         score = min(candidates)
@@ -148,6 +171,8 @@ def _resolve_auto_observer_coherence() -> Optional[float]:
                     {"coherence_score": score,
                      "observer_rock_score": obs_score,
                      "canonical_field_gamma": canonical_gamma,
+                     "volatility_sentinel_risk": vol_risk,
+                     "volatility_sentinel_safety": vol_safety,
                      "scaling_active_in_mode": _scaling_active},
                     decision="kelly_buffer",
                     would_have_blocked=None,

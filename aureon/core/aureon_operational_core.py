@@ -184,6 +184,52 @@ class SignalGate:
             except Exception as e:
                 logger.debug(f"Solar monitor check failed (allowing trade): {e}")
 
+        # 4. Volatility sentinel check (P4). The sentinel PREDICTS high
+        # volatility from four measured factors (EWMA expansion, phase
+        # transition, QGITA regime, spectral surge); at VOL_RISK_BLOCK with
+        # enough factor coverage the entry is vetoed. Same production_mode
+        # contract as the phase check: acts in LIVE, audits
+        # would_have_blocked everywhere else. No assessment / stale /
+        # thin coverage → honest passthrough (never a substituted risk).
+        try:
+            from aureon.intelligence.volatility_sentinel import (
+                VOL_MIN_CONFIDENCE_GATE,
+                VOL_RISK_BLOCK,
+                read_latest_assessment,
+            )
+
+            vol = read_latest_assessment()
+            if (vol is not None and vol.status == "ok"
+                    and vol.volatility_risk is not None
+                    and vol.confidence >= VOL_MIN_CONFIDENCE_GATE
+                    and vol.volatility_risk >= VOL_RISK_BLOCK):
+                from aureon.observer.production_mode import audit as _pm_audit
+                from aureon.observer.production_mode import volatility_veto_active
+                veto = volatility_veto_active()
+                factors = ",".join(
+                    f.name for f in vol.factors if f.status == "ok") or "none"
+                _pm_audit(
+                    "signal_gate_volatility_check",
+                    {
+                        "symbol": symbol,
+                        "volatility_risk": round(vol.volatility_risk, 4),
+                        "confidence": round(vol.confidence, 4),
+                        "factors": factors,
+                    },
+                    decision="entry_veto",
+                    would_have_blocked=True,
+                    actually_blocked=veto,
+                )
+                if veto:
+                    self._blocked_count += 1
+                    return False, (
+                        f"VOLATILITY_PREDICTED: sentinel risk="
+                        f"{vol.volatility_risk:.2f} >= {VOL_RISK_BLOCK} "
+                        f"(factors: {factors})"
+                    )
+        except Exception as e:
+            logger.debug(f"Volatility sentinel check failed (allowing trade): {e}")
+
         self._allowed_count += 1
         return True, "CLEAR"
 
