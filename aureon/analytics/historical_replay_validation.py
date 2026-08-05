@@ -31,6 +31,24 @@ Kraken taker fee charged on every position change. Reported against
 buy-and-hold AND against the same strategy WITHOUT the sentinel veto, so the
 veto's contribution is isolated and measured, never asserted.
 
+Profit-margin benchmark (two real horizons, per-component attribution)
+----------------------------------------------------------------------
+Both bundled horizons replay: ~30 days of hourly candles AND ~2 years of
+daily candles per symbol, all from the same open endpoint. Per replay:
+
+* **Round-trip margins** — every entry→exit pair's net margin (both fee
+  legs charged), win rate, median/best/worst trade, mean hold time, and
+  the fee drag (gross return minus net).
+* **Ablation attribution** — the SAME recorded per-candle observables
+  re-walked under each gate subset (``hnc_full`` → ``no_sentinel_veto`` →
+  ``probability_only`` → ``momentum_only`` → ``buy_hold``), so each HNC
+  component's margin contribution is a measured difference between two
+  deterministic equity walks, never an assertion. By construction each
+  added gate can only remove long candles (subset property).
+* **Γ-conditioned forward returns** — the mean next-candle return when the
+  field's Γ sits above vs below its own series median (no invented
+  thresholds; the split point is the data's own median).
+
 Honesty
 -------
 The dataset is REAL exchange history (never synthetic here); a missing file
@@ -52,6 +70,8 @@ __all__ = [
     "TAKER_FEE_RATE",
     "DATA_DIR",
     "SYMBOLS",
+    "INTERVALS",
+    "ABLATION_GATES",
     "load_ohlc",
     "replay_symbol",
     "compute_replay_validation",
@@ -71,6 +91,13 @@ TAKER_FEE_RATE = 0.0026
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = _REPO_ROOT / "data" / "historical"
 SYMBOLS = ("BTCUSD", "ETHUSD", "SOLUSD")
+#: Both bundled real horizons: 60m ≈ the last 30 days, 1440m ≈ the last 2 years.
+INTERVALS = (60, 1440)
+#: Ablation ladder, strongest gate first. Each later entry is a superset of
+#: long candles (a gate can only remove longs), so differences between the
+#: walks isolate one component's measured margin contribution.
+ABLATION_GATES = (
+    "hnc_full", "no_sentinel_veto", "probability_only", "momentum_only", "buy_hold")
 
 
 @dataclass(frozen=True)
@@ -78,6 +105,7 @@ class SymbolReplay:
     """Everything measured while one symbol's history flowed through the stack."""
 
     symbol: str
+    interval_minutes: int
     candles: int
     provenance: dict[str, Any]
     # HNC / Auris observables on the real timeline
@@ -104,6 +132,21 @@ class SymbolReplay:
     buy_hold_max_drawdown_pct: float
     n_position_changes: int
     fees_paid_pct: float
+    # profit-margin benchmark: round-trip trade margins on the full strategy
+    n_round_trips: int
+    win_rate: float | None
+    avg_trade_net_pct: float | None
+    median_trade_net_pct: float | None
+    best_trade_net_pct: float | None
+    worst_trade_net_pct: float | None
+    avg_hold_candles: float | None
+    gross_return_pct: float
+    fee_drag_pct: float
+    # per-component margin attribution (same observables, gate subsets)
+    ablations: dict[str, dict[str, Any]]
+    # the field's own Γ vs realized next-candle return (median split — no
+    # invented threshold)
+    gamma_conditioned: dict[str, Any]
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -118,6 +161,11 @@ class ReplayValidationReport:
     any_symbol_produced_signals: bool
     capital_preserved_in_downtrends: bool
     any_veto_fired: bool
+    # aggregate profit-margin benchmark across every replayed horizon
+    total_round_trips: int
+    overall_win_rate: float | None
+    avg_trade_net_pct: float | None
+    margin_attribution: dict[str, dict[str, Any]]
     switch_to_live_note: str
     boundary: str = REPLAY_BOUNDARY
     blockers: list[str] = field(default_factory=list)
@@ -127,9 +175,10 @@ class ReplayValidationReport:
         return asdict(self)
 
 
-def load_ohlc(symbol: str, data_dir: Path | None = None) -> dict[str, Any] | None:
+def load_ohlc(symbol: str, data_dir: Path | None = None,
+              interval_minutes: int = 60) -> dict[str, Any] | None:
     """Load one symbol's provenance-stamped real dataset. Missing → None."""
-    path = (data_dir or DATA_DIR) / f"kraken_ohlc_{symbol}_60m.json"
+    path = (data_dir or DATA_DIR) / f"kraken_ohlc_{symbol}_{interval_minutes}m.json"
     if not path.exists():
         return None
     try:
@@ -141,7 +190,8 @@ def load_ohlc(symbol: str, data_dir: Path | None = None) -> dict[str, Any] | Non
     return payload
 
 
-def _equity_walk(closes: list[float], positions: list[int]) -> tuple[float, float, int, float]:
+def _equity_walk(closes: list[float], positions: list[int],
+                 fee_rate: float = TAKER_FEE_RATE) -> tuple[float, float, int, float]:
     """Fee-inclusive long/flat equity walk. ``positions[i]`` is held over the
     move closes[i] → closes[i+1]. Returns (return_pct, max_drawdown_pct,
     n_position_changes, fees_paid_pct)."""
@@ -153,8 +203,8 @@ def _equity_walk(closes: list[float], positions: list[int]) -> tuple[float, floa
     prev_pos = 0
     for i, pos in enumerate(positions):
         if pos != prev_pos:
-            equity *= (1.0 - TAKER_FEE_RATE)
-            fees += TAKER_FEE_RATE
+            equity *= (1.0 - fee_rate)
+            fees += fee_rate
             changes += 1
             prev_pos = pos
         if pos and closes[i] > 0:
@@ -162,10 +212,54 @@ def _equity_walk(closes: list[float], positions: list[int]) -> tuple[float, floa
         peak = max(peak, equity)
         max_dd = max(max_dd, (peak - equity) / peak)
     if prev_pos:  # close the final position at the last price
-        equity *= (1.0 - TAKER_FEE_RATE)
-        fees += TAKER_FEE_RATE
+        equity *= (1.0 - fee_rate)
+        fees += fee_rate
         changes += 1
     return ((equity - 1.0) * 100.0, max_dd * 100.0, changes, fees * 100.0)
+
+
+def _trade_stats(closes: list[float], positions: list[int],
+                 fee_rate: float = TAKER_FEE_RATE) -> dict[str, Any]:
+    """Round-trip profit margins for a long/flat position series.
+
+    A round trip opens at the first candle a position is held (bought at
+    ``closes[entry]``) and closes at the candle it is dropped (sold at
+    ``closes[exit]``), with both fee legs charged — the same accounting as
+    ``_equity_walk``, decomposed per trade so the margin distribution is
+    visible, not just the compounded end state.
+    """
+    trades: list[float] = []
+    holds: list[int] = []
+    entry: int | None = None
+    for i, pos in enumerate(positions):
+        if pos and entry is None:
+            entry = i
+        elif not pos and entry is not None:
+            gross = closes[i] / closes[entry] if closes[entry] > 0 else 1.0
+            trades.append((gross * (1.0 - fee_rate) ** 2 - 1.0) * 100.0)
+            holds.append(i - entry)
+            entry = None
+    if entry is not None:  # still long at series end — close at the last price
+        gross = closes[len(positions)] / closes[entry] if closes[entry] > 0 else 1.0
+        trades.append((gross * (1.0 - fee_rate) ** 2 - 1.0) * 100.0)
+        holds.append(len(positions) - entry)
+    n = len(trades)
+    if not n:
+        return {"n_round_trips": 0, "win_rate": None, "avg_trade_net_pct": None,
+                "median_trade_net_pct": None, "best_trade_net_pct": None,
+                "worst_trade_net_pct": None, "avg_hold_candles": None}
+    ordered = sorted(trades)
+    median = (ordered[n // 2] if n % 2
+              else (ordered[n // 2 - 1] + ordered[n // 2]) / 2.0)
+    return {
+        "n_round_trips": n,
+        "win_rate": round(sum(1 for t in trades if t > 0) / n, 6),
+        "avg_trade_net_pct": round(sum(trades) / n, 4),
+        "median_trade_net_pct": round(median, 4),
+        "best_trade_net_pct": round(max(trades), 4),
+        "worst_trade_net_pct": round(min(trades), 4),
+        "avg_hold_candles": round(sum(holds) / n, 2),
+    }
 
 
 def replay_symbol(payload: dict[str, Any]) -> SymbolReplay:
@@ -182,6 +276,9 @@ def replay_symbol(payload: dict[str, Any]) -> SymbolReplay:
     symbol = str(payload.get("symbol", "?"))
     candles = payload["candles"]
     closes = [float(c["close"]) for c in candles]
+    interval_minutes = int(payload.get("provenance", {}).get("interval_minutes", 60))
+    # how many candles make up 24 hours at this cadence (1 for daily bars)
+    win_n = max(1, 1440 // max(1, interval_minutes))
 
     sentinel = VolatilitySentinel(symbols=[symbol])
     auris = AurisEngine()
@@ -199,6 +296,8 @@ def replay_symbol(payload: dict[str, Any]) -> SymbolReplay:
 
     positions: list[int] = []          # with sentinel veto
     positions_no_veto: list[int] = []  # same gates minus the veto
+    prob_flags: list[bool] = []        # probability coherence above midline
+    mom_flags: list[bool] = []         # positive 24h momentum
     veto_flags: list[bool] = []
     entry_signals = 0
     prev_long = False
@@ -210,9 +309,10 @@ def replay_symbol(payload: dict[str, Any]) -> SymbolReplay:
 
         # The coherence formulas' production contract is the 24h TICKER
         # (change24h, 24h high/low, 24h quote volume) — feed them the same
-        # quantities computed over the trailing 24 real candles, exactly what
-        # the live exchanges' 24hr endpoints report.
-        w = candles[max(0, i - 23):i + 1]
+        # quantities computed over the trailing 24 hours of real candles,
+        # exactly what the live exchanges' 24hr endpoints report. At daily
+        # cadence that window is the current candle itself.
+        w = candles[max(0, i - (win_n - 1)):i + 1]
         high_24h = max(float(x["high"]) for x in w)
         low_24h = min(float(x["low"]) for x in w)
         open_24h = float(w[0]["open"])
@@ -272,7 +372,11 @@ def replay_symbol(payload: dict[str, Any]) -> SymbolReplay:
 
         # 6. The signal on the historical timeline: the probability formula
         # above its own sigmoid midline, positive 24h momentum, sentinel clear.
-        base_long = prob_coh > 0.5 and change_24h > 0.0
+        prob_ok = prob_coh > 0.5
+        mom_ok = change_24h > 0.0
+        prob_flags.append(prob_ok)
+        mom_flags.append(mom_ok)
+        base_long = prob_ok and mom_ok
         long_now = base_long and not vetoed
         positions.append(1 if long_now else 0)
         positions_no_veto.append(1 if base_long else 0)
@@ -288,6 +392,54 @@ def replay_symbol(payload: dict[str, Any]) -> SymbolReplay:
     ret_nv, _dd_nv, _ch_nv, _f_nv = _equity_walk(closes, positions_no_veto)
     buy_hold = (closes[-1] / closes[0] - 1.0) * 100.0
     _bh_ret, bh_dd, _bh_ch, _bh_f = _equity_walk(closes, [1] * (len(closes) - 1))
+
+    # profit-margin benchmark: round-trip margins + gross-vs-net fee drag
+    trade_stats = _trade_stats(closes, positions)
+    gross_ret, _g_dd, _g_ch, _g_f = _equity_walk(closes, positions, fee_rate=0.0)
+
+    # per-component ablation: the SAME recorded observables under each gate
+    # subset — each walk is deterministic, so differences ARE the component's
+    # measured margin contribution on this real series
+    n_pos = len(positions)
+    gate_positions: dict[str, list[int]] = {
+        "hnc_full": positions,
+        "no_sentinel_veto": positions_no_veto,
+        "probability_only": [1 if p else 0 for p in prob_flags[:n_pos]],
+        "momentum_only": [1 if m else 0 for m in mom_flags[:n_pos]],
+        "buy_hold": [1] * n_pos,
+    }
+    ablations: dict[str, dict[str, Any]] = {}
+    for gate in ABLATION_GATES:
+        gpos = gate_positions[gate]
+        g_ret, g_dd, _g_changes, g_fees = _equity_walk(closes, gpos)
+        g_trades = _trade_stats(closes, gpos)
+        ablations[gate] = {
+            "return_pct": round(g_ret, 4),
+            "max_drawdown_pct": round(g_dd, 4),
+            "fees_paid_pct": round(g_fees, 4),
+            "long_candles": sum(gpos),
+            "n_round_trips": g_trades["n_round_trips"],
+            "win_rate": g_trades["win_rate"],
+            "avg_trade_net_pct": g_trades["avg_trade_net_pct"],
+        }
+
+    # Γ vs realized forward return, split at the series' OWN median Γ —
+    # a measured association, using no invented threshold
+    fwd = [(closes[i + 1] / closes[i] - 1.0) * 100.0
+           for i in range(len(closes) - 1) if closes[i] > 0]
+    g_series = gammas[:len(fwd)]
+    g_sorted = sorted(g_series)
+    g_median = (g_sorted[len(g_sorted) // 2] if len(g_sorted) % 2
+                else (g_sorted[len(g_sorted) // 2 - 1] + g_sorted[len(g_sorted) // 2]) / 2.0)
+    above = [fwd[i] for i, g in enumerate(g_series) if g >= g_median]
+    below = [fwd[i] for i, g in enumerate(g_series) if g < g_median]
+    gamma_conditioned: dict[str, Any] = {
+        "gamma_median": round(g_median, 6),
+        "n_above": len(above),
+        "n_below": len(below),
+        "avg_fwd_return_above_pct": round(sum(above) / len(above), 4) if above else None,
+        "avg_fwd_return_below_pct": round(sum(below) / len(below), 4) if below else None,
+    }
 
     # veto calibration: how often a veto candle sits in the top realized-vol
     # decile of the same series (measured precision, only when vetoes exist)
@@ -309,6 +461,7 @@ def replay_symbol(payload: dict[str, Any]) -> SymbolReplay:
 
     return SymbolReplay(
         symbol=symbol,
+        interval_minutes=interval_minutes,
         candles=len(candles),
         provenance=dict(payload.get("provenance", {})),
         auris_coherence_mean=round(sum(auris_scores) / len(auris_scores), 6),
@@ -332,21 +485,58 @@ def replay_symbol(payload: dict[str, Any]) -> SymbolReplay:
         buy_hold_max_drawdown_pct=round(bh_dd, 4),
         n_position_changes=changes,
         fees_paid_pct=round(fees, 4),
+        n_round_trips=trade_stats["n_round_trips"],
+        win_rate=trade_stats["win_rate"],
+        avg_trade_net_pct=trade_stats["avg_trade_net_pct"],
+        median_trade_net_pct=trade_stats["median_trade_net_pct"],
+        best_trade_net_pct=trade_stats["best_trade_net_pct"],
+        worst_trade_net_pct=trade_stats["worst_trade_net_pct"],
+        avg_hold_candles=trade_stats["avg_hold_candles"],
+        gross_return_pct=round(gross_ret, 4),
+        fee_drag_pct=round(gross_ret - ret, 4),
+        ablations=ablations,
+        gamma_conditioned=gamma_conditioned,
     )
 
 
-def compute_replay_validation(data_dir: Path | None = None) -> ReplayValidationReport:
-    """Replay every bundled symbol; missing datasets are named blockers."""
+def compute_replay_validation(
+        data_dir: Path | None = None,
+        intervals: tuple[int, ...] = INTERVALS) -> ReplayValidationReport:
+    """Replay every bundled symbol × horizon; missing datasets are named blockers."""
     results: list[SymbolReplay] = []
     blockers: list[str] = []
-    for sym in SYMBOLS:
-        payload = load_ohlc(sym, data_dir)
-        if payload is None:
-            blockers.append(
-                f"{sym}: dataset missing/unreadable at data/historical/"
-                f"kraken_ohlc_{sym}_60m.json — refetch with --refresh (no key needed)")
+    for interval in intervals:
+        for sym in SYMBOLS:
+            payload = load_ohlc(sym, data_dir, interval_minutes=interval)
+            if payload is None:
+                blockers.append(
+                    f"{sym}@{interval}m: dataset missing/unreadable at data/historical/"
+                    f"kraken_ohlc_{sym}_{interval}m.json — refetch with --refresh (no key needed)")
+                continue
+            results.append(replay_symbol(payload))
+
+    # aggregate profit-margin benchmark, attributed per HNC component
+    all_trips = sum(r.n_round_trips for r in results)
+    all_wins = sum(round((r.win_rate or 0.0) * r.n_round_trips) for r in results)
+    weighted_margin = sum((r.avg_trade_net_pct or 0.0) * r.n_round_trips for r in results)
+    margin_attribution: dict[str, dict[str, Any]] = {}
+    for interval in intervals:
+        rows = [r for r in results if r.interval_minutes == interval]
+        if not rows:
             continue
-        results.append(replay_symbol(payload))
+        means = {
+            gate: round(sum(r.ablations[gate]["return_pct"] for r in rows) / len(rows), 4)
+            for gate in ABLATION_GATES
+        }
+        margin_attribution[f"{interval}m"] = {
+            "mean_return_pct_by_gate": means,
+            "hnc_edge_vs_momentum_only_pct": round(
+                means["hnc_full"] - means["momentum_only"], 4),
+            "mean_max_dd_hnc_full_pct": round(
+                sum(r.ablations["hnc_full"]["max_drawdown_pct"] for r in rows) / len(rows), 4),
+            "mean_max_dd_buy_hold_pct": round(
+                sum(r.ablations["buy_hold"]["max_drawdown_pct"] for r in rows) / len(rows), 4),
+        }
 
     return ReplayValidationReport(
         symbols=[r.to_dict() for r in results],
@@ -357,6 +547,10 @@ def compute_replay_validation(data_dir: Path | None = None) -> ReplayValidationR
         capital_preserved_in_downtrends=all(
             r.max_drawdown_pct <= r.buy_hold_max_drawdown_pct for r in results),
         any_veto_fired=any(r.veto_candles > 0 for r in results),
+        total_round_trips=all_trips,
+        overall_win_rate=round(all_wins / all_trips, 6) if all_trips else None,
+        avg_trade_net_pct=round(weighted_margin / all_trips, 4) if all_trips else None,
+        margin_attribution=margin_attribution,
         switch_to_live_note=(
             "Live cut-over is configuration, not code: the P3 daemon source feeds the same "
             "VolatilitySentinel from ws_cache/ws_prices.json (live exchange feeds), and the P4/P5 "
@@ -365,7 +559,8 @@ def compute_replay_validation(data_dir: Path | None = None) -> ReplayValidationR
     )
 
 
-def refresh_datasets(data_dir: Path | None = None) -> list[str]:
+def refresh_datasets(data_dir: Path | None = None,
+                     intervals: tuple[int, ...] = INTERVALS) -> list[str]:
     """Re-fetch the open Kraken OHLC datasets (public endpoint, no API key)."""
     import urllib.request
 
@@ -373,36 +568,37 @@ def refresh_datasets(data_dir: Path | None = None) -> list[str]:
     out_dir.mkdir(parents=True, exist_ok=True)
     written: list[str] = []
     kraken_pairs = {"BTCUSD": "XBTUSD", "ETHUSD": "ETHUSD", "SOLUSD": "SOLUSD"}
-    for name, pair in kraken_pairs.items():
-        url = f"https://api.kraken.com/0/public/OHLC?pair={pair}&interval=60"
-        with urllib.request.urlopen(url, timeout=30) as r:
-            payload = json.load(r)
-        if payload.get("error"):
-            raise RuntimeError(f"kraken error for {name}: {payload['error']}")
-        result = payload["result"]
-        key = next(k for k in result if k != "last")
-        candles = [
-            {"ts": int(c[0]), "open": float(c[1]), "high": float(c[2]),
-             "low": float(c[3]), "close": float(c[4]), "vwap": float(c[5]),
-             "volume": float(c[6]), "trades": int(c[7])}
-            for c in result[key]
-        ]
-        doc = {
-            "provenance": {
-                "source": "Kraken public market-data API (no API key required)",
-                "url": url,
-                "kraken_pair_key": key,
-                "interval_minutes": 60,
-                "fetched_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                "license_note": "public exchange market data, retrieved from the open unauthenticated endpoint",
-                "kind": "REAL historical OHLCV — not synthetic",
-            },
-            "symbol": name[:3] + "/" + name[3:],
-            "candles": candles,
-        }
-        path = out_dir / f"kraken_ohlc_{name}_60m.json"
-        path.write_text(json.dumps(doc), encoding="utf-8")
-        written.append(str(path))
+    for interval in intervals:
+        for name, pair in kraken_pairs.items():
+            url = f"https://api.kraken.com/0/public/OHLC?pair={pair}&interval={interval}"
+            with urllib.request.urlopen(url, timeout=30) as r:
+                payload = json.load(r)
+            if payload.get("error"):
+                raise RuntimeError(f"kraken error for {name}: {payload['error']}")
+            result = payload["result"]
+            key = next(k for k in result if k != "last")
+            candles = [
+                {"ts": int(c[0]), "open": float(c[1]), "high": float(c[2]),
+                 "low": float(c[3]), "close": float(c[4]), "vwap": float(c[5]),
+                 "volume": float(c[6]), "trades": int(c[7])}
+                for c in result[key]
+            ]
+            doc = {
+                "provenance": {
+                    "source": "Kraken public market-data API (no API key required)",
+                    "url": url,
+                    "kraken_pair_key": key,
+                    "interval_minutes": interval,
+                    "fetched_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    "license_note": "public exchange market data, retrieved from the open unauthenticated endpoint",
+                    "kind": "REAL historical OHLCV — not synthetic",
+                },
+                "symbol": name[:3] + "/" + name[3:],
+                "candles": candles,
+            }
+            path = out_dir / f"kraken_ohlc_{name}_{interval}m.json"
+            path.write_text(json.dumps(doc), encoding="utf-8")
+            written.append(str(path))
     return written
 
 
@@ -436,7 +632,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"wrote {report.out_path}")
 
     for s in report.symbols:
-        print(f"\n{s['symbol']}  ({s['candles']} real candles)")
+        print(f"\n{s['symbol']} @{s['interval_minutes']}m  ({s['candles']} real candles)")
         print(f"  Auris 9-node coherence  mean={s['auris_coherence_mean']:.3f} "
               f"range=[{s['auris_coherence_min']:.3f}, {s['auris_coherence_max']:.3f}]")
         print(f"  HNC field               Γ mean={s['gamma_mean']:.3f}  "
@@ -453,6 +649,33 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  Risk                    maxDD={s['max_drawdown_pct']:.2f}% "
               f"(buy&hold {s['buy_hold_max_drawdown_pct']:.2f}%)  "
               f"fees={s['fees_paid_pct']:.2f}%  changes={s['n_position_changes']}")
+        if s["n_round_trips"]:
+            print(f"  Trade margins           {s['n_round_trips']} round trips  "
+                  f"win rate={s['win_rate']:.0%}  avg={s['avg_trade_net_pct']:+.2f}%  "
+                  f"median={s['median_trade_net_pct']:+.2f}%  "
+                  f"best={s['best_trade_net_pct']:+.2f}%  worst={s['worst_trade_net_pct']:+.2f}%  "
+                  f"hold={s['avg_hold_candles']:.1f} candles")
+            print(f"  Fee drag                gross={s['gross_return_pct']:+.2f}% → "
+                  f"net={s['strategy_return_pct']:+.2f}% (drag {s['fee_drag_pct']:.2f}%)")
+        abl = s["ablations"]
+        print("  Ablation (return% | maxDD%)  " + "  ".join(
+            f"{g}={abl[g]['return_pct']:+.2f}|{abl[g]['max_drawdown_pct']:.2f}"
+            for g in ABLATION_GATES))
+        gc = s["gamma_conditioned"]
+        above = gc["avg_fwd_return_above_pct"]
+        below = gc["avg_fwd_return_below_pct"]
+        print(f"  Γ-conditioned fwd ret   Γ≥median → "
+              f"{above if above is not None else 'n/a'}%  |  Γ<median → "
+              f"{below if below is not None else 'n/a'}%  (median Γ={gc['gamma_median']:.3f})")
+    if report.total_round_trips:
+        print(f"\nAggregate margins: {report.total_round_trips} round trips, "
+              f"win rate {report.overall_win_rate:.0%}, "
+              f"avg net margin {report.avg_trade_net_pct:+.2f}%/trade")
+    for horizon, att in report.margin_attribution.items():
+        print(f"  {horizon} mean return by gate: {att['mean_return_pct_by_gate']}  "
+              f"HNC edge vs momentum-only: {att['hnc_edge_vs_momentum_only_pct']:+.2f}%  "
+              f"maxDD {att['mean_max_dd_hnc_full_pct']:.2f}% vs "
+              f"buy&hold {att['mean_max_dd_buy_hold_pct']:.2f}%")
     for b in report.blockers:
         print(f"  BLOCKER: {b}")
     print(f"\n{report.switch_to_live_note}")
