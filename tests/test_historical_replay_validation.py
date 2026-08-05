@@ -96,6 +96,9 @@ def test_profit_margin_benchmark_measured_on_both_horizons(bundled_report):
         # time) and must cut mean max drawdown vs buy-and-hold
         assert att["hnc_edge_vs_momentum_only_pct"] > 0.0
         assert att["mean_max_dd_hnc_full_pct"] < att["mean_max_dd_buy_hold_pct"]
+        # the walk-forward Γ tighten never costs margin on the bundled data
+        # (measured +0.00% hourly / +10.23% daily at pin time)
+        assert att["gamma_edge_vs_hnc_full_pct"] >= 0.0
 
 
 def test_ablation_gate_ladder_is_structurally_monotone(bundled_report):
@@ -104,7 +107,8 @@ def test_ablation_gate_ladder_is_structurally_monotone(bundled_report):
     for s in report.symbols:
         abl = s["ablations"]
         assert set(abl) == set(ABLATION_GATES)
-        assert (abl["hnc_full"]["long_candles"]
+        assert (abl["gamma_tightened"]["long_candles"]
+                <= abl["hnc_full"]["long_candles"]
                 <= abl["no_sentinel_veto"]["long_candles"]
                 <= abl["probability_only"]["long_candles"]
                 <= abl["buy_hold"]["long_candles"])

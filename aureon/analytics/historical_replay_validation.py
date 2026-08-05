@@ -96,8 +96,12 @@ INTERVALS = (60, 1440)
 #: Ablation ladder, strongest gate first. Each later entry is a superset of
 #: long candles (a gate can only remove longs), so differences between the
 #: walks isolate one component's measured margin contribution.
+#: ``gamma_tightened`` = the full HNC gates AND the field's Γ at/above the
+#: median of every Γ measured so far (expanding window — no lookahead, the
+#: split point is the data's own history, never an invented constant).
 ABLATION_GATES = (
-    "hnc_full", "no_sentinel_veto", "probability_only", "momentum_only", "buy_hold")
+    "gamma_tightened", "hnc_full", "no_sentinel_veto",
+    "probability_only", "momentum_only", "buy_hold")
 
 
 @dataclass(frozen=True)
@@ -397,11 +401,24 @@ def replay_symbol(payload: dict[str, Any]) -> SymbolReplay:
     trade_stats = _trade_stats(closes, positions)
     gross_ret, _g_dd, _g_ch, _g_f = _equity_walk(closes, positions, fee_rate=0.0)
 
+    # walk-forward Γ tighten: at each candle, is the field's Γ at/above the
+    # median of every Γ measured SO FAR? Expanding window — no lookahead.
+    import bisect
+    g_run: list[float] = []
+    gamma_gate_flags: list[bool] = []
+    for g in gammas:
+        bisect.insort(g_run, g)
+        m = len(g_run)
+        med_run = g_run[m // 2] if m % 2 else (g_run[m // 2 - 1] + g_run[m // 2]) / 2.0
+        gamma_gate_flags.append(g >= med_run)
+
     # per-component ablation: the SAME recorded observables under each gate
     # subset — each walk is deterministic, so differences ARE the component's
     # measured margin contribution on this real series
     n_pos = len(positions)
     gate_positions: dict[str, list[int]] = {
+        "gamma_tightened": [
+            1 if (positions[i] and gamma_gate_flags[i]) else 0 for i in range(n_pos)],
         "hnc_full": positions,
         "no_sentinel_veto": positions_no_veto,
         "probability_only": [1 if p else 0 for p in prob_flags[:n_pos]],
@@ -532,6 +549,8 @@ def compute_replay_validation(
             "mean_return_pct_by_gate": means,
             "hnc_edge_vs_momentum_only_pct": round(
                 means["hnc_full"] - means["momentum_only"], 4),
+            "gamma_edge_vs_hnc_full_pct": round(
+                means["gamma_tightened"] - means["hnc_full"], 4),
             "mean_max_dd_hnc_full_pct": round(
                 sum(r.ablations["hnc_full"]["max_drawdown_pct"] for r in rows) / len(rows), 4),
             "mean_max_dd_buy_hold_pct": round(
@@ -674,6 +693,7 @@ def main(argv: list[str] | None = None) -> int:
     for horizon, att in report.margin_attribution.items():
         print(f"  {horizon} mean return by gate: {att['mean_return_pct_by_gate']}  "
               f"HNC edge vs momentum-only: {att['hnc_edge_vs_momentum_only_pct']:+.2f}%  "
+              f"Γ-tighten edge vs hnc_full: {att['gamma_edge_vs_hnc_full_pct']:+.2f}%  "
               f"maxDD {att['mean_max_dd_hnc_full_pct']:.2f}% vs "
               f"buy&hold {att['mean_max_dd_buy_hold_pct']:.2f}%")
     for b in report.blockers:
