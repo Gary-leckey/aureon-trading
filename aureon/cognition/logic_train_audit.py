@@ -158,8 +158,6 @@ KNOWN_UNWIRED: Final[dict[str, str]] = {
         "measured unwired at pin time (role=consumer, reads a field, no canonical wire)",
     "aureon/observer/fitter.py":
         "measured unwired at pin time (role=producer, reads a field, no canonical wire)",
-    "aureon/observer/harmonic_observer.py":
-        "observer core computes a real local field; should publish it as a sub-field",
     "aureon/observer/historical_backtest.py":
         "backtest harness — fixture surface, expected to stay off the live field",
     "aureon/observer/run.py":

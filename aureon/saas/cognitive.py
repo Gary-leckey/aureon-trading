@@ -133,6 +133,8 @@ _INTENDED_PRODUCERS: tuple[Dict[str, str], ...] = (
      "note": "thought-propagation spore engine; live on the Queen/ignition boot path, dark only in the minimal organism daemon"},
     {"source": "hnc_human_loop", "host": "integrated_cognitive_system",
      "note": "human-in-the-loop Λ producer; host not booted, and event-driven (publishes per message)"},
+    {"source": "harmonic_observer", "host": "hnc_live_daemon",
+     "note": "FFT-of-Λ spectral observer; publishes its local field each daemon compute step (throttled 30 s), dark until the observer has data"},
 )
 
 

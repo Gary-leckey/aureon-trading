@@ -74,6 +74,8 @@ FRED_INTERVAL = 3600            # FRED economic releases are sparse
 NOAA_CDO_INTERVAL = 3600        # NCEI Climate Data Online — slow daily records
 USGS_WATER_INTERVAL = 1800      # USGS Water Data collections — slow feed
 LOCAL_ACTION_INTERVAL = 60      # the organism's own local-machine moves
+VOL_SENTINEL_INTERVAL = 5       # market volatility prediction — compute cadence
+HARMONIC_SPECTRUM_INTERVAL = 15  # FFT-of-Λ(t) observer readback
 
 # Compute cadence — how often the engine takes a step against the latest
 # readings. The kernel is cheap (<1 ms/step) so 5 s gives the field high
@@ -87,13 +89,28 @@ BACKOFF_MAX = 600
 
 @dataclass
 class SourceState:
-    """Per-source running state — cached reading, error count, last fetch ts."""
+    """Per-source running state — cached reading, error count, last fetch ts.
+
+    ``max_age_s`` is the honesty expiry: a cached reading older than this is
+    excluded from the Λ compute step instead of lingering in Γ forever. None
+    (the default for every pre-existing source) keeps the original
+    never-expires behaviour bit-identical; only sources whose input is a
+    fast-moving market quantity opt in.
+    """
     name: str
     interval_s: float
     last_reading: Optional[SubsystemReading] = None
     last_fetch_ts: float = 0.0
     error_count: int = 0
     backoff_s: float = BACKOFF_INITIAL
+    max_age_s: float | None = None
+
+    def reading_for_compute(self, now: float) -> SubsystemReading | None:
+        if self.last_reading is None:
+            return None
+        if self.max_age_s is not None and (now - self.last_fetch_ts) > self.max_age_s:
+            return None
+        return self.last_reading
 
 
 # ─── SubsystemReading mappers ─────────────────────────────────────
@@ -366,6 +383,58 @@ def _map_usgs_water(item) -> SubsystemReading:
     )
 
 
+def _map_volatility_sentinel(assessment) -> SubsystemReading | None:
+    """VolatilityAssessment → SubsystemReading (the Fourier→Λ(t) seam).
+
+    value = SAFETY = 1 − volatility_risk: predicted high volatility reads as a
+    LOW subsystem value, which pulls Γ = 1−|σ/μ| down, which every
+    reconcile_gamma order-path gate then takes as the tighter bound — b46
+    tighten-only by construction, with zero edits at the ten gate sites.
+
+    no_data → None, NEVER a neutral placeholder: Γ consumes reading VALUES
+    regardless of confidence, so a substituted 0.5 would move the canonical
+    field — fabrication by another name.
+    """
+    if assessment is None:
+        return None
+    risk = getattr(assessment, "volatility_risk", None)
+    if getattr(assessment, "status", "no_data") != "ok" or risk is None:
+        return None
+    factors = [f.name for f in getattr(assessment, "factors", ())
+               if getattr(f, "status", "") == "ok"]
+    return SubsystemReading(
+        name="volatility_sentinel",
+        value=max(0.0, min(1.0, 1.0 - float(risk))),
+        confidence=max(0.0, min(1.0, float(getattr(assessment, "confidence", 0.0)))),
+        state=f"risk={float(risk):.2f};factors={','.join(factors) or 'none'}",
+    )
+
+
+def _map_harmonic_observer(observer) -> SubsystemReading | None:
+    """HarmonicObserver → SubsystemReading (FFT of Λ(t) fed back into Λ(t)).
+
+    value = the observer's rock-stability coherence score; state = its regime.
+    WARMING (no data yet) → None. Confidence capped at 0.6 because this is a
+    self-referential loop — the spectral view of the field must inform the
+    field, never dominate it.
+    """
+    if observer is None:
+        return None
+    try:
+        regime = str(observer.regime())
+        if regime.upper() == "WARMING":
+            return None
+        score = float(observer.coherence_score())
+    except Exception:
+        return None
+    return SubsystemReading(
+        name="harmonic_spectrum",
+        value=max(0.0, min(1.0, score)),
+        confidence=0.6,
+        state=regime,
+    )
+
+
 # ─── The daemon ───────────────────────────────────────────────────
 
 class HNCLiveDaemon:
@@ -462,11 +531,16 @@ class HNCLiveDaemon:
         name: str,
         interval_s: float,
         fetcher: Callable[[], Awaitable[Optional[SubsystemReading]]],
+        max_age_s: float | None = None,
     ) -> None:
         """Add a source. ``fetcher`` is an async callable that returns a
         SubsystemReading or None. The daemon handles cadence and retry.
+        ``max_age_s`` expires the cached reading out of the Λ compute step
+        when the source goes dark (default None = never expires, exactly the
+        pre-existing behaviour).
         """
-        self._sources[name] = SourceState(name=name, interval_s=interval_s)
+        self._sources[name] = SourceState(
+            name=name, interval_s=interval_s, max_age_s=max_age_s)
         self._fetchers[name] = fetcher
         logger.info("HNC daemon: registered source %s @ %ss", name, interval_s)
 
@@ -633,6 +707,87 @@ class HNCLiveDaemon:
         except Exception as exc:
             logger.warning("HNC daemon: local_action not wired (%s)", exc)
 
+        # ── volatility sentinel (market FFT surge + phase + QGITA + EWMA) ──
+        # The Fourier→Λ(t) source: predicted high volatility lowers Γ, which
+        # tightens every reconcile_gamma order-path gate. Prices come from the
+        # same ws_cache the HNC live connector reads — real prices or no
+        # ingest at all; a no_data assessment maps to None (never a
+        # placeholder), and max_age_s expires the reading if the sentinel
+        # goes dark so a stale risk cannot linger in Γ.
+        try:
+            from aureon.intelligence.volatility_sentinel import VolatilitySentinel
+
+            _sentinel_symbols = [
+                s.strip() for s in os.environ.get(
+                    "HNC_SYMBOLS", "BTC/USD,ETH/USD,SOL/USD").split(",")
+                if s.strip()
+            ]
+            _sentinel = VolatilitySentinel(symbols=_sentinel_symbols)
+            self._volatility_sentinel = _sentinel
+
+            def _load_ws_prices() -> dict:
+                # Same cache + normalization as HncLiveConnector
+                # (_load_prices_from_cache): 'prices' (binance) → BASE/USD,
+                # 'ticker_cache' (coingecko) → PAIR. Missing/unreadable → {}.
+                import json as _json
+                from pathlib import Path as _Path
+                path = _Path(os.environ.get(
+                    "WS_PRICE_CACHE_PATH", "ws_cache/ws_prices.json"))
+                if not path.exists():
+                    return {}
+                try:
+                    payload = _json.loads(path.read_text(encoding="utf-8"))
+                except Exception:
+                    return {}
+                out: dict = {}
+                for base, price in (payload.get("prices") or {}).items():
+                    try:
+                        out[f"{base}/USD"] = float(price)
+                    except Exception:
+                        continue
+                for pair, entry in (payload.get("ticker_cache") or {}).items():
+                    try:
+                        out[str(pair).upper()] = float(
+                            (entry or {}).get("price", 0) or 0)
+                    except Exception:
+                        continue
+                return out
+
+            def _sentinel_step():
+                prices = _load_ws_prices()
+                for sym in _sentinel.symbols:
+                    px = prices.get(sym)
+                    if px and px > 0:
+                        _sentinel.ingest_price(sym, px)
+                assessment = _sentinel.assess_portfolio()
+                # Publish even when no_data — the honest state is telemetry too.
+                _sentinel.publish(assessment)
+                return assessment
+
+            async def fetch_volatility_sentinel():
+                assessment = await asyncio.to_thread(_sentinel_step)
+                return _map_volatility_sentinel(assessment)
+
+            self.register_source(
+                "volatility_sentinel", VOL_SENTINEL_INTERVAL,
+                fetch_volatility_sentinel, max_age_s=120.0)
+        except Exception as exc:
+            logger.warning("HNC daemon: volatility_sentinel not wired (%s)", exc)
+
+        # ── harmonic spectrum (FFT of Λ(t), the attached observer) ──
+        # The observer already ingests every engine step; this closes its loop
+        # back into Λ(t) as a bounded-confidence reading.
+        try:
+            if self._observer is not None:
+                async def fetch_harmonic_spectrum():
+                    return _map_harmonic_observer(self._observer)
+
+                self.register_source(
+                    "harmonic_spectrum", HARMONIC_SPECTRUM_INTERVAL,
+                    fetch_harmonic_spectrum, max_age_s=180.0)
+        except Exception as exc:
+            logger.warning("HNC daemon: harmonic_spectrum not wired (%s)", exc)
+
     # ─── per-source pull loop ──────────────────────────────────
 
     async def _source_loop(self, name: str) -> None:
@@ -677,9 +832,12 @@ class HNCLiveDaemon:
 
     async def _compute_loop(self) -> None:
         while not self._stop.is_set():
+            _now = time.time()
             readings: List[SubsystemReading] = [
-                st.last_reading for st in self._sources.values()
-                if st.last_reading is not None
+                r for r in (
+                    st.reading_for_compute(_now) for st in self._sources.values()
+                )
+                if r is not None
             ]
             async with self._step_lock:
                 state = self.engine.step(readings)
@@ -717,6 +875,10 @@ class HNCLiveDaemon:
             if self._observer is not None:
                 try:
                     self._observer.ingest_state(state)
+                    # The observer's local field joins the whole-body consensus
+                    # as a sub-field (throttled inside publish_field; no-op
+                    # before it has data).
+                    self._observer.publish_field()
                 except Exception as exc:
                     logger.debug("observer.ingest_state failed: %s", exc)
 
