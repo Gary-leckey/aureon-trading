@@ -21,7 +21,13 @@ def test_s5_system():
     print("=" * 70)
     print("🔥 S5 MILLION DOLLAR SYSTEM TEST 🔥")
     print("=" * 70)
-    
+
+    # Deterministic: the simulated conversions below feed per-path velocity,
+    # which enters the labyrinth score — unseeded randomness made the win-rate
+    # assertion flaky (a lucky ETH velocity draw could outweigh BTC's higher
+    # win rate). Same real code paths, reproducible numbers.
+    random.seed(55)
+
     # Initialize with $1000 starting capital
     network = MyceliumNetwork(initial_capital=1000.0)
     
@@ -134,7 +140,15 @@ def test_s5_system():
     network.conversion_metrics['path_performance']['ETH→USDC'] = {
         'profit': 2.0, 'count': 15, 'avg_profit': 0.133, 'wins': 10, 'losses': 5
     }
-    
+
+    # This assertion is about the WIN-RATE factor, so hold the other real
+    # factor (per-path velocity from the Test-2 conversions) equal between the
+    # two compared paths — otherwise a lucky velocity draw for ETH can outweigh
+    # BTC's higher win rate and the test measures noise, not the factor.
+    for _key in ('BTC→USDC', 'ETH→USDC'):
+        network.s5_state['path_velocity'].setdefault(_key, {})['velocity'] = 100.0
+        network._s5_score_cache.pop(_key, None)
+
     score_btc = network.s5_adaptive_labyrinth_score('BTC→USDC', 0.25)
     score_eth = network.s5_adaptive_labyrinth_score('ETH→USDC', 0.25)
     score_new = network.s5_adaptive_labyrinth_score('NEW→USDC', 0.25)

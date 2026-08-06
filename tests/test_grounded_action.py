@@ -139,6 +139,9 @@ def test_lambda_source_maps_action_activity():
 
 def test_action_endpoint_and_bearer_gate(monkeypatch):
     pytest.importorskip("flask", reason="operator HTTP surface requires the [operator] extra")
+    # this test asserts the DISARMED (dry-run) posture — pin it explicitly so a
+    # leaked process-wide ARMED flag from an earlier test cannot flip it
+    monkeypatch.delenv("AUREON_LOCAL_ACTIONS_ARMED", raising=False)
     import importlib
 
     import aureon.operator.operator_server as srv

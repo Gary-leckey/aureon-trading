@@ -291,9 +291,16 @@ def test_flipping_only_sets_env_no_executor(temp_store, monkeypatch):
     changes, and apply_to_env imports nothing from the trading/executor layer."""
     monkeypatch.delenv("AUREON_LOCAL_ACTIONS_ARMED", raising=False)
     before = dict(os.environ)
-    fs.save_flag("AUREON_LOCAL_ACTIONS_ARMED", True)
-    changed = {k for k in os.environ if os.environ.get(k) != before.get(k)}
-    assert changed == {"AUREON_LOCAL_ACTIONS_ARMED"}
+    try:
+        fs.save_flag("AUREON_LOCAL_ACTIONS_ARMED", True)
+        changed = {k for k in os.environ if os.environ.get(k) != before.get(k)}
+        assert changed == {"AUREON_LOCAL_ACTIONS_ARMED"}
+    finally:
+        # save_flag writes os.environ directly (by design), and monkeypatch
+        # registers no undo for a var that was absent — without this pop the
+        # ARMED flag leaks process-wide and every later test's action bridge
+        # constructs armed (measured: grounded_action dry_run flipped False).
+        os.environ.pop("AUREON_LOCAL_ACTIONS_ARMED", None)
     # the module never imports an executor / trading path (checked on import lines only)
     import_lines = [
         ln for ln in pathlib.Path(fs.__file__).read_text(encoding="utf-8").splitlines()
