@@ -3476,6 +3476,106 @@ def b46_logic_train(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b47_volatility_sentinel(tmp_root: Path) -> Dict[str, Any]:
+    """The volatility sentinel PREDICTS expansion before it fully lands, and stays quiet in calm:
+    the seeded labeled-synthetic regime library (the labels are the ground truth the detector never
+    sees) drives the real EWMA fast/slow estimator through calm → expansion breaks, pinning
+    detection on every regime, a floor on how many post-break samples arrive protected, and a
+    zero-tolerance-drift false-positive rate across 700 calm assessments. Synthetic appears here
+    ONLY as the labeled test harness — the sentinel itself consumes real prices in production
+    (the P3 daemon source), and the historical-replay benchmark (b48) drives it on real history."""
+    from aureon.analytics.volatility_sentinel_benchmark import compute_benchmark
+
+    b = compute_benchmark()
+    d = b.to_dict() if hasattr(b, "to_dict") else dict(vars(b))
+    b2 = compute_benchmark()
+    d2 = b2.to_dict() if hasattr(b2, "to_dict") else dict(vars(b2))
+
+    invariants = {
+        "every_labeled_regime_detected": bool(d.get("all_detected")),
+        "protected_samples_floor_100": int(d.get("min_protected_samples", 0)) >= 100,
+        "calm_fpr_at_most_20pct": float(d.get("fpr_calm", 1.0)) <= 0.20,
+        "calm_window_is_substantial": int(d.get("calm_assessments", 0)) >= 500,
+        "veto_line_matches_production": float(d.get("risk_block", 0.0)) == 0.85,
+        "deterministic": d == d2,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Volatility sentinel (predictive veto, labeled benchmark)",
+        "module": "aureon/analytics/volatility_sentinel_benchmark.py",
+        "passed": passed,
+        "metrics": {
+            "min_protected_samples": d.get("min_protected_samples"),
+            "fpr_calm": d.get("fpr_calm"),
+            "calm_assessments": d.get("calm_assessments"),
+            "risk_block": d.get("risk_block"),
+        },
+        "evidence": (
+            f"seeded regime library: every labeled expansion break detected, "
+            f"≥{d.get('min_protected_samples')} post-break samples protected, calm FPR "
+            f"{d.get('fpr_calm')} over {d.get('calm_assessments')} assessments at the "
+            f"production veto line {d.get('risk_block')}; deterministic run-to-run"
+        ),
+        "invariants": invariants,
+    }
+
+
+def b48_historical_replay_validation(tmp_root: Path) -> Dict[str, Any]:
+    """The WHOLE HNC/Auris/sentinel stack fires on REAL open exchange history — no API keys:
+    provenance-stamped Kraken public OHLC (30-day hourly + 2-year daily × BTC/ETH/SOL, every
+    dataset chronology- and OHLC-integrity-proven before it may replay) flows through the real
+    components; profit margins are measured per gate subset (the ablation ladder), so each HNC
+    layer's contribution — probability matrix, sentinel veto, walk-forward Γ tighten — is a
+    difference between deterministic equity walks, never an assertion. Capital preservation and
+    a positive HNC edge over ungated momentum are pinned on both horizons."""
+    from aureon.analytics.historical_replay_validation import (
+        INTERVALS,
+        SYMBOLS,
+        compute_replay_validation,
+    )
+
+    rep = compute_replay_validation()
+    att = rep.margin_attribution
+
+    invariants = {
+        "no_blockers": not rep.blockers,
+        "both_horizons_all_symbols": len(rep.symbols) == len(SYMBOLS) * len(INTERVALS),
+        "every_dataset_real_provenance": all(
+            "not synthetic" in str(s.get("provenance", {}).get("kind", ""))
+            for s in rep.symbols),
+        "signals_fired_on_real_history": rep.any_symbol_produced_signals,
+        "capital_preserved_in_downtrends": rep.capital_preserved_in_downtrends,
+        "hnc_edge_positive_both_horizons": bool(att) and all(
+            a["hnc_edge_vs_momentum_only_pct"] > 0 for a in att.values()),
+        "gamma_tighten_never_costs_margin": bool(att) and all(
+            a["gamma_edge_vs_hnc_full_pct"] >= 0 for a in att.values()),
+        "deterministic": compute_replay_validation().to_dict() == rep.to_dict(),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Historical replay validation (HNC margins on real data, no keys)",
+        "module": "aureon/analytics/historical_replay_validation.py",
+        "passed": passed,
+        "metrics": {
+            "total_candles": rep.total_candles,
+            "round_trips": rep.total_round_trips,
+            "overall_win_rate": rep.overall_win_rate,
+            "hnc_edge_pct": {h: a["hnc_edge_vs_momentum_only_pct"] for h, a in att.items()},
+            "gamma_edge_pct": {h: a["gamma_edge_vs_hnc_full_pct"] for h, a in att.items()},
+        },
+        "evidence": (
+            f"{rep.total_candles} real candles (Kraken public, provenance-stamped, "
+            f"integrity-proven) through the real stack: {rep.total_round_trips} round trips, "
+            f"HNC edge vs ungated momentum "
+            + ", ".join(f"{h} {a['hnc_edge_vs_momentum_only_pct']:+.2f}%" for h, a in att.items())
+            + "; capital preserved on every replay; deterministic"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3528,6 +3628,8 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Brain-reply membrane (outbound)",   b44_brain_reply_membrane),
     ("SaaS repo-wide coverage (38/38)",    b45_saas_coverage),
     ("Logic-train audit (repo-wide)",       b46_logic_train),
+    ("Volatility sentinel (predictive veto)", b47_volatility_sentinel),
+    ("Replay validation (real-data margins)", b48_historical_replay_validation),
 ]
 
 

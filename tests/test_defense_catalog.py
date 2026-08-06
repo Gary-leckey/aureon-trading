@@ -12,10 +12,11 @@ import sys
 from aureon.saas import defense_catalog as dc
 
 
-def test_builds_four_groups_from_committed_report():
+def test_builds_five_groups_from_committed_report():
     cat = dc.build_defense_catalog()
     assert cat["group_order"] == [
         "cognitive_immune_layer", "statistical_validity", "adaptive_direction", "sensor_lane",
+        "market_validation",
     ]
     groups = cat["groups"]
     assert set(groups) == set(cat["group_order"])
@@ -25,6 +26,9 @@ def test_builds_four_groups_from_committed_report():
     assert groups["statistical_validity"]["module_count"] == 6
     assert groups["adaptive_direction"]["module_count"] == 4
     assert groups["sensor_lane"]["module_count"] >= 1
+    # HNC market validation: the sentinel benchmark + real-data replay, once the
+    # regenerated Tier-A report carries b47/b48
+    assert groups["market_validation"]["module_count"] == 2
     assert cat["counts"]["total"] == sum(g["module_count"] for g in groups.values())
 
 
@@ -38,12 +42,15 @@ def test_immune_and_stat_modules_land_in_the_right_group():
             "calibration_curve", "multiplicity", "false_discovery"} <= stat
 
 
-def test_every_row_is_honest_and_bio_scoped():
+def test_every_row_is_honest_and_explicitly_registered():
     cat = dc.build_defense_catalog()
     valid_status = {"live", "real_derived", "cached_real", "no_data", "test_fixture"}
     for g in cat["groups"].values():
         for row in g["modules"]:
-            assert row["module"].startswith("aureon/bio/")
+            # bio modules join by family; anything else ONLY by explicit
+            # registration in _GROUPS — a connection is named, never inferred
+            assert (row["module"].startswith("aureon/bio/")
+                    or dc._basename(row["module"]) in dc._GROUPS)
             assert isinstance(row["passed"], bool)
             assert row["truth_status"] in valid_status
             assert row["group"] in cat["group_order"]

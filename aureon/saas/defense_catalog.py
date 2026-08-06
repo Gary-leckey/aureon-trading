@@ -60,9 +60,19 @@ _GROUP_META: Dict[str, Dict[str, str]] = {
                    "market · UPE · sacred lattice · harmonic core · observatory) scanned through "
                    "the one unchanged φ engine",
     },
+    "market_validation": {
+        "label": "HNC market validation",
+        "purpose": "the proof the trading mind is calibrated — the volatility sentinel's "
+                   "predictive veto pinned on a labeled regime library, and the whole "
+                   "HNC/Auris/sentinel stack replayed over REAL open exchange history "
+                   "(provenance-stamped, integrity-proven, no API keys) with profit margins "
+                   "attributed per gate: every layer earns its place in measured numbers, "
+                   "never assertion",
+    },
 }
 _GROUP_ORDER: List[str] = [
     "cognitive_immune_layer", "statistical_validity", "adaptive_direction", "sensor_lane",
+    "market_validation",
 ]
 
 # module-basename (no .py) → group; anything else under aureon/bio/ is a sensor lane
@@ -83,6 +93,9 @@ _GROUPS: Dict[str, str] = {
     "mcp_transport": "adaptive_direction",
     "direction_runtime": "adaptive_direction",
     "brain_reply_membrane": "adaptive_direction",
+    # non-bio modules admitted by explicit mapping only (see build filter)
+    "volatility_sentinel_benchmark": "market_validation",
+    "historical_replay_validation": "market_validation",
 }
 
 # module-basename → bus-trace name (the emit_* mirror), for the live overlay only
@@ -149,9 +162,12 @@ def build_defense_catalog() -> Dict[str, Any]:
     rows: List[Dict[str, Any]] = []
     for entry in tier_a:
         module = str(entry.get("module", ""))
-        if not module.startswith("aureon/bio/"):
-            continue
         base = _basename(module)
+        # bio modules are always in (default group: sensor lane); a non-bio
+        # module joins ONLY by explicit mapping — connections are registered
+        # by name, never inferred
+        if not (module.startswith("aureon/bio/") or base in _GROUPS):
+            continue
         group = _GROUPS.get(base, "sensor_lane")
         invariants = entry.get("invariants", {}) if isinstance(entry.get("invariants"), dict) else {}
         inv_pass = sum(1 for v in invariants.values() if v)
