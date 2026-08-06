@@ -3576,6 +3576,146 @@ def b48_historical_replay_validation(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b49_kings_court_accounting(tmp_root: Path) -> Dict[str, Any]:
+    """The King's Court accounting body marches end-to-end on the R&A benchmark
+    client: LABELED benchmark bank rows drop in, rules + the Throne agent seat
+    (stubbed model — a benchmark never fakes a live server) name the suspense,
+    a published-rates payslip lands balanced, and the statutory shapes (P&L,
+    balance sheet, MTD VAT 9-box, FRS 105) all self-prove from the same books.
+    Coordination coherence is measured over every step, the unexplained pound
+    STAYS in suspense, and the whole march is deterministic."""
+    from aureon.accounting.categorize import CategoryRule, recategorize_suspense
+    from aureon.accounting.client_ledger import ClientLedger, Posting
+    from aureon.accounting.file_drop import ingest_file
+    from aureon.accounting.filings import frs105_micro_balance_sheet, vat_nine_box
+    from aureon.accounting.payroll_journal import post_payslip
+    from aureon.accounting.statements import balance_sheet, profit_and_loss
+    from aureon.accounting.throne_agent import ThroneCategorizer
+    from aureon.accounting.uk_payroll_reference import payslip_breakdown
+
+    class _BenchModel:
+        """Labeled benchmark stand-in for the Ollama backend — scripted, honest."""
+
+        def __init__(self, answers):
+            self.answers = list(answers)
+
+        def health_check(self):
+            return True
+
+        def prompt(self, messages, system="", **kwargs):
+            class R:
+                stop_reason = "end_turn"
+                text = self.answers.pop(0) if self.answers else "UNDECIDED"
+            return R()
+
+    def _march():
+        csv = tmp_root / "ra_benchmark_statement.csv"
+        csv.write_text(
+            "date,description,amount\n"
+            "2026-01-05,Client payment ACME consulting,3600.00\n"
+            "2026-01-08,Office rent January,-850.00\n"
+            "2026-01-12,Cloud software subscription,-120.00\n"
+            "2026-01-19,Completely unexplained transfer,-42.00\n",
+            encoding="utf-8")
+        led = ClientLedger("ra-consulting-benchmark")
+        led.post("opening capital", [Posting("1000", debit_pennies=1_000_000),
+                                     Posting("3000", credit_pennies=1_000_000)])
+        led.post("invoice ACME (VAT split)",
+                 [Posting("1100", debit_pennies=120_000),
+                  Posting("4000", credit_pennies=100_000),
+                  Posting("2110", credit_pennies=20_000)], when=1_767_139_200.0)
+        led.post("supplier bill (VAT split)",
+                 [Posting("7100", debit_pennies=50_000),
+                  Posting("2120", debit_pennies=10_000),
+                  Posting("2000", credit_pennies=60_000)], when=1_767_139_200.0)
+        ingest = ingest_file("bank_csv", csv, led)
+
+        rules = [CategoryRule("client payment", "4000"), CategoryRule("rent", "7000")]
+        throne = ThroneCategorizer(adapter=_BenchModel(["7500", "UNDECIDED"]))
+        cat = recategorize_suspense(led, rules, decide=throne.decide)
+
+        slip = payslip_breakdown(30_000_00)
+        post_payslip(led, slip, "employee-001", when=1_767_225_600.0)
+
+        return {
+            "ingest_rows": ingest.entries_posted,
+            "categorize": cat,
+            "consultations": [c["code"] for c in throne.consultations],
+            "trial_balance": led.trial_balance(),
+            "pnl": profit_and_loss(led),
+            "bs": balance_sheet(led),
+            "vat": vat_nine_box(led),
+            "frs105": frs105_micro_balance_sheet(led),
+            "coordination": led.coordination_report(),
+            "suspense_pennies": led.suspense_pennies(),
+        }
+
+    run = _march()
+    rerun = _march()
+
+    coherence = run["coordination"]["coordination_coherence"]
+    v = run["vat"]["boxes"]
+    invariants = {
+        "all_rows_ingested": run["ingest_rows"] == 4,
+        "rules_and_agent_moved_three": run["categorize"]["moved"] == 3,
+        "unexplained_pound_stays_in_suspense": (
+            run["categorize"]["still_in_suspense"] == 1
+            and run["suspense_pennies"] == 4_200),
+        "trial_balance_proves": run["trial_balance"]["balanced"] is True,
+        "balance_sheet_self_proves": run["bs"]["balances"] is True,
+        "frs105_self_proves": run["frs105"]["balances"] is True,
+        "vat_box5_is_box3_minus_box4": (
+            v["5_net_vat_pennies"]
+            == v["3_total_vat_due_pennies"] - v["4_vat_reclaimed_on_purchases_pennies"]),
+        "vat_boxes_sum_posted_splits": (
+            v["1_vat_due_on_sales_pennies"] == 20_000
+            and v["4_vat_reclaimed_on_purchases_pennies"] == 10_000
+            and v["5_net_vat_pennies"] == 10_000),
+        "suspense_never_leaks_into_pnl": (
+            run["pnl"]["uncategorized_suspense_pennies"] == run["suspense_pennies"]),
+        "every_coordination_step_measured": run["coordination"]["steps_total"] >= 10,
+        "coherence_reflects_the_march": coherence is not None and 0.0 < coherence <= 1.0,
+        "deterministic": _strip_ts(run) == _strip_ts(rerun),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "King's Court accounting (file drop → filings, measured coherence)",
+        "module": "aureon/accounting/client_ledger.py",
+        "passed": passed,
+        "metrics": {
+            "coordination_steps": run["coordination"]["steps_total"],
+            "coordination_coherence": coherence,
+            "moved": run["categorize"]["moved"],
+            "still_in_suspense": run["categorize"]["still_in_suspense"],
+            "suspense_pennies": run["suspense_pennies"],
+            "net_vat_pennies": v["5_net_vat_pennies"],
+            "frs105_net_assets_pennies": run["frs105"]["net_assets_pennies"],
+        },
+        "evidence": (
+            f"labeled benchmark books for the R&A benchmark client: 4 bank rows in, "
+            f"{run['categorize']['moved']} named (rules + Throne seat), 1 honest suspense "
+            f"pound held, payslip balanced, VAT box5 {v['5_net_vat_pennies']}p, FRS 105 "
+            f"proves {run['frs105']['net_assets_pennies']}p; coherence "
+            f"{coherence} over {run['coordination']['steps_total']} measured steps; deterministic"
+        ),
+        "invariants": invariants,
+    }
+
+
+def _strip_ts(payload: Dict[str, Any]) -> str:
+    """Canonical form of a b49 run with volatile ids/timestamps removed."""
+    import re as _re
+
+    text = json.dumps(payload, sort_keys=True, default=str)
+    text = _re.sub(r'"ts": [0-9.e+]+', '"ts": 0', text)
+    text = _re.sub(r'"gamma": [^,}\]]+', '"gamma": 0', text)
+    text = _re.sub(r'"id": "[0-9a-f]{12}"', '"id": "x"', text)
+    text = _re.sub(r"clears [0-9a-f]{12}", "clears x", text)
+    text = _re.sub(r'"reference": "[0-9a-f]{12}"', '"reference": "x"', text)
+    return text
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3630,6 +3770,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Logic-train audit (repo-wide)",       b46_logic_train),
     ("Volatility sentinel (predictive veto)", b47_volatility_sentinel),
     ("Replay validation (real-data margins)", b48_historical_replay_validation),
+    ("King's Court accounting (measured coherence)", b49_kings_court_accounting),
 ]
 
 

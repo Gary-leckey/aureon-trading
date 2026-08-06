@@ -69,10 +69,20 @@ _GROUP_META: Dict[str, Dict[str, str]] = {
                    "attributed per gate: every layer earns its place in measured numbers, "
                    "never assertion",
     },
+    "kings_court_accounting": {
+        "label": "King's Court accounting",
+        "purpose": "the commercial HNC accounting body — multi-client double-entry books in "
+                   "integer pennies where every posting is a measured coordination step, "
+                   "file-drop ingestion that parks the unexplained in suspense (never guessed), "
+                   "the Throne agent seat that names codes only from the chart, and statutory "
+                   "shapes (P&L, balance sheet, MTD VAT 9-box, FRS 105) that self-prove from "
+                   "the same books — drafts for review, nothing transmits to HMRC or "
+                   "Companies House",
+    },
 }
 _GROUP_ORDER: List[str] = [
     "cognitive_immune_layer", "statistical_validity", "adaptive_direction", "sensor_lane",
-    "market_validation",
+    "market_validation", "kings_court_accounting",
 ]
 
 # module-basename (no .py) → group; anything else under aureon/bio/ is a sensor lane
@@ -96,6 +106,7 @@ _GROUPS: Dict[str, str] = {
     # non-bio modules admitted by explicit mapping only (see build filter)
     "volatility_sentinel_benchmark": "market_validation",
     "historical_replay_validation": "market_validation",
+    "client_ledger": "kings_court_accounting",
 }
 
 # module-basename → bus-trace name (the emit_* mirror), for the live overlay only
