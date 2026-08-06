@@ -39,6 +39,8 @@ UK_SME_CHART: Dict[str, str] = {
     # liabilities (2xxx credit-normal)
     "2000": "Trade creditors (accounts payable)",
     "2100": "VAT control account",
+    "2110": "VAT on sales (output tax)",
+    "2120": "VAT on purchases (input tax)",
     "2200": "PAYE/NI control account",
     "2300": "Pension control account",
     "2400": "Director's loan account",
