@@ -32,6 +32,7 @@ _FS_TO_PRODUCT: Dict[str, str] = {
     "trading": "trading", "exchanges": "trading", "strategies": "trading",
     "scanners": "trading", "s51": "trading", "bots": "trading",
     "portfolio": "accounting", "analytics": "accounting", "conversion": "accounting",
+    "accounting": "accounting",  # the King's Court — the commercial accounting body
     "harmonic": "research", "wisdom": "research", "decoders": "research",
     "simulation": "research", "atn": "research", "intelligence": "research",
     "operator": "cognition", "cognition": "cognition", "queen": "cognition",
