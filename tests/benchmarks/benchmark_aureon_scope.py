@@ -3588,6 +3588,7 @@ def b49_kings_court_accounting(tmp_root: Path) -> Dict[str, Any]:
     from aureon.accounting.client_ledger import ClientLedger, Posting
     from aureon.accounting.file_drop import ingest_file
     from aureon.accounting.filings import frs105_micro_balance_sheet, vat_nine_box
+    from aureon.accounting.hmrc_mtd import build_vat_return
     from aureon.accounting.payroll_journal import post_payslip
     from aureon.accounting.statements import balance_sheet, profit_and_loss
     from aureon.accounting.throne_agent import ThroneCategorizer
@@ -3645,6 +3646,7 @@ def b49_kings_court_accounting(tmp_root: Path) -> Dict[str, Any]:
             "pnl": profit_and_loss(led),
             "bs": balance_sheet(led),
             "vat": vat_nine_box(led),
+            "hmrc": build_vat_return(vat_nine_box(led), "24A1"),
             "frs105": frs105_micro_balance_sheet(led),
             "coordination": led.coordination_report(),
             "suspense_pennies": led.suspense_pennies(),
@@ -3671,6 +3673,11 @@ def b49_kings_court_accounting(tmp_root: Path) -> Dict[str, Any]:
             v["1_vat_due_on_sales_pennies"] == 20_000
             and v["4_vat_reclaimed_on_purchases_pennies"] == 10_000
             and v["5_net_vat_pennies"] == 10_000),
+        "hmrc_v1_schema_validates_clean": (
+            run["hmrc"]["violations"] == []
+            and str(run["hmrc"]["payload"]["netVatDue"]) == "100.00"
+            and run["hmrc"]["payload"]["totalValueSalesExVAT"] == 4_600
+            and run["hmrc"]["payload"]["totalValuePurchasesExVAT"] == 35_220),
         "suspense_never_leaks_into_pnl": (
             run["pnl"]["uncategorized_suspense_pennies"] == run["suspense_pennies"]),
         "every_coordination_step_measured": run["coordination"]["steps_total"] >= 10,
