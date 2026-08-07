@@ -76,6 +76,7 @@ Master table of contents for all project documentation.
 | [Theory to Code](architecture/THEORY_TO_CODE.md) | Research concepts → implementations |
 | [System Landscape](architecture/SYSTEM_LANDSCAPE.md) | High-level subsystem overview |
 | [HNC White Paper](HNC_UNIFIED_WHITE_PAPER.md) | Harmonic Nexus Core mathematical framework |
+| [Auris / HNC Field Mechanics](AURIS_HNC_FIELD_MECHANICS.md) | Creator's synthesis: field law → Auris nodes → dual-voice → Γ → operator gate, with a measured code-anchor appendix |
 
 ## Trading Operations
 | Document | Description |
