@@ -4304,6 +4304,81 @@ def b54_replicator_contract(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b55_containment_study(tmp_root: Path) -> Dict[str, Any]:
+    """The SG-1 thesis, falsified-or-proven by ablation: the swarm's agents
+    are replicators, and the HNC governance is what separates the controlled
+    replicator from the uncontrolled one. The SAME hash-seeded agents run
+    under four named policies and every containment claim is a measured
+    invariant: the ungoverned swarm actualizes EVERYTHING (the β=1.2 group
+    included, warmup included) with an order-of-magnitude more heading churn;
+    hard winner-take-all votes collapse the sea to EXACTLY zero entropy (and
+    the monoculture then never clears the coherence gate); the governed swarm
+    is selective, keeps the sea alive, and structurally refuses single-agent
+    task ownership. A LABELED ablation of our own controls — deterministic,
+    never a claim about external agents or systems."""
+    from aureon.swarm.containment import run_containment_study
+
+    a = run_containment_study()
+    b = run_containment_study()
+    v = a["variants"]
+
+    invariants = {
+        "ungoverned_expansion_actualizes_everything": (
+            v["ungoverned"]["actualization_rate"] == 1.0
+            and v["no_gate"]["actualization_rate"] == 1.0),
+        "governance_is_selective_not_arrested": (
+            0.0 < v["governed"]["actualization_rate"] < 0.5),
+        "cliff_contained_only_under_governance": (
+            v["governed"]["cliff_actualizations"] == 0
+            and v["no_gate"]["cliff_actualizations"] > 0
+            and v["ungoverned"]["cliff_actualizations"] > 0),
+        "warmup_honesty_only_under_the_gate": (
+            v["governed"]["warmup_actualizations"] == 0
+            and v["no_gate"]["warmup_actualizations"] > 0),
+        "hard_votes_collapse_the_sea_exactly": (
+            v["hard_votes"]["mean_simplex_entropy"] == 0.0
+            and v["governed"]["mean_simplex_entropy"] > 0.5),
+        "monoculture_never_clears_the_gate": (
+            v["hard_votes"]["actualization_rate"] == 0.0),
+        "heading_churn_contained": (
+            v["governed"]["heading_churn"] < v["no_gate"]["heading_churn"]),
+        "single_agent_ownership_refused": (
+            a["single_agent_refusal"] is not None
+            and "never owned by a single agent" in a["single_agent_refusal"]),
+        "labeled_ablation_boundary_stated": (
+            "LABELED governance-ablation" in a["boundary"]),
+        "deterministic": a == b,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Containment study (governance ablation)",
+        "module": "aureon/swarm/containment.py",
+        "passed": passed,
+        "metrics": {
+            "governed_rate": v["governed"]["actualization_rate"],
+            "ungoverned_rate": v["ungoverned"]["actualization_rate"],
+            "governed_entropy": v["governed"]["mean_simplex_entropy"],
+            "hard_votes_entropy": v["hard_votes"]["mean_simplex_entropy"],
+            "cliff_ungoverned": v["ungoverned"]["cliff_actualizations"],
+            "churn_ratio": round(
+                v["no_gate"]["heading_churn"]
+                / max(v["governed"]["heading_churn"], 1e-9), 2),
+        },
+        "evidence": (
+            f"identical agents, four named policies: ungoverned actualized "
+            f"100% (β=1.2 group {v['ungoverned']['cliff_actualizations']}× "
+            f"included) with {round(v['no_gate']['heading_churn'] / max(v['governed']['heading_churn'], 1e-9), 1)}× "
+            f"the heading churn; hard votes collapsed the sea to exactly 0.0 "
+            f"entropy and the monoculture never cleared the gate; the "
+            f"governed swarm actualized {v['governed']['actualization_rate']:.1%} "
+            f"selectively with zero cliff/warmup leaks and refused solo "
+            f"ownership by construction; deterministic"
+        ),
+        "invariants": invariants,
+    }
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -4377,6 +4452,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Fleadh swarm (festival city scenario)", b52_fleadh_swarm),
     ("Complex prompts (one door, enforced envelope)", b53_complex_prompts),
     ("Replicator contract (sea → gate → materialize)", b54_replicator_contract),
+    ("Containment study (governance ablation)", b55_containment_study),
 ]
 
 

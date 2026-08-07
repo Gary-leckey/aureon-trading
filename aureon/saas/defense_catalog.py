@@ -131,6 +131,7 @@ _GROUPS: Dict[str, str] = {
     "company": "harmonic_swarm",
     "capability_grid": "harmonic_swarm",
     "fleadh": "harmonic_swarm",
+    "containment": "harmonic_swarm",
     "prompt_router": "universal_prompt_router",
     "cognition": "universal_prompt_router",
 }
