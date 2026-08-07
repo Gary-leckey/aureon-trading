@@ -111,10 +111,10 @@ def test_repo_index_ingests_python_source():
 
 
 def test_agentic_loop_dispatches_tool_and_returns_final():
-    adapter = ScriptedAdapter(tool="repo_search", tool_args={"query": "operator"}, final="grounded answer")
+    adapter = ScriptedAdapter(tool="repo_search", tool_args={"query": "operator"}, final="grounded answer.")
     res = _cog(adapter).reason("How does the operator work?")
-    assert res.text == "grounded answer"
-    assert adapter.calls == 2                                   # tool turn + final turn
+    assert res.text == "grounded answer."
+    assert adapter.calls == 2                                   # tool turn + final turn (complete → no bake pass)
     assert [t.tool for t in res.tool_calls] == ["repo_search"]
     assert res.tool_calls[0].blocked is False
 

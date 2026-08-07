@@ -73,7 +73,9 @@ def classify_prompt(prompt: str) -> Dict[str, Any]:
         "families": families,
         "complex": len(families) >= COUNCIL_MIN_FAMILIES,
         "routes": [{"route": str(r.get("route", "")), "risk": str(r.get("risk", "")),
-                    "requires_human": bool(r.get("requires_human", False))}
+                    "requires_human": bool(r.get("requires_human", False)),
+                    "reason": str(r.get("reason", ""))[:200],
+                    "systems": [str(s) for s in list(r.get("systems", []))[:6]]}
                    for r in routes],
         "blockers": [],
     }

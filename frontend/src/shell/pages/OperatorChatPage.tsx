@@ -29,6 +29,7 @@ interface ResponseEnvelope {
   capability?: { families?: string[]; complex?: boolean };
   coherence?: { lead_family?: string; gamma_by_cluster?: Record<string, number | null> } | null;
   actualization?: { realized_count?: number; parked_count?: number; answer?: string } | null;
+  bake?: { passes?: number; complete?: boolean | null; refined?: boolean } | null;
 }
 
 interface CognitionReply {
@@ -191,6 +192,16 @@ export default function OperatorChatPage() {
                             {turn.reply.envelope.actualization.parked_count} parked
                           </Badge>
                         )}
+                      {turn.reply.envelope?.bake?.refined && (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          baked ×{turn.reply.envelope.bake.passes ?? 2}
+                        </Badge>
+                      )}
+                      {turn.reply.envelope?.bake?.complete === false && (
+                        <Badge variant="outline" className="border-warning/40 text-warning">
+                          incomplete — honest seal
+                        </Badge>
+                      )}
                       {(turn.reply.tool_calls?.length ?? 0) > 0 && (
                         <Badge variant="outline" className="gap-1 text-muted-foreground">
                           <Wrench className="h-3 w-3" /> {turn.reply.tool_calls?.length} tool call

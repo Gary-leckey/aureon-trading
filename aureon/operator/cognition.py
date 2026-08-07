@@ -104,6 +104,13 @@ _TOOL_HINT = (
     "write_repo_file, patch_repo_file, read_state/read_positions/read_prices. "
     "Prefer repo_search to ground Aureon-specific claims."
 )
+_BAKE_CHARTER = (
+    "\n\nDeliver the FULLY BAKED result: a complete, self-contained answer/plan/"
+    "code/report — never a stub or partial trace. Use ALL knowledge available "
+    "to you: the grounded repo packets when relevant (cite them), tools when "
+    "they help, and your general model knowledge otherwise — and state plainly "
+    "which of those the answer rests on."
+)
 
 
 class AureonCognition:
@@ -204,6 +211,7 @@ class AureonCognition:
         self._route(prompt, res)
         system_prompt = self._ground(prompt, res)
         self._run_loop(prompt, system_prompt, res)
+        self._bake(prompt, system_prompt, res)
         self._veto(prompt, res)
         self._actualize(res)
 
@@ -309,7 +317,30 @@ class AureonCognition:
             if bits:
                 system += ("\n\nOrganism state (the shared HNC field you are part of): "
                            + ", ".join(bits))
+
+        # Council specialist notes: a complex ask spans capability families —
+        # the map's OWN reasons/instruments ride into grounding so the final
+        # answer covers every family's aspect, not only the lead's.
+        cap = res.capability or {}
+        if cap.get("complex") and res.swarm is not None:
+            by_route = {r.get("route"): r for r in cap.get("routes", [])}
+            lines = []
+            for fam in res.swarm.get("families", []):  # type: ignore[union-attr]
+                r = by_route.get(fam, {})
+                note = f"- {fam}: {r.get('reason', 'named by the capability map')}"
+                systems = list(r.get("systems", []))[:4]
+                if systems:
+                    note += f" (instruments: {', '.join(systems)})"
+                lines.append(note)
+            if lines:
+                system += (
+                    "\n\nRouting council (measured, deterministic): lead family "
+                    f"{res.swarm.get('lead')}. This ask spans several capability "  # type: ignore[union-attr]
+                    "families — address EVERY family's aspect in the final "
+                    "answer:\n" + "\n".join(lines))
+
         system += _TOOL_HINT
+        system += _BAKE_CHARTER
 
         res.grounded = bool(sources)
         res.grounding = GroundingContext(sources=sources, lane="cognition",
@@ -359,13 +390,45 @@ class AureonCognition:
             text = f"[cognition error] {exc}"
 
         res.text = (text or "").strip()
-        res.turns = getattr(runner, "_turn_count", 0)
+        res.turns += getattr(runner, "_turn_count", 0)   # accumulates across bake passes
         # Reconcile which tool calls were blocked by the guard.
         blocked_tools = {b["tool"] for b in getattr(self.tools, "blocked_calls", [])}
         for tc in res.tool_calls:
             if tc.tool in blocked_tools:
                 tc.blocked = True
         self._publish(res, "loop", {"turns": res.turns, "n_tools": len(res.tool_calls)})
+
+    # ------------------------------------------------------------------
+    # Bake (the completeness signal: one refinement pass, never a churn)
+    # ------------------------------------------------------------------
+
+    def _bake(self, prompt: str, system_prompt: str, res: CognitionResult) -> None:
+        """Assess the draft with measured surface heuristics; run exactly ONE
+        refinement pass when it looks unfinished. An honest ``[ERROR]``/offline
+        reply is never refined (that would churn an honest status into risk of
+        invention), and a blocked answer is never touched."""
+        try:
+            from aureon.operator.bake import assess_completeness, refinement_prompt
+        except Exception as exc:  # noqa: BLE001 — a dark bake module never breaks answering
+            logger.debug("bake module unavailable: %s", exc)
+            return
+        first = assess_completeness(prompt, res.text)
+        res.bake = {"passes": 1, "complete": first["complete"],
+                    "reasons": list(first["reasons"]), "refined": False}
+        if first["complete"] or res.blocked or res.status() != "ok":
+            if not first["complete"] and res.status() != "ok":
+                res.bake["reasons"].append(
+                    "not refined: the adapter is honestly unavailable — a "
+                    "second pass would add no knowledge")
+            return
+        self._publish(res, "bake", {"reasons": first["reasons"]})
+        self._run_loop(refinement_prompt(prompt, res.text, first["reasons"]),
+                       system_prompt, res)
+        second = assess_completeness(prompt, res.text)
+        res.bake = {"passes": 2, "complete": second["complete"],
+                    "reasons": list(second["reasons"]),
+                    "first_pass_reasons": list(first["reasons"]),
+                    "refined": True}
 
     # ------------------------------------------------------------------
     # Veto

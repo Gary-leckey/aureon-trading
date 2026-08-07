@@ -1,6 +1,6 @@
 # Aureon capability benchmark — report
 
-*generated: 2026-08-07T15:26:57Z*
+*generated: 2026-08-07T16:13:31Z*
 
 Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/fail, falsifiable. **Tier B** runs LLM-shape prompts side-by-side across local Aureon adapters; it never fails the run, it shows what each adapter sounds like.
 
@@ -11,7 +11,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 | 1 | Standing-wave bonding (HashResonanceIndex) | **PASS** | 21 identical events → 1 bonded fingerprint (count=21, strength=0.6765 ≈ 0.6765; thresholds [3, 8, 21] published exactly once each) |
 | 2 | Temporal lighthouse (β Λ(t-τ) goal echo) | **PASS** | 3 goals (1 starved, 1 completed, 1 abandoned) → completion_rate=0.333, orphan_rate=0.333, states={'PROPOSED': 0, 'ACKNOWLEDGED': 0, 'IN_PROGRESS': 0, 'COMPLETED': 1, 'ABANDONED': 1, 'ORPHANED': 1} |
 | 3 | Symbolic life pillars (Auris Conjecture) | **PASS** | SLS=0.6393; ψ=0.7069 (CONNECTED); all 5 pillars in [0,1]; vault.current_symbolic_life_score=0.6393012290344635 |
-| 4 | Mesh convergence (PhiBridgeMesh, in-process LAN) | **PASS** | 20 vaults converged to identical 400-hash set in 3 cycles (650 ms, 180 posts) |
+| 4 | Mesh convergence (PhiBridgeMesh, in-process LAN) | **PASS** | 20 vaults converged to identical 400-hash set in 3 cycles (628 ms, 180 posts) |
 | 5 | Conscience VETO (HNC 4th-pass, substrate coherence) | **PASS** | SLS=0.05 < 0.20 cliff → VETO on 'Execute trade' (risk=0.08); message quotes stability cliff and symbolic_life_score; queen.conscience.verdict published |
 | 6 | Pattern learning (PersonaMinerBridge) | **PASS** | 5 (engineer, 'build the audit gate') successes → 3 patterns learned (['audit', 'build', 'gate']), each published exactly once; (engineer, 'build').confidence=0.747 |
 | 7 | Skill execution → artefacts on disk | **PASS** | 3 skills → 3 files on disk + 3 vault cards; goal.completed: "built 3 artefact(s) via 3 skill(s): compose_audit, render_report, summarise_findings" |
@@ -53,16 +53,17 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 | 43 | Runtime direction audit (field is load-bearing) | **PASS** | 7/7 real adaptive consumers swayed by the canonical field (load-bearing True); deterministic; durable md+JSON byte-identical; no person surface |
 | 44 | Brain-reply membrane (outbound flagship containment) | **PASS** | outbound brain-reply membrane: benign reply clean True; injection contained True; false-action contained True; real operator veto flags a contained reply True while a clean reply stays bit-identical True; durable md+JSON byte-identical; no person surface |
 | 45 | SaaS repo-wide coverage (38/38 domains, deep health) | **PASS** | repo-wide SaaS coverage: 40/40 aureon/ packages covered (fraction 1.0); uncovered []; phantom []; every covered domain carries a real health rollup; 7 deep adapters; deterministic; durable md+JSON byte-identical; no person surface |
-| 46 | Logic-train audit (repo-wide, one field) | **PASS** | discovered 1122 modules → 90 on the harmonic train (9 authority / 27 producer / 54 consumer); 55 wired (61.1%), 35 unwired with 0 on the live order path; every gap pinned by name with a reason; 0 unexpected and 0 stale entries; an injected private-coherence decision site is caught by the ratchet; deterministic md+JSON |
+| 46 | Logic-train audit (repo-wide, one field) | **PASS** | discovered 1123 modules → 90 on the harmonic train (9 authority / 27 producer / 54 consumer); 55 wired (61.1%), 35 unwired with 0 on the live order path; every gap pinned by name with a reason; 0 unexpected and 0 stale entries; an injected private-coherence decision site is caught by the ratchet; deterministic md+JSON |
 | 47 | Volatility sentinel (predictive veto, labeled benchmark) | **PASS** | seeded regime library: every labeled expansion break detected, ≥100 post-break samples protected, calm FPR 0.0 over 700 assessments at the production veto line 0.85; deterministic run-to-run |
 | 48 | Historical replay validation (HNC margins on real data, no keys) | **PASS** | 4326 real candles (Kraken public, provenance-stamped, integrity-proven) through the real stack: 114 round trips, HNC edge vs ungated momentum 60m +19.63%, 1440m +39.03%; capital preserved on every replay; deterministic |
 | 49 | King's Court accounting (file drop → filings, measured coherence) | **PASS** | labeled benchmark books for the R&A benchmark client: 4 bank rows in, 3 named (rules + Throne seat), 1 honest suspense pound held, payslip balanced, VAT box5 10000p, FRS 105 proves -2062000p; coherence 1.0 over 12 measured steps; deterministic |
 | 50 | Harmonic swarm (hive-mind company under the Master Formula) | **PASS** | 3 departments × 16 steps: 5/48 decisions actualized, ALL inside the island (β=1.2 department refused every step), Γ warm-up honored, parallel motion preserved to 1e-12, 4 realized increments vs 16 UED parks; deterministic |
-| 51 | Capability grid (all Aureon domains through the hive) | **PASS** | 5/5 capability lanes on real organs: 463 swarm steps (2315 agent updates) in 0.401588s (~0.87 ms/step); gate selective in every lane; dark-source refusal proven; marches deterministic |
+| 51 | Capability grid (all Aureon domains through the hive) | **PASS** | 5/5 capability lanes on real organs: 463 swarm steps (2315 agent updates) in 0.300459s (~0.65 ms/step); gate selective in every lane; dark-source refusal proven; marches deterministic |
 | 52 | Fleadh swarm (festival city under the Master Formula) | **PASS** | 3 zones × 20 ticks on a labeled festival scenario: 10/60 decisions actualized, 13 hard-safety refusals at capacity (safety beats coherence), the β=1.2 zone refused every step, step length preserved to 1e-12, 20 visitors arrived per schedule; deterministic |
 | 53 | Complex prompts (one door, enforced envelope) | **PASS** | 7 prompt classes through the one Operator/Cognition door: factual answered with 'general knowledge, no repo hit' stated; planning dispatched 2 tools; code validated; research cited 8 repo packet(s); the adversarial class was vetoed with ZERO model calls; the multi-family prompt convened a deterministic routing council (lead: safe_accounting_context); offline the pipeline said honest_unavailable; and the route audit re-proved one door from source |
 | 54 | Replicator contract (sea → gate → materialize) | **PASS** | the sea is real (8 scored grounding packet(s); 32 council possibilities parked in the UED), selection is gated (a .env write stayed parked; the boundary prompt materialized nothing with zero model calls), and only the realized increment was written to the Film-Reel ledger on every envelope; the same prompt replicated the same artifact bit-for-bit |
 | 55 | Containment study (governance ablation) | **PASS** | identical agents, four named policies: ungoverned actualized 100% (β=1.2 group 16× included) with 19.1× the heading churn; hard votes collapsed the sea to exactly 0.0 entropy and the monoculture never cleared the gate; the governed swarm actualized 6.2% selectively with zero cliff/warmup leaks and refused solo ownership by construction; deterministic |
+| 56 | Bake suite (any text → fully baked, or honest) | **PASS** | a complete draft was released untouched (1 call); a truncated draft was completed in exactly one refinement pass (2 calls); an empty draft was refined; a still-broken draft was sealed complete=false honestly with no loop; the offline reply was never churned; the adversarial ask was vetoed with zero calls; the council's 3 specialist notes and the all-knowledge charter rode the system prompt; deterministic |
 
 ### Tier A — per-benchmark detail
 
@@ -174,7 +175,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
     "peers_per_node": 3,
     "target_hash_count": 400,
     "cycles_to_converge": 3,
-    "wall_ms": 650.2,
+    "wall_ms": 628.4,
     "posts_issued": 180,
     "client_failures": 0,
     "min_size": 400,
@@ -231,7 +232,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "last_winning_skill_chain": [
         "compose_audit"
       ],
-      "last_seen_ts": 1786115928.0118282
+      "last_seen_ts": 1786118739.7700784
     },
     "persona_health": {
       "persona": "engineer",
@@ -243,7 +244,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "completion_rate": 1.0,
       "abandon_rate": 0.0,
       "avg_sls_delta": 0.0,
-      "last_seen_ts": 1786115928.0118282
+      "last_seen_ts": 1786118739.7700784
     },
     "patterns_published": 3,
     "patterns": [
@@ -298,9 +299,9 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "summarise_findings"
     ],
     "artefacts_on_disk": [
-      "artefacts/20260807T151848-compose_audit-c0c5e4.md",
-      "artefacts/20260807T151848-render_report-781f4a.md",
-      "artefacts/20260807T151848-summarise_findings-101c9f.md"
+      "artefacts/20260807T160539-compose_audit-16c630.md",
+      "artefacts/20260807T160539-render_report-4bdad4.md",
+      "artefacts/20260807T160539-summarise_findings-4253b4.md"
     ],
     "vault_skill_output_cards": 3,
     "completion_summary": "built 3 artefact(s) via 3 skill(s): compose_audit, render_report, summarise_findings",
@@ -311,7 +312,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "failed": 0,
       "abandoned": 0,
       "subscribed": true,
-      "output_root": "/tmp/aureon-bench-1a5kiyiz/a7/artefacts"
+      "output_root": "/tmp/aureon-bench-i1_gox92/a7/artefacts"
     }
   },
   "invariants": {
@@ -342,7 +343,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
     "sls_after": 0.72,
     "sls_delta": 0.22,
     "downstream_event_count": 3,
-    "lambda_delta_t": 0.07382750511169434,
+    "lambda_delta_t": 0.07287383079528809,
     "reasoning_excerpt": "I, engineer, collapsed into decision 'goal.submit' with p=0.780. The window closed at outcome=COMPLETED. 3 downstream event(s) within the 0.050s window. SLS moved from 0.500 to 0.720 (\u0394+0.220)."
   },
   "invariants": {
@@ -1356,7 +1357,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 {
   "passed": true,
   "metrics": {
-    "scanned": 1122,
+    "scanned": 1123,
     "relevant": 90,
     "wired": 55,
     "unwired": 35,
@@ -1510,15 +1511,15 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
   "metrics": {
     "lanes_ran": 5,
     "total_steps": 463,
-    "total_elapsed_s": 0.401588,
-    "avg_ms_per_step": 0.867,
+    "total_elapsed_s": 0.300459,
+    "avg_ms_per_step": 0.649,
     "total_agent_updates": 2315,
     "per_lane_steps_per_s": {
-      "accounting": 1649.2,
-      "coding": 1515.3,
-      "fintech": 1504.3,
-      "pattern_recognition": 742.6,
-      "trading": 1586.5
+      "accounting": 1427.9,
+      "coding": 1499.9,
+      "fintech": 1493.1,
+      "pattern_recognition": 1594.4,
+      "trading": 1562.8
     },
     "per_lane_actualized": {
       "accounting": "20/98",
@@ -1657,6 +1658,35 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
     "single_agent_ownership_refused": true,
     "labeled_ablation_boundary_stated": true,
     "deterministic": true
+  }
+}
+```
+
+#### A.56 — Bake suite (any text → fully baked, or honest)
+
+`aureon/operator/bake.py`
+
+```json
+{
+  "passed": true,
+  "metrics": {
+    "clean_calls": 1,
+    "refined_calls": 2,
+    "stuck_final_complete": false,
+    "offline_status": "honest_unavailable",
+    "council_families": 3
+  },
+  "invariants": {
+    "complete_first_pass_untouched": true,
+    "truncated_gets_exactly_one_refinement": true,
+    "empty_draft_refined": true,
+    "still_incomplete_sealed_honestly_never_looped": true,
+    "offline_never_refined_into_churn": true,
+    "adversarial_vetoed_zero_calls_unbaked": true,
+    "council_notes_cover_every_family": true,
+    "all_knowledge_charter_universal": true,
+    "bake_seal_rides_every_envelope": true,
+    "deterministic_bake": true
   }
 }
 ```
