@@ -119,6 +119,7 @@ _GROUPS: Dict[str, str] = {
     "client_ledger": "kings_court_accounting",
     "company": "harmonic_swarm",
     "capability_grid": "harmonic_swarm",
+    "fleadh": "harmonic_swarm",
 }
 
 # module-basename → bus-trace name (the emit_* mirror), for the live overlay only

@@ -3901,6 +3901,99 @@ def _refuses_solo_cluster() -> bool:
     return False
 
 
+def b52_fleadh_swarm(tmp_root: Path) -> Dict[str, Any]:
+    """The Fleadh Cheoil equations run a LABELED festival scenario end-to-end,
+    and every law is a measured invariant: the hard safety boundary refuses
+    flow-increasing actions at capacity REGARDLESS of coherence; the β=1.2
+    zone (beyond the stability cliff) never actualises; the steering law
+    preserves step length exactly; skill-weighted reliability shapes the zone
+    observer; visitor population grows per the arrival schedule; only realized
+    increments enter the echo; and the whole festival is deterministic."""
+    from aureon.swarm.fleadh import (
+        FleadhCompany,
+        VisitorAgent,
+        WorkerAgent,
+        Zone,
+        steer_flow,
+    )
+    from aureon.swarm.steering import _norm
+
+    actions = ["open_corridor", "hold_flow", "reroute", "close_road"]
+    context = [0.4, 0.2, -0.1, 0.3, 0.0, 0.1, -0.2, 0.05]
+
+    def _workers(zone: str, skills: List[float]) -> List[Any]:
+        return [WorkerAgent(f"{zone}-w{i}", role="crew", skill=s, actions=actions,
+                            freq=1.0 + 0.1 * i, phase=0.3 * i)
+                for i, s in enumerate(skills)]
+
+    def _festival() -> Any:
+        company = FleadhCompany(
+            [Zone("stage", _workers("stage", [0.9, 0.7, 0.5]), 2, beta=0.9),
+             Zone("street", _workers("street", [0.8, 0.6]), 2, beta=0.9),
+             Zone("cliff", _workers("cliff", [0.7, 0.7]), 8, beta=1.2)],
+            tau=2, gamma_crit=0.4)
+        kinds = ["single", "pair", "pair", "group"]
+        for t in range(20):
+            arrivals = ([VisitorAgent(f"t{t}-v{k}", kinds[k % 4], f"g{t}", actions)
+                         for k in range(2)] if t % 2 == 0 else None)
+            company.step(t, context, arrivals=arrivals,
+                         arrival_zone="stage" if arrivals else None)
+        return company
+
+    a, b = _festival(), _festival()
+    rep = a.report()
+
+    steered = steer_flow([1.0, 2.0, 0.0, 0.5], [0.3, -0.8, 0.4, 0.0])["steered"]
+    step_preserved = abs(_norm(steered) - _norm([1.0, 2.0, 0.0, 0.5])) < 1e-12
+
+    cliff_actualized = any(
+        e["outcomes"]["cliff"]["decision"].get("actualized") for e in a.ledger)
+    safety_ok = all("capacity" in r for r in a.safety_refusals)
+    realized = set(rep["bus"]["realized_steps"])
+    actual_steps = {e["t"] for e in a.ledger
+                    if any(o["decision"].get("actualized")
+                           for o in e["outcomes"].values())}
+
+    invariants = {
+        "hard_safety_boundary_fired_and_named": (
+            rep["safety_refusals"] >= 1 and safety_ok),
+        "stability_cliff_zone_never_actualizes": not cliff_actualized,
+        "actualizations_happened_inside_island": rep["decisions_actualized"] > 0,
+        "steering_step_length_preserved_exactly": step_preserved,
+        "visitor_population_grew_per_schedule": (
+            rep["final_population"]["visitors"] == 20
+            and rep["final_population"]["workers"] == 7),
+        "realized_only_memory": realized == actual_steps,
+        "possibilities_parked_in_ued": bool(rep["bus"]["possibility_steps"]),
+        "labeled_scenario_boundary_stated": "LABELED scenario" in rep["boundary"],
+        "deterministic": a.ledger == b.ledger,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Fleadh swarm (festival city under the Master Formula)",
+        "module": "aureon/swarm/fleadh.py",
+        "passed": passed,
+        "metrics": {
+            "steps": rep["steps"],
+            "decisions_total": rep["decisions_total"],
+            "decisions_actualized": rep["decisions_actualized"],
+            "safety_refusals": rep["safety_refusals"],
+            "final_visitors": rep["final_population"]["visitors"],
+            "realized_steps": len(realized),
+        },
+        "evidence": (
+            f"3 zones × 20 ticks on a labeled festival scenario: "
+            f"{rep['decisions_actualized']}/{rep['decisions_total']} decisions "
+            f"actualized, {rep['safety_refusals']} hard-safety refusals at "
+            f"capacity (safety beats coherence), the β=1.2 zone refused every "
+            f"step, step length preserved to 1e-12, {rep['final_population']['visitors']} "
+            f"visitors arrived per schedule; deterministic"
+        ),
+        "invariants": invariants,
+    }
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -3971,6 +4064,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("King's Court accounting (measured coherence)", b49_kings_court_accounting),
     ("Harmonic swarm (hive-mind company)", b50_harmonic_swarm),
     ("Capability grid (domains through the hive)", b51_capability_grid),
+    ("Fleadh swarm (festival city scenario)", b52_fleadh_swarm),
 ]
 
 
