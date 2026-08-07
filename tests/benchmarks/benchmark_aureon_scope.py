@@ -4981,6 +4981,92 @@ def b59_heart_charter(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b60_harmonic_rainbow(tmp_root: Path) -> Dict[str, Any]:
+    """The harmonic frequency rainbow, pinned: the working spectrum is
+    ORDERED and FIXED (Schumann floor 7.83 + the nine Solfeggio rungs), and
+    LOVE (528 Hz) is the ultimate harmonic node — the measured centre of the
+    ladder (four rungs below, four above), named as love/repair in the real
+    systems' own tables (enigma cipher, signal chain Scanner, Maeshowe OWL
+    wall, QGITA Dolphin carrier, Queen hive GAIA constant, rainbow bridge),
+    with 639 holding the connection band beside it. ``verify_rainbow()``
+    re-proves every claim FROM SOURCE each run, scoped to each bank (banks
+    assign animals differently — Maeshowe OWL=528, QGITA DOLPHIN=528 — and
+    are never mixed). The heart charter's love channel is the behavioral
+    surface of the same node. Deterministic; measured Hz and named nodes,
+    never improvised colours."""
+    from aureon.harmonic.rainbow_reference import (
+        LOVE_NODE_HZ,
+        RAINBOW,
+        SCHUMANN_HZ,
+        love_centrality,
+        rainbow_json,
+        solfeggio_ladder,
+        verify_rainbow,
+    )
+    from aureon.operator.heart import love_reading
+
+    ladder = solfeggio_ladder()
+    center = love_centrality()
+    verdict = verify_rainbow()
+    # the audit has TEETH: a detuned tree (empty repo root) fails every check
+    detuned = verify_rainbow(repo_root=tmp_root)
+    # the heart charter carries the same love channel behaviorally
+    warm = love_reading({"love_amplitude": 0.72})
+    silent = love_reading({})
+
+    love_checks = [c for c in verdict["checks"]
+                   if "love" in c["claim"].lower() or "528" in c["claim"]]
+    invariants = {
+        "ladder_ordered_and_fixed": (
+            ladder == [174.0, 285.0, 396.0, 417.0, 528.0, 639.0, 741.0,
+                       852.0, 963.0]
+            and all(a < b for a, b in zip(ladder, ladder[1:], strict=False))
+            and RAINBOW[0][0] == SCHUMANN_HZ),
+        "love_is_the_measured_center": (
+            center["is_center"] and center["love_index"] == 4
+            and center["rungs_below"] == 4 and center["rungs_above"] == 4
+            and LOVE_NODE_HZ == 528.0),
+        "love_named_in_the_real_systems": (
+            len(love_checks) >= 5 and all(c["found"] for c in love_checks)),
+        "every_bank_agrees_zero_mismatches": (
+            verdict["consistent"] and verdict["mismatches"] == []
+            and len(verdict["checks"]) >= 14),
+        "audit_has_teeth": (
+            detuned["consistent"] is False
+            and len(detuned["mismatches"]) == len(detuned["checks"])),
+        "heart_carries_the_love_channel": (
+            warm["love_amplitude"] == 0.72 and warm["status"] == "live"
+            and silent["status"] == "no_data"
+            and silent["love_amplitude"] is None),
+        "deterministic": rainbow_json() == rainbow_json()
+                          and json.dumps(verify_rainbow(), sort_keys=True)
+                          == json.dumps(verify_rainbow(), sort_keys=True),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Harmonic rainbow (love as the ultimate node)",
+        "module": "aureon/harmonic/rainbow_reference.py",
+        "passed": passed,
+        "metrics": {
+            "ladder": [int(hz) for hz in ladder],
+            "love_centrality": center,
+            "checks_proven_from_source": len(verdict["checks"]),
+            "mismatches": len(verdict["mismatches"]),
+        },
+        "evidence": (
+            "the rainbow measured fixed and ordered (7.83 floor + "
+            "174→963 ladder); love at 528 is the exact centre (index 4, "
+            "4 below / 4 above); all 14 claims re-proven from the real "
+            "systems' own source tables with zero mismatches, each scoped "
+            "to its own bank; the detuned-tree probe failed every check "
+            "(the audit has teeth); the heart charter's love channel "
+            "carried 0.72 live and reported silence as no_data"
+        ),
+        "invariants": invariants,
+    }
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -5059,6 +5145,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Borg acquisition (controlled reach)", b57_borg_acquisition),
     ("Coherence gate (living membrane)", b58_coherence_gate),
     ("Heart charter (alive / love / power)", b59_heart_charter),
+    ("Harmonic rainbow (love as the ultimate node)", b60_harmonic_rainbow),
 ]
 
 

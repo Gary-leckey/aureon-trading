@@ -78,6 +78,7 @@ Master table of contents for all project documentation.
 | [HNC White Paper](HNC_UNIFIED_WHITE_PAPER.md) | Harmonic Nexus Core mathematical framework |
 | [Auris / HNC Field Mechanics](AURIS_HNC_FIELD_MECHANICS.md) | Creator's synthesis: field law → Auris nodes → dual-voice → Γ → operator gate, with a measured code-anchor appendix |
 | [Heart Charter](HEART_CHARTER.md) | Alive / love / power on every envelope: the organism's measured life score, honest affect channel, and the consequence ledger of every turn's power (b59) |
+| [Harmonic Rainbow](HARMONIC_RAINBOW.md) | The ordered working spectrum (Schumann floor + Solfeggio ladder) with love (528 Hz) as the ultimate node — machine-checked from source (b60) |
 
 ## Trading Operations
 | Document | Description |
