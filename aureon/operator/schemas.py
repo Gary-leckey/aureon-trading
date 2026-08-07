@@ -178,6 +178,27 @@ class CognitionResult:
     swarm: Dict[str, Any] | None = None        # routing-council report (complex prompts)
     actualization: Dict[str, Any] | None = None  # Film-Reel ledger: realized vs parked
     bake: Dict[str, Any] | None = None           # bake cycle: completeness + refinement
+    acquisition: Dict[str, Any] | None = None    # Borg loop: gaps found → tools reached
+    assimilation: Dict[str, Any] | None = None   # controlled write-back verdict
+
+    def knowledge_reach(self) -> List[str]:
+        """The knowledge classes this answer MEASURABLY rested on — derived
+        from the grounding record and the executed tool ledger, never
+        self-reported: repo | web | skills | live_state | tools | general_knowledge."""
+        reach: List[str] = []
+        if self.grounded:
+            reach.append("repo")
+        used = {t.tool for t in self.tool_calls if not t.blocked}
+        if used & {"web_search", "web_fetch"}:
+            reach.append("web")
+        if "list_skills" in used:
+            reach.append("skills")
+        if used & {"read_state", "read_positions", "read_prices"}:
+            reach.append("live_state")
+        if used - {"web_search", "web_fetch", "list_skills",
+                   "read_state", "read_positions", "read_prices"}:
+            reach.append("tools")
+        return reach or ["general_knowledge"]
 
     def status(self) -> str:
         """Honest turn classification: ``ok`` | ``honest_unavailable`` | ``fault``.
@@ -222,6 +243,10 @@ class CognitionResult:
             "coherence": coherence,
             "actualization": dict(self.actualization) if self.actualization else None,
             "bake": dict(self.bake) if self.bake else None,
+            "knowledge_reach": self.knowledge_reach(),
+            "acquisition": dict(self.acquisition) if self.acquisition else None,
+            "assimilation": ({"assimilated": bool(self.assimilation.get("assimilated"))}
+                             if self.assimilation else None),
         }
 
     def to_dict(self) -> Dict[str, Any]:
@@ -244,6 +269,8 @@ class CognitionResult:
             "swarm": dict(self.swarm) if self.swarm else None,
             "actualization": dict(self.actualization) if self.actualization else None,
             "bake": dict(self.bake) if self.bake else None,
+            "acquisition": dict(self.acquisition) if self.acquisition else None,
+            "assimilation": dict(self.assimilation) if self.assimilation else None,
             "envelope": self.envelope(),
         }
 

@@ -30,6 +30,8 @@ interface ResponseEnvelope {
   coherence?: { lead_family?: string; gamma_by_cluster?: Record<string, number | null> } | null;
   actualization?: { realized_count?: number; parked_count?: number; answer?: string } | null;
   bake?: { passes?: number; complete?: boolean | null; refined?: boolean } | null;
+  knowledge_reach?: string[];
+  acquisition?: { triggered?: boolean; outcome?: string } | null;
 }
 
 interface CognitionReply {
@@ -192,6 +194,17 @@ export default function OperatorChatPage() {
                             {turn.reply.envelope.actualization.parked_count} parked
                           </Badge>
                         )}
+                      {turn.reply.envelope?.knowledge_reach &&
+                        turn.reply.envelope.knowledge_reach.join(",") !== "general_knowledge" && (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            reach: {turn.reply.envelope.knowledge_reach.join(" + ").replace(/_/g, " ")}
+                          </Badge>
+                        )}
+                      {turn.reply.envelope?.acquisition?.triggered && (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          acquired: {turn.reply.envelope.acquisition.outcome}
+                        </Badge>
+                      )}
                       {turn.reply.envelope?.bake?.refined && (
                         <Badge variant="outline" className="text-muted-foreground">
                           baked ×{turn.reply.envelope.bake.passes ?? 2}

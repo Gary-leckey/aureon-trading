@@ -204,6 +204,7 @@ class AureonCognition:
             )
             res.text = f"🦗 Blocked at the Aureon authority boundary.\nReason: {res.conscience_message}"
             self._actualize(res)
+            self._assimilate(res)
             res.elapsed_ms = (time.time() - started) * 1000.0
             self._publish(res, "complete", res.to_dict())
             return res
@@ -211,9 +212,11 @@ class AureonCognition:
         self._route(prompt, res)
         system_prompt = self._ground(prompt, res)
         self._run_loop(prompt, system_prompt, res)
+        self._acquire(prompt, system_prompt, res)
         self._bake(prompt, system_prompt, res)
         self._veto(prompt, res)
         self._actualize(res)
+        self._assimilate(res)
 
         res.elapsed_ms = (time.time() - started) * 1000.0
         self._publish(res, "complete", res.to_dict())
@@ -399,6 +402,39 @@ class AureonCognition:
         self._publish(res, "loop", {"turns": res.turns, "n_tools": len(res.tool_calls)})
 
     # ------------------------------------------------------------------
+    # Acquire (the Borg loop: find what is missing, never invent it)
+    # ------------------------------------------------------------------
+
+    def _acquire(self, prompt: str, system_prompt: str, res: CognitionResult) -> None:
+        """When the draft names a knowledge gap, run exactly ONE acquisition
+        pass directing the agent at its tools — repo, skills, web, live
+        state. The outcome is measured from the tool ledger (acquired /
+        unavailable / declined), never self-reported. An honest offline
+        reply is not an acquisition case — its status already says it all."""
+        try:
+            from aureon.operator.acquisition import (
+                acquisition_outcome,
+                acquisition_prompt,
+                find_gaps,
+            )
+        except Exception as exc:  # noqa: BLE001 — a dark module never breaks answering
+            logger.debug("acquisition module unavailable: %s", exc)
+            return
+        if res.blocked or res.status() != "ok":
+            return
+        gaps = find_gaps(prompt, res)
+        if not gaps:
+            res.acquisition = {"triggered": False, "gaps": [],
+                               "outcome": "not_needed"}
+            return
+        self._publish(res, "acquire", {"gaps": gaps})
+        tools_before = len(res.tool_calls)
+        self._run_loop(acquisition_prompt(prompt, res.text, gaps),
+                       system_prompt, res)
+        verdict = acquisition_outcome(tools_before, res)
+        res.acquisition = {"triggered": True, "gaps": gaps, **verdict}
+
+    # ------------------------------------------------------------------
     # Bake (the completeness signal: one refinement pass, never a churn)
     # ------------------------------------------------------------------
 
@@ -485,6 +521,20 @@ class AureonCognition:
             "realized_count": len(realized) + (0 if res.blocked else 1),
             "parked_count": len(parked) + (1 if res.blocked else 0),
         }
+
+    # ------------------------------------------------------------------
+    # Assimilate (controlled write-back: only realized + validated joins)
+    # ------------------------------------------------------------------
+
+    def _assimilate(self, res: CognitionResult) -> None:
+        """Gate this turn's knowledge record into the collective ledger —
+        realized, approved, complete, ok — or refuse with the checks named."""
+        try:
+            from aureon.operator.assimilation import assimilate
+
+            res.assimilation = assimilate(res)
+        except Exception as exc:  # noqa: BLE001 — a dark ledger never breaks answering
+            logger.debug("assimilation unavailable: %s", exc)
 
     def _get_conscience(self):
         if self._conscience_loaded:

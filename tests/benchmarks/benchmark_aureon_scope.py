@@ -4524,6 +4524,173 @@ def b56_bake_suite(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b57_borg_acquisition(tmp_root: Path) -> Dict[str, Any]:
+    """The Borg clause of the replicator contract, pinned: when local
+    knowledge is not enough the agent goes OUT — through the guarded tools —
+    finds what is missing, evaluates it, and uses it for THIS task; and only
+    the realized, validated increment ever joins the collective memory.
+    Measured end to end: an admitted gap triggers exactly ONE acquisition
+    pass; the outcome is read from the tool ledger (acquired / unavailable /
+    declined), never self-reported; offline, every network tool refusal is
+    RECORDED and the gap stays named — never invented; the envelope declares
+    the answer's measured knowledge reach (repo/web/skills/live_state/tools/
+    general_knowledge); the skills tool is read-only listing (execution stays
+    gated, tenants never see it); and the assimilation ledger accepts ONLY
+    realized + approved + complete + ok turns, refusing everything else with
+    the failed checks named. Driver adapters are LABELED harness doubles."""
+    import os as _os
+
+    from aureon.inhouse_ai.llm_adapter import LLMResponse, StreamChunk, ToolCall
+    from aureon.operator.cognition import AureonCognition
+    from aureon.operator.schemas import CognitionResult
+
+    class _Plan:
+        """LABELED harness double: scripted tool/text turns, repeats the last."""
+
+        model = "plan-harness"
+
+        def __init__(self, turns: List[Any]):
+            self.turns = list(turns)
+            self.calls = 0
+
+        def prompt(self, messages, system="", tools=None, max_tokens=4096,
+                   temperature=0.7, **k):
+            self.calls += 1
+            kind, *rest = self.turns[min(self.calls - 1, len(self.turns) - 1)]
+            if kind == "tool" and tools:
+                return LLMResponse(text="",
+                                   tool_calls=[ToolCall(name=rest[0], arguments=rest[1])],
+                                   stop_reason="tool_use", model=self.model)
+            return LLMResponse(text=rest[-1], stop_reason="end_turn", model=self.model)
+
+        def stream(self, *a, **k):
+            yield StreamChunk(done=True)
+
+    ledger = tmp_root / "b57_assimilated.jsonl"
+    prev_ledger = _os.environ.get("AUREON_ASSIMILATION_PATH")
+    _os.environ["AUREON_ASSIMILATION_PATH"] = str(ledger)
+    try:
+        def _cog(adapter: Any) -> AureonCognition:
+            return AureonCognition(adapter=adapter, join_mesh=False,
+                                   conscience=None, mesh_broadcast=False)
+
+        # 1 · an admitted gap → ONE acquisition pass, tools actually consulted
+        acq_adapter = _Plan([("text", "I don't know that."),
+                             ("tool", "repo_search", {"query": "master formula"}),
+                             ("text", "Found and used: the answer is complete.")])
+        acquired = _cog(acq_adapter).reason("explain something obscure")
+        # 2 · offline: network tool refused and RECORDED; gap stays named
+        off_adapter = _Plan([("text", "I don't know that."),
+                             ("tool", "web_search", {"query": "obscure fact"}),
+                             ("text", "The network is unavailable; here is what "
+                                      "is missing and why I cannot verify it.")])
+        offline = _cog(off_adapter).reason("explain something external")
+        # 3 · no gap → no churn
+        clean_adapter = _Plan([("text", "A complete confident answer.")])
+        clean = _cog(clean_adapter).reason("simple question")
+        # 4 · skills: read-only listing, never on the tenant plane
+        from aureon.operator.tools import TENANT_ALLOWED_TOOLS, build_operator_tools
+
+        reg = build_operator_tools(allow_writes=False, allow_shell=False)
+        skills_payload = json.loads(reg.execute("list_skills", {}))
+        # 5 · assimilation gate, all four checks probed directly
+        from aureon.operator.assimilation import assimilate
+
+        vetoed = CognitionResult(prompt="p", text="🦗 vetoed", blocked=True,
+                                 conscience_verdict="VETO")
+        vetoed.actualization = {"answer": "parked"}
+        vetoed.bake = {"complete": True}
+        veto_verdict = assimilate(vetoed)
+        halfbaked = CognitionResult(prompt="p", text="stops mid")
+        halfbaked.actualization = {"answer": "realized"}
+        halfbaked.bake = {"complete": False}
+        half_verdict = assimilate(halfbaked)
+        ledger_lines = (ledger.read_text(encoding="utf-8").strip().splitlines()
+                        if ledger.exists() else [])
+        # determinism: the same acquisition twice (ledger ts excluded — it is
+        # runtime memory, never part of the reasoning identity)
+        det_a = _cog(_Plan([("text", "I don't know that."),
+                            ("tool", "repo_search", {"query": "x"}),
+                            ("text", "Now complete.")])).reason("explain q")
+        det_b = _cog(_Plan([("text", "I don't know that."),
+                            ("tool", "repo_search", {"query": "x"}),
+                            ("text", "Now complete.")])).reason("explain q")
+
+        def _canon(env: Dict[str, Any]) -> str:
+            e = {k: v for k, v in env.items() if k != "trace_id"}
+            return json.dumps(e, sort_keys=True, default=str)
+
+        invariants = {
+            "gap_triggers_one_acquisition_pass": (
+                acquired.acquisition is not None
+                and acquired.acquisition["triggered"] is True
+                and acquired.acquisition["outcome"] == "acquired"
+                and "repo_search" in acquired.acquisition["tools_consulted"]),
+            "knowledge_reach_measured_from_ledger": (
+                "tools" in acquired.envelope()["knowledge_reach"]
+                and clean.envelope()["knowledge_reach"] == ["general_knowledge"]),
+            "offline_refusal_recorded_never_invented": (
+                offline.acquisition is not None
+                and offline.acquisition["outcome"] == "unavailable"
+                and "web_search" in offline.acquisition["tools_blocked"]
+                and "never invented" in offline.acquisition["blocker"]),
+            "no_gap_no_churn": (
+                clean.acquisition == {"triggered": False, "gaps": [],
+                                      "outcome": "not_needed"}
+                and clean_adapter.calls == 1),
+            "skills_read_only_and_off_tenant_plane": (
+                isinstance(skills_payload.get("skills"), list)
+                and "list_skills" not in TENANT_ALLOWED_TOOLS),
+            "assimilation_accepts_only_clean_turns": (
+                (clean.assimilation or {}).get("assimilated") is True
+                and veto_verdict["assimilated"] is False
+                and half_verdict["assimilated"] is False
+                and "nothing parked, vetoed, or half-baked" in veto_verdict["reason"]),
+            "ledger_holds_only_gated_records": (
+                len(ledger_lines) >= 1
+                and all(json.loads(x).get("trace_id") for x in ledger_lines)),
+            "envelope_carries_the_borg_blocks": all(
+                r.envelope().get("acquisition") is not None
+                and r.envelope().get("knowledge_reach")
+                and r.envelope().get("assimilation") is not None
+                for r in (acquired, offline, clean)),
+            "deterministic_acquisition": _canon(det_a.envelope()) == _canon(det_b.envelope()),
+        }
+        passed = all(invariants.values())
+
+        return {
+            "name": "Borg acquisition (find, use, assimilate under control)",
+            "module": "aureon/operator/acquisition.py",
+            "passed": passed,
+            "metrics": {
+                "acquired_tools": acquired.acquisition["tools_consulted"]
+                if acquired.acquisition else [],
+                "offline_blocked": offline.acquisition["tools_blocked"]
+                if offline.acquisition else [],
+                "skills_in_library": skills_payload.get("total_in_library", 0),
+                "ledger_records": len(ledger_lines),
+                "clean_reach": clean.envelope()["knowledge_reach"],
+            },
+            "evidence": (
+                f"an admitted gap triggered exactly one acquisition pass that "
+                f"really consulted {acquired.acquisition['tools_consulted'] if acquired.acquisition else []}; "
+                f"offline the network refusal was recorded on the ledger and "
+                f"the gap stayed named; a clean answer churned nothing; the "
+                f"skills tool listed {skills_payload.get('total_in_library', 0)} "
+                f"validated procedures read-only (tenants never see it); the "
+                f"assimilation gate accepted only the realized+approved+"
+                f"complete turn ({len(ledger_lines)} record(s)) and refused "
+                f"the vetoed and half-baked ones by name; deterministic"
+            ),
+            "invariants": invariants,
+        }
+    finally:
+        if prev_ledger is None:
+            _os.environ.pop("AUREON_ASSIMILATION_PATH", None)
+        else:
+            _os.environ["AUREON_ASSIMILATION_PATH"] = prev_ledger
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -4599,6 +4766,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Replicator contract (sea → gate → materialize)", b54_replicator_contract),
     ("Containment study (governance ablation)", b55_containment_study),
     ("Bake suite (fully baked or honest)", b56_bake_suite),
+    ("Borg acquisition (controlled reach)", b57_borg_acquisition),
 ]
 
 
