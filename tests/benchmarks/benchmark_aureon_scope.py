@@ -4744,7 +4744,8 @@ def b58_coherence_gate(tmp_root: Path) -> Dict[str, Any]:
         "advisory_closed": compute_aperture(0.9, False, None)["aperture"],
         "lighthouse_critical": compute_aperture(0.9, True, "critical")["aperture"],
         "dark": compute_aperture(None, None, None)["aperture"],
-        "closed": compute_aperture(0.1, False, None)["aperture"],
+        "local_only": compute_aperture(0.1, False, None)["aperture"],
+        "refuse": compute_aperture(0.1, False, "critical")["aperture"],
     }
     all_tools = {"repo_search", "read_repo_file", "list_repo", "list_skills",
                  "web_search", "web_fetch", "code_validate", "read_state"}
@@ -4777,12 +4778,25 @@ def b58_coherence_gate(tmp_root: Path) -> Dict[str, Any]:
         e = {k: v for k, v in env.items() if k != "trace_id"}
         return json.dumps(e, sort_keys=True, default=str)
 
+    # the gate-refusal path: no model runs, the refusal is named and parked
+    refuse_field = {"symbolic_life_score": 0.05, "coherence_gamma": 0.1,
+                    "gate_open": False, "lighthouse_severity": "critical"}
+    refuse_adapter = _Plan([("text", "should never be asked")])
+    refused = _cog(refuse_adapter, organism=refuse_field).reason("do something")
+
     invariants = {
         "aperture_ladder_is_named_and_continuous": (
-            ladder == {"clear": "full", "soft": "reduced", "low": "introspective",
-                       "advisory_closed": "introspective",
-                       "lighthouse_critical": "introspective",
-                       "dark": "full", "closed": "closed"}),
+            ladder == {"clear": "full", "soft": "reduced", "low": "skills_only",
+                       "advisory_closed": "skills_only",
+                       "lighthouse_critical": "skills_only",
+                       "dark": "full", "local_only": "local_only",
+                       "refuse": "refuse"}),
+        "gate_refusal_named_parked_zero_calls": (
+            refuse_adapter.calls == 0 and refused.blocked
+            and "coherence gate refusal" in refused.conscience_message
+            and (refused.actualization or {}).get("answer") == "parked"
+            and (refused.assimilation or {}).get("assimilated") is False
+            and refused.envelope()["coherence_gate"]["aperture"] == "refuse"),
         "dark_field_never_restricts": (
             (dark.coherence_gate or {}).get("field_status") == "canonical_dark"
             and (dark.coherence_gate or {}).get("aperture") == "full"
@@ -4795,9 +4809,10 @@ def b58_coherence_gate(tmp_root: Path) -> Dict[str, Any]:
                 "parked_possibilities", [])),
         "reach_sets_exact": (
             reach_for("reduced", all_tools) == all_tools - {"web_search", "web_fetch"}
-            and reach_for("introspective", all_tools) == {
+            and reach_for("skills_only", all_tools) == {
                 "repo_search", "read_repo_file", "list_repo", "list_skills"}
-            and reach_for("closed", all_tools) == set()
+            and reach_for("local_only", all_tools) == set()
+            and reach_for("refuse", all_tools) == set()
             and reach_for("full", all_tools) is None),
         "outer_wall_fires_before_the_membrane": (
             wall["blocked"] and "sensitive path" in wall["reason"]),
@@ -4821,12 +4836,13 @@ def b58_coherence_gate(tmp_root: Path) -> Dict[str, Any]:
         },
         "evidence": (
             f"the aperture ladder measured exactly (Γ=0.85→full, 0.45→reduced, "
-            f"0.2→introspective, advisory-closed/lighthouse-critical→"
-            f"introspective, Γ=0.1+closed-advisory→closed, dark→full by "
-            f"tighten-only doctrine); a live Γ=0.45 field parked the web "
-            f"reach with a named coherence-gate refusal that landed in the "
-            f"Film-Reel; the hard wall still fired first on a sensitive "
-            f"write; the envelope records the gate on every cake; "
+            f"0.2→skills_only, advisory-closed/lighthouse-critical→skills_only, "
+            f"Γ=0.1+closed-advisory→local_only, all-signals-against→refuse, "
+            f"dark→full by tighten-only doctrine); a live Γ=0.45 field parked "
+            f"the web reach with a named coherence-gate refusal in the "
+            f"Film-Reel; the refuse aperture answered with zero model calls, "
+            f"parked and named; the hard wall still fired first on a "
+            f"sensitive write; the envelope records the gate on every cake; "
             f"deterministic"
         ),
         "invariants": invariants,

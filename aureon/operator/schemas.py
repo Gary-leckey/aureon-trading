@@ -201,6 +201,21 @@ class CognitionResult:
             reach.append("tools")
         return reach or ["general_knowledge"]
 
+    def reach_class(self) -> str:
+        """The coarse reach taxonomy: ``local`` (repo/skills/state/tools only),
+        ``acquired`` (network only), ``mixed`` (both), ``none`` (model
+        knowledge alone) — derived from the measured reach, never self-reported."""
+        classes = set(self.knowledge_reach())
+        acquired = "web" in classes
+        local = bool(classes & {"repo", "skills", "live_state", "tools"})
+        if acquired and local:
+            return "mixed"
+        if acquired:
+            return "acquired"
+        if local:
+            return "local"
+        return "none"
+
     def status(self) -> str:
         """Honest turn classification: ``ok`` | ``honest_unavailable`` | ``fault``.
 
@@ -245,6 +260,7 @@ class CognitionResult:
             "actualization": dict(self.actualization) if self.actualization else None,
             "bake": dict(self.bake) if self.bake else None,
             "knowledge_reach": self.knowledge_reach(),
+            "reach_class": self.reach_class(),
             "acquisition": dict(self.acquisition) if self.acquisition else None,
             "assimilation": ({"assimilated": bool(self.assimilation.get("assimilated"))}
                              if self.assimilation else None),

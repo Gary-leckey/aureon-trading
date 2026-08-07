@@ -211,6 +211,25 @@ class AureonCognition:
 
         self._route(prompt, res)
         self._gate_aperture(res)
+        if (res.coherence_gate or {}).get("aperture") == "refuse":
+            # The field itself refused the turn's expansion: no model runs, the
+            # refusal is NAMED, the answer parks, and the write-back gate sees
+            # a verdict — never a silent stall, never an invented answer.
+            gate = res.coherence_gate or {}
+            res.blocked = True
+            res.conscience_message = ("coherence gate refusal — the hive field "
+                                      "is closed: " + "; ".join(gate.get("reasons", [])))
+            res.text = ("🦗 The coherence gate refused this turn.\n"
+                        f"Reason: {res.conscience_message}\n"
+                        "No tools were reached and no answer was baked — "
+                        "ask again when the field clears.")
+            res.acquisition = {"triggered": False, "gaps": [],
+                               "outcome": "gate_refused"}
+            self._actualize(res)
+            self._assimilate(res)
+            res.elapsed_ms = (time.time() - started) * 1000.0
+            self._publish(res, "complete", res.to_dict())
+            return res
         system_prompt = self._ground(prompt, res)
         self._run_loop(prompt, system_prompt, res)
         self._acquire(prompt, system_prompt, res)

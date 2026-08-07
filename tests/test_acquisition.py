@@ -85,6 +85,23 @@ def test_knowledge_reach_is_measured_not_self_reported():
     assert blocked.envelope()["knowledge_reach"] == ["general_knowledge"]
 
 
+def test_reach_class_taxonomy_local_acquired_mixed_none():
+    none_r = CognitionResult(prompt="p", text="t")
+    assert none_r.reach_class() == "none"
+
+    local = CognitionResult(prompt="p", text="t", grounded=True)
+    assert local.reach_class() == "local"
+
+    acquired = CognitionResult(prompt="p", text="t")
+    acquired.tool_calls = [ToolInvocation(tool="web_search", arguments={})]
+    assert acquired.reach_class() == "acquired"
+
+    mixed = CognitionResult(prompt="p", text="t", grounded=True)
+    mixed.tool_calls = [ToolInvocation(tool="web_fetch", arguments={})]
+    assert mixed.reach_class() == "mixed"
+    assert mixed.envelope()["reach_class"] == "mixed"      # rides every envelope
+
+
 # ── wired through cognition: one acquisition pass, measured outcome ───────
 
 

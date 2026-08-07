@@ -10,14 +10,18 @@ the lighthouse) decides how far an agent's reach extends THIS turn.
 
 The aperture is not allow/deny — it scales, by NAME:
 
-* ``full``          — the field is clear: all guarded tools, skills, network
-* ``reduced``       — coherence is soft: network reach withdrawn, local
-                      tools + skills + live state remain
-* ``introspective`` — coherence is low or the advisory is closed: repo
-                      reading and skill listing only, nothing that acts
-* ``closed``        — low coherence AND a closed advisory: no tool runs;
-                      the agent answers from what it already holds,
-                      honestly labeled
+* ``full``        — the field is clear: all guarded tools, skills, network
+* ``reduced``     — coherence is soft: network reach withdrawn, local
+                    tools + skills + live state remain
+* ``skills_only`` — coherence is low or the advisory is closed: repo
+                    reading and skill listing only, nothing that acts
+* ``local_only``  — low coherence AND a closed advisory: no tool runs;
+                    the agent answers from what it already holds,
+                    honestly labeled
+* ``refuse``      — every signal is against (Γ below the refuse floor AND
+                    the advisory closed AND the lighthouse severe): the
+                    turn's expansion is refused outright, with the reasons
+                    named on the envelope — never a silent stall
 
 DOCTRINE (the b46 rule, applied to capability): the membrane may only
 TIGHTEN on a LIVE field signal. A dark field — no fresh canonical Γ —
@@ -38,15 +42,17 @@ from __future__ import annotations
 
 from typing import Any, Dict, Set
 
-__all__ = ["APERTURES", "GAMMA_FULL", "GAMMA_REDUCED", "compute_aperture",
-           "reach_for"]
+__all__ = ["APERTURES", "GAMMA_FULL", "GAMMA_REDUCED", "GAMMA_REFUSE",
+           "compute_aperture", "reach_for"]
 
 #: aperture levels, widest to narrowest — a level exists by NAME
-APERTURES = ("full", "reduced", "introspective", "closed")
+APERTURES = ("full", "reduced", "skills_only", "local_only", "refuse")
 #: Γ at or above this → the field is clear, full reach
 GAMMA_FULL = 0.6
-#: Γ below this → introspective reach only
+#: Γ below this → skills-only reach
 GAMMA_REDUCED = 0.3
+#: Γ below this, with the advisory closed AND the lighthouse severe → refuse
+GAMMA_REFUSE = 0.15
 #: lighthouse severities that close the membrane to introspective reach
 _SEVERE = {"critical", "emergency", "severe"}
 
@@ -79,19 +85,25 @@ def compute_aperture(gamma: Any, advisory_open: Any,
         aperture = "reduced"
         reasons.append(f"Γ={g:.3f} < {GAMMA_FULL} — network reach withdrawn")
     if g < GAMMA_REDUCED:
-        aperture = "introspective"
-        reasons.append(f"Γ={g:.3f} < {GAMMA_REDUCED} — introspective reach only")
+        aperture = "skills_only"
+        reasons.append(f"Γ={g:.3f} < {GAMMA_REDUCED} — skills-only reach")
     severe = str(lighthouse_severity or "").lower() in _SEVERE
-    if advisory_open is False or severe:
+    closed_advisory = advisory_open is False or severe
+    if closed_advisory:
         if aperture in ("full", "reduced"):
-            aperture = "introspective"
+            aperture = "skills_only"
         reasons.append("the advisory/lighthouse holds the membrane at "
-                       f"introspective reach (advisory_open={advisory_open}, "
+                       f"skills-only reach (advisory_open={advisory_open}, "
                        f"lighthouse={lighthouse_severity})")
-    if g < GAMMA_REDUCED and (advisory_open is False or severe):
-        aperture = "closed"
-        reasons.append("low coherence AND a closed advisory — the membrane "
-                       "closes; the agent answers from what it already holds")
+    if g < GAMMA_REDUCED and closed_advisory:
+        aperture = "local_only"
+        reasons.append("low coherence AND a closed advisory — no tool runs; "
+                       "the agent answers from what it already holds")
+    if g < GAMMA_REFUSE and advisory_open is False and severe:
+        aperture = "refuse"
+        reasons.append(f"every signal is against (Γ={g:.3f} < {GAMMA_REFUSE}, "
+                       "advisory closed, lighthouse severe) — the turn's "
+                       "expansion is refused, named, never silent")
     return {"aperture": aperture, "field_status": "live", "gamma": round(g, 6),
             "advisory_open": advisory_open,
             "lighthouse": lighthouse_severity,
@@ -104,9 +116,9 @@ def reach_for(aperture: str, all_tools: Set[str]) -> Set[str] | None:
         return None
     if aperture == "reduced":
         return set(all_tools) - set(_NETWORK_TOOLS)
-    if aperture == "introspective":
+    if aperture == "skills_only":
         return set(all_tools) & set(_INTROSPECTIVE_TOOLS)
-    if aperture == "closed":
+    if aperture in ("local_only", "refuse"):
         return set()
     raise ValueError(f"unknown aperture '{aperture}' — apertures exist by "
                      f"name: {', '.join(APERTURES)}")
