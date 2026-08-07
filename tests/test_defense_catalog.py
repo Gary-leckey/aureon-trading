@@ -33,8 +33,9 @@ def test_builds_eight_groups_from_committed_report():
     assert groups["kings_court_accounting"]["module_count"] == 1
     # the harmonic swarm, capability grid + Fleadh scenario join by name (b50-b52)
     assert groups["harmonic_swarm"]["module_count"] == 3
-    # the universal prompt router (one door, enforced envelope) joins by name (b53)
-    assert groups["universal_prompt_router"]["module_count"] == 1
+    # the universal prompt router (one door, enforced envelope, replicator
+    # contract) joins by name (b53-b54)
+    assert groups["universal_prompt_router"]["module_count"] == 2
     assert cat["counts"]["total"] == sum(g["module_count"] for g in groups.values())
 
 

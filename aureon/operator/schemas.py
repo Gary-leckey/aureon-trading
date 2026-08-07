@@ -176,6 +176,7 @@ class CognitionResult:
     errors: List[Dict[str, Any]] = field(default_factory=list)
     capability: Dict[str, Any] | None = None   # goal-capability classification
     swarm: Dict[str, Any] | None = None        # routing-council report (complex prompts)
+    actualization: Dict[str, Any] | None = None  # Film-Reel ledger: realized vs parked
 
     def status(self) -> str:
         """Honest turn classification: ``ok`` | ``honest_unavailable`` | ``fault``.
@@ -218,6 +219,7 @@ class CognitionResult:
                            "complex": bool(cap.get("complex", False)),
                            "status": cap.get("status", "unavailable")},
             "coherence": coherence,
+            "actualization": dict(self.actualization) if self.actualization else None,
         }
 
     def to_dict(self) -> Dict[str, Any]:
@@ -238,6 +240,7 @@ class CognitionResult:
             "errors": list(self.errors),
             "capability": dict(self.capability) if self.capability else None,
             "swarm": dict(self.swarm) if self.swarm else None,
+            "actualization": dict(self.actualization) if self.actualization else None,
             "envelope": self.envelope(),
         }
 

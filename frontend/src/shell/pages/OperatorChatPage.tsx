@@ -20,6 +20,15 @@ import { LiveDataNotice } from "../Page";
 interface GroundingSource {
   title?: string;
   path?: string;
+  score?: string;
+}
+
+interface ResponseEnvelope {
+  status?: string;
+  sources_statement?: string;
+  capability?: { families?: string[]; complex?: boolean };
+  coherence?: { lead_family?: string; gamma_by_cluster?: Record<string, number | null> } | null;
+  actualization?: { realized_count?: number; parked_count?: number; answer?: string } | null;
 }
 
 interface CognitionReply {
@@ -33,6 +42,7 @@ interface CognitionReply {
   grounding?: { sources?: GroundingSource[] } | null;
   tool_calls?: Array<{ tool?: string; name?: string }>;
   trace_id?: string;
+  envelope?: ResponseEnvelope | null;
 }
 
 interface ChatTurn {
@@ -161,8 +171,26 @@ export default function OperatorChatPage() {
                         </Badge>
                       )}
                       <Badge variant="outline" className="text-muted-foreground">
-                        {turn.reply.grounded ? "repo-grounded" : "general knowledge"}
+                        {turn.reply.envelope?.sources_statement ||
+                          (turn.reply.grounded ? "repo-grounded" : "general knowledge")}
                       </Badge>
+                      {turn.reply.envelope?.status && turn.reply.envelope.status !== "ok" && (
+                        <Badge variant="outline" className="border-warning/40 text-warning">
+                          {turn.reply.envelope.status.replace(/_/g, " ")}
+                        </Badge>
+                      )}
+                      {turn.reply.envelope?.coherence?.lead_family && (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          council lead: {turn.reply.envelope.coherence.lead_family.replace(/^safe_/, "").replace(/_/g, " ")}
+                        </Badge>
+                      )}
+                      {turn.reply.envelope?.actualization &&
+                        (turn.reply.envelope.actualization.parked_count ?? 0) > 0 && (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            {turn.reply.envelope.actualization.realized_count ?? 0} realized ·{" "}
+                            {turn.reply.envelope.actualization.parked_count} parked
+                          </Badge>
+                        )}
                       {(turn.reply.tool_calls?.length ?? 0) > 0 && (
                         <Badge variant="outline" className="gap-1 text-muted-foreground">
                           <Wrench className="h-3 w-3" /> {turn.reply.tool_calls?.length} tool call
@@ -181,6 +209,7 @@ export default function OperatorChatPage() {
                       {turn.reply.grounding.sources.slice(0, 4).map((s, j) => (
                         <p key={j} className="truncate font-mono text-[10px] text-muted-foreground">
                            {s.path || s.title}
+                          {s.score ? ` · ${s.score}` : ""}
                         </p>
                       ))}
                     </div>

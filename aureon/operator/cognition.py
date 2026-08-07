@@ -196,6 +196,7 @@ class AureonCognition:
                 "(live trading, payment, safety-gate bypass, credential, or filing)."
             )
             res.text = f"🦗 Blocked at the Aureon authority boundary.\nReason: {res.conscience_message}"
+            self._actualize(res)
             res.elapsed_ms = (time.time() - started) * 1000.0
             self._publish(res, "complete", res.to_dict())
             return res
@@ -204,6 +205,7 @@ class AureonCognition:
         system_prompt = self._ground(prompt, res)
         self._run_loop(prompt, system_prompt, res)
         self._veto(prompt, res)
+        self._actualize(res)
 
         res.elapsed_ms = (time.time() - started) * 1000.0
         self._publish(res, "complete", res.to_dict())
@@ -251,14 +253,17 @@ class AureonCognition:
         sources: List[Dict[str, str]] = []
         blocks: List[str] = []
         try:
-            hits = repo_search(prompt, top_k=4)
+            # the pattern buffer runs deep: more candidate packets, each carrying
+            # its own measured relevance score into the envelope (never invented)
+            hits = repo_search(prompt, top_k=8)
             top = hits[0].score if hits else 0.0
             is_grounded = top >= _MID_FLOOR and _has_domain_term(prompt)
             if is_grounded:
                 for s in hits:
                     if s.score < _SNIPPET_FLOOR:
                         continue
-                    sources.append({"title": s.doc_id, "path": s.doc_id})
+                    sources.append({"title": s.doc_id, "path": s.doc_id,
+                                    "score": f"{s.score:.1f}"})
                     blocks.append(f"[{s.doc_id}] {s.text[:400]}")
         except Exception as exc:  # noqa: BLE001
             logger.debug("repo grounding failed: %s", exc)
@@ -396,6 +401,27 @@ class AureonCognition:
             res.conscience_verdict = "APPROVED"
             res.errors.append({"phase": "veto", "error": str(exc)})
         self._publish(res, "veto", {"verdict": res.conscience_verdict, "blocked": res.blocked})
+
+    # ------------------------------------------------------------------
+    # Actualize (the Film-Reel ledger: only the realized increment is written)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _actualize(res: CognitionResult) -> None:
+        """The replicator's last step, recorded honestly: executed tool calls
+        and an un-vetoed answer are REALIZED increments; blocked tool calls and
+        a vetoed/boundary-refused answer are PARKED possibilities. The parked
+        ensemble is named, never deleted by fiat — and nothing parked is ever
+        presented as materialized."""
+        realized = [t.tool for t in res.tool_calls if not t.blocked]
+        parked = [t.tool for t in res.tool_calls if t.blocked]
+        res.actualization = {
+            "realized_increments": realized,
+            "parked_possibilities": parked,
+            "answer": "parked" if res.blocked else "realized",
+            "realized_count": len(realized) + (0 if res.blocked else 1),
+            "parked_count": len(parked) + (1 if res.blocked else 0),
+        }
 
     def _get_conscience(self):
         if self._conscience_loaded:

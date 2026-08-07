@@ -132,6 +132,7 @@ _GROUPS: Dict[str, str] = {
     "capability_grid": "harmonic_swarm",
     "fleadh": "harmonic_swarm",
     "prompt_router": "universal_prompt_router",
+    "cognition": "universal_prompt_router",
 }
 
 # module-basename → bus-trace name (the emit_* mirror), for the live overlay only

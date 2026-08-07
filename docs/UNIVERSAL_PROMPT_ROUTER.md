@@ -101,6 +101,31 @@ double** — every claim is about the pipeline's measured behavior):
 Plus: offline honesty (`honest_unavailable`, never invented), and the
 route audit re-proven from source.
 
+## The replicator contract (benchmark b54)
+
+The router is one half of a replicator: it holds a possibility space, selects
+the coherent configuration, and materializes only what survives the
+constraints. b54 pins that contract end to end:
+
+- **The sea is real** — grounding packets each carry a MEASURED relevance
+  score into the envelope (top-k deepened to 8), and the routing council's
+  warm-up refusals park soft probability mass in the UED (measured:
+  `decisions_total − decisions_actualized > 0`).
+- **Selection is gated** — hard boundaries refuse before any model runs
+  (zero model calls, pinned); a guarded tool call (e.g. a `.env` write)
+  stays parked and never materializes.
+- **Only the realized increment is written** — every `CognitionResult` now
+  carries the Film-Reel ledger (`actualization`): executed tools and an
+  un-vetoed answer are *realized increments*; blocked tools and vetoed or
+  boundary-refused answers are *parked possibilities* — named on every
+  envelope, never deleted by fiat, never presented as materialized.
+- **Deterministic replication** — the same prompt replicates the same
+  artifact bit-for-bit (trace id aside).
+
+The console chat (`OperatorChatPage`) renders the served artifact's label:
+the sources statement, non-`ok` status, the council's lead family, the
+realized/parked counts, and each packet's relevance score.
+
 ## Reproduce
 
 ```bash
