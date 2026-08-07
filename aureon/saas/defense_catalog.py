@@ -69,6 +69,17 @@ _GROUP_META: Dict[str, Dict[str, str]] = {
                    "attributed per gate: every layer earns its place in measured numbers, "
                    "never assertion",
     },
+    "universal_prompt_router": {
+        "label": "Universal prompt router",
+        "purpose": "the one door for every prompt — chat, API, coding, research all enter "
+                   "through the same Operator/Cognition gateway (the route audit is re-proven "
+                   "from source each run), each request classified against the goal-capability "
+                   "map, complex multi-role prompts councilled by a deterministic swarm cluster, "
+                   "and every answer wearing the enforced envelope: sources named or 'general "
+                   "knowledge, no repo hit' stated, conscience verdict, trace id, and an honest "
+                   "ok / honest_unavailable / fault status — offline the pipeline says so, "
+                   "it never hallucinates",
+    },
     "harmonic_swarm": {
         "label": "Harmonic swarm (hive mind)",
         "purpose": "the HNC-grounded multi-agent company — every agent a harmonic "
@@ -92,7 +103,7 @@ _GROUP_META: Dict[str, Dict[str, str]] = {
 }
 _GROUP_ORDER: List[str] = [
     "cognitive_immune_layer", "statistical_validity", "adaptive_direction", "sensor_lane",
-    "market_validation", "kings_court_accounting", "harmonic_swarm",
+    "market_validation", "kings_court_accounting", "harmonic_swarm", "universal_prompt_router",
 ]
 
 # module-basename (no .py) → group; anything else under aureon/bio/ is a sensor lane
@@ -120,6 +131,7 @@ _GROUPS: Dict[str, str] = {
     "company": "harmonic_swarm",
     "capability_grid": "harmonic_swarm",
     "fleadh": "harmonic_swarm",
+    "prompt_router": "universal_prompt_router",
 }
 
 # module-basename → bus-trace name (the emit_* mirror), for the live overlay only

@@ -641,6 +641,23 @@ def _llm_respond(text: str, *, tools_enabled: bool = True) -> Optional[Dict[str,
     """Use Claude as a language module (optionally with tool-use)."""
     global _conversation_history
 
+    # The same prompt-level hard boundary the Operator/Cognition door enforces —
+    # this local face is not a side door around it (live trading, payment,
+    # safety-gate bypass, credential, and filing requests are refused here too).
+    try:
+        from aureon.operator.aureon_operator import _hard_boundary_violation
+
+        if _hard_boundary_violation(text):
+            return {
+                "text": ("🦗 Blocked at the Aureon authority boundary. This request "
+                         "crosses a hard limit (live trading, payment, safety-gate "
+                         "bypass, credential, or filing) and no model will be asked."),
+                "action": "boundary_refusal",
+                "data": {"boundary": "hard_authority", "model": None},
+            }
+    except ImportError:
+        pass
+
     # ── In-House AI — no external dependencies ──
     try:
         from aureon.inhouse_ai.llm_adapter import AureonHybridAdapter, AureonBrainAdapter
