@@ -1,6 +1,6 @@
 # Aureon capability benchmark — report
 
-*generated: 2026-08-07T06:35:54Z*
+*generated: 2026-08-07T10:25:45Z*
 
 Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/fail, falsifiable. **Tier B** runs LLM-shape prompts side-by-side across local Aureon adapters; it never fails the run, it shows what each adapter sounds like.
 
@@ -11,7 +11,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 | 1 | Standing-wave bonding (HashResonanceIndex) | **PASS** | 21 identical events → 1 bonded fingerprint (count=21, strength=0.6765 ≈ 0.6765; thresholds [3, 8, 21] published exactly once each) |
 | 2 | Temporal lighthouse (β Λ(t-τ) goal echo) | **PASS** | 3 goals (1 starved, 1 completed, 1 abandoned) → completion_rate=0.333, orphan_rate=0.333, states={'PROPOSED': 0, 'ACKNOWLEDGED': 0, 'IN_PROGRESS': 0, 'COMPLETED': 1, 'ABANDONED': 1, 'ORPHANED': 1} |
 | 3 | Symbolic life pillars (Auris Conjecture) | **PASS** | SLS=0.6393; ψ=0.7069 (CONNECTED); all 5 pillars in [0,1]; vault.current_symbolic_life_score=0.6393012290344635 |
-| 4 | Mesh convergence (PhiBridgeMesh, in-process LAN) | **PASS** | 20 vaults converged to identical 400-hash set in 3 cycles (526 ms, 180 posts) |
+| 4 | Mesh convergence (PhiBridgeMesh, in-process LAN) | **PASS** | 20 vaults converged to identical 400-hash set in 3 cycles (640 ms, 180 posts) |
 | 5 | Conscience VETO (HNC 4th-pass, substrate coherence) | **PASS** | SLS=0.05 < 0.20 cliff → VETO on 'Execute trade' (risk=0.08); message quotes stability cliff and symbolic_life_score; queen.conscience.verdict published |
 | 6 | Pattern learning (PersonaMinerBridge) | **PASS** | 5 (engineer, 'build the audit gate') successes → 3 patterns learned (['audit', 'build', 'gate']), each published exactly once; (engineer, 'build').confidence=0.747 |
 | 7 | Skill execution → artefacts on disk | **PASS** | 3 skills → 3 files on disk + 3 vault cards; goal.completed: "built 3 artefact(s) via 3 skill(s): compose_audit, render_report, summarise_findings" |
@@ -52,11 +52,12 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 | 42 | MCP transport (stable read-only connector bridge) | **PASS** | isolated read-only MCP bridge: 5 safe tools sealed (surface-only True); benign call laminar True with interior unchanged True; mutating tool refused True; adversarial ingress contained True; tamper detected True; Flask round-trip laminar True (read-only True, mutating refused True, interior unchanged True, adversarial refused True); durable md+JSON byte-identical; no person surface |
 | 43 | Runtime direction audit (field is load-bearing) | **PASS** | 7/7 real adaptive consumers swayed by the canonical field (load-bearing True); deterministic; durable md+JSON byte-identical; no person surface |
 | 44 | Brain-reply membrane (outbound flagship containment) | **PASS** | outbound brain-reply membrane: benign reply clean True; injection contained True; false-action contained True; real operator veto flags a contained reply True while a clean reply stays bit-identical True; durable md+JSON byte-identical; no person surface |
-| 45 | SaaS repo-wide coverage (38/38 domains, deep health) | **PASS** | repo-wide SaaS coverage: 39/39 aureon/ packages covered (fraction 1.0); uncovered []; phantom []; every covered domain carries a real health rollup; 7 deep adapters; deterministic; durable md+JSON byte-identical; no person surface |
-| 46 | Logic-train audit (repo-wide, one field) | **PASS** | discovered 1111 modules → 89 on the harmonic train (9 authority / 27 producer / 53 consumer); 54 wired (60.7%), 35 unwired with 0 on the live order path; every gap pinned by name with a reason; 0 unexpected and 0 stale entries; an injected private-coherence decision site is caught by the ratchet; deterministic md+JSON |
+| 45 | SaaS repo-wide coverage (38/38 domains, deep health) | **PASS** | repo-wide SaaS coverage: 40/40 aureon/ packages covered (fraction 1.0); uncovered []; phantom []; every covered domain carries a real health rollup; 7 deep adapters; deterministic; durable md+JSON byte-identical; no person surface |
+| 46 | Logic-train audit (repo-wide, one field) | **PASS** | discovered 1118 modules → 90 on the harmonic train (9 authority / 27 producer / 54 consumer); 55 wired (61.1%), 35 unwired with 0 on the live order path; every gap pinned by name with a reason; 0 unexpected and 0 stale entries; an injected private-coherence decision site is caught by the ratchet; deterministic md+JSON |
 | 47 | Volatility sentinel (predictive veto, labeled benchmark) | **PASS** | seeded regime library: every labeled expansion break detected, ≥100 post-break samples protected, calm FPR 0.0 over 700 assessments at the production veto line 0.85; deterministic run-to-run |
 | 48 | Historical replay validation (HNC margins on real data, no keys) | **PASS** | 4326 real candles (Kraken public, provenance-stamped, integrity-proven) through the real stack: 114 round trips, HNC edge vs ungated momentum 60m +19.63%, 1440m +39.03%; capital preserved on every replay; deterministic |
 | 49 | King's Court accounting (file drop → filings, measured coherence) | **PASS** | labeled benchmark books for the R&A benchmark client: 4 bank rows in, 3 named (rules + Throne seat), 1 honest suspense pound held, payslip balanced, VAT box5 10000p, FRS 105 proves -2062000p; coherence 1.0 over 12 measured steps; deterministic |
+| 50 | Harmonic swarm (hive-mind company under the Master Formula) | **PASS** | 3 departments × 16 steps: 5/48 decisions actualized, ALL inside the island (β=1.2 department refused every step), Γ warm-up honored, parallel motion preserved to 1e-12, 4 realized increments vs 16 UED parks; deterministic |
 
 ### Tier A — per-benchmark detail
 
@@ -168,7 +169,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
     "peers_per_node": 3,
     "target_hash_count": 400,
     "cycles_to_converge": 3,
-    "wall_ms": 526.4,
+    "wall_ms": 640.0,
     "posts_issued": 180,
     "client_failures": 0,
     "min_size": 400,
@@ -225,7 +226,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "last_winning_skill_chain": [
         "compose_audit"
       ],
-      "last_seen_ts": 1786084259.2334983
+      "last_seen_ts": 1786097953.169304
     },
     "persona_health": {
       "persona": "engineer",
@@ -237,7 +238,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "completion_rate": 1.0,
       "abandon_rate": 0.0,
       "avg_sls_delta": 0.0,
-      "last_seen_ts": 1786084259.2334983
+      "last_seen_ts": 1786097953.169304
     },
     "patterns_published": 3,
     "patterns": [
@@ -292,9 +293,9 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "summarise_findings"
     ],
     "artefacts_on_disk": [
-      "artefacts/20260807T063059-compose_audit-5605be.md",
-      "artefacts/20260807T063059-render_report-557e5f.md",
-      "artefacts/20260807T063059-summarise_findings-609172.md"
+      "artefacts/20260807T101913-compose_audit-31fbaf.md",
+      "artefacts/20260807T101913-render_report-4b0de7.md",
+      "artefacts/20260807T101913-summarise_findings-eef6a4.md"
     ],
     "vault_skill_output_cards": 3,
     "completion_summary": "built 3 artefact(s) via 3 skill(s): compose_audit, render_report, summarise_findings",
@@ -305,7 +306,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "failed": 0,
       "abandoned": 0,
       "subscribed": true,
-      "output_root": "/tmp/aureon-bench-occfshh7/a7/artefacts"
+      "output_root": "/tmp/aureon-bench-s7tqfc8x/a7/artefacts"
     }
   },
   "invariants": {
@@ -336,7 +337,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
     "sls_after": 0.72,
     "sls_delta": 0.22,
     "downstream_event_count": 3,
-    "lambda_delta_t": 0.07233667373657227,
+    "lambda_delta_t": 0.0729668140411377,
     "reasoning_excerpt": "I, engineer, collapsed into decision 'goal.submit' with p=0.780. The window closed at outcome=COMPLETED. 3 downstream event(s) within the 0.050s window. SLS moved from 0.500 to 0.720 (\u0394+0.220)."
   },
   "invariants": {
@@ -1320,8 +1321,8 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 {
   "passed": true,
   "metrics": {
-    "fs_package_count": 39,
-    "covered": 39,
+    "fs_package_count": 40,
+    "covered": 40,
     "adapter_deep_count": 7
   },
   "invariants": {
@@ -1350,12 +1351,12 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 {
   "passed": true,
   "metrics": {
-    "scanned": 1111,
-    "relevant": 89,
-    "wired": 54,
+    "scanned": 1118,
+    "relevant": 90,
+    "wired": 55,
     "unwired": 35,
     "order_path_gaps": 0,
-    "wired_fraction": 0.6067
+    "wired_fraction": 0.6111
   },
   "invariants": {
     "discovers_whole_tree": true,
@@ -1463,6 +1464,37 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 }
 ```
 
+#### A.50 — Harmonic swarm (hive-mind company under the Master Formula)
+
+`aureon/swarm/company.py`
+
+```json
+{
+  "passed": true,
+  "metrics": {
+    "steps": 16,
+    "decisions_total": 48,
+    "decisions_actualized": 5,
+    "cliff_refusals": 16,
+    "realized_steps": 4,
+    "ued_steps": 16
+  },
+  "invariants": {
+    "no_single_agent_task_possible": true,
+    "soft_mass_never_hard_votes": true,
+    "gamma_warms_honestly_no_early_collapse": true,
+    "stability_cliff_never_actualizes": true,
+    "actualizations_happened_inside_island": true,
+    "every_collapse_cleared_gamma_crit": true,
+    "canonical_darkness_recorded_not_invented": true,
+    "steering_parallel_preserved_exactly": true,
+    "realized_only_memory": true,
+    "possibilities_parked_in_ued": true,
+    "deterministic": true
+  }
+}
+```
+
 ## Tier B — LLM-shape tasks (local adapters, side-by-side)
 
 ### B.1 — Exposure questions (10-prompt session blob)
@@ -1491,7 +1523,7 @@ I want to take you exposure-style through ten questions about yourself. Speak br
 
 #### → AureonBrainAdapter
 
-*latency=1 ms, chars=348, words=54, model=aureon-brain-v1*
+*latency=2 ms, chars=348, words=54, model=aureon-brain-v1*
 
 ```
 Hello. I hear you through Aureon's local brain fallback, and I am treating this as operator chat, not a trading signal. I can help route coding jobs, UI work, media builds, research, and system-health checks through the local Aureon organism while keeping live trading, payments, filings, credentials, and destructive OS actions behind their gates.

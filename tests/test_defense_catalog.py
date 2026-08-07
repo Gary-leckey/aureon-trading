@@ -12,11 +12,11 @@ import sys
 from aureon.saas import defense_catalog as dc
 
 
-def test_builds_six_groups_from_committed_report():
+def test_builds_seven_groups_from_committed_report():
     cat = dc.build_defense_catalog()
     assert cat["group_order"] == [
         "cognitive_immune_layer", "statistical_validity", "adaptive_direction", "sensor_lane",
-        "market_validation", "kings_court_accounting",
+        "market_validation", "kings_court_accounting", "harmonic_swarm",
     ]
     groups = cat["groups"]
     assert set(groups) == set(cat["group_order"])
@@ -31,6 +31,8 @@ def test_builds_six_groups_from_committed_report():
     assert groups["market_validation"]["module_count"] == 2
     # the King's Court accounting body joins by explicit name (b49)
     assert groups["kings_court_accounting"]["module_count"] == 1
+    # the harmonic swarm joins by explicit name (b50)
+    assert groups["harmonic_swarm"]["module_count"] == 1
     assert cat["counts"]["total"] == sum(g["module_count"] for g in groups.values())
 
 

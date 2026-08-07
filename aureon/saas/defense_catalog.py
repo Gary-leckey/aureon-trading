@@ -69,6 +69,16 @@ _GROUP_META: Dict[str, Dict[str, str]] = {
                    "attributed per gate: every layer earns its place in measured numbers, "
                    "never assertion",
     },
+    "harmonic_swarm": {
+        "label": "Harmonic swarm (hive mind)",
+        "purpose": "the HNC-grounded multi-agent company — every agent a harmonic "
+                   "mode with its own probability simplex (soft mass, never hard "
+                   "votes), clusters owning tasks (never a single agent), Γ as a "
+                   "measured rolling correlation, steering that shapes and never "
+                   "arrests, the island of stability enforced on β, realized-only "
+                   "causal-echo memory, and a Queen gate the canonical field may "
+                   "only tighten",
+    },
     "kings_court_accounting": {
         "label": "King's Court accounting",
         "purpose": "the commercial HNC accounting body — multi-client double-entry books in "
@@ -82,7 +92,7 @@ _GROUP_META: Dict[str, Dict[str, str]] = {
 }
 _GROUP_ORDER: List[str] = [
     "cognitive_immune_layer", "statistical_validity", "adaptive_direction", "sensor_lane",
-    "market_validation", "kings_court_accounting",
+    "market_validation", "kings_court_accounting", "harmonic_swarm",
 ]
 
 # module-basename (no .py) → group; anything else under aureon/bio/ is a sensor lane
@@ -107,6 +117,7 @@ _GROUPS: Dict[str, str] = {
     "volatility_sentinel_benchmark": "market_validation",
     "historical_replay_validation": "market_validation",
     "client_ledger": "kings_court_accounting",
+    "company": "harmonic_swarm",
 }
 
 # module-basename → bus-trace name (the emit_* mirror), for the live overlay only

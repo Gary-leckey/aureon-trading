@@ -46,6 +46,7 @@ _FS_TO_PRODUCT: Dict[str, str] = {
     "bio": "research", "alignment": "research", "search": "research",
     "observer": "cognition", "inhouse_ai": "cognition", "miner": "cognition",
     "swarm_motion": "cognition",
+    "swarm": "cognition",  # the harmonic hive — HNC-grounded multi-agent company
     "integrations": "security",
     "code_architect": "self-improvement", "vault": "self-improvement",
     "generated": "self-improvement",

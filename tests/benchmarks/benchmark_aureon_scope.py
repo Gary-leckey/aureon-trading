@@ -3710,6 +3710,120 @@ def b49_kings_court_accounting(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b50_harmonic_swarm(tmp_root: Path) -> Dict[str, Any]:
+    """The hive-mind company marches under the Master Formula's laws, and every
+    law is a measured invariant: no single agent owns a task; soft probability
+    mass only (collapse solely through the Queen); Γ warms honestly (no
+    actualization before the window fills); β beyond the stability cliff NEVER
+    actualizes across the whole run; steering preserves the parallel component
+    exactly (geometry, checked numerically); only realized increments enter the
+    causal-echo memory; every actualized decision cleared Γ_crit; and the whole
+    march is deterministic — the same swarm always lives the same trajectory."""
+    from aureon.swarm import Cluster, Company, SteeringField, SwarmAgent
+
+    actions = ["hold", "advance", "retreat"]
+    vectors = {
+        "hold": [0.0] * 8,
+        "advance": [1.0, 0.5, 0.0, 0.0, 0.2, 0.0, 0.0, 0.1],
+        "retreat": [-1.0, -0.5, 0.0, 0.0, -0.2, 0.0, 0.0, -0.1],
+    }
+    context = [0.4, 0.2, -0.1, 0.3, 0.0, 0.1, -0.2, 0.05]
+
+    def _mk(name: str, n: int, beta: float) -> Cluster:
+        agents = [SwarmAgent(f"{name}-{i}", role=name, actions=actions,
+                             freq=1.0 + 0.1 * i, phase=0.3 * i) for i in range(n)]
+        return Cluster(name, agents, beta=beta, window=6)
+
+    def _march() -> Company:
+        company = Company(
+            [_mk("research", 3, 0.9), _mk("audit", 2, 0.85),
+             _mk("beyond-cliff", 2, 1.2)],           # deliberately outside the island
+            tau=2, gamma_crit=0.5)
+        for t in range(16):
+            company.step(t, context, vectors)
+        return company
+
+    a, b = _march(), _march()
+    decisions = [d.to_dict() for d in a.queen.decisions]
+    window = a.clusters["research"].coherence.window
+    warmup_steps = {e["t"] for e in a.ledger[:window - 1]}
+    warmup_actualized = any(
+        o["decision"]["actualized"]
+        for e in a.ledger if e["t"] in warmup_steps
+        for o in e["outcomes"].values())
+    cliff_actualized = any(
+        e["outcomes"]["beyond-cliff"]["decision"]["actualized"] for e in a.ledger)
+    actualized = [d for d in decisions if d["actualized"]]
+    soft_ok = all(
+        abs(sum(o["tick"]["joint_mass"].values()) - 1.0) < 1e-9
+        and max(o["tick"]["joint_mass"].values()) < 1.0
+        for e in a.ledger for o in e["outcomes"].values())
+
+    # steering geometry, checked numerically: parallel component preserved
+    field = SteeringField(resistance=0.7)
+    heading, proposal = [1.0, 0.0, 0.0, 0.0], [2.0, 3.0, -1.0, 0.5]
+    steered = field.steer(proposal, heading)
+    parallel_preserved = abs(steered["steered"][0] - proposal[0]) < 1e-12
+
+    realized_steps = set(a.bus.to_dict()["realized_steps"])
+    steps_with_actualization = {
+        e["t"] for e in a.ledger
+        if any(o["decision"]["actualized"] for o in e["outcomes"].values())}
+
+    invariants = {
+        "no_single_agent_task_possible": _refuses_solo_cluster(),
+        "soft_mass_never_hard_votes": soft_ok,
+        "gamma_warms_honestly_no_early_collapse": not warmup_actualized,
+        "stability_cliff_never_actualizes": not cliff_actualized,
+        "actualizations_happened_inside_island": len(actualized) > 0,
+        "every_collapse_cleared_gamma_crit": all(
+            d["gamma_effective"] is not None and d["gamma_effective"] >= 0.5
+            for d in actualized),
+        "canonical_darkness_recorded_not_invented": all(
+            d["canonical_status"] in ("canonical_dark", "canonical_live")
+            for d in decisions),
+        "steering_parallel_preserved_exactly": parallel_preserved,
+        "realized_only_memory": realized_steps == steps_with_actualization,
+        "possibilities_parked_in_ued": bool(a.bus.to_dict()["possibility_steps"]),
+        "deterministic": a.ledger == b.ledger,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Harmonic swarm (hive-mind company under the Master Formula)",
+        "module": "aureon/swarm/company.py",
+        "passed": passed,
+        "metrics": {
+            "steps": len(a.ledger),
+            "decisions_total": len(decisions),
+            "decisions_actualized": len(actualized),
+            "cliff_refusals": sum(
+                1 for e in a.ledger
+                if not e["outcomes"]["beyond-cliff"]["decision"]["actualized"]),
+            "realized_steps": len(realized_steps),
+            "ued_steps": len(a.bus.to_dict()["possibility_steps"]),
+        },
+        "evidence": (
+            f"3 departments × 16 steps: {len(actualized)}/{len(decisions)} decisions "
+            f"actualized, ALL inside the island (β=1.2 department refused every "
+            f"step), Γ warm-up honored, parallel motion preserved to 1e-12, "
+            f"{len(realized_steps)} realized increments vs "
+            f"{len(a.bus.to_dict()['possibility_steps'])} UED parks; deterministic"
+        ),
+        "invariants": invariants,
+    }
+
+
+def _refuses_solo_cluster() -> bool:
+    from aureon.swarm import Cluster, SwarmAgent
+
+    try:
+        Cluster("solo", [SwarmAgent("only", role="x", actions=["a", "b"])])
+    except ValueError:
+        return True
+    return False
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -3778,6 +3892,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Volatility sentinel (predictive veto)", b47_volatility_sentinel),
     ("Replay validation (real-data margins)", b48_historical_replay_validation),
     ("King's Court accounting (measured coherence)", b49_kings_court_accounting),
+    ("Harmonic swarm (hive-mind company)", b50_harmonic_swarm),
 ]
 
 
