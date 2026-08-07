@@ -3814,6 +3814,83 @@ def b50_harmonic_swarm(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b51_capability_grid(tmp_root: Path) -> Dict[str, Any]:
+    """Every Aureon capability speed-texted through the hive on REAL organ
+    output: trading (committed provenance-stamped Kraken candles), pattern
+    recognition (autocorrelation spectra of the same real closes), accounting
+    (the King's Court's measured coordination steps), fintech (HMRC MTD v1.0
+    pressings, schema-validated), and coding (the repo's own logic-train
+    audit). Throughput is MEASURED per lane; determinism is proven on the
+    march ledgers with timing excluded; a dark source refuses with a named
+    blocker instead of synthesizing a domain."""
+    import aureon.swarm.capability_grid as grid
+    from aureon.swarm.capability_grid import build_lane, run_grid, run_lane
+
+    a = run_grid(max_steps=150)
+    b = run_grid(max_steps=150)
+
+    lanes = a["lanes"]
+    prov_markers = {"trading": "Kraken", "pattern_recognition": "autocorrelation",
+                    "accounting": "King's Court", "fintech": "HMRC MTD",
+                    "coding": "logic-train audit"}
+
+    # dark-source honesty, proven live: point the trading lane at nothing
+    real_path = grid._OHLC
+    try:
+        grid._OHLC = tmp_root / "missing.json"
+        dark = run_lane(build_lane("trading"))
+    finally:
+        grid._OHLC = real_path
+
+    total_updates = sum(
+        r["steps"] * r["agents"] for r in lanes.values() if r["ran"])
+    avg_ms_per_step = (1000.0 * a["total_elapsed_s"] / a["total_steps"]
+                       if a["total_steps"] else None)
+
+    invariants = {
+        "all_five_lanes_ran_on_real_organs": a["lanes_ran"] == 5,
+        "every_lane_names_its_provenance": all(
+            marker in lanes[n]["provenance"] for n, marker in prov_markers.items()),
+        "throughput_measured_positive": all(
+            r["steps_per_s"] > 0 and r["agent_updates_per_s"] > 0
+            for r in lanes.values()),
+        "per_step_overhead_bounded": (avg_ms_per_step is not None
+                                      and avg_ms_per_step < 50.0),
+        "gate_selective_not_rubber_stamp": all(
+            0 < r["decisions_actualized"] < r["decisions_total"]
+            for r in lanes.values()),
+        "deterministic_marches_timing_excluded": a["_ledgers"] == b["_ledgers"],
+        "dark_source_refuses_named": (dark["ran"] is False
+                                      and any("nothing is synthesized" in x
+                                              for x in dark["blockers"])),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Capability grid (all Aureon domains through the hive)",
+        "module": "aureon/swarm/capability_grid.py",
+        "passed": passed,
+        "metrics": {
+            "lanes_ran": a["lanes_ran"],
+            "total_steps": a["total_steps"],
+            "total_elapsed_s": a["total_elapsed_s"],
+            "avg_ms_per_step": round(avg_ms_per_step, 3) if avg_ms_per_step else None,
+            "total_agent_updates": total_updates,
+            "per_lane_steps_per_s": {n: r["steps_per_s"] for n, r in lanes.items()},
+            "per_lane_actualized": {
+                n: f"{r['decisions_actualized']}/{r['decisions_total']}"
+                for n, r in lanes.items()},
+        },
+        "evidence": (
+            f"5/5 capability lanes on real organs: {a['total_steps']} swarm steps "
+            f"({total_updates} agent updates) in {a['total_elapsed_s']}s "
+            f"(~{avg_ms_per_step:.2f} ms/step); gate selective in every lane; "
+            f"dark-source refusal proven; marches deterministic"
+        ),
+        "invariants": invariants,
+    }
+
+
 def _refuses_solo_cluster() -> bool:
     from aureon.swarm import Cluster, SwarmAgent
 
@@ -3893,6 +3970,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Replay validation (real-data margins)", b48_historical_replay_validation),
     ("King's Court accounting (measured coherence)", b49_kings_court_accounting),
     ("Harmonic swarm (hive-mind company)", b50_harmonic_swarm),
+    ("Capability grid (domains through the hive)", b51_capability_grid),
 ]
 
 

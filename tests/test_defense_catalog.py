@@ -31,8 +31,8 @@ def test_builds_seven_groups_from_committed_report():
     assert groups["market_validation"]["module_count"] == 2
     # the King's Court accounting body joins by explicit name (b49)
     assert groups["kings_court_accounting"]["module_count"] == 1
-    # the harmonic swarm joins by explicit name (b50)
-    assert groups["harmonic_swarm"]["module_count"] == 1
+    # the harmonic swarm + its capability grid join by explicit name (b50/b51)
+    assert groups["harmonic_swarm"]["module_count"] == 2
     assert cat["counts"]["total"] == sum(g["module_count"] for g in groups.values())
 
 
