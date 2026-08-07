@@ -176,6 +176,45 @@ class CognitionResult:
     errors: List[Dict[str, Any]] = field(default_factory=list)
     capability: Dict[str, Any] | None = None   # goal-capability classification
     swarm: Dict[str, Any] | None = None        # routing-council report (complex prompts)
+    actualization: Dict[str, Any] | None = None  # Film-Reel ledger: realized vs parked
+    bake: Dict[str, Any] | None = None           # bake cycle: completeness + refinement
+    acquisition: Dict[str, Any] | None = None    # Borg loop: gaps found → tools reached
+    assimilation: Dict[str, Any] | None = None   # controlled write-back verdict
+    coherence_gate: Dict[str, Any] | None = None  # the field's capability aperture
+
+    def knowledge_reach(self) -> List[str]:
+        """The knowledge classes this answer MEASURABLY rested on — derived
+        from the grounding record and the executed tool ledger, never
+        self-reported: repo | web | skills | live_state | tools | general_knowledge."""
+        reach: List[str] = []
+        if self.grounded:
+            reach.append("repo")
+        used = {t.tool for t in self.tool_calls if not t.blocked}
+        if used & {"web_search", "web_fetch"}:
+            reach.append("web")
+        if "list_skills" in used:
+            reach.append("skills")
+        if used & {"read_state", "read_positions", "read_prices"}:
+            reach.append("live_state")
+        if used - {"web_search", "web_fetch", "list_skills",
+                   "read_state", "read_positions", "read_prices"}:
+            reach.append("tools")
+        return reach or ["general_knowledge"]
+
+    def reach_class(self) -> str:
+        """The coarse reach taxonomy: ``local`` (repo/skills/state/tools only),
+        ``acquired`` (network only), ``mixed`` (both), ``none`` (model
+        knowledge alone) — derived from the measured reach, never self-reported."""
+        classes = set(self.knowledge_reach())
+        acquired = "web" in classes
+        local = bool(classes & {"repo", "skills", "live_state", "tools"})
+        if acquired and local:
+            return "mixed"
+        if acquired:
+            return "acquired"
+        if local:
+            return "local"
+        return "none"
 
     def status(self) -> str:
         """Honest turn classification: ``ok`` | ``honest_unavailable`` | ``fault``.
@@ -218,6 +257,14 @@ class CognitionResult:
                            "complex": bool(cap.get("complex", False)),
                            "status": cap.get("status", "unavailable")},
             "coherence": coherence,
+            "actualization": dict(self.actualization) if self.actualization else None,
+            "bake": dict(self.bake) if self.bake else None,
+            "knowledge_reach": self.knowledge_reach(),
+            "reach_class": self.reach_class(),
+            "acquisition": dict(self.acquisition) if self.acquisition else None,
+            "assimilation": ({"assimilated": bool(self.assimilation.get("assimilated"))}
+                             if self.assimilation else None),
+            "coherence_gate": dict(self.coherence_gate) if self.coherence_gate else None,
         }
 
     def to_dict(self) -> Dict[str, Any]:
@@ -238,6 +285,11 @@ class CognitionResult:
             "errors": list(self.errors),
             "capability": dict(self.capability) if self.capability else None,
             "swarm": dict(self.swarm) if self.swarm else None,
+            "actualization": dict(self.actualization) if self.actualization else None,
+            "bake": dict(self.bake) if self.bake else None,
+            "acquisition": dict(self.acquisition) if self.acquisition else None,
+            "assimilation": dict(self.assimilation) if self.assimilation else None,
+            "coherence_gate": dict(self.coherence_gate) if self.coherence_gate else None,
             "envelope": self.envelope(),
         }
 

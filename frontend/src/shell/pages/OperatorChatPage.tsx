@@ -20,6 +20,19 @@ import { LiveDataNotice } from "../Page";
 interface GroundingSource {
   title?: string;
   path?: string;
+  score?: string;
+}
+
+interface ResponseEnvelope {
+  status?: string;
+  sources_statement?: string;
+  capability?: { families?: string[]; complex?: boolean };
+  coherence?: { lead_family?: string; gamma_by_cluster?: Record<string, number | null> } | null;
+  actualization?: { realized_count?: number; parked_count?: number; answer?: string } | null;
+  bake?: { passes?: number; complete?: boolean | null; refined?: boolean } | null;
+  knowledge_reach?: string[];
+  acquisition?: { triggered?: boolean; outcome?: string } | null;
+  coherence_gate?: { aperture?: string; field_status?: string } | null;
 }
 
 interface CognitionReply {
@@ -33,6 +46,7 @@ interface CognitionReply {
   grounding?: { sources?: GroundingSource[] } | null;
   tool_calls?: Array<{ tool?: string; name?: string }>;
   trace_id?: string;
+  envelope?: ResponseEnvelope | null;
 }
 
 interface ChatTurn {
@@ -161,8 +175,53 @@ export default function OperatorChatPage() {
                         </Badge>
                       )}
                       <Badge variant="outline" className="text-muted-foreground">
-                        {turn.reply.grounded ? "repo-grounded" : "general knowledge"}
+                        {turn.reply.envelope?.sources_statement ||
+                          (turn.reply.grounded ? "repo-grounded" : "general knowledge")}
                       </Badge>
+                      {turn.reply.envelope?.status && turn.reply.envelope.status !== "ok" && (
+                        <Badge variant="outline" className="border-warning/40 text-warning">
+                          {turn.reply.envelope.status.replace(/_/g, " ")}
+                        </Badge>
+                      )}
+                      {turn.reply.envelope?.coherence?.lead_family && (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          council lead: {turn.reply.envelope.coherence.lead_family.replace(/^safe_/, "").replace(/_/g, " ")}
+                        </Badge>
+                      )}
+                      {turn.reply.envelope?.actualization &&
+                        (turn.reply.envelope.actualization.parked_count ?? 0) > 0 && (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            {turn.reply.envelope.actualization.realized_count ?? 0} realized ·{" "}
+                            {turn.reply.envelope.actualization.parked_count} parked
+                          </Badge>
+                        )}
+                      {turn.reply.envelope?.knowledge_reach &&
+                        turn.reply.envelope.knowledge_reach.join(",") !== "general_knowledge" && (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            reach: {turn.reply.envelope.knowledge_reach.join(" + ").replace(/_/g, " ")}
+                          </Badge>
+                        )}
+                      {turn.reply.envelope?.acquisition?.triggered && (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          acquired: {turn.reply.envelope.acquisition.outcome}
+                        </Badge>
+                      )}
+                      {turn.reply.envelope?.coherence_gate?.aperture &&
+                        turn.reply.envelope.coherence_gate.aperture !== "full" && (
+                          <Badge variant="outline" className="border-warning/40 text-warning">
+                            aperture: {turn.reply.envelope.coherence_gate.aperture}
+                          </Badge>
+                        )}
+                      {turn.reply.envelope?.bake?.refined && (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          baked ×{turn.reply.envelope.bake.passes ?? 2}
+                        </Badge>
+                      )}
+                      {turn.reply.envelope?.bake?.complete === false && (
+                        <Badge variant="outline" className="border-warning/40 text-warning">
+                          incomplete — honest seal
+                        </Badge>
+                      )}
                       {(turn.reply.tool_calls?.length ?? 0) > 0 && (
                         <Badge variant="outline" className="gap-1 text-muted-foreground">
                           <Wrench className="h-3 w-3" /> {turn.reply.tool_calls?.length} tool call
@@ -181,6 +240,7 @@ export default function OperatorChatPage() {
                       {turn.reply.grounding.sources.slice(0, 4).map((s, j) => (
                         <p key={j} className="truncate font-mono text-[10px] text-muted-foreground">
                            {s.path || s.title}
+                          {s.score ? ` · ${s.score}` : ""}
                         </p>
                       ))}
                     </div>

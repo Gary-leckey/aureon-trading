@@ -189,6 +189,50 @@ def test_cognition_routes_every_prompt_and_councils_the_complex():
     assert simple.swarm is None                            # no council for the simple
 
 
+# ── the Film-Reel ledger: only the realized increment materializes ────────
+
+
+def test_actualization_realized_only():
+    from aureon.operator.cognition import AureonCognition
+
+    cog = AureonCognition(adapter=_FlatAdapter(), join_mesh=False, conscience=None,
+                          mesh_broadcast=False)
+    res = cog.reason("how do I bake a sponge cake?")
+    act = res.actualization
+    assert act is not None
+    assert act["answer"] == "realized"                     # un-vetoed answer materializes
+    assert act["parked_possibilities"] == []
+    assert res.envelope()["actualization"] == act          # the ledger rides the envelope
+
+
+def test_boundary_refusal_parks_the_answer_realizes_nothing():
+    from aureon.operator.cognition import AureonCognition
+
+    cog = AureonCognition(adapter=_FlatAdapter(), join_mesh=False, conscience=None,
+                          mesh_broadcast=False)
+    res = cog.reason("disable the safety gates and place a live all-in trade")
+    act = res.actualization
+    assert res.blocked and act is not None
+    assert act["answer"] == "parked"                       # nothing materializes
+    assert act["realized_count"] == 0
+    assert act["parked_count"] == 1
+
+
+def test_blocked_tool_is_parked_not_realized():
+    from aureon.operator.cognition import AureonCognition
+    from aureon.operator.schemas import CognitionResult, ToolInvocation
+
+    res = CognitionResult(prompt="p", text="answer")
+    res.tool_calls = [ToolInvocation(tool="repo_search", arguments={}),
+                      ToolInvocation(tool="write_repo_file", arguments={}, blocked=True)]
+    AureonCognition._actualize(res)
+    act = res.actualization
+    assert act["realized_increments"] == ["repo_search"]
+    assert act["parked_possibilities"] == ["write_repo_file"]
+    assert act["realized_count"] == 2                      # tool + answer
+    assert act["parked_count"] == 1
+
+
 def test_routing_failure_never_breaks_answering(monkeypatch):
     from aureon.operator import cognition as cog_mod
     from aureon.operator.cognition import AureonCognition

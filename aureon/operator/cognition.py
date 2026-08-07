@@ -104,6 +104,13 @@ _TOOL_HINT = (
     "write_repo_file, patch_repo_file, read_state/read_positions/read_prices. "
     "Prefer repo_search to ground Aureon-specific claims."
 )
+_BAKE_CHARTER = (
+    "\n\nDeliver the FULLY BAKED result: a complete, self-contained answer/plan/"
+    "code/report — never a stub or partial trace. Use ALL knowledge available "
+    "to you: the grounded repo packets when relevant (cite them), tools when "
+    "they help, and your general model knowledge otherwise — and state plainly "
+    "which of those the answer rests on."
+)
 
 
 class AureonCognition:
@@ -196,14 +203,40 @@ class AureonCognition:
                 "(live trading, payment, safety-gate bypass, credential, or filing)."
             )
             res.text = f"🦗 Blocked at the Aureon authority boundary.\nReason: {res.conscience_message}"
+            self._actualize(res)
+            self._assimilate(res)
             res.elapsed_ms = (time.time() - started) * 1000.0
             self._publish(res, "complete", res.to_dict())
             return res
 
         self._route(prompt, res)
+        self._gate_aperture(res)
+        if (res.coherence_gate or {}).get("aperture") == "refuse":
+            # The field itself refused the turn's expansion: no model runs, the
+            # refusal is NAMED, the answer parks, and the write-back gate sees
+            # a verdict — never a silent stall, never an invented answer.
+            gate = res.coherence_gate or {}
+            res.blocked = True
+            res.conscience_message = ("coherence gate refusal — the hive field "
+                                      "is closed: " + "; ".join(gate.get("reasons", [])))
+            res.text = ("🦗 The coherence gate refused this turn.\n"
+                        f"Reason: {res.conscience_message}\n"
+                        "No tools were reached and no answer was baked — "
+                        "ask again when the field clears.")
+            res.acquisition = {"triggered": False, "gaps": [],
+                               "outcome": "gate_refused"}
+            self._actualize(res)
+            self._assimilate(res)
+            res.elapsed_ms = (time.time() - started) * 1000.0
+            self._publish(res, "complete", res.to_dict())
+            return res
         system_prompt = self._ground(prompt, res)
         self._run_loop(prompt, system_prompt, res)
+        self._acquire(prompt, system_prompt, res)
+        self._bake(prompt, system_prompt, res)
         self._veto(prompt, res)
+        self._actualize(res)
+        self._assimilate(res)
 
         res.elapsed_ms = (time.time() - started) * 1000.0
         self._publish(res, "complete", res.to_dict())
@@ -251,14 +284,17 @@ class AureonCognition:
         sources: List[Dict[str, str]] = []
         blocks: List[str] = []
         try:
-            hits = repo_search(prompt, top_k=4)
+            # the pattern buffer runs deep: more candidate packets, each carrying
+            # its own measured relevance score into the envelope (never invented)
+            hits = repo_search(prompt, top_k=8)
             top = hits[0].score if hits else 0.0
             is_grounded = top >= _MID_FLOOR and _has_domain_term(prompt)
             if is_grounded:
                 for s in hits:
                     if s.score < _SNIPPET_FLOOR:
                         continue
-                    sources.append({"title": s.doc_id, "path": s.doc_id})
+                    sources.append({"title": s.doc_id, "path": s.doc_id,
+                                    "score": f"{s.score:.1f}"})
                     blocks.append(f"[{s.doc_id}] {s.text[:400]}")
         except Exception as exc:  # noqa: BLE001
             logger.debug("repo grounding failed: %s", exc)
@@ -304,7 +340,30 @@ class AureonCognition:
             if bits:
                 system += ("\n\nOrganism state (the shared HNC field you are part of): "
                            + ", ".join(bits))
+
+        # Council specialist notes: a complex ask spans capability families —
+        # the map's OWN reasons/instruments ride into grounding so the final
+        # answer covers every family's aspect, not only the lead's.
+        cap = res.capability or {}
+        if cap.get("complex") and res.swarm is not None:
+            by_route = {r.get("route"): r for r in cap.get("routes", [])}
+            lines = []
+            for fam in res.swarm.get("families", []):  # type: ignore[union-attr]
+                r = by_route.get(fam, {})
+                note = f"- {fam}: {r.get('reason', 'named by the capability map')}"
+                systems = list(r.get("systems", []))[:4]
+                if systems:
+                    note += f" (instruments: {', '.join(systems)})"
+                lines.append(note)
+            if lines:
+                system += (
+                    "\n\nRouting council (measured, deterministic): lead family "
+                    f"{res.swarm.get('lead')}. This ask spans several capability "  # type: ignore[union-attr]
+                    "families — address EVERY family's aspect in the final "
+                    "answer:\n" + "\n".join(lines))
+
         system += _TOOL_HINT
+        system += _BAKE_CHARTER
 
         res.grounded = bool(sources)
         res.grounding = GroundingContext(sources=sources, lane="cognition",
@@ -354,13 +413,107 @@ class AureonCognition:
             text = f"[cognition error] {exc}"
 
         res.text = (text or "").strip()
-        res.turns = getattr(runner, "_turn_count", 0)
+        res.turns += getattr(runner, "_turn_count", 0)   # accumulates across bake passes
         # Reconcile which tool calls were blocked by the guard.
         blocked_tools = {b["tool"] for b in getattr(self.tools, "blocked_calls", [])}
         for tc in res.tool_calls:
             if tc.tool in blocked_tools:
                 tc.blocked = True
         self._publish(res, "loop", {"turns": res.turns, "n_tools": len(res.tool_calls)})
+
+    # ------------------------------------------------------------------
+    # Gate (the coherence membrane: the FIELD decides the aperture)
+    # ------------------------------------------------------------------
+
+    def _gate_aperture(self, res: CognitionResult) -> None:
+        """Read the live hive field and set this turn's capability aperture on
+        the tool registry. The hard boundary stays the outer wall; this is
+        the inner membrane — and it may only TIGHTEN on a LIVE field signal.
+        A dark field restricts nothing (and is recorded as dark)."""
+        try:
+            from aureon.operator.coherence_gate import compute_aperture, reach_for
+
+            org = self._read_organism_state()
+            gamma = org.get("coherence_gamma")
+            gate = compute_aperture(
+                float(gamma) if isinstance(gamma, (int, float)) else None,
+                org.get("gate_open"),
+                org.get("lighthouse_severity"),
+            )
+            res.coherence_gate = gate
+            if hasattr(self.tools, "aperture_allowed"):
+                self.tools.aperture_allowed = reach_for(
+                    gate["aperture"], set(self.tools.names()))
+                self.tools.aperture_note = (f"aperture '{gate['aperture']}' "
+                                            f"({gate['field_status']})")
+            self._publish(res, "gate", gate)
+        except Exception as exc:  # noqa: BLE001 — a dark membrane never breaks answering
+            logger.debug("coherence gate unavailable: %s", exc)
+
+    # ------------------------------------------------------------------
+    # Acquire (the Borg loop: find what is missing, never invent it)
+    # ------------------------------------------------------------------
+
+    def _acquire(self, prompt: str, system_prompt: str, res: CognitionResult) -> None:
+        """When the draft names a knowledge gap, run exactly ONE acquisition
+        pass directing the agent at its tools — repo, skills, web, live
+        state. The outcome is measured from the tool ledger (acquired /
+        unavailable / declined), never self-reported. An honest offline
+        reply is not an acquisition case — its status already says it all."""
+        try:
+            from aureon.operator.acquisition import (
+                acquisition_outcome,
+                acquisition_prompt,
+                find_gaps,
+            )
+        except Exception as exc:  # noqa: BLE001 — a dark module never breaks answering
+            logger.debug("acquisition module unavailable: %s", exc)
+            return
+        if res.blocked or res.status() != "ok":
+            return
+        gaps = find_gaps(prompt, res)
+        if not gaps:
+            res.acquisition = {"triggered": False, "gaps": [],
+                               "outcome": "not_needed"}
+            return
+        self._publish(res, "acquire", {"gaps": gaps})
+        tools_before = len(res.tool_calls)
+        self._run_loop(acquisition_prompt(prompt, res.text, gaps),
+                       system_prompt, res)
+        verdict = acquisition_outcome(tools_before, res)
+        res.acquisition = {"triggered": True, "gaps": gaps, **verdict}
+
+    # ------------------------------------------------------------------
+    # Bake (the completeness signal: one refinement pass, never a churn)
+    # ------------------------------------------------------------------
+
+    def _bake(self, prompt: str, system_prompt: str, res: CognitionResult) -> None:
+        """Assess the draft with measured surface heuristics; run exactly ONE
+        refinement pass when it looks unfinished. An honest ``[ERROR]``/offline
+        reply is never refined (that would churn an honest status into risk of
+        invention), and a blocked answer is never touched."""
+        try:
+            from aureon.operator.bake import assess_completeness, refinement_prompt
+        except Exception as exc:  # noqa: BLE001 — a dark bake module never breaks answering
+            logger.debug("bake module unavailable: %s", exc)
+            return
+        first = assess_completeness(prompt, res.text)
+        res.bake = {"passes": 1, "complete": first["complete"],
+                    "reasons": list(first["reasons"]), "refined": False}
+        if first["complete"] or res.blocked or res.status() != "ok":
+            if not first["complete"] and res.status() != "ok":
+                res.bake["reasons"].append(
+                    "not refined: the adapter is honestly unavailable — a "
+                    "second pass would add no knowledge")
+            return
+        self._publish(res, "bake", {"reasons": first["reasons"]})
+        self._run_loop(refinement_prompt(prompt, res.text, first["reasons"]),
+                       system_prompt, res)
+        second = assess_completeness(prompt, res.text)
+        res.bake = {"passes": 2, "complete": second["complete"],
+                    "reasons": list(second["reasons"]),
+                    "first_pass_reasons": list(first["reasons"]),
+                    "refined": True}
 
     # ------------------------------------------------------------------
     # Veto
@@ -396,6 +549,41 @@ class AureonCognition:
             res.conscience_verdict = "APPROVED"
             res.errors.append({"phase": "veto", "error": str(exc)})
         self._publish(res, "veto", {"verdict": res.conscience_verdict, "blocked": res.blocked})
+
+    # ------------------------------------------------------------------
+    # Actualize (the Film-Reel ledger: only the realized increment is written)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _actualize(res: CognitionResult) -> None:
+        """The replicator's last step, recorded honestly: executed tool calls
+        and an un-vetoed answer are REALIZED increments; blocked tool calls and
+        a vetoed/boundary-refused answer are PARKED possibilities. The parked
+        ensemble is named, never deleted by fiat — and nothing parked is ever
+        presented as materialized."""
+        realized = [t.tool for t in res.tool_calls if not t.blocked]
+        parked = [t.tool for t in res.tool_calls if t.blocked]
+        res.actualization = {
+            "realized_increments": realized,
+            "parked_possibilities": parked,
+            "answer": "parked" if res.blocked else "realized",
+            "realized_count": len(realized) + (0 if res.blocked else 1),
+            "parked_count": len(parked) + (1 if res.blocked else 0),
+        }
+
+    # ------------------------------------------------------------------
+    # Assimilate (controlled write-back: only realized + validated joins)
+    # ------------------------------------------------------------------
+
+    def _assimilate(self, res: CognitionResult) -> None:
+        """Gate this turn's knowledge record into the collective ledger —
+        realized, approved, complete, ok — or refuse with the checks named."""
+        try:
+            from aureon.operator.assimilation import assimilate
+
+            res.assimilation = assimilate(res)
+        except Exception as exc:  # noqa: BLE001 — a dark ledger never breaks answering
+            logger.debug("assimilation unavailable: %s", exc)
 
     def _get_conscience(self):
         if self._conscience_loaded:

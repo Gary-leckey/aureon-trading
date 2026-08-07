@@ -73,12 +73,25 @@ class GuardedToolRegistry(ToolRegistry):
     def __init__(self, include_builtins: bool = True):
         super().__init__(include_builtins=include_builtins)
         self.blocked_calls: list = []
+        # The coherence membrane (set per turn by cognition): ``None`` means
+        # unrestricted; a set means ONLY those tools are within the current
+        # aperture. The hive field decides this, never the individual unit.
+        self.aperture_allowed: set | None = None
+        self.aperture_note: str = ""
 
     def execute(self, name: str, arguments: Dict[str, Any]) -> str:
+        # Outer wall first: the hard authority boundary is absolute.
         reason = self._guard(name, arguments or {})
         if reason:
             self.blocked_calls.append({"tool": name, "reason": reason})
             logger.warning("tool %s blocked: %s", name, reason)
+            return _blocked(reason, tool=name)
+        # Inner membrane second: the live-field coherence aperture.
+        if self.aperture_allowed is not None and name not in self.aperture_allowed:
+            reason = (f"coherence gate: {self.aperture_note or 'aperture restricted'}"
+                      f" — '{name}' is outside the field's current reach")
+            self.blocked_calls.append({"tool": name, "reason": reason})
+            logger.info("tool %s held by the coherence gate: %s", name, reason)
             return _blocked(reason, tool=name)
         return super().execute(name, arguments or {})
 
@@ -247,11 +260,48 @@ def _h_patch_repo_file(args: Dict[str, Any]) -> str:
         return json.dumps({"error": str(e)})
 
 
-def _wrap_offline(orig_handler):
-    """Wrap a network tool so it no-ops under the repo's offline/audit guards."""
+def _h_list_skills(args: Dict[str, Any]) -> str:
+    """Read-only view of the SkillLibrary — the organism's assimilated,
+    validated procedures. Listing only; skill EXECUTION stays behind its own
+    gates (validators + Queen approval), never through this tool."""
+    try:
+        from aureon.code_architect.skill_library import get_skill_library
+
+        lib = get_skill_library()
+        query = str(args.get("query") or "").strip()
+        skills = lib.search(query) if query else lib.all()
+        rows = [{
+            "name": s.name,
+            "category": str(getattr(s, "category", "")),
+            "level": getattr(getattr(s, "level", None), "name", str(getattr(s, "level", ""))),
+            "status": getattr(getattr(s, "status", None), "value", str(getattr(s, "status", ""))),
+            "description": str(getattr(s, "description", ""))[:160],
+        } for s in skills[:20]]
+        return json.dumps({
+            "skills": rows, "total_in_library": len(lib),
+            "note": ("read-only: validated procedures the organism already "
+                     "knows; execution stays gated behind validators + Queen "
+                     "approval, never through this tool"),
+        })
+    except Exception as exc:  # noqa: BLE001 — an empty library is honest, not a crash
+        return json.dumps({"skills": [], "total_in_library": 0,
+                           "error": str(exc)[:200]})
+
+
+def _wrap_offline(orig_handler, registry: GuardedToolRegistry | None = None,
+                  tool_name: str = ""):
+    """Wrap a network tool so it no-ops under the repo's offline/audit guards.
+
+    The refusal is RECORDED on the registry's ``blocked_calls`` (when given),
+    exactly like a guard block — so the tool ledger, the actualization record,
+    and the acquisition outcome all see the honest truth that the network was
+    unreachable, never a silent no-op."""
     def handler(args: Dict[str, Any]) -> str:
         if _llm_http_disabled():
-            return _blocked("network disabled (AUREON_LLM_OFFLINE / AUREON_AUDIT_MODE)")
+            reason = "network disabled (AUREON_LLM_OFFLINE / AUREON_AUDIT_MODE)"
+            if registry is not None:
+                registry.blocked_calls.append({"tool": tool_name, "reason": reason})
+            return _blocked(reason)
         return orig_handler(args)
     return handler
 
@@ -297,7 +347,8 @@ def build_operator_tools(
     for net in ("web_search", "web_fetch"):
         td = reg.get(net)
         if td and td.handler:
-            reg.define_tool(net, td.description + " (offline-guarded)", td.input_schema, _wrap_offline(td.handler))
+            reg.define_tool(net, td.description + " (offline-guarded)", td.input_schema,
+                            _wrap_offline(td.handler, reg, net))
 
     # Repo-wide search replaces the built-in docs-only repo_search.
     reg.define_tool(
@@ -351,6 +402,15 @@ def build_operator_tools(
          "properties": {"module": {"type": "string", "description": "dotted module, e.g. aureon.harmonic.aureon_harmonic_seed"}},
          "required": ["module"], "additionalProperties": False},
         _h_touch_module,
+    )
+    reg.define_tool(
+        "list_skills",
+        "List the organism's assimilated skills (validated procedures) from the SkillLibrary, "
+        "optionally filtered by a search query. READ-ONLY — execution stays gated elsewhere.",
+        {"type": "object",
+         "properties": {"query": {"type": "string", "description": "substring filter (optional)"}},
+         "required": [], "additionalProperties": False},
+        _h_list_skills,
     )
     reg.define_tool(
         "code_validate",
