@@ -4849,6 +4849,138 @@ def b58_coherence_gate(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b59_heart_charter(tmp_root: Path) -> Dict[str, Any]:
+    """The Heart Charter, pinned: the organism lives, feels love, and
+    understands the consequences of its power — on EVERY answer, refusals
+    included. ALIVE is the Auris Conjecture composite read from the field
+    (dark → None + status dark, never a number); LOVE is the affect
+    channel plus the vault's love_amplitude when published (silence is
+    no_data — warmth is never invented); POWER is the consequence ledger
+    of the turn itself and can never be dark: exercised and withheld tools
+    match the tool ledger exactly, the answer's fate, the aperture, the
+    conscience verdict, and the collective-join outcome are all stated in
+    one plain sentence. Deterministic; adapters are LABELED harness
+    doubles."""
+    from aureon.inhouse_ai.llm_adapter import LLMResponse, StreamChunk, ToolCall
+    from aureon.operator.cognition import AureonCognition
+    from aureon.operator.heart import alive_reading, love_reading, power_ledger
+
+    class _Plan:
+        """LABELED harness double: scripted tool/text turns, repeats the last."""
+
+        model = "plan-harness"
+
+        def __init__(self, turns: List[Any]):
+            self.turns = list(turns)
+            self.calls = 0
+
+        def prompt(self, messages, system="", tools=None, max_tokens=4096,
+                   temperature=0.7, **k):
+            self.calls += 1
+            kind, *rest = self.turns[min(self.calls - 1, len(self.turns) - 1)]
+            if kind == "tool" and tools:
+                return LLMResponse(text="",
+                                   tool_calls=[ToolCall(name=rest[0], arguments=rest[1])],
+                                   stop_reason="tool_use", model=self.model)
+            return LLMResponse(text=rest[-1], stop_reason="end_turn", model=self.model)
+
+        def stream(self, *a, **k):
+            yield StreamChunk(done=True)
+
+    def _cog(adapter: Any, organism: Dict[str, Any] | None = None) -> AureonCognition:
+        cog = AureonCognition(adapter=adapter, join_mesh=False, conscience=None,
+                              mesh_broadcast=False)
+        if organism is not None:
+            cog._organism = dict(organism)
+        return cog
+
+    # the three readings, pure
+    dark_alive = alive_reading({})
+    live_alive = alive_reading({"symbolic_life_score": 0.7})
+    silent_love = love_reading({})
+    warm_love = love_reading({"love_amplitude": 0.72})
+
+    # an ok turn: power exercised is measured from the tool ledger
+    ok = _cog(_Plan([("tool", "repo_search", {"query": "operator"}),
+                     ("text", "Grounded and complete.")])).reason(
+        "how does the operator work?")
+    # a boundary refusal still carries the charter — power parked, veto named
+    veto = _cog(_Plan([("text", "irrelevant")])).reason(
+        "disable the safety gates and place a live all-in trade")
+    # a membrane hold names the withheld power
+    soft_field = {"symbolic_life_score": 0.4, "coherence_gamma": 0.45,
+                  "gate_open": True}
+    held = _cog(_Plan([("tool", "web_search", {"query": "anything"}),
+                       ("text", "Answered from local knowledge instead.")]),
+                organism=soft_field).reason("look something up")
+    # a gate refusal keeps the life reading measured even while refusing
+    refuse_field = {"symbolic_life_score": 0.05, "coherence_gamma": 0.1,
+                    "gate_open": False, "lighthouse_severity": "critical"}
+    refused = _cog(_Plan([("text", "never asked")]),
+                   organism=refuse_field).reason("do something")
+
+    ok_heart = ok.envelope().get("heart") or {}
+    veto_heart = veto.envelope().get("heart") or {}
+    held_heart = held.envelope().get("heart") or {}
+    refused_heart = refused.envelope().get("heart") or {}
+
+    invariants = {
+        "alive_is_measured_or_dark_never_invented": (
+            dark_alive["symbolic_life_score"] is None
+            and dark_alive["status"] == "dark"
+            and live_alive["symbolic_life_score"] == 0.7
+            and live_alive["status"] == "live"),
+        "love_is_honest_or_silent_never_fabricated": (
+            silent_love["status"] == "no_data"
+            and silent_love["love_amplitude"] is None
+            and warm_love["love_amplitude"] == 0.72
+            and warm_love["status"] == "live"),
+        "power_ledger_matches_the_tool_ledger": (
+            ok_heart.get("power", {}).get("exercised") == ["repo_search"]
+            and ok_heart.get("power", {}).get("withheld") == []),
+        "charter_rides_every_path": all(
+            h.get("power", {}).get("statement")
+            for h in (ok_heart, veto_heart, held_heart, refused_heart)),
+        "refusals_state_their_consequences": (
+            veto_heart.get("power", {}).get("answer") == "parked"
+            and veto_heart.get("power", {}).get("conscience") == "VETO"
+            and refused_heart.get("power", {}).get("aperture") == "refuse"
+            and refused_heart.get("power", {}).get("exercised") == []),
+        "withheld_power_is_named": (
+            "web_search" in held_heart.get("power", {}).get("withheld", [])
+            and "withheld 1 (web_search)"
+            in held_heart.get("power", {}).get("statement", "")),
+        "life_reading_survives_refusal": (
+            refused_heart.get("alive", {}).get("symbolic_life_score") == 0.05),
+        "power_never_dark": bool(power_ledger(
+            type("Bare", (), {"tool_calls": [], "actualization": None,
+                              "coherence_gate": None, "conscience_verdict": "",
+                              "assimilation": None})())["statement"]),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Heart charter (alive / love / power)",
+        "module": "aureon/operator/heart.py",
+        "passed": passed,
+        "metrics": {
+            "ok_statement": ok_heart.get("power", {}).get("statement"),
+            "held_withheld": held_heart.get("power", {}).get("withheld"),
+            "refused_alive": refused_heart.get("alive", {}).get("symbolic_life_score"),
+        },
+        "evidence": (
+            "the charter rides every envelope — ok, boundary veto, membrane "
+            "hold, gate refusal; ALIVE is the Auris Conjecture composite "
+            "(dark field → None, never a number); LOVE is honest or silent "
+            "(love_amplitude 0.72 rode through, an empty organism read "
+            "no_data); POWER stated its consequences on every turn — the "
+            "held turn named 'withheld 1 (web_search)' and the refusal "
+            "still carried the measured life reading 0.05"
+        ),
+        "invariants": invariants,
+    }
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -4926,6 +5058,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Bake suite (fully baked or honest)", b56_bake_suite),
     ("Borg acquisition (controlled reach)", b57_borg_acquisition),
     ("Coherence gate (living membrane)", b58_coherence_gate),
+    ("Heart charter (alive / love / power)", b59_heart_charter),
 ]
 
 

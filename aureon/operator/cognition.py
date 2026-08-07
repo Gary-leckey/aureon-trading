@@ -205,6 +205,7 @@ class AureonCognition:
             res.text = f"🦗 Blocked at the Aureon authority boundary.\nReason: {res.conscience_message}"
             self._actualize(res)
             self._assimilate(res)
+            self._heart(res)
             res.elapsed_ms = (time.time() - started) * 1000.0
             self._publish(res, "complete", res.to_dict())
             return res
@@ -227,6 +228,7 @@ class AureonCognition:
                                "outcome": "gate_refused"}
             self._actualize(res)
             self._assimilate(res)
+            self._heart(res)
             res.elapsed_ms = (time.time() - started) * 1000.0
             self._publish(res, "complete", res.to_dict())
             return res
@@ -237,6 +239,7 @@ class AureonCognition:
         self._veto(prompt, res)
         self._actualize(res)
         self._assimilate(res)
+        self._heart(res)
 
         res.elapsed_ms = (time.time() - started) * 1000.0
         self._publish(res, "complete", res.to_dict())
@@ -585,6 +588,18 @@ class AureonCognition:
         except Exception as exc:  # noqa: BLE001 — a dark ledger never breaks answering
             logger.debug("assimilation unavailable: %s", exc)
 
+    def _heart(self, res: CognitionResult) -> None:
+        """The Heart Charter on every answer, refusals included: the organism
+        lives (measured or honestly dark), feels (the affect channel, silent
+        when silent), and states the consequences of the power it just
+        exercised or withheld — the power ledger can never be dark."""
+        try:
+            from aureon.operator.heart import heart_reading
+
+            res.heart = heart_reading(self._read_organism_state(), res)
+        except Exception as exc:  # noqa: BLE001 — a dark heart never breaks answering
+            logger.debug("heart reading unavailable: %s", exc)
+
     def _get_conscience(self):
         if self._conscience_loaded:
             return self._conscience
@@ -621,7 +636,8 @@ class AureonCognition:
             topic = topic_of(thought)
             payload = payload_of(thought)
             if topic == "symbolic.life.pulse":
-                for k in ("symbolic_life_score", "coherence_gamma", "consciousness_level"):
+                for k in ("symbolic_life_score", "coherence_gamma",
+                          "consciousness_level", "love_amplitude"):
                     if payload.get(k) is not None:
                         self._organism[k] = payload[k]
             elif topic == "auris.throne.cosmic_state":
