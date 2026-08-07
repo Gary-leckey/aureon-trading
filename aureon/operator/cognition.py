@@ -210,6 +210,7 @@ class AureonCognition:
             return res
 
         self._route(prompt, res)
+        self._gate_aperture(res)
         system_prompt = self._ground(prompt, res)
         self._run_loop(prompt, system_prompt, res)
         self._acquire(prompt, system_prompt, res)
@@ -400,6 +401,35 @@ class AureonCognition:
             if tc.tool in blocked_tools:
                 tc.blocked = True
         self._publish(res, "loop", {"turns": res.turns, "n_tools": len(res.tool_calls)})
+
+    # ------------------------------------------------------------------
+    # Gate (the coherence membrane: the FIELD decides the aperture)
+    # ------------------------------------------------------------------
+
+    def _gate_aperture(self, res: CognitionResult) -> None:
+        """Read the live hive field and set this turn's capability aperture on
+        the tool registry. The hard boundary stays the outer wall; this is
+        the inner membrane — and it may only TIGHTEN on a LIVE field signal.
+        A dark field restricts nothing (and is recorded as dark)."""
+        try:
+            from aureon.operator.coherence_gate import compute_aperture, reach_for
+
+            org = self._read_organism_state()
+            gamma = org.get("coherence_gamma")
+            gate = compute_aperture(
+                float(gamma) if isinstance(gamma, (int, float)) else None,
+                org.get("gate_open"),
+                org.get("lighthouse_severity"),
+            )
+            res.coherence_gate = gate
+            if hasattr(self.tools, "aperture_allowed"):
+                self.tools.aperture_allowed = reach_for(
+                    gate["aperture"], set(self.tools.names()))
+                self.tools.aperture_note = (f"aperture '{gate['aperture']}' "
+                                            f"({gate['field_status']})")
+            self._publish(res, "gate", gate)
+        except Exception as exc:  # noqa: BLE001 — a dark membrane never breaks answering
+            logger.debug("coherence gate unavailable: %s", exc)
 
     # ------------------------------------------------------------------
     # Acquire (the Borg loop: find what is missing, never invent it)

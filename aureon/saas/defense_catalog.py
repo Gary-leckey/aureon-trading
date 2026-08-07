@@ -136,6 +136,7 @@ _GROUPS: Dict[str, str] = {
     "cognition": "universal_prompt_router",
     "bake": "universal_prompt_router",
     "acquisition": "universal_prompt_router",
+    "coherence_gate": "universal_prompt_router",
 }
 
 # module-basename → bus-trace name (the emit_* mirror), for the live overlay only

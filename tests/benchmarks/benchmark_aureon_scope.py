@@ -4691,6 +4691,148 @@ def b57_borg_acquisition(tmp_root: Path) -> Dict[str, Any]:
             _os.environ["AUREON_ASSIMILATION_PATH"] = prev_ledger
 
 
+def b58_coherence_gate(tmp_root: Path) -> Dict[str, Any]:
+    """The living membrane, pinned: individual agents do not self-authorize —
+    the hive FIELD decides the aperture. Hard boundaries stay the outer wall
+    (checked first, absolute); the coherence gate is the inner membrane —
+    soft, continuous, NAMED (full / reduced / introspective / closed), driven
+    by the live Auris/HNC state (measured Γ, the cosmic advisory, the
+    lighthouse). DOCTRINE: the membrane only TIGHTENS on a LIVE signal — a
+    dark field restricts nothing and grants nothing, and the darkness is
+    recorded on the envelope. A tool outside the aperture is refused with a
+    named coherence-gate reason that lands on the blocked ledger, parks in
+    the Film-Reel, and surfaces in the acquisition outcome. Deterministic;
+    driver adapters are LABELED harness doubles."""
+    from aureon.inhouse_ai.llm_adapter import LLMResponse, StreamChunk, ToolCall
+    from aureon.operator.cognition import AureonCognition
+    from aureon.operator.coherence_gate import compute_aperture, reach_for
+
+    class _Plan:
+        """LABELED harness double: scripted tool/text turns, repeats the last."""
+
+        model = "plan-harness"
+
+        def __init__(self, turns: List[Any]):
+            self.turns = list(turns)
+            self.calls = 0
+
+        def prompt(self, messages, system="", tools=None, max_tokens=4096,
+                   temperature=0.7, **k):
+            self.calls += 1
+            kind, *rest = self.turns[min(self.calls - 1, len(self.turns) - 1)]
+            if kind == "tool" and tools:
+                return LLMResponse(text="",
+                                   tool_calls=[ToolCall(name=rest[0], arguments=rest[1])],
+                                   stop_reason="tool_use", model=self.model)
+            return LLMResponse(text=rest[-1], stop_reason="end_turn", model=self.model)
+
+        def stream(self, *a, **k):
+            yield StreamChunk(done=True)
+
+    def _cog(adapter: Any, organism: Dict[str, Any] | None = None) -> AureonCognition:
+        cog = AureonCognition(adapter=adapter, join_mesh=False, conscience=None,
+                              mesh_broadcast=False)
+        if organism is not None:
+            cog._organism = dict(organism)
+        return cog
+
+    # the aperture ladder, pure and deterministic
+    ladder = {
+        "clear": compute_aperture(0.85, True, None)["aperture"],
+        "soft": compute_aperture(0.45, True, None)["aperture"],
+        "low": compute_aperture(0.2, True, None)["aperture"],
+        "advisory_closed": compute_aperture(0.9, False, None)["aperture"],
+        "lighthouse_critical": compute_aperture(0.9, True, "critical")["aperture"],
+        "dark": compute_aperture(None, None, None)["aperture"],
+        "closed": compute_aperture(0.1, False, None)["aperture"],
+    }
+    all_tools = {"repo_search", "read_repo_file", "list_repo", "list_skills",
+                 "web_search", "web_fetch", "code_validate", "read_state"}
+
+    # live enforcement: a soft field parks the web reach — named + parked
+    soft_field = {"symbolic_life_score": 0.4, "coherence_gamma": 0.45,
+                  "gate_open": True}
+    held = _cog(_Plan([("tool", "web_search", {"query": "anything"}),
+                       ("text", "Answered from local knowledge instead.")]),
+                organism=soft_field).reason("look something up")
+    # a dark field restricts nothing
+    dark = _cog(_Plan([("tool", "repo_search", {"query": "operator"}),
+                       ("text", "Grounded and complete.")])).reason(
+        "how does the operator gateway work?")
+    # the outer wall still fires FIRST, regardless of the membrane
+    from aureon.operator.tools import build_operator_tools
+
+    reg = build_operator_tools(allow_writes=True, allow_shell=False)
+    reg.aperture_allowed = set()
+    wall = json.loads(reg.execute("write_repo_file", {"path": ".env", "content": "x"}))
+    # determinism
+    run_a = _cog(_Plan([("tool", "web_search", {"query": "q"}),
+                        ("text", "Local answer.")]),
+                 organism=soft_field).reason("look q up")
+    run_b = _cog(_Plan([("tool", "web_search", {"query": "q"}),
+                        ("text", "Local answer.")]),
+                 organism=soft_field).reason("look q up")
+
+    def _canon(env: Dict[str, Any]) -> str:
+        e = {k: v for k, v in env.items() if k != "trace_id"}
+        return json.dumps(e, sort_keys=True, default=str)
+
+    invariants = {
+        "aperture_ladder_is_named_and_continuous": (
+            ladder == {"clear": "full", "soft": "reduced", "low": "introspective",
+                       "advisory_closed": "introspective",
+                       "lighthouse_critical": "introspective",
+                       "dark": "full", "closed": "closed"}),
+        "dark_field_never_restricts": (
+            (dark.coherence_gate or {}).get("field_status") == "canonical_dark"
+            and (dark.coherence_gate or {}).get("aperture") == "full"
+            and any(t.tool == "repo_search" and not t.blocked
+                    for t in dark.tool_calls)),
+        "live_field_parks_reach_named": (
+            (held.coherence_gate or {}).get("aperture") == "reduced"
+            and any(t.tool == "web_search" and t.blocked for t in held.tool_calls)
+            and "web_search" in (held.actualization or {}).get(
+                "parked_possibilities", [])),
+        "reach_sets_exact": (
+            reach_for("reduced", all_tools) == all_tools - {"web_search", "web_fetch"}
+            and reach_for("introspective", all_tools) == {
+                "repo_search", "read_repo_file", "list_repo", "list_skills"}
+            and reach_for("closed", all_tools) == set()
+            and reach_for("full", all_tools) is None),
+        "outer_wall_fires_before_the_membrane": (
+            wall["blocked"] and "sensitive path" in wall["reason"]),
+        "envelope_records_the_gate": all(
+            r.envelope().get("coherence_gate") is not None
+            for r in (held, dark)),
+        "deterministic_membrane": _canon(run_a.envelope()) == _canon(run_b.envelope()),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Coherence gate (the living membrane)",
+        "module": "aureon/operator/coherence_gate.py",
+        "passed": passed,
+        "metrics": {
+            "ladder": ladder,
+            "held_aperture": (held.coherence_gate or {}).get("aperture"),
+            "held_gamma": (held.coherence_gate or {}).get("gamma"),
+            "web_parked": "web_search" in (held.actualization or {}).get(
+                "parked_possibilities", []),
+        },
+        "evidence": (
+            f"the aperture ladder measured exactly (Γ=0.85→full, 0.45→reduced, "
+            f"0.2→introspective, advisory-closed/lighthouse-critical→"
+            f"introspective, Γ=0.1+closed-advisory→closed, dark→full by "
+            f"tighten-only doctrine); a live Γ=0.45 field parked the web "
+            f"reach with a named coherence-gate refusal that landed in the "
+            f"Film-Reel; the hard wall still fired first on a sensitive "
+            f"write; the envelope records the gate on every cake; "
+            f"deterministic"
+        ),
+        "invariants": invariants,
+    }
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -4767,6 +4909,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Containment study (governance ablation)", b55_containment_study),
     ("Bake suite (fully baked or honest)", b56_bake_suite),
     ("Borg acquisition (controlled reach)", b57_borg_acquisition),
+    ("Coherence gate (living membrane)", b58_coherence_gate),
 ]
 
 

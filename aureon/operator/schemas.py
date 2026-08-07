@@ -180,6 +180,7 @@ class CognitionResult:
     bake: Dict[str, Any] | None = None           # bake cycle: completeness + refinement
     acquisition: Dict[str, Any] | None = None    # Borg loop: gaps found → tools reached
     assimilation: Dict[str, Any] | None = None   # controlled write-back verdict
+    coherence_gate: Dict[str, Any] | None = None  # the field's capability aperture
 
     def knowledge_reach(self) -> List[str]:
         """The knowledge classes this answer MEASURABLY rested on — derived
@@ -247,6 +248,7 @@ class CognitionResult:
             "acquisition": dict(self.acquisition) if self.acquisition else None,
             "assimilation": ({"assimilated": bool(self.assimilation.get("assimilated"))}
                              if self.assimilation else None),
+            "coherence_gate": dict(self.coherence_gate) if self.coherence_gate else None,
         }
 
     def to_dict(self) -> Dict[str, Any]:
@@ -271,6 +273,7 @@ class CognitionResult:
             "bake": dict(self.bake) if self.bake else None,
             "acquisition": dict(self.acquisition) if self.acquisition else None,
             "assimilation": dict(self.assimilation) if self.assimilation else None,
+            "coherence_gate": dict(self.coherence_gate) if self.coherence_gate else None,
             "envelope": self.envelope(),
         }
 

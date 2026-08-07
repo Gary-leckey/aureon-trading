@@ -32,6 +32,7 @@ interface ResponseEnvelope {
   bake?: { passes?: number; complete?: boolean | null; refined?: boolean } | null;
   knowledge_reach?: string[];
   acquisition?: { triggered?: boolean; outcome?: string } | null;
+  coherence_gate?: { aperture?: string; field_status?: string } | null;
 }
 
 interface CognitionReply {
@@ -205,6 +206,12 @@ export default function OperatorChatPage() {
                           acquired: {turn.reply.envelope.acquisition.outcome}
                         </Badge>
                       )}
+                      {turn.reply.envelope?.coherence_gate?.aperture &&
+                        turn.reply.envelope.coherence_gate.aperture !== "full" && (
+                          <Badge variant="outline" className="border-warning/40 text-warning">
+                            aperture: {turn.reply.envelope.coherence_gate.aperture}
+                          </Badge>
+                        )}
                       {turn.reply.envelope?.bake?.refined && (
                         <Badge variant="outline" className="text-muted-foreground">
                           baked ×{turn.reply.envelope.bake.passes ?? 2}

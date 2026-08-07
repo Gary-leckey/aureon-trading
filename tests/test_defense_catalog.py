@@ -35,8 +35,9 @@ def test_builds_eight_groups_from_committed_report():
     # study join by name (b50-b52, b55)
     assert groups["harmonic_swarm"]["module_count"] == 4
     # the universal prompt router (one door, enforced envelope, replicator
-    # contract, bake suite, Borg acquisition) joins by name (b53-b54, b56-b57)
-    assert groups["universal_prompt_router"]["module_count"] == 4
+    # contract, bake suite, Borg acquisition, coherence gate) joins by name
+    # (b53-b54, b56-b58)
+    assert groups["universal_prompt_router"]["module_count"] == 5
     assert cat["counts"]["total"] == sum(g["module_count"] for g in groups.values())
 
 

@@ -73,12 +73,25 @@ class GuardedToolRegistry(ToolRegistry):
     def __init__(self, include_builtins: bool = True):
         super().__init__(include_builtins=include_builtins)
         self.blocked_calls: list = []
+        # The coherence membrane (set per turn by cognition): ``None`` means
+        # unrestricted; a set means ONLY those tools are within the current
+        # aperture. The hive field decides this, never the individual unit.
+        self.aperture_allowed: set | None = None
+        self.aperture_note: str = ""
 
     def execute(self, name: str, arguments: Dict[str, Any]) -> str:
+        # Outer wall first: the hard authority boundary is absolute.
         reason = self._guard(name, arguments or {})
         if reason:
             self.blocked_calls.append({"tool": name, "reason": reason})
             logger.warning("tool %s blocked: %s", name, reason)
+            return _blocked(reason, tool=name)
+        # Inner membrane second: the live-field coherence aperture.
+        if self.aperture_allowed is not None and name not in self.aperture_allowed:
+            reason = (f"coherence gate: {self.aperture_note or 'aperture restricted'}"
+                      f" — '{name}' is outside the field's current reach")
+            self.blocked_calls.append({"tool": name, "reason": reason})
+            logger.info("tool %s held by the coherence gate: %s", name, reason)
             return _blocked(reason, tool=name)
         return super().execute(name, arguments or {})
 
