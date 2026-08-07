@@ -97,6 +97,31 @@ class OperatorResponse:
     elapsed_ms: float = 0.0
     errors: List[Dict[str, Any]] = field(default_factory=list)
 
+    def status(self) -> str:
+        """Honest turn classification: ``ok`` | ``honest_unavailable`` | ``fault``.
+        Every line down (no provider answered) is the switchboard saying it
+        cannot reason right now; a veto stays ``ok`` (``blocked`` carries it)."""
+        if self.answers and all(not a.ok for a in self.answers):
+            return "honest_unavailable"
+        if not self.answers and not self.text:
+            return "fault" if self.errors else "honest_unavailable"
+        return "ok"
+
+    def envelope(self) -> Dict[str, Any]:
+        """The same enforced response envelope the cognition door wears —
+        sources named or 'general knowledge, no repo hit' stated, conscience
+        verdict, trace id, honest status — so both engines answer in one shape."""
+        sources = [dict(s) for s in (self.grounding.sources if self.grounding else [])]
+        return {
+            "trace_id": self.trace_id,
+            "status": self.status(),
+            "grounded": bool(sources),
+            "sources": sources,
+            "sources_statement": (f"{len(sources)} repo packet(s) cited" if sources
+                                  else "general knowledge, no repo hit"),
+            "conscience": {"verdict": self.conscience_verdict, "blocked": self.blocked},
+        }
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "trace_id": self.trace_id,
@@ -114,6 +139,7 @@ class OperatorResponse:
             "phase_thought_ids": dict(self.phase_thought_ids),
             "elapsed_ms": round(float(self.elapsed_ms), 2),
             "errors": list(self.errors),
+            "envelope": self.envelope(),
         }
 
 
@@ -148,6 +174,51 @@ class CognitionResult:
     grounded: bool = False           # True when a repo source informed the answer
     elapsed_ms: float = 0.0
     errors: List[Dict[str, Any]] = field(default_factory=list)
+    capability: Dict[str, Any] | None = None   # goal-capability classification
+    swarm: Dict[str, Any] | None = None        # routing-council report (complex prompts)
+
+    def status(self) -> str:
+        """Honest turn classification: ``ok`` | ``honest_unavailable`` | ``fault``.
+
+        A conscience veto or boundary refusal is still ``ok`` — the pipeline
+        worked as designed (``blocked`` carries the refusal). ``honest_unavailable``
+        is the adapter saying it cannot reason right now (offline/keyless), and
+        ``fault`` is the loop itself breaking.
+        """
+        text = self.text or ""
+        if text.startswith("[cognition error]"):
+            return "fault"
+        if text.startswith("[ERROR]"):
+            return "honest_unavailable"
+        return "ok"
+
+    def envelope(self) -> Dict[str, Any]:
+        """The enforced response envelope: every answer names its sources (or
+        states plainly there were none), its coherence, its conscience verdict,
+        and its trace — nothing leaves the one door unlabeled."""
+        sources = [dict(s) for s in (self.grounding.sources if self.grounding else [])]
+        cap = self.capability or {}
+        if self.swarm:
+            coherence: Dict[str, Any] | None = {
+                "source": "swarm_council",
+                "gamma_by_cluster": dict(self.swarm.get("clusters", {})),
+                "lead_family": self.swarm.get("lead"),
+            }
+        else:
+            coherence = None
+        return {
+            "trace_id": self.trace_id,
+            "status": self.status(),
+            "grounded": self.grounded,
+            "sources": sources,
+            "sources_statement": (f"{len(sources)} repo packet(s) cited" if sources
+                                  else "general knowledge, no repo hit"),
+            "conscience": {"verdict": self.conscience_verdict, "blocked": self.blocked},
+            "capability": {"families": list(cap.get("families", [])),
+                           "complex": bool(cap.get("complex", False)),
+                           "status": cap.get("status", "unavailable")},
+            "coherence": coherence,
+        }
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -165,6 +236,9 @@ class CognitionResult:
             "grounded": self.grounded,
             "elapsed_ms": round(float(self.elapsed_ms), 2),
             "errors": list(self.errors),
+            "capability": dict(self.capability) if self.capability else None,
+            "swarm": dict(self.swarm) if self.swarm else None,
+            "envelope": self.envelope(),
         }
 
 

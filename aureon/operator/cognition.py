@@ -200,6 +200,7 @@ class AureonCognition:
             self._publish(res, "complete", res.to_dict())
             return res
 
+        self._route(prompt, res)
         system_prompt = self._ground(prompt, res)
         self._run_loop(prompt, system_prompt, res)
         self._veto(prompt, res)
@@ -220,6 +221,27 @@ class AureonCognition:
         for word in (res.text or "").split(" "):
             yield {"type": "token", "text": word + " "}
         yield {"type": "complete", "response": res.to_dict()}
+
+    # ------------------------------------------------------------------
+    # Route (the universal prompt router: classify, council the complex)
+    # ------------------------------------------------------------------
+
+    def _route(self, prompt: str, res: CognitionResult) -> None:
+        """Classify the prompt against the goal-capability map; a prompt
+        spanning ≥2 capability families convenes a deterministic swarm
+        routing council. Advisory only — a routing failure is a recorded
+        error, never a broken answer."""
+        try:
+            from aureon.operator.prompt_router import classify_prompt, swarm_council
+
+            res.capability = classify_prompt(prompt)
+            if res.capability.get("complex"):
+                res.swarm = swarm_council(prompt, res.capability["families"])
+            self._publish(res, "route", {"capability": res.capability,
+                                         "council_convened": res.swarm is not None})
+        except Exception as exc:  # noqa: BLE001 — routing must never break answering
+            logger.debug("prompt routing failed: %s", exc)
+            res.errors.append({"phase": "route", "error": str(exc)})
 
     # ------------------------------------------------------------------
     # Ground
