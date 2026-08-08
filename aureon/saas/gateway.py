@@ -257,9 +257,20 @@ def register_saas_routes(app: Any) -> Any:
     def saas_coverage():
         # Repo-wide coverage audit: reconciles the real aureon/ package tree against the SaaS
         # taxonomy + catalog, proving every domain is surfaced (no uncovered, no phantom).
+        # Also carries the benchmark-coverage march (b63): which domains hold a
+        # Tier-A pin, the named gap roadmap, and the one-way ratchet verdict.
+        from aureon.analytics.benchmark_coverage import (
+            build_coverage,
+            load_baseline,
+            ratchet_check,
+        )
         from aureon.saas.coverage import build_coverage_audit
 
-        return jsonify(_stamp(build_coverage_audit(), "real_derived"))
+        payload = build_coverage_audit()
+        bc = build_coverage()
+        payload["benchmark_coverage"] = dict(bc.to_dict(),
+                                             ratchet=ratchet_check(bc, load_baseline()))
+        return jsonify(_stamp(payload, "real_derived"))
 
     @app.get("/api/status")
     @_guarded
