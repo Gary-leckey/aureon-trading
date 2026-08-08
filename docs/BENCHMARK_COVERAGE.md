@@ -3,9 +3,9 @@
 > Derived from the committed Tier-A report + the filesystem. Nothing invented;
 > the uncovered list is the roadmap, the ratchet makes progress one-way.
 
-- Tier-A benchmarks: **63** (all passed: True)
-- Unique modules pinned: **59** of 1127 on disk
-- Domain coverage: **10/40** (0.25)
+- Tier-A benchmarks: **64** (all passed: True)
+- Unique modules pinned: **60** of 1127 on disk
+- Domain coverage: **11/40** (0.275)
 
 ## Per-domain
 
@@ -24,7 +24,7 @@
 | cognition | 7 | 3 | yes |
 | command_centers | 17 | 0 | **no** |
 | conversion | 11 | 0 | **no** |
-| core | 77 | 0 | **no** |
+| core | 77 | 1 | yes |
 | data_feeds | 22 | 0 | **no** |
 | decoders | 12 | 0 | **no** |
 | exchanges | 41 | 0 | **no** |
@@ -67,7 +67,6 @@
 - `code_architect` — 10 modules, zero pins
 - `command_centers` — 17 modules, zero pins
 - `conversion` — 11 modules, zero pins
-- `core` — 77 modules, zero pins
 - `data_feeds` — 22 modules, zero pins
 - `decoders` — 12 modules, zero pins
 - `exchanges` — 41 modules, zero pins

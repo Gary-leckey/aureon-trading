@@ -5460,6 +5460,125 @@ def b63_benchmark_coverage(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b64_core_field_contract(tmp_root: Path) -> Dict[str, Any]:
+    """The foundational wheel itself, pinned: aureon/core's canonical field +
+    thought bus contract that every other benchmark rides on. A dark field is
+    HONEST (unavailable, and reconcile_gamma passes the local figure through
+    unchanged — dark restricts nothing, invents nothing); a live field can
+    only TIGHTEN (min(local, Γ), never a loosening); freshness fails CLOSED
+    (a stale or unstamped trace row is refused, never presented as the live
+    organism); a published sub-field round-trips to the whole-body view; and
+    the bus delivers thoughts to exact and wildcard subscribers and remembers
+    them for recall. Hermetic: trace paths redirected into tmp_root."""
+    import time as _time
+    from types import SimpleNamespace
+
+    iso = {"AUREON_HNC_TRACE_PATH": str(tmp_root / "core_hnc.jsonl"),
+           "AUREON_BUS_TRACE_DIR": str(tmp_root / "core_bus_trace")}
+    prev = {k: os.environ.get(k) for k in iso}
+    os.environ.update(iso)
+    try:
+        from aureon.core.aureon_thought_bus import Thought, ThoughtBus
+        from aureon.core.hnc_field import (
+            publish_subfield,
+            read_canonical_field,
+            read_subfields,
+            reconcile_gamma,
+        )
+
+        # 1) dark field: honest unavailable + restricts nothing
+        dark_bus = ThoughtBus()
+        dark = read_canonical_field(dark_bus)
+        dark_gamma = reconcile_gamma(0.7, dark_bus)
+
+        # 2) live field tightens only: min(local, Γ), never loosened
+        live_bus = ThoughtBus()
+        live_bus.publish(Thought(source="b64", topic="symbolic.life.pulse",
+                                 payload={"symbolic_life_score": 0.5,
+                                          "coherence_gamma": 0.3}))
+        tightened = reconcile_gamma(0.7, live_bus)
+        not_loosened = reconcile_gamma(0.2, live_bus)
+
+        # 3) freshness fails closed on the cross-process trace
+        trace = tmp_root / "core_hnc.jsonl"
+        stale_row = {"symbolic_life_score": 0.9, "coherence_gamma": 0.9,
+                     "ts": _time.time() - 99999.0}
+        trace.write_text(json.dumps(stale_row) + "\n", encoding="utf-8")
+        stale = read_canonical_field(ThoughtBus())
+        fresh_row = dict(stale_row, ts=_time.time())
+        trace.write_text(json.dumps(fresh_row) + "\n", encoding="utf-8")
+        fresh = read_canonical_field(ThoughtBus())
+
+        # 4) sub-field round-trip: a producer's local field reaches the body
+        sub_bus = ThoughtBus()
+        publish_subfield("b64_probe",
+                         SimpleNamespace(symbolic_life_score=0.42,
+                                         coherence_gamma=0.61,
+                                         consciousness_level="aware"),
+                         bus=sub_bus)
+        subs = read_subfields(sub_bus)
+
+        # 5) the bus delivers (exact + wildcard) and remembers
+        got: List[Any] = []
+        bus = ThoughtBus()
+        bus.subscribe("b64.exact", got.append)
+        bus.subscribe("b64.*", got.append)
+        bus.publish(Thought(source="b64", topic="b64.exact",
+                            payload={"n": 1}))
+        recalled = bus.recall("b64.exact", limit=5) or []
+
+        invariants = {
+            "dark_field_is_honest_and_restricts_nothing": (
+                dark.available is False and dark.coherence_gamma is None
+                and dark_gamma == 0.7),
+            "live_field_tightens_only": (
+                tightened == 0.3 and not_loosened == 0.2),
+            "freshness_fails_closed": (
+                stale.available is False
+                and fresh.available is True
+                and fresh.coherence_gamma == 0.9),
+            "subfield_round_trips_to_the_body": (
+                subs.get("b64_probe", {}).get("symbolic_life_score") == 0.42
+                and subs.get("b64_probe", {}).get("coherence_gamma") == 0.61),
+            "bus_delivers_exact_and_wildcard_and_recalls": (
+                len(got) == 2
+                and all(getattr(t, "payload", {}).get("n") == 1 for t in got)
+                and len(recalled) == 1),
+        }
+        passed = all(invariants.values())
+
+        return {
+            "name": "Core field & bus contract (the foundational wheel)",
+            "module": "aureon/core/hnc_field.py",
+            "passed": passed,
+            "metrics": {
+                "dark_reconcile": dark_gamma,
+                "live_tightened": tightened,
+                "live_not_loosened": not_loosened,
+                "fresh_gamma": fresh.coherence_gamma,
+                "subfields_seen": len(subs),
+                "bus_deliveries": len(got),
+            },
+            "evidence": (
+                "a dark field read honest-unavailable and reconcile_gamma "
+                "passed 0.7 through unchanged; a live Γ=0.3 pulse tightened "
+                "local 0.7 to 0.3 and left local 0.2 untouched (min, never "
+                "loosened); a stale trace row was refused while a fresh one "
+                "served Γ=0.9 (freshness fails closed); a published sub-field "
+                "round-tripped into the whole-body view with its measured "
+                "values; the bus delivered one thought to exact + wildcard "
+                "subscribers and recalled it from memory"
+            ),
+            "invariants": invariants,
+        }
+    finally:
+        for k, v in prev.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -5542,6 +5661,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Unified replication contract (two angles, one path)", b61_unified_replication_contract),
     ("Open benchmark honesty (measured vs cited)", b62_open_benchmark_honesty),
     ("Benchmark coverage (the march to 100%)", b63_benchmark_coverage),
+    ("Core field & bus contract (the foundational wheel)", b64_core_field_contract),
 ]
 
 

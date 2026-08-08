@@ -1,7 +1,7 @@
 {
   "status": "measured",
   "blocker": "",
-  "benchmarks": 63,
+  "benchmarks": 64,
   "all_rows_passed": true,
   "pinned_modules": [
     "aureon/accounting/client_ledger.py",
@@ -42,6 +42,7 @@
     "aureon/cognition/logic_flow.py",
     "aureon/cognition/logic_train_audit.py",
     "aureon/cognition/phenolic_bridge.py",
+    "aureon/core/hnc_field.py",
     "aureon/harmonic/phi_bridge_mesh.py",
     "aureon/harmonic/rainbow_reference.py",
     "aureon/operator/acquisition.py",
@@ -175,8 +176,10 @@
     },
     "core": {
       "modules": 77,
-      "pinned": [],
-      "covered": false
+      "pinned": [
+        "aureon/core/hnc_field.py"
+      ],
+      "covered": true
     },
     "data_feeds": {
       "modules": 22,
@@ -343,6 +346,7 @@
     "analytics",
     "bio",
     "cognition",
+    "core",
     "harmonic",
     "operator",
     "queen",
@@ -360,7 +364,6 @@
     "code_architect",
     "command_centers",
     "conversion",
-    "core",
     "data_feeds",
     "decoders",
     "exchanges",
@@ -382,7 +385,7 @@
     "utils",
     "wisdom"
   ],
-  "domain_coverage_fraction": 0.25,
+  "domain_coverage_fraction": 0.275,
   "total_modules": 1127,
-  "module_pin_count": 59
+  "module_pin_count": 60
 }
