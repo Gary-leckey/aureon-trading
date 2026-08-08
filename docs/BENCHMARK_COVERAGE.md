@@ -3,9 +3,9 @@
 > Derived from the committed Tier-A report + the filesystem. Nothing invented;
 > the uncovered list is the roadmap, the ratchet makes progress one-way.
 
-- Tier-A benchmarks: **68** (all passed: True)
-- Unique modules pinned: **64** of 1127 on disk
-- Domain coverage: **15/40** (0.375)
+- Tier-A benchmarks: **70** (all passed: True)
+- Unique modules pinned: **66** of 1127 on disk
+- Domain coverage: **17/40** (0.425)
 
 ## Per-domain
 
@@ -27,7 +27,7 @@
 | core | 77 | 1 | yes |
 | data_feeds | 22 | 1 | yes |
 | decoders | 12 | 0 | **no** |
-| exchanges | 41 | 0 | **no** |
+| exchanges | 41 | 1 | yes |
 | generated | 3 | 0 | **no** |
 | harmonic | 35 | 2 | yes |
 | inhouse_ai | 9 | 1 | yes |
@@ -35,7 +35,7 @@
 | intelligence | 36 | 1 | yes |
 | miner | 2 | 0 | **no** |
 | monitors | 26 | 0 | **no** |
-| observer | 15 | 0 | **no** |
+| observer | 15 | 1 | yes |
 | operator | 33 | 6 | yes |
 | portfolio | 32 | 0 | **no** |
 | queen | 80 | 1 | yes |
@@ -68,12 +68,10 @@
 - `command_centers` — 17 modules, zero pins
 - `conversion` — 11 modules, zero pins
 - `decoders` — 12 modules, zero pins
-- `exchanges` — 41 modules, zero pins
 - `generated` — 3 modules, zero pins
 - `integrations` — 20 modules, zero pins
 - `miner` — 2 modules, zero pins
 - `monitors` — 26 modules, zero pins
-- `observer` — 15 modules, zero pins
 - `portfolio` — 32 modules, zero pins
 - `s51` — 6 modules, zero pins
 - `scanners` — 19 modules, zero pins

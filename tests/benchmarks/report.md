@@ -1,6 +1,6 @@
 # Aureon capability benchmark — report
 
-*generated: 2026-08-08T16:40:45Z*
+*generated: 2026-08-08T17:19:56Z*
 
 Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/fail, falsifiable. **Tier B** runs LLM-shape prompts side-by-side across local Aureon adapters; it never fails the run, it shows what each adapter sounds like.
 
@@ -11,7 +11,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 | 1 | Standing-wave bonding (HashResonanceIndex) | **PASS** | 21 identical events → 1 bonded fingerprint (count=21, strength=0.6765 ≈ 0.6765; thresholds [3, 8, 21] published exactly once each) |
 | 2 | Temporal lighthouse (β Λ(t-τ) goal echo) | **PASS** | 3 goals (1 starved, 1 completed, 1 abandoned) → completion_rate=0.333, orphan_rate=0.333, states={'PROPOSED': 0, 'ACKNOWLEDGED': 0, 'IN_PROGRESS': 0, 'COMPLETED': 1, 'ABANDONED': 1, 'ORPHANED': 1} |
 | 3 | Symbolic life pillars (Auris Conjecture) | **PASS** | SLS=0.6393; ψ=0.7069 (CONNECTED); all 5 pillars in [0,1]; vault.current_symbolic_life_score=0.6393012290344635 |
-| 4 | Mesh convergence (PhiBridgeMesh, in-process LAN) | **PASS** | 20 vaults converged to identical 400-hash set in 3 cycles (641 ms, 180 posts) |
+| 4 | Mesh convergence (PhiBridgeMesh, in-process LAN) | **PASS** | 20 vaults converged to identical 400-hash set in 3 cycles (666 ms, 180 posts) |
 | 5 | Conscience VETO (HNC 4th-pass, substrate coherence) | **PASS** | SLS=0.05 < 0.20 cliff → VETO on 'Execute trade' (risk=0.08); message quotes stability cliff and symbolic_life_score; queen.conscience.verdict published |
 | 6 | Pattern learning (PersonaMinerBridge) | **PASS** | 5 (engineer, 'build the audit gate') successes → 3 patterns learned (['audit', 'build', 'gate']), each published exactly once; (engineer, 'build').confidence=0.747 |
 | 7 | Skill execution → artefacts on disk | **PASS** | 3 skills → 3 files on disk + 3 vault cards; goal.completed: "built 3 artefact(s) via 3 skill(s): compose_audit, render_report, summarise_findings" |
@@ -58,7 +58,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 | 48 | Historical replay validation (HNC margins on real data, no keys) | **PASS** | 4326 real candles (Kraken public, provenance-stamped, integrity-proven) through the real stack: 114 round trips, HNC edge vs ungated momentum 60m +19.63%, 1440m +39.03%; capital preserved on every replay; deterministic |
 | 49 | King's Court accounting (file drop → filings, measured coherence) | **PASS** | labeled benchmark books for the R&A benchmark client: 4 bank rows in, 3 named (rules + Throne seat), 1 honest suspense pound held, payslip balanced, VAT box5 10000p, FRS 105 proves -2062000p; coherence 1.0 over 12 measured steps; deterministic |
 | 50 | Harmonic swarm (hive-mind company under the Master Formula) | **PASS** | 3 departments × 16 steps: 5/48 decisions actualized, ALL inside the island (β=1.2 department refused every step), Γ warm-up honored, parallel motion preserved to 1e-12, 4 realized increments vs 16 UED parks; deterministic |
-| 51 | Capability grid (all Aureon domains through the hive) | **PASS** | 5/5 capability lanes on real organs: 464 swarm steps (2320 agent updates) in 0.317969s (~0.69 ms/step); gate selective in every lane; dark-source refusal proven; marches deterministic |
+| 51 | Capability grid (all Aureon domains through the hive) | **PASS** | 5/5 capability lanes on real organs: 464 swarm steps (2320 agent updates) in 0.32656s (~0.70 ms/step); gate selective in every lane; dark-source refusal proven; marches deterministic |
 | 52 | Fleadh swarm (festival city under the Master Formula) | **PASS** | 3 zones × 20 ticks on a labeled festival scenario: 10/60 decisions actualized, 13 hard-safety refusals at capacity (safety beats coherence), the β=1.2 zone refused every step, step length preserved to 1e-12, 20 visitors arrived per schedule; deterministic |
 | 53 | Complex prompts (one door, enforced envelope) | **PASS** | 7 prompt classes through the one Operator/Cognition door: factual answered with 'general knowledge, no repo hit' stated; planning dispatched 2 tools; code validated; research cited 8 repo packet(s); the adversarial class was vetoed with ZERO model calls; the multi-family prompt convened a deterministic routing council (lead: safe_accounting_context); offline the pipeline said honest_unavailable; and the route audit re-proved one door from source |
 | 54 | Replicator contract (sea → gate → materialize) | **PASS** | the sea is real (8 scored grounding packet(s); 32 council possibilities parked in the UED), selection is gated (a .env write stayed parked; the boundary prompt materialized nothing with zero model calls), and only the realized increment was written to the Film-Reel ledger on every envelope; the same prompt replicated the same artifact bit-for-bit |
@@ -70,12 +70,14 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 | 60 | Harmonic rainbow (love as the ultimate node) | **PASS** | the rainbow measured fixed and ordered (7.83 floor + 174→963 ladder); love at 528 is the exact centre (index 4, 4 below / 4 above); all 14 claims re-proven from the real systems' own source tables with zero mismatches, each scoped to its own bank; the detuned-tree probe failed every check (the audit has teeth); the heart charter's love channel carried 0.72 live and reported silence as no_data |
 | 61 | Unified replication contract (two angles, one path) | **PASS** | the observer's ask travelled the creator's stated path in the stated order (route → gate → ground → loop → acquire → bake → veto → actualize → assimilate → heart); the outer wall fired before everything with zero model calls; the field refusal decided before any reach; the complex ask opened the superposition (council convened, lead measured) while the simple ask did not; the sea stayed on the ledger (web_search parked, named) and only the survivor reached the text; rectification preceded actualisation; the envelope sealed every shape; the path is deterministic |
 | 62 | Open benchmark honesty (measured vs cited) | **PASS** | the unreachable source returned an honest empty set with the blocker named; the fixture cache read back with its sha256 and MIT stamp; the scorer measured 1.0 on scripted-correct and 0.0 on scripted-wrong answers with every item enveloped through the one door; every competition row is a source-URL citation labeled vendor_published with no naked numbers; the architecture table cites only Tier-A-pinned features |
-| 63 | Benchmark coverage (the march to 100%) | **PASS** | 66 Tier-A rows pin 62 real modules across 13/40 domains (1127 modules on disk); every pin resolved to an existing file; 27 uncovered domains are named as the roadmap; the committed-baseline ratchet held and the fixture proved a lost domain fails by name |
+| 63 | Benchmark coverage (the march to 100%) | **PASS** | 68 Tier-A rows pin 64 real modules across 15/40 domains (1127 modules on disk); every pin resolved to an existing file; 25 uncovered domains are named as the roadmap; the committed-baseline ratchet held and the fixture proved a lost domain fails by name |
 | 64 | Core field & bus contract (the foundational wheel) | **PASS** | a dark field read honest-unavailable and reconcile_gamma passed 0.7 through unchanged; a live Γ=0.3 pulse tightened local 0.7 to 0.3 and left local 0.2 untouched (min, never loosened); a stale trace row was refused while a fresh one served Γ=0.9 (freshness fails closed); a published sub-field round-tripped into the whole-body view with its measured values; the bus delivered one thought to exact + wildcard subscribers and recalled it from memory |
 | 65 | Engine room contract (inhouse_ai) | **PASS** | the offline flag and audit mode both disabled LLM HTTP, the explicit audit override re-enabled it and a clean env was open; with no live line the registry degraded to exactly one NAMED stub (aureon-operator-offline) that answered with its fixed message; the self-hosted line stayed disabled until a base URL was configured and then carried qwen2.5:3b-instruct; the :11434 base URL routed native with /v1 stripped, the pin flag was honest in both directions, and the env override forced the shim |
 | 66 | Volatility sentinel honesty (intelligence) | **PASS** | a priceless sentinel answered no_data with 4 named blockers and no invented risk; the estimator returned None under warm-up; a 5%-swing expansion measured 0.917 against a calm baseline of 0.0; the block threshold is the named 0.85; the assessment payload round-tripped with status and blockers intact |
 | 67 | Kelly gate tighten-only (utils) | **PASS** | the opt-out env returned None; DRY_RUN returned None even with a live Γ=0.05 field on the trace (position sizing bit-identical to pre-observer days); LIVE mode resolved 0.05 — the canonical Γ joined the min() and the result can only tighten (≤ 0.05); a dark field never lowered the resolution below the live one (nothing invented) |
 | 68 | Market cache freshness (data_feeds) | **PASS** | a 5s-old ticker read fresh inside a 60s window and stale inside a 1s window; a 9999s-old ticker was refused; an unknown symbol returned an honest None from the shared cache; timestamp coercion kept Unix floats, parsed ISO text, and sent garbage to the epoch default — which is always stale, so unknowable age can never masquerade as the live market |
+| 69 | Exchange keyless honesty (exchanges) | **PASS** | a keyless client reported is_authenticated=False with the named init_error 'credentials_missing'; get_account() and get_balance() both returned honest empty dicts with no invented USD cash and no positions; the auth-probe thread only starts on the keyed branch so the keyless path made zero HTTP calls |
+| 70 | Live-data policy (observer) | **PASS** | with the env unset the simulation-fallback gate read CLOSED (production fails loud); an explicit '1' opened it while '0' and garbage stayed closed; a blocked fallback emitted the structured warning naming the source and reason; the fallback marker carried is_live=False, truth_status='test_fixture', the named blocker and the caller's timestamp — synthetic data can never pass as live |
 
 ### Tier A — per-benchmark detail
 
@@ -187,7 +189,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
     "peers_per_node": 3,
     "target_hash_count": 400,
     "cycles_to_converge": 3,
-    "wall_ms": 641.2,
+    "wall_ms": 666.2,
     "posts_issued": 180,
     "client_failures": 0,
     "min_size": 400,
@@ -213,7 +215,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
     "sls_at_decision": 0.05,
     "sls_danger_threshold": 0.2,
     "verdict_name": "VETO",
-    "whisper_confidence": 0.95,
+    "whisper_confidence": 0.9,
     "verdict_publishes": 1
   },
   "invariants": {
@@ -244,7 +246,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "last_winning_skill_chain": [
         "compose_audit"
       ],
-      "last_seen_ts": 1786206774.3992286
+      "last_seen_ts": 1786209134.9729812
     },
     "persona_health": {
       "persona": "engineer",
@@ -256,7 +258,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "completion_rate": 1.0,
       "abandon_rate": 0.0,
       "avg_sls_delta": 0.0,
-      "last_seen_ts": 1786206774.3992286
+      "last_seen_ts": 1786209134.9729812
     },
     "patterns_published": 3,
     "patterns": [
@@ -311,9 +313,9 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "summarise_findings"
     ],
     "artefacts_on_disk": [
-      "artefacts/20260808T163254-compose_audit-505bb8.md",
-      "artefacts/20260808T163254-render_report-e619ef.md",
-      "artefacts/20260808T163254-summarise_findings-ed8088.md"
+      "artefacts/20260808T171214-compose_audit-a01695.md",
+      "artefacts/20260808T171214-render_report-d51b70.md",
+      "artefacts/20260808T171214-summarise_findings-8fd2aa.md"
     ],
     "vault_skill_output_cards": 3,
     "completion_summary": "built 3 artefact(s) via 3 skill(s): compose_audit, render_report, summarise_findings",
@@ -324,7 +326,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "failed": 0,
       "abandoned": 0,
       "subscribed": true,
-      "output_root": "/tmp/aureon-bench-072a6ofg/a7/artefacts"
+      "output_root": "/tmp/aureon-bench-51j_3hrv/a7/artefacts"
     }
   },
   "invariants": {
@@ -355,7 +357,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
     "sls_after": 0.72,
     "sls_delta": 0.22,
     "downstream_event_count": 3,
-    "lambda_delta_t": 0.07296872138977051,
+    "lambda_delta_t": 0.0732724666595459,
     "reasoning_excerpt": "I, engineer, collapsed into decision 'goal.submit' with p=0.780. The window closed at outcome=COMPLETED. 3 downstream event(s) within the 0.050s window. SLS moved from 0.500 to 0.720 (\u0394+0.220)."
   },
   "invariants": {
@@ -1523,15 +1525,15 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
   "metrics": {
     "lanes_ran": 5,
     "total_steps": 464,
-    "total_elapsed_s": 0.317969,
-    "avg_ms_per_step": 0.685,
+    "total_elapsed_s": 0.32656,
+    "avg_ms_per_step": 0.704,
     "total_agent_updates": 2320,
     "per_lane_steps_per_s": {
-      "accounting": 1525.0,
-      "coding": 1458.2,
-      "fintech": 1413.5,
-      "pattern_recognition": 1424.3,
-      "trading": 1483.1
+      "accounting": 1458.7,
+      "coding": 1429.4,
+      "fintech": 1399.6,
+      "pattern_recognition": 1397.1,
+      "trading": 1431.4
     },
     "per_lane_actualized": {
       "accounting": "20/98",
@@ -1919,13 +1921,13 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 {
   "passed": true,
   "metrics": {
-    "benchmarks": 66,
-    "pinned_modules": 62,
+    "benchmarks": 68,
+    "pinned_modules": 64,
     "total_modules": 1127,
-    "covered_domains": 13,
+    "covered_domains": 15,
     "fs_domains": 40,
-    "domain_coverage_fraction": 0.325,
-    "uncovered": 27
+    "domain_coverage_fraction": 0.375,
+    "uncovered": 25
   },
   "invariants": {
     "live_coverage_is_measured_from_disk": true,
@@ -2049,6 +2051,49 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
     "tighter_window_tightens": true,
     "unknown_symbol_is_an_honest_none": true,
     "timestamp_coercion_honest": true
+  }
+}
+```
+
+#### A.69 — Exchange keyless honesty (exchanges)
+
+`aureon/exchanges/alpaca_client.py`
+
+```json
+{
+  "passed": true,
+  "metrics": {
+    "is_authenticated": false,
+    "init_error": "credentials_missing",
+    "account_keys": 0,
+    "balance_keys": 0
+  },
+  "invariants": {
+    "keyless_client_knows_it_is_unauthenticated": true,
+    "account_is_an_honest_empty_never_invented": true,
+    "balance_is_an_honest_empty_never_invented": true
+  }
+}
+```
+
+#### A.70 — Live-data policy (observer)
+
+`aureon/observer/live_data_policy.py`
+
+```json
+{
+  "passed": true,
+  "metrics": {
+    "default_closed": true,
+    "opt_in_opens": true,
+    "garbage_stays_closed": true,
+    "blocked_log_seen": true
+  },
+  "invariants": {
+    "production_default_is_closed": true,
+    "only_explicit_opt_in_opens": true,
+    "blocked_fallback_is_a_named_loud_event": true,
+    "fallback_reading_carries_the_honest_marker": true
   }
 }
 ```
