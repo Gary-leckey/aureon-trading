@@ -5775,6 +5775,182 @@ def b66_volatility_sentinel_honesty(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b67_kelly_gate_tighten_only(tmp_root: Path) -> Dict[str, Any]:
+    """The Kelly position-sizing seam (aureon/utils), pinned at the resolver
+    every live-order-path caller shares: the operator opt-out returns None;
+    a dark world (no field, no observer signal accepted, no sentinel) returns
+    None — the gate falls back to the pre-observer static buffer, nothing
+    invented; in DRY_RUN mode the resolver returns None even with a LIVE
+    field so position sizing stays bit-identical to pre-observer days (the
+    production-mode wheel); and in LIVE mode a live canonical Γ=0.05 joins
+    the min() so the resolved coherence can only TIGHTEN (≤ 0.05 — min over
+    a superset of candidates is provably ≤ any single one, b46). Hermetic:
+    env + trace path saved/restored."""
+    import time as _time
+
+    from aureon.observer.production_mode import reload_mode
+    from aureon.utils.adaptive_prime_profit_gate import (
+        _resolve_auto_observer_coherence,
+    )
+
+    _KEYS = ("AUREON_KELLY_OBSERVE_COHERENCE", "AUREON_OBSERVER_MODE",
+             "AUREON_HNC_TRACE_PATH")
+    prev = {k: os.environ.get(k) for k in _KEYS}
+    trace = tmp_root / "kelly_hnc.jsonl"
+
+    def _set(**env: str) -> None:
+        for k in _KEYS:
+            os.environ.pop(k, None)
+        os.environ["AUREON_HNC_TRACE_PATH"] = str(trace)
+        os.environ.update(env)
+        # the mode is cached module-level for the hot path; reload_mode() is
+        # the documented runtime-change API — without it the first probe's
+        # mode would poison every later probe
+        reload_mode()
+
+    try:
+        # 1) operator opt-out is honoured
+        _set(AUREON_KELLY_OBSERVE_COHERENCE="0")
+        opted_out = _resolve_auto_observer_coherence()
+
+        # 2) DRY_RUN with a LIVE Γ=0.05 field → None (bit-identical sizing).
+        #    The pulse goes on BOTH channels the canonical reader consults —
+        #    the global bus (which wins) and the cross-process trace — so the
+        #    probe is deterministic in any world, including a process whose
+        #    import side effects already pulsed without a Γ.
+        pulse = {"symbolic_life_score": 0.5, "coherence_gamma": 0.05,
+                 "ts": _time.time()}
+        trace.write_text(json.dumps(pulse) + "\n", encoding="utf-8")
+        try:
+            from aureon.core.aureon_thought_bus import Thought, get_thought_bus
+
+            _b = get_thought_bus()
+            if _b is not None:
+                _b.publish(Thought(source="b67", topic="symbolic.life.pulse",
+                                   payload=dict(pulse)))
+        except Exception:  # noqa: BLE001 — trace fallback still covers it
+            pass
+        _set(AUREON_OBSERVER_MODE="dry_run")
+        dry_run = _resolve_auto_observer_coherence()
+
+        # 3) LIVE mode with the same live Γ=0.05 → tighten-only (≤ 0.05)
+        _set(AUREON_OBSERVER_MODE="live")
+        live = _resolve_auto_observer_coherence()
+
+        # 4) LIVE mode, dark field → no invented candidate from the field
+        #    (resolver may still be None when no observer/sentinel exists)
+        trace.write_text("", encoding="utf-8")
+        _set(AUREON_OBSERVER_MODE="live")
+        dark = _resolve_auto_observer_coherence()
+
+        invariants = {
+            "operator_opt_out_honoured": opted_out is None,
+            "dry_run_is_bit_identical": dry_run is None,
+            "live_field_tightens_only": (
+                live is not None and 0.0 <= float(live) <= 0.05),
+            "dark_field_never_invents_a_gamma": (
+                dark is None or (live is not None and float(dark) >= float(live))),
+        }
+        passed = all(invariants.values())
+
+        return {
+            "name": "Kelly gate tighten-only (utils)",
+            "module": "aureon/utils/adaptive_prime_profit_gate.py",
+            "passed": passed,
+            "metrics": {
+                "opted_out": opted_out,
+                "dry_run": dry_run,
+                "live_resolved": live,
+                "dark_resolved": dark,
+            },
+            "evidence": (
+                "the opt-out env returned None; DRY_RUN returned None even "
+                "with a live Γ=0.05 field on the trace (position sizing "
+                "bit-identical to pre-observer days); LIVE mode resolved "
+                f"{live if live is None else round(float(live), 4)} — the "
+                "canonical Γ joined the min() and the result can only "
+                "tighten (≤ 0.05); a dark field never lowered the resolution "
+                "below the live one (nothing invented)"
+            ),
+            "invariants": invariants,
+        }
+    finally:
+        for k, v in prev.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+        reload_mode()          # re-cache from the RESTORED env, not a probe's
+
+
+def b68_market_cache_freshness(tmp_root: Path) -> Dict[str, Any]:
+    """The market-data hub (aureon/data_feeds), pinned at its freshness
+    primitive: a cached ticker is fresh only within its max_age window (a
+    stale one is refused, never presented as the market); an unknown symbol
+    reads back as an honest None from the shared cache (a missing price is
+    a value, never a guess); and the timestamp coercion accepts both Unix
+    floats and ISO text but returns the default for garbage — unknowable
+    age parses to the epoch default, which is always stale. Deterministic;
+    no network, no API keys."""
+    import time as _time
+
+    from aureon.data_feeds.unified_market_cache import (
+        CachedTicker,
+        _as_timestamp,
+        get_price,
+    )
+
+    now = _time.time()
+
+    def _ticker(ts: float) -> CachedTicker:
+        return CachedTicker(symbol="B68", price=100.0, bid=99.9, ask=100.1,
+                            change_24h=0.0, volume_24h=1.0,
+                            source="labeled_fixture", timestamp=ts,
+                            pair="B68/USD")
+
+    fresh = _ticker(now - 5.0)
+    stale = _ticker(now - 9999.0)
+    iso_ts = _as_timestamp("2026-01-01T00:00:00Z")
+    float_ts = _as_timestamp(1234.5)
+    garbage_ts = _as_timestamp("not-a-time", default=0.0)
+    missing = get_price("ZZZ_B68_NO_SUCH_SYMBOL")
+
+    invariants = {
+        "fresh_within_window_stale_refused": (
+            fresh.is_fresh(max_age=60.0) is True
+            and stale.is_fresh(max_age=60.0) is False),
+        "tighter_window_tightens": fresh.is_fresh(max_age=1.0) is False,
+        "unknown_symbol_is_an_honest_none": missing is None,
+        "timestamp_coercion_honest": (
+            float_ts == 1234.5 and iso_ts > 1.7e9
+            and garbage_ts == 0.0
+            and _ticker(garbage_ts).is_fresh(max_age=60.0) is False),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Market cache freshness (data_feeds)",
+        "module": "aureon/data_feeds/unified_market_cache.py",
+        "passed": passed,
+        "metrics": {
+            "fresh_ok": fresh.is_fresh(max_age=60.0),
+            "stale_refused": not stale.is_fresh(max_age=60.0),
+            "iso_ts": iso_ts,
+            "garbage_ts": garbage_ts,
+            "missing_price": missing,
+        },
+        "evidence": (
+            "a 5s-old ticker read fresh inside a 60s window and stale inside "
+            "a 1s window; a 9999s-old ticker was refused; an unknown symbol "
+            "returned an honest None from the shared cache; timestamp "
+            "coercion kept Unix floats, parsed ISO text, and sent garbage to "
+            "the epoch default — which is always stale, so unknowable age "
+            "can never masquerade as the live market"
+        ),
+        "invariants": invariants,
+    }
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -5860,6 +6036,8 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Core field & bus contract (the foundational wheel)", b64_core_field_contract),
     ("Engine room contract (inhouse_ai)", b65_engine_room_contract),
     ("Volatility sentinel honesty (intelligence)", b66_volatility_sentinel_honesty),
+    ("Kelly gate tighten-only (utils)", b67_kelly_gate_tighten_only),
+    ("Market cache freshness (data_feeds)", b68_market_cache_freshness),
 ]
 
 

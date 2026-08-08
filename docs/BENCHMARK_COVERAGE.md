@@ -3,9 +3,9 @@
 > Derived from the committed Tier-A report + the filesystem. Nothing invented;
 > the uncovered list is the roadmap, the ratchet makes progress one-way.
 
-- Tier-A benchmarks: **66** (all passed: True)
-- Unique modules pinned: **62** of 1127 on disk
-- Domain coverage: **13/40** (0.325)
+- Tier-A benchmarks: **68** (all passed: True)
+- Unique modules pinned: **64** of 1127 on disk
+- Domain coverage: **15/40** (0.375)
 
 ## Per-domain
 
@@ -25,7 +25,7 @@
 | command_centers | 17 | 0 | **no** |
 | conversion | 11 | 0 | **no** |
 | core | 77 | 1 | yes |
-| data_feeds | 22 | 0 | **no** |
+| data_feeds | 22 | 1 | yes |
 | decoders | 12 | 0 | **no** |
 | exchanges | 41 | 0 | **no** |
 | generated | 3 | 0 | **no** |
@@ -48,7 +48,7 @@
 | swarm | 10 | 4 | yes |
 | swarm_motion | 5 | 0 | **no** |
 | trading | 94 | 0 | **no** |
-| utils | 42 | 0 | **no** |
+| utils | 42 | 1 | yes |
 | vault | 41 | 6 | yes |
 | wisdom | 37 | 0 | **no** |
 
@@ -67,7 +67,6 @@
 - `code_architect` — 10 modules, zero pins
 - `command_centers` — 17 modules, zero pins
 - `conversion` — 11 modules, zero pins
-- `data_feeds` — 22 modules, zero pins
 - `decoders` — 12 modules, zero pins
 - `exchanges` — 41 modules, zero pins
 - `generated` — 3 modules, zero pins
@@ -83,5 +82,4 @@
 - `strategies` — 36 modules, zero pins
 - `swarm_motion` — 5 modules, zero pins
 - `trading` — 94 modules, zero pins
-- `utils` — 42 modules, zero pins
 - `wisdom` — 37 modules, zero pins

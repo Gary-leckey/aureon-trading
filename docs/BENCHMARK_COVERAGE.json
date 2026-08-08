@@ -1,7 +1,7 @@
 {
   "status": "measured",
   "blocker": "",
-  "benchmarks": 66,
+  "benchmarks": 68,
   "all_rows_passed": true,
   "pinned_modules": [
     "aureon/accounting/client_ledger.py",
@@ -43,6 +43,7 @@
     "aureon/cognition/logic_train_audit.py",
     "aureon/cognition/phenolic_bridge.py",
     "aureon/core/hnc_field.py",
+    "aureon/data_feeds/unified_market_cache.py",
     "aureon/harmonic/phi_bridge_mesh.py",
     "aureon/harmonic/rainbow_reference.py",
     "aureon/inhouse_ai/llm_adapter.py",
@@ -59,6 +60,7 @@
     "aureon/swarm/company.py",
     "aureon/swarm/containment.py",
     "aureon/swarm/fleadh.py",
+    "aureon/utils/adaptive_prime_profit_gate.py",
     "aureon/vault/voice/hash_resonance_index.py",
     "aureon/vault/voice/meta_cognition_observer.py",
     "aureon/vault/voice/persona_miner_bridge.py",
@@ -185,8 +187,10 @@
     },
     "data_feeds": {
       "modules": 22,
-      "pinned": [],
-      "covered": false
+      "pinned": [
+        "aureon/data_feeds/unified_market_cache.py"
+      ],
+      "covered": true
     },
     "decoders": {
       "modules": 12,
@@ -323,8 +327,10 @@
     },
     "utils": {
       "modules": 42,
-      "pinned": [],
-      "covered": false
+      "pinned": [
+        "aureon/utils/adaptive_prime_profit_gate.py"
+      ],
+      "covered": true
     },
     "vault": {
       "modules": 41,
@@ -353,6 +359,7 @@
     "bio",
     "cognition",
     "core",
+    "data_feeds",
     "harmonic",
     "inhouse_ai",
     "intelligence",
@@ -360,6 +367,7 @@
     "queen",
     "saas",
     "swarm",
+    "utils",
     "vault"
   ],
   "uncovered_domains": [
@@ -372,7 +380,6 @@
     "code_architect",
     "command_centers",
     "conversion",
-    "data_feeds",
     "decoders",
     "exchanges",
     "generated",
@@ -388,10 +395,9 @@
     "strategies",
     "swarm_motion",
     "trading",
-    "utils",
     "wisdom"
   ],
-  "domain_coverage_fraction": 0.325,
+  "domain_coverage_fraction": 0.375,
   "total_modules": 1127,
-  "module_pin_count": 62
+  "module_pin_count": 64
 }
