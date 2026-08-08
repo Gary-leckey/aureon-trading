@@ -4692,6 +4692,28 @@ def b57_borg_acquisition(tmp_root: Path) -> Dict[str, Any]:
 
 
 def b58_coherence_gate(tmp_root: Path) -> Dict[str, Any]:
+    """Hermetic wrapper: the dark probe's contract REQUIRES a dark canonical
+    field, and the live probes must not be tightened by whatever another
+    process on this box happens to be writing to the shared state trace —
+    so the whole benchmark runs with the field/assimilation/affect paths
+    redirected into tmp_root (the same isolation the pytest suite's
+    _dark_field fixture provides), restored afterwards."""
+    iso = {"AUREON_HNC_TRACE_PATH": str(tmp_root / "hermetic_hnc.jsonl"),
+           "AUREON_ASSIMILATION_PATH": str(tmp_root / "hermetic_assim.jsonl"),
+           "AUREON_AFFECT_LAMBDA_PATH": str(tmp_root / "hermetic_affect.json")}
+    prev = {k: os.environ.get(k) for k in iso}
+    os.environ.update(iso)
+    try:
+        return _b58_coherence_gate_probes(tmp_root)
+    finally:
+        for k, v in prev.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+def _b58_coherence_gate_probes(tmp_root: Path) -> Dict[str, Any]:
     """The living membrane, pinned: individual agents do not self-authorize —
     the hive FIELD decides the aperture. Hard boundaries stay the outer wall
     (checked first, absolute); the coherence gate is the inner membrane —
@@ -5363,6 +5385,200 @@ def b62_open_benchmark_honesty(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b63_benchmark_coverage(tmp_root: Path) -> Dict[str, Any]:
+    """The march to 100% is itself pinned: benchmark coverage is MEASURED
+    (committed Tier-A report reconciled against the real filesystem — every
+    pin names a file that exists), the gap is NAMED (uncovered domains listed,
+    never hidden), and progress is a one-way RATCHET (a covered domain or a
+    pinned module can be added but never silently lost — a regression is a
+    named failure, in a fixture and against the committed baseline)."""
+    import json as _json
+
+    from aureon.analytics.benchmark_coverage import (
+        build_coverage,
+        load_baseline,
+        ratchet_check,
+    )
+
+    live = build_coverage()
+    live_ratchet = ratchet_check(live, load_baseline())
+
+    # fixture probe: derivation + ratchet honest in both directions
+    (tmp_root / "aureon" / "alpha").mkdir(parents=True)
+    (tmp_root / "aureon" / "alpha" / "__init__.py").write_text("", encoding="utf-8")
+    (tmp_root / "aureon" / "alpha" / "engine.py").write_text("x = 1\n", encoding="utf-8")
+    (tmp_root / "aureon" / "beta").mkdir(parents=True)
+    (tmp_root / "aureon" / "beta" / "__init__.py").write_text("", encoding="utf-8")
+    rp = tmp_root / "report.json"
+    rp.write_text(_json.dumps({"tier_a": [
+        {"module": "aureon/alpha/engine.py", "passed": True}]}), encoding="utf-8")
+    fix = build_coverage(repo_root=tmp_root, report_path=rp)
+    lost = dict(fix.to_dict())
+    lost["covered_domains"] = ["alpha", "beta"]       # baseline claims more than live
+    lost_verdict = ratchet_check(fix, lost)
+
+    invariants = {
+        "live_coverage_is_measured_from_disk": (
+            live.status == "measured" and live.missing_modules == []
+            and live.benchmarks >= 62 and live.module_pin_count >= 58),
+        "the_gap_is_named_never_hidden": (
+            isinstance(live.uncovered_domains, list)
+            and all(d in live.domains for d in live.uncovered_domains)
+            and all(live.domains[d]["pinned"] == [] for d in live.uncovered_domains)),
+        "committed_baseline_ratchet_holds": live_ratchet["ok"],
+        "fixture_derivation_covered_and_uncovered": (
+            fix.covered_domains == ["alpha"] and fix.uncovered_domains == ["beta"]
+            and fix.domain_coverage_fraction == 0.5),
+        "losing_a_domain_is_a_named_regression": (
+            lost_verdict["ok"] is False
+            and any("beta" in r for r in lost_verdict["regressions"])),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Benchmark coverage (the march to 100%)",
+        "module": "aureon/analytics/benchmark_coverage.py",
+        "passed": passed,
+        "metrics": {
+            "benchmarks": live.benchmarks,
+            "pinned_modules": live.module_pin_count,
+            "total_modules": live.total_modules,
+            "covered_domains": len(live.covered_domains),
+            "fs_domains": len(live.domains),
+            "domain_coverage_fraction": live.domain_coverage_fraction,
+            "uncovered": len(live.uncovered_domains),
+        },
+        "evidence": (
+            f"{live.benchmarks} Tier-A rows pin {live.module_pin_count} real modules "
+            f"across {len(live.covered_domains)}/{len(live.domains)} domains "
+            f"({live.total_modules} modules on disk); every pin resolved to an "
+            f"existing file; {len(live.uncovered_domains)} uncovered domains are "
+            "named as the roadmap; the committed-baseline ratchet held and the "
+            "fixture proved a lost domain fails by name"
+        ),
+        "invariants": invariants,
+    }
+
+
+def b64_core_field_contract(tmp_root: Path) -> Dict[str, Any]:
+    """The foundational wheel itself, pinned: aureon/core's canonical field +
+    thought bus contract that every other benchmark rides on. A dark field is
+    HONEST (unavailable, and reconcile_gamma passes the local figure through
+    unchanged — dark restricts nothing, invents nothing); a live field can
+    only TIGHTEN (min(local, Γ), never a loosening); freshness fails CLOSED
+    (a stale or unstamped trace row is refused, never presented as the live
+    organism); a published sub-field round-trips to the whole-body view; and
+    the bus delivers thoughts to exact and wildcard subscribers and remembers
+    them for recall. Hermetic: trace paths redirected into tmp_root."""
+    import time as _time
+    from types import SimpleNamespace
+
+    iso = {"AUREON_HNC_TRACE_PATH": str(tmp_root / "core_hnc.jsonl"),
+           "AUREON_BUS_TRACE_DIR": str(tmp_root / "core_bus_trace")}
+    prev = {k: os.environ.get(k) for k in iso}
+    os.environ.update(iso)
+    try:
+        from aureon.core.aureon_thought_bus import Thought, ThoughtBus
+        from aureon.core.hnc_field import (
+            publish_subfield,
+            read_canonical_field,
+            read_subfields,
+            reconcile_gamma,
+        )
+
+        # 1) dark field: honest unavailable + restricts nothing
+        dark_bus = ThoughtBus()
+        dark = read_canonical_field(dark_bus)
+        dark_gamma = reconcile_gamma(0.7, dark_bus)
+
+        # 2) live field tightens only: min(local, Γ), never loosened
+        live_bus = ThoughtBus()
+        live_bus.publish(Thought(source="b64", topic="symbolic.life.pulse",
+                                 payload={"symbolic_life_score": 0.5,
+                                          "coherence_gamma": 0.3}))
+        tightened = reconcile_gamma(0.7, live_bus)
+        not_loosened = reconcile_gamma(0.2, live_bus)
+
+        # 3) freshness fails closed on the cross-process trace
+        trace = tmp_root / "core_hnc.jsonl"
+        stale_row = {"symbolic_life_score": 0.9, "coherence_gamma": 0.9,
+                     "ts": _time.time() - 99999.0}
+        trace.write_text(json.dumps(stale_row) + "\n", encoding="utf-8")
+        stale = read_canonical_field(ThoughtBus())
+        fresh_row = dict(stale_row, ts=_time.time())
+        trace.write_text(json.dumps(fresh_row) + "\n", encoding="utf-8")
+        fresh = read_canonical_field(ThoughtBus())
+
+        # 4) sub-field round-trip: a producer's local field reaches the body
+        sub_bus = ThoughtBus()
+        publish_subfield("b64_probe",
+                         SimpleNamespace(symbolic_life_score=0.42,
+                                         coherence_gamma=0.61,
+                                         consciousness_level="aware"),
+                         bus=sub_bus)
+        subs = read_subfields(sub_bus)
+
+        # 5) the bus delivers (exact + wildcard) and remembers
+        got: List[Any] = []
+        bus = ThoughtBus()
+        bus.subscribe("b64.exact", got.append)
+        bus.subscribe("b64.*", got.append)
+        bus.publish(Thought(source="b64", topic="b64.exact",
+                            payload={"n": 1}))
+        recalled = bus.recall("b64.exact", limit=5) or []
+
+        invariants = {
+            "dark_field_is_honest_and_restricts_nothing": (
+                dark.available is False and dark.coherence_gamma is None
+                and dark_gamma == 0.7),
+            "live_field_tightens_only": (
+                tightened == 0.3 and not_loosened == 0.2),
+            "freshness_fails_closed": (
+                stale.available is False
+                and fresh.available is True
+                and fresh.coherence_gamma == 0.9),
+            "subfield_round_trips_to_the_body": (
+                subs.get("b64_probe", {}).get("symbolic_life_score") == 0.42
+                and subs.get("b64_probe", {}).get("coherence_gamma") == 0.61),
+            "bus_delivers_exact_and_wildcard_and_recalls": (
+                len(got) == 2
+                and all(getattr(t, "payload", {}).get("n") == 1 for t in got)
+                and len(recalled) == 1),
+        }
+        passed = all(invariants.values())
+
+        return {
+            "name": "Core field & bus contract (the foundational wheel)",
+            "module": "aureon/core/hnc_field.py",
+            "passed": passed,
+            "metrics": {
+                "dark_reconcile": dark_gamma,
+                "live_tightened": tightened,
+                "live_not_loosened": not_loosened,
+                "fresh_gamma": fresh.coherence_gamma,
+                "subfields_seen": len(subs),
+                "bus_deliveries": len(got),
+            },
+            "evidence": (
+                "a dark field read honest-unavailable and reconcile_gamma "
+                "passed 0.7 through unchanged; a live Γ=0.3 pulse tightened "
+                "local 0.7 to 0.3 and left local 0.2 untouched (min, never "
+                "loosened); a stale trace row was refused while a fresh one "
+                "served Γ=0.9 (freshness fails closed); a published sub-field "
+                "round-tripped into the whole-body view with its measured "
+                "values; the bus delivered one thought to exact + wildcard "
+                "subscribers and recalled it from memory"
+            ),
+            "invariants": invariants,
+        }
+    finally:
+        for k, v in prev.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -5444,6 +5660,8 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Harmonic rainbow (love as the ultimate node)", b60_harmonic_rainbow),
     ("Unified replication contract (two angles, one path)", b61_unified_replication_contract),
     ("Open benchmark honesty (measured vs cited)", b62_open_benchmark_honesty),
+    ("Benchmark coverage (the march to 100%)", b63_benchmark_coverage),
+    ("Core field & bus contract (the foundational wheel)", b64_core_field_contract),
 ]
 
 
