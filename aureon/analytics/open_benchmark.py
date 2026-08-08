@@ -255,13 +255,16 @@ def run_open_benchmark(limit: int = 25, offline: bool = False,
 
             return AureonCognition(join_mesh=False, mesh_broadcast=False)
     cog = cog_factory()
-    adapter_name = type(getattr(cog, "adapter", None)).__name__
+    adapter = getattr(cog, "adapter", None)
+    adapter_name = type(adapter).__name__
+    model_name = str(getattr(adapter, "model", "") or "")
 
     gsm = run_gsm8k(cog, fetch_dataset("gsm8k", limit=limit, offline=offline))
     he = run_humaneval(cog, fetch_dataset("humaneval", limit=limit,
                                           offline=offline))
     return {
         "adapter": adapter_name,
+        "model": model_name,
         "aureon_measured": {"gsm8k": gsm, "humaneval": he},
         "competition_cited": COMPETITION,
         "architecture_contract": ARCHITECTURE_CONTRACT,
@@ -280,7 +283,8 @@ def write_report(payload: Dict[str, Any], out_md: Path, out_json: Path) -> None:
     h = payload["aureon_measured"]["humaneval"]
     lines = [
         "# Open benchmark — Aureon vs the published competition", "",
-        f"Adapter resolved by the one door: `{payload['adapter']}`", "",
+        f"Adapter resolved by the one door: `{payload['adapter']}`"
+        + (f" — model `{payload['model']}`" if payload.get("model") else ""), "",
         "## Aureon (measured here)", "",
         "| Set | n | ok turns | score |", "|---|---|---|---|",
         f"| GSM8K | {g['n']} | {g['ok_turns']} | "
