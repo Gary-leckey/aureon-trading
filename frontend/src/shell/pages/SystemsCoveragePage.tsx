@@ -34,6 +34,17 @@ interface CoverageDomain {
   health: DomainHealth | null;
 }
 
+interface BenchmarkCoverage {
+  status: string;
+  benchmarks: number;
+  module_pin_count: number;
+  total_modules: number;
+  covered_domains: string[];
+  uncovered_domains: string[];
+  domain_coverage_fraction: number | null;
+  ratchet?: { ok: boolean; regressions: string[] };
+}
+
 interface CoveragePayload {
   fs_package_count: number;
   taxonomy_count: number;
@@ -45,6 +56,7 @@ interface CoveragePayload {
   adapter_deep_count: number;
   surfaced_with_systems: number;
   domains: CoverageDomain[];
+  benchmark_coverage?: BenchmarkCoverage;
   note?: string;
   truth_status?: string;
 }
@@ -188,6 +200,45 @@ export default function SystemsCoveragePage() {
               {data.note && <p className="mt-3 text-[11px] text-muted-foreground">{data.note}</p>}
             </CardContent>
           </Card>
+
+          {data.benchmark_coverage && data.benchmark_coverage.status === "measured" && (
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <CardTitle className="text-base">Benchmark coverage — the march to 100%</CardTitle>
+                  <Badge variant={data.benchmark_coverage.ratchet?.ok ? "success" : "secondary"}>
+                    ratchet {data.benchmark_coverage.ratchet?.ok ? "holding" : "regressed"}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <StatTile label="Tier-A benchmarks" value={data.benchmark_coverage.benchmarks} tone="good" />
+                  <StatTile
+                    label="modules pinned"
+                    value={`${data.benchmark_coverage.module_pin_count}/${data.benchmark_coverage.total_modules}`}
+                  />
+                  <StatTile
+                    label="domains pinned"
+                    value={`${data.benchmark_coverage.covered_domains.length}/${
+                      data.benchmark_coverage.covered_domains.length +
+                      data.benchmark_coverage.uncovered_domains.length
+                    }`}
+                  />
+                  <StatTile
+                    label="roadmap (unpinned)"
+                    value={data.benchmark_coverage.uncovered_domains.length}
+                    tone={data.benchmark_coverage.uncovered_domains.length ? "warn" : "good"}
+                  />
+                </div>
+                {data.benchmark_coverage.uncovered_domains.length > 0 && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    roadmap: {data.benchmark_coverage.uncovered_domains.join(" · ")}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader className="pb-2">

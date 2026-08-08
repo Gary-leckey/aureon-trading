@@ -12,19 +12,21 @@ import sys
 from aureon.saas import defense_catalog as dc
 
 
-def test_builds_eight_groups_from_committed_report():
+def test_builds_nine_groups_from_committed_report():
     cat = dc.build_defense_catalog()
     assert cat["group_order"] == [
         "cognitive_immune_layer", "statistical_validity", "adaptive_direction", "sensor_lane",
         "market_validation", "kings_court_accounting", "harmonic_swarm", "universal_prompt_router",
+        "measured_benchmarks",
     ]
     groups = cat["groups"]
     assert set(groups) == set(cat["group_order"])
     # the immune layer's six organs, the six statistical modules, and the adaptive-direction dossier
-    # (source audit + inbound MCP transport + runtime audit + outbound brain-reply membrane) grouped exactly
+    # (source audit + inbound MCP transport + runtime audit + outbound brain-reply
+    # membrane + the b64 one-field seam itself) grouped exactly
     assert groups["cognitive_immune_layer"]["module_count"] == 6
     assert groups["statistical_validity"]["module_count"] == 6
-    assert groups["adaptive_direction"]["module_count"] == 4
+    assert groups["adaptive_direction"]["module_count"] == 5
     assert groups["sensor_lane"]["module_count"] >= 1
     # HNC market validation: the sentinel benchmark + real-data replay, once the
     # regenerated Tier-A report carries b47/b48
@@ -40,6 +42,9 @@ def test_builds_eight_groups_from_committed_report():
     # entries are defenses (benchmark rows), not unique files: b54 and b61
     # are distinct defenses that both live in operator/cognition.py
     assert groups["universal_prompt_router"]["module_count"] == 7
+    # the honesty layer over the benchmarks themselves: open benchmark (b62)
+    # + the coverage march ratchet (b63) join by name
+    assert groups["measured_benchmarks"]["module_count"] == 2
     assert cat["counts"]["total"] == sum(g["module_count"] for g in groups.values())
 
 

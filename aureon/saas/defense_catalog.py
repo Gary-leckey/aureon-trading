@@ -102,10 +102,20 @@ _GROUP_META: Dict[str, Dict[str, str]] = {
                    "the same books — drafts for review, nothing transmits to HMRC or "
                    "Companies House",
     },
+    "measured_benchmarks": {
+        "label": "Measured benchmarks",
+        "purpose": "the honesty layer over the benchmarks themselves — Aureon scored on "
+                   "OPEN sources (GSM8K, HumanEval) through the one door with the engine "
+                   "named, the competition cited by source URL and never claimed, and the "
+                   "march to a full 100% benchmark of the OS made falsifiable: every Tier-A "
+                   "pin reconciled against the real filesystem, the uncovered domains named "
+                   "as the roadmap, and progress held by a one-way ratchet",
+    },
 }
 _GROUP_ORDER: List[str] = [
     "cognitive_immune_layer", "statistical_validity", "adaptive_direction", "sensor_lane",
     "market_validation", "kings_court_accounting", "harmonic_swarm", "universal_prompt_router",
+    "measured_benchmarks",
 ]
 
 # module-basename (no .py) → group; anything else under aureon/bio/ is a sensor lane
@@ -140,6 +150,9 @@ _GROUPS: Dict[str, str] = {
     "acquisition": "universal_prompt_router",
     "coherence_gate": "universal_prompt_router",
     "heart": "universal_prompt_router",
+    "hnc_field": "adaptive_direction",              # b64: the one-field seam itself
+    "open_benchmark": "measured_benchmarks",
+    "benchmark_coverage": "measured_benchmarks",
 }
 
 # module-basename → bus-trace name (the emit_* mirror), for the live overlay only
