@@ -5579,6 +5579,202 @@ def b64_core_field_contract(tmp_root: Path) -> Dict[str, Any]:
                 os.environ[k] = v
 
 
+def b65_engine_room_contract(tmp_root: Path) -> Dict[str, Any]:
+    """The engine room behind the one door (aureon/inhouse_ai), pinned: the
+    offline guards are honest (audit mode and the offline flag both disable
+    LLM HTTP, the explicit audit override re-enables it, a clean environment
+    is open); with no live line the registry degrades to a NAMED offline stub
+    (never a fake provider — the stub answers with its fixed message and its
+    own model stamp); the self-hosted line stays disabled until a base URL is
+    configured and then carries the configured model; and the Ollama-native
+    detection routes :11434 through the native API with the /v1 shim root
+    stripped, overridable and honest about model pinning. Hermetic: env
+    saved/restored around every probe."""
+    from aureon.inhouse_ai.llm_adapter import AureonLocalAdapter, _llm_http_disabled
+    from aureon.operator.config import default_registry
+    from aureon.operator.providers import build_registry
+
+    _KEYS = ("AUREON_LLM_OFFLINE", "AUREON_AUDIT_MODE", "AUREON_DISABLE_LLM_HTTP",
+             "AUREON_LLM_ALLOW_HTTP_IN_AUDIT", "AUREON_LLM_BASE_URL",
+             "AUREON_LLM_MODEL", "AUREON_LLM_PREFER_NATIVE")
+    prev = {k: os.environ.get(k) for k in _KEYS}
+
+    def _set(**env: str) -> None:
+        for k in _KEYS:
+            os.environ.pop(k, None)
+        os.environ.update(env)
+
+    try:
+        # 1) offline guards, all four worlds
+        _set(AUREON_LLM_OFFLINE="1")
+        guard_offline = _llm_http_disabled()
+        _set(AUREON_AUDIT_MODE="1")
+        guard_audit = _llm_http_disabled()
+        _set(AUREON_AUDIT_MODE="1", AUREON_LLM_ALLOW_HTTP_IN_AUDIT="1")
+        guard_override = _llm_http_disabled()
+        _set()
+        guard_clean = _llm_http_disabled()
+
+        # 2) honest offline degradation: one named stub, never a fake provider
+        _set()
+        offline_reg = build_registry(force_offline=True)
+        stub = offline_reg.get("offline")
+        stub_reply = stub.prompt([{"role": "user", "content": "hello"}]) if stub else None
+
+        # 3) the self-hosted line resolution contract
+        _set()
+        local_off = [s for s in default_registry() if s.kind == "local"][0]
+        _set(AUREON_LLM_BASE_URL="http://127.0.0.1:11434/v1",
+             AUREON_LLM_MODEL="qwen2.5:3b-instruct")
+        local_on = [s for s in default_registry() if s.kind == "local"][0]
+
+        # 4) Ollama-native detection on the local adapter
+        _set()
+        pinned = AureonLocalAdapter(base_url="http://127.0.0.1:11434/v1",
+                                    model="qwen2.5:3b-instruct")
+        unpinned = AureonLocalAdapter(base_url="http://127.0.0.1:11434/v1")
+        _set(AUREON_LLM_PREFER_NATIVE="0")
+        shimmed = AureonLocalAdapter(base_url="http://127.0.0.1:11434/v1")
+
+        invariants = {
+            "offline_guards_honest_in_all_four_worlds": (
+                guard_offline is True and guard_audit is True
+                and guard_override is False and guard_clean is False),
+            "offline_registry_degrades_to_named_stub": (
+                offline_reg is not None and list(offline_reg) == ["offline"]
+                and stub_reply is not None and bool(stub_reply.text)
+                and stub_reply.model == "aureon-operator-offline"),
+            "self_hosted_line_disabled_until_configured": (
+                local_off.enabled is False and local_on.enabled is True
+                and local_on.model == "qwen2.5:3b-instruct"),
+            "ollama_native_detection_and_pinning": (
+                pinned._prefer_native is True
+                and pinned._native_root == "http://127.0.0.1:11434"
+                and pinned._model_pinned is True
+                and unpinned._model_pinned is False
+                and shimmed._prefer_native is False),
+        }
+        passed = all(invariants.values())
+
+        return {
+            "name": "Engine room contract (inhouse_ai)",
+            "module": "aureon/inhouse_ai/llm_adapter.py",
+            "passed": passed,
+            "metrics": {
+                "offline_providers": len(offline_reg or {}),
+                "stub_model": getattr(stub_reply, "model", None),
+                "local_enabled_configured": local_on.enabled,
+                "native_root": pinned._native_root,
+            },
+            "evidence": (
+                "the offline flag and audit mode both disabled LLM HTTP, the "
+                "explicit audit override re-enabled it and a clean env was open; "
+                "with no live line the registry degraded to exactly one NAMED "
+                "stub (aureon-operator-offline) that answered with its fixed "
+                "message; the self-hosted line stayed disabled until a base URL "
+                "was configured and then carried qwen2.5:3b-instruct; the "
+                ":11434 base URL routed native with /v1 stripped, the pin flag "
+                "was honest in both directions, and the env override forced "
+                "the shim"
+            ),
+            "invariants": invariants,
+        }
+    finally:
+        for k, v in prev.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+def b66_volatility_sentinel_honesty(tmp_root: Path) -> Dict[str, Any]:
+    """The intelligence domain's predictive eye, pinned at the module itself:
+    a sentinel with NO prices returns an honest no_data assessment with one
+    named blocker per missing factor (volatility_risk None — nothing
+    invented); the EWMA estimator refuses to guess before warm-up (risk None
+    under 30 returns); after warm-up a real volatility expansion reads as a
+    measured risk in [0,1] strictly above the calm baseline; the block
+    threshold stays the named constant 0.85; and an assessment round-trips
+    its payload with status and blockers intact. Deterministic prices, no
+    market feed."""
+    from aureon.intelligence.volatility_sentinel import (
+        VOL_RISK_BLOCK,
+        EwmaVolEstimator,
+        VolatilityAssessment,
+        VolatilitySentinel,
+    )
+
+    # 1) nothing invented: no prices → no_data + named blockers
+    empty = VolatilitySentinel(["BTC/USD"]).assess("BTC/USD", ts=1.0)
+
+    # 2) warm-up honesty + measured expansion
+    est = EwmaVolEstimator()
+    price = 100.0
+    for i in range(20):                      # far below warm-up
+        price *= 1.001 if i % 2 == 0 else 0.999
+        est.update(price)
+    early = est.risk()
+    calm = EwmaVolEstimator()
+    price = 100.0
+    for i in range(160):                     # calm baseline, fully warmed
+        price *= 1.0005 if i % 2 == 0 else 0.9995
+        calm.update(price)
+    calm_risk = calm.risk()
+    shocked = EwmaVolEstimator()
+    price = 100.0
+    for i in range(140):
+        price *= 1.0005 if i % 2 == 0 else 0.9995
+        shocked.update(price)
+    for i in range(20):                      # 5% swings: a real expansion
+        price *= 1.05 if i % 2 == 0 else 0.95
+        shocked.update(price)
+    shock_risk = shocked.risk()
+
+    # 3) payload round-trip keeps the honesty fields
+    back = VolatilityAssessment.from_payload(empty.to_payload())
+
+    invariants = {
+        "no_prices_is_no_data_with_named_blockers": (
+            empty.status == "no_data" and empty.volatility_risk is None
+            and len(empty.blockers) >= 1
+            and all(isinstance(b, str) and b for b in empty.blockers)),
+        "warmup_refuses_to_guess": early is None,
+        "expansion_is_measured_above_calm": (
+            isinstance(shock_risk, float) and 0.0 < shock_risk <= 1.0
+            and isinstance(calm_risk, float)
+            and shock_risk > calm_risk),
+        "block_threshold_is_the_named_constant": VOL_RISK_BLOCK == 0.85,
+        "payload_round_trip_keeps_honesty": (
+            back.status == "no_data" and back.volatility_risk is None
+            and tuple(back.blockers) == tuple(empty.blockers)),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Volatility sentinel honesty (intelligence)",
+        "module": "aureon/intelligence/volatility_sentinel.py",
+        "passed": passed,
+        "metrics": {
+            "blockers_named": len(empty.blockers),
+            "early_risk": early,
+            "calm_risk": calm_risk,
+            "shock_risk": shock_risk,
+            "block_threshold": VOL_RISK_BLOCK,
+        },
+        "evidence": (
+            f"a priceless sentinel answered no_data with {len(empty.blockers)} "
+            "named blockers and no invented risk; the estimator returned None "
+            "under warm-up; a 5%-swing expansion measured "
+            f"{shock_risk if shock_risk is None else round(shock_risk, 4)} "
+            f"against a calm baseline of "
+            f"{calm_risk if calm_risk is None else round(calm_risk, 4)}; the "
+            "block threshold is the named 0.85; the assessment payload "
+            "round-tripped with status and blockers intact"
+        ),
+        "invariants": invariants,
+    }
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -5662,6 +5858,8 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Open benchmark honesty (measured vs cited)", b62_open_benchmark_honesty),
     ("Benchmark coverage (the march to 100%)", b63_benchmark_coverage),
     ("Core field & bus contract (the foundational wheel)", b64_core_field_contract),
+    ("Engine room contract (inhouse_ai)", b65_engine_room_contract),
+    ("Volatility sentinel honesty (intelligence)", b66_volatility_sentinel_honesty),
 ]
 
 

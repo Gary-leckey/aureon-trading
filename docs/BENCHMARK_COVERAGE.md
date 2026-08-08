@@ -3,9 +3,9 @@
 > Derived from the committed Tier-A report + the filesystem. Nothing invented;
 > the uncovered list is the roadmap, the ratchet makes progress one-way.
 
-- Tier-A benchmarks: **64** (all passed: True)
-- Unique modules pinned: **60** of 1127 on disk
-- Domain coverage: **11/40** (0.275)
+- Tier-A benchmarks: **66** (all passed: True)
+- Unique modules pinned: **62** of 1127 on disk
+- Domain coverage: **13/40** (0.325)
 
 ## Per-domain
 
@@ -30,9 +30,9 @@
 | exchanges | 41 | 0 | **no** |
 | generated | 3 | 0 | **no** |
 | harmonic | 35 | 2 | yes |
-| inhouse_ai | 9 | 0 | **no** |
+| inhouse_ai | 9 | 1 | yes |
 | integrations | 20 | 0 | **no** |
-| intelligence | 36 | 0 | **no** |
+| intelligence | 36 | 1 | yes |
 | miner | 2 | 0 | **no** |
 | monitors | 26 | 0 | **no** |
 | observer | 15 | 0 | **no** |
@@ -71,9 +71,7 @@
 - `decoders` — 12 modules, zero pins
 - `exchanges` — 41 modules, zero pins
 - `generated` — 3 modules, zero pins
-- `inhouse_ai` — 9 modules, zero pins
 - `integrations` — 20 modules, zero pins
-- `intelligence` — 36 modules, zero pins
 - `miner` — 2 modules, zero pins
 - `monitors` — 26 modules, zero pins
 - `observer` — 15 modules, zero pins

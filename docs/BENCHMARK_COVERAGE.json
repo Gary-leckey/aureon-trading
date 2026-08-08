@@ -1,7 +1,7 @@
 {
   "status": "measured",
   "blocker": "",
-  "benchmarks": 64,
+  "benchmarks": 66,
   "all_rows_passed": true,
   "pinned_modules": [
     "aureon/accounting/client_ledger.py",
@@ -45,6 +45,8 @@
     "aureon/core/hnc_field.py",
     "aureon/harmonic/phi_bridge_mesh.py",
     "aureon/harmonic/rainbow_reference.py",
+    "aureon/inhouse_ai/llm_adapter.py",
+    "aureon/intelligence/volatility_sentinel.py",
     "aureon/operator/acquisition.py",
     "aureon/operator/bake.py",
     "aureon/operator/cognition.py",
@@ -211,8 +213,10 @@
     },
     "inhouse_ai": {
       "modules": 9,
-      "pinned": [],
-      "covered": false
+      "pinned": [
+        "aureon/inhouse_ai/llm_adapter.py"
+      ],
+      "covered": true
     },
     "integrations": {
       "modules": 20,
@@ -221,8 +225,10 @@
     },
     "intelligence": {
       "modules": 36,
-      "pinned": [],
-      "covered": false
+      "pinned": [
+        "aureon/intelligence/volatility_sentinel.py"
+      ],
+      "covered": true
     },
     "miner": {
       "modules": 2,
@@ -348,6 +354,8 @@
     "cognition",
     "core",
     "harmonic",
+    "inhouse_ai",
+    "intelligence",
     "operator",
     "queen",
     "saas",
@@ -368,9 +376,7 @@
     "decoders",
     "exchanges",
     "generated",
-    "inhouse_ai",
     "integrations",
-    "intelligence",
     "miner",
     "monitors",
     "observer",
@@ -385,7 +391,7 @@
     "utils",
     "wisdom"
   ],
-  "domain_coverage_fraction": 0.275,
+  "domain_coverage_fraction": 0.325,
   "total_modules": 1127,
-  "module_pin_count": 60
+  "module_pin_count": 62
 }
