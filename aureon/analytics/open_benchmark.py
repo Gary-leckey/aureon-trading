@@ -205,6 +205,21 @@ def run_gsm8k(cog: Any, dataset: Dataset) -> Dict[str, Any]:
             "provenance": dataset.provenance, "results": results}
 
 
+_CODE_FENCE = re.compile(r"```(?:python|py)?[ \t]*\n(.*?)```", re.DOTALL)
+
+
+def _extract_code(text: str) -> str:
+    """Pull the code out of a chat answer — fenced ```python blocks first
+    (standard harness practice: a raw markdown fence is a Python syntax
+    error, which would fail every fenced answer regardless of the code
+    inside), falling back to the raw text when the answer is already bare
+    code."""
+    blocks = _CODE_FENCE.findall(text or "")
+    if blocks:
+        return "\n\n".join(b.strip("\n") for b in blocks)
+    return text or ""
+
+
 def _guarded_exec(program: str, timeout_s: float = 10.0) -> bool:
     """HumanEval check execution in a subprocess with a hard timeout — the
     standard harness practice, on an offline box, for OUR adapter's output."""
@@ -223,12 +238,15 @@ def run_humaneval(cog: Any, dataset: Dataset) -> Dict[str, Any]:
     """Measured HumanEval subset pass@1 through the one door."""
     results, passed, ok = [], 0, 0
     for item in dataset.items:
-        res = cog.reason("Complete this Python function. Return ONLY the full "
-                         f"function definition.\n\n{item['prompt']}")
+        res = cog.reason(
+            "Complete this Python function. Reply with the complete function "
+            "definition inside one ```python code block — the code must be in "
+            "the answer text itself; do not write it to a file.\n\n"
+            f"{item['prompt']}")
         status = res.status()
         hit = False
         if status == "ok" and res.text:
-            program = (item["prompt"] + "\n" + res.text + "\n"
+            program = (item["prompt"] + "\n" + _extract_code(res.text) + "\n"
                        + item["test"] + f"\ncheck({item['entry_point']})\n")
             hit = _guarded_exec(program)
         ok += status == "ok"

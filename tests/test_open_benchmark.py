@@ -109,6 +109,23 @@ def _fixture_ds():
     ], provenance={"license": "labeled fixture", "items_total": 2})
 
 
+def test_humaneval_scorer_unwraps_fenced_code_honest_both_ways():
+    from aureon.analytics.open_benchmark import run_humaneval
+
+    # like real HumanEval, the prompt alone is valid Python (docstring body)
+    ds = Dataset(name="humaneval", items=[{
+        "task_id": "T/0", "prompt": 'def add2(x):\n    """add 2"""\n',
+        "entry_point": "add2",
+        "test": "def check(f):\n    assert f(1) == 3\n"}],
+        provenance={"license": "labeled fixture", "items_total": 1})
+    good = run_humaneval(
+        _cog(_Plan(["```python\ndef add2(x):\n    return x + 2\n```"])), ds)
+    assert good["passed"] == 1 and good["pass_at_1"] == 1.0
+    wrong = run_humaneval(
+        _cog(_Plan(["```python\ndef add2(x):\n    return x + 5\n```"])), ds)
+    assert wrong["passed"] == 0 and wrong["pass_at_1"] == 0.0
+
+
 def test_scorer_counts_only_measured_matches():
     right = run_gsm8k(_cog(_Plan(["The answer is 4.", "The answer is 15."])),
                       _fixture_ds())
