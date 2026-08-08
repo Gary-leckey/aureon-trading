@@ -1,7 +1,7 @@
 {
   "status": "measured",
   "blocker": "",
-  "benchmarks": 74,
+  "benchmarks": 76,
   "all_rows_passed": true,
   "pinned_modules": [
     "aureon/accounting/client_ledger.py",
@@ -57,6 +57,7 @@
     "aureon/operator/coherence_gate.py",
     "aureon/operator/heart.py",
     "aureon/operator/prompt_router.py",
+    "aureon/portfolio/cost_basis_tracker.py",
     "aureon/queen/queen_conscience.py",
     "aureon/saas/coverage.py",
     "aureon/scanners/aureon_strategic_warfare_scanner.py",
@@ -65,6 +66,7 @@
     "aureon/swarm/company.py",
     "aureon/swarm/containment.py",
     "aureon/swarm/fleadh.py",
+    "aureon/trading/dynamic_margin_sizer.py",
     "aureon/utils/adaptive_prime_profit_gate.py",
     "aureon/vault/voice/hash_resonance_index.py",
     "aureon/vault/voice/meta_cognition_observer.py",
@@ -275,8 +277,10 @@
     },
     "portfolio": {
       "modules": 32,
-      "pinned": [],
-      "covered": false
+      "pinned": [
+        "aureon/portfolio/cost_basis_tracker.py"
+      ],
+      "covered": true
     },
     "queen": {
       "modules": 80,
@@ -338,8 +342,10 @@
     },
     "trading": {
       "modules": 94,
-      "pinned": [],
-      "covered": false
+      "pinned": [
+        "aureon/trading/dynamic_margin_sizer.py"
+      ],
+      "covered": true
     },
     "utils": {
       "modules": 42,
@@ -385,11 +391,13 @@
     "monitors",
     "observer",
     "operator",
+    "portfolio",
     "queen",
     "saas",
     "scanners",
     "strategies",
     "swarm",
+    "trading",
     "utils",
     "vault",
     "wisdom"
@@ -408,14 +416,12 @@
     "generated",
     "integrations",
     "miner",
-    "portfolio",
     "s51",
     "search",
     "simulation",
-    "swarm_motion",
-    "trading"
+    "swarm_motion"
   ],
-  "domain_coverage_fraction": 0.525,
+  "domain_coverage_fraction": 0.575,
   "total_modules": 1127,
-  "module_pin_count": 70
+  "module_pin_count": 72
 }

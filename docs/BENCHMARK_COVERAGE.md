@@ -3,9 +3,9 @@
 > Derived from the committed Tier-A report + the filesystem. Nothing invented;
 > the uncovered list is the roadmap, the ratchet makes progress one-way.
 
-- Tier-A benchmarks: **74** (all passed: True)
-- Unique modules pinned: **70** of 1127 on disk
-- Domain coverage: **21/40** (0.525)
+- Tier-A benchmarks: **76** (all passed: True)
+- Unique modules pinned: **72** of 1127 on disk
+- Domain coverage: **23/40** (0.575)
 
 ## Per-domain
 
@@ -37,7 +37,7 @@
 | monitors | 26 | 1 | yes |
 | observer | 15 | 1 | yes |
 | operator | 33 | 6 | yes |
-| portfolio | 32 | 0 | **no** |
+| portfolio | 32 | 1 | yes |
 | queen | 80 | 1 | yes |
 | s51 | 6 | 0 | **no** |
 | saas | 16 | 1 | yes |
@@ -47,7 +47,7 @@
 | strategies | 36 | 1 | yes |
 | swarm | 10 | 4 | yes |
 | swarm_motion | 5 | 0 | **no** |
-| trading | 94 | 0 | **no** |
+| trading | 94 | 1 | yes |
 | utils | 42 | 1 | yes |
 | vault | 41 | 6 | yes |
 | wisdom | 37 | 1 | yes |
@@ -71,9 +71,7 @@
 - `generated` — 3 modules, zero pins
 - `integrations` — 20 modules, zero pins
 - `miner` — 2 modules, zero pins
-- `portfolio` — 32 modules, zero pins
 - `s51` — 6 modules, zero pins
 - `search` — 5 modules, zero pins
 - `simulation` — 35 modules, zero pins
 - `swarm_motion` — 5 modules, zero pins
-- `trading` — 94 modules, zero pins
