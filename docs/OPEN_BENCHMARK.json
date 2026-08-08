@@ -1,18 +1,19 @@
 {
-  "adapter": "AureonStubAdapter",
+  "adapter": "AureonLocalAdapter",
+  "model": "qwen2.5:3b-instruct",
   "aureon_measured": {
     "gsm8k": {
       "dataset": "gsm8k",
       "n": 25,
       "ok_turns": 25,
-      "correct": 0,
-      "accuracy": 0.0,
+      "correct": 16,
+      "accuracy": 0.64,
       "provenance": {
         "source_url": "https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/test.jsonl",
         "sha256": "3730d312f6e3440559ace48831e51066acaca737f6eabec99bccb9e4b3c39d14",
         "bytes": 749738,
         "license": "MIT (openai/grade-school-math)",
-        "retrieved_at": "2026-08-08T08:16:59Z",
+        "retrieved_at": "2026-08-08T10:09:35Z",
         "task": "grade-school math word problems (exact-match final number)",
         "items_used": 25,
         "items_total": 1319
@@ -20,177 +21,177 @@
       "results": [
         {
           "status": "ok",
-          "got": null,
+          "got": "18",
           "gold": "18",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "3",
           "gold": "3",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "70000",
           "gold": "70000",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "540",
           "gold": "540",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "20",
           "gold": "20",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "16",
           "gold": "64",
           "correct": false,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "260",
           "gold": "260",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "120",
           "gold": "160",
           "correct": false,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "85",
           "gold": "45",
           "correct": false,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "460",
           "gold": "460",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "366",
           "gold": "366",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "794",
           "gold": "694",
           "correct": false,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "12",
           "gold": "13",
           "correct": false,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "10",
           "gold": "18",
           "correct": false,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "60",
           "gold": "60",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "125",
           "gold": "125",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "300",
           "gold": "230",
           "correct": false,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "57500",
           "gold": "57500",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "4",
           "gold": "7",
           "correct": false,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "6",
           "gold": "6",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "3",
           "gold": "15",
           "correct": false,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "14",
           "gold": "14",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "7",
           "gold": "7",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "8",
           "gold": "8",
-          "correct": false,
+          "correct": true,
           "envelope": true
         },
         {
           "status": "ok",
-          "got": null,
+          "got": "26",
           "gold": "26",
-          "correct": false,
+          "correct": true,
           "envelope": true
         }
       ]
@@ -199,14 +200,14 @@
       "dataset": "humaneval",
       "n": 25,
       "ok_turns": 25,
-      "passed": 0,
-      "pass_at_1": 0.0,
+      "passed": 12,
+      "pass_at_1": 0.48,
       "provenance": {
         "source_url": "https://raw.githubusercontent.com/openai/human-eval/master/data/HumanEval.jsonl.gz",
         "sha256": "b796127e635a67f93fb35c04f4cb03cf06f38c8072ee7cee8833d7bee06979ef",
         "bytes": 44877,
         "license": "MIT (openai/human-eval)",
-        "retrieved_at": "2026-08-08T08:18:07Z",
+        "retrieved_at": "2026-08-08T10:38:44Z",
         "task": "Python function synthesis (pass@1 via guarded execution)",
         "items_used": 25,
         "items_total": 164
@@ -225,17 +226,17 @@
         {
           "task_id": "HumanEval/2",
           "status": "ok",
-          "passed": false
+          "passed": true
         },
         {
           "task_id": "HumanEval/3",
           "status": "ok",
-          "passed": false
+          "passed": true
         },
         {
           "task_id": "HumanEval/4",
           "status": "ok",
-          "passed": false
+          "passed": true
         },
         {
           "task_id": "HumanEval/5",
@@ -250,12 +251,12 @@
         {
           "task_id": "HumanEval/7",
           "status": "ok",
-          "passed": false
+          "passed": true
         },
         {
           "task_id": "HumanEval/8",
           "status": "ok",
-          "passed": false
+          "passed": true
         },
         {
           "task_id": "HumanEval/9",
@@ -275,7 +276,7 @@
         {
           "task_id": "HumanEval/12",
           "status": "ok",
-          "passed": false
+          "passed": true
         },
         {
           "task_id": "HumanEval/13",
@@ -290,12 +291,12 @@
         {
           "task_id": "HumanEval/15",
           "status": "ok",
-          "passed": false
+          "passed": true
         },
         {
           "task_id": "HumanEval/16",
           "status": "ok",
-          "passed": false
+          "passed": true
         },
         {
           "task_id": "HumanEval/17",
@@ -305,7 +306,7 @@
         {
           "task_id": "HumanEval/18",
           "status": "ok",
-          "passed": false
+          "passed": true
         },
         {
           "task_id": "HumanEval/19",
@@ -325,17 +326,17 @@
         {
           "task_id": "HumanEval/22",
           "status": "ok",
-          "passed": false
+          "passed": true
         },
         {
           "task_id": "HumanEval/23",
           "status": "ok",
-          "passed": false
+          "passed": true
         },
         {
           "task_id": "HumanEval/24",
           "status": "ok",
-          "passed": false
+          "passed": true
         }
       ]
     }

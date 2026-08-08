@@ -1,13 +1,13 @@
 # Open benchmark — Aureon vs the published competition
 
-Adapter resolved by the one door: `AureonStubAdapter`
+Adapter resolved by the one door: `AureonLocalAdapter` — model `qwen2.5:3b-instruct`
 
 ## Aureon (measured here)
 
 | Set | n | ok turns | score |
 |---|---|---|---|
-| GSM8K | 25 | 25 | 0.0 |
-| HumanEval | 25 | 25 | 0.0 |
+| GSM8K | 25 | 25 | 0.64 |
+| HumanEval | 25 | 25 | 0.48 |
 
 ## Competition (vendor-published, cited)
 
