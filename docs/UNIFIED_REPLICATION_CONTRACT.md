@@ -96,8 +96,96 @@ One issue. Two angles. One architecture: observer asks → superposition under H
 
 ---
 
+## Design flow — Aureon OS as dual-angle replicator
+
+```mermaid
+flowchart TD
+    subgraph OBS["Observer / Substrate"]
+        A[Human cognition stream<br/>any question · design · build]
+    end
+
+    subgraph DOOR["One Door"]
+        B[Universal Prompt Router]
+        C{Classify}
+        C -->|simple| D[Single path]
+        C -->|complex multi-family| E[Swarm council<br/>soft probabilities]
+    end
+
+    subgraph SEA["Sea of Possibilities · UED"]
+        F[Open ensemble<br/>repo · skills · tools · APIs · search · model]
+        G[HNC coordination map]
+    end
+
+    subgraph GATES["Governance"]
+        H[Hard boundaries<br/>outer wall]
+        I[Coherence gate<br/>Auris nodes · Γ · island of stability]
+        I -->|full| J1[Full reach]
+        I -->|restricted| J2[Reduced / skills-only / local]
+        I -->|closed| J3[Refuse · honest_unavailable]
+    end
+
+    subgraph HIVE["SG-1 angle · Agents as Replicators"]
+        K[Find → Evaluate → Use]
+        L[Controlled assimilation<br/>realised + validated only]
+        M[Write-back gate]
+    end
+
+    subgraph BAKE["Star Trek angle · Materialise the Cake"]
+        N[Rectify · fuse · consensus]
+        O[Actualise AEMD path]
+        P[Bake until complete]
+    end
+
+    subgraph OUT["Deliverable"]
+        Q[Fully formed result]
+        R[Envelope<br/>sources · knowledge-reach · conscience · Γ · status · trace]
+    end
+
+    A --> B --> C
+    D --> F
+    E --> F
+    F --> G --> H --> I
+    J1 --> K
+    J2 --> K
+    J3 --> R
+    K --> L --> M --> N --> O --> P --> Q --> R
+
+    style OBS fill:#1a1a2e,stroke:#e94560,color:#eee
+    style DOOR fill:#16213e,stroke:#0f3460,color:#eee
+    style SEA fill:#0f3460,stroke:#533483,color:#eee
+    style GATES fill:#1a1a2e,stroke:#e94560,color:#eee
+    style HIVE fill:#16213e,stroke:#e94560,color:#eee
+    style BAKE fill:#0f3460,stroke:#533483,color:#eee
+    style OUT fill:#1a1a2e,stroke:#28a745,color:#eee
+```
+
+### How to read it
+
+| Stage | Angle | Role |
+|-------|--------|------|
+| One door + classify | Shared | Every input enters the same membrane |
+| Sea of possibilities | Shared | Superposition of relevant knowledge paths |
+| Hard boundaries + coherence gate | SG-1 + HNC | Outer wall + living hive aperture |
+| Find → evaluate → use + write-back | SG-1 | Agents assimilate under control |
+| Rectify → actualise → bake | Star Trek | Only the complete cake leaves |
+| Envelope | Shared | Provenance, reach, conscience, status |
+
+**One issue.**
+**Two angles.**
+**One flow:** observer asks → open ensemble under HNC → gate by field → acquire under control → collapse to fully formed result.
+
+---
+
 <!-- editorial: everything below this line is the measured verification appendix,
      added by the maintainers. The prose above is the creator's own. -->
+
+> **Measured-order note (b61):** the built system is *stricter* than the
+> diagram reads left-to-right. In the measured traversal the hard boundary
+> fires **before everything** (the wall turn runs zero pipeline stages
+> before refusing) and the coherence aperture is set **before** grounding
+> opens the sea — governance precedes possibility. The diagram's
+> conceptual grouping is unchanged; the enforcement order on the wire is
+> `wall → route → gate → sea → …`, pinned per run.
 
 ## Appendix — the flow itself is machine-checked (b61)
 
