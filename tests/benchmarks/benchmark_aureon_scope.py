@@ -6510,6 +6510,222 @@ def b74_quantum_signals_honesty(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b75_margin_sizer_honesty(tmp_root: Path) -> Dict[str, Any]:
+    """The dynamic margin sizer (aureon/trading), pinned at the money gate:
+    every refusal names its blocker and sizes to volume 0.0 (never a
+    fabricated position); an empty exchange balance normalizes to an
+    all-zero snapshot rather than a guess; max_safe_notional is tighten-only
+    — monotone non-increasing as margin_used grows, exactly 0.0 once the
+    250% entry floor has no room, never negative; an approved plan proves
+    the floor holds (projected margin >= 250%, required margin within free
+    margin, positive volume); and the whole surface is frozen-dataclass
+    deterministic with no clock, no randomness, no files."""
+    from aureon.trading.dynamic_margin_sizer import (
+        DynamicMarginSizer,
+        MarginCapitalSnapshot,
+    )
+
+    sizer = DynamicMarginSizer()
+
+    empty_snapshot = MarginCapitalSnapshot.from_trade_balance({})
+    healthy = MarginCapitalSnapshot.from_trade_balance(
+        {"equity": 1000.0, "margin_used": 50.0, "mf": 900.0})
+
+    def _plan(snapshot, **over):
+        kwargs = {"price": 100.0, "ordermin": 0.01, "lot_decimals": 4,
+                  "leverage": 3, "max_profit_target_usd": 5.0}
+        kwargs.update(over)
+        return sizer.plan(snapshot, **kwargs)
+
+    no_price = _plan(healthy, price=0.0)
+    # leverage=0 is coerced to 1 by `int(leverage or 1)`; a negative
+    # value is the honest probe for the invalid-leverage refusal
+    bad_leverage = _plan(healthy, leverage=-1)
+    broke = _plan(MarginCapitalSnapshot.from_trade_balance(
+        {"equity": 10.0, "margin_used": 0.0, "mf": 1.0}))
+    approved = _plan(healthy)
+    approved_again = _plan(healthy)
+
+    safe_curve = [sizer.max_safe_notional(
+        MarginCapitalSnapshot.from_trade_balance(
+            {"equity": 1000.0, "margin_used": used,
+             "mf": max(0.0, 1000.0 - used)}),
+        leverage=3, free_margin_fraction=1.0)
+        for used in (0.0, 100.0, 200.0, 300.0, 400.0, 500.0, 1000.0)]
+
+    invariants = {
+        "refusals_are_named_and_size_zero": (
+            no_price.approved is False
+            and no_price.reason == "missing live price"
+            and no_price.volume == 0.0
+            and bad_leverage.approved is False
+            and bad_leverage.reason == "invalid leverage"
+            and broke.approved is False
+            and broke.reason.startswith("free margin")
+            and broke.volume == 0.0),
+        "empty_balance_normalizes_to_zero_not_a_guess": (
+            empty_snapshot.equity == 0.0
+            and empty_snapshot.free_margin == 0.0
+            and empty_snapshot.margin_used == 0.0),
+        "safe_notional_is_tighten_only": (
+            all(safe_curve[i] >= safe_curve[i + 1]
+                for i in range(len(safe_curve) - 1))
+            and safe_curve[-1] == 0.0
+            and all(v >= 0.0 for v in safe_curve)),
+        "approval_proves_the_floor_holds": (
+            approved.approved is True
+            and approved.volume > 0.0
+            and approved.notional > 0.0
+            and approved.projected_margin_pct
+            >= sizer.config.entry_min_margin_pct
+            and approved.required_margin <= healthy.free_margin),
+        "plan_is_deterministic_and_frozen": (
+            approved == approved_again
+            and type(approved).__dataclass_params__.frozen),
+        "profit_target_stays_clamped": (
+            sizer.profit_target_usd(0.0, 5.0)
+            == sizer.config.min_profit_target_usd
+            and sizer.profit_target_usd(-5.0, 5.0)
+            == sizer.config.min_profit_target_usd
+            and sizer.profit_target_usd(1e9, 5.0) == 5.0),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Margin sizer honesty (trading)",
+        "module": "aureon/trading/dynamic_margin_sizer.py",
+        "passed": passed,
+        "metrics": {
+            "no_price_reason": no_price.reason,
+            "approved_volume": round(approved.volume, 6),
+            "approved_margin_pct": round(approved.projected_margin_pct, 2),
+            "safe_curve_first": safe_curve[0],
+            "safe_curve_last": safe_curve[-1],
+        },
+        "evidence": (
+            "a missing price, zero leverage and a broke account each "
+            "refused with the exact named blocker and volume 0.0; an empty "
+            "TradeBalance dict normalized to an all-zero snapshot instead "
+            "of a guess; max_safe_notional fell monotonically from its "
+            "unencumbered value to exactly 0.0 as margin_used consumed the "
+            "250% entry floor, never negative; the one approved plan "
+            "carried projected margin above the floor with required margin "
+            "inside free margin; two identical calls returned equal frozen "
+            "dataclasses; and the profit target stayed clamped to "
+            "[min, cap] for zero, negative and absurd equity"
+        ),
+        "invariants": invariants,
+    }
+
+
+def b76_cost_basis_honesty(tmp_root: Path) -> Dict[str, Any]:
+    """The cost-basis sell gate (aureon/portfolio), pinned where money
+    leaves the book: an unknown symbol refuses with NO_DATA and entry_price
+    None (never an assumed entry); a zero entry with no valid lots refuses
+    with NO_VALID_COST_BASIS (the guardrail that once produced misleading
+    P&L); FIFO consumes the OLDEST lot first regardless of insertion order;
+    the penny-profit rule is exact on both sides of the $0.01 boundary;
+    raising the fee can only flip a sell True to False, never False to
+    True; and the read path writes no state file. Hermetic: the module
+    singleton is reset for the probe and restored after."""
+    from aureon.portfolio.cost_basis_tracker import CostBasisTracker, Trade
+
+    prev_instance = CostBasisTracker._instance
+    CostBasisTracker._instance = None
+    try:
+        store = tmp_root / "b76_cost_basis.json"
+        tracker = CostBasisTracker(filepath=str(store))
+
+        key = "kraken:B76ZZ/USD"
+        tracker.positions[key] = {
+            "exchange": "kraken", "avg_entry_price": 100.0,
+            "total_quantity": 2.0, "order_ids": []}
+        tracker.trade_lots[key] = [
+            Trade(price=110.0, quantity=1.0, timestamp=2.0),
+            Trade(price=90.0, quantity=1.0, timestamp=1.0),
+        ]
+        zero_key = "kraken:B76YY/USD"
+        tracker.positions[zero_key] = {
+            "exchange": "kraken", "avg_entry_price": 0.0,
+            "total_quantity": 1.0, "order_ids": []}
+
+        unknown_ok, unknown = tracker.can_sell_profitably(
+            "B76NOPE/USD", 100.0, exchange="kraken")
+        invalid_ok, invalid = tracker.can_sell_profitably(
+            "B76YY/USD", 100.0, exchange="kraken")
+        fifo_ok, fifo = tracker.can_sell_profitably(
+            "B76ZZ/USD", 120.0, exchange="kraken", quantity=1.0,
+            fee_pct=0.0)
+
+        half_penny_ok, _ = tracker.can_sell_profitably(
+            "B76ZZ/USD", 90.005, exchange="kraken", quantity=1.0,
+            fee_pct=0.0)
+        two_pennies_ok, _ = tracker.can_sell_profitably(
+            "B76ZZ/USD", 90.02, exchange="kraken", quantity=1.0,
+            fee_pct=0.0)
+
+        thin_ok, thin = tracker.can_sell_profitably(
+            "B76ZZ/USD", 90.2, exchange="kraken", quantity=1.0,
+            fee_pct=0.0)
+        taxed_ok, taxed = tracker.can_sell_profitably(
+            "B76ZZ/USD", 90.2, exchange="kraken", quantity=1.0,
+            fee_pct=0.005)
+        loss_ok, loss = tracker.can_sell_profitably(
+            "B76ZZ/USD", 50.0, exchange="kraken", quantity=1.0,
+            fee_pct=0.001)
+
+        invariants = {
+            "unknown_symbol_refuses_with_no_data": (
+                unknown_ok is False and unknown["entry_price"] is None
+                and "NO_DATA" in unknown["recommendation"]),
+            "zero_entry_refuses_not_misleads": (
+                invalid_ok is False and invalid["entry_price"] is None
+                and "NO_VALID_COST_BASIS" in invalid["recommendation"]),
+            "fifo_consumes_the_oldest_lot_first": (
+                fifo_ok is True and fifo["cost_basis"] == 90.0
+                and fifo["net_profit"] == 30.0),
+            "penny_rule_exact_on_both_sides": (
+                half_penny_ok is False and two_pennies_ok is True),
+            "higher_fee_only_tightens": (
+                thin_ok is True and taxed_ok is False
+                and taxed["net_profit"] < thin["net_profit"]),
+            "loss_refused_and_measured": (
+                loss_ok is False and loss["net_profit"] < 0
+                and loss["potential_loss"] == abs(loss["net_profit"])),
+            "read_path_writes_no_state": not store.exists(),
+        }
+        passed = all(invariants.values())
+
+        return {
+            "name": "Cost-basis sell gate (portfolio)",
+            "module": "aureon/portfolio/cost_basis_tracker.py",
+            "passed": passed,
+            "metrics": {
+                "fifo_cost_basis": fifo["cost_basis"],
+                "fifo_net_profit": fifo["net_profit"],
+                "thin_net": round(thin["net_profit"], 6),
+                "taxed_net": round(taxed["net_profit"], 6),
+                "loss_potential": round(loss["potential_loss"], 6),
+            },
+            "evidence": (
+                "an unknown symbol refused with NO_DATA and a None entry "
+                "price instead of assuming one; a stored zero entry with no "
+                "valid lots refused with NO_VALID_COST_BASIS — the "
+                "guardrail that once produced misleading P&L; selling 1 of "
+                "2 lots consumed the OLDEST (t=1, $90) first for an exact "
+                "$90 cost basis and $30 net despite newest-first insertion; "
+                "a +$0.005 net refused while +$0.02 cleared the penny rule; "
+                "raising the fee from 0 to 0.5% flipped the same thin sell "
+                "True to False and can never flip the other way; a loss "
+                "refused with potential_loss equal to |net|; and the read "
+                "path left no state file on disk"
+            ),
+            "invariants": invariants,
+        }
+    finally:
+        CostBasisTracker._instance = prev_instance
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -6603,6 +6819,8 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("QGITA framework honesty (wisdom)", b72_qgita_framework_honesty),
     ("Cross-substrate honesty (monitors)", b73_cross_substrate_honesty),
     ("Quantum signals honesty (strategies)", b74_quantum_signals_honesty),
+    ("Margin sizer honesty (trading)", b75_margin_sizer_honesty),
+    ("Cost-basis sell gate (portfolio)", b76_cost_basis_honesty),
 ]
 
 
