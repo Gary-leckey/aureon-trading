@@ -5249,6 +5249,120 @@ def b61_unified_replication_contract(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b62_open_benchmark_honesty(tmp_root: Path) -> Dict[str, Any]:
+    """The open-benchmark harness, pinned: Aureon is measured against the
+    published competition WITHOUT ever bending a number. Datasets are
+    provenance-stamped open sources (URL + sha256 + license) and an
+    unreachable source yields an honest empty set with the blocker named;
+    every item runs through the ONE DOOR and carries an envelope; the
+    scorer counts only measured matches (a scripted correct answer scores,
+    a wrong one does not — honest in both directions); every competition
+    row is a CITATION (source URL + vendor_published label, no naked
+    numbers); and the architecture table claims only Tier-A-pinned
+    features. Offline-safe; driver adapters are LABELED harness doubles."""
+    from aureon.analytics.open_benchmark import (
+        ARCHITECTURE_CONTRACT,
+        COMPETITION,
+        VENDOR_PUBLISHED,
+        Dataset,
+        fetch_dataset,
+        run_gsm8k,
+    )
+    from aureon.inhouse_ai.llm_adapter import LLMResponse, StreamChunk
+    from aureon.operator.cognition import AureonCognition
+
+    class _Plan:
+        """LABELED harness double: fixed scripted answers, one per call."""
+
+        model = "plan-harness"
+
+        def __init__(self, finals: List[str]):
+            self.finals = list(finals)
+            self.calls = 0
+
+        def prompt(self, messages, system="", tools=None, max_tokens=4096,
+                   temperature=0.7, **k):
+            text = self.finals[min(self.calls, len(self.finals) - 1)]
+            self.calls += 1
+            return LLMResponse(text=text, stop_reason="end_turn", model=self.model)
+
+        def stream(self, *a, **k):
+            yield StreamChunk(done=True)
+
+    def _cog(adapter: Any) -> AureonCognition:
+        return AureonCognition(adapter=adapter, join_mesh=False,
+                               conscience=None, mesh_broadcast=False)
+
+    # honest offline: no cache → empty set with the blocker NAMED
+    empty = fetch_dataset("gsm8k", offline=True, cache_dir=tmp_root / "none")
+    # stamped fixture cache reads back with its provenance intact
+    cache = tmp_root / "cache"
+    cache.mkdir()
+    (cache / "gsm8k.jsonl").write_text(
+        '{"question": "2+2?", "answer": "s\\n#### 4"}\n', encoding="utf-8")
+    (cache / "gsm8k.provenance.json").write_text(json.dumps(
+        {"source_url": "https://example/fixture", "sha256": "ab" * 32,
+         "license": "MIT (labeled fixture)"}), encoding="utf-8")
+    stamped = fetch_dataset("gsm8k", offline=True, cache_dir=cache)
+
+    fixture = Dataset(name="gsm8k", items=[
+        {"question": "What is 2+2?", "answer": "s\n#### 4"},
+        {"question": "What is 3*5?", "answer": "p\n#### 15"},
+    ], provenance={"license": "labeled fixture", "items_total": 2})
+    right = run_gsm8k(_cog(_Plan(["It is 4.", "It is 15."])), fixture)
+    wrong = run_gsm8k(_cog(_Plan(["It is 7.", "no number at all,"])), fixture)
+
+    invariants = {
+        "unreachable_source_is_an_honest_blocker": (
+            empty.items == []
+            and empty.provenance.get("status") == "honest_unavailable"
+            and "source unreachable" in empty.provenance.get("blocker", "")),
+        "provenance_stamp_rides_the_cache": (
+            len(stamped.items) == 1
+            and stamped.provenance.get("sha256") == "ab" * 32
+            and "MIT" in stamped.provenance.get("license", "")),
+        "scorer_honest_in_both_directions": (
+            right["correct"] == 2 and right["accuracy"] == 1.0
+            and wrong["correct"] == 0 and wrong["accuracy"] == 0.0),
+        "every_item_through_the_one_door": all(
+            r["envelope"] for r in right["results"] + wrong["results"]),
+        "competition_cited_never_claimed": (
+            len(COMPETITION) >= 3
+            and all(row["source"].startswith("https://")
+                    and row["label"] == VENDOR_PUBLISHED
+                    and all(v is None for k, v in row["scores"].items()
+                            if k != "note")
+                    for row in COMPETITION)),
+        "architecture_claims_only_pinned": all(
+            row["aureon"].startswith("measured — b")
+            and row["raw_model_api"] == "not offered"
+            for row in ARCHITECTURE_CONTRACT),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Open benchmark honesty (measured vs cited)",
+        "module": "aureon/analytics/open_benchmark.py",
+        "passed": passed,
+        "metrics": {
+            "right_accuracy": right["accuracy"],
+            "wrong_accuracy": wrong["accuracy"],
+            "competition_rows": len(COMPETITION),
+            "contract_rows": len(ARCHITECTURE_CONTRACT),
+        },
+        "evidence": (
+            "the unreachable source returned an honest empty set with the "
+            "blocker named; the fixture cache read back with its sha256 and "
+            "MIT stamp; the scorer measured 1.0 on scripted-correct and 0.0 "
+            "on scripted-wrong answers with every item enveloped through the "
+            "one door; every competition row is a source-URL citation "
+            "labeled vendor_published with no naked numbers; the "
+            "architecture table cites only Tier-A-pinned features"
+        ),
+        "invariants": invariants,
+    }
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -5329,6 +5443,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Heart charter (alive / love / power)", b59_heart_charter),
     ("Harmonic rainbow (love as the ultimate node)", b60_harmonic_rainbow),
     ("Unified replication contract (two angles, one path)", b61_unified_replication_contract),
+    ("Open benchmark honesty (measured vs cited)", b62_open_benchmark_honesty),
 ]
 
 

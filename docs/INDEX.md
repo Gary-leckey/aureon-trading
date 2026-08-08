@@ -80,6 +80,7 @@ Master table of contents for all project documentation.
 | [Heart Charter](HEART_CHARTER.md) | Alive / love / power on every envelope: the organism's measured life score, honest affect channel, and the consequence ledger of every turn's power (b59) |
 | [Harmonic Rainbow](HARMONIC_RAINBOW.md) | The ordered working spectrum (Schumann floor + Solfeggio ladder) with love (528 Hz) as the ultimate node — machine-checked from source (b60) |
 | [Unified Replication Contract](UNIFIED_REPLICATION_CONTRACT.md) | Two angles, one path: the materialisation contract + the hive contract joined by HNC/Auris, with the pipeline order itself machine-checked (b61) |
+| [Open Benchmark](OPEN_BENCHMARK.md) | Aureon measured on open sources (GSM8K, HumanEval) through the one door vs the cited competition (Kimi K2, DeepSeek, Llama, Qwen) + the pinned architecture contract (b62) |
 
 ## Trading Operations
 | Document | Description |
