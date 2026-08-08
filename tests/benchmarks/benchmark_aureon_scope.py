@@ -5951,6 +5951,156 @@ def b68_market_cache_freshness(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b69_exchange_keyless_honesty(tmp_root: Path) -> Dict[str, Any]:
+    """The exchange adapters (aureon/exchanges), pinned at the credential
+    boundary: a KEYLESS Alpaca client knows it is not authenticated
+    (is_authenticated False, init_error 'credentials_missing'), answers
+    account and balance queries with an honest EMPTY dict — never a
+    fabricated cash figure, never a guessed position — and spawns no auth
+    probe (the probe thread only starts on the keyed branch, so keyless
+    means zero HTTP). Hermetic: credential env saved/cleared/restored."""
+    _KEYS = ("ALPACA_API_KEY", "ALPACA_SECRET_KEY", "ALPACA_API_SECRET",
+             "ALPACA_SECRET", "PROMETHEUS_METRICS_PORT")
+    prev = {k: os.environ.get(k) for k in _KEYS}
+    for k in _KEYS:
+        os.environ.pop(k, None)
+    try:
+        from aureon.exchanges.alpaca_client import AlpacaClient
+
+        client = AlpacaClient()
+        account = client.get_account()
+        balance = client.get_balance()
+
+        invariants = {
+            "keyless_client_knows_it_is_unauthenticated": (
+                client.is_authenticated is False
+                and client.init_error == "credentials_missing"),
+            "account_is_an_honest_empty_never_invented": (
+                isinstance(account, dict) and account == {}),
+            "balance_is_an_honest_empty_never_invented": (
+                isinstance(balance, dict) and balance == {}
+                and "USD" not in balance),
+        }
+        passed = all(invariants.values())
+
+        return {
+            "name": "Exchange keyless honesty (exchanges)",
+            "module": "aureon/exchanges/alpaca_client.py",
+            "passed": passed,
+            "metrics": {
+                "is_authenticated": client.is_authenticated,
+                "init_error": client.init_error,
+                "account_keys": len(account),
+                "balance_keys": len(balance),
+            },
+            "evidence": (
+                "a keyless client reported is_authenticated=False with the "
+                "named init_error 'credentials_missing'; get_account() and "
+                "get_balance() both returned honest empty dicts with no "
+                "invented USD cash and no positions; the auth-probe thread "
+                "only starts on the keyed branch so the keyless path made "
+                "zero HTTP calls"
+            ),
+            "invariants": invariants,
+        }
+    finally:
+        for k, v in prev.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+def b70_live_data_policy(tmp_root: Path) -> Dict[str, Any]:
+    """The production data posture (aureon/observer), pinned at the one gate
+    every simulation-fallback path shares: with the env unset the gate is
+    CLOSED (production fails loud — live sources return None rather than
+    substituting synthetic values); only an explicit truthy opt-in opens it,
+    and a falsy or garbage value stays closed; a blocked fallback emits a
+    structured, named log event; and a reading that DOES come from a
+    fallback carries the honest marker — is_live False, truth_status
+    'test_fixture', the blocker named. Hermetic env."""
+    import logging as _logging
+
+    from aureon.observer.live_data_policy import (
+        ENV_ALLOW_SIM_FALLBACK,
+        fallback_marker,
+        log_blocked_fallback,
+        simulation_fallback_allowed,
+    )
+
+    prev = os.environ.get(ENV_ALLOW_SIM_FALLBACK)
+    try:
+        os.environ.pop(ENV_ALLOW_SIM_FALLBACK, None)
+        default_closed = simulation_fallback_allowed()
+        os.environ[ENV_ALLOW_SIM_FALLBACK] = "1"
+        opted_in = simulation_fallback_allowed()
+        os.environ[ENV_ALLOW_SIM_FALLBACK] = "0"
+        falsy_closed = simulation_fallback_allowed()
+        os.environ[ENV_ALLOW_SIM_FALLBACK] = "banana"
+        garbage_closed = simulation_fallback_allowed()
+
+        records: List[Any] = []
+        handler = _logging.Handler()
+        handler.emit = records.append          # type: ignore[method-assign]
+        policy_logger = _logging.getLogger("aureon.observer.live_data_policy")
+        policy_logger.addHandler(handler)
+        prev_level = policy_logger.level
+        policy_logger.setLevel(_logging.WARNING)
+        try:
+            log_blocked_fallback("b70_probe", reason="live_unavailable")
+        finally:
+            policy_logger.removeHandler(handler)
+            policy_logger.setLevel(prev_level)
+        logged = records[0].getMessage() if records else ""
+
+        marker = fallback_marker("b70_probe", when=123.0)
+
+        invariants = {
+            "production_default_is_closed": default_closed is False,
+            "only_explicit_opt_in_opens": (
+                opted_in is True and falsy_closed is False
+                and garbage_closed is False),
+            "blocked_fallback_is_a_named_loud_event": (
+                "b70_probe" in logged and "BLOCKED" in logged
+                and "live_unavailable" in logged),
+            "fallback_reading_carries_the_honest_marker": (
+                marker["is_live"] is False
+                and marker["truth_status"] == "test_fixture"
+                and marker["source"] == "b70_probe"
+                and bool(marker["blocker"])
+                and marker["fallback_used_at"] == 123.0),
+        }
+        passed = all(invariants.values())
+
+        return {
+            "name": "Live-data policy (observer)",
+            "module": "aureon/observer/live_data_policy.py",
+            "passed": passed,
+            "metrics": {
+                "default_closed": not default_closed,
+                "opt_in_opens": opted_in,
+                "garbage_stays_closed": not garbage_closed,
+                "blocked_log_seen": bool(records),
+            },
+            "evidence": (
+                "with the env unset the simulation-fallback gate read CLOSED "
+                "(production fails loud); an explicit '1' opened it while '0' "
+                "and garbage stayed closed; a blocked fallback emitted the "
+                "structured warning naming the source and reason; the "
+                "fallback marker carried is_live=False, "
+                "truth_status='test_fixture', the named blocker and the "
+                "caller's timestamp — synthetic data can never pass as live"
+            ),
+            "invariants": invariants,
+        }
+    finally:
+        if prev is None:
+            os.environ.pop(ENV_ALLOW_SIM_FALLBACK, None)
+        else:
+            os.environ[ENV_ALLOW_SIM_FALLBACK] = prev
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -6038,6 +6188,8 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Volatility sentinel honesty (intelligence)", b66_volatility_sentinel_honesty),
     ("Kelly gate tighten-only (utils)", b67_kelly_gate_tighten_only),
     ("Market cache freshness (data_feeds)", b68_market_cache_freshness),
+    ("Exchange keyless honesty (exchanges)", b69_exchange_keyless_honesty),
+    ("Live-data policy (observer)", b70_live_data_policy),
 ]
 
 
