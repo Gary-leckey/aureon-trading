@@ -81,6 +81,7 @@ Master table of contents for all project documentation.
 | [Harmonic Rainbow](HARMONIC_RAINBOW.md) | The ordered working spectrum (Schumann floor + Solfeggio ladder) with love (528 Hz) as the ultimate node — machine-checked from source (b60) |
 | [Unified Replication Contract](UNIFIED_REPLICATION_CONTRACT.md) | Two angles, one path: the materialisation contract + the hive contract joined by HNC/Auris, with the pipeline order itself machine-checked (b61) |
 | [Open Benchmark](OPEN_BENCHMARK.md) | Aureon measured on open sources (GSM8K, HumanEval) through the one door vs the cited competition (Kimi K2, DeepSeek, Llama, Qwen) + the pinned architecture contract (b62) |
+| [Benchmark Coverage](BENCHMARK_COVERAGE.md) | The march to 100%: which domains/modules carry a Tier-A pin, the named gap roadmap, and the one-way coverage ratchet (b63) |
 
 ## Trading Operations
 | Document | Description |

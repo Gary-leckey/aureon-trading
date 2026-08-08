@@ -4692,6 +4692,28 @@ def b57_borg_acquisition(tmp_root: Path) -> Dict[str, Any]:
 
 
 def b58_coherence_gate(tmp_root: Path) -> Dict[str, Any]:
+    """Hermetic wrapper: the dark probe's contract REQUIRES a dark canonical
+    field, and the live probes must not be tightened by whatever another
+    process on this box happens to be writing to the shared state trace —
+    so the whole benchmark runs with the field/assimilation/affect paths
+    redirected into tmp_root (the same isolation the pytest suite's
+    _dark_field fixture provides), restored afterwards."""
+    iso = {"AUREON_HNC_TRACE_PATH": str(tmp_root / "hermetic_hnc.jsonl"),
+           "AUREON_ASSIMILATION_PATH": str(tmp_root / "hermetic_assim.jsonl"),
+           "AUREON_AFFECT_LAMBDA_PATH": str(tmp_root / "hermetic_affect.json")}
+    prev = {k: os.environ.get(k) for k in iso}
+    os.environ.update(iso)
+    try:
+        return _b58_coherence_gate_probes(tmp_root)
+    finally:
+        for k, v in prev.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+def _b58_coherence_gate_probes(tmp_root: Path) -> Dict[str, Any]:
     """The living membrane, pinned: individual agents do not self-authorize —
     the hive FIELD decides the aperture. Hard boundaries stay the outer wall
     (checked first, absolute); the coherence gate is the inner membrane —
@@ -5363,6 +5385,81 @@ def b62_open_benchmark_honesty(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b63_benchmark_coverage(tmp_root: Path) -> Dict[str, Any]:
+    """The march to 100% is itself pinned: benchmark coverage is MEASURED
+    (committed Tier-A report reconciled against the real filesystem — every
+    pin names a file that exists), the gap is NAMED (uncovered domains listed,
+    never hidden), and progress is a one-way RATCHET (a covered domain or a
+    pinned module can be added but never silently lost — a regression is a
+    named failure, in a fixture and against the committed baseline)."""
+    import json as _json
+
+    from aureon.analytics.benchmark_coverage import (
+        build_coverage,
+        load_baseline,
+        ratchet_check,
+    )
+
+    live = build_coverage()
+    live_ratchet = ratchet_check(live, load_baseline())
+
+    # fixture probe: derivation + ratchet honest in both directions
+    (tmp_root / "aureon" / "alpha").mkdir(parents=True)
+    (tmp_root / "aureon" / "alpha" / "__init__.py").write_text("", encoding="utf-8")
+    (tmp_root / "aureon" / "alpha" / "engine.py").write_text("x = 1\n", encoding="utf-8")
+    (tmp_root / "aureon" / "beta").mkdir(parents=True)
+    (tmp_root / "aureon" / "beta" / "__init__.py").write_text("", encoding="utf-8")
+    rp = tmp_root / "report.json"
+    rp.write_text(_json.dumps({"tier_a": [
+        {"module": "aureon/alpha/engine.py", "passed": True}]}), encoding="utf-8")
+    fix = build_coverage(repo_root=tmp_root, report_path=rp)
+    lost = dict(fix.to_dict())
+    lost["covered_domains"] = ["alpha", "beta"]       # baseline claims more than live
+    lost_verdict = ratchet_check(fix, lost)
+
+    invariants = {
+        "live_coverage_is_measured_from_disk": (
+            live.status == "measured" and live.missing_modules == []
+            and live.benchmarks >= 62 and live.module_pin_count >= 58),
+        "the_gap_is_named_never_hidden": (
+            isinstance(live.uncovered_domains, list)
+            and all(d in live.domains for d in live.uncovered_domains)
+            and all(live.domains[d]["pinned"] == [] for d in live.uncovered_domains)),
+        "committed_baseline_ratchet_holds": live_ratchet["ok"],
+        "fixture_derivation_covered_and_uncovered": (
+            fix.covered_domains == ["alpha"] and fix.uncovered_domains == ["beta"]
+            and fix.domain_coverage_fraction == 0.5),
+        "losing_a_domain_is_a_named_regression": (
+            lost_verdict["ok"] is False
+            and any("beta" in r for r in lost_verdict["regressions"])),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Benchmark coverage (the march to 100%)",
+        "module": "aureon/analytics/benchmark_coverage.py",
+        "passed": passed,
+        "metrics": {
+            "benchmarks": live.benchmarks,
+            "pinned_modules": live.module_pin_count,
+            "total_modules": live.total_modules,
+            "covered_domains": len(live.covered_domains),
+            "fs_domains": len(live.domains),
+            "domain_coverage_fraction": live.domain_coverage_fraction,
+            "uncovered": len(live.uncovered_domains),
+        },
+        "evidence": (
+            f"{live.benchmarks} Tier-A rows pin {live.module_pin_count} real modules "
+            f"across {len(live.covered_domains)}/{len(live.domains)} domains "
+            f"({live.total_modules} modules on disk); every pin resolved to an "
+            f"existing file; {len(live.uncovered_domains)} uncovered domains are "
+            "named as the roadmap; the committed-baseline ratchet held and the "
+            "fixture proved a lost domain fails by name"
+        ),
+        "invariants": invariants,
+    }
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -5444,6 +5541,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Harmonic rainbow (love as the ultimate node)", b60_harmonic_rainbow),
     ("Unified replication contract (two angles, one path)", b61_unified_replication_contract),
     ("Open benchmark honesty (measured vs cited)", b62_open_benchmark_honesty),
+    ("Benchmark coverage (the march to 100%)", b63_benchmark_coverage),
 ]
 
 

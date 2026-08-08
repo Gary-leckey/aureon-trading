@@ -1,0 +1,388 @@
+{
+  "status": "measured",
+  "blocker": "",
+  "benchmarks": 63,
+  "all_rows_passed": true,
+  "pinned_modules": [
+    "aureon/accounting/client_ledger.py",
+    "aureon/analytics/benchmark_coverage.py",
+    "aureon/analytics/historical_replay_validation.py",
+    "aureon/analytics/open_benchmark.py",
+    "aureon/analytics/volatility_sentinel_benchmark.py",
+    "aureon/bio/",
+    "aureon/bio/audio_signal_adapter.py",
+    "aureon/bio/authenticity_discriminator.py",
+    "aureon/bio/brain_reply_membrane.py",
+    "aureon/bio/calibration_curve.py",
+    "aureon/bio/celestial_observatory.py",
+    "aureon/bio/coherence_scan.py",
+    "aureon/bio/cosmic_scan.py",
+    "aureon/bio/counter_frequency_scan.py",
+    "aureon/bio/direction_runtime.py",
+    "aureon/bio/false_discovery.py",
+    "aureon/bio/harmonic_core_scan.py",
+    "aureon/bio/hnc_direction_audit.py",
+    "aureon/bio/image_signal_adapter.py",
+    "aureon/bio/immune_memory.py",
+    "aureon/bio/immune_regulation.py",
+    "aureon/bio/integrity_guard.py",
+    "aureon/bio/market_signal_adapter.py",
+    "aureon/bio/mcp_membrane.py",
+    "aureon/bio/mcp_transport.py",
+    "aureon/bio/multiplicity.py",
+    "aureon/bio/null_calibration.py",
+    "aureon/bio/power_analysis.py",
+    "aureon/bio/proxy_suite.py",
+    "aureon/bio/qgita_calibration.py",
+    "aureon/bio/sacred_lattice_scan.py",
+    "aureon/bio/sky_map.py",
+    "aureon/bio/sky_signal_adapter.py",
+    "aureon/bio/swarm_defense.py",
+    "aureon/bio/video_signal_adapter.py",
+    "aureon/cognition/logic_flow.py",
+    "aureon/cognition/logic_train_audit.py",
+    "aureon/cognition/phenolic_bridge.py",
+    "aureon/harmonic/phi_bridge_mesh.py",
+    "aureon/harmonic/rainbow_reference.py",
+    "aureon/operator/acquisition.py",
+    "aureon/operator/bake.py",
+    "aureon/operator/cognition.py",
+    "aureon/operator/coherence_gate.py",
+    "aureon/operator/heart.py",
+    "aureon/operator/prompt_router.py",
+    "aureon/queen/queen_conscience.py",
+    "aureon/saas/coverage.py",
+    "aureon/swarm/capability_grid.py",
+    "aureon/swarm/company.py",
+    "aureon/swarm/containment.py",
+    "aureon/swarm/fleadh.py",
+    "aureon/vault/voice/hash_resonance_index.py",
+    "aureon/vault/voice/meta_cognition_observer.py",
+    "aureon/vault/voice/persona_miner_bridge.py",
+    "aureon/vault/voice/skill_executor_bridge.py",
+    "aureon/vault/voice/symbolic_life_bridge.py",
+    "aureon/vault/voice/temporal_causality.py",
+    "scripts/validation/benchmark_nasa_sky.py"
+  ],
+  "missing_modules": [],
+  "domains": {
+    "accounting": {
+      "modules": 11,
+      "pinned": [
+        "aureon/accounting/client_ledger.py"
+      ],
+      "covered": true
+    },
+    "alignment": {
+      "modules": 4,
+      "pinned": [],
+      "covered": false
+    },
+    "analytics": {
+      "modules": 46,
+      "pinned": [
+        "aureon/analytics/benchmark_coverage.py",
+        "aureon/analytics/historical_replay_validation.py",
+        "aureon/analytics/open_benchmark.py",
+        "aureon/analytics/volatility_sentinel_benchmark.py"
+      ],
+      "covered": true
+    },
+    "atn": {
+      "modules": 4,
+      "pinned": [],
+      "covered": false
+    },
+    "autonomous": {
+      "modules": 114,
+      "pinned": [],
+      "covered": false
+    },
+    "bio": {
+      "modules": 41,
+      "pinned": [
+        "aureon/bio/",
+        "aureon/bio/audio_signal_adapter.py",
+        "aureon/bio/authenticity_discriminator.py",
+        "aureon/bio/brain_reply_membrane.py",
+        "aureon/bio/calibration_curve.py",
+        "aureon/bio/celestial_observatory.py",
+        "aureon/bio/coherence_scan.py",
+        "aureon/bio/cosmic_scan.py",
+        "aureon/bio/counter_frequency_scan.py",
+        "aureon/bio/direction_runtime.py",
+        "aureon/bio/false_discovery.py",
+        "aureon/bio/harmonic_core_scan.py",
+        "aureon/bio/hnc_direction_audit.py",
+        "aureon/bio/image_signal_adapter.py",
+        "aureon/bio/immune_memory.py",
+        "aureon/bio/immune_regulation.py",
+        "aureon/bio/integrity_guard.py",
+        "aureon/bio/market_signal_adapter.py",
+        "aureon/bio/mcp_membrane.py",
+        "aureon/bio/mcp_transport.py",
+        "aureon/bio/multiplicity.py",
+        "aureon/bio/null_calibration.py",
+        "aureon/bio/power_analysis.py",
+        "aureon/bio/proxy_suite.py",
+        "aureon/bio/qgita_calibration.py",
+        "aureon/bio/sacred_lattice_scan.py",
+        "aureon/bio/sky_map.py",
+        "aureon/bio/sky_signal_adapter.py",
+        "aureon/bio/swarm_defense.py",
+        "aureon/bio/video_signal_adapter.py"
+      ],
+      "covered": true
+    },
+    "bots": {
+      "modules": 33,
+      "pinned": [],
+      "covered": false
+    },
+    "bots_intelligence": {
+      "modules": 22,
+      "pinned": [],
+      "covered": false
+    },
+    "bridges": {
+      "modules": 18,
+      "pinned": [],
+      "covered": false
+    },
+    "code_architect": {
+      "modules": 10,
+      "pinned": [],
+      "covered": false
+    },
+    "cognition": {
+      "modules": 7,
+      "pinned": [
+        "aureon/cognition/logic_flow.py",
+        "aureon/cognition/logic_train_audit.py",
+        "aureon/cognition/phenolic_bridge.py"
+      ],
+      "covered": true
+    },
+    "command_centers": {
+      "modules": 17,
+      "pinned": [],
+      "covered": false
+    },
+    "conversion": {
+      "modules": 11,
+      "pinned": [],
+      "covered": false
+    },
+    "core": {
+      "modules": 77,
+      "pinned": [],
+      "covered": false
+    },
+    "data_feeds": {
+      "modules": 22,
+      "pinned": [],
+      "covered": false
+    },
+    "decoders": {
+      "modules": 12,
+      "pinned": [],
+      "covered": false
+    },
+    "exchanges": {
+      "modules": 41,
+      "pinned": [],
+      "covered": false
+    },
+    "generated": {
+      "modules": 3,
+      "pinned": [],
+      "covered": false
+    },
+    "harmonic": {
+      "modules": 35,
+      "pinned": [
+        "aureon/harmonic/phi_bridge_mesh.py",
+        "aureon/harmonic/rainbow_reference.py"
+      ],
+      "covered": true
+    },
+    "inhouse_ai": {
+      "modules": 9,
+      "pinned": [],
+      "covered": false
+    },
+    "integrations": {
+      "modules": 20,
+      "pinned": [],
+      "covered": false
+    },
+    "intelligence": {
+      "modules": 36,
+      "pinned": [],
+      "covered": false
+    },
+    "miner": {
+      "modules": 2,
+      "pinned": [],
+      "covered": false
+    },
+    "monitors": {
+      "modules": 26,
+      "pinned": [],
+      "covered": false
+    },
+    "observer": {
+      "modules": 15,
+      "pinned": [],
+      "covered": false
+    },
+    "operator": {
+      "modules": 33,
+      "pinned": [
+        "aureon/operator/acquisition.py",
+        "aureon/operator/bake.py",
+        "aureon/operator/cognition.py",
+        "aureon/operator/coherence_gate.py",
+        "aureon/operator/heart.py",
+        "aureon/operator/prompt_router.py"
+      ],
+      "covered": true
+    },
+    "portfolio": {
+      "modules": 32,
+      "pinned": [],
+      "covered": false
+    },
+    "queen": {
+      "modules": 80,
+      "pinned": [
+        "aureon/queen/queen_conscience.py"
+      ],
+      "covered": true
+    },
+    "s51": {
+      "modules": 6,
+      "pinned": [],
+      "covered": false
+    },
+    "saas": {
+      "modules": 16,
+      "pinned": [
+        "aureon/saas/coverage.py"
+      ],
+      "covered": true
+    },
+    "scanners": {
+      "modules": 19,
+      "pinned": [],
+      "covered": false
+    },
+    "search": {
+      "modules": 5,
+      "pinned": [],
+      "covered": false
+    },
+    "simulation": {
+      "modules": 35,
+      "pinned": [],
+      "covered": false
+    },
+    "strategies": {
+      "modules": 36,
+      "pinned": [],
+      "covered": false
+    },
+    "swarm": {
+      "modules": 10,
+      "pinned": [
+        "aureon/swarm/capability_grid.py",
+        "aureon/swarm/company.py",
+        "aureon/swarm/containment.py",
+        "aureon/swarm/fleadh.py"
+      ],
+      "covered": true
+    },
+    "swarm_motion": {
+      "modules": 5,
+      "pinned": [],
+      "covered": false
+    },
+    "trading": {
+      "modules": 94,
+      "pinned": [],
+      "covered": false
+    },
+    "utils": {
+      "modules": 42,
+      "pinned": [],
+      "covered": false
+    },
+    "vault": {
+      "modules": 41,
+      "pinned": [
+        "aureon/vault/voice/hash_resonance_index.py",
+        "aureon/vault/voice/meta_cognition_observer.py",
+        "aureon/vault/voice/persona_miner_bridge.py",
+        "aureon/vault/voice/skill_executor_bridge.py",
+        "aureon/vault/voice/symbolic_life_bridge.py",
+        "aureon/vault/voice/temporal_causality.py"
+      ],
+      "covered": true
+    },
+    "wisdom": {
+      "modules": 37,
+      "pinned": [],
+      "covered": false
+    }
+  },
+  "outside_aureon": [
+    "scripts/validation/benchmark_nasa_sky.py"
+  ],
+  "covered_domains": [
+    "accounting",
+    "analytics",
+    "bio",
+    "cognition",
+    "harmonic",
+    "operator",
+    "queen",
+    "saas",
+    "swarm",
+    "vault"
+  ],
+  "uncovered_domains": [
+    "alignment",
+    "atn",
+    "autonomous",
+    "bots",
+    "bots_intelligence",
+    "bridges",
+    "code_architect",
+    "command_centers",
+    "conversion",
+    "core",
+    "data_feeds",
+    "decoders",
+    "exchanges",
+    "generated",
+    "inhouse_ai",
+    "integrations",
+    "intelligence",
+    "miner",
+    "monitors",
+    "observer",
+    "portfolio",
+    "s51",
+    "scanners",
+    "search",
+    "simulation",
+    "strategies",
+    "swarm_motion",
+    "trading",
+    "utils",
+    "wisdom"
+  ],
+  "domain_coverage_fraction": 0.25,
+  "total_modules": 1127,
+  "module_pin_count": 59
+}

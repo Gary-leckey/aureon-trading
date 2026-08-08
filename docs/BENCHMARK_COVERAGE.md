@@ -1,0 +1,90 @@
+# Benchmark coverage — the march to 100%
+
+> Derived from the committed Tier-A report + the filesystem. Nothing invented;
+> the uncovered list is the roadmap, the ratchet makes progress one-way.
+
+- Tier-A benchmarks: **63** (all passed: True)
+- Unique modules pinned: **59** of 1127 on disk
+- Domain coverage: **10/40** (0.25)
+
+## Per-domain
+
+| Domain | Modules | Pinned | Covered |
+|---|---|---|---|
+| accounting | 11 | 1 | yes |
+| alignment | 4 | 0 | **no** |
+| analytics | 46 | 4 | yes |
+| atn | 4 | 0 | **no** |
+| autonomous | 114 | 0 | **no** |
+| bio | 41 | 30 | yes |
+| bots | 33 | 0 | **no** |
+| bots_intelligence | 22 | 0 | **no** |
+| bridges | 18 | 0 | **no** |
+| code_architect | 10 | 0 | **no** |
+| cognition | 7 | 3 | yes |
+| command_centers | 17 | 0 | **no** |
+| conversion | 11 | 0 | **no** |
+| core | 77 | 0 | **no** |
+| data_feeds | 22 | 0 | **no** |
+| decoders | 12 | 0 | **no** |
+| exchanges | 41 | 0 | **no** |
+| generated | 3 | 0 | **no** |
+| harmonic | 35 | 2 | yes |
+| inhouse_ai | 9 | 0 | **no** |
+| integrations | 20 | 0 | **no** |
+| intelligence | 36 | 0 | **no** |
+| miner | 2 | 0 | **no** |
+| monitors | 26 | 0 | **no** |
+| observer | 15 | 0 | **no** |
+| operator | 33 | 6 | yes |
+| portfolio | 32 | 0 | **no** |
+| queen | 80 | 1 | yes |
+| s51 | 6 | 0 | **no** |
+| saas | 16 | 1 | yes |
+| scanners | 19 | 0 | **no** |
+| search | 5 | 0 | **no** |
+| simulation | 35 | 0 | **no** |
+| strategies | 36 | 0 | **no** |
+| swarm | 10 | 4 | yes |
+| swarm_motion | 5 | 0 | **no** |
+| trading | 94 | 0 | **no** |
+| utils | 42 | 0 | **no** |
+| vault | 41 | 6 | yes |
+| wisdom | 37 | 0 | **no** |
+
+## Pins outside `aureon/`
+
+- `scripts/validation/benchmark_nasa_sky.py`
+
+## Uncovered domains (the roadmap)
+
+- `alignment` — 4 modules, zero pins
+- `atn` — 4 modules, zero pins
+- `autonomous` — 114 modules, zero pins
+- `bots` — 33 modules, zero pins
+- `bots_intelligence` — 22 modules, zero pins
+- `bridges` — 18 modules, zero pins
+- `code_architect` — 10 modules, zero pins
+- `command_centers` — 17 modules, zero pins
+- `conversion` — 11 modules, zero pins
+- `core` — 77 modules, zero pins
+- `data_feeds` — 22 modules, zero pins
+- `decoders` — 12 modules, zero pins
+- `exchanges` — 41 modules, zero pins
+- `generated` — 3 modules, zero pins
+- `inhouse_ai` — 9 modules, zero pins
+- `integrations` — 20 modules, zero pins
+- `intelligence` — 36 modules, zero pins
+- `miner` — 2 modules, zero pins
+- `monitors` — 26 modules, zero pins
+- `observer` — 15 modules, zero pins
+- `portfolio` — 32 modules, zero pins
+- `s51` — 6 modules, zero pins
+- `scanners` — 19 modules, zero pins
+- `search` — 5 modules, zero pins
+- `simulation` — 35 modules, zero pins
+- `strategies` — 36 modules, zero pins
+- `swarm_motion` — 5 modules, zero pins
+- `trading` — 94 modules, zero pins
+- `utils` — 42 modules, zero pins
+- `wisdom` — 37 modules, zero pins
