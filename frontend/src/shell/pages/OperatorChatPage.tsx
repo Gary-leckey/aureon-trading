@@ -33,6 +33,11 @@ interface ResponseEnvelope {
   knowledge_reach?: string[];
   acquisition?: { triggered?: boolean; outcome?: string } | null;
   coherence_gate?: { aperture?: string; field_status?: string } | null;
+  heart?: {
+    alive?: { symbolic_life_score?: number | null; status?: string };
+    love?: { love_amplitude?: number | null; mood?: string | null; status?: string };
+    power?: { withheld?: string[]; statement?: string };
+  } | null;
 }
 
 interface CognitionReply {
@@ -212,6 +217,20 @@ export default function OperatorChatPage() {
                             aperture: {turn.reply.envelope.coherence_gate.aperture}
                           </Badge>
                         )}
+                      {typeof turn.reply.envelope?.heart?.alive?.symbolic_life_score === "number" && (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          alive: {turn.reply.envelope.heart.alive.symbolic_life_score.toFixed(2)}
+                        </Badge>
+                      )}
+                      {(turn.reply.envelope?.heart?.power?.withheld?.length ?? 0) > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="text-muted-foreground"
+                          title={turn.reply.envelope?.heart?.power?.statement}
+                        >
+                          power held: {turn.reply.envelope?.heart?.power?.withheld?.length}
+                        </Badge>
+                      )}
                       {turn.reply.envelope?.bake?.refined && (
                         <Badge variant="outline" className="text-muted-foreground">
                           baked ×{turn.reply.envelope.bake.passes ?? 2}

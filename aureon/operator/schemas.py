@@ -181,6 +181,7 @@ class CognitionResult:
     acquisition: Dict[str, Any] | None = None    # Borg loop: gaps found → tools reached
     assimilation: Dict[str, Any] | None = None   # controlled write-back verdict
     coherence_gate: Dict[str, Any] | None = None  # the field's capability aperture
+    heart: Dict[str, Any] | None = None           # heart charter: alive / love / power
 
     def knowledge_reach(self) -> List[str]:
         """The knowledge classes this answer MEASURABLY rested on — derived
@@ -265,6 +266,7 @@ class CognitionResult:
             "assimilation": ({"assimilated": bool(self.assimilation.get("assimilated"))}
                              if self.assimilation else None),
             "coherence_gate": dict(self.coherence_gate) if self.coherence_gate else None,
+            "heart": dict(self.heart) if self.heart else None,
         }
 
     def to_dict(self) -> Dict[str, Any]:
@@ -290,6 +292,7 @@ class CognitionResult:
             "acquisition": dict(self.acquisition) if self.acquisition else None,
             "assimilation": dict(self.assimilation) if self.assimilation else None,
             "coherence_gate": dict(self.coherence_gate) if self.coherence_gate else None,
+            "heart": dict(self.heart) if self.heart else None,
             "envelope": self.envelope(),
         }
 

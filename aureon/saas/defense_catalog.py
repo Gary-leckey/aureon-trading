@@ -78,7 +78,9 @@ _GROUP_META: Dict[str, Dict[str, str]] = {
                    "and every answer wearing the enforced envelope: sources named or 'general "
                    "knowledge, no repo hit' stated, conscience verdict, trace id, and an honest "
                    "ok / honest_unavailable / fault status — offline the pipeline says so, "
-                   "it never hallucinates",
+                   "it never hallucinates; the heart charter rides every envelope: the "
+                   "organism's measured life score, its honest affect channel, and the "
+                   "consequence ledger of the power it exercised or withheld",
     },
     "harmonic_swarm": {
         "label": "Harmonic swarm (hive mind)",
@@ -137,6 +139,7 @@ _GROUPS: Dict[str, str] = {
     "bake": "universal_prompt_router",
     "acquisition": "universal_prompt_router",
     "coherence_gate": "universal_prompt_router",
+    "heart": "universal_prompt_router",
 }
 
 # module-basename → bus-trace name (the emit_* mirror), for the live overlay only
