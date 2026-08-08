@@ -37,7 +37,9 @@ def test_builds_eight_groups_from_committed_report():
     # the universal prompt router (one door, enforced envelope, replicator
     # contract, bake suite, Borg acquisition, coherence gate) joins by name
     # (b53-b54, b56-b58)
-    assert groups["universal_prompt_router"]["module_count"] == 6
+    # entries are defenses (benchmark rows), not unique files: b54 and b61
+    # are distinct defenses that both live in operator/cognition.py
+    assert groups["universal_prompt_router"]["module_count"] == 7
     assert cat["counts"]["total"] == sum(g["module_count"] for g in groups.values())
 
 
