@@ -3,9 +3,9 @@
 > Derived from the committed Tier-A report + the filesystem. Nothing invented;
 > the uncovered list is the roadmap, the ratchet makes progress one-way.
 
-- Tier-A benchmarks: **70** (all passed: True)
-- Unique modules pinned: **66** of 1127 on disk
-- Domain coverage: **17/40** (0.425)
+- Tier-A benchmarks: **72** (all passed: True)
+- Unique modules pinned: **68** of 1127 on disk
+- Domain coverage: **19/40** (0.475)
 
 ## Per-domain
 
@@ -41,7 +41,7 @@
 | queen | 80 | 1 | yes |
 | s51 | 6 | 0 | **no** |
 | saas | 16 | 1 | yes |
-| scanners | 19 | 0 | **no** |
+| scanners | 19 | 1 | yes |
 | search | 5 | 0 | **no** |
 | simulation | 35 | 0 | **no** |
 | strategies | 36 | 0 | **no** |
@@ -50,7 +50,7 @@
 | trading | 94 | 0 | **no** |
 | utils | 42 | 1 | yes |
 | vault | 41 | 6 | yes |
-| wisdom | 37 | 0 | **no** |
+| wisdom | 37 | 1 | yes |
 
 ## Pins outside `aureon/`
 
@@ -74,10 +74,8 @@
 - `monitors` — 26 modules, zero pins
 - `portfolio` — 32 modules, zero pins
 - `s51` — 6 modules, zero pins
-- `scanners` — 19 modules, zero pins
 - `search` — 5 modules, zero pins
 - `simulation` — 35 modules, zero pins
 - `strategies` — 36 modules, zero pins
 - `swarm_motion` — 5 modules, zero pins
 - `trading` — 94 modules, zero pins
-- `wisdom` — 37 modules, zero pins

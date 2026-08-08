@@ -6101,6 +6101,246 @@ def b70_live_data_policy(tmp_root: Path) -> Dict[str, Any]:
             os.environ[ENV_ALLOW_SIM_FALLBACK] = prev
 
 
+def b71_warfare_scanner_honesty(tmp_root: Path) -> Dict[str, Any]:
+    """The strategic warfare scanner (aureon/scanners), pinned at its pure
+    scoring core: every Sun Tzu / IRA / Apache metric is deterministic math
+    over the caller's kline series — empty input returns the documented
+    refusal (0.0 / 'neutral' / 'unknown' / []), the two neutral-0.5 returns
+    ANNOUNCE themselves with a named [insufficient-data] warning, scores stay
+    bounded, series shorter than the 100-bar floor are refused rather than
+    classified, and scoring mutates no scanner state. Bus wiring is disabled
+    for the probe so the arithmetic itself is what gets pinned."""
+    import logging as _logging
+
+    import aureon.scanners.aureon_strategic_warfare_scanner as sws
+
+    prev_tb = sws.THOUGHT_BUS_AVAILABLE
+    prev_cb = sws.CHIRP_BUS_AVAILABLE
+    sws.THOUGHT_BUS_AVAILABLE = False
+    sws.CHIRP_BUS_AVAILABLE = False
+    try:
+        scanner = sws.StrategicWarfareScanner()
+    finally:
+        sws.THOUGHT_BUS_AVAILABLE = prev_tb
+        sws.CHIRP_BUS_AVAILABLE = prev_cb
+
+    def _klines(n: int, volume: float) -> List[Dict[str, float]]:
+        # deterministic synthetic series, labeled fixture — hour-of-day in
+        # find_ambush_locations derives from these timestamps, not the clock
+        out = []
+        for i in range(n):
+            price = 100.0 + 2.0 * math.sin(i / 7.0)
+            out.append({
+                "timestamp": 1_700_000_000_000 + i * 3_600_000,
+                "open": price, "high": price + 0.5, "low": price - 0.5,
+                "close": price,
+                "volume": volume * (1.0 + 0.1 * math.sin(i / 5.0)),
+            })
+        return out
+
+    quiet = [("B71A", _klines(120, 1_000.0)), ("B71B", _klines(120, 2_000.0))]
+    loud = [("B71A", _klines(120, 1_000_000.0)),
+            ("B71B", _klines(120, 2_000_000.0))]
+    short = [("B71A", _klines(50, 1_000.0))]
+
+    empty_refusals = {
+        "strength": scanner.assess_strength([]),
+        "position": scanner.analyze_position([]),
+        "pattern": scanner.detect_movement_pattern([]),
+        "terrain": scanner.identify_controlled_terrain([]),
+        "ambush": scanner.find_ambush_locations([]),
+        "disruption": scanner.calculate_disruption_probability([]),
+    }
+
+    records: List[Any] = []
+    handler = _logging.Handler()
+    handler.emit = records.append          # type: ignore[method-assign]
+    mod_logger = _logging.getLogger(sws.__name__)
+    mod_logger.addHandler(handler)
+    prev_level = mod_logger.level
+    mod_logger.setLevel(_logging.WARNING)
+    try:
+        stealth_empty = scanner.calculate_stealth_score([])
+        patience_empty = scanner.measure_patience([])
+    finally:
+        mod_logger.removeHandler(handler)
+        mod_logger.setLevel(prev_level)
+    announced = [r.getMessage() for r in records
+                 if "[insufficient-data]" in r.getMessage()]
+
+    reports_before = len(scanner.intelligence_reports)
+
+    def _score_pass() -> Dict[str, float]:
+        # float() strips numpy scalars so the report stays JSON-honest
+        return {
+            "strength_quiet": float(scanner.assess_strength(quiet)),
+            "strength_loud": float(scanner.assess_strength(loud)),
+            "stealth": float(scanner.calculate_stealth_score(quiet)),
+            "patience": float(scanner.measure_patience(quiet)),
+            "terrain_knowledge": float(
+                scanner.assess_terrain_knowledge(quiet)),
+            "disruption": float(
+                scanner.calculate_disruption_probability(quiet)),
+        }
+
+    scores = _score_pass()
+    second_pass = _score_pass()
+
+    invariants = {
+        "empty_input_refuses_never_fabricates": (
+            empty_refusals["strength"] == 0.0
+            and empty_refusals["position"] == "neutral"
+            and empty_refusals["pattern"] == "unknown"
+            and empty_refusals["terrain"] == []
+            and empty_refusals["ambush"] == []
+            and empty_refusals["disruption"] == 0.1),
+        "neutral_half_announces_itself": (
+            stealth_empty == 0.5 and patience_empty == 0.5
+            and len(announced) == 2),
+        "scores_stay_bounded": all(
+            0.0 <= v <= 1.0 for v in scores.values()),
+        "more_volume_reads_stronger": (
+            scores["strength_loud"] > scores["strength_quiet"]),
+        "short_series_refused_not_classified": (
+            scanner.detect_movement_pattern(short) == "unknown"),
+        "scoring_is_deterministic_and_stateless": (
+            scores == second_pass
+            and len(scanner.intelligence_reports) == reports_before),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Warfare scanner honesty (scanners)",
+        "module": "aureon/scanners/aureon_strategic_warfare_scanner.py",
+        "passed": passed,
+        "metrics": {
+            "strength_quiet": round(scores["strength_quiet"], 6),
+            "strength_loud": round(scores["strength_loud"], 6),
+            "stealth_quiet": round(scores["stealth"], 6),
+            "insufficient_data_warnings": len(announced),
+            "empty_pattern": empty_refusals["pattern"],
+        },
+        "evidence": (
+            "every empty-input probe returned the documented refusal (0.0 "
+            "strength, 'neutral' position, 'unknown' pattern, empty terrain "
+            "and ambush lists, 0.1 floor disruption); the two neutral-0.5 "
+            "returns each emitted a named [insufficient-data] warning; all "
+            "scores over deterministic synthetic klines stayed in [0,1]; "
+            "1000x more volume read strictly stronger; a 50-bar series was "
+            "refused by the 100-bar floor rather than classified; and two "
+            "identical passes were bit-identical with no report accumulated"
+        ),
+        "invariants": invariants,
+    }
+
+
+def b72_qgita_framework_honesty(tmp_root: Path) -> Dict[str, Any]:
+    """The QGITA market framework (aureon/wisdom), pinned at its pure
+    analytic core: an analyzer with fewer than 10 samples returns the
+    explicit insufficient_data sentinel and NO direction; two independently
+    constructed analyzers fed identical prices with injected timestamps
+    produce identical analyses (no hidden randomness in the fusion path);
+    coherence and confidence stay bounded (confidence hard-capped at 0.95
+    even on an extreme monotonic ramp); every degenerate Lighthouse input
+    floors to exactly 0.0 rather than a NaN or an invented score; and the
+    closed-form FTCP curvature of a linear signal is exactly zero."""
+    import numpy as _np
+
+    from aureon.wisdom.aureon_qgita_framework import (
+        FibonacciTimeLattice,
+        FTCPDetector,
+        LighthouseModel,
+        QGITAMarketAnalyzer,
+    )
+
+    fresh = QGITAMarketAnalyzer()
+    starved = fresh.analyze()
+
+    def _fed(prices: List[float]) -> QGITAMarketAnalyzer:
+        a = QGITAMarketAnalyzer()
+        for i, p in enumerate(prices):
+            a.feed_price(p, timestamp=1_700_000_000.0 + i * 60.0)
+        return a
+
+    series = [100.0 + 3.0 * math.sin(i / 6.0) + 0.2 * i for i in range(60)]
+    first = _fed(series).analyze()
+    second = _fed(series).analyze()
+    first.pop("timestamp", None)
+    second.pop("timestamp", None)
+
+    ramp = _fed([100.0 * (1.06 ** i) for i in range(60)]).analyze()
+
+    lighthouse = LighthouseModel()
+    floors = {
+        "linear_empty": lighthouse.compute_linear_coherence(_np.array([])),
+        "nonlinear_one": lighthouse.compute_nonlinear_coherence(
+            _np.array([1.0])),
+        "phi_two": lighthouse.compute_phi_coherence(_np.array([1.0, 2.0])),
+        "global_five": fresh.compute_global_coherence(
+            _np.arange(5, dtype=float)),
+    }
+
+    detector = FTCPDetector()
+    linear_curvature = detector.compute_discrete_curvature(
+        1.0, 2.0, 3.0, 0.0, 1.0, 2.0)
+    zero_dt_curvature = detector.compute_discrete_curvature(
+        1.0, 2.0, 3.0, 0.0, 0.0, 2.0)
+    fib = FibonacciTimeLattice(max_k=10).fibonacci
+
+    coherence = float(first.get("coherence", {}).get("global_R", -1.0))
+    confidence = float(first.get("signals", {}).get("confidence", -1.0))
+    ramp_confidence = float(ramp.get("signals", {}).get("confidence", -1.0))
+
+    invariants = {
+        "starved_analyzer_names_its_hunger": (
+            starved.get("status") == "insufficient_data"
+            and starved.get("samples_needed") == 10
+            and "signals" not in starved),
+        "identical_worlds_identical_analyses": (
+            json.dumps(first, sort_keys=True, default=str)
+            == json.dumps(second, sort_keys=True, default=str)),
+        "coherence_and_confidence_bounded": (
+            0.0 <= coherence <= 1.0 and 0.0 <= confidence <= 0.95),
+        "extreme_ramp_never_breaks_the_cap": (
+            0.0 <= ramp_confidence <= 0.95),
+        "degenerate_inputs_floor_to_zero": all(
+            v == 0.0 for v in floors.values()),
+        "closed_form_math_exact": (
+            linear_curvature == 0.0 and zero_dt_curvature == 0.0
+            and fib == [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55]),
+        "no_event_found_means_none_reported": (
+            detector.get_strongest_ftcp([]) is None),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "QGITA framework honesty (wisdom)",
+        "module": "aureon/wisdom/aureon_qgita_framework.py",
+        "passed": passed,
+        "metrics": {
+            "starved_status": starved.get("status"),
+            "global_coherence": round(coherence, 6),
+            "confidence": round(confidence, 6),
+            "ramp_confidence": round(ramp_confidence, 6),
+            "linear_curvature": linear_curvature,
+        },
+        "evidence": (
+            "a sub-10-sample analyzer returned the explicit "
+            "insufficient_data sentinel with samples_needed=10 and no "
+            "signals key; two independent analyzers fed 60 identical "
+            "prices with injected timestamps produced identical analyses; "
+            "coherence stayed in [0,1] and confidence under the 0.95 hard "
+            "cap even on a 6%-per-step monotonic ramp; empty/one/two-point "
+            "Lighthouse inputs and a 5-sample global coherence all floored "
+            "to exactly 0.0; a linear signal's discrete curvature was "
+            "exactly zero and a zero time-delta was guarded to 0.0 rather "
+            "than raising; the Fibonacci lattice matched the sequence; and "
+            "an empty FTCP list yielded None, never an invented event"
+        ),
+        "invariants": invariants,
+    }
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -6190,6 +6430,8 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Market cache freshness (data_feeds)", b68_market_cache_freshness),
     ("Exchange keyless honesty (exchanges)", b69_exchange_keyless_honesty),
     ("Live-data policy (observer)", b70_live_data_policy),
+    ("Warfare scanner honesty (scanners)", b71_warfare_scanner_honesty),
+    ("QGITA framework honesty (wisdom)", b72_qgita_framework_honesty),
 ]
 
 

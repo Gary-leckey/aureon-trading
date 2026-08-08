@@ -1,7 +1,7 @@
 {
   "status": "measured",
   "blocker": "",
-  "benchmarks": 70,
+  "benchmarks": 72,
   "all_rows_passed": true,
   "pinned_modules": [
     "aureon/accounting/client_ledger.py",
@@ -58,6 +58,7 @@
     "aureon/operator/prompt_router.py",
     "aureon/queen/queen_conscience.py",
     "aureon/saas/coverage.py",
+    "aureon/scanners/aureon_strategic_warfare_scanner.py",
     "aureon/swarm/capability_grid.py",
     "aureon/swarm/company.py",
     "aureon/swarm/containment.py",
@@ -69,6 +70,7 @@
     "aureon/vault/voice/skill_executor_bridge.py",
     "aureon/vault/voice/symbolic_life_bridge.py",
     "aureon/vault/voice/temporal_causality.py",
+    "aureon/wisdom/aureon_qgita_framework.py",
     "scripts/validation/benchmark_nasa_sky.py"
   ],
   "missing_modules": [],
@@ -293,8 +295,10 @@
     },
     "scanners": {
       "modules": 19,
-      "pinned": [],
-      "covered": false
+      "pinned": [
+        "aureon/scanners/aureon_strategic_warfare_scanner.py"
+      ],
+      "covered": true
     },
     "search": {
       "modules": 5,
@@ -352,8 +356,10 @@
     },
     "wisdom": {
       "modules": 37,
-      "pinned": [],
-      "covered": false
+      "pinned": [
+        "aureon/wisdom/aureon_qgita_framework.py"
+      ],
+      "covered": true
     }
   },
   "outside_aureon": [
@@ -374,9 +380,11 @@
     "operator",
     "queen",
     "saas",
+    "scanners",
     "swarm",
     "utils",
-    "vault"
+    "vault",
+    "wisdom"
   ],
   "uncovered_domains": [
     "alignment",
@@ -395,15 +403,13 @@
     "monitors",
     "portfolio",
     "s51",
-    "scanners",
     "search",
     "simulation",
     "strategies",
     "swarm_motion",
-    "trading",
-    "wisdom"
+    "trading"
   ],
-  "domain_coverage_fraction": 0.425,
+  "domain_coverage_fraction": 0.475,
   "total_modules": 1127,
-  "module_pin_count": 66
+  "module_pin_count": 68
 }
