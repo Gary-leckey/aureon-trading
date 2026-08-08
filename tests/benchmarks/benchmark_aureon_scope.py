@@ -6341,6 +6341,175 @@ def b72_qgita_framework_honesty(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b73_cross_substrate_honesty(tmp_root: Path) -> Dict[str, Any]:
+    """The cross-substrate analyzer (aureon/monitors), pinned at its pure
+    statistical core: every refusal path is the most conservative claim
+    available — thin or zero-variance data yields a 0.0 correlation marked
+    not-significant (never a value squeezed from an under-determined
+    window), a short Granger series refuses at the MAXIMUM p of 1.0, a thin
+    PCA matrix reads 0.0/not-unified, and zero evidence falsifies the
+    hypothesis with a named reason rather than supporting it. On real
+    seeded signal the lag recovery is exact and two fresh instances agree
+    bit-for-bit. The analyzer touches no network, no clock, no files."""
+    import numpy as _np
+
+    from aureon.monitors.aureon_cross_substrate_monitor import (
+        CrossSubstrateAnalyzer,
+    )
+
+    analyzer = CrossSubstrateAnalyzer()
+    rng = _np.random.default_rng(73)
+    x = rng.normal(0.0, 1.0, 400)
+    y = _np.roll(x, 5) + 0.1 * rng.normal(0.0, 1.0, 400)
+
+    thin = analyzer.cross_correlation(x[:20], y[:20], max_lag=24)
+    flat = analyzer.cross_correlation(_np.ones(200), y[:200], max_lag=24)
+    granger_short = analyzer.granger_causality(x[:10], y[:10], max_lag=24)
+    pca_thin = analyzer.pca_unified_system_test(_np.ones((3, 1)))
+    no_evidence = analyzer.check_falsification([], {}, [])
+
+    recovered = analyzer.cross_correlation(x, y, max_lag=24)
+    recovered_again = CrossSubstrateAnalyzer().cross_correlation(
+        x, y, max_lag=24)
+
+    invariants = {
+        "thin_window_refuses_at_zero": (
+            thin["peak_correlation"] == 0.0
+            and thin["peak_lag_hours"] == 0
+            and bool(thin["significant"]) is False),
+        "zero_variance_refuses_not_nan": (
+            flat["peak_correlation"] == 0.0
+            and bool(flat["significant"]) is False),
+        "granger_refuses_at_maximum_p": (
+            granger_short["min_p_value"] == 1.0
+            and bool(granger_short["significant"]) is False),
+        "thin_pca_reads_not_unified": (
+            pca_thin["pc1_variance"] == 0.0
+            and bool(pca_thin["unified"]) is False),
+        "zero_evidence_falsifies_with_named_reason": (
+            bool(no_evidence["falsified"]) is True
+            and len(no_evidence["reasons"]) > 0
+            and no_evidence["total_events_analyzed"] == 0),
+        "seeded_lag_recovered_exactly": (
+            int(recovered["peak_lag_hours"]) == 5
+            and abs(float(recovered["peak_correlation"])) <= 1.05),
+        "fresh_instances_agree_bit_for_bit": (
+            {k: float(v) for k, v in recovered.items()}
+            == {k: float(v) for k, v in recovered_again.items()}),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Cross-substrate honesty (monitors)",
+        "module": "aureon/monitors/aureon_cross_substrate_monitor.py",
+        "passed": passed,
+        "metrics": {
+            "thin_peak": float(thin["peak_correlation"]),
+            "granger_refusal_p": float(granger_short["min_p_value"]),
+            "recovered_lag_hours": int(recovered["peak_lag_hours"]),
+            "recovered_peak": round(float(recovered["peak_correlation"]), 6),
+            "no_evidence_reasons": len(no_evidence["reasons"]),
+        },
+        "evidence": (
+            "a 20-sample window returned exactly 0.0/not-significant rather "
+            "than a correlation squeezed from an under-determined slice; a "
+            "constant series refused at 0.0 instead of dividing by zero; a "
+            "10-sample Granger test refused at the maximum p of 1.0 — the "
+            "most conservative claim possible; a 3x1 PCA matrix read "
+            "0.0/not-unified; zero events falsified the hypothesis with a "
+            "named reason instead of supporting it; and on a seeded "
+            "5-hour-lagged signal the analyzer recovered exactly lag 5 with "
+            "two fresh instances bit-for-bit identical"
+        ),
+        "invariants": invariants,
+    }
+
+
+def b74_quantum_signals_honesty(tmp_root: Path) -> Dict[str, Any]:
+    """The quantum signal strategy core (aureon/strategies), pinned at its
+    pure free-function surface: empty OR merely-insufficient input refuses
+    with the documented null signal (no entry, direction 'none', confidence
+    0.0, penny_threshold None — a non-None threshold on no data would be
+    the fabrication); the penny-profit gate matches its closed form
+    r = ((1+P/A)/(1-f)^2) - 1 exactly with the 3:1 stop; required move is
+    strictly increasing in the venue fee so nobody can quietly cheapen a
+    fee constant to flatter a strategy; and the unknown-venue fallback is
+    the MOST expensive profile in the table, never a cheaper one."""
+    from aureon.strategies.quantum_signals import (
+        FEE_RATES,
+        MarketPhase,
+        calculate_penny_threshold,
+        detect_market_phase,
+        generate_quantum_signal,
+        get_total_fee_rate,
+    )
+
+    empty = generate_quantum_signal(
+        prices=[], volumes=[], highs=[], lows=[], closes=[],
+        rsi_values=[], tf_signals=[])
+    thin_phase = detect_market_phase(
+        [100.0 + 0.1 * i for i in range(49)], [1000.0] * 49, lookback=50)
+
+    a, p = 10.0, 0.01
+    thresholds = {ex: calculate_penny_threshold(a, ex) for ex in FEE_RATES}
+    closed_form_ok = all(
+        abs(thresholds[ex].required_move_pct
+            - (((1 + p / a) / ((1 - FEE_RATES[ex]["total"]) ** 2)) - 1) * 100
+            ) < 1e-12
+        and thresholds[ex].stop_lte == -(thresholds[ex].win_gte * 3.0)
+        for ex in FEE_RATES)
+    ordered = sorted(FEE_RATES, key=lambda ex: FEE_RATES[ex]["total"])
+    moves = [thresholds[ex].required_move_pct for ex in ordered]
+    fallback = get_total_fee_rate("NOT_A_VENUE_B74")
+
+    invariants = {
+        "empty_input_yields_the_null_signal": (
+            empty.should_enter is False and empty.direction == "none"
+            and empty.confidence == 0.0 and empty.penny_threshold is None),
+        "insufficient_is_refused_like_absent": (
+            thin_phase.phase is MarketPhase.UNKNOWN
+            and thin_phase.confidence == 0.0),
+        "penny_gate_matches_its_closed_form": closed_form_ok,
+        "required_move_tightens_with_fees": all(
+            moves[i] < moves[i + 1] for i in range(len(moves) - 1)),
+        "unknown_venue_falls_back_to_the_dearest": (
+            fallback == FEE_RATES["kraken"]["total"]
+            and fallback == max(v["total"] for v in FEE_RATES.values())),
+        "signal_is_deterministic": (
+            generate_quantum_signal(
+                prices=[], volumes=[], highs=[], lows=[], closes=[],
+                rsi_values=[], tf_signals=[]) == empty),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Quantum signals honesty (strategies)",
+        "module": "aureon/strategies/quantum_signals.py",
+        "passed": passed,
+        "metrics": {
+            "empty_confidence": empty.confidence,
+            "kraken_required_move_pct": round(
+                thresholds["kraken"].required_move_pct, 6),
+            "binance_required_move_pct": round(
+                thresholds["binance"].required_move_pct, 6),
+            "fallback_fee": fallback,
+            "venues_pinned": len(FEE_RATES),
+        },
+        "evidence": (
+            "all-empty input returned the documented null signal (no entry, "
+            "direction 'none', confidence 0.0, penny_threshold None); 49 "
+            "bars under a 50-bar lookback refused as UNKNOWN just like "
+            "absent data; the penny-profit thresholds matched the closed "
+            "form ((1+P/A)/(1-f)^2)-1 to 1e-12 with the exact 3:1 stop on "
+            "all four venues; required move increased strictly with the fee "
+            "(binance < capital < alpaca < kraken); an unknown venue fell "
+            "back to kraken — the dearest profile in the table — never a "
+            "cheaper one; and identical calls returned identical signals"
+        ),
+        "invariants": invariants,
+    }
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -6432,6 +6601,8 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Live-data policy (observer)", b70_live_data_policy),
     ("Warfare scanner honesty (scanners)", b71_warfare_scanner_honesty),
     ("QGITA framework honesty (wisdom)", b72_qgita_framework_honesty),
+    ("Cross-substrate honesty (monitors)", b73_cross_substrate_honesty),
+    ("Quantum signals honesty (strategies)", b74_quantum_signals_honesty),
 ]
 
 
