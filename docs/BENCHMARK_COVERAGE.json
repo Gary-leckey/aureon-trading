@@ -1,7 +1,7 @@
 {
   "status": "measured",
   "blocker": "",
-  "benchmarks": 72,
+  "benchmarks": 74,
   "all_rows_passed": true,
   "pinned_modules": [
     "aureon/accounting/client_ledger.py",
@@ -49,6 +49,7 @@
     "aureon/harmonic/rainbow_reference.py",
     "aureon/inhouse_ai/llm_adapter.py",
     "aureon/intelligence/volatility_sentinel.py",
+    "aureon/monitors/aureon_cross_substrate_monitor.py",
     "aureon/observer/live_data_policy.py",
     "aureon/operator/acquisition.py",
     "aureon/operator/bake.py",
@@ -59,6 +60,7 @@
     "aureon/queen/queen_conscience.py",
     "aureon/saas/coverage.py",
     "aureon/scanners/aureon_strategic_warfare_scanner.py",
+    "aureon/strategies/quantum_signals.py",
     "aureon/swarm/capability_grid.py",
     "aureon/swarm/company.py",
     "aureon/swarm/containment.py",
@@ -247,8 +249,10 @@
     },
     "monitors": {
       "modules": 26,
-      "pinned": [],
-      "covered": false
+      "pinned": [
+        "aureon/monitors/aureon_cross_substrate_monitor.py"
+      ],
+      "covered": true
     },
     "observer": {
       "modules": 15,
@@ -312,8 +316,10 @@
     },
     "strategies": {
       "modules": 36,
-      "pinned": [],
-      "covered": false
+      "pinned": [
+        "aureon/strategies/quantum_signals.py"
+      ],
+      "covered": true
     },
     "swarm": {
       "modules": 10,
@@ -376,11 +382,13 @@
     "harmonic",
     "inhouse_ai",
     "intelligence",
+    "monitors",
     "observer",
     "operator",
     "queen",
     "saas",
     "scanners",
+    "strategies",
     "swarm",
     "utils",
     "vault",
@@ -400,16 +408,14 @@
     "generated",
     "integrations",
     "miner",
-    "monitors",
     "portfolio",
     "s51",
     "search",
     "simulation",
-    "strategies",
     "swarm_motion",
     "trading"
   ],
-  "domain_coverage_fraction": 0.475,
+  "domain_coverage_fraction": 0.525,
   "total_modules": 1127,
-  "module_pin_count": 68
+  "module_pin_count": 70
 }
