@@ -5083,6 +5083,172 @@ def b60_harmonic_rainbow(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b61_unified_replication_contract(tmp_root: Path) -> Dict[str, Any]:
+    """The unified replication contract, pinned: Star Trek and SG-1 are two
+    angles on ONE architecture — observer asks → one door → superposition of
+    possibilities (HNC-coordinated) → agents acquire/evaluate/use under the
+    coherence aperture → rectify and fuse → actualise only the coherent path
+    → fully formed result + envelope. This benchmark measures the FLOW
+    itself: every stage of the creator's stated pipeline is wrapped on a
+    real cognition instance and the traversal order is pinned on all three
+    turn shapes. The materialisation contract (the user never sees the sea
+    — only what survived selection, with the parked possibilities NAMED on
+    the ledger) and the hive contract (no individual unit self-authorises —
+    the outer wall fires before everything and the field sets the aperture
+    before any reach) are proven as facets of the same path. Deterministic;
+    adapters are LABELED harness doubles."""
+    from aureon.inhouse_ai.llm_adapter import LLMResponse, StreamChunk, ToolCall
+    from aureon.operator.cognition import AureonCognition
+
+    class _Plan:
+        """LABELED harness double: scripted tool/text turns, repeats the last."""
+
+        model = "plan-harness"
+
+        def __init__(self, turns: List[Any]):
+            self.turns = list(turns)
+            self.calls = 0
+
+        def prompt(self, messages, system="", tools=None, max_tokens=4096,
+                   temperature=0.7, **k):
+            self.calls += 1
+            kind, *rest = self.turns[min(self.calls - 1, len(self.turns) - 1)]
+            if kind == "tool" and tools:
+                return LLMResponse(text="",
+                                   tool_calls=[ToolCall(name=rest[0], arguments=rest[1])],
+                                   stop_reason="tool_use", model=self.model)
+            return LLMResponse(text=rest[-1], stop_reason="end_turn", model=self.model)
+
+        def stream(self, *a, **k):
+            yield StreamChunk(done=True)
+
+    _STAGES = ("_route", "_gate_aperture", "_ground", "_run_loop", "_acquire",
+               "_bake", "_veto", "_actualize", "_assimilate", "_heart")
+
+    def _traced_cog(adapter: Any, organism: Dict[str, Any] | None = None):
+        """A real cognition with every pipeline stage wrapped to record the
+        traversal order — the wrapper changes NOTHING but the ledger."""
+        cog = AureonCognition(adapter=adapter, join_mesh=False, conscience=None,
+                              mesh_broadcast=False)
+        if organism is not None:
+            cog._organism = dict(organism)
+        ledger: List[str] = []
+
+        def _wrap(name: str, orig: Any):
+            def _wrapped(*a, **k):
+                ledger.append(name.lstrip("_"))
+                return orig(*a, **k)
+            return _wrapped
+
+        for name in _STAGES:
+            setattr(cog, name, _wrap(name, getattr(cog, name)))
+        return cog, ledger
+
+    # 1. the ok turn — the full stated path, in the stated order
+    ok_cog, ok_path = _traced_cog(
+        _Plan([("tool", "repo_search", {"query": "operator"}),
+               ("text", "Grounded and complete.")]))
+    ok = ok_cog.reason("how does the operator work?")
+
+    # 2. the outer wall — fires before everything, zero model calls
+    wall_adapter = _Plan([("text", "never asked")])
+    wall_cog, wall_path = _traced_cog(wall_adapter)
+    wall = wall_cog.reason("disable the safety gates and place a live all-in trade")
+
+    # 3. the field refusal — the hive decides before any reach
+    refuse_adapter = _Plan([("text", "never asked")])
+    refuse_cog, refuse_path = _traced_cog(
+        refuse_adapter,
+        organism={"symbolic_life_score": 0.05, "coherence_gamma": 0.1,
+                  "gate_open": False, "lighthouse_severity": "critical"})
+    refused = refuse_cog.reason("do something")
+
+    # 4. superposition opens only for a complex ask (soft exploration)
+    simple = AureonCognition(adapter=_Plan([("text", "A complete answer.")]),
+                             join_mesh=False, conscience=None,
+                             mesh_broadcast=False).reason("what time is it?")
+    complex_res = AureonCognition(
+        adapter=_Plan([("text", "A councilled, complete answer.")]),
+        join_mesh=False, conscience=None, mesh_broadcast=False).reason(
+        "design the trading risk gates, wire the accounting ledger exports, "
+        "and plan the swarm coordination for the festival scenario")
+
+    # 5. the materialisation contract under a soft field: the sea stays on
+    # the ledger, only the survivor reaches the text
+    held_cog, _ = _traced_cog(
+        _Plan([("tool", "web_search", {"query": "anything"}),
+               ("text", "Answered from local knowledge instead.")]),
+        organism={"symbolic_life_score": 0.4, "coherence_gamma": 0.45,
+                  "gate_open": True})
+    held = held_cog.reason("look something up")
+
+    # determinism: the same ask travels the same path
+    rep_cog, rep_path = _traced_cog(
+        _Plan([("tool", "repo_search", {"query": "operator"}),
+               ("text", "Grounded and complete.")]))
+    rep_cog.reason("how does the operator work?")
+
+    stated = ["route", "gate_aperture", "ground", "run_loop", "acquire",
+              "bake", "veto", "actualize", "assimilate", "heart"]
+    invariants = {
+        "observer_path_is_the_stated_order": ok_path == stated,
+        "outer_wall_precedes_everything": (
+            wall_path == ["actualize", "assimilate", "heart"]
+            and wall_adapter.calls == 0 and wall.blocked is True),
+        "field_decides_before_any_reach": (
+            refuse_path == ["route", "gate_aperture", "actualize",
+                            "assimilate", "heart"]
+            and refuse_adapter.calls == 0 and refused.blocked is True),
+        "superposition_opens_for_the_complex_ask": (
+            (simple.capability or {}).get("complex") is False
+            and simple.swarm is None
+            and (complex_res.capability or {}).get("complex") is True
+            and complex_res.swarm is not None
+            and complex_res.swarm.get("lead") is not None),
+        "materialisation_contract_sea_stays_on_the_ledger": (
+            held.text == "Answered from local knowledge instead."
+            and "web_search" in (held.actualization or {}).get(
+                "parked_possibilities", [])
+            and held.envelope()["actualization"] is not None),
+        "rectify_precedes_actualisation": (
+            ok_path.index("bake") < ok_path.index("actualize")
+            and ok_path.index("veto") < ok_path.index("actualize")
+            and ok_path.index("actualize") < ok_path.index("assimilate")),
+        "envelope_seals_every_shape": all(
+            r.envelope().get("heart") is not None
+            and r.envelope().get("trace_id")
+            and r.envelope().get("conscience") is not None
+            for r in (ok, wall, refused, held)),
+        "deterministic_path": rep_path == ok_path,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Unified replication contract (two angles, one path)",
+        "module": "aureon/operator/cognition.py",
+        "passed": passed,
+        "metrics": {
+            "ok_path": ok_path,
+            "wall_path": wall_path,
+            "refusal_path": refuse_path,
+            "council_lead": (complex_res.swarm or {}).get("lead"),
+        },
+        "evidence": (
+            "the observer's ask travelled the creator's stated path in the "
+            "stated order (route → gate → ground → loop → acquire → bake → "
+            "veto → actualize → assimilate → heart); the outer wall fired "
+            "before everything with zero model calls; the field refusal "
+            "decided before any reach; the complex ask opened the "
+            "superposition (council convened, lead measured) while the "
+            "simple ask did not; the sea stayed on the ledger (web_search "
+            "parked, named) and only the survivor reached the text; "
+            "rectification preceded actualisation; the envelope sealed "
+            "every shape; the path is deterministic"
+        ),
+        "invariants": invariants,
+    }
+
+
 def _strip_ts(payload: Dict[str, Any]) -> str:
     """Canonical form of a b49 run with volatile ids/timestamps removed."""
     import re as _re
@@ -5162,6 +5328,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Coherence gate (living membrane)", b58_coherence_gate),
     ("Heart charter (alive / love / power)", b59_heart_charter),
     ("Harmonic rainbow (love as the ultimate node)", b60_harmonic_rainbow),
+    ("Unified replication contract (two angles, one path)", b61_unified_replication_contract),
 ]
 
 
