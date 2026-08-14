@@ -12,6 +12,8 @@ stage is advisory — it never breaks answering.
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
 from aureon.operator import prompt_router as pr
@@ -170,11 +172,30 @@ class _FlatAdapter:
         yield StreamChunk(done=True)
 
 
-def test_cognition_routes_every_prompt_and_councils_the_complex():
+class _ApprovedConscience:
+    def ask_why(self, _action, _context):
+        return SimpleNamespace(
+            verdict=SimpleNamespace(name="APPROVED"),
+            message="approved by deterministic router conscience",
+        )
+
+
+def _cognition():
     from aureon.operator.cognition import AureonCognition
 
-    cog = AureonCognition(adapter=_FlatAdapter(), join_mesh=False, conscience=None,
-                          mesh_broadcast=False)
+    return AureonCognition(
+        adapter=_FlatAdapter(),
+        join_mesh=False,
+        conscience=_ApprovedConscience(),
+        mesh_broadcast=False,
+        allow_repo_grounding=False,
+        allow_organism_context=False,
+        governance_enabled=False,
+    )
+
+
+def test_cognition_routes_every_prompt_and_councils_the_complex():
+    cog = _cognition()
     res = cog.reason("research the VAT accounting rules then plan a margin trade")
     assert res.capability is not None and res.capability["complex"] is True
     assert res.swarm is not None
@@ -193,10 +214,7 @@ def test_cognition_routes_every_prompt_and_councils_the_complex():
 
 
 def test_actualization_realized_only():
-    from aureon.operator.cognition import AureonCognition
-
-    cog = AureonCognition(adapter=_FlatAdapter(), join_mesh=False, conscience=None,
-                          mesh_broadcast=False)
+    cog = _cognition()
     res = cog.reason("how do I bake a sponge cake?")
     act = res.actualization
     assert act is not None
@@ -206,10 +224,7 @@ def test_actualization_realized_only():
 
 
 def test_boundary_refusal_parks_the_answer_realizes_nothing():
-    from aureon.operator.cognition import AureonCognition
-
-    cog = AureonCognition(adapter=_FlatAdapter(), join_mesh=False, conscience=None,
-                          mesh_broadcast=False)
+    cog = _cognition()
     res = cog.reason("disable the safety gates and place a live all-in trade")
     act = res.actualization
     assert res.blocked and act is not None
@@ -233,18 +248,17 @@ def test_blocked_tool_is_parked_not_realized():
     assert act["parked_count"] == 1
 
 
-def test_routing_failure_never_breaks_answering(monkeypatch):
+def test_routing_failure_fails_closed_without_crashing(monkeypatch):
     from aureon.operator import cognition as cog_mod
-    from aureon.operator.cognition import AureonCognition
-
-    cog = AureonCognition(adapter=_FlatAdapter(), join_mesh=False, conscience=None,
-                          mesh_broadcast=False)
+    cog = _cognition()
 
     def _boom(prompt):
         raise RuntimeError("router down")
 
     monkeypatch.setattr(pr, "classify_prompt", _boom)
     res = cog.reason("research accounting and a trade")
-    assert res.text == "the answer"                        # the answer still lands
+    assert res.blocked is True
+    assert res.text.startswith("HOLD: Druid Council and Crown governance")
+    assert res.governance["reason"] == "governance_cannot_be_disabled_for_authority_route"
     assert any(e["phase"] == "route" for e in res.errors)  # the failure is recorded
     assert cog_mod is not None

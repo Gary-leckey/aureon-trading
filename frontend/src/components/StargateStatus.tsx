@@ -15,7 +15,7 @@ type StargateStatusProps = {
 export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: StargateStatusProps) => {
   const { config } = useSentinelConfig();
   const [influence, setInfluence] = useState<StargateInfluence | null>(null);
-  const [gridEnergy, setGridEnergy] = useState(0);
+  const [gridEnergy, setGridEnergy] = useState<number | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoInitialized, setAutoInitialized] = useState(false);
@@ -151,7 +151,7 @@ export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: Stargat
                 <span className="font-semibold text-sm">Why Location?</span>
               </div>
               <p className="text-xs text-muted-foreground mb-2">
-                AUREON uses your location to calculate Stargate Lattice influence and optimize trading signals based on geomagnetic field proximity.
+                AUREON uses your location for a reference-geometry distance calculation. This is not live geomagnetic telemetry and is not treated as an observed trading signal.
               </p>
               <p className="text-xs text-muted-foreground">
                 🔒 Your location data never leaves your device
@@ -266,13 +266,13 @@ export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: Stargat
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-muted-foreground">Planetary Grid Energy</span>
                 <span className="text-sm font-mono font-bold">
-                  {(gridEnergy * 100).toFixed(1)}%
+                  {gridEnergy === null ? 'Unavailable' : `${(gridEnergy * 100).toFixed(1)}%`}
                 </span>
               </div>
               <div className="w-full h-2 bg-background rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-primary/50 to-primary transition-all duration-1000"
-                  style={{ width: `${gridEnergy * 100}%` }}
+                  style={{ width: `${gridEnergy === null ? 0 : gridEnergy * 100}%` }}
                 />
               </div>
             </div>

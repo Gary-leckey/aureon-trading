@@ -161,7 +161,7 @@ def _cog(adapter, organism=None):
     from aureon.operator.cognition import AureonCognition
 
     cog = AureonCognition(adapter=adapter, join_mesh=False, conscience=None,
-                          mesh_broadcast=False)
+                          mesh_broadcast=False, governance_enabled=False)
     if organism is not None:
         cog._organism = dict(organism)
     return cog

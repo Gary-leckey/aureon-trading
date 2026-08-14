@@ -33,7 +33,7 @@ from pathlib import Path
 # ═══════════════════════════════════════════════════════════════════════════
 # WINDOWS UTF-8 FIX
 # ═══════════════════════════════════════════════════════════════════════════
-if sys.platform == 'win32':
+if sys.platform == 'win32' and sys.stdout is sys.__stdout__ and sys.stdout.isatty():
     os.environ['PYTHONIOENCODING'] = 'utf-8'
     try:
         def _is_utf8_wrapper(stream):

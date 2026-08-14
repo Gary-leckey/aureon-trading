@@ -6,9 +6,8 @@
  * and their hive mind coherence.
  */
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useSystemsIntegration, useTemporalLadder, useQueenHiveBrowser } from '../hooks/useSystemsIntegration';
-import { SimulatedDataBadge } from '@/components/SimulatedDataBadge';
 
 const SystemStatusCard: React.FC<{
   name: string;
@@ -81,21 +80,7 @@ const STAGE_BADGE: Record<string, string> = {
 export const SystemsIntegrationDashboard: React.FC = () => {
   const { state, isInitialized, refreshAkashic } = useSystemsIntegration();
   const { systemStatuses, hiveMindCoherence } = useTemporalLadder();
-  const { state: queenState, step: queenStep, simulate, reset } = useQueenHiveBrowser();
-
-  const [autoSimulate, setAutoSimulate] = useState(false);
-
-  useEffect(() => {
-    let interval: number | null = null;
-    if (autoSimulate) {
-      interval = window.setInterval(() => {
-        queenStep();
-      }, 500);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [autoSimulate, queenStep]);
+  const { state: queenState } = useQueenHiveBrowser();
 
   if (!isInitialized) {
     return (
@@ -113,10 +98,9 @@ export const SystemsIntegrationDashboard: React.FC = () => {
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Temporal Ladder — Hive Mind Integration
           </h1>
-          <SimulatedDataBadge />
         </div>
         <p className="text-muted-foreground">
-          In-browser systems-integration model
+          Provider-observed systems integration; unavailable feeds remain no_data
         </p>
       </div>
 
@@ -283,55 +267,34 @@ export const SystemsIntegrationDashboard: React.FC = () => {
             <h2 className="text-xl font-bold text-foreground">
               Queen Hive — 10-9-1 Model
             </h2>
-            <div className="flex gap-2">
-              <button
-                onClick={queenStep}
-                className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-semibold transition"
-              >
-                Step
-              </button>
-              <button
-                onClick={() => simulate(10)}
-                className="px-4 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg text-sm font-semibold transition"
-              >
-                +10 Steps
-              </button>
-              <button
-                onClick={() => setAutoSimulate(!autoSimulate)}
-                className={`px-4 py-2 ${autoSimulate ? 'bg-destructive hover:bg-destructive/90' : 'bg-success hover:bg-success/90'} text-white rounded-lg text-sm font-semibold transition`}
-              >
-                {autoSimulate ? 'Stop' : 'Auto'}
-              </button>
-              <button
-                onClick={reset}
-                className="px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg text-sm font-semibold transition"
-              >
-                Reset
-              </button>
-            </div>
+            <span className="text-sm text-muted-foreground">
+              {queenState.truthStatus === 'no_data'
+                ? `Unavailable: ${queenState.reason ?? 'no live snapshot'}`
+                : `${queenState.truthStatus} · ${queenState.sourceId}`}
+            </span>
           </div>
           <div className="grid grid-cols-4 gap-4 text-center mb-4">
             <div className="bg-muted/50 rounded-lg p-4">
               <div className="text-2xl font-bold text-foreground">
-                {queenState.totalHives}
+                {queenState.totalHives ?? '—'}
               </div>
               <div className="text-muted-foreground text-sm">Total Hives</div>
             </div>
             <div className="bg-muted/50 rounded-lg p-4">
               <div className="text-2xl font-bold text-success">
-                £{queenState.totalEquity.toFixed(2)}
+                {queenState.totalEquity === null ? '—' : `£${queenState.totalEquity.toFixed(2)}`}
               </div>
               <div className="text-muted-foreground text-sm">Total Equity</div>
             </div>
             <div className="bg-muted/50 rounded-lg p-4">
               <div className="text-2xl font-bold text-foreground">
-                {queenState.totalAgents}
+                {queenState.totalAgents ?? '—'}
               </div>
               <div className="text-muted-foreground text-sm">Total Agents</div>
             </div>
             <div className="bg-muted/50 rounded-lg p-4">
               <div className="text-2xl font-bold text-foreground">
-                G{queenState.generation}
+                {queenState.generation === null ? '—' : `G${queenState.generation}`}
               </div>
               <div className="text-muted-foreground text-sm">Generation</div>
             </div>

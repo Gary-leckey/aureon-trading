@@ -1661,6 +1661,9 @@ def build_agent_company_bill_list(
     goal: str = "",
     online: bool = False,
     online_limit: int = 4,
+    provision_brains: bool = False,
+    brain_resolver: Any = None,
+    thought_path: Any = None,
 ) -> dict[str, Any]:
     root = Path(root or _default_root()).resolve()
     generated_at = utc_now()
@@ -1675,6 +1678,77 @@ def build_agent_company_bill_list(
         online=online,
         online_limit=online_limit,
     )
+    from aureon.autonomous.aureon_agent_company_brain_fabric import (
+        canonical_agent_company_brain_topology,
+        company_brain_fabric_report,
+        provision_agent_company_brain_fabric,
+    )
+
+    role_brain_lanes, process_brain_bindings = canonical_agent_company_brain_topology()
+    role_process_bindings = {
+        owner: process_id for process_id, (_lane, owner) in process_brain_bindings.items()
+    }
+    if provision_brains:
+        try:
+            brain_fabric = company_brain_fabric_report(
+                provision_agent_company_brain_fabric(
+                    brain_resolver,
+                    thought_path=thought_path,
+                )
+            )
+        except Exception as exc:
+            brain_fabric = {
+                "schema_version": "aureon-agent-company-brain-fabric-v1",
+                "status": "hold",
+                "ready": False,
+                "reason": f"brain_fabric_provision_failed:{type(exc).__name__}",
+                "action_eligible": False,
+                "economic_eligible": False,
+                "passports": [],
+            }
+    else:
+        brain_fabric = {
+            "schema_version": "aureon-agent-company-brain-fabric-v1",
+            "status": "not_requested",
+            "ready": False,
+            "reason": "explicit_brain_provisioning_required",
+            "action_eligible": False,
+            "economic_eligible": False,
+            "passports": [],
+        }
+    brain_fabric_ready = bool(brain_fabric.get("ready"))
+    passport_by_subject = {
+        (item.get("subject_type"), item.get("subject_id")): item
+        for item in brain_fabric.get("passports", [])
+        if isinstance(item, dict)
+    }
+    role_payloads = []
+    agent_payloads = []
+    for role in roles:
+        process_id = role_process_bindings[role.title]
+        agent_passport = passport_by_subject.get(("agent", role.title), {})
+        process_passport = passport_by_subject.get(("process", process_id), {})
+        binding = {
+            "lane": role_brain_lanes[role.title],
+            "paired_process_id": process_id,
+            "agent_brain_passport_id": agent_passport.get("receipt_id"),
+            "process_brain_passport_id": process_passport.get("receipt_id"),
+            "provisioned": bool(agent_passport and process_passport),
+            "tools_enabled": False,
+            "action_eligible": False,
+            "economic_eligible": False,
+        }
+        role_payloads.append({**role.to_dict(), "brain_binding": binding})
+        agent_config = _agent_config_for(role)
+        if brain_fabric_ready:
+            agent_config["tools_enabled"] = False
+        agent_config["metadata"] = {
+            **agent_config["metadata"],
+            "registry_only_v1": not brain_fabric_ready,
+            "brain_fabric_provisioned": brain_fabric_ready,
+            "brain_binding": binding,
+        }
+        agent_payloads.append(agent_config)
     departments = []
     for department in DEPARTMENTS:
         department_roles = [role for role in roles if role.department == department["id"]]
@@ -1697,13 +1771,25 @@ def build_agent_company_bill_list(
         str(_rooted(root, DEFAULT_PHONEBOOK_PUBLIC_JSON)),
     ]
 
+    summary = _summary(roles, work_orders, recruitment_engine)
+    summary.update(
+        {
+            "executable_agents_created": brain_fabric_ready,
+            "brain_fabric_status": brain_fabric.get("status"),
+            "brain_fabric_ready": brain_fabric_ready,
+            "agent_brain_count": int(brain_fabric.get("agent_brain_count") or 0),
+            "process_brain_count": int(brain_fabric.get("process_brain_count") or 0),
+            "brain_passport_count": int(brain_fabric.get("brain_passport_count") or 0),
+        }
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "generated_at": generated_at,
         "company_name": "Aureon Agent Company",
         "goal": goal,
-        "status": "agent_company_registry_ready",
-        "summary": _summary(roles, work_orders, recruitment_engine),
+        "status": "agent_company_brain_fabric_ready" if brain_fabric_ready else "agent_company_registry_ready",
+        "summary": summary,
+        "brain_fabric": brain_fabric,
         "capability_taxonomy_sources": MARKET_CAPABILITY_TAXONOMY,
         "market_ai_systems": MARKET_AI_SYSTEMS,
         "capability_market_comparison": market_comparison,
@@ -1720,8 +1806,8 @@ def build_agent_company_bill_list(
         "whole_organism_access_policy": WHOLE_ORGANISM_ACCESS_POLICY,
         "daily_operating_loop": DAILY_OPERATING_LOOP,
         "departments": departments,
-        "roles": [role.to_dict() for role in roles],
-        "agents": [_agent_config_for(role) for role in roles],
+        "roles": role_payloads,
+        "agents": agent_payloads,
         "capability_coverage": _capability_coverage(roles),
         "handoff_map": _handoff_map(roles),
         "authority_boundaries": AUTHORITY_BOUNDARIES,
@@ -1764,6 +1850,7 @@ def build_agent_company_bill_list(
             "did_attach_bio_cosmic_organisation_doctrine": BIO_COSMIC_ORGANISATION_DOCTRINE["ethos"]
             == "bio_cosmic_living_system_organisation",
             "did_build_agent_blueprints": bool(recruitment_engine.get("agent_blueprints")),
+            "did_provision_all_agent_and_process_brains": brain_fabric_ready,
             "did_run_internal_skill_search": bool(recruitment_engine.get("internal_skill_searches")),
             "did_run_online_skill_search_when_requested": (
                 not online or (recruitment_engine.get("online_skill_searches") or {}).get("status") in {"search_complete", "search_failed"}
@@ -2052,9 +2139,20 @@ def build_and_write_agent_company_bill_list(
     goal: str = "",
     online: bool = False,
     online_limit: int = 4,
+    provision_brains: bool = False,
+    brain_resolver: Any = None,
+    thought_path: Any = None,
 ) -> dict[str, Any]:
     root = Path(root or _default_root()).resolve()
-    report = build_agent_company_bill_list(root=root, goal=goal, online=online, online_limit=online_limit)
+    report = build_agent_company_bill_list(
+        root=root,
+        goal=goal,
+        online=online,
+        online_limit=online_limit,
+        provision_brains=provision_brains,
+        brain_resolver=brain_resolver,
+        thought_path=thought_path,
+    )
     memory_writes = _write_memory_phonebook(root, report)
     writes = [
         _write_json(_rooted(root, DEFAULT_STATE_PATH), report),
@@ -2077,8 +2175,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument("--json", action="store_true", help="Print JSON report.")
     parser.add_argument("--online", action="store_true", help="Run bounded online recruitment skill searches.")
     parser.add_argument("--online-limit", type=int, default=4)
+    parser.add_argument(
+        "--provision-brains",
+        action="store_true",
+        help="Live-probe Ollama and attach brain passports to all canonical roles and processes.",
+    )
     args = parser.parse_args(argv)
-    result = build_and_write_agent_company_bill_list(goal=args.goal, online=args.online, online_limit=args.online_limit)
+    result = build_and_write_agent_company_bill_list(
+        goal=args.goal,
+        online=args.online,
+        online_limit=args.online_limit,
+        provision_brains=args.provision_brains,
+    )
     print(json.dumps(result, indent=2, sort_keys=True, default=str) if args.json else _make_markdown(result))
     return 0 if result.get("write_info", {}).get("all_ok") else 1
 

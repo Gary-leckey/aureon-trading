@@ -15,6 +15,7 @@ import inspect
 import os
 import sys
 import threading
+from pathlib import Path
 
 import pytest
 
@@ -153,6 +154,75 @@ _LEAKY_SINGLETONS = (
     # Inner-work ascent history accumulates across modules the same way.
     ("aureon.core.inner_work", "_monitor"),
 )
+
+_ASYNC_LOOP_KEY = pytest.StashKey[asyncio.AbstractEventLoop]()
+_ASYNC_SOURCE_CACHE: dict[Path, bool] = {}
+
+
+def _test_requires_async_loop(item) -> bool:
+    test_fn = getattr(item, "obj", None)
+    if test_fn is not None and inspect.iscoroutinefunction(test_fn):
+        return True
+    path = Path(str(getattr(item, "path", "")))
+    if not path.is_file():
+        return False
+    cached = _ASYNC_SOURCE_CACHE.get(path)
+    if cached is None:
+        try:
+            cached = "asyncio.run(" in path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            cached = False
+        _ASYNC_SOURCE_CACHE[path] = cached
+    return cached
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_setup(item):
+    """Create only the event-loop control socket before pytest-socket locks down."""
+    if _test_requires_async_loop(item):
+        item.stash[_ASYNC_LOOP_KEY] = asyncio.new_event_loop()
+
+
+@pytest.fixture(autouse=True)
+def _socket_blocked_asyncio_run(request, monkeypatch):
+    """Run async tests on the pre-created loop while sockets stay blocked."""
+    loop = request.node.stash.get(_ASYNC_LOOP_KEY, None)
+    if loop is None:
+        yield
+        return
+
+    def run(coroutine, *, debug=None, loop_factory=None):
+        if loop_factory is not None:
+            raise RuntimeError("test loop_factory is incompatible with socket isolation")
+        if loop.is_running():
+            raise RuntimeError("asyncio.run() cannot be called from a running event loop")
+        prior_debug = loop.get_debug()
+        if debug is not None:
+            loop.set_debug(debug)
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(coroutine)
+        finally:
+            asyncio.set_event_loop(None)
+            loop.set_debug(prior_debug)
+
+    monkeypatch.setattr(asyncio, "run", run)
+    yield
+
+
+@pytest.hookimpl(hookwrapper=True, trylast=True)
+def pytest_runtest_teardown(item, nextitem):
+    yield
+    loop = item.stash.get(_ASYNC_LOOP_KEY, None)
+    if loop is None or loop.is_closed():
+        return
+    pending = tuple(asyncio.all_tasks(loop))
+    for task in pending:
+        task.cancel()
+    if pending:
+        loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+    loop.run_until_complete(loop.shutdown_asyncgens())
+    loop.close()
 
 
 def pytest_collection_finish(session):

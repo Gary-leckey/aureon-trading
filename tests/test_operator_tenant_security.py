@@ -108,6 +108,42 @@ def test_tenant_engine_has_no_shell_or_write_tools(app_env):
     assert srv_mod is not None
 
 
+def test_tenant_models_never_receive_instance_repo_grounding(app_env, monkeypatch):
+    """Automatic grounding is also a data boundary, not only a toolbelt concern.
+
+    A tenant controls their model ``base_url``. Sending source packets to it would
+    disclose the instance repository even when every repo-reading tool is absent.
+    """
+    client, _srv, _ks = app_env
+    calls: list[str] = []
+
+    import aureon.operator.cognition as cognition_module
+    import aureon.autonomous.aureon_dynamic_prompt_filter as prompt_filter_module
+
+    def forbidden_grounding(*_args, **_kwargs):
+        calls.append("instance_repo_grounding")
+        raise AssertionError("tenant plane must not read instance repository context")
+
+    monkeypatch.setattr(cognition_module, "repo_search", forbidden_grounding)
+    monkeypatch.setattr(prompt_filter_module, "build_dynamic_prompt_filter", forbidden_grounding)
+    _connect_model(client, _tenant("aaa"))
+
+    cognition = client.post(
+        "/api/cognition/reason",
+        json={"prompt": "explain this account"},
+        headers=_tenant("aaa"),
+    )
+    operator = client.post(
+        "/api/operator/respond",
+        json={"prompt": "explain this account"},
+        headers=_tenant("aaa"),
+    )
+
+    assert cognition.status_code == 200
+    assert operator.status_code == 200
+    assert calls == []
+
+
 # ── CRITICAL: the instance control plane is operator-only ───────────────────────
 
 def test_tenant_cannot_flip_feature_switchboard(app_env):
@@ -589,12 +625,9 @@ def test_an_empty_allowlist_yields_an_empty_belt_not_the_full_one():
     assert list(eng.tools.names()) == [], "an empty toolbelt was silently replaced by the full one"
 
 
-def test_tenant_conscience_never_falls_back_to_the_shared_bus_attached_one(app_env, monkeypatch):
-    """If a private conscience cannot be built, the tenant plane must run WITHOUT one rather than
-    borrow the instance's — the shared object publishes each verdict (which quotes the action, i.e.
-    the user's prompt) onto the shared thought bus, and it would be cached for the whole tenant
-    plane. Asserts the invariant that actually matters: even with the constructor failing, a tenant
-    prompt does not reach shared instance memory.
+def test_tenant_conscience_failure_is_isolated_and_denied_no_data(app_env, monkeypatch):
+    """A private-conscience construction failure must neither borrow the shared object nor
+    become downstream APPROVED. The isolated unavailable sentinel emits an explicit no_data VETO.
     """
     import aureon.queen.queen_conscience as qc
 
@@ -603,6 +636,31 @@ def test_tenant_conscience_never_falls_back_to_the_shared_bus_attached_one(app_e
 
     monkeypatch.setattr(qc, "QueenConscience", _boom)
 
+    # Capture the conscience passed by operator_server without contacting the
+    # tenant's configured model endpoint. The real Cognition VETO behavior is
+    # covered separately; this regression owns the construction-failure seam.
+    from types import SimpleNamespace
+    import aureon.operator.cognition as cognition_mod
+
+    captured = {}
+
+    class _NoNetworkCognition:
+        def __init__(self, *args, conscience=None, **kwargs):
+            captured["conscience"] = conscience
+
+        def reason(self, prompt, session_id=None):
+            whisper = captured["conscience"].ask_why(prompt, {})
+            verdict = whisper.verdict.name
+            payload = {
+                "text": whisper.message,
+                "blocked": verdict == "VETO",
+                "conscience_verdict": verdict,
+                "conscience_message": whisper.message,
+            }
+            return SimpleNamespace(to_dict=lambda: payload)
+
+    monkeypatch.setattr(cognition_mod, "AureonCognition", _NoNetworkCognition)
+
     client, srv, _ks = app_env
     app = srv.create_app()          # fresh app so the tenant-conscience cache is built under _boom
     c2 = app.test_client()
@@ -610,6 +668,13 @@ def test_tenant_conscience_never_falls_back_to_the_shared_bus_attached_one(app_e
     marker = "tenant-private-marker-conscience-fallback-4417"
     r = c2.post("/api/cognition/reason", json={"prompt": marker}, headers=_tenant("aaa"))
     assert r.status_code == 200, "a missing conscience must not break the tenant plane"
+    body = r.get_json()
+    assert body["blocked"] is True
+    assert body["conscience_verdict"] == "VETO"
+    assert "NO_DATA" in body["conscience_message"]
+    assert "denied" in body["conscience_message"]
+    assert captured["conscience"].available is False
+    assert captured["conscience"]._thought_bus is None
 
     try:
         from aureon.core.aureon_thought_bus import get_thought_bus

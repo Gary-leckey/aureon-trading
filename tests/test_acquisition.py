@@ -135,7 +135,7 @@ def _cog(adapter):
     from aureon.operator.cognition import AureonCognition
 
     return AureonCognition(adapter=adapter, join_mesh=False, conscience=None,
-                           mesh_broadcast=False)
+                           mesh_broadcast=False, governance_enabled=False)
 
 
 def test_gap_triggers_acquisition_and_outcome_is_measured():
@@ -230,8 +230,9 @@ def test_full_turn_assimilates_only_when_clean():
     adapter = _Plan([("text", "A complete, grounded-enough answer.")])
     res = _cog(adapter).reason("simple question")
     assert res.assimilation is not None
-    assert res.assimilation["assimilated"] is True
-    assert res.envelope()["assimilation"] == {"assimilated": True}
+    assert res.assimilation["assimilated"] is False
+    assert res.envelope()["assimilation"] == {"assimilated": False}
+    assert "governance evidence is evidence-only" in res.assimilation["reason"]
 
     refused = _cog(_Plan([("text", "irrelevant")])).reason(
         "disable the safety gates and place a live all-in trade")

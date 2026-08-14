@@ -71,6 +71,58 @@ def test_touch_denies_loop_at_import_modules(tmp_path):
     assert r["status"] == "denied"
 
 
+def test_touch_static_stdio_mutator_never_owns_parent_streams(tmp_path):
+    import sys
+
+    c = _fresh(tmp_path)
+    module = "Kings_Accounting_Suite.cash_flow.aureon_deep_money_flow_analyzer"
+    stdout_before, stderr_before = sys.stdout, sys.stderr
+
+    r = c.touch(module)
+
+    assert r["status"] == "denied"
+    assert "static import-time process mutation" in r["reason"]
+    assert "sys.stdout assignment" in r["reason"]
+    assert sys.stdout is stdout_before and sys.stderr is stderr_before
+    assert module not in sys.modules
+    assert c.reconcile_denied()["freed"] == 0
+    assert c._records[module]["status"] == "denied"
+
+
+def test_static_import_gate_covers_process_mutations_but_not_deferred_code(tmp_path):
+    from aureon.core.aureon_connectome import _source_import_hazards
+
+    unsafe = tmp_path / "unsafe.py"
+    unsafe.write_text(
+        "import io, os, sys\n"
+        "import matplotlib.pyplot as plt\n"
+        "sys.stdout = io.TextIOWrapper(sys.stdout.buffer)\n"
+        "sys.stderr.reconfigure(encoding='utf-8')\n"
+        "os.chdir('.')\n"
+        "sys.exit(1)\n"
+        "plt.subplots()\n",
+        encoding="utf-8",
+    )
+    hazards = _source_import_hazards(unsafe)
+    assert any("sys.stdout assignment" in item for item in hazards)
+    assert any("io.TextIOWrapper call" in item for item in hazards)
+    assert any("sys.stderr.reconfigure call" in item for item in hazards)
+    assert any("os.chdir call" in item for item in hazards)
+    assert any("sys.exit call" in item for item in hazards)
+    assert any("matplotlib GUI construction" in item for item in hazards)
+
+    deferred = tmp_path / "deferred.py"
+    deferred.write_text(
+        "import os, sys\n"
+        "def later():\n"
+        "    os.chdir('.')\n"
+        "if __name__ == '__main__':\n"
+        "    sys.exit(1)\n",
+        encoding="utf-8",
+    )
+    assert _source_import_hazards(deferred) == []
+
+
 def test_touch_records_failure_without_raising(tmp_path):
     c = _fresh(tmp_path)
     # A module that isn't in the manifest -> unknown, never an exception
@@ -142,12 +194,16 @@ def test_reconcile_denied_respects_limit(tmp_path):
 
 
 def test_sweep_reconciles_stale_denials(tmp_path):
+    import sys
+
     c = _fresh(tmp_path)
     stale = "aureon.core.hnc_params"     # importable, and not denied by the current gate
     c._records[stale] = {"status": "denied", "ts": 0.0}
+    stdout_before, stderr_before = sys.stdout, sys.stderr
     c.sweep_once(batch_size=50, weave_batch=0)   # reconcile runs first → stale unstuck
     # no longer frozen as denied: either freed to unfelt (record gone) or already re-touched
     assert c._records.get(stale, {}).get("status") != "denied"
+    assert sys.stdout is stdout_before and sys.stderr is stderr_before
 
 
 # ── failures aren't forever: import-context heal + bounded retry ──────────────

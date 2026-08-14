@@ -662,7 +662,9 @@ def _llm_respond(text: str, *, tools_enabled: bool = True) -> Optional[Dict[str,
     try:
         from aureon.inhouse_ai.llm_adapter import AureonHybridAdapter, AureonBrainAdapter
         try:
-            adapter = AureonHybridAdapter()
+            from aureon.integrations.ollama import OllamaModelSwitchboard
+
+            adapter, _selection = OllamaModelSwitchboard().hybrid_adapter_for("general")
             if not adapter.health_check():
                 adapter = AureonBrainAdapter()
         except Exception:

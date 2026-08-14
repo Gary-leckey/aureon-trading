@@ -185,14 +185,14 @@ def field_surface(bus: Any = None) -> Dict[str, Any]:
             "consensus_event": _consensus_event(bus),
             "producers": field_producers(subs),
         }
-        if canonical.available and canonical.source and canonical.source != "hnc_trace_file":
+        if canonical.available and canonical.evidence_transport == "thought_bus":
             surface["truth_status"] = "live"
-        elif canonical.available:
+        elif canonical.available and canonical.evidence_transport == "persisted_trace":
             surface["truth_status"] = "cached_real"
             surface["derivation"] = "hnc_live_trace.jsonl (cross-process)"
         else:
             surface["truth_status"] = "no_data"
-            surface["blocker"] = "no symbolic.life.pulse and no trace file"
+            surface["blocker"] = "no validated field on a known evidence transport"
     except Exception as exc:  # noqa: BLE001
         surface = {"truth_status": "no_data", "blocker": f"field read failed: {str(exc)[:120]}"}
     return surface

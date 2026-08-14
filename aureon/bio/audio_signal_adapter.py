@@ -39,6 +39,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from aureon.bio.derived_nulls import derived_null_generator
 
 import phenolic_fingerprint as engine
 from aureon.bio.human_harmonic_proxy import (
@@ -226,7 +227,7 @@ def synthetic_audio(
     must score ``structure_present`` — proving the adapter detects real structure,
     not by fiat. Fully deterministic for a given seed.
     """
-    rng = np.random.default_rng([int(seed), 11])
+    rng = derived_null_generator(int(seed), 11)
     t = np.arange(int(n)) / float(sample_rate_hz)
     if kind == "noise":
         return rng.standard_normal(t.size), float(sample_rate_hz)

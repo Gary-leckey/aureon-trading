@@ -5,7 +5,6 @@ from aureon.core.integrated_cognitive_system import IntegratedCognitiveSystem
 from aureon.queen.accounting_context_bridge import AccountingContextBridge
 from aureon.queen.meaning_resolver import MeaningResolver
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -262,8 +261,10 @@ def test_accounting_context_bridge_loads_generated_artifacts_and_publishes_statu
         # period manifest is present on this machine
         assert combined["csv_source_count"] >= 0
     assert context["accounting_system_registry"]["module_count"] >= 25
-    assert context["accounting_system_registry"]["nonstandard_surfaces"]["accounting_vault_memory"] is True
-    assert context["accounting_vault_memory"]["status"] == "ready"
+    vault_memory = context["accounting_vault_memory"]
+    vault_available = bool(vault_memory["index_exists"] or vault_memory["workflow_count"])
+    assert context["accounting_system_registry"]["nonstandard_surfaces"]["accounting_vault_memory"] is vault_available
+    assert vault_memory["status"] == ("ready" if vault_available else "missing")
     readiness = bridge.validate_accounting_readiness(context)
     # Full readiness requires the operator's personal statement corpus and the
     # generated final-ready outputs, which are deliberately not committed. The

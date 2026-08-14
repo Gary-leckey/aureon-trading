@@ -50,10 +50,33 @@ const PULSE = {
 };
 
 async function mockLiveBackend(page: Page) {
+  // Keep every unmodelled operator endpoint local and explicit. More-specific
+  // routes registered below win in Playwright's reverse registration order.
+  await page.route("**/api/**", (r) =>
+    r.fulfill({ status: 404, json: { error: "not modelled by this fixture" } }),
+  );
   await page.route("**/api/status", (r) => r.fulfill({ json: STATUS }));
   await page.route("**/api/automation", (r) => r.fulfill({ json: AUTOMATION }));
   await page.route("**/api/organism", (r) => r.fulfill({ json: ORGANISM }));
   await page.route("**/api/pulse", (r) => r.fulfill({ json: PULSE }));
+  await page.route("**/api/defense", (r) =>
+    r.fulfill({ json: { counts: { total: 12, passing: 12 }, truth_status: "real_derived" } }),
+  );
+  await page.route("**/api/me", (r) =>
+    r.fulfill({
+      json: {
+        kind: "admin",
+        is_admin: true,
+        plane: "instance",
+        tenancy_enabled: false,
+        auth_required: false,
+        allowed_routes: null,
+      },
+    }),
+  );
+  await page.route("**/api/providers", (r) =>
+    r.fulfill({ json: { providers: [{ id: "fixture", has_key: true, live: true }] } }),
+  );
   await page.route("**/api/billing/status", (r) =>
     r.fulfill({ json: { configured: true, metering: { sink: "memory", flushed: 0, pending: 0 } } }),
   );
@@ -61,7 +84,7 @@ async function mockLiveBackend(page: Page) {
 
 test("Overview renders REAL backend values when the operator is live", async ({ page }) => {
   await mockLiveBackend(page);
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.goto("/console", { waitUntil: "domcontentloaded" });
 
   // the real automation index flows through to the headline metric
   await expect(page.getByText("42.5%")).toBeVisible({ timeout: 15_000 });
@@ -84,7 +107,7 @@ test("Overview renders REAL backend values when the operator is live", async ({ 
 test("Overview degrades honestly (no fabrication) when the backend is down", async ({ page }) => {
   // every backend call fails at the transport layer — the gateway is unreachable
   await page.route("**/api/**", (r) => r.abort());
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.goto("/console", { waitUntil: "domcontentloaded" });
 
   // honest empty copy instead of numbers
   await expect(page.getByText(/Gateway offline/i).first()).toBeVisible({ timeout: 15_000 });

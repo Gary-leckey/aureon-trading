@@ -34,6 +34,7 @@ from aureon.inhouse_ai.llm_adapter import (
     StreamChunk,
     _llm_http_disabled,
 )
+from aureon.ollama_config import ensure_ollama_runtime_config
 
 logger = logging.getLogger("aureon.operator.providers")
 
@@ -243,7 +244,12 @@ def _build_from_spec(spec) -> LLMAdapter | None:
             adapter = AureonAnthropicAdapter(model=spec.model or None)
             return adapter if adapter.health_check() else None
         if kind == "local":
-            adapter = AureonLocalAdapter(model=spec.model or None)
+            from aureon.integrations.ollama import OllamaModelSwitchboard
+
+            adapter, _selection = OllamaModelSwitchboard().compatible_adapter_for(
+                "general",
+                preferred=spec.model or "",
+            )
             return adapter if adapter.health_check() else None
         if kind == "stub":
             return AureonStubAdapter(spec.options.get("message", _OFFLINE_STUB_ANSWER), model=spec.model or "stub")
@@ -270,6 +276,8 @@ def build_registry(
     from aureon.operator.config import default_registry
 
     if specs is None:
+        if force_offline is not True:
+            ensure_ollama_runtime_config()
         specs = default_registry()
     offline = _llm_http_disabled() if force_offline is None else bool(force_offline)
 

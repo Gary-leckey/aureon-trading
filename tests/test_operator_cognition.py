@@ -8,6 +8,7 @@ exercised directly.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -18,6 +19,85 @@ from aureon.operator.cognition import AureonCognition
 from aureon.operator.tools import build_operator_tools
 
 _REPO = Path(__file__).resolve().parents[1]
+
+
+def _file_fingerprint(path: Path):
+    if not path.exists():
+        return (False, 0, 0, "")
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    stat = path.stat()
+    return (True, stat.st_size, stat.st_mtime_ns, digest.hexdigest())
+
+
+@pytest.fixture(autouse=True)
+def isolated_cognition_bus(tmp_path, monkeypatch):
+    """Keep cognition telemetry out of the checkout's durable journals."""
+    import aureon.core.aureon_thought_bus as thought_bus_module
+    import aureon.operator.cognition as cognition_module
+    from aureon.core.aureon_thought_bus import ThoughtBus
+
+    root_journal = _REPO / "thoughts.jsonl"
+    root_fingerprint = _file_fingerprint(root_journal)
+    trace_dir = tmp_path / "bus-traces"
+    trace_dir.mkdir()
+    monkeypatch.setenv("AUREON_BUS_TRACE_DIR", str(trace_dir))
+    monkeypatch.delenv("AUREON_REDIS_URL", raising=False)
+
+    bus = ThoughtBus(persist_path=str(tmp_path / "thoughts.jsonl"))
+    monkeypatch.setattr(thought_bus_module, "_thought_bus_instance", bus)
+    monkeypatch.setattr(cognition_module, "get_thought_bus", lambda: bus)
+    yield bus
+
+    current_fingerprint = _file_fingerprint(root_journal)
+    assert current_fingerprint == root_fingerprint, (
+        "cognition test mutated the checkout's durable thoughts.jsonl: "
+        f"before={root_fingerprint!r} after={current_fingerprint!r}"
+    )
+
+
+@pytest.fixture
+def isolated_repo_index(tmp_path, monkeypatch):
+    """Exercise the real index implementation against a deterministic tiny repo.
+
+    The production root and ingest contract remain asserted here.  Only the
+    corpus/cache are redirected so these focused tests do not rebuild the whole
+    dirty checkout (including every PDF) whenever its production cache is stale.
+    """
+    import aureon.operator.repo_index as repo_index_module
+    from aureon.queen.research_corpus_index import ResearchCorpusIndex
+
+    assert repo_index_module.REPO_ROOT == _REPO
+    assert {".md", ".py", ".txt", ".pdf"} <= set(repo_index_module._INGEST)
+
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    (corpus / "README.md").write_text(
+        """# Aureon operator fixture corpus
+
+The Aureon operator grounds answers in the repo before consensus and veto.
+Oil volatility and GitHub node activation have a measured correlation of 0.85.
+The HNC Master Formula beta stability regime is 0.6 to 1.1.
+The repository uses the MIT license.
+""",
+        encoding="utf-8",
+    )
+    (corpus / "sample.py").write_text(
+        '"""Indexed Python source for repo-search tests."""\n'
+        "def indexed_python_symbol():\n"
+        '    return "aureon operator repo_search"\n',
+        encoding="utf-8",
+    )
+    index = ResearchCorpusIndex(
+        root=str(corpus),
+        cache_path=str(tmp_path / "operator_repo_index.json"),
+        exclude=(),
+        ingest_exts=repo_index_module._INGEST,
+    )
+    monkeypatch.setattr(repo_index_module, "_instance", index)
+    return index
 
 
 # ── test doubles ──────────────────────────────────────────────────────────────
@@ -46,6 +126,7 @@ class ScriptedAdapter(LLMAdapter):
 def _cog(adapter, **kw):
     kw.setdefault("join_mesh", False)
     kw.setdefault("conscience", None)
+    kw.setdefault("governance_enabled", False)
     return AureonCognition(adapter=adapter, **kw)
 
 
@@ -97,10 +178,11 @@ def test_code_validate_syntax_and_sandbox():
 # ── repo-wide index ───────────────────────────────────────────────────────────
 
 
-def test_repo_index_ingests_python_source():
+def test_repo_index_ingests_python_source(isolated_repo_index):
     from aureon.operator.repo_index import get_operator_repo_index
 
     idx = get_operator_repo_index()
+    assert idx is isolated_repo_index
     idx.ensure_built()
     ids = idx.list_doc_ids()
     assert any(d.endswith(".py") for d in ids), "repo index must touch .py source"
@@ -110,7 +192,7 @@ def test_repo_index_ingests_python_source():
 # ── agentic loop ──────────────────────────────────────────────────────────────
 
 
-def test_agentic_loop_dispatches_tool_and_returns_final():
+def test_agentic_loop_dispatches_tool_and_returns_final(isolated_repo_index):
     adapter = ScriptedAdapter(tool="repo_search", tool_args={"query": "operator"}, final="grounded answer.")
     res = _cog(adapter).reason("How does the operator work?")
     assert res.text == "grounded answer."
@@ -119,7 +201,7 @@ def test_agentic_loop_dispatches_tool_and_returns_final():
     assert res.tool_calls[0].blocked is False
 
 
-def test_general_domain_prompt_is_answered_not_refused():
+def test_general_domain_prompt_is_answered_not_refused(isolated_repo_index):
     adapter = ScriptedAdapter(final="A sponge cake needs flour, eggs, sugar and butter.")
     res = _cog(adapter).reason("How do I bake a sponge cake?")
     assert res.blocked is False
@@ -137,14 +219,45 @@ def test_prompt_level_hard_boundary_blocks_before_loop():
 # ── mycelium mesh ─────────────────────────────────────────────────────────────
 
 
-def test_cross_domain_benchmark_cognition_beats_baseline():
-    from aureon.operator.cognition_benchmark import run
+def test_cross_domain_benchmark_cognition_beats_baseline(
+    isolated_repo_index, monkeypatch
+):
+    from types import SimpleNamespace
+
+    import aureon.operator.cognition_benchmark as benchmark_module
+
+    real_cognition = benchmark_module.AureonCognition
+
+    class _ApprovedBenchmarkConscience:
+        def ask_why(self, _action, _context):
+            return SimpleNamespace(
+                verdict=SimpleNamespace(name="APPROVED"),
+                message="approved by deterministic benchmark conscience",
+            )
+
+    def _benchmark_cognition(*args, **kwargs):
+        # This legacy A/B owns grounding, read-only tool use and the hard
+        # authority boundary.  The independent dual-key gate has dedicated
+        # suites, so keep it explicitly out of this measurement.
+        kwargs.update(
+            conscience=_ApprovedBenchmarkConscience(),
+            governance_enabled=False,
+            mesh_broadcast=False,
+            allow_organism_context=False,
+        )
+        return real_cognition(*args, **kwargs)
+
+    monkeypatch.setattr(
+        benchmark_module,
+        "AureonCognition",
+        _benchmark_cognition,
+    )
 
     prompts = _REPO / "data/research/cognition_benchmark_prompts.json"
     recs = _REPO / "data/research/cognition_benchmark_recordings.json"
     if not (prompts.exists() and recs.exists()):
         pytest.skip("benchmark data absent")
-    res = run(prompts, recs)
+    res = benchmark_module.run(prompts, recs)
     b, c = res["baseline"]["metrics"], res["cognition"]["metrics"]
     assert c["correctness"] > b["correctness"]
     assert c["grounding_precision"] >= b["grounding_precision"]
@@ -153,10 +266,20 @@ def test_cross_domain_benchmark_cognition_beats_baseline():
     assert c["fabricated_citation_rate"] == 0.0        # off-repo prompts never grounded
 
 
-def test_cognition_joins_mesh_and_receives_messages():
+def test_cognition_joins_mesh_and_receives_messages(monkeypatch):
+    import aureon.operator.cognition as cognition_module
+    from aureon.core.aureon_mycelium import get_mycelium
+
+    def _join_mycelium_only(subsystem, name):
+        # This test owns the Mycelium registration/message contract.  The
+        # production helper also constructs the full Queen, whose unrelated
+        # scanner wiring can attempt provider HTTP during an offline test.
+        get_mycelium().connect_subsystem(name, subsystem)
+        return {"mycelium": True, "queen": False}
+
+    monkeypatch.setattr(cognition_module, "join_organism", _join_mycelium_only)
     adapter = ScriptedAdapter(final="ok")
     cog = AureonCognition(adapter=adapter, join_mesh=True, conscience=None)
-    from aureon.core.aureon_mycelium import get_mycelium
 
     status = str(get_mycelium().get_mesh_status())
     assert "aureon_cognition" in status

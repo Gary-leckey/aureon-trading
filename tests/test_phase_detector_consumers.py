@@ -19,6 +19,7 @@ synthetic-crash shape as the detector's own __main__ validation.
 
 import math
 import random
+from pathlib import Path
 
 import pytest
 
@@ -28,8 +29,24 @@ from aureon.intelligence.aureon_phase_transition_detector import (
 )
 
 
-def _feed_stable_then_crash(sink, n_stable: int = 200, n_crash: int = 60,
-                            seed: int = 7):
+@pytest.fixture(autouse=True)
+def _isolate_phase_receipts(tmp_path, monkeypatch):
+    """Keep transition thoughts and observer audits out of operational journals."""
+    from aureon.core import aureon_thought_bus as thought_bus_module
+    from aureon.observer import production_mode
+
+    monkeypatch.setenv("AUREON_BUS_TRACE_DIR", str(tmp_path / "bus-traces"))
+    monkeypatch.delenv("AUREON_REDIS_URL", raising=False)
+    bus = thought_bus_module.ThoughtBus(persist_path=str(tmp_path / "phase-thoughts.jsonl"))
+    monkeypatch.setattr(thought_bus_module, "_thought_bus_instance", bus)
+    monkeypatch.setattr(
+        production_mode,
+        "AUDIT_LOG_PATH",
+        Path(tmp_path / "observer_audit.jsonl"),
+    )
+
+
+def _feed_stable_then_crash(sink, n_stable: int = 200, n_crash: int = 60, seed: int = 7):
     """Generate a stable random-walk then a crash, feeding ``sink(price, i)``.
 
     Mirrors the detector's own test scenario: low-vol drift, then an abrupt
@@ -83,9 +100,7 @@ def test_publish_transition_emits_real_thought():
 
 def test_signal_gate_blocks_in_crash_window_when_armed(monkeypatch):
     """With the veto armed, the repaired SignalGate blocks during the crash."""
-    monkeypatch.setattr(
-        "aureon.observer.production_mode.phase_veto_active", lambda: True
-    )
+    monkeypatch.setattr("aureon.observer.production_mode.phase_veto_active", lambda: True)
 
     det = PhaseTransitionDetector()
     gate = SignalGate(phase_detector=det)
@@ -94,6 +109,10 @@ def test_signal_gate_blocks_in_crash_window_when_armed(monkeypatch):
     outcomes = []
 
     def sink(price, i):
+        # Windows can return the same time.time() value across many rapid calls.
+        # Reset only the test cache marker so every synthetic observation reaches
+        # the real detector; production's five-second cache remains unchanged.
+        gate._last_check_time = 0.0
         allowed, reason = gate.check_entry_allowed("BTC/USD", price)
         outcomes.append((i, allowed, reason))
 
@@ -101,10 +120,7 @@ def test_signal_gate_blocks_in_crash_window_when_armed(monkeypatch):
 
     blocked = [(i, r) for i, ok, r in outcomes if not ok]
     assert blocked, "gate never blocked across a synthetic crash — repair regressed"
-    assert any(
-        r.startswith("PHASE_CRITICAL") or r.startswith("HIGH_CURVATURE")
-        for _, r in blocked
-    )
+    assert any(r.startswith("PHASE_CRITICAL") or r.startswith("HIGH_CURVATURE") for _, r in blocked)
     # Warm-up honored: no block is possible before the Takens memory fills
     # (memory_length=144), so the first 100 entries must all have been allowed.
     # (The detector saturates CRITICAL from its first prediction on realistic
@@ -114,9 +130,7 @@ def test_signal_gate_blocks_in_crash_window_when_armed(monkeypatch):
 
 def test_signal_gate_audits_but_allows_when_not_armed(monkeypatch):
     """DRY_RUN semantics: same detector state, would_have_blocked recorded, trade allowed."""
-    monkeypatch.setattr(
-        "aureon.observer.production_mode.phase_veto_active", lambda: False
-    )
+    monkeypatch.setattr("aureon.observer.production_mode.phase_veto_active", lambda: False)
     audits = []
     monkeypatch.setattr(
         "aureon.observer.production_mode.audit",
@@ -128,9 +142,12 @@ def test_signal_gate_audits_but_allows_when_not_armed(monkeypatch):
     gate._cache_ttl = 0.0
 
     outcomes = []
-    _feed_stable_then_crash(
-        lambda p, i: outcomes.append(gate.check_entry_allowed("BTC/USD", p))
-    )
+
+    def sink(price, _i):
+        gate._last_check_time = 0.0
+        outcomes.append(gate.check_entry_allowed("BTC/USD", price))
+
+    _feed_stable_then_crash(sink)
 
     assert all(ok for ok, _ in outcomes), "unarmed gate must allow every entry"
     phase_audits = [a for a in audits if a[0] == "signal_gate_phase_check"]
@@ -154,6 +171,7 @@ class _KrakenScorerHost:
     from aureon.exchanges.kraken_margin_penny_trader import (  # type: ignore
         KrakenMarginArmyTrader as _K,
     )
+
     _score_phase_transition = _K._score_phase_transition
 
 
@@ -167,9 +185,7 @@ def warmed_detector():
 def test_kraken_scorer_reads_real_state(warmed_detector):
     host = _KrakenScorerHost(warmed_detector)
     result = host._score_phase_transition("BTC/USD", "buy", 100.0)
-    assert result["state"] != "UNKNOWN", (
-        "state pinned at UNKNOWN — the get_status() key repair regressed"
-    )
+    assert result["state"] != "UNKNOWN", "state pinned at UNKNOWN — the get_status() key repair regressed"
     assert result["state"] in {"STABLE", "ELEVATED", "CRITICAL", "RECOVERY"}
     assert not math.isnan(result["score"])
     snap = host._phase_transition_snapshot
@@ -179,9 +195,7 @@ def test_kraken_scorer_reads_real_state(warmed_detector):
 def test_kraken_scorer_nav_mapping_can_match_side(warmed_detector):
     """enter/exit maps onto buy/sell so the ±0.5 nav bonus is reachable again."""
     host = _KrakenScorerHost(warmed_detector)
-    nav = str(
-        warmed_detector.get_status().get("navigation_signal", "HOLD")
-    ).lower()
+    nav = str(warmed_detector.get_status().get("navigation_signal", "HOLD")).lower()
     nav_side = {"enter": "buy", "exit": "sell"}.get(nav, nav)
     if nav_side in {"buy", "sell"}:
         with_match = host._score_phase_transition("BTC/USD", nav_side, 100.0)

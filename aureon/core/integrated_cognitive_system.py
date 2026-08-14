@@ -29,6 +29,15 @@ logger = logging.getLogger("aureon.core.ics")
 _COGNITIVE_ENTRY_COHERENCE = 0.55
 _COGNITIVE_EXIT_COHERENCE = 0.45
 
+
+def _background_side_effects_suppressed() -> bool:
+    """Return True when callers require a deterministic, non-autonomous boot."""
+
+    return any(
+        os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+        for name in ("AUREON_AUDIT_MODE", "AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS")
+    )
+
 # ---------------------------------------------------------------------------
 # Graceful imports — every subsystem wrapped in try/except
 # ---------------------------------------------------------------------------
@@ -397,6 +406,7 @@ class IntegratedCognitiveSystem:
         degradation. Returns {subsystem_name: "alive"|"failed"|"skipped"}.
         """
         status: Dict[str, str] = {}
+        background_enabled = not _background_side_effects_suppressed()
 
         # Activate Queen autonomous control in background — importing
         # aureon_queen_hive_mind pulls a heavy dependency chain that can
@@ -407,7 +417,8 @@ class IntegratedCognitiveSystem:
                 activate_autonomous_control()
             except Exception:
                 pass
-        threading.Thread(target=_do_activate, daemon=True, name="ICS.auto_ctrl").start()
+        if background_enabled:
+            threading.Thread(target=_do_activate, daemon=True, name="ICS.auto_ctrl").start()
 
         def _boot_phase(name: str, fn):
             try:
@@ -513,7 +524,8 @@ class IntegratedCognitiveSystem:
             if not _HAS_CORTEX:
                 raise RuntimeError("import failed")
             self.cortex = get_cortex()
-            self.cortex.start()
+            if background_enabled:
+                self.cortex.start()
         _boot_phase("cortex", boot_cortex)
 
         # Phase 6: Self-Feedback Loop
@@ -521,7 +533,8 @@ class IntegratedCognitiveSystem:
             if not _HAS_FEEDBACK_LOOP:
                 raise RuntimeError("import failed")
             self.feedback_loop = get_self_feedback_loop(vault=self.vault)
-            self.feedback_loop.start()
+            if background_enabled:
+                self.feedback_loop.start()
         _boot_phase("feedback_loop", boot_feedback)
 
         # Phase 7: Sentient Loop
@@ -529,7 +542,8 @@ class IntegratedCognitiveSystem:
             if not _HAS_SENTIENT:
                 raise RuntimeError("import failed")
             self.sentient_loop = QueenSentientLoop(think_interval=1.0)
-            self.sentient_loop.start()
+            if background_enabled:
+                self.sentient_loop.start()
         _boot_phase("sentient_loop", boot_sentient)
 
         # Phase 8: Mycelium Mind (thought propagation + synaptic learning)
@@ -537,7 +551,8 @@ class IntegratedCognitiveSystem:
             if not _HAS_MYCELIUM:
                 raise RuntimeError("import failed")
             self.mycelium_mind = get_mycelium_mind()
-            self.mycelium_mind.start()
+            if background_enabled:
+                self.mycelium_mind.start()
         _boot_phase("mycelium_mind", boot_mycelium)
 
         # Phase 9: Queen Metacognition (5W self-reflection loop)
@@ -545,7 +560,8 @@ class IntegratedCognitiveSystem:
             if not _HAS_METACOGNITION:
                 raise RuntimeError("import failed")
             self.metacognition = _QueenMetacognition()
-            self.metacognition.start()
+            if background_enabled:
+                self.metacognition.start()
         _boot_phase("metacognition", boot_metacognition)
 
         # Phase 10: Love Stream (528 Hz love signal → vault love_amplitude)
@@ -553,7 +569,8 @@ class IntegratedCognitiveSystem:
             if not _HAS_LOVE_STREAM:
                 raise RuntimeError("import failed")
             self.love_stream = StandingWaveLoveStream(sample_rate_hz=1.0)
-            self.love_stream.start()
+            if background_enabled:
+                self.love_stream.start()
         _boot_phase("love_stream", boot_love_stream)
 
         # Phase 11: Conscience (ethical compass — Jiminy Cricket)
@@ -571,7 +588,8 @@ class IntegratedCognitiveSystem:
                 entry_coherence=_COGNITIVE_ENTRY_COHERENCE,
                 exit_coherence=_COGNITIVE_EXIT_COHERENCE,
             )
-            self.source_law.start()
+            if background_enabled:
+                self.source_law.start()
         _boot_phase("source_law", boot_source_law)
 
         # Phase 13: As Above So Below Mirror (Hermetic reflection)
@@ -579,7 +597,8 @@ class IntegratedCognitiveSystem:
             if not _HAS_MIRROR or self.love_stream is None:
                 raise RuntimeError("import failed or love_stream not available")
             self.mirror = AsAboveSoBelowMirror(love_stream=self.love_stream)
-            self.mirror.start()
+            if background_enabled:
+                self.mirror.start()
         _boot_phase("mirror", boot_mirror)
 
         # Phase 14: Agent Core
@@ -704,7 +723,8 @@ class IntegratedCognitiveSystem:
                 goal_engine=self.goal_engine,
                 thought_bus=self.thought_bus,
             )
-            self.cognitive_planner.start()
+            if background_enabled:
+                self.cognitive_planner.start()
         _boot_phase("cognitive_planner", boot_cognitive_planner)
 
         # Phase 16.7: Capital CFD Trader — wire Λ(t) into scoring engine.
@@ -773,7 +793,8 @@ class IntegratedCognitiveSystem:
                 interval_s=120.0,  # research every 2 minutes
                 max_questions_per_cycle=2,
             )
-            self.self_research_loop.start()
+            if background_enabled:
+                self.self_research_loop.start()
         _boot_phase("self_research_loop", boot_self_research)
 
         # Phase 22.7: Vault Knowledge Bridge — continuous vault → dataset
@@ -791,7 +812,8 @@ class IntegratedCognitiveSystem:
                 sync_interval_s=30.0,
                 self_organize_every_n_absorbs=15,
             )
-            self.vault_knowledge_bridge.start()
+            if background_enabled:
+                self.vault_knowledge_bridge.start()
         _boot_phase("vault_knowledge_bridge", boot_vault_bridge)
 
         # Phase 23: Wire integrations (Ollama + Obsidian into vault/loop)
@@ -818,7 +840,8 @@ class IntegratedCognitiveSystem:
                         self.cognitive_planner.set_ollama_adapter(result.ollama_adapter)
                 except Exception:
                     pass
-            threading.Thread(target=_do_wire, daemon=True, name="ICS.integrations").start()
+            if background_enabled:
+                threading.Thread(target=_do_wire, daemon=True, name="ICS.integrations").start()
         _boot_phase("integrations", boot_integrations)
 
         # Phase 26: Prose Composer (self-description from real state)
@@ -859,6 +882,8 @@ class IntegratedCognitiveSystem:
     # Unified cognitive tick (~1Hz background thread)
     # ------------------------------------------------------------------
     def _start_tick_thread(self) -> None:
+        if _background_side_effects_suppressed():
+            return
         self._running = True
         self._tick_thread = threading.Thread(
             target=self._tick_loop, name="ics-tick", daemon=True,
@@ -1429,7 +1454,10 @@ class IntegratedCognitiveSystem:
             )
 
         if action == "next":
-            item = self.contract_stack.claim_next(worker="ics.contract_command")
+            item = self.contract_stack.claim_next_available(
+                ("organism.capability_growth", "organism.default"),
+                worker="ics.contract_command",
+            )
             if item is None:
                 return "No queued organism work orders."
             return f"Claimed {item.contract_id}: {item.title}"

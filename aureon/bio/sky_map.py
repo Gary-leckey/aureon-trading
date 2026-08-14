@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Any, Final, Sequence
 
 import numpy as np
+from aureon.bio.derived_nulls import DerivedNullGenerator, derived_null_generator
 
 import phenolic_fingerprint as engine
 from aureon.bio.human_harmonic_proxy import (
@@ -68,8 +69,8 @@ _DEFAULT_NASA: Final[str] = "data/sky/nasa_exoplanet_hosts.csv"
 _DEFAULT_DE440: Final[str] = "data/de440_ephemeris.csv"
 
 
-def _rng(seed: int, tag: int) -> np.random.Generator:
-    return np.random.default_rng([int(seed), int(tag)])
+def _rng(seed: int, tag: int) -> DerivedNullGenerator:
+    return derived_null_generator(int(seed), int(tag))
 
 
 @dataclass(frozen=True)

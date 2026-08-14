@@ -246,7 +246,6 @@ S5 = Speed × Scale × Smart × Systematic × Sustainable
 ✅ Time-to-million: Real-time progress tracking
     """)
     
-    return True
 
 if __name__ == "__main__":
     test_s5_system()

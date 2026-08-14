@@ -51,6 +51,8 @@ def test_write_frontend_manifests_matches_ui_contract(tmp_path):
 def test_taxonomy_mapping():
     assert product_domain_for("exchanges") == "trading"
     assert product_domain_for("queen") == "cognition"
+    assert product_domain_for("governance") == "security"
+    assert product_domain_for("observability") == "self-improvement"
     assert product_domain_for("totally_unknown_domain") == "self-improvement"
     assert fs_domain_from_path("aureon/queen/queen_conscience.py") == "queen"
     assert fs_domain_from_path("aureon/operator/cognition.py") == "operator"

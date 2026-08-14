@@ -31,15 +31,17 @@ This distinguishes surface imitations by harmonic + geometric makeup and a perfe
 keyed provenance seal it cannot forge. It is **synthetic only, NOT a claim about any person, and NOT a
 security proof.** The irreducible limit is stated plainly: **a clone that also steals the secret key is
 authentic by every test.** The real production key comes from the ``AUREON_AUTHENTICITY_KEY`` environment
-variable and is never committed; a fixed, documented **non-secret** test key is the default so self-tests
-are deterministic. Pure stdlib (``hmac``/``hashlib``) + numpy + the engine, called unchanged; no network,
-no import-time side effects; content-bound + fixed test key → byte-identical artifacts.
+variable and is never committed. Runtime verification fails closed if that key is absent. A fixed,
+documented **non-secret** key is used only by the explicitly non-operational statistical-control
+experiment so its artifacts remain deterministic. Pure stdlib + numpy + the engine, called unchanged;
+no network and no import-time side effects.
 """
 
 from __future__ import annotations
 
 import hashlib
 import hmac
+import math
 import os
 import sys
 import time
@@ -57,14 +59,6 @@ if str(_REPO_ROOT) not in sys.path:
 import phenolic_fingerprint as engine  # noqa: E402
 from aureon.bio.power_analysis import _structured_tones  # noqa: E402
 
-# --- guarded organism link (suppressible; never fatal) — the "I exist" heartbeat ---
-try:  # pragma: no cover - environment-dependent, best-effort
-    from aureon.core.aureon_baton_link import link_system
-
-    link_system(__name__)
-except Exception:  # noqa: BLE001 - the organ must import in any environment
-    pass
-
 __all__ = [
     "AUTHENTICITY_BOUNDARY",
     "AUTH_RUN_TOPIC",
@@ -81,9 +75,39 @@ __all__ = [
     "main",
 ]
 
-AUTH_RUN_TOPIC: Final[str] = "bio.authenticity.run"
-AUTH_TRACE_NAME: Final[str] = "authenticity_discriminator"
-_SOURCE: Final[str] = "authenticity_discriminator"
+AUTH_RUN_TOPIC: Final[str] = "bio.control.authenticity.run"
+AUTH_TRACE_NAME: Final[str] = "control_authenticity_discriminator"
+_SOURCE: Final[str] = "bio_control.authenticity_discriminator"
+
+_NON_OPERATIONAL_CONTROL: Final[dict[str, Any]] = {
+    "data_origin": "derived_statistical_control",
+    "truth_status": "statistical_control",
+    "control_only": True,
+    "live_data": False,
+    "provider_observation": False,
+    "operational_eligible": False,
+    "actionable": False,
+    "accounting_eligible": False,
+}
+
+
+def _control_metadata() -> dict[str, Any]:
+    return dict(_NON_OPERATIONAL_CONTROL)
+
+
+def _analysis_metadata(*, control_only: bool) -> dict[str, Any]:
+    if control_only:
+        return _control_metadata()
+    return {
+        "data_origin": "derived_signal_analysis",
+        "truth_status": "derived_analysis",
+        "control_only": False,
+        "live_data": None,
+        "provider_observation": False,
+        "operational_eligible": False,
+        "actionable": False,
+        "accounting_eligible": False,
+    }
 
 #: Environment variable holding the real provenance secret in production (never committed).
 PROVENANCE_KEY_ENV: Final[str] = "AUREON_AUTHENTICITY_KEY"
@@ -108,13 +132,19 @@ _TOKEN_PRECISION: Final[int] = 4  # tone rounding for the canonical provenance s
 
 
 def _rng(seed: int, tag: int) -> np.random.Generator:
-    """Reproducible generator stream for a (seed, purpose) pair (engine idiom)."""
+    """Reproducible statistical-null stream for a (seed, purpose) pair."""
     return np.random.default_rng([int(seed), int(tag)])
 
 
+def _runtime_key() -> str | None:
+    """Return the configured runtime provenance key; never substitute a control key."""
+    value = os.environ.get(PROVENANCE_KEY_ENV)
+    return value.strip() if value and value.strip() else None
+
+
 def _default_key() -> str:
-    """The active provenance key: the production secret from the environment, else the test key."""
-    return os.environ.get(PROVENANCE_KEY_ENV) or _TEST_KEY
+    """Compatibility helper returning the declared statistical-control key only."""
+    return _TEST_KEY
 
 
 # ── provenance seal — the keyed complement to b36's keyless integrity envelope ────────────────────
@@ -123,19 +153,26 @@ def _default_key() -> str:
 def _canonical(tones: np.ndarray) -> str:
     """Deterministic canonical signature of a tone set — the HMAC input (rounded, sorted, tight)."""
     arr = np.asarray(tones, dtype=float).ravel()
+    if arr.size == 0 or not np.all(np.isfinite(arr)):
+        raise ValueError("provenance tones must be a non-empty finite array")
     return ",".join(f"{round(float(x), _TOKEN_PRECISION):.{_TOKEN_PRECISION}f}" for x in np.sort(arr))
 
 
 def provenance_token(tones: np.ndarray, *, key: str) -> str:
     """Issue a keyed origin seal over the canonical tone signature (HMAC-SHA256 hex)."""
+    if not isinstance(key, str) or not key.strip():
+        raise ValueError("a non-empty provenance key is required")
     return hmac.new(key.encode("utf-8"), _canonical(tones).encode("utf-8"), hashlib.sha256).hexdigest()
 
 
 def verify_provenance(tones: np.ndarray, token: str | None, *, key: str) -> bool:
     """True iff ``token`` is the genuine seal for ``tones`` under ``key`` (missing/forged → False)."""
-    if not token:
+    if not token or not isinstance(key, str) or not key.strip():
         return False
-    expected = provenance_token(tones, key=key)
+    try:
+        expected = provenance_token(tones, key=key)
+    except (TypeError, ValueError):
+        return False
     return hmac.compare_digest(expected, str(token))
 
 
@@ -146,6 +183,7 @@ def discriminate(
     key: str | None = None,
     nulls: int = 200,
     seed: int = 0,
+    control_only: bool = False,
 ) -> dict[str, Any]:
     """Classify one signal by structure (harmonic + geometric) and provenance.
 
@@ -154,18 +192,38 @@ def discriminate(
     provenance_valid``. A perfect structural clone (``structure_present`` True) with a forged/absent
     token is ``authentic`` False — the resolved Ditto/Gucci paradox.
     """
-    active_key = key if key is not None else _default_key()
-    arr = np.asarray(tones, dtype=float)
-    if arr.size < 2:
-        p_a = p_b = 1.0
-    else:
-        p_a = float(engine.test_A(arr, nulls=nulls, rng=_rng(seed, 1)))
-        p_b = float(engine.test_B(arr, nulls=nulls, rng=_rng(seed, 2)))
+    active_key = key.strip() if isinstance(key, str) and key.strip() else _runtime_key()
+    try:
+        arr = np.asarray(tones, dtype=float).ravel()
+    except (TypeError, ValueError):
+        arr = np.array([], dtype=float)
+    try:
+        null_count = int(nulls)
+    except (TypeError, ValueError, OverflowError):
+        null_count = 0
+    input_valid = bool(arr.size >= 2 and np.all(np.isfinite(arr)) and null_count > 0)
+    if not input_valid:
+        result: dict[str, Any] = {
+            "p_A": None,
+            "p_B": None,
+            "harmonic_present": False,
+            "geometric_present": False,
+            "structure_present": False,
+            "provenance_valid": False,
+            "authentic": False,
+            "input_valid": False,
+            "reason": "requires at least two finite tones and a positive null-resample count",
+        }
+        result.update(_analysis_metadata(control_only=control_only))
+        return result
+
+    p_a = float(engine.test_A(arr, nulls=null_count, rng=_rng(seed, 1)))
+    p_b = float(engine.test_B(arr, nulls=null_count, rng=_rng(seed, 2)))
     harmonic_present = bool(p_a < ALPHA)
     geometric_present = bool(p_b < ALPHA)
     structure_present = harmonic_present and geometric_present
-    provenance_valid = verify_provenance(arr, token, key=active_key)
-    return {
+    provenance_valid = bool(active_key and verify_provenance(arr, token, key=active_key))
+    result = {
         "p_A": p_a,
         "p_B": p_b,
         "harmonic_present": harmonic_present,
@@ -173,7 +231,11 @@ def discriminate(
         "structure_present": structure_present,
         "provenance_valid": provenance_valid,
         "authentic": structure_present and provenance_valid,
+        "input_valid": True,
+        "reason": None if active_key else "runtime provenance key unavailable",
     }
+    result.update(_analysis_metadata(control_only=control_only))
+    return result
 
 
 # ── synthetic signal classes (deterministic; each presents provenance as it would) ────────────────
@@ -251,7 +313,9 @@ class ClassOutcome:
     is_clone: bool
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload.update(_control_metadata())
+        return payload
 
 
 @dataclass(frozen=True)
@@ -276,6 +340,7 @@ class AuthenticityReport:
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["classes"] = [c.to_dict() for c in self.classes]
+        d.update(_control_metadata())
         return d
 
 
@@ -296,7 +361,16 @@ def compute_authenticity(
     structural tests yet be blocked by provenance (``clone_blocked_by_provenance``). ``separation`` is
     the authentic-rate margin between the genuine class and the strongest surface imitation.
     """
-    active_key = _default_key()
+    if trials <= 0 or nulls <= 0:
+        raise ValueError("trials and nulls must be positive")
+    if not math.isfinite(float(jitter_hz)) or jitter_hz < 0:
+        raise ValueError("jitter_hz must be finite and non-negative")
+    if not math.isfinite(float(tolerance)) or not 0.0 <= tolerance <= 1.0:
+        raise ValueError("tolerance must be finite and between zero and one")
+
+    # This entire experiment is a declared statistical control. It never uses
+    # the runtime provenance secret and cannot mint a runtime-valid receipt.
+    active_key = _TEST_KEY
     outcomes: list[ClassOutcome] = []
     for spec in _CLASS_SPECS:
         struct_hits = prov_hits = auth_hits = 0
@@ -304,7 +378,14 @@ def compute_authenticity(
             seed = seed0 * _TRIAL_STRIDE + spec.index * _CLASS_STRIDE + t
             tones = spec.generate(seed, jitter_hz)
             token = _class_token(spec, tones, active_key)
-            r = discriminate(tones, token=token, key=active_key, nulls=nulls, seed=seed)
+            r = discriminate(
+                tones,
+                token=token,
+                key=active_key,
+                nulls=nulls,
+                seed=seed,
+                control_only=True,
+            )
             struct_hits += int(r["structure_present"])
             prov_hits += int(r["provenance_valid"])
             auth_hits += int(r["authentic"])
@@ -404,21 +485,22 @@ def emit_authenticity(
         "separation": report.separation,
         "boundary": AUTHENTICITY_BOUNDARY,
     }
-    try:
-        from aureon.core.aureon_thought_bus import Thought, get_thought_bus
+    summary.update(_control_metadata())
+    if bus is not None:
+        try:
+            from aureon.core.aureon_thought_bus import Thought
 
-        target = bus if bus is not None else get_thought_bus()
-        target.publish(
-            Thought(source=_SOURCE, topic=AUTH_RUN_TOPIC, trace_id=uuid.uuid4().hex, payload=summary)
-        )
-    except Exception:  # noqa: BLE001 - emission is best-effort, never fatal
-        pass
+            bus.publish(
+                Thought(source=_SOURCE, topic=AUTH_RUN_TOPIC, trace_id=uuid.uuid4().hex, payload=summary)
+            )
+        except Exception:  # noqa: BLE001 - emission is best-effort, never fatal
+            pass
 
     if trace:
         try:
             from aureon.core.bus_trace import append_trace
 
-            append_trace(AUTH_TRACE_NAME, {
+            trace_payload = {
                 "authentic_rate": report.authentic_rate,
                 "max_surface_imitation_rate": report.max_surface_imitation_rate,
                 "clone_blocked_by_provenance": report.clone_blocked_by_provenance,
@@ -426,7 +508,9 @@ def emit_authenticity(
                 "n_classes": report.n_classes,
                 "boundary": AUTHENTICITY_BOUNDARY,
                 "_ts": time.time(),
-            })
+            }
+            trace_payload.update(_control_metadata())
+            append_trace(AUTH_TRACE_NAME, trace_payload)
         except Exception:  # noqa: BLE001 - trace mirror is best-effort
             pass
 

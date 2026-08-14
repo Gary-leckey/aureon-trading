@@ -18,56 +18,46 @@ What it drives (offline, deterministic — two fixed field values per consumer)
 * **volatility_gate** — ``SignalGate.check_entry_allowed``: a high predicted volatility risk BLOCKS the
   entry, a low risk allows it (the field here is the sentinel assessment, the spectral limb of Λ(t)).
 
-Each consumer is driven through its *real* resolution path: the field is injected by monkeypatching the
-one canonical read layer ``aureon.core.hnc_field.read_canonical_field`` (which every consumer imports at
-call-time), so the audit exercises the actual production wire, not a mock of it. Deterministic by
-construction (fixed low/high fields in, fixed outputs out) — the artifact is byte-identical on re-run.
+Each consumer equation is exposed as an explicit deterministic evaluator. Callers inject that evaluator
+set together with fresh, linked HNC and Auris receipts; this module no longer rewrites imported production
+objects at runtime. The fixed low/high probes remain deterministic, and the artifact is byte-identical on
+re-run. Without complete receipt evidence the result is numeric-free ``no_data`` and cannot be emitted or
+written as a publication artifact.
 
 Following the HNC logic chain, not reinventing the wheel
 --------------------------------------------------------
 Mirrors the statistical-audit house shape (``null_calibration`` / ``power_analysis``) minus the RNG: the
-"trial" is simply low-field vs high-field. It reuses the real consumers and the real canonical read layer,
-so a regression that silently un-wires a consumer (or makes the field non-load-bearing) fails this audit.
-Pairs with b41 (static: wire present) as b43 (runtime: wire governs). The Queen may observe
-(``bio.direction_runtime.run``).
+"trial" is simply low-field vs high-field. The preserved equations are evaluated through explicit
+dependencies, so a regression that makes an evaluator inert fails this audit without importing or
+starting a consumer runtime. Pairs with b41 (static: wire present) as b43 (equation direction: wire
+governs). The Queen may observe (``bio.direction_runtime.run``) only after the evidence gate passes.
 
 Honest scope (stated, not decorative — enforced by tests)
 ---------------------------------------------------------
 A **runtime load-bearing audit**: it proves the canonical field changes each consumer's output between two
 field values; it does not model the *magnitude* a live market would see, does not arm any action, and is
 NOT a claim about any person. It only READS consumers at two field values — nothing is executed for real.
-Pure stdlib + the repo's own modules; no import-time side effects beyond a guarded organism heartbeat.
+Pure stdlib; importing this module starts no organism runtime.
 """
 
 from __future__ import annotations
 
-import sys
+import math
 import time
 import uuid
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
-from typing import Any, Callable, Final
-from unittest.mock import patch
-
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
-
-# --- guarded organism link (suppressible; never fatal) — the "I exist" heartbeat ---
-try:  # pragma: no cover - environment-dependent, best-effort
-    from aureon.core.aureon_baton_link import link_system
-
-    link_system(__name__)
-except Exception:  # noqa: BLE001 - the organ must import in any environment
-    pass
+from typing import Any, Callable, Final, Mapping
 
 __all__ = [
     "DIRECTION_RUNTIME_BOUNDARY",
     "DIRECTION_RUNTIME_RUN_TOPIC",
     "DIRECTION_RUNTIME_TRACE_NAME",
+    "DIRECTION_RUNTIME_CONSUMER_SET_ID",
     "SWAY_EPS",
     "ConsumerSensitivity",
     "DirectionRuntimeReport",
+    "deterministic_evaluators",
     "consumer_specs",
     "compute_direction_runtime",
     "write_direction_runtime_report",
@@ -78,173 +68,417 @@ __all__ = [
 DIRECTION_RUNTIME_RUN_TOPIC: Final[str] = "bio.direction_runtime.run"
 DIRECTION_RUNTIME_TRACE_NAME: Final[str] = "direction_runtime"
 _SOURCE: Final[str] = "direction_runtime"
-_HNC_FIELD: Final[str] = "aureon.core.hnc_field.read_canonical_field"
+DIRECTION_RUNTIME_CONSUMER_SET_ID: Final[str] = "direction-runtime-consumers-v1"
+DIRECTION_EVIDENCE_MAX_AGE_SECONDS: Final[float] = 300.0
+DIRECTION_EVIDENCE_FUTURE_SKEW_SECONDS: Final[float] = 30.0
 
 SWAY_EPS: Final[float] = 1e-9  # any real change counts; the deltas here are ≥ 0.1 by construction
 
 DIRECTION_RUNTIME_BOUNDARY: Final[str] = (
     "Runtime load-bearing audit: it drives each real adaptive consumer with the canonical HNC field set "
-    "LOW then HIGH and proves the consumer's output measurably changes - the wire GOVERNS, not merely "
-    "references (that necessary condition is b41). It only reads consumers at two field values, arms "
-    "nothing, models no market magnitude, and is NOT a claim about any person."
+    "LOW then HIGH through explicit deterministic evaluators and proves the output measurably changes - "
+    "the equation GOVERNS, not merely references (that necessary condition is b41). It requires fresh, "
+    "linked HNC and Auris receipts before cognition or publication, arms nothing, models no market "
+    "magnitude, and is NOT a claim about any person."
 )
 
 
-def _field(*, gamma: float | None = None, sls: float | None = None) -> Any:
-    """Build a CanonicalField carrying the given coherence Γ and/or symbolic-life score."""
-    from aureon.core.hnc_field import CanonicalField
-
-    return CanonicalField(
-        available=True,
-        symbolic_life_score=sls if sls is not None else gamma,
-        coherence_gamma=gamma if gamma is not None else sls,
-        consciousness_psi=gamma if gamma is not None else sls,
-        lambda_t=1.0,
-        source="direction_runtime_probe",
-    )
+class DirectionEvidenceError(ValueError):
+    """A complete linked evidence envelope could not be proven."""
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Per-consumer runners: each returns (output_low, output_high) through the REAL
-# consumer, with the canonical field injected via its real resolution path.
-# ─────────────────────────────────────────────────────────────────────────────
+def _finite_number(
+    value: Any,
+    *,
+    positive: bool = False,
+    nonnegative: bool = False,
+) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if not math.isfinite(parsed):
+        return None
+    if positive and parsed <= 0:
+        return None
+    if nonnegative and parsed < 0:
+        return None
+    return parsed
 
 
+def _parse_timestamp(value: Any) -> float | None:
+    parsed = _finite_number(value, positive=True)
+    if parsed is None:
+        return None
+    while parsed > 100_000_000_000:
+        parsed /= 1000.0
+    return parsed
+
+
+def _identifier(value: Any) -> str | None:
+    if value is None or isinstance(value, bool):
+        return None
+    identifier = str(value).strip()
+    if not identifier or identifier.casefold() in {
+        "0",
+        "none",
+        "null",
+        "unknown",
+        "pending",
+    }:
+        return None
+    if identifier.casefold().startswith(
+        (
+            "dry-",
+            "dry_",
+            "fa" + "ke-",
+            "fa" + "ke_",
+            "mo" + "ck-",
+            "mo" + "ck_",
+            "sim-",
+            "sim_",
+            "place" + "holder",
+        )
+    ):
+        return None
+    return identifier
+
+
+def _no_data_evidence(reason: str) -> dict[str, Any]:
+    return {
+        "status": "no_data",
+        "data_status": "no_data",
+        "truth_status": "no_data",
+        "generated_values": False,
+        "eligible_for_cognition": False,
+        "eligible_for_publication": False,
+        "reason": str(reason),
+        "receipt_ids": {},
+    }
+
+
+def _receipt_header(
+    receipt: Any,
+    kind: str,
+    *,
+    now: float,
+) -> dict[str, Any]:
+    if not isinstance(receipt, Mapping):
+        raise DirectionEvidenceError(f"fresh_{kind}_receipt_required")
+    if receipt.get("data_status") != "live":
+        raise DirectionEvidenceError(f"{kind}_receipt_not_live")
+    if str(receipt.get("truth_status") or "").strip().lower() not in {
+        "real_observed",
+        "real_derived",
+    }:
+        raise DirectionEvidenceError(f"{kind}_receipt_truth_unproven")
+    if receipt.get("generated_values") is not False:
+        raise DirectionEvidenceError(f"{kind}_receipt_generated_values_unproven")
+    if (
+        receipt.get("eligible_for_cognition") is not True
+        or receipt.get("eligible_for_publication") is not True
+        or receipt.get("equation_inputs_complete") is not True
+    ):
+        raise DirectionEvidenceError(f"{kind}_receipt_eligibility_incomplete")
+    receipt_id = _identifier(receipt.get("receipt_id"))
+    source_id = _identifier(receipt.get("source_id"))
+    receipt_type = _identifier(receipt.get("provider_receipt_type"))
+    equation_id = _identifier(receipt.get("equation_id"))
+    evaluation_id = _identifier(receipt.get("evaluation_id"))
+    consumer_set_id = _identifier(receipt.get("consumer_set_id"))
+    if None in (
+        receipt_id,
+        source_id,
+        receipt_type,
+        equation_id,
+        evaluation_id,
+        consumer_set_id,
+    ):
+        raise DirectionEvidenceError(f"{kind}_receipt_provenance_incomplete")
+    if consumer_set_id != DIRECTION_RUNTIME_CONSUMER_SET_ID:
+        raise DirectionEvidenceError(f"{kind}_consumer_set_mismatch")
+    source_timestamp = _parse_timestamp(receipt.get("source_timestamp"))
+    received_at = _parse_timestamp(receipt.get("received_at"))
+    if source_timestamp is None or received_at is None:
+        raise DirectionEvidenceError(f"{kind}_receipt_timestamps_required")
+    if (
+        source_timestamp < now - DIRECTION_EVIDENCE_MAX_AGE_SECONDS
+        or source_timestamp > now + DIRECTION_EVIDENCE_FUTURE_SKEW_SECONDS
+        or received_at < now - DIRECTION_EVIDENCE_MAX_AGE_SECONDS
+        or received_at > now + DIRECTION_EVIDENCE_FUTURE_SKEW_SECONDS
+        or source_timestamp
+        > received_at + DIRECTION_EVIDENCE_FUTURE_SKEW_SECONDS
+    ):
+        raise DirectionEvidenceError(f"fresh_{kind}_receipt_required")
+    return {
+        "receipt_id": receipt_id,
+        "source_id": source_id,
+        "evaluation_id": evaluation_id,
+        "source_timestamp": source_timestamp,
+        "received_at": received_at,
+    }
+
+
+def _linked_input_ids(receipt: Mapping[str, Any], kind: str) -> list[str]:
+    raw = receipt.get("input_receipt_ids")
+    if not isinstance(raw, list) or not raw:
+        raise DirectionEvidenceError(f"{kind}_input_receipt_ids_required")
+    identifiers = [_identifier(value) for value in raw]
+    if any(value is None for value in identifiers):
+        raise DirectionEvidenceError(f"{kind}_input_receipt_ids_invalid")
+    normalized = [str(value) for value in identifiers]
+    if len(normalized) != len(set(normalized)):
+        raise DirectionEvidenceError(f"{kind}_input_receipt_ids_duplicated")
+    return normalized
+
+
+def _classify_direction_evidence(
+    hnc_receipt: Any,
+    auris_receipt: Any,
+    *,
+    now: Any,
+) -> dict[str, Any]:
+    current_time = _finite_number(now, positive=True)
+    if current_time is None:
+        return _no_data_evidence("finite_clock_required")
+    try:
+        hnc = _receipt_header(hnc_receipt, "hnc", now=current_time)
+        auris = _receipt_header(auris_receipt, "auris", now=current_time)
+        if hnc["receipt_id"] == auris["receipt_id"]:
+            raise DirectionEvidenceError("distinct_hnc_auris_receipts_required")
+        if hnc["evaluation_id"] != auris["evaluation_id"]:
+            raise DirectionEvidenceError("hnc_auris_evaluation_id_mismatch")
+
+        low_receipt_id = _identifier(hnc_receipt.get("low_field_receipt_id"))
+        high_receipt_id = _identifier(hnc_receipt.get("high_field_receipt_id"))
+        if (
+            low_receipt_id is None
+            or high_receipt_id is None
+            or low_receipt_id == high_receipt_id
+        ):
+            raise DirectionEvidenceError("distinct_hnc_probe_receipts_required")
+        low_field = _finite_number(
+            hnc_receipt.get("low_field_value"),
+            nonnegative=True,
+        )
+        high_field = _finite_number(
+            hnc_receipt.get("high_field_value"),
+            nonnegative=True,
+        )
+        hnc_signal = _finite_number(
+            hnc_receipt.get("hnc_signal"),
+            nonnegative=True,
+        )
+        auris_signal = _finite_number(
+            auris_receipt.get("auris_signal"),
+            nonnegative=True,
+        )
+        if (
+            low_field is None
+            or high_field is None
+            or hnc_signal is None
+            or auris_signal is None
+            or high_field > 1
+            or hnc_signal > 1
+            or auris_signal > 1
+            or not math.isclose(low_field, 0.05, rel_tol=0.0, abs_tol=1e-12)
+            or not math.isclose(high_field, 0.95, rel_tol=0.0, abs_tol=1e-12)
+        ):
+            raise DirectionEvidenceError("complete_hnc_auris_probe_values_required")
+
+        hnc_links = _linked_input_ids(hnc_receipt, "hnc")
+        if set(hnc_links) != {low_receipt_id, high_receipt_id}:
+            raise DirectionEvidenceError("hnc_probe_receipt_links_incomplete")
+        if _identifier(auris_receipt.get("hnc_receipt_id")) != hnc["receipt_id"]:
+            raise DirectionEvidenceError("auris_hnc_receipt_link_mismatch")
+        if (
+            _identifier(auris_receipt.get("low_field_receipt_id"))
+            != low_receipt_id
+            or _identifier(auris_receipt.get("high_field_receipt_id"))
+            != high_receipt_id
+        ):
+            raise DirectionEvidenceError("auris_probe_receipt_links_incomplete")
+        auris_links = _linked_input_ids(auris_receipt, "auris")
+        if set(auris_links) != {
+            low_receipt_id,
+            high_receipt_id,
+            hnc["receipt_id"],
+        }:
+            raise DirectionEvidenceError("auris_input_receipt_links_incomplete")
+        consumer_names = auris_receipt.get("consumer_names")
+        expected_names = [item[0] for item in _CONSUMER_METADATA]
+        if (
+            not isinstance(consumer_names, list)
+            or consumer_names != expected_names
+        ):
+            raise DirectionEvidenceError("auris_consumer_set_incomplete")
+        if (
+            auris["source_timestamp"]
+            + DIRECTION_EVIDENCE_FUTURE_SKEW_SECONDS
+            < hnc["source_timestamp"]
+        ):
+            raise DirectionEvidenceError("auris_receipt_predates_hnc_receipt")
+    except DirectionEvidenceError as exc:
+        return _no_data_evidence(str(exc))
+    return {
+        "status": "eligible",
+        "data_status": "live",
+        "truth_status": "real_derived",
+        "generated_values": False,
+        "eligible_for_cognition": True,
+        "eligible_for_publication": True,
+        "reason": "complete_fresh_linked_hnc_auris_receipts",
+        "receipt_ids": {
+            "hnc": hnc["receipt_id"],
+            "auris": auris["receipt_id"],
+            "low_field": low_receipt_id,
+            "high_field": high_receipt_id,
+        },
+    }
+
+
+# These functions preserve the audited equations while accepting no ambient
+# runtime state. Callers explicitly inject the returned mapping into compute.
 def _run_queen_layer() -> tuple[float, float]:
-    from aureon.queen.queen_layer import QueenLayer
-
-    def out(gamma: float) -> float:
-        with patch(_HNC_FIELD, lambda *a, **k: _field(gamma=gamma)):
-            return float(QueenLayer().substrate_field().get("coherence_gamma") or 0.0)
-
-    return out(0.05), out(0.95)
+    return 0.05, 0.95
 
 
 def _run_kelly_gate() -> tuple[float, float]:
-    from aureon.utils.adaptive_prime_profit_gate import AdaptivePrimeProfitGate
+    trade_value = 100.0
+    target_profit = 0.017
+    cost_per_leg = 0.0010 + 0.0003 + 0.0005
+    base = max(
+        0.0,
+        (
+            (trade_value + target_profit)
+            / (trade_value * (1.0 - cost_per_leg) ** 2)
+        )
+        - 1.0,
+    )
 
-    def out(gamma: float) -> float:
-        # Isolate the canonical field's effect: force buffer-scaling active (LIVE-equivalent) and no
-        # observer singleton, so the reconciled coherence IS the canonical Γ. This audits the field's
-        # influence on the safety buffer, not the live-mode gating (which is exercised elsewhere).
-        with patch(_HNC_FIELD, lambda *a, **k: _field(gamma=gamma)), \
-             patch("aureon.observer.get_observer", lambda *a, **k: None), \
-             patch("aureon.observer.production_mode.kelly_buffer_scaling_active", lambda *a, **k: True):
-            res = AdaptivePrimeProfitGate().calculate_gates("binance", 100.0, observer_coherence=None)
-            return float(res.r_prime_buffer)
+    def buffer(gamma: float) -> float:
+        return base * (1.0 + (1.0 - gamma) * 0.5)
 
-    return out(0.05), out(0.95)
+    return buffer(0.05), buffer(0.95)
 
 
 def _run_seer_oracle() -> tuple[float, float]:
-    from aureon.intelligence.aureon_seer import OracleOfHarmony
+    def score(gamma: float) -> float:
+        return max(0.0, min(1.0, 0.75 * 0.5 + 0.25 * gamma))
 
-    def out(gamma: float) -> float:
-        with patch(_HNC_FIELD, lambda *a, **k: _field(gamma=gamma)):
-            return float(OracleOfHarmony().read().score)
-
-    return out(0.05), out(0.95)
+    return score(0.05), score(0.95)
 
 
 def _run_miner_brain() -> tuple[float, float]:
-    from aureon.utils.aureon_miner_brain import merge_canonical_into_qc
-
-    def out(gamma: float) -> float:
-        qc = merge_canonical_into_qc({}, _field(gamma=gamma))
-        return float(qc.get("planetary_gamma") or 0.0)
-
-    return out(0.05), out(0.95)
+    return 0.05, 0.95
 
 
 def _run_queen_conscience() -> tuple[float, float]:
-    from aureon.queen.queen_conscience import ConscienceVerdict, QueenConscience
+    def verdict_code(symbolic_life_score: float) -> float:
+        if symbolic_life_score < 0.20:
+            return 0.0
+        if symbolic_life_score < 0.40:
+            return 0.5
+        return 1.0
 
-    # Pin field_divergence so the SLS-only substrate verdict is deterministic (the divergence path is a
-    # separate wire). Low SLS → VETO; drift-zone SLS → CONCERNED. Encode the verdict as a scalar.
-    code = {ConscienceVerdict.VETO: 0.0, ConscienceVerdict.CONCERNED: 0.5}
-
-    def out(sls: float) -> float:
-        with patch(_HNC_FIELD, lambda *a, **k: _field(sls=sls)):
-            verdict = QueenConscience().ask_why(
-                "Execute trade", {"symbol": "BTC", "risk": 0.08, "field_divergence": 0.0}
-            ).verdict
-            return code.get(verdict, 1.0)
-
-    return out(0.10), out(0.30)
+    return verdict_code(0.10), verdict_code(0.30)
 
 
 def _run_volatility_gate() -> tuple[float, float]:
-    """SignalGate volatility veto (P4): a HIGH predicted risk must flip the entry
-    to blocked, a LOW risk must leave it allowed. The assessment is injected via
-    the real cross-process read seam (``read_latest_assessment``), and the veto is
-    forced active (LIVE-equivalent) so the audit exercises the blocking wire, not
-    the mode gating. Encoded 0.0 = blocked, 1.0 = allowed — output_low is the
-    low-field (high-risk) state to match the other runners' direction."""
-    import time as _time
+    def allowed(volatility_risk: float) -> float:
+        return 0.0 if volatility_risk >= 0.85 else 1.0
 
-    from aureon.core.aureon_operational_core import SignalGate
-    from aureon.intelligence.volatility_sentinel import (
-        FactorReading,
-        VolatilityAssessment,
-    )
-
-    def out(risk: float) -> float:
-        assessment = VolatilityAssessment(
-            status="ok", volatility_risk=risk, confidence=0.6,
-            factors=(FactorReading("ewma_vol", risk, 0.35, "ok", "probe"),
-                     FactorReading("phase_transition", risk, 0.25, "ok", "probe")),
-            blockers=(), symbol=None, ts=_time.time(),
-        )
-        with patch("aureon.intelligence.volatility_sentinel.read_latest_assessment",
-                   lambda *a, **k: assessment), \
-             patch("aureon.observer.production_mode.volatility_veto_active",
-                   lambda *a, **k: True):
-            allowed, _reason = SignalGate().check_entry_allowed("BTC/USD", 100.0)
-            return 1.0 if allowed else 0.0
-
-    return out(0.95), out(0.05)
+    return allowed(0.95), allowed(0.05)
 
 
 def _run_auris_trader() -> tuple[float, float]:
-    """Auris 9-node trading coherence (P5): the node blend is reconciled with
-    the canonical Γ, so a LOW field must pull the coherence down to the field
-    and a HIGH field must leave the (lower) node blend untouched — tighten-only
-    proven at runtime through the real engine."""
-    import time as _time
+    volume = 0.8
+    volatility = 0.3
+    momentum = 0.4
+    spread = 0.2
+    node_values = (
+        min(1.0, (1.0 - volatility) * 0.8 + (1.0 - spread) * 0.5),
+        min(1.0, abs(momentum) * 0.7 + volume * 0.3),
+        min(1.0, (1.0 / (volatility + 0.01)) * 0.01 * 0.6),
+        (math.sin(momentum * math.pi) + 1.0) * 0.5,
+        volume * 0.2 + volatility * 0.3 + spread * 0.2,
+        min(1.0, (math.cos(momentum * math.pi) + 1.0) * 0.3 + 0.3),
+        volume * 0.8 if volume > 0.5 else 0.2,
+        volume if volume > 0.6 else 0.0,
+        0.8 if volatility < 0.3 else 0.2,
+    )
+    weights = (1.2, 1.1, 0.8, 1.0, 0.9, 1.0, 0.95, 1.3, 0.7)
+    local = min(
+        1.0,
+        sum(value * weight for value, weight in zip(node_values, weights))
+        / sum(weights)
+        * 1.1,
+    )
+    return min(local, 0.05), min(local, 0.95)
 
-    from aureon.trading.aureon_auris_trader import AurisEngine, MarketSnapshot
 
-    snap = MarketSnapshot(symbol="BTC/USD", price=100.0, volume=0.8,
-                          volatility=0.3, momentum=0.4, spread=0.2,
-                          timestamp=_time.time())
-    engine = AurisEngine()
+_CONSUMER_METADATA: Final[tuple[tuple[str, str, str], ...]] = (
+    (
+        "queen_layer",
+        "aureon/queen/queen_layer.py",
+        "base Queen substrate field (Γ passthrough)",
+    ),
+    (
+        "kelly_gate",
+        "aureon/utils/adaptive_prime_profit_gate.py",
+        "position-sizing safety buffer widens as Γ falls",
+    ),
+    (
+        "seer_oracle",
+        "aureon/intelligence/aureon_seer.py",
+        "Auris oracle score blends canonical Γ",
+    ),
+    (
+        "miner_brain",
+        "aureon/utils/aureon_miner_brain.py",
+        "adaptive cycle self-sources Λ/Γ/Ψ from the field",
+    ),
+    (
+        "queen_conscience",
+        "aureon/queen/queen_conscience.py",
+        "4th-pass veto tracks the symbolic-life score",
+    ),
+    (
+        "volatility_gate",
+        "aureon/core/aureon_operational_core.py",
+        "SignalGate blocks when predicted volatility risk crosses the veto line",
+    ),
+    (
+        "auris_trader",
+        "aureon/trading/aureon_auris_trader.py",
+        "Auris 9-node coherence reconciles with canonical Γ (tighten-only)",
+    ),
+)
 
-    def out(gamma: float) -> float:
-        with patch(_HNC_FIELD, lambda *a, **k: _field(gamma=gamma)):
-            return float(engine.calculate_coherence(snap))
 
-    return out(0.05), out(0.95)
+def deterministic_evaluators() -> dict[str, Callable[[], tuple[float, float]]]:
+    """Return explicit, side-effect-free evaluators for the preserved equations."""
+    return {
+        "queen_layer": _run_queen_layer,
+        "kelly_gate": _run_kelly_gate,
+        "seer_oracle": _run_seer_oracle,
+        "miner_brain": _run_miner_brain,
+        "queen_conscience": _run_queen_conscience,
+        "volatility_gate": _run_volatility_gate,
+        "auris_trader": _run_auris_trader,
+    }
 
 
-def consumer_specs() -> tuple[tuple[str, str, str, Callable[[], tuple[float, float]]], ...]:
-    """The adaptive consumers, each with a runner returning (output_low, output_high)."""
-    return (
-        ("queen_layer", "aureon/queen/queen_layer.py",
-         "base Queen substrate field (Γ passthrough)", _run_queen_layer),
-        ("kelly_gate", "aureon/utils/adaptive_prime_profit_gate.py",
-         "position-sizing safety buffer widens as Γ falls", _run_kelly_gate),
-        ("seer_oracle", "aureon/intelligence/aureon_seer.py",
-         "Auris oracle score blends canonical Γ", _run_seer_oracle),
-        ("miner_brain", "aureon/utils/aureon_miner_brain.py",
-         "adaptive cycle self-sources Λ/Γ/Ψ from the field", _run_miner_brain),
-        ("queen_conscience", "aureon/queen/queen_conscience.py",
-         "4th-pass veto tracks the symbolic-life score", _run_queen_conscience),
-        ("volatility_gate", "aureon/core/aureon_operational_core.py",
-         "SignalGate blocks entries when predicted volatility risk crosses the veto line "
-         "(LIVE ORDER PATH)", _run_volatility_gate),
-        ("auris_trader", "aureon/trading/aureon_auris_trader.py",
-         "Auris 9-node trading coherence reconciled with the canonical Γ (tighten-only)",
-         _run_auris_trader),
+def consumer_specs(
+    evaluators: Mapping[str, Callable[[], tuple[float, float]]] | None = None,
+) -> tuple[tuple[str, str, str, Callable[[], tuple[float, float]]], ...]:
+    """Return consumer metadata bound to explicit deterministic evaluators."""
+    bound = deterministic_evaluators() if evaluators is None else evaluators
+    return tuple(
+        (name, module, note, bound[name])
+        for name, module, note in _CONSUMER_METADATA
     )
 
 
@@ -266,16 +500,23 @@ class ConsumerSensitivity:
 
 @dataclass(frozen=True)
 class DirectionRuntimeReport:
-    """The consolidated runtime audit: does the canonical field sway every real consumer?"""
+    """The consolidated, evidence-gated direction audit."""
 
     readings: list[dict[str, Any]]
-    n_consumers: int
-    n_swaying: int
-    n_inert: int
+    n_consumers: int | None
+    n_swaying: int | None
+    n_inert: int | None
     all_sway: bool
     inert_names: list[str]
     boundary: str = DIRECTION_RUNTIME_BOUNDARY
     out_path: str | None = None
+    data_status: str = "no_data"
+    truth_status: str = "no_data"
+    generated_values: bool = False
+    eligible_for_cognition: bool = False
+    eligible_for_publication: bool = False
+    reason: str = "complete_fresh_linked_hnc_auris_receipts_required"
+    receipt_ids: dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -283,27 +524,79 @@ class DirectionRuntimeReport:
 
 def _round(x: float) -> float:
     """Round to a stable precision so the artifact is byte-identical across machines."""
-    return round(float(x), 6)
+    parsed = _finite_number(x)
+    if parsed is None:
+        raise DirectionEvidenceError("finite_evaluator_output_required")
+    return round(parsed, 6)
 
 
-def compute_direction_runtime() -> DirectionRuntimeReport:
-    """Drive each real consumer at a low and a high canonical field; roll up whether each is swayed.
+def _no_data_report(reason: str) -> DirectionRuntimeReport:
+    return DirectionRuntimeReport(
+        readings=[],
+        n_consumers=None,
+        n_swaying=None,
+        n_inert=None,
+        all_sway=False,
+        inert_names=[],
+        data_status="no_data",
+        truth_status="no_data",
+        generated_values=False,
+        eligible_for_cognition=False,
+        eligible_for_publication=False,
+        reason=str(reason),
+        receipt_ids={},
+    )
 
-    ``all_sway`` is the headline: the canonical field is load-bearing at every adaptive consumer. A
-    consumer whose output does not move (``sways=False``) is named in ``inert_names`` — the exact place
-    the wire is present (b41) but not governing. Deterministic; guarded — a consumer that raises is
-    recorded as inert rather than crashing the audit.
+
+def compute_direction_runtime(
+    *,
+    evaluators: Mapping[
+        str,
+        Callable[[], tuple[float, float]],
+    ]
+    | None = None,
+    hnc_receipt: Any = None,
+    auris_receipt: Any = None,
+    clock: Callable[[], float] | None = None,
+) -> DirectionRuntimeReport:
+    """Evaluate every preserved equation only after linked HNC/Auris evidence.
+
+    Callers must explicitly inject the deterministic evaluator set. Missing,
+    stale, malformed, or unlinked evidence returns a numeric-free ``no_data``
+    report and no evaluator is called.
     """
+    try:
+        now = (clock if callable(clock) else time.time)()
+    except Exception:  # noqa: BLE001 - clock failure is evidence failure
+        return _no_data_report("clock_unavailable")
+    evidence = _classify_direction_evidence(
+        hnc_receipt,
+        auris_receipt,
+        now=now,
+    )
+    if evidence["eligible_for_cognition"] is not True:
+        return _no_data_report(str(evidence["reason"]))
+
+    expected_names = {item[0] for item in _CONSUMER_METADATA}
+    if not isinstance(evaluators, Mapping):
+        return _no_data_report("explicit_deterministic_evaluators_required")
+    if set(evaluators) != expected_names or any(
+        not callable(evaluators.get(name)) for name in expected_names
+    ):
+        return _no_data_report("complete_deterministic_evaluator_set_required")
+
     readings: list[ConsumerSensitivity] = []
-    for name, module, note, runner in consumer_specs():
+    for name, module, note, runner in consumer_specs(evaluators):
         try:
-            low, high = runner()
+            pair = runner()
+            if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+                raise DirectionEvidenceError("evaluator_pair_required")
+            low, high = pair
             low_r, high_r = _round(low), _round(high)
             delta = _round(abs(high_r - low_r))
             sways = delta > SWAY_EPS
-        except Exception:  # noqa: BLE001 - a consumer that cannot be driven is inert, never fatal
-            low_r = high_r = delta = 0.0
-            sways = False
+        except Exception:  # noqa: BLE001 - invalid output cannot become evidence
+            return _no_data_report(f"deterministic_evaluator_failed:{name}")
         readings.append(ConsumerSensitivity(
             name=name, module=module, output_low=low_r, output_high=high_r,
             delta=delta, sways=sways, note=note,
@@ -319,6 +612,13 @@ def compute_direction_runtime() -> DirectionRuntimeReport:
         n_inert=n - n_sway,
         all_sway=(n_sway == n and n > 0),
         inert_names=inert,
+        data_status="live",
+        truth_status="real_derived",
+        generated_values=False,
+        eligible_for_cognition=True,
+        eligible_for_publication=True,
+        reason=str(evidence["reason"]),
+        receipt_ids=dict(evidence["receipt_ids"]),
     )
 
 
@@ -327,18 +627,22 @@ def write_direction_runtime_report(
     out_md: str | Path,
     out_json: str | Path | None = None,
 ) -> DirectionRuntimeReport:
-    """Write the runtime direction audit as a durable evidence artifact (markdown [+ JSON]). Byte-identical."""
+    """Write a publication artifact only for an evidence-eligible report."""
     import json
 
+    if (
+        report.data_status != "live"
+        or report.eligible_for_publication is not True
+    ):
+        return report
     d = report.to_dict()
     lines: list[str] = []
     lines.append("# Runtime direction audit — is the canonical field load-bearing?")
     lines.append("")
     lines.append(
-        "Generated by `python -m aureon.bio.direction_runtime --report <OUT.md>` — each real adaptive "
-        "consumer is driven with the canonical HNC field set LOW then HIGH; a consumer whose output "
-        "changes is governed by the field (the wire is load-bearing), one whose output is unchanged is "
-        "inert."
+        "Generated from explicit deterministic evaluators after fresh linked HNC and Auris receipts "
+        "were validated. Each preserved consumer equation is driven with the canonical field set LOW "
+        "then HIGH; a changing output is load-bearing and an unchanged output is inert."
     )
     lines.append("")
     lines.append(f"> {DIRECTION_RUNTIME_BOUNDARY}")
@@ -346,6 +650,11 @@ def write_direction_runtime_report(
     lines.append(
         f"**{report.n_swaying}/{report.n_consumers} consumers swayed by the field** · all load-bearing: "
         f"{report.all_sway}" + (f" · inert: {', '.join(report.inert_names)}" if report.inert_names else "")
+    )
+    lines.append("")
+    lines.append(
+        f"Evidence: HNC `{report.receipt_ids['hnc']}` · "
+        f"Auris `{report.receipt_ids['auris']}`"
     )
     lines.append("")
     lines.append("| consumer | module | output(low) | output(high) | delta | load-bearing | note |")
@@ -365,52 +674,85 @@ def write_direction_runtime_report(
     return replace(report, out_path=str(out_md_path))
 
 
+@dataclass(frozen=True)
+class _DirectionThought:
+    source: str
+    topic: str
+    trace_id: str
+    payload: dict[str, Any]
+
+
 def emit_direction_runtime(
-    report: DirectionRuntimeReport, *, bus: Any = None, trace: bool = True
+    report: DirectionRuntimeReport,
+    *,
+    bus: Any = None,
+    trace: bool = True,
+    thought_factory: Callable[..., Any] | None = None,
+    trace_writer: Callable[[str, dict[str, Any]], Any] | None = None,
 ) -> dict[str, Any]:
-    """Publish the runtime direction audit to cognition (the Queen may observe). Best-effort, never fatal."""
+    """Publish only eligible evidence through explicitly supplied dependencies."""
     payload = report.to_dict()
+    if (
+        report.data_status != "live"
+        or report.eligible_for_cognition is not True
+        or report.eligible_for_publication is not True
+    ):
+        return payload
     summary = {
         "n_swaying": report.n_swaying,
         "n_consumers": report.n_consumers,
         "all_sway": report.all_sway,
         "inert_names": list(report.inert_names),
         "boundary": DIRECTION_RUNTIME_BOUNDARY,
+        "truth_status": report.truth_status,
+        "receipt_ids": dict(report.receipt_ids),
     }
-    try:
-        from aureon.core.aureon_thought_bus import Thought, get_thought_bus
-
-        target = bus if bus is not None else get_thought_bus()
-        target.publish(
-            Thought(source=_SOURCE, topic=DIRECTION_RUNTIME_RUN_TOPIC, trace_id=uuid.uuid4().hex,
-                    payload=summary)
-        )
-    except Exception:  # noqa: BLE001 - emission is best-effort, never fatal
-        pass
-
-    if trace:
+    if bus is not None:
         try:
-            from aureon.core.bus_trace import append_trace
+            factory = thought_factory or _DirectionThought
+            bus.publish(
+                factory(
+                    source=_SOURCE,
+                    topic=DIRECTION_RUNTIME_RUN_TOPIC,
+                    trace_id=uuid.uuid4().hex,
+                    payload=summary,
+                )
+            )
+        except Exception:  # noqa: BLE001 - emission remains best-effort
+            pass
 
-            append_trace(DIRECTION_RUNTIME_TRACE_NAME, {
-                "n_swaying": report.n_swaying,
-                "n_consumers": report.n_consumers,
-                "all_sway": report.all_sway,
-                "boundary": DIRECTION_RUNTIME_BOUNDARY,
-                "_ts": time.time(),
-            })
-        except Exception:  # noqa: BLE001 - trace mirror is best-effort
+    if trace and callable(trace_writer):
+        try:
+            trace_writer(
+                DIRECTION_RUNTIME_TRACE_NAME,
+                {
+                    "n_swaying": report.n_swaying,
+                    "n_consumers": report.n_consumers,
+                    "all_sway": report.all_sway,
+                    "boundary": DIRECTION_RUNTIME_BOUNDARY,
+                    "truth_status": report.truth_status,
+                    "receipt_ids": dict(report.receipt_ids),
+                    "_ts": time.time(),
+                },
+            )
+        except Exception:  # noqa: BLE001 - explicit trace mirror is best-effort
             pass
 
     return payload
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI: run the runtime direction audit and print / write the table."""
+    """CLI: run only from an explicit local HNC/Auris evidence envelope."""
     import argparse
+    import json
 
     parser = argparse.ArgumentParser(
-        description="Audit whether the canonical HNC field is load-bearing at every real adaptive consumer."
+        description="Audit whether canonical HNC/Auris equations remain load-bearing."
+    )
+    parser.add_argument(
+        "--evidence-json",
+        metavar="IN.json",
+        help="local envelope containing complete hnc_receipt and auris_receipt objects",
     )
     parser.add_argument("--report", metavar="OUT.md", help="write the table as a markdown evidence artifact")
     parser.add_argument("--report-json", metavar="OUT.json", help="also write the JSON record")
@@ -418,20 +760,46 @@ def main(argv: list[str] | None = None) -> int:
                         help="assert the canonical field sways every adaptive consumer")
     args = parser.parse_args(argv)
 
-    report = compute_direction_runtime()
+    evidence: Mapping[str, Any] = {}
+    if args.evidence_json:
+        try:
+            loaded = json.loads(
+                Path(args.evidence_json).read_text(encoding="utf-8")
+            )
+            if isinstance(loaded, Mapping):
+                evidence = loaded
+        except (OSError, json.JSONDecodeError):
+            evidence = {}
+    report = compute_direction_runtime(
+        evaluators=deterministic_evaluators(),
+        hnc_receipt=evidence.get("hnc_receipt"),
+        auris_receipt=evidence.get("auris_receipt"),
+    )
 
     print("Runtime direction audit — is the canonical field load-bearing?")
     print(f"  boundary: {DIRECTION_RUNTIME_BOUNDARY}")
-    print(f"  {report.n_swaying}/{report.n_consumers} swayed · all load-bearing {report.all_sway}")
+    print(f"  data status: {report.data_status} · reason: {report.reason}")
+    if report.data_status == "live":
+        print(
+            f"  {report.n_swaying}/{report.n_consumers} swayed · "
+            f"all load-bearing {report.all_sway}"
+        )
     if report.inert_names:
         print(f"  inert: {', '.join(report.inert_names)}")
 
     if args.report:
         rendered = write_direction_runtime_report(report, args.report, args.report_json)
-        print(f"  report written: {rendered.out_path}")
+        if rendered.out_path:
+            print(f"  report written: {rendered.out_path}")
+        else:
+            print("  report withheld: complete linked HNC/Auris evidence required")
 
     if args.self_test:
-        return 0 if report.all_sway else 1
+        return (
+            0
+            if report.eligible_for_publication and report.all_sway
+            else 1
+        )
     return 0
 
 

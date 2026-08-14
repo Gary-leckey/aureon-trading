@@ -40,7 +40,6 @@ def test_revenue_board():
     print(f"   Trade Count: {status['trading']['trades']}")
     
     print("\n✅ Revenue Board Test Complete!")
-    return True
 
 if __name__ == "__main__":
     test_revenue_board()

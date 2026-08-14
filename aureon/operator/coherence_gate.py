@@ -42,11 +42,22 @@ from __future__ import annotations
 
 from typing import Any, Dict, Set
 
-__all__ = ["APERTURES", "GAMMA_FULL", "GAMMA_REDUCED", "GAMMA_REFUSE",
-           "compute_aperture", "reach_for"]
+__all__ = [
+    "APERTURES",
+    "EVOLUTION_FLOWS",
+    "GAMMA_FULL",
+    "GAMMA_REDUCED",
+    "GAMMA_REFUSE",
+    "compute_aperture",
+    "compute_evolution_flow",
+    "reach_for",
+]
 
 #: aperture levels, widest to narrowest — a level exists by NAME
 APERTURES = ("full", "reduced", "skills_only", "local_only", "refuse")
+#: Internal self-evolution never has a closed state. Coherence changes pace,
+#: patch size, and proof depth while introspection/repair/rollback remain alive.
+EVOLUTION_FLOWS = ("expand", "steady", "observe", "repair")
 #: Γ at or above this → the field is clear, full reach
 GAMMA_FULL = 0.6
 #: Γ below this → skills-only reach
@@ -60,6 +71,13 @@ _SEVERE = {"critical", "emergency", "severe"}
 _INTROSPECTIVE_TOOLS = frozenset({"repo_search", "read_repo_file",
                                   "list_repo", "list_skills"})
 _NETWORK_TOOLS = frozenset({"web_search", "web_fetch"})
+
+
+def _severe_lighthouse(value: Any) -> bool:
+    """Accept both named and numeric Lighthouse severities."""
+    if isinstance(value, (int, float)):
+        return float(value) >= 0.8
+    return str(value or "").lower() in _SEVERE
 
 
 def compute_aperture(gamma: Any, advisory_open: Any,
@@ -87,7 +105,7 @@ def compute_aperture(gamma: Any, advisory_open: Any,
     if g < GAMMA_REDUCED:
         aperture = "skills_only"
         reasons.append(f"Γ={g:.3f} < {GAMMA_REDUCED} — skills-only reach")
-    severe = str(lighthouse_severity or "").lower() in _SEVERE
+    severe = _severe_lighthouse(lighthouse_severity)
     closed_advisory = advisory_open is False or severe
     if closed_advisory:
         if aperture in ("full", "reduced"):
@@ -108,6 +126,124 @@ def compute_aperture(gamma: Any, advisory_open: Any,
             "advisory_open": advisory_open,
             "lighthouse": lighthouse_severity,
             "reasons": reasons or [f"Γ={g:.3f} — the field is clear, full reach"]}
+
+
+def compute_evolution_flow(
+    gamma: Any,
+    advisory_open: Any,
+    lighthouse_severity: Any,
+    *,
+    auris_confidence: Any = None,
+    beta: Any = None,
+) -> Dict[str, Any]:
+    """Translate HNC/Auris state into a non-blocking self-evolution rhythm.
+
+    This is the organism-facing counterpart to :func:`compute_aperture`.
+    External actions still meet the outer authority wall, but no field state
+    can remove the internal abilities to observe, reason, propose a patch,
+    validate it, roll it back, and try again. Lower coherence narrows the
+    batch and strengthens proof instead of creating a dead end.
+    """
+
+    def number(value: Any) -> float | None:
+        try:
+            return None if value is None else float(value)
+        except (TypeError, ValueError):
+            return None
+
+    g = number(gamma)
+    auris = number(auris_confidence)
+    beta_value = number(beta)
+    severe = _severe_lighthouse(lighthouse_severity)
+    closed_advisory = advisory_open is False or severe
+    reasons: list[str] = []
+
+    if g is None:
+        flow = "observe"
+        field_status = "canonical_dark"
+        reasons.append(
+            "the canonical field is dark; keep introspection and repair alive "
+            "while gathering a fresh HNC/Auris reading"
+        )
+    else:
+        g = max(0.0, min(1.0, g))
+        field_status = "live"
+        if g >= GAMMA_FULL and not closed_advisory and (auris is None or auris >= GAMMA_FULL):
+            flow = "expand"
+            reasons.append(f"gamma={g:.3f} supports a wider validated change batch")
+        elif g >= GAMMA_REDUCED and not severe:
+            flow = "steady"
+            reasons.append(f"gamma={g:.3f} calls for a measured change batch")
+        else:
+            flow = "repair"
+            reasons.append(f"gamma={g:.3f} turns the cycle toward diagnosis and repair")
+
+    if auris is not None:
+        auris = max(0.0, min(1.0, auris))
+        if auris < GAMMA_REDUCED and flow != "repair":
+            flow = "repair"
+            reasons.append(f"Auris confidence={auris:.3f} deepens proof and narrows the batch")
+        elif auris < GAMMA_FULL and flow == "expand":
+            flow = "steady"
+            reasons.append(f"Auris confidence={auris:.3f} tempers expansion")
+
+    if closed_advisory and flow != "repair":
+        flow = "repair"
+        reasons.append(
+            "the Auris advisory/Lighthouse signal redirects expansion into repair; "
+            "internal reasoning remains open"
+        )
+
+    if beta_value is not None and not 0.6 <= beta_value <= 1.1:
+        flow = "repair"
+        reasons.append(
+            f"HNC beta={beta_value:.3f} is outside the documented 0.6-1.1 stability regime"
+        )
+
+    profiles = {
+        "expand": {
+            "patch_batch_limit": 3,
+            "required_test_layers": ["focused", "integration", "regression"],
+            "minimum_review_cycles": 1,
+        },
+        "steady": {
+            "patch_batch_limit": 2,
+            "required_test_layers": ["focused", "integration", "regression"],
+            "minimum_review_cycles": 1,
+        },
+        "observe": {
+            "patch_batch_limit": 1,
+            "required_test_layers": ["focused", "integration", "regression"],
+            "minimum_review_cycles": 2,
+        },
+        "repair": {
+            "patch_batch_limit": 1,
+            "required_test_layers": ["focused", "integration", "regression", "rollback"],
+            "minimum_review_cycles": 2,
+        },
+    }
+    return {
+        "flow": flow,
+        "field_status": field_status,
+        "gamma": None if g is None else round(g, 6),
+        "auris_confidence": None if auris is None else round(auris, 6),
+        "beta": beta_value,
+        "advisory_open": advisory_open,
+        "lighthouse": lighthouse_severity,
+        "reasons": reasons,
+        "capabilities": {
+            "observe": True,
+            "reason": True,
+            "use_native_aureon_systems": True,
+            "use_external_llm": True,
+            "propose_patch": True,
+            "validate": True,
+            "rollback": True,
+            "retry": True,
+        },
+        "outer_authority_boundary_preserved": True,
+        **profiles[flow],
+    }
 
 
 def reach_for(aperture: str, all_tools: Set[str]) -> Set[str] | None:

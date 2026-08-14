@@ -11,6 +11,8 @@ notes land in the system prompt.
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
 from aureon.operator.bake import assess_completeness, refinement_prompt
@@ -80,11 +82,28 @@ class _Sequence:
         yield StreamChunk(done=True)
 
 
+class _ApprovedConscience:
+    """Deterministic Queen voice for this bake-only contract."""
+
+    def ask_why(self, _action, _context):
+        return SimpleNamespace(
+            verdict=SimpleNamespace(name="APPROVED"),
+            message="approved by deterministic bake conscience",
+        )
+
+
 def _cog(adapter):
     from aureon.operator.cognition import AureonCognition
 
-    return AureonCognition(adapter=adapter, join_mesh=False, conscience=None,
-                           mesh_broadcast=False)
+    return AureonCognition(
+        adapter=adapter,
+        join_mesh=False,
+        conscience=_ApprovedConscience(),
+        mesh_broadcast=False,
+        allow_repo_grounding=False,
+        allow_organism_context=False,
+        governance_enabled=False,
+    )
 
 
 def test_truncated_draft_gets_exactly_one_refinement_pass():

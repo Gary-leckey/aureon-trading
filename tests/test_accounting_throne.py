@@ -106,8 +106,9 @@ def test_hallucinated_code_refused_twice(tmp_path):
     assert throne.consultations[0]["usable"] is False
 
 
-def test_real_adapter_is_honestly_dark_in_offline_container():
-    # the suite runs with AUREON_LLM_OFFLINE=1 — the REAL adapter must refuse
+def test_real_adapter_is_honestly_dark_in_offline_container(monkeypatch):
+    # Cloud-backed developer checkouts may be live; this case opts out explicitly.
+    monkeypatch.setenv("AUREON_LLM_OFFLINE", "1")
     throne = ThroneCategorizer()  # default AureonLocalAdapter
     assert throne.decide("Office rent January", -85_000) is None
     assert any("agent seat empty" in b for b in throne.status()["blockers"])

@@ -31,6 +31,8 @@ from __future__ import annotations
 import math
 from typing import Final
 
+import numpy as np
+from aureon.bio.derived_nulls import derived_null_generator
 from aureon.bio.human_harmonic_proxy import fold_to_band
 from aureon.bio.image_signal_adapter import _wavelength_nm_to_hz
 
@@ -97,13 +99,11 @@ def reference_modulation_tones(n: int = 121) -> list[float]:
 
 
 if __name__ == "__main__":  # pragma: no cover - manual anchor check
-    import numpy as np
-
     import phenolic_fingerprint as engine
 
     tones = np.array(reference_modulation_tones())
-    p_a = engine.test_A(tones, nulls=500, rng=np.random.default_rng([0, 1]))
-    p_b = engine.test_B(tones, nulls=500, rng=np.random.default_rng([0, 2]))
+    p_a = engine.test_A(tones, nulls=500, rng=derived_null_generator(0, 1))
+    p_b = engine.test_B(tones, nulls=500, rng=derived_null_generator(0, 2))
     print(f"UPE reference tones: {tones.size}")
     print(f"  test_A (clustering) p = {p_a:.4f}")
     print(f"  test_B (phi)        p = {p_b:.4f}")

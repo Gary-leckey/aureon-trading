@@ -23,7 +23,7 @@ interface SystemHealth {
   name: string;
   registered: boolean;
   lastHeartbeat: number | null;
-  coherence: number;
+  coherence: number | null;
   status: 'online' | 'stale' | 'offline';
 }
 
@@ -50,7 +50,9 @@ export function SystemsTabContent({ globalState }: SystemsTabContentProps) {
           name,
           registered: true,
           lastHeartbeat,
-          coherence: busState?.coherence || 0,
+          coherence: typeof busState?.coherence === 'number' && Number.isFinite(busState.coherence)
+            ? busState.coherence
+            : null,
           status: timeSince < 5000 ? 'online' : timeSince < 15000 ? 'stale' : 'offline'
         });
       });
@@ -193,9 +195,13 @@ export function SystemsTabContent({ globalState }: SystemsTabContentProps) {
                     <span className="font-mono">{name}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground">Γ: {state.coherence?.toFixed(3) || '0.000'}</span>
+                    <span className="text-muted-foreground">
+                      Γ: {typeof state.coherence === 'number' && Number.isFinite(state.coherence)
+                        ? state.coherence.toFixed(3)
+                        : 'Unavailable'}
+                    </span>
                     <Badge variant={state.signal === 'BUY' ? 'default' : state.signal === 'SELL' ? 'destructive' : 'secondary'} className="text-[9px]">
-                      {state.signal || 'NEUTRAL'}
+                      {state.signal ?? 'NO DATA'}
                     </Badge>
                   </div>
                 </div>

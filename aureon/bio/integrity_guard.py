@@ -40,6 +40,7 @@ from pathlib import Path
 from typing import Any, Final
 
 import numpy as np
+from aureon.bio.derived_nulls import DerivedNullGenerator, derived_null_generator
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -103,7 +104,7 @@ _CANARY_NULLS: Final[int] = 200
 # Captured once from the pristine engine and committed as the baseline (permutation p-values are exact
 # rationals under a fixed seed, so equality is reproducible; a tiny tolerance guards numpy drift).
 _EXPECTED_CANARY: Final[dict[str, Any]] = {
-    "test_A_p": 0.009950248756218905,  # 2/201 at _CANARY_NULLS=200 — pristine engine
+    "test_A_p": 0.004975124378109453,  # 1/201 for the derived-null engine
     "test_B_p": 0.004975124378109453,  # 1/201
     "positive_control_passed": True,
     "negative_control_passed": True,
@@ -126,9 +127,9 @@ _INJECTION_PATTERNS: Final[tuple[str, ...]] = (
 )
 
 
-def _rng(seed: int, tag: int) -> np.random.Generator:
-    """Reproducible generator stream for a (seed, purpose) pair (engine idiom)."""
-    return np.random.default_rng([int(seed), int(tag)])
+def _rng(seed: int, tag: int) -> DerivedNullGenerator:
+    """Reproducible statistical-null stream for a (seed, purpose) pair."""
+    return derived_null_generator(int(seed), int(tag))
 
 
 def _canary_tones() -> np.ndarray:

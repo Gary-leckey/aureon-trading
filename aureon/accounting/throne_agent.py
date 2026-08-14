@@ -57,9 +57,9 @@ class ThroneCategorizer:
     def __init__(self, chart: dict[str, str] | None = None, adapter: Any = None):
         self.chart = dict(chart or UK_SME_CHART)
         if adapter is None:
-            from aureon.inhouse_ai.llm_adapter import AureonLocalAdapter
+            from aureon.integrations.ollama import OllamaModelSwitchboard
 
-            adapter = AureonLocalAdapter()
+            adapter, _selection = OllamaModelSwitchboard().compatible_adapter_for("fast")
         self.adapter = adapter
         self.consultations: list[dict[str, Any]] = []
         self.blockers: list[str] = []

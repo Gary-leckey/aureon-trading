@@ -1,5 +1,6 @@
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import unittest
+from datetime import datetime, timezone
 from alpaca_client import AlpacaClient
 
 class TestAlpacaQuoteFallback(unittest.TestCase):
@@ -14,7 +15,8 @@ class TestAlpacaQuoteFallback(unittest.TestCase):
                 return {}  # simulate 404/no-data
             if endpoint.startswith('/v1beta3/crypto'):
                 # mimic the crypto quotes payload
-                return {'BTC/USD': {'bp': 97000.0, 'ap': 97100.0, 't': '2026-01-01T00:00:00Z'}}
+                observed_at = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+                return {'BTC/USD': {'bp': 97000.0, 'ap': 97100.0, 't': observed_at}}
             return {}
         c._request = fake_request
         res = c.get_last_quote('BTCUSD')
@@ -25,7 +27,8 @@ class TestAlpacaQuoteFallback(unittest.TestCase):
         c = AlpacaClient()
         def fake_request(method, endpoint, params=None, json=None, base_url=None, **kwargs):
             if endpoint.startswith('/v2/stocks/'):
-                return {'quote': {'bp': 100.0, 'ap': 102.0}}
+                observed_at = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+                return {'quote': {'bp': 100.0, 'ap': 102.0, 't': observed_at}}
             return {}
         c._request = fake_request
         res = c.get_last_quote('AAPL')

@@ -1877,14 +1877,15 @@ def b27_video_adapter(tmp_root: Path) -> Dict[str, Any]:
     This is the last SignalAdapter on the roadmap — image · audio · video · UPE · sky · market.
     """
     from aureon.bio import video_signal_adapter as vsa
+    from tests.bio.video_signal_fixtures import video_fixture
 
-    structured = vsa.score_video(vsa.synthetic_video("structured"), consent=True,
-                                 provenance="synthetic video (no subject)", nulls=120, seed=0)
-    noise = vsa.score_video(vsa.synthetic_video("noise"), consent=True,
-                            provenance="synthetic video (no subject)", nulls=120, seed=0)
-    again = vsa.score_video(vsa.synthetic_video("structured"), consent=True,
-                            provenance="synthetic video (no subject)", nulls=120, seed=0)
-    blocked = vsa.score_video(vsa.synthetic_video("structured"), consent=False,
+    structured = vsa.score_video(video_fixture("structured"), consent=True,
+                                 provenance="controlled test fixture", nulls=120, seed=0)
+    noise = vsa.score_video(video_fixture("noise"), consent=True,
+                            provenance="controlled test fixture", nulls=120, seed=0)
+    again = vsa.score_video(video_fixture("structured"), consent=True,
+                            provenance="controlled test fixture", nulls=120, seed=0)
+    blocked = vsa.score_video(video_fixture("structured"), consent=False,
                               provenance="x", nulls=100)
 
     surface = [n.lower() for n in dir(vsa)]

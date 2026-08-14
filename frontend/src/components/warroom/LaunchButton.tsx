@@ -48,7 +48,8 @@ export function LaunchButton({ onLaunch, onStop, status }: LaunchButtonProps) {
 
       const hasCredentials = !!session?.binance_api_key_encrypted;
       const isLiveMode = session?.trading_mode === 'live';
-      const hasGasBalance = (session?.gas_tank_balance || 0) > 0;
+      const gasBalance = Number(session?.gas_tank_balance);
+      const hasGasBalance = Number.isFinite(gasBalance) && gasBalance > 0;
 
       setValidationStatus({
         credentials: hasCredentials,
@@ -81,6 +82,7 @@ export function LaunchButton({ onLaunch, onStop, status }: LaunchButtonProps) {
 
       // Step 3: Set orchestrator mode
       unifiedOrchestrator.setDryRun(!isLiveMode);
+      unifiedOrchestrator.setLiveExecutionConfirmation(isLiveMode && forceLive);
 
       // Step 4: Launch trading
       onLaunch();
@@ -89,7 +91,7 @@ export function LaunchButton({ onLaunch, onStop, status }: LaunchButtonProps) {
         title: ' AUREON Launched!',
         description: isLiveMode 
           ? 'Live trading is now active. Monitor your positions closely.'
-          : 'Paper trading started. No real funds at risk.',
+          : 'Evidence analysis started. No orders or simulated trades will be created.',
       });
     } catch (err) {
       console.error('Launch validation failed:', err);
@@ -112,6 +114,7 @@ export function LaunchButton({ onLaunch, onStop, status }: LaunchButtonProps) {
         .eq('id', 'dd282f03-11b4-4f70-b8c2-dd5523ed73e2');
 
       onStop();
+      unifiedOrchestrator.setLiveExecutionConfirmation(false);
 
       toast({
         title: ' Trading Stopped',

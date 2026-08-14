@@ -102,6 +102,20 @@ def test_env_vars():
     print("\n🔐 ENVIRONMENT VARIABLES")
     print("=" * 50)
     
+    # Pytest is the credential-scrubbed audit plane. Never reload a checkout
+    # .env here: either the complete required set was injected explicitly, or
+    # every live route must be visibly dormant. A partial set is always invalid.
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        present = [name for name in REQUIRED_ENV_VARS if os.environ.get(name)]
+        assert len(present) in {0, len(REQUIRED_ENV_VARS)}, (
+            "partial exchange credential set in the pytest audit plane"
+        )
+        if not present:
+            assert os.environ.get("AUREON_LIVE", "0") == "0"
+            assert os.environ.get("AUREON_LIVE_TRADING", "0") == "0"
+            assert os.environ.get("AUREON_DRY_RUN", "0") == "1"
+        return None
+
     # Load .env if exists
     try:
         from dotenv import load_dotenv

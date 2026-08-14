@@ -79,6 +79,61 @@ def test_guarded_patch_applier_applies_allowlisted_patch_after_checks_and_tests(
     assert result["test_results"][0]["ok"] is True
 
 
+def test_guarded_patch_applier_requires_tests_before_mutating(tmp_path: Path) -> None:
+    _init_git(tmp_path)
+    target = tmp_path / "allowed.txt"
+    target.write_text("old\n", encoding="utf-8")
+    patch = "diff --git a/allowed.txt b/allowed.txt\n--- a/allowed.txt\n+++ b/allowed.txt\n@@ -1 +1 @@\n-old\n+new\n"
+    applier = GuardedPatchApplier(root=tmp_path, allowlist=["allowed.txt"], test_commands=[])
+
+    result = applier.apply_proposal({"title": "untested", "patch_text": patch, "target_files": ["allowed.txt"]})
+
+    assert result["applied"] is False
+    assert result["blocked_reason"] == "validation_commands_missing"
+    assert target.read_text(encoding="utf-8") == "old\n"
+
+
+def test_guarded_patch_applier_rolls_back_when_tests_fail(tmp_path: Path) -> None:
+    _init_git(tmp_path)
+    target = tmp_path / "allowed.txt"
+    target.write_text("old\n", encoding="utf-8")
+    patch = "diff --git a/allowed.txt b/allowed.txt\n--- a/allowed.txt\n+++ b/allowed.txt\n@@ -1 +1 @@\n-old\n+new\n"
+    applier = GuardedPatchApplier(
+        root=tmp_path,
+        allowlist=["allowed.txt"],
+        test_commands=[[sys.executable, "-c", "raise SystemExit(1)"]],
+    )
+
+    result = applier.apply_proposal({"title": "regression", "patch_text": patch, "target_files": ["allowed.txt"]})
+
+    assert result["status"] == "rolled_back_tests_failed"
+    assert result["ever_applied"] is True
+    assert result["applied"] is False
+    assert result["rollback"]["ok"] is True
+    assert target.read_text(encoding="utf-8") == "old\n"
+
+
+def test_guarded_patch_applier_repeats_validation_for_coherence_review_cycles(tmp_path: Path) -> None:
+    _init_git(tmp_path)
+    target = tmp_path / "allowed.txt"
+    target.write_text("old\n", encoding="utf-8")
+    patch = "diff --git a/allowed.txt b/allowed.txt\n--- a/allowed.txt\n+++ b/allowed.txt\n@@ -1 +1 @@\n-old\n+new\n"
+    applier = GuardedPatchApplier(
+        root=tmp_path,
+        allowlist=["allowed.txt"],
+        test_commands=[[sys.executable, "-c", "print('ok')"]],
+        required_test_layers=["focused", "integration", "regression", "rollback"],
+        review_cycles=2,
+    )
+
+    result = applier.apply_proposal({"title": "repair rhythm", "patch_text": patch, "target_files": ["allowed.txt"]})
+
+    assert result["status"] == "applied"
+    assert [item["review_cycle"] for item in result["test_results"]] == [1, 2]
+    assert result["coherence_proof"]["required_test_layers"][-1] == "rollback"
+    assert result["coherence_proof"]["review_cycles"] == 2
+
+
 def test_self_fix_director_publishes_artifacts_and_holds_manual_authority(tmp_path: Path) -> None:
     _write_json(
         tmp_path / "frontend" / "public" / "aureon_capability_forge.json",
@@ -156,3 +211,58 @@ def test_self_fix_director_failed_audit_blocks_after_the_fact(tmp_path: Path) ->
     assert report["status"] == "self_fix_failed_audit"
     assert report["handover_ready"] is False
     assert report["summary"]["audit_gate_ok"] is False
+
+
+def test_hnc_auris_flow_sets_patch_batch_without_closing_internal_repair(tmp_path: Path) -> None:
+    proposals = []
+    for index in range(3):
+        proposals.append(
+            {
+                "kind": "patch_proposal",
+                "title": f"repair {index}",
+                "target_files": ["tests/test_aureon_autonomous_self_fix_director.py"],
+                "patch_text": (
+                    "diff --git a/tests/test_aureon_autonomous_self_fix_director.py "
+                    "b/tests/test_aureon_autonomous_self_fix_director.py\n"
+                    "--- a/tests/test_aureon_autonomous_self_fix_director.py\n"
+                    "+++ b/tests/test_aureon_autonomous_self_fix_director.py\n"
+                    "@@ -1 +1 @@\n-old\n+new\n"
+                ),
+            }
+        )
+    _write_json(
+        tmp_path / "state" / "safe_code_control_state.json",
+        {"pending_proposals": proposals, "recent_reviews": []},
+    )
+
+    repair = build_and_write_autonomous_self_fix_director(
+        root=tmp_path,
+        apply_safe_fixes=False,
+        coherence_inputs={
+            "gamma": 0.1,
+            "advisory_open": False,
+            "lighthouse_severity": "critical",
+            "auris_confidence": 0.1,
+            "beta": 0.8,
+        },
+    )
+    assert repair["coherence_flow"]["flow"] == "repair"
+    assert repair["summary"]["patch_batch_limit"] == 1
+    assert repair["summary"]["patch_candidate_count"] == 1
+    assert repair["coherence_flow"]["capabilities"]["propose_patch"] is True
+    assert repair["coherence_flow"]["capabilities"]["rollback"] is True
+
+    expand = build_and_write_autonomous_self_fix_director(
+        root=tmp_path,
+        apply_safe_fixes=False,
+        coherence_inputs={
+            "gamma": 0.9,
+            "advisory_open": True,
+            "lighthouse_severity": None,
+            "auris_confidence": 0.9,
+            "beta": 0.8,
+        },
+    )
+    assert expand["coherence_flow"]["flow"] == "expand"
+    assert expand["summary"]["patch_batch_limit"] == 3
+    assert expand["summary"]["patch_candidate_count"] == 3

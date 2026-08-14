@@ -16,7 +16,7 @@ Author: Gary Leckey / Aureon System
 Date: November 28, 2025
 """
 from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
-import os, sys, json, time, logging, argparse, random, math
+import os, sys, json, time, logging, argparse, math
 from datetime import datetime
 from typing import List, Dict, Any
 from aureon.exchanges.binance_client import BinanceClient, get_binance_client
@@ -451,8 +451,8 @@ class AureonThePlayTrader:
             coherence = self.master_eq.compute_coherence(symbol, snap)
             freq = self.master_eq.get_frequency(coherence)
             
-            # Log status occasionally
-            if random.random() < 0.05:
+            # Log every twentieth observed status check.
+            if pos['cycles'] % 20 == 0:
                 logger.info(f"📊 {symbol}: Γ={coherence:.4f} f={freq:.0f}Hz | PnL {pnl_pct*100:.2f}%")
             
             # 🪙 PENNY PROFIT EXIT LOGIC (priority over coherence)

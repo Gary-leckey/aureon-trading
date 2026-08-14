@@ -54,9 +54,24 @@ __all__ = [
     "main",
 ]
 
-CURVE_RUN_TOPIC: Final[str] = "bio.calibration_curve.run"
-CURVE_TRACE_NAME: Final[str] = "calibration_curve"
-_SOURCE: Final[str] = "calibration_curve"
+CURVE_RUN_TOPIC: Final[str] = "bio.control.calibration_curve.run"
+CURVE_TRACE_NAME: Final[str] = "control_calibration_curve"
+_SOURCE: Final[str] = "bio_control.calibration_curve"
+
+_NON_OPERATIONAL_CONTROL: Final[dict[str, Any]] = {
+    "data_origin": "derived_statistical_control",
+    "truth_status": "statistical_control",
+    "control_only": True,
+    "live_data": False,
+    "provider_observation": False,
+    "operational_eligible": False,
+    "actionable": False,
+    "accounting_eligible": False,
+}
+
+
+def _control_metadata() -> dict[str, Any]:
+    return dict(_NON_OPERATIONAL_CONTROL)
 
 CALIBRATION_CURVE_BOUNDARY: Final[str] = (
     "Synthetic calibration audit: it measures, across a grid of significance levels, how often the "
@@ -71,7 +86,7 @@ _NULL_TONE_COUNT: Final[int] = 12
 
 
 def _rng(seed: int, tag: int) -> np.random.Generator:
-    """Reproducible generator stream for a (seed, purpose) pair (engine idiom)."""
+    """Reproducible statistical-null stream for a (seed, purpose) pair."""
     return np.random.default_rng([int(seed), int(tag)])
 
 
@@ -93,7 +108,9 @@ class CurvePoint:
     test_A_conservative: bool
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload.update(_control_metadata())
+        return payload
 
 
 @dataclass(frozen=True)
@@ -114,6 +131,7 @@ class CalibrationCurveReport:
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["points"] = [p.to_dict() for p in self.points]
+        d.update(_control_metadata())
         return d
 
 
@@ -132,6 +150,13 @@ def compute_calibration(
     conjunction. A point is ``joint_conservative`` iff the conjunction rate ≤ α + ``tolerance``
     (the operative guarantee), and ``test_A_conservative`` iff Test A's rate ≤ α + ``tolerance``.
     """
+    if trials <= 0 or nulls <= 0:
+        raise ValueError("trials and nulls must be positive")
+    if not alphas or not all(np.isfinite(float(a)) and 0.0 < a < 1.0 for a in alphas):
+        raise ValueError("alphas must be a non-empty finite sequence inside (0, 1)")
+    if not np.isfinite(float(tolerance)) or tolerance < 0.0:
+        raise ValueError("tolerance must be finite and non-negative")
+
     p_a = np.empty(trials, dtype=float)
     p_b = np.empty(trials, dtype=float)
     for i in range(trials):
@@ -150,7 +175,7 @@ def compute_calibration(
             joint_conservative=rate_j <= a + tolerance,
             test_A_conservative=rate_a <= a + tolerance,
         ))
-    max_joint_exc = max((p.rate_joint - p.alpha for p in points), default=0.0)
+    max_joint_exc = max(p.rate_joint - p.alpha for p in points)
     return CalibrationCurveReport(
         points=points,
         n_points=len(points),
@@ -223,27 +248,30 @@ def emit_curve(report: CalibrationCurveReport, *, bus: Any | None = None, trace:
         "max_joint_exceedance": report.max_joint_exceedance,
         "boundary": CALIBRATION_CURVE_BOUNDARY,
     }
-    try:
-        from aureon.core.aureon_thought_bus import Thought, get_thought_bus
+    summary.update(_control_metadata())
+    if bus is not None:
+        try:
+            from aureon.core.aureon_thought_bus import Thought
 
-        target = bus if bus is not None else get_thought_bus()
-        target.publish(
-            Thought(source=_SOURCE, topic=CURVE_RUN_TOPIC, trace_id=uuid.uuid4().hex, payload=summary)
-        )
-    except Exception:  # noqa: BLE001 - emission is best-effort, never fatal
-        pass
+            bus.publish(
+                Thought(source=_SOURCE, topic=CURVE_RUN_TOPIC, trace_id=uuid.uuid4().hex, payload=summary)
+            )
+        except Exception:  # noqa: BLE001 - emission is best-effort, never fatal
+            pass
 
     if trace:
         try:
             from aureon.core.bus_trace import append_trace
 
-            append_trace(CURVE_TRACE_NAME, {
+            trace_payload = {
                 "joint_conservative": report.joint_conservative,
                 "max_joint_exceedance": report.max_joint_exceedance,
                 "n_points": report.n_points,
                 "boundary": CALIBRATION_CURVE_BOUNDARY,
                 "_ts": time.time(),
-            })
+            }
+            trace_payload.update(_control_metadata())
+            append_trace(CURVE_TRACE_NAME, trace_payload)
         except Exception:  # noqa: BLE001 - trace mirror is best-effort
             pass
 

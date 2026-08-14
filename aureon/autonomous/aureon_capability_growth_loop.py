@@ -25,6 +25,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
 
+from aureon.obsidian_paths import resolve_obsidian_note_path
 from aureon.autonomous.aureon_goal_capability_map import build_goal_capability_map
 
 
@@ -32,7 +33,8 @@ SCHEMA_VERSION = "aureon-capability-growth-loop-v1"
 DEFAULT_OUTPUT_MD = Path("docs/audits/aureon_capability_growth_loop.md")
 DEFAULT_OUTPUT_JSON = Path("docs/audits/aureon_capability_growth_loop.json")
 DEFAULT_STATE_PATH = Path("state/capability_growth_loop.json")
-DEFAULT_CONTRACT_STATE = Path("state/capability_growth_contracts.json")
+DEFAULT_CONTRACT_STATE = Path("state/organism_contract_stack.json")
+LEGACY_CONTRACT_STATE = Path("state/capability_growth_contracts.json")
 DEFAULT_SKILL_DIR = Path("state/capability_growth_skills")
 DEFAULT_VAULT_NOTE = Path(".obsidian/Aureon Self Understanding/capability_growth_loop.md")
 
@@ -589,6 +591,12 @@ def queue_growth_contracts(
             state_path=root / DEFAULT_CONTRACT_STATE,
             source="capability_growth_loop",
         )
+        legacy_import = stack.import_state(root / LEGACY_CONTRACT_STATE)
+        deduplication = stack.deduplicate_queued_work_orders(
+            "organism.capability_growth",
+            payload_path=("gap", "domain"),
+            worker="capability_growth_loop",
+        )
         workflow = stack.create_goal_workflow(
             "Continuously audit, benchmark, fix, and retest Aureon capabilities across every domain.",
             skills=[item.skill_name for item in authored if item.registered],
@@ -596,8 +604,19 @@ def queue_growth_contracts(
             source="capability_growth_loop",
         )
         authored_by_domain = {item.domain: item.skill_name for item in authored if item.registered}
+        existing_by_domain = {
+            str(((item.get("payload") or {}).get("gap") or {}).get("domain") or ""): item
+            for item in stack.contracts.values()
+            if item.get("contract_type") == "work_order"
+            and item.get("queue") == "organism.capability_growth"
+            and item.get("status") in {"queued", "active"}
+        }
         gap_work_orders: list[dict[str, Any]] = []
         for gap in gaps:
+            existing = existing_by_domain.get(gap.domain)
+            if existing:
+                gap_work_orders.append({**existing, "reused_open_work_order": True})
+                continue
             wo = stack.enqueue_work_order(
                 f"Improve capability domain: {gap.domain}",
                 "execute_internal_task",
@@ -615,6 +634,8 @@ def queue_growth_contracts(
         return {
             "queued_persistently": True,
             "state_path": str(root / DEFAULT_CONTRACT_STATE),
+            "legacy_state_import": legacy_import,
+            "deduplication": deduplication,
             "workflow": workflow,
             "gap_work_orders": gap_work_orders,
             "status": status,
@@ -781,7 +802,7 @@ def build_capability_growth_loop(
         status = "growth_loop_working_with_improvement_queue"
     else:
         status = "growth_loop_working_clean"
-    vault_path = root / DEFAULT_VAULT_NOTE
+    vault_path = resolve_obsidian_note_path(DEFAULT_VAULT_NOTE, repo_root=root)
     summary = {
         "iteration_count": len(iteration_reports),
         "latest_status": latest.status,

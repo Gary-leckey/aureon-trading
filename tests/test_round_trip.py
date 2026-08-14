@@ -32,8 +32,8 @@ class TestRoundTripAvailability(unittest.TestCase):
     def test_no_barter_navigator(self):
         self.lab.barter_navigator = None
         ok, reason = self.lab.ensure_round_trip_available('USD', 'AAPL', 100.0)
-        self.assertTrue(ok)
-        self.assertIn('assume path exists', reason)
+        self.assertFalse(ok)
+        self.assertEqual(reason, 'NO_DATA: barter navigator is unavailable')
 
     def test_alpaca_only_rejects_non_alpaca_paths(self):
         # ALPACA_ONLY set - only allow paths that are fully on Alpaca
@@ -112,7 +112,7 @@ class TestRoundTripAvailability(unittest.TestCase):
         self.lab.alpaca_fee_tracker = DummyFeeTracker()
         ok, reason = self.lab.ensure_round_trip_available('USD', 'AAPL', 100.0, live_depth_check=True)
         self.assertFalse(ok)
-        self.assertIn('Insufficient orderbook depth', reason)
+        self.assertIn('Insufficient two-sided orderbook depth', reason)
 
     def test_live_depth_check_passes_when_orderbook_sufficient(self):
         path = DummyPath([Hop('USD/AAPL', 'alpaca')])

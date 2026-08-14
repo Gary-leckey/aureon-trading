@@ -121,6 +121,9 @@ def test_build_growth_loop_writes_report_vault_and_contracts(tmp_path):
     assert report.summary["latest_gap_count"] >= 1
     assert report.summary["latest_registered_improvement_count"] >= 1
     assert report.iterations[0].contract_plan["queued_persistently"] is True
+    assert report.iterations[0].contract_plan["state_path"].endswith("state\\organism_contract_stack.json") or report.iterations[0].contract_plan["state_path"].endswith("state/organism_contract_stack.json")
+    assert (tmp_path / "state" / "organism_contract_stack.json").exists()
+    assert report.iterations[0].contract_plan["deduplication"]["contracts_preserved"] is True
 
     markdown = render_markdown(report)
     assert "Aureon Capability Growth Loop" in markdown

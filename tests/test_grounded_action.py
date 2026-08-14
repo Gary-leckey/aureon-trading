@@ -129,7 +129,7 @@ def test_lambda_source_maps_action_activity():
     from aureon.core.hnc_live_daemon import _map_local_action
 
     idle = _map_local_action({"count": 0})
-    assert idle.confidence == 0.0 and idle.state == "idle"
+    assert idle is None
     active = _map_local_action({"count": 40, "approve_ratio": 0.75, "veto_count": 3})
     assert 0.0 <= active.value <= 1.0 and active.confidence > 0.0
     assert "40_moves" in active.state

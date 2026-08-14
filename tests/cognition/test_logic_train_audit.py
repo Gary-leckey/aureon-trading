@@ -68,6 +68,17 @@ def test_the_canonical_layer_itself_is_authority_not_a_consumer(report):
     assert by["aureon/core/aureon_lambda_engine.py"]["role"] == ModuleRole.AUTHORITY
 
 
+def test_receipt_bound_hnc_consumers_are_wired_without_live_field_reads(report):
+    by = {s["module"]: s for s in report.sites}
+    for module in (
+        "aureon/swarm/auris_node_receipts.py",
+        "aureon/trading/bounded_binance_roundtrip.py",
+    ):
+        assert by[module]["role"] == ModuleRole.CONSUMER
+        assert by[module]["wired"] is True
+        assert by[module]["via"] == "receipt-bound-hnc-auris"
+
+
 def test_every_authority_exemption_states_its_reason(report):
     """An exemption with no reason is where things get hidden."""
     for site in report.sites:

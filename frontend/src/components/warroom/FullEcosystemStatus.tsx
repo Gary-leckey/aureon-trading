@@ -94,12 +94,12 @@ export function FullEcosystemStatus() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <MetricCard 
             label="Hive Mind" 
-            value={`${(metrics.hiveMindCoherence * 100).toFixed(0)}%`}
-            color={metrics.hiveMindCoherence > 0.8 ? 'text-success' : 'text-warning'}
+            value={formatPercent(metrics.hiveMindCoherence)}
+            color={metrics.hiveMindCoherence == null ? 'text-muted-foreground' : metrics.hiveMindCoherence > 0.8 ? 'text-success' : 'text-warning'}
           />
           <MetricCard 
             label="Consensus" 
-            value={metrics.consensusSignal}
+            value={metrics.consensusSignal ?? 'Unavailable'}
             color={
               metrics.consensusSignal === 'BUY' ? 'text-success' :
               metrics.consensusSignal === 'SELL' ? 'text-destructive' :
@@ -108,8 +108,8 @@ export function FullEcosystemStatus() {
           />
           <MetricCard 
             label="Confidence" 
-            value={`${(metrics.consensusConfidence * 100).toFixed(0)}%`}
-            color={metrics.consensusConfidence > 0.7 ? 'text-success' : 'text-warning'}
+            value={formatPercent(metrics.consensusConfidence)}
+            color={metrics.consensusConfidence == null ? 'text-muted-foreground' : metrics.consensusConfidence > 0.7 ? 'text-success' : 'text-warning'}
           />
           <MetricCard 
             label="JSON Loaded" 
@@ -147,7 +147,9 @@ export function FullEcosystemStatus() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">QGITA Signal</span>
               <Badge variant="outline" className="text-xs">
-                Tier {metrics.qgitaTier} | {metrics.qgitaConfidence.toFixed(0)}%
+                {metrics.qgitaTier == null || metrics.qgitaConfidence == null
+                  ? 'Unavailable'
+                  : `Tier ${metrics.qgitaTier} | ${metrics.qgitaConfidence.toFixed(0)}%`}
               </Badge>
             </div>
             
@@ -155,35 +157,35 @@ export function FullEcosystemStatus() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">6D Wave</span>
               <span className={metrics.harmonicLock ? 'text-success' : 'text-muted-foreground'}>
-                {metrics.waveState} {metrics.harmonicLock && ''}
+                {metrics.waveState ?? 'Unavailable'} {metrics.harmonicLock && ''}
               </span>
             </div>
             
             {/* Stargate */}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Stargate Grid</span>
-              <span>{metrics.activeNodes} nodes | {(metrics.stargateNetworkStrength * 100).toFixed(0)}%</span>
+              <span>{metrics.activeNodes == null ? 'Unavailable' : `${metrics.activeNodes} nodes | ${formatPercent(metrics.stargateNetworkStrength)}`}</span>
             </div>
             
             {/* AQAL */}
             <div className="flex justify-between">
               <span className="text-muted-foreground">AQAL Level</span>
-              <span>{(metrics.evolutionaryLevel * 100).toFixed(0)}% | {metrics.dominantQuadrant}</span>
+              <span>{metrics.evolutionaryLevel == null ? 'Unavailable' : `${formatPercent(metrics.evolutionaryLevel)} | ${metrics.dominantQuadrant}`}</span>
             </div>
             
             {/* HNC */}
             <div className="flex justify-between">
               <span className="text-muted-foreground">HNC Fidelity</span>
               <span className={metrics.rainbowBridgeOpen ? 'text-success' : 'text-muted-foreground'}>
-                {metrics.harmonicFidelity.toFixed(0)}% {metrics.rainbowBridgeOpen && ''}
+                {metrics.harmonicFidelity == null ? 'Unavailable' : `${metrics.harmonicFidelity.toFixed(0)}%`} {metrics.rainbowBridgeOpen && ''}
               </span>
             </div>
             
             {/* Temporal */}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Temporal Anchor</span>
-              <span className={metrics.temporalAnchorStrength > 0.7 ? 'text-success' : 'text-warning'}>
-                {(metrics.temporalAnchorStrength * 100).toFixed(0)}% {metrics.surgeWindowActive && ''}
+              <span className={metrics.temporalAnchorStrength == null ? 'text-muted-foreground' : metrics.temporalAnchorStrength > 0.7 ? 'text-success' : 'text-warning'}>
+                {formatPercent(metrics.temporalAnchorStrength)} {metrics.surgeWindowActive && ''}
               </span>
             </div>
           </div>
@@ -206,11 +208,11 @@ function SystemBadge({
   system, 
   icon 
 }: { 
-  system: { name: string; online: boolean; coherence: number; publishedToBus: boolean };
+  system: { name: string; online: boolean; coherence: number | null; publishedToBus: boolean; dataStatus?: string };
   icon?: React.ReactNode;
 }) {
   const statusColor = system.online 
-    ? system.coherence > 0.8 
+    ? system.coherence !== null && system.coherence > 0.8
       ? 'bg-success/20 text-success border-success/30' 
       : 'bg-warning/20 text-warning border-warning/30'
     : 'bg-destructive/20 text-destructive border-destructive/30';
@@ -219,9 +221,14 @@ function SystemBadge({
     <div className={`flex items-center gap-1.5 px-2 py-1 rounded border text-xs ${statusColor}`}>
       {icon || <Activity className="w-3 h-3" />}
       <span className="truncate">{formatSystemName(system.name)}</span>
+      <span className="text-[10px]">{system.dataStatus ?? (system.online ? 'live' : 'no_data')}</span>
       {system.publishedToBus && <span className="text-[10px]"></span>}
     </div>
   );
+}
+
+function formatPercent(value: number | null): string {
+  return value == null ? 'Unavailable' : `${(value * 100).toFixed(0)}%`;
 }
 
 function formatSystemName(name: string): string {

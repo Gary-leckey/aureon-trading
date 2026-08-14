@@ -35,6 +35,7 @@ import threading
 from pathlib import Path
 from typing import Any, Dict
 
+from aureon.ollama_config import OLLAMA_API_KEY_ENVS
 from aureon.operator.provider_catalog import get_provider, managed_env_vars
 
 logger = logging.getLogger("aureon.operator.keystore")
@@ -46,6 +47,12 @@ TENANTS_DIR = CONFIG_DIR / "tenants"
 
 _FIELDS = ("api_key", "base_url", "model", "enabled")
 _SAFE_TENANT = re.compile(r"[A-Za-z0-9_-]{1,128}")
+
+
+def _provider_key_envs(info: Any) -> tuple[str, ...]:
+    if str(getattr(info, "id", "") or "") == "ollama":
+        return OLLAMA_API_KEY_ENVS
+    return (info.key_env,) if getattr(info, "key_env", "") else ()
 
 
 def _safe_tenant(tenant: str) -> str:
@@ -202,7 +209,16 @@ def delete_provider(provider_id: str, *, tenant: str | None = None) -> None:
         return
     info = get_provider(provider_id)
     if info:  # LLM provider
-        for var in (info.key_env, info.base_url_env, model_env(info.registry_name)):
+        for var in (
+            *_provider_key_envs(info),
+            info.base_url_env,
+            model_env(info.registry_name),
+            *(
+                ("AUREON_LLM_MODEL", "AUREON_OLLAMA_MODEL")
+                if str(getattr(info, "id", "") or "") == "ollama"
+                else ()
+            ),
+        ):
             if var:
                 os.environ.pop(var, None)
         return
@@ -235,15 +251,22 @@ def apply_to_env() -> None:
             base_url = str(entry.get("base_url", "") or "")
             model = str(entry.get("model", "") or "")
             if enabled:
-                if key and info.key_env:
-                    os.environ[info.key_env] = key
+                if key:
+                    for key_env in _provider_key_envs(info):
+                        os.environ[key_env] = key
                 if base_url and info.base_url_env:
                     os.environ[info.base_url_env] = base_url
                 if model:
                     os.environ[model_env(info.registry_name)] = model
+                    if str(getattr(info, "id", "") or "") == "ollama":
+                        os.environ["AUREON_LLM_MODEL"] = model
+                        os.environ["AUREON_OLLAMA_MODEL"] = model
             else:
-                if info.key_env:
-                    os.environ.pop(info.key_env, None)
+                for key_env in _provider_key_envs(info):
+                    os.environ.pop(key_env, None)
+                if str(getattr(info, "id", "") or "") == "ollama":
+                    os.environ.pop("AUREON_LLM_MODEL", None)
+                    os.environ.pop("AUREON_OLLAMA_MODEL", None)
                 if info.key_optional and info.base_url_env:
                     os.environ.pop(info.base_url_env, None)
             continue

@@ -50,7 +50,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════
 # WINDOWS UTF-8 FIX - Must be at top before any logging
 # ═══════════════════════════════════════════════════════════════════════════
-if sys.platform == 'win32':
+if sys.platform == 'win32' and sys.stdout is sys.__stdout__ and sys.stdout.isatty():
     os.environ['PYTHONIOENCODING'] = 'utf-8'
     try:
         import io
@@ -104,8 +104,14 @@ class UTF8StreamHandler(logging.StreamHandler):
         except Exception:
             self.handleError(record)
 
-# Configure Logging with UTF-8 support
-if sys.platform == 'win32':
+# Configure logging only for an explicitly running process. Collection and
+# audit imports must not open persistent files or replace root handlers.
+_SUPPRESS_IMPORT_LOGGING = os.getenv(
+    "AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS", ""
+).strip().lower() in {"1", "true", "yes", "on"}
+if _SUPPRESS_IMPORT_LOGGING:
+    pass
+elif sys.platform == 'win32':
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -3814,7 +3820,8 @@ class MogollonWisdomLibrary:
     
     def get_pit_house_wisdom(self) -> Dict:
         """Get architectural wisdom from pit house philosophy."""
-        wisdom_key = random.choice(list(self.PIT_HOUSE_WISDOM.keys()))
+        keys = sorted(self.PIT_HOUSE_WISDOM.keys())
+        wisdom_key = keys[datetime.now().toordinal() % len(keys)]
         return {
             "principle": wisdom_key.replace("_", " ").title(),
             "wisdom": self.PIT_HOUSE_WISDOM[wisdom_key],
@@ -3823,7 +3830,8 @@ class MogollonWisdomLibrary:
     
     def get_trade_route_lesson(self) -> Dict:
         """Get wisdom from ancient Mogollon trade networks."""
-        route_key = random.choice(list(self.TRADE_ROUTES.keys()))
+        keys = sorted(self.TRADE_ROUTES.keys())
+        route_key = keys[datetime.now().toordinal() % len(keys)]
         return {"route": route_key, **self.TRADE_ROUTES[route_key]}
     
     def get_three_worlds_guidance(self, fear_greed: int) -> Dict:
@@ -3840,7 +3848,7 @@ class MogollonWisdomLibrary:
     
     def get_proverb(self) -> Dict:
         """Get a Mogollon proverb."""
-        return random.choice(self.PROVERBS)
+        return self.PROVERBS[datetime.now().toordinal() % len(self.PROVERBS)]
     
     def get_full_mogollon_reading(self, fear_greed: int, btc_price: float, btc_change: float) -> Dict:
         """Get complete Mogollon wisdom reading."""

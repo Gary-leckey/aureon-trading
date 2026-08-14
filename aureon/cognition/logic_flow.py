@@ -133,13 +133,39 @@ def compute_logic_flow(*, seed_score: float = 0.639, trace_id: str = "logicflow0
     bus.subscribe("*", _watch)
 
     # 1. The harmonic core speaks — one authoritative pulse (the daemon's own shape).
+    observed_at = time.time()
     pulse_payload = {
         "symbolic_life_score": seed_score,
         "coherence_gamma": 0.945,
         "consciousness_psi": 0.707,
         "consciousness_level": "CONNECTED",
         "lambda_t": 1.0,
-        "source": "logic_flow_probe",
+        "source_count": 1,
+        "source": "hnc_live_daemon",
+        "source_id": "aureon:hnc:live_daemon",
+        "source_timestamp": observed_at,
+        "received_at": observed_at,
+        "ts": observed_at,
+        "receipt_id": f"hnc:live_field:logic-flow-{trace_id}",
+        "receipt_type": "hnc_live_field",
+        "provider_receipt_type": "hnc_live_field",
+        "input_receipt_ids": [f"logic_flow:seed:{trace_id}"],
+        "data_status": "live",
+        "truth_status": "real_derived",
+        "generated_values": False,
+        "freshness_status": "fresh",
+        "equation_inputs_complete": True,
+        "action_gate_reason": "route_specific_market_link_required",
+        "operational_eligible": False,
+        "provider_eligible": False,
+        "action_eligible": False,
+        "actionable": False,
+        "accounting_eligible": False,
+        "learning_eligible": False,
+        "eligible_for_action": False,
+        "eligible_for_accounting": False,
+        "eligible_for_learning": False,
+        "action_gate_passed": False,
     }
     bus.publish(Thought(source="hnc_live_daemon", topic=PULSE_TOPIC, trace_id=trace_id, payload=pulse_payload))
     pulses = bus.recall(PULSE_TOPIC, limit=1) or []

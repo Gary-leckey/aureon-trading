@@ -22,12 +22,15 @@ the whole turn is bounded by the same offline/audit guards as the rest of Aureon
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
 import re
+import threading
 import time
 import uuid
+from collections.abc import Callable, Mapping
 from typing import Any, Dict, Generator, List
 
 try:
@@ -37,8 +40,21 @@ try:
 except Exception:  # noqa: BLE001
     pass
 
+from aureon.governance.cognition_gate import (
+    CognitionGovernanceRequest,
+    TrustedCouncilReceiptSupplier,
+    TrustedCrownReceiptSupplier,
+    build_cognition_governance_request,
+    evaluate_cognition_governance,
+    explicit_disabled_governance,
+)
+from aureon.governance.dual_key import DUAL_KEY_SCHEMA, validate_dual_key_receipt
 from aureon.inhouse_ai.agent_runner import AgentRunner
 from aureon.inhouse_ai.llm_adapter import LLMAdapter
+from aureon.inhouse_ai.tool_registry import (
+    ToolDispatchAuthorization,
+    ToolDispatchProposal,
+)
 from aureon.operator.aureon_operator import (
     _OPERATOR_PERSONA,
     _hard_boundary_violation,
@@ -112,6 +128,113 @@ _BAKE_CHARTER = (
     "which of those the answer rests on."
 )
 
+_GOVERNANCE_FALSE_FLAGS = (
+    "action_eligible",
+    "accounting_eligible",
+    "learning_eligible",
+    "action_gate_passed",
+    "actionable",
+    "operational_eligible",
+    "provider_eligible",
+    "eligible_for_action",
+    "eligible_for_accounting",
+    "eligible_for_learning",
+    "economic_mutation",
+)
+
+
+def _governance_hold(reason: str) -> Dict[str, Any]:
+    """Numeric-free HOLD evidence; never a fabricated governance receipt."""
+
+    return {
+        "schema": DUAL_KEY_SCHEMA,
+        "receipt_type": "druid_queen_dual_key",
+        "receipt_id": None,
+        "decision": "HOLD",
+        "reason": reason,
+        "data_status": "no_data",
+        "truth_status": "no_data",
+        "freshness_status": "no_data",
+        "equation_inputs_complete": False,
+        "generated_values": False,
+        "input_receipt_ids": [],
+        "rune_voices": [],
+        "lineage_alignment": "unavailable",
+        "harmonic_outcome": "HOLD",
+        "route_authorization_required": True,
+        **dict.fromkeys(_GOVERNANCE_FALSE_FLAGS, False),
+    }
+
+
+def _sha256_json(value: Any) -> str:
+    canonical = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+class _CognitionDispatchVerifier:
+    """Registry trust root binding a dual-key receipt to one frozen tool proposal."""
+
+    verifier_id = "aureon.cognition.dual-key-dispatch-verifier.v1"
+
+    def __init__(self) -> None:
+        self._expected: Dict[str, Dict[str, Any]] = {}
+        self._lock = threading.RLock()
+
+    def register(
+        self,
+        proposal: ToolDispatchProposal,
+        request: CognitionGovernanceRequest,
+    ) -> None:
+        with self._lock:
+            self._expected[proposal.proposal_digest] = {
+                "governance_proposal_digest": request.proposal_digest,
+                "prompt_digest": request.prompt_digest,
+                "provider_receipt_ids": list(request.provider_receipt_ids),
+                "provider_moment_digest": request.provider_moment_digest,
+                "provider_source_timestamp": request.provider_source_timestamp,
+            }
+
+    def discard(self, proposal_digest: str) -> None:
+        with self._lock:
+            self._expected.pop(proposal_digest, None)
+
+    def validate_tool_dispatch_authorization(
+        self,
+        *,
+        proposal: ToolDispatchProposal,
+        authorization: ToolDispatchAuthorization,
+    ) -> bool:
+        with self._lock:
+            expected = self._expected.pop(proposal.proposal_digest, None)
+        if expected is None:
+            return False
+        try:
+            receipt = json.loads(authorization.authority_receipt_json)
+            validated = validate_dual_key_receipt(receipt)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return False
+        return bool(
+            authorization.issuer_id == self.verifier_id
+            and authorization.proposal_digest == proposal.proposal_digest
+            and authorization.authority_receipt_id == validated.get("receipt_id")
+            and validated.get("decision") == "ACCEPT"
+            and validated.get("proposal_digest")
+            == expected["governance_proposal_digest"]
+            and validated.get("prompt_digest") == expected["prompt_digest"]
+            and validated.get("provider_receipt_ids")
+            == expected["provider_receipt_ids"]
+            and validated.get("provider_moment_digest")
+            == expected["provider_moment_digest"]
+            and validated.get("provider_source_timestamp")
+            == expected["provider_source_timestamp"]
+        )
+
 
 class AureonCognition:
     """Single-mind agentic cognition: ground → tool-loop → veto, fully traced."""
@@ -131,6 +254,13 @@ class AureonCognition:
         mesh_broadcast: bool = True,
         source: str = "aureon.cognition",
         prefer_local: bool | None = None,
+        allow_repo_grounding: bool = True,
+        allow_organism_context: bool = True,
+        council_receipt_supplier: TrustedCouncilReceiptSupplier | None = None,
+        crown_receipt_supplier: TrustedCrownReceiptSupplier | None = None,
+        governance_acquisition: Mapping[str, Any] | None = None,
+        governance_acquisition_supplier: Callable[[], Mapping[str, Any]] | None = None,
+        governance_enabled: bool = True,
     ) -> None:
         # ``join_mesh`` governs INBOUND mesh membership only. Outbound broadcasts are separate and
         # default on, so nothing changes for the instance engine; a per-tenant engine passes
@@ -141,14 +271,71 @@ class AureonCognition:
         if prefer_local is None:
             prefer_local = str(os.environ.get("AUREON_COGNITION_PREFER_LOCAL", "") or "").strip().lower() in {"1", "true", "yes", "on"}
         self.adapter = adapter or self._default_adapter(prefer_local=prefer_local)
+        self._governance_enabled = bool(governance_enabled)
+        if (
+            self._governance_enabled
+            and council_receipt_supplier is None
+            and crown_receipt_supplier is None
+            and governance_acquisition is None
+            and governance_acquisition_supplier is None
+        ):
+            try:
+                from aureon.core.organism_composition import (
+                    get_canonical_organism_composition,
+                )
+
+                composition = get_canonical_organism_composition()
+                if composition is not None:
+                    composition_kwargs = composition.cognition_kwargs()
+                    council_receipt_supplier = composition_kwargs.get(
+                        "council_receipt_supplier"
+                    )
+                    crown_receipt_supplier = composition_kwargs.get(
+                        "crown_receipt_supplier"
+                    )
+                    governance_acquisition_supplier = composition_kwargs.get(
+                        "governance_acquisition_supplier"
+                    )
+            except Exception as exc:  # noqa: BLE001 - incomplete root stays fail-closed
+                logger.debug("canonical organism composition unavailable: %s", exc)
+        self._council_receipt_supplier = council_receipt_supplier
+        self._crown_receipt_supplier = crown_receipt_supplier
+        if governance_acquisition is not None and governance_acquisition_supplier is not None:
+            raise ValueError(
+                "static_and_request_scoped_governance_acquisition_are_mutually_exclusive"
+            )
+        if governance_acquisition is not None and not isinstance(
+            governance_acquisition, Mapping
+        ):
+            raise TypeError("governance_acquisition must be a mapping")
+        if governance_acquisition_supplier is not None and not callable(
+            governance_acquisition_supplier
+        ):
+            raise TypeError("governance_acquisition_supplier must be callable")
+        self._governance_acquisition = (
+            dict(governance_acquisition) if governance_acquisition is not None else None
+        )
+        self._governance_acquisition_supplier = governance_acquisition_supplier
+        self._dispatch_verifier = _CognitionDispatchVerifier()
         # `is not None`, NOT `or`: ToolRegistry defines __len__, so a registry deliberately pruned to
         # zero tools is FALSY, and `tools or build_operator_tools(...)` would silently hand back the
         # FULL instance toolbelt — the exact opposite of what an empty allowlist asks for. That fails
         # open on the tenant plane, inverting the allowlist guarantee.
         self.tools = tools if tools is not None else build_operator_tools(
-            allow_writes=allow_writes, allow_shell=allow_shell)
+            allow_writes=allow_writes,
+            allow_shell=allow_shell,
+            governance_required=True,
+            authorization_verifier=self._dispatch_verifier,
+        )
+        try:
+            self.tools.governance_required = True
+            self.tools.authorization_verifier = self._dispatch_verifier
+        except Exception as exc:  # noqa: BLE001 - a non-governable toolbelt must not run
+            raise TypeError("a governance-capable tool registry is required") from exc
         self.max_turns = max_turns
         self.source = source
+        self._allow_repo_grounding = bool(allow_repo_grounding)
+        self._allow_organism_context = bool(allow_organism_context)
         self._conscience = conscience
         self._conscience_loaded = conscience is not None
         self.last_mesh_message: Dict[str, Any] = {}
@@ -202,6 +389,7 @@ class AureonCognition:
                 "This request crosses a hard Aureon authority boundary "
                 "(live trading, payment, safety-gate bypass, credential, or filing)."
             )
+            res.governance = _governance_hold("hard_authority_boundary_refusal")
             res.text = f"🦗 Blocked at the Aureon authority boundary.\nReason: {res.conscience_message}"
             self._actualize(res)
             self._assimilate(res)
@@ -218,6 +406,9 @@ class AureonCognition:
             # a verdict — never a silent stall, never an invented answer.
             gate = res.coherence_gate or {}
             res.blocked = True
+            res.conscience_verdict = "UNAVAILABLE"
+            res.queen_evaluated = False
+            res.queen_evidence = {"available": False, "evaluated": False}
             res.conscience_message = ("coherence gate refusal — the hive field "
                                       "is closed: " + "; ".join(gate.get("reasons", [])))
             res.text = ("🦗 The coherence gate refused this turn.\n"
@@ -226,6 +417,7 @@ class AureonCognition:
                         "ask again when the field clears.")
             res.acquisition = {"triggered": False, "gaps": [],
                                "outcome": "gate_refused"}
+            res.governance = _governance_hold("coherence_aperture_refusal")
             self._actualize(res)
             self._assimilate(res)
             self._heart(res)
@@ -233,10 +425,17 @@ class AureonCognition:
             self._publish(res, "complete", res.to_dict())
             return res
         system_prompt = self._ground(prompt, res)
-        self._run_loop(prompt, system_prompt, res)
+        self._run_loop(
+            prompt,
+            system_prompt,
+            res,
+            phase="draft",
+            observer_prompt=prompt,
+        )
         self._acquire(prompt, system_prompt, res)
         self._bake(prompt, system_prompt, res)
         self._veto(prompt, res)
+        self._govern_final_answer(prompt, res)
         self._actualize(res)
         self._assimilate(res)
         self._heart(res)
@@ -286,28 +485,35 @@ class AureonCognition:
     def _ground(self, prompt: str, res: CognitionResult) -> str:
         sources: List[Dict[str, str]] = []
         blocks: List[str] = []
-        try:
-            # the pattern buffer runs deep: more candidate packets, each carrying
-            # its own measured relevance score into the envelope (never invented)
-            hits = repo_search(prompt, top_k=8)
-            top = hits[0].score if hits else 0.0
-            is_grounded = top >= _MID_FLOOR and _has_domain_term(prompt)
-            if is_grounded:
-                for s in hits:
-                    if s.score < _SNIPPET_FLOOR:
-                        continue
-                    sources.append({"title": s.doc_id, "path": s.doc_id,
-                                    "score": f"{s.score:.1f}"})
-                    blocks.append(f"[{s.doc_id}] {s.text[:400]}")
-        except Exception as exc:  # noqa: BLE001
-            logger.debug("repo grounding failed: %s", exc)
-            res.errors.append({"phase": "ground", "error": str(exc)})
+        if self._allow_repo_grounding:
+            try:
+                # the pattern buffer runs deep: more candidate packets, each carrying
+                # its own measured relevance score into the envelope (never invented)
+                hits = repo_search(prompt, top_k=8)
+                top = hits[0].score if hits else 0.0
+                is_grounded = top >= _MID_FLOOR and _has_domain_term(prompt)
+                if is_grounded:
+                    for s in hits:
+                        if s.score < _SNIPPET_FLOOR:
+                            continue
+                        sources.append({"title": s.doc_id, "path": s.doc_id,
+                                        "score": f"{s.score:.1f}"})
+                        blocks.append(f"[{s.doc_id}] {s.text[:400]}")
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("repo grounding failed: %s", exc)
+                res.errors.append({"phase": "ground", "error": str(exc)})
 
-        qa = self._life_questions_snippet(prompt)
-        if qa:
-            blocks.append(f"[aureon_qa_dataset] {qa}")
+            qa = self._life_questions_snippet(prompt)
+            if qa:
+                blocks.append(f"[aureon_qa_dataset] {qa}")
 
         system = _OPERATOR_PERSONA
+        if not self._allow_repo_grounding:
+            system += (
+                "\n\nThis is an isolated tenant model plane. No instance repository, "
+                "research corpus, operator memory, or organism state is available to it. "
+                "Do not claim or infer access to those sources."
+            )
         if blocks:
             system += "\n\nGrounded Aureon context (cite when relevant):\n" + "\n\n".join(blocks)[:4000]
 
@@ -397,17 +603,319 @@ class AureonCognition:
     # Agentic loop
     # ------------------------------------------------------------------
 
-    def _run_loop(self, prompt: str, system_prompt: str, res: CognitionResult) -> None:
-        runner = AgentRunner(self.adapter, tools=self.tools, system_prompt=system_prompt,
-                             max_turns=self.max_turns)
+    def _governance_acquisition_for(self, res: CognitionResult) -> Dict[str, Any]:
+        if self._governance_acquisition_supplier is not None:
+            try:
+                supplied = self._governance_acquisition_supplier()
+                if not isinstance(supplied, Mapping):
+                    raise TypeError(
+                        "governance_acquisition_supplier_must_return_mapping"
+                    )
+                acquisition = dict(supplied)
+            except Exception as exc:  # noqa: BLE001 - bad evidence must HOLD, not crash
+                logger.debug("governance acquisition unavailable: %s", exc)
+                acquisition = {}
+        else:
+            acquisition = dict(self._governance_acquisition or {})
+        acquisition["knowledge_acquisition"] = dict(res.acquisition or {})
+        return acquisition
+
+    @staticmethod
+    def _proposal_material(proposal: ToolDispatchProposal) -> Dict[str, Any]:
+        return {
+            "schema": proposal.schema,
+            "tool_call_id": proposal.tool_call_id,
+            "runner_turn_index": proposal.runner_turn_index,
+            "response_call_index": proposal.response_call_index,
+            "tool_name": proposal.tool_name,
+            "arguments_json": proposal.arguments_json,
+            "arguments_digest": proposal.arguments_digest,
+            "effect": proposal.effect,
+            "operation_id": proposal.operation_id,
+            "tool_definition_digest": proposal.tool_definition_digest,
+            "context_json": proposal.context_json,
+            "context_digest": proposal.context_digest,
+            "proposal_digest": proposal.proposal_digest,
+        }
+
+    def _queen_voice(
+        self,
+        action: str,
+        context: Mapping[str, Any],
+    ) -> tuple[str, str, bool, Dict[str, Any]]:
+        conscience = self._get_conscience()
+        if conscience is None:
+            return (
+                "UNAVAILABLE",
+                "QueenConscience is unavailable",
+                False,
+                {"available": False, "evaluated": False},
+            )
+        try:
+            whisper = conscience.ask_why(action, dict(context))
+            verdict = str(
+                getattr(
+                    getattr(whisper, "verdict", ""),
+                    "name",
+                    getattr(whisper, "verdict", ""),
+                )
+            ).strip().upper()
+            message = str(getattr(whisper, "message", "") or "")
+            if verdict not in {"APPROVED", "CONCERNED", "TEACHING_MOMENT", "VETO"}:
+                return (
+                    "UNAVAILABLE",
+                    "QueenConscience returned an unrecognized verdict",
+                    False,
+                    {"available": True, "evaluated": False},
+                )
+            source = (
+                f"{conscience.__class__.__module__}."
+                f"{conscience.__class__.__qualname__}"
+            )
+            return (
+                verdict,
+                message,
+                True,
+                {
+                    "available": True,
+                    "evaluated": True,
+                    "verdict_source_id": source,
+                    "action_digest": hashlib.sha256(
+                        action.encode("utf-8")
+                    ).hexdigest(),
+                    "context_digest": _sha256_json(dict(context)),
+                    "message_digest": hashlib.sha256(
+                        message.encode("utf-8")
+                    ).hexdigest(),
+                },
+            )
+        except Exception as exc:  # noqa: BLE001 - an unavailable Queen must hold
+            logger.debug("conscience unavailable: %s", exc)
+            return (
+                "UNAVAILABLE",
+                "QueenConscience evaluation failed",
+                False,
+                {
+                    "available": True,
+                    "evaluated": False,
+                    "error_type": type(exc).__name__,
+                },
+            )
+
+    def _authorize_tool_dispatch(
+        self,
+        proposal: ToolDispatchProposal,
+        *,
+        observer_prompt: str,
+        phase: str,
+        res: CognitionResult,
+    ) -> tuple[ToolDispatchAuthorization | None, Dict[str, Any]]:
+        if not self._governance_enabled:
+            return None, _governance_hold(
+                "mutation_dispatch_requires_enabled_governance"
+            )
+        proposal_material = self._proposal_material(proposal)
+        tool_ledger = [item.to_dict() for item in res.tool_calls]
+        dispatch_bake = {
+            "phase": phase,
+            "dispatch_proposal": proposal_material,
+            "tool_ledger": tool_ledger,
+            "tool_ledger_digest": _sha256_json(tool_ledger),
+        }
+        queen_context = {
+            "trace_id": res.trace_id,
+            "phase": phase,
+            "tool_name": proposal.tool_name,
+            "effect": proposal.effect,
+            "operation_id": proposal.operation_id,
+            "tool_proposal_digest": proposal.proposal_digest,
+            "tool_ledger_digest": dispatch_bake["tool_ledger_digest"],
+        }
+        verdict, _message, evaluated, _evidence = self._queen_voice(
+            f"authorize exact tool dispatch: {proposal.operation_id}",
+            queen_context,
+        )
+        if not evaluated:
+            return None, _governance_hold("evaluated_queen_voice_required")
+        answer = json.dumps(
+            proposal_material,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
+        acquisition = self._governance_acquisition_for(res)
+        request = build_cognition_governance_request(
+            prompt=observer_prompt,
+            answer=answer,
+            tool_calls=res.tool_calls,
+            capability=res.capability,
+            bake=dispatch_bake,
+            acquisition=acquisition,
+            queen_verdict=verdict,
+        )
+        gate = evaluate_cognition_governance(
+            prompt=observer_prompt,
+            answer=answer,
+            tool_calls=res.tool_calls,
+            capability=res.capability,
+            bake=dispatch_bake,
+            acquisition=acquisition,
+            queen_verdict=verdict,
+            queen_evaluated=evaluated,
+            council_receipt_supplier=self._council_receipt_supplier,
+            crown_receipt_supplier=self._crown_receipt_supplier,
+        )
+        gate_decision = str(gate.get("decision") or "HOLD").upper()
+        if gate_decision != "ACCEPT" or not gate.get("receipt_id"):
+            if gate_decision in {"HOLD", "ABORT"}:
+                return (
+                    ToolDispatchAuthorization.issue(
+                        proposal=proposal,
+                        decision=gate_decision,
+                        issuer_id=self._dispatch_verifier.verifier_id,
+                        authority_receipt_id=str(gate.get("receipt_id") or ""),
+                        authority_receipt=gate,
+                    ),
+                    gate,
+                )
+            return None, gate
+        self._dispatch_verifier.register(proposal, request)
+        try:
+            authorization = ToolDispatchAuthorization.issue(
+                proposal=proposal,
+                decision="ACCEPT",
+                issuer_id=self._dispatch_verifier.verifier_id,
+                authority_receipt_id=str(gate["receipt_id"]),
+                authority_receipt=gate,
+            )
+        except Exception:
+            self._dispatch_verifier.discard(proposal.proposal_digest)
+            raise
+        return authorization, gate
+
+    def _run_loop(
+        self,
+        prompt: str,
+        system_prompt: str,
+        res: CognitionResult,
+        *,
+        phase: str,
+        observer_prompt: str,
+    ) -> None:
+        pending: List[ToolInvocation] = []
+        dispatch_gates: Dict[str, Dict[str, Any]] = {}
+
+        def _dispatch_context() -> Dict[str, Any]:
+            ledger = [item.to_dict() for item in res.tool_calls]
+            return {
+                "trace_id": res.trace_id,
+                "phase": phase,
+                "observer_prompt_digest": hashlib.sha256(
+                    observer_prompt.encode("utf-8")
+                ).hexdigest(),
+                "active_prompt_digest": hashlib.sha256(
+                    prompt.encode("utf-8")
+                ).hexdigest(),
+                "tool_ledger_digest": _sha256_json(ledger),
+            }
+
+        def _authorize(
+            proposal: ToolDispatchProposal,
+        ) -> ToolDispatchAuthorization | None:
+            try:
+                authorization, gate = self._authorize_tool_dispatch(
+                    proposal,
+                    observer_prompt=observer_prompt,
+                    phase=phase,
+                    res=res,
+                )
+            except Exception as exc:  # noqa: BLE001 - authorizer failure holds
+                logger.warning("cognition tool governance failed: %s", exc)
+                authorization = None
+                gate = _governance_hold("tool_governance_unavailable")
+            dispatch_gates[proposal.proposal_digest] = gate
+            return authorization
+
+        runner = AgentRunner(
+            self.adapter,
+            tools=self.tools,
+            system_prompt=system_prompt,
+            max_turns=self.max_turns,
+            governance_required=True,
+            authorize_tool_dispatch=_authorize,
+            dispatch_context_provider=_dispatch_context,
+        )
 
         def _on_tool_call(name: str, args: Dict[str, Any]) -> None:
-            res.tool_calls.append(ToolInvocation(tool=name, arguments=dict(args or {})))
+            definition = self.tools.get(name)
+            invocation = ToolInvocation(
+                tool=name,
+                arguments=dict(args or {}),
+                phase=phase,
+                effect=(definition.effect.value if definition is not None else "unknown"),
+                operation_id=(definition.operation_id if definition is not None else ""),
+            )
+            res.tool_calls.append(invocation)
+            pending.append(invocation)
             self._publish(res, "tool", {"tool": name, "arguments": args})
             if self._mesh_broadcast:
                 broadcast_to_mesh("cognition.tool", {"trace_id": res.trace_id, "tool": name})
 
         runner.on_tool_call = _on_tool_call
+
+        def _on_tool_result(
+            proposal: ToolDispatchProposal | None,
+            authorization: ToolDispatchAuthorization | None,
+            result: str,
+        ) -> None:
+            invocation = pending.pop(0) if pending else None
+            if invocation is None:
+                return
+            if proposal is not None:
+                invocation.proposal_digest = proposal.proposal_digest
+                invocation.effect = proposal.effect
+                invocation.operation_id = proposal.operation_id
+            if authorization is not None:
+                invocation.authorization_digest = authorization.authorization_digest
+                invocation.governance_receipt_id = (
+                    authorization.authority_receipt_id or None
+                )
+            record = next(
+                (
+                    item
+                    for item in reversed(getattr(self.tools, "dispatch_records", []))
+                    if proposal is not None
+                    and item.proposal_digest == proposal.proposal_digest
+                ),
+                None,
+            )
+            if record is not None:
+                invocation.governance_decision = record.decision
+                invocation.governance_reason = record.reason
+                invocation.handler_called = record.handler_called
+                invocation.result_digest = record.result_digest
+                invocation.blocked = not record.handler_called
+                if not record.handler_called and proposal is not None:
+                    self._dispatch_verifier.discard(proposal.proposal_digest)
+            else:
+                invocation.blocked = True
+                invocation.result_digest = hashlib.sha256(
+                    result.encode("utf-8")
+                ).hexdigest()
+            if proposal is not None:
+                gate = dispatch_gates.pop(proposal.proposal_digest, None)
+                if gate is not None and not invocation.governance_decision:
+                    invocation.governance_decision = str(gate.get("decision") or "HOLD")
+                if gate is not None and not invocation.governance_reason:
+                    invocation.governance_reason = str(gate.get("reason") or "")
+            try:
+                payload = json.loads(result)
+            except (TypeError, json.JSONDecodeError):
+                payload = {}
+            if isinstance(payload, Mapping) and payload.get("blocked") is True:
+                invocation.blocked = True
+
+        runner.on_tool_result = _on_tool_result
         try:
             text = runner.turn(prompt)
         except Exception as exc:  # noqa: BLE001 — a loop failure must not crash cognition
@@ -417,11 +925,6 @@ class AureonCognition:
 
         res.text = (text or "").strip()
         res.turns += getattr(runner, "_turn_count", 0)   # accumulates across bake passes
-        # Reconcile which tool calls were blocked by the guard.
-        blocked_tools = {b["tool"] for b in getattr(self.tools, "blocked_calls", [])}
-        for tc in res.tool_calls:
-            if tc.tool in blocked_tools:
-                tc.blocked = True
         self._publish(res, "loop", {"turns": res.turns, "n_tools": len(res.tool_calls)})
 
     # ------------------------------------------------------------------
@@ -482,7 +985,8 @@ class AureonCognition:
         self._publish(res, "acquire", {"gaps": gaps})
         tools_before = len(res.tool_calls)
         self._run_loop(acquisition_prompt(prompt, res.text, gaps),
-                       system_prompt, res)
+                       system_prompt, res, phase="acquisition",
+                       observer_prompt=prompt)
         verdict = acquisition_outcome(tools_before, res)
         res.acquisition = {"triggered": True, "gaps": gaps, **verdict}
 
@@ -511,7 +1015,8 @@ class AureonCognition:
             return
         self._publish(res, "bake", {"reasons": first["reasons"]})
         self._run_loop(refinement_prompt(prompt, res.text, first["reasons"]),
-                       system_prompt, res)
+                       system_prompt, res, phase="bake",
+                       observer_prompt=prompt)
         second = assess_completeness(prompt, res.text)
         res.bake = {"passes": 2, "complete": second["complete"],
                     "reasons": list(second["reasons"]),
@@ -523,35 +1028,91 @@ class AureonCognition:
     # ------------------------------------------------------------------
 
     def _veto(self, prompt: str, res: CognitionResult) -> None:
-        conscience = self._get_conscience()
-        if conscience is None:
-            res.conscience_verdict = "APPROVED"
-            self._publish(res, "veto", {"verdict": "APPROVED", "available": False})
-            return
-        try:
-            org = self._read_organism_state()
-            ctx = {"answer_preview": res.text[:400], "grounded": res.grounded,
-                   "tools_used": [t.tool for t in res.tool_calls]}
-            # Fold the shared field into the veto so the conscience's substrate-
-            # coherence check sees the organism's real coherence, not "unknown".
-            if org.get("symbolic_life_score") is not None:
-                ctx["symbolic_life_score"] = org["symbolic_life_score"]
-            if org.get("cosmic_score") is not None:
-                ctx["cosmic_score"] = org["cosmic_score"]
-            whisper = conscience.ask_why(
-                f"answer cognition prompt: {prompt[:160]}", ctx,
+        org = self._read_organism_state()
+        ctx = {
+            "answer_preview": res.text[:400],
+            "answer_digest": hashlib.sha256(res.text.encode("utf-8")).hexdigest(),
+            "grounded": res.grounded,
+            "tools_used": [t.tool for t in res.tool_calls],
+            "tool_ledger_digest": _sha256_json(
+                [item.to_dict() for item in res.tool_calls]
+            ),
+        }
+        # Fold the shared field into the veto so the conscience's substrate-
+        # coherence check sees the organism's real coherence, not "unknown".
+        if org.get("symbolic_life_score") is not None:
+            ctx["symbolic_life_score"] = org["symbolic_life_score"]
+        if org.get("cosmic_score") is not None:
+            ctx["cosmic_score"] = org["cosmic_score"]
+        verdict, message, evaluated, evidence = self._queen_voice(
+            f"answer cognition prompt: {prompt[:160]}",
+            ctx,
+        )
+        res.conscience_verdict = verdict
+        res.conscience_message = message
+        res.queen_evaluated = evaluated
+        res.queen_evidence = evidence
+        if verdict == "VETO":
+            res.blocked = True
+            res.text = (
+                "The Queen's conscience vetoed this answer.\n"
+                f"Reason: {res.conscience_message}"
             )
-            verdict = getattr(whisper.verdict, "name", str(whisper.verdict))
-            res.conscience_verdict = verdict
-            res.conscience_message = str(getattr(whisper, "message", "") or "")
-            if verdict == "VETO":
-                res.blocked = True
-                res.text = f"🦗 The Queen's conscience vetoed this answer.\nReason: {res.conscience_message}"
-        except Exception as exc:  # noqa: BLE001
-            logger.debug("conscience unavailable: %s", exc)
-            res.conscience_verdict = "APPROVED"
-            res.errors.append({"phase": "veto", "error": str(exc)})
         self._publish(res, "veto", {"verdict": res.conscience_verdict, "blocked": res.blocked})
+
+    def _govern_final_answer(self, prompt: str, res: CognitionResult) -> None:
+        """Require a second exact two-rune join before answer actualization."""
+
+        pre_governance_status = res.status()
+        if pre_governance_status != "ok":
+            res.governance = _governance_hold(
+                "healthy_cognition_result_required_before_governance"
+            )
+        elif not self._governance_enabled:
+            res.governance = explicit_disabled_governance(res.capability)
+        else:
+            tool_ledger = [item.to_dict() for item in res.tool_calls]
+            final_bake = dict(res.bake or {})
+            final_bake.update({
+                "phase": "final_answer",
+                "tool_ledger": tool_ledger,
+                "tool_ledger_digest": _sha256_json(tool_ledger),
+            })
+            res.governance = evaluate_cognition_governance(
+                prompt=prompt,
+                answer=res.text,
+                tool_calls=res.tool_calls,
+                capability=res.capability,
+                bake=final_bake,
+                acquisition=self._governance_acquisition_for(res),
+                queen_verdict=res.conscience_verdict,
+                queen_evaluated=res.queen_evaluated,
+                council_receipt_supplier=self._council_receipt_supplier,
+                crown_receipt_supplier=self._crown_receipt_supplier,
+            )
+        gate = res.governance or _governance_hold("governance_result_required")
+        decision = str(gate.get("decision") or "HOLD").upper()
+        self._publish(
+            res,
+            "governance",
+            {
+                "decision": decision,
+                "receipt_id": gate.get("receipt_id"),
+                "reason": gate.get("reason"),
+            },
+        )
+        if decision not in {"ACCEPT", "DISABLED"}:
+            res.blocked = True
+            # Preserve an honest adapter/fault status verbatim. Governance may
+            # park it, but must not relabel an unavailable result as a healthy
+            # generic HOLD merely because that replacement text starts cleanly.
+            if pre_governance_status == "ok":
+                label = "ABORT" if decision == "ABORT" else "HOLD"
+                res.text = (
+                    f"{label}: Druid Council and Crown governance did not authorize "
+                    "this cognition output.\n"
+                    f"Reason: {gate.get('reason') or 'complete governance evidence required'}"
+                )
 
     # ------------------------------------------------------------------
     # Actualize (the Film-Reel ledger: only the realized increment is written)
@@ -581,6 +1142,17 @@ class AureonCognition:
     def _assimilate(self, res: CognitionResult) -> None:
         """Gate this turn's knowledge record into the collective ledger —
         realized, approved, complete, ok — or refuse with the checks named."""
+        governance = res.governance or {}
+        if governance.get("learning_eligible") is not True:
+            res.assimilation = {
+                "assimilated": False,
+                "checks": {"governance_learning_eligible": False},
+                "reason": (
+                    "write-back refused: governance evidence is evidence-only "
+                    "and does not grant learning eligibility"
+                ),
+            }
+            return
         try:
             from aureon.operator.assimilation import assimilate
 
@@ -655,6 +1227,8 @@ class AureonCognition:
     def _read_organism_state(self) -> Dict[str, Any]:
         """The live cache, backfilled from the bus ring buffer so a fresh
         cognition (no subscription history yet) still senses the current field."""
+        if not self._allow_organism_context:
+            return {}
         state = dict(self._organism)
         # Backfill the field from the one canonical accessor (shared source of
         # truth, flood-proof) so a fresh cognition still senses it before any

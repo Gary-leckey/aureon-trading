@@ -34,6 +34,7 @@ from pathlib import Path
 from typing import Any, Final
 
 import numpy as np
+from aureon.bio.derived_nulls import DerivedNullGenerator, derived_null_generator
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -71,9 +72,9 @@ _NULL_TONE_COUNT: Final[int] = 12
 _LANE_STRIDE: Final[int] = 1_000_003  # keeps per-(trial,lane) seeds disjoint & reproducible
 
 
-def _rng(seed: int, tag: int) -> np.random.Generator:
-    """Reproducible generator stream for a (seed, purpose) pair (engine idiom)."""
-    return np.random.default_rng([int(seed), int(tag)])
+def _rng(seed: int, tag: int) -> DerivedNullGenerator:
+    """Reproducible statistical-null stream for a (seed, purpose) pair."""
+    return derived_null_generator(int(seed), int(tag))
 
 
 def _null_lane_pvals(seed: int, *, nulls: int) -> tuple[float, float]:

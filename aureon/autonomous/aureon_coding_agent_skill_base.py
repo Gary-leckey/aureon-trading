@@ -22,6 +22,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
+from aureon.obsidian_paths import resolve_obsidian_note_path
 from aureon.autonomous.aureon_saas_system_inventory import repo_root_from
 
 try:
@@ -972,14 +973,21 @@ def render_markdown(profile: dict[str, Any]) -> str:
 def write_profile(profile: dict[str, Any], root: Path) -> dict[str, Any]:
     payload = json.dumps(profile, indent=2, sort_keys=True, default=str)
     markdown = render_markdown(profile)
+    root = root.resolve()
+    vault_path = resolve_obsidian_note_path(DEFAULT_VAULT_NOTE, repo_root=root)
     files = {
         DEFAULT_OUTPUT_JSON.as_posix(): payload,
         DEFAULT_OUTPUT_MD.as_posix(): markdown,
         DEFAULT_PUBLIC_JSON.as_posix(): payload,
         DEFAULT_STATE_PATH.as_posix(): payload,
-        DEFAULT_VAULT_NOTE.as_posix(): markdown,
         DEFAULT_COMPONENT.as_posix(): render_component(),
     }
+    try:
+        vault_relative = vault_path.relative_to(root)
+    except ValueError:
+        vault_relative = None
+    if vault_relative is not None:
+        files[vault_relative.as_posix()] = markdown
     app_path = root / DEFAULT_APP_PATH
     if app_path.exists():
         files[DEFAULT_APP_PATH.as_posix()] = mount_component_in_app(app_path.read_text(encoding="utf-8", errors="replace"))
@@ -990,13 +998,23 @@ def write_profile(profile: dict[str, Any], root: Path) -> dict[str, Any]:
             ok = queen.write_file(rel, content, backup=True)
             if not ok:
                 raise RuntimeError(f"QueenCodeArchitect refused to write {rel}")
-        return {"writer": "QueenCodeArchitect", "created_files": list(getattr(queen, "created_files", []))}
+        created_files = list(getattr(queen, "created_files", []))
+        if vault_relative is None:
+            vault_path.parent.mkdir(parents=True, exist_ok=True)
+            vault_path.write_text(markdown, encoding="utf-8")
+            created_files.append(str(vault_path))
+        return {"writer": "QueenCodeArchitect", "created_files": created_files}
 
     for rel, content in files.items():
         path = root / rel
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
-    return {"writer": "direct_python_fallback", "created_files": list(files)}
+    created_files = list(files)
+    if vault_relative is None:
+        vault_path.parent.mkdir(parents=True, exist_ok=True)
+        vault_path.write_text(markdown, encoding="utf-8")
+        created_files.append(str(vault_path))
+    return {"writer": "direct_python_fallback", "created_files": created_files}
 
 
 def build_and_write_profile(

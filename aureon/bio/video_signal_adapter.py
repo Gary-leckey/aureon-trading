@@ -29,18 +29,21 @@ series. :func:`fold_to_band` then octave-folds those into the engine's 1000-2000
 modulation band, the same octave-fold the engine performs for molecular peaks.
 
 Pure numpy + stdlib for the core; ``imageio`` is imported **lazily and only** to
-decode a real video file (the synthetic path and the pure proxy core never need
-it). No network, no import-time side effects.
+decode a real video file. Controlled generated clips live exclusively in the test
+package. No network, no import-time side effects.
 """
 
 from __future__ import annotations
 
+import math
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 import phenolic_fingerprint as engine
+from aureon.bio.derived_nulls import derived_null_generator
 from aureon.bio.human_harmonic_proxy import (
     SCIENTIFIC_BOUNDARY,
     HumanSignal,
@@ -50,13 +53,132 @@ from aureon.bio.human_harmonic_proxy import (
 )
 
 __all__ = [
+    "VideoControlEnvelope",
+    "VideoHumanSignal",
     "VideoSignalAdapter",
+    "control_video",
     "score_video",
     "synthetic_video",
     "main",
 ]
 
 PHI: float = float(engine.PHI)
+_CONTROL_PREFIX = "bio.control.video."
+
+
+@dataclass(frozen=True, slots=True)
+class VideoControlEnvelope:
+    """Immutable generated-video control with explicit non-operational provenance."""
+
+    frame_bytes: bytes
+    shape: tuple[int, ...]
+    frame_rate_hz: float
+    provenance: str
+    data_origin: str = "derived_statistical_control"
+    truth_status: str = "statistical_control"
+    generated_values: bool = True
+    control_only: bool = True
+    live_data: bool = False
+    provider_observation: bool = False
+    operational_eligible: bool = False
+    action_eligible: bool = False
+    actionable: bool = False
+    accounting_eligible: bool = False
+    learning_eligible: bool = False
+    provider_eligible: bool = False
+
+    def as_frames(self) -> np.ndarray:
+        frames = np.frombuffer(self.frame_bytes, dtype="<f8").reshape(self.shape)
+        if frames.flags.writeable:
+            raise ValueError("video control storage must remain read-only")
+        return frames
+
+
+@dataclass(frozen=True)
+class VideoHumanSignal(HumanSignal):
+    """HumanSignal carrying the immutable video-control classification."""
+
+    data_origin: str = "derived_signal_analysis"
+    truth_status: str = "derived_analysis"
+    generated_values: bool = False
+    live_data: bool | None = None
+    provider_observation: bool = False
+    operational_eligible: bool = False
+    action_eligible: bool = False
+    actionable: bool = False
+    accounting_eligible: bool = False
+    learning_eligible: bool = False
+    provider_eligible: bool = False
+
+
+def _finite_positive(value: Any, label: str) -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"{label} must be finite and positive")
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{label} must be finite and positive") from exc
+    if not math.isfinite(number) or number <= 0.0:
+        raise ValueError(f"{label} must be finite and positive")
+    return number
+
+
+def _positive_int(value: Any, label: str) -> int:
+    if isinstance(value, bool):
+        raise ValueError(f"{label} must be a positive integer")
+    try:
+        number = int(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{label} must be a positive integer") from exc
+    if number <= 0 or number != value:
+        raise ValueError(f"{label} must be a positive integer")
+    return number
+
+
+def _freeze_control(
+    frames: Any,
+    *,
+    frame_rate_hz: Any,
+    provenance: str,
+) -> VideoControlEnvelope:
+    if not provenance.startswith(_CONTROL_PREFIX):
+        raise ValueError("video control provenance must use bio.control.video")
+    array = np.asarray(frames, dtype="<f8")
+    if array.ndim < 1 or array.shape[0] < 4 or not np.all(np.isfinite(array)):
+        raise ValueError("video control frames must be complete finite values")
+    contiguous = np.ascontiguousarray(array, dtype="<f8")
+    return VideoControlEnvelope(
+        frame_bytes=contiguous.tobytes(order="C"),
+        shape=tuple(int(value) for value in contiguous.shape),
+        frame_rate_hz=_finite_positive(frame_rate_hz, "frame_rate_hz"),
+        provenance=provenance,
+    )
+
+
+def _validate_control(value: VideoControlEnvelope) -> None:
+    false_fields = (
+        value.live_data,
+        value.provider_observation,
+        value.operational_eligible,
+        value.action_eligible,
+        value.actionable,
+        value.accounting_eligible,
+        value.learning_eligible,
+        value.provider_eligible,
+    )
+    if (
+        not value.provenance.startswith(_CONTROL_PREFIX)
+        or value.data_origin != "derived_statistical_control"
+        or value.truth_status != "statistical_control"
+        or value.generated_values is not True
+        or value.control_only is not True
+        or any(field is not False for field in false_fields)
+    ):
+        raise ValueError("invalid or relabelled video control envelope")
+    _finite_positive(value.frame_rate_hz, "frame_rate_hz")
+    frames = value.as_frames()
+    if frames.ndim < 1 or frames.shape[0] < 4 or not np.all(np.isfinite(frames)):
+        raise ValueError("invalid video control frames")
 
 # Rec.601 luma coefficients (global per-frame brightness; not a colour/identity read).
 _LUMA_RGB: tuple[float, float, float] = (0.299, 0.587, 0.114)
@@ -131,9 +253,25 @@ def _load_frames(spec: Any, *, frame_rate_hz: float | None) -> tuple[np.ndarray,
     randomness, no network. Importing this module never requires ``imageio`` — only
     the real-file path does.
     """
+    def require_frame_rate(value: Any) -> float:
+        try:
+            fps = float(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("no_data: a finite positive provider frame rate is required") from exc
+        if not np.isfinite(fps) or fps <= 0:
+            raise ValueError("no_data: a finite positive provider frame rate is required")
+        return fps
+
+    if isinstance(spec, VideoControlEnvelope):
+        _validate_control(spec)
+        fps = require_frame_rate(spec.frame_rate_hz)
+        if frame_rate_hz is not None and require_frame_rate(frame_rate_hz) != fps:
+            raise ValueError("frame_rate_hz cannot relabel a frozen video control")
+        return spec.as_frames(), fps
+
     if isinstance(spec, tuple) and len(spec) == 2 and not isinstance(spec[0], (str, Path)):
         frames, fps = spec
-        return np.asarray(frames), float(fps)
+        return np.asarray(frames), require_frame_rate(fps)
 
     if isinstance(spec, (str, Path)):
         try:
@@ -141,22 +279,22 @@ def _load_frames(spec: Any, *, frame_rate_hz: float | None) -> tuple[np.ndarray,
         except Exception as exc:  # noqa: BLE001
             raise ImportError(
                 "imageio is required to decode video files "
-                "(`pip install imageio[ffmpeg]`); the synthetic path and the pure "
-                "proxy core do not need it."
+                "(`pip install imageio[ffmpeg]`); the pure proxy core does not need it."
             ) from exc
         reader = imageio.get_reader(str(spec))
         try:
-            fps = float(reader.get_meta_data().get("fps", frame_rate_hz or 30.0))
-        except Exception:  # noqa: BLE001
-            fps = float(frame_rate_hz or 30.0)
-        frames = np.stack([np.asarray(fr) for fr in reader])
-        reader.close()
+            metadata = reader.get_meta_data()
+            metadata_fps = metadata.get("fps") if isinstance(metadata, dict) else None
+            fps = require_frame_rate(metadata_fps if metadata_fps is not None else frame_rate_hz)
+            frames = np.stack([np.asarray(fr) for fr in reader])
+        finally:
+            reader.close()
         return frames, fps
 
     if isinstance(spec, np.ndarray):
         if frame_rate_hz is None:
             raise ValueError("frame_rate_hz is required when passing a raw frame stack")
-        return spec, float(frame_rate_hz)
+        return spec, require_frame_rate(frame_rate_hz)
 
     raise TypeError(f"unsupported video spec type: {type(spec)!r}")
 
@@ -184,23 +322,54 @@ class VideoSignalAdapter:
         provenance: str,
         frame_rate_hz: float | None = None,
         max_peaks: int = 24,
-    ) -> HumanSignal:
+    ) -> VideoHumanSignal:
         """Return a :class:`HumanSignal` (modality='video') of folded modulation tones."""
         frames, fps = _load_frames(spec, frame_rate_hz=frame_rate_hz)
+        control: VideoControlEnvelope | None
+        if isinstance(spec, VideoControlEnvelope):
+            control = spec
+        elif isinstance(spec, (str, Path)):
+            control = None
+        else:
+            control = _freeze_control(
+                frames,
+                frame_rate_hz=fps,
+                provenance=f"{_CONTROL_PREFIX}unverified_input",
+            )
+            frames = control.as_frames()
         luma = _frames_to_luma(frames)
         raw_hz = _dominant_video_hz(luma, frame_rate_hz=fps, max_peaks=max_peaks)
         tones = tuple(sorted(f for f in (fold_to_band(v) for v in raw_hz) if f is not None))
-        label = f"video:{Path(spec).name}" if isinstance(spec, (str, Path)) else "video:array"
-        return HumanSignal(
+        label = f"video:{Path(spec).name}" if isinstance(spec, (str, Path)) else "video:control"
+        declared = bool(str(provenance).strip())
+        return VideoHumanSignal(
             label=label,
             frequencies_hz=tones,
-            provenance=provenance,
-            consent=consent,
+            provenance=control.provenance if control is not None else provenance,
+            consent=consent is True and declared,
             modality=self.modality,
             notes=(
                 f"{len(tones)} dominant per-frame-luma mode(s); global per-frame luminance "
                 "only (no face/object/pose analysis), not a claim about any person"
             ),
+            control_only=control is not None,
+            data_origin=(
+                control.data_origin if control is not None else "derived_signal_analysis"
+            ),
+            truth_status=(
+                control.truth_status if control is not None else "derived_analysis"
+            ),
+            generated_values=(
+                control.generated_values if control is not None else False
+            ),
+            live_data=control.live_data if control is not None else None,
+            provider_observation=False,
+            operational_eligible=False,
+            action_eligible=False,
+            actionable=False,
+            accounting_eligible=False,
+            learning_eligible=False,
+            provider_eligible=False,
         )
 
 
@@ -221,9 +390,55 @@ def score_video(
     return score_signal(signal, nulls=nulls, seed=seed)
 
 
-# ---------------------------------------------------------------------------
-# synthetic self-test (no real subject)
-# ---------------------------------------------------------------------------
+def control_video(
+    kind: str = "noise",
+    *,
+    seed: int = 0,
+    frame_rate_hz: float = 4000.0,
+    n_frames: int = 4000,
+    h: int = 4,
+    w: int = 4,
+) -> VideoControlEnvelope:
+    """Build a frozen video statistical control under canonical provenance."""
+    if isinstance(seed, bool):
+        raise ValueError("seed must be an integer")
+    try:
+        seed_value = int(seed)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("seed must be an integer") from exc
+    if seed_value != seed:
+        raise ValueError("seed must be an integer")
+    fps = _finite_positive(frame_rate_hz, "frame_rate_hz")
+    frame_count = _positive_int(n_frames, "n_frames")
+    height = _positive_int(h, "h")
+    width = _positive_int(w, "w")
+    rng = derived_null_generator(seed_value, 13)
+    t = np.arange(frame_count, dtype=float) / fps
+    if kind == "noise":
+        luma = rng.standard_normal(t.size)
+    elif kind == "structured":
+        base = 1100.0
+        centers = np.array([base, base * PHI])
+        offsets = np.array([-4.0, 0.0, 4.0])
+        tones = (centers[:, None] + offsets[None, :]).ravel()
+        if float(np.max(tones)) >= fps / 2.0:
+            raise ValueError("frame_rate_hz must preserve the structured control below Nyquist")
+        luma = np.zeros_like(t)
+        for frequency in tones:
+            luma = luma + np.sin(2.0 * np.pi * float(frequency) * t)
+        luma = luma + 0.02 * rng.standard_normal(t.size)
+    else:
+        raise ValueError(f"unknown video control kind {kind!r}")
+    frames = np.repeat(
+        np.repeat(luma[:, None, None], height, axis=1),
+        width,
+        axis=2,
+    )
+    return _freeze_control(
+        frames,
+        frame_rate_hz=fps,
+        provenance=f"{_CONTROL_PREFIX}{kind}",
+    )
 
 
 def synthetic_video(
@@ -234,82 +449,42 @@ def synthetic_video(
     n_frames: int = 4000,
     h: int = 4,
     w: int = 4,
-) -> tuple[np.ndarray, float]:
-    """Return a ``(frames, frame_rate_hz)`` synthetic clip for the self-test (no real subject).
-
-    ``noise`` = seeded random per-frame luminance (must score non-separable — the
-    honest absent anchor). ``structured`` = per-frame luminance driven by a sum of
-    sine tones at two tight clusters one golden ratio apart, planted **directly
-    in-band and sub-Nyquist** (so :func:`fold_to_band` is the identity and does not
-    disturb them) + light seeded noise; its dominant tones equal a known clustered +
-    PHI-spaced set, so it must score ``structure_present`` — proving the adapter
-    detects real structure, not by fiat. Each frame is a flat ``h×w`` grayscale image
-    at that luminance, so it is a genuine frame stack. Fully deterministic per seed.
-    """
-    rng = np.random.default_rng([int(seed), 13])
-    t = np.arange(int(n_frames)) / float(frame_rate_hz)
-    if kind == "noise":
-        luma = rng.standard_normal(t.size)
-    elif kind == "structured":
-        base = 1100.0
-        centers = np.array([base, base * PHI])  # ~1100 and ~1780, both in-band, < Nyquist(2000)
-        offsets = np.array([-4.0, 0.0, 4.0])    # within-cluster spread (drives Test A)
-        tones = (centers[:, None] + offsets[None, :]).ravel()
-        luma = np.zeros_like(t)
-        for f in tones:
-            luma = luma + np.sin(2.0 * np.pi * float(f) * t)
-        luma = luma + 0.02 * rng.standard_normal(t.size)  # light noise, structure dominates
-    else:
-        raise ValueError(f"unknown synthetic kind {kind!r}")
-    # broadcast the per-frame scalar across a flat grayscale h×w frame -> (F, H, W)
-    frames = np.repeat(np.repeat(luma[:, None, None], h, axis=1), w, axis=2)
-    return frames, float(frame_rate_hz)
+) -> VideoControlEnvelope:
+    return control_video(
+        kind=kind,
+        seed=seed,
+        frame_rate_hz=frame_rate_hz,
+        n_frames=n_frames,
+        h=h,
+        w=w,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI: score a video clip the caller consents to, or run the synthetic self-test."""
+    """CLI: score a real video clip the caller has consent to analyse."""
     import argparse
 
     parser = argparse.ArgumentParser(
         description="Score a video clip's per-frame-luminance signal (content-agnostic, no face/object analysis)."
     )
-    parser.add_argument("video", nargs="?", help="path to a video the caller consents to analyse")
+    parser.add_argument("video", help="path to a video the caller consents to analyse")
     parser.add_argument("--consent", action="store_true", help="affirm consent to analyse this clip")
     parser.add_argument("--provenance", default="", help="provenance string (required with --consent)")
+    parser.add_argument(
+        "--frame-rate-hz",
+        type=float,
+        default=None,
+        help="observed frame rate, required only when the file has no frame-rate metadata",
+    )
     parser.add_argument("--nulls", type=int, default=engine.DEFAULT_NULLS)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--self-test", action="store_true", help="run structured⇒present / noise⇒absent demo")
     args = parser.parse_args(argv)
 
     print("Video signal adapter — per-frame luminance -> dominant frequency -> folded tone (no face analysis)")
     print(f"  boundary: {SCIENTIFIC_BOUNDARY}")
 
-    if args.self_test:
-        prov = "synthetic video self-test (no real subject)"
-        noise = score_video(synthetic_video("noise", seed=args.seed), consent=True, provenance=prov,
-                            nulls=args.nulls, seed=args.seed)
-        structured = score_video(synthetic_video("structured", seed=args.seed), consent=True, provenance=prov,
-                                 nulls=args.nulls, seed=args.seed)
-        checks = [
-            (noise.valid and not noise.structure_present,
-             "random-luminance clip  -> structure ABSENT (honest anchor)"),
-            (structured.valid and structured.structure_present,
-             "structured luma clip   -> structure PRESENT"),
-            (structured.boundary == SCIENTIFIC_BOUNDARY,
-             "scientific boundary present"),
-        ]
-        ok = True
-        for passed, label in checks:
-            ok = ok and passed
-            print(f"  {'✅' if passed else '❌'} {label}")
-        print(f"  noise:      A_p={noise.test_A_p} B_p={noise.test_B_p} n_tones={noise.n_tones}")
-        print(f"  structured: A_p={structured.test_A_p} B_p={structured.test_B_p} n_tones={structured.n_tones}")
-        return 0 if ok else 1
-
-    if not args.video:
-        parser.error("provide a video path, or use --self-test")
     result = score_video(args.video, consent=bool(args.consent), provenance=args.provenance,
-                        nulls=args.nulls, seed=args.seed)
+                        frame_rate_hz=args.frame_rate_hz, nulls=args.nulls, seed=args.seed)
     d = result.to_dict()
     print(f"  video            : {args.video}")
     print(f"  n_tones          : {d['n_tones']}")

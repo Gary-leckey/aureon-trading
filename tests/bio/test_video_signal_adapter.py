@@ -15,6 +15,7 @@ import pytest
 
 from aureon.bio import human_harmonic_proxy as proxy
 from aureon.bio import video_signal_adapter as vsa
+from tests.bio.video_signal_fixtures import video_fixture
 
 NULLS = 300
 _FORBIDDEN = ("health", "aura", "emotion", "spirit", "entity", "diagnos", "disease", "personality")
@@ -56,8 +57,14 @@ def test_dominant_video_hz_recovers_tones_and_ignores_flat():
     assert vsa._dominant_video_hz(np.ones(4000), frame_rate_hz=fr) == []
 
 
+@pytest.mark.parametrize("frame_rate", [0.0, -1.0, float("nan")])
+def test_frame_rate_must_be_finite_positive_provider_evidence(frame_rate):
+    with pytest.raises(ValueError, match="no_data"):
+        vsa._load_frames((np.zeros((4, 2, 2)), frame_rate), frame_rate_hz=None)
+
+
 def test_extract_folds_into_modulation_band():
-    frames, fr = vsa.synthetic_video("structured")
+    frames, fr = video_fixture("structured")
     signal = vsa.VideoSignalAdapter().extract(frames, consent=True, provenance="p", frame_rate_hz=fr)
     low, high = proxy.TARGET_BAND_HZ
     assert signal.frequencies_hz
@@ -71,16 +78,16 @@ def test_extract_folds_into_modulation_band():
 
 
 def test_noise_video_scores_non_separable():
-    r = vsa.score_video(vsa.synthetic_video("noise"), consent=True,
-                        provenance="synthetic video", nulls=NULLS)
+    r = vsa.score_video(video_fixture("noise"), consent=True,
+                        provenance="controlled test fixture", nulls=NULLS)
     assert r.valid is True
     assert r.blocked is False
     assert r.structure_present is False
 
 
 def test_structured_video_scores_present():
-    r = vsa.score_video(vsa.synthetic_video("structured"), consent=True,
-                        provenance="synthetic video", nulls=NULLS)
+    r = vsa.score_video(video_fixture("structured"), consent=True,
+                        provenance="controlled test fixture", nulls=NULLS)
     assert r.valid is True
     assert r.structure_present is True
     assert r.n_tones >= 2
@@ -88,7 +95,7 @@ def test_structured_video_scores_present():
 
 
 def test_rescan_is_deterministic():
-    clip = vsa.synthetic_video("structured")
+    clip = video_fixture("structured")
     r1 = vsa.score_video(clip, consent=True, provenance="det", nulls=200, seed=0)
     r2 = vsa.score_video(clip, consent=True, provenance="det", nulls=200, seed=0)
     assert r1.to_dict() == r2.to_dict()
@@ -100,7 +107,7 @@ def test_rescan_is_deterministic():
 
 
 def test_frame_stack_round_trip_scores_valid():
-    frames, fr = vsa.synthetic_video("structured")
+    frames, fr = video_fixture("structured")
     # a genuine (F, H, W, 3) colour stack built from the grayscale luminance
     colour = np.repeat(frames[..., None], 3, axis=-1)
     r = vsa.score_video((colour, fr), consent=True, provenance="frame-stack round-trip", nulls=NULLS)
@@ -115,19 +122,19 @@ def test_frame_stack_round_trip_scores_valid():
 
 
 def test_consent_gate_blocks():
-    r = vsa.score_video(vsa.synthetic_video("structured"), consent=False,
+    r = vsa.score_video(video_fixture("structured"), consent=False,
                         provenance="p", nulls=NULLS)
     assert r.blocked is True and r.valid is False
     assert r.to_dict()["structure_present"] is False
 
 
 def test_missing_provenance_blocks():
-    r = vsa.score_video(vsa.synthetic_video("structured"), consent=True, provenance="  ", nulls=NULLS)
+    r = vsa.score_video(video_fixture("structured"), consent=True, provenance="  ", nulls=NULLS)
     assert r.blocked is True
 
 
 def test_boundary_and_no_subject_claims():
-    r = vsa.score_video(vsa.synthetic_video("structured"), consent=True, provenance="p", nulls=NULLS)
+    r = vsa.score_video(video_fixture("structured"), consent=True, provenance="p", nulls=NULLS)
     d = r.to_dict()
     assert d["boundary"] == proxy.SCIENTIFIC_BOUNDARY
     for key, value in d.items():

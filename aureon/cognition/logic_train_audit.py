@@ -134,6 +134,22 @@ _AUTHORITY: Final[dict[str, str]] = {
         "no-keys replay harness — drives the real components on recorded open data, decides nothing live",
 }
 
+# These consumers never read mutable live field state. They accept already
+# issued HNC/Auris receipts at a trusted boundary and validate the complete
+# causal linkage before a decision. Treating that as an unwired private number
+# would be as inaccurate as treating it as a field authority.
+_RECEIPT_BOUND_CONSUMERS: Final[dict[str, str]] = {
+    "aureon/swarm/auris_node_receipts.py":
+        "validates exact HNC, Auris, provider-moment, and coherence-measurement receipts",
+    "aureon/trading/bounded_binance_roundtrip.py":
+        "validates exact HNC, Auris, provider-moment, and route authorization receipts",
+}
+_RECEIPT_WIRE_TOKENS: Final[tuple[str, ...]] = (
+    "hnc_receipt_id",
+    "auris_receipt_id",
+    "provider_moment_digest",
+)
+
 #: Decision sites known to be unwired at the time of writing, each with the reason it is still open.
 #: This is the burn-down list. A site NOT in here that turns up unwired fails the audit — that is the
 #: ratchet. Removing an entry is the visible diff that says the wire was actually laid.
@@ -322,6 +338,20 @@ def compute_logic_train(*, repo_root: Path | None = None) -> LogicTrainReport:
         if rel in _AUTHORITY:
             sites.append(TrainSite(rel, ModuleRole.AUTHORITY, True, "role", reads_field,
                                    computes_field, _AUTHORITY[rel]))
+            continue
+
+        if rel in _RECEIPT_BOUND_CONSUMERS:
+            missing = [token for token in _RECEIPT_WIRE_TOKENS if token not in source]
+            sites.append(TrainSite(
+                rel,
+                ModuleRole.CONSUMER,
+                not missing,
+                "receipt-bound-hnc-auris" if not missing else "",
+                reads_field,
+                computes_field,
+                (_RECEIPT_BOUND_CONSUMERS[rel] if not missing
+                 else f"receipt-bound consumer missing causal fields: {', '.join(missing)}"),
+            ))
             continue
 
         if not parses:

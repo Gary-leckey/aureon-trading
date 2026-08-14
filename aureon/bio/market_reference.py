@@ -36,6 +36,7 @@ from pathlib import Path
 from typing import Final
 
 import numpy as np
+from aureon.bio.derived_nulls import derived_null_generator
 
 import phenolic_fingerprint as engine
 
@@ -127,7 +128,7 @@ def efficient_market_returns(n: int = 1024, seed: int = 0) -> np.ndarray:
     """
     if n < 4:
         raise ValueError("n must be >= 4")
-    rng = np.random.default_rng(seed)
+    rng = derived_null_generator(int(seed), 17)
     return rng.standard_normal(n)
 
 

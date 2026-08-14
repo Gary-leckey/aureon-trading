@@ -223,6 +223,26 @@ def register_saas_routes(app: Any) -> Any:
         wrapper.__name__ = fn.__name__
         return wrapper
 
+    def _authenticated_admin_only(fn):
+        """Require the configured operator bearer, never the open dev plane.
+
+        This stronger boundary is reserved for decisions that may later be
+        consumed as authority. ``open`` remains useful for local read-only
+        development, but it is not an authenticated owner identity.
+        """
+        def wrapper(*a, **k):
+            if getattr(g, "identity_kind", None) != "admin":
+                return jsonify({
+                    "error": {
+                        "code": 403,
+                        "message": "authenticated operator bearer required",
+                        "plane": "admin",
+                    }
+                }), 403
+            return fn(*a, **k)
+        wrapper.__name__ = fn.__name__
+        return wrapper
+
     @app.get("/api/catalog")
     @_guarded
     def saas_catalog():
@@ -377,7 +397,7 @@ def register_saas_routes(app: Any) -> Any:
 
     @app.post("/api/approvals/<item_id>")
     @_guarded
-    @_admin_only
+    @_authenticated_admin_only
     def saas_approvals_decide(item_id: str):
         # Record Gary's approve/reject for a prepared big play. This is the human
         # gate — it records the decision and does NOT execute the irreversible move
@@ -387,14 +407,27 @@ def register_saas_routes(app: Any) -> Any:
         body = request.get_json(silent=True) or {}
         decision = str(body.get("decision") or "").strip().lower()
         note = str(body.get("note") or "")
+        if "approver" in body:
+            return jsonify(_stamp({
+                "ok": False,
+                "error": "approver identity is derived by the server",
+            }, "no_data")), 400
         if decision not in ("approve", "reject"):
             return jsonify(_stamp({"ok": False, "error": "decision must be 'approve' or 'reject'"},
                                   "no_data")), 400
         try:
             from aureon.core.approval_queue import get_approval_queue
 
-            item = get_approval_queue().decide(item_id, decision, approver=str(body.get("approver") or "gary"),
-                                               note=note)
+            item = get_approval_queue().decide(
+                item_id,
+                decision,
+                approver="gary-operator-admin",
+                note=note,
+                auth_context={
+                    "identity_kind": "admin",
+                    "authn_method": "operator_static_bearer",
+                },
+            )
         except Exception as exc:  # noqa: BLE001
             return jsonify(_stamp({"ok": False, "error": str(exc)[:200]}, "no_data")), 500
         if item is None:

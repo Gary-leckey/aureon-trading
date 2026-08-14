@@ -279,12 +279,14 @@ class GroundedActionGate:
         #     conscience-engaging floor — fear tightens, triumph never loosens.
         #     Off by default; fail-open (a bad read leaves risk untouched); capped
         #     at the destructive tier so it can never exceed the hard ceiling.
+        affect_caution_bias = 0.0
         if _truthy("AUREON_AFFECT_MODULATION"):
             try:
                 from aureon.core.affect_monitor import get_affect_monitor
 
                 bias = max(0.0, float(get_affect_monitor().caution_bias()))
                 if bias > 0.0:
+                    affect_caution_bias = bias
                     risk = min(0.12, max(risk, risk + bias))
             except Exception as exc:  # noqa: BLE001 — affect never blocks the gate
                 logger.debug("affect modulation skipped: %s", exc)
@@ -321,6 +323,17 @@ class GroundedActionGate:
             if verdict_name not in ("CONCERNED", "VETO"):
                 reason = (f"grounded but cautioned: the field is divided "
                           f"(divergence {divergence:.3f})")
+        # Affect is an advisory tightening signal. A positive caution bias must
+        # be visible in the final verdict even when no canonical HNC divergence
+        # is available; it never upgrades authority and never turns a veto into
+        # an approval.
+        if approved and affect_caution_bias > 0.0:
+            concerned = True
+            if verdict_name not in ("CONCERNED", "VETO"):
+                reason = (
+                    "grounded but cautioned: affect modulation raised risk "
+                    f"by {affect_caution_bias:.3f}"
+                )
         v = ActionVerdict(
             action=action, approved=approved,
             verdict="VETOED" if not approved else ("CONCERNED" if concerned else "APPROVED"),

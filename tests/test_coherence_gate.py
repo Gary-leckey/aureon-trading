@@ -14,15 +14,20 @@ decision on every cake.
 from __future__ import annotations
 
 import json
+import tempfile
+from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from aureon.operator.coherence_gate import (
     APERTURES,
+    EVOLUTION_FLOWS,
     GAMMA_FULL,
     GAMMA_REDUCED,
     GAMMA_REFUSE,
     compute_aperture,
+    compute_evolution_flow,
     reach_for,
 )
 
@@ -31,9 +36,32 @@ ALL_TOOLS = {"repo_search", "read_repo_file", "list_repo", "list_skills",
 
 
 @pytest.fixture(autouse=True)
-def _dark_field(monkeypatch, tmp_path):
-    monkeypatch.setenv("AUREON_HNC_TRACE_PATH", str(tmp_path / "hnc.jsonl"))
-    monkeypatch.setenv("AUREON_ASSIMILATION_PATH", str(tmp_path / "assim.jsonl"))
+def _dark_field(monkeypatch):
+    # Avoid pytest's Windows numbered-dir symlink bookkeeping in this
+    # lifecycle-sensitive suite; stdlib temp storage is isolated and removed.
+    with tempfile.TemporaryDirectory(prefix="aureon-coherence-") as temp_dir:
+        base = Path(temp_dir)
+        monkeypatch.setenv("AUREON_HNC_TRACE_PATH", str(base / "hnc.jsonl"))
+        monkeypatch.setenv("AUREON_ASSIMILATION_PATH", str(base / "assim.jsonl"))
+        yield
+
+
+@pytest.fixture
+def _bounded_repo_search(monkeypatch):
+    """Keep membrane tests focused; repo-index construction has its own suite."""
+    from aureon.operator import cognition, tools
+
+    def bounded(query, top_k=4):
+        return [
+            SimpleNamespace(
+                doc_id="test_fixture:operator",
+                score=1.0,
+                text=f"bounded repository evidence for {query}",
+            )
+        ][:top_k]
+
+    monkeypatch.setattr(tools, "_repo_search", bounded)
+    monkeypatch.setattr(cognition, "repo_search", bounded)
 
 
 # ── the aperture function (pure, deterministic) ───────────────────────────
@@ -89,10 +117,35 @@ def test_reach_sets_are_named_and_exact():
                               "refuse"}
 
 
+def test_internal_evolution_flow_never_closes_the_organism():
+    for flow in (
+        compute_evolution_flow(None, None, None),
+        compute_evolution_flow(0.45, True, None, auris_confidence=0.5, beta=1.0),
+        compute_evolution_flow(0.05, False, "critical", auris_confidence=0.1, beta=1.2),
+    ):
+        assert flow["flow"] in EVOLUTION_FLOWS
+        assert all(flow["capabilities"].values())
+        assert flow["patch_batch_limit"] >= 1
+        assert flow["outer_authority_boundary_preserved"] is True
+
+    repair = compute_evolution_flow(0.05, False, 0.95, auris_confidence=0.1)
+    assert repair["flow"] == "repair"
+    assert "rollback" in repair["required_test_layers"]
+
+
+def test_internal_evolution_flow_expands_only_on_coherent_hnc_and_auris():
+    expanded = compute_evolution_flow(0.82, True, None, auris_confidence=0.79, beta=1.0)
+    assert expanded["flow"] == "expand"
+    assert expanded["patch_batch_limit"] == 3
+
+    tempered = compute_evolution_flow(0.82, True, None, auris_confidence=0.42, beta=1.0)
+    assert tempered["flow"] == "steady"
+
+
 # ── enforcement: membrane second, wall first ──────────────────────────────
 
 
-def test_registry_holds_tools_outside_the_aperture():
+def test_registry_holds_tools_outside_the_aperture(_bounded_repo_search):
     from aureon.operator.tools import build_operator_tools
 
     reg = build_operator_tools(allow_writes=False, allow_shell=False)
@@ -149,13 +202,13 @@ def _cog(adapter, organism=None):
     from aureon.operator.cognition import AureonCognition
 
     cog = AureonCognition(adapter=adapter, join_mesh=False, conscience=None,
-                          mesh_broadcast=False)
+                          mesh_broadcast=False, governance_enabled=False)
     if organism is not None:
         cog._organism = dict(organism)
     return cog
 
 
-def test_low_coherence_parks_the_web_reach():
+def test_low_coherence_parks_the_web_reach(_bounded_repo_search):
     field = {"symbolic_life_score": 0.4, "coherence_gamma": 0.45,
              "gate_open": True}
     adapter = _Plan([("tool", "web_search", {"query": "anything"}),
@@ -169,7 +222,7 @@ def test_low_coherence_parks_the_web_reach():
     assert res.envelope()["coherence_gate"]["aperture"] == "reduced"
 
 
-def test_dark_field_leaves_reach_unrestricted():
+def test_dark_field_leaves_reach_unrestricted(_bounded_repo_search):
     adapter = _Plan([("tool", "repo_search", {"query": "operator"}),
                      ("text", "Grounded and complete.")])
     res = _cog(adapter).reason("how does the operator work?")
@@ -179,7 +232,7 @@ def test_dark_field_leaves_reach_unrestricted():
     assert any(t.tool == "repo_search" and not t.blocked for t in res.tool_calls)
 
 
-def test_clear_field_opens_full_reach():
+def test_clear_field_opens_full_reach(_bounded_repo_search):
     field = {"symbolic_life_score": 0.9, "coherence_gamma": 0.85,
              "gate_open": True}
     adapter = _Plan([("text", "A complete answer.")])
@@ -189,7 +242,7 @@ def test_clear_field_opens_full_reach():
     assert res.coherence_gate["field_status"] == "live"
 
 
-def test_gate_refusal_names_parks_and_never_calls_the_model():
+def test_gate_refusal_names_parks_and_never_calls_the_model(_bounded_repo_search):
     field = {"symbolic_life_score": 0.05, "coherence_gamma": 0.1,
              "gate_open": False, "lighthouse_severity": "critical"}
     adapter = _Plan([("text", "should never be asked")])

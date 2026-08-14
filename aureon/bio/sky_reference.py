@@ -29,7 +29,9 @@ from __future__ import annotations
 
 from typing import Final
 
+import numpy as np
 import phenolic_fingerprint as engine
+from aureon.bio.derived_nulls import derived_null_generator
 from aureon.bio.human_harmonic_proxy import fold_to_band
 from aureon.bio.image_signal_adapter import _wavelength_nm_to_hz
 
@@ -183,8 +185,6 @@ def diffuse_night_sky_spectrum(n: int = 241) -> list[tuple[float, float]]:
 
 
 def _fold_band_vec(f_hz):  # numpy array in, array out
-    import numpy as np
-
     k = np.floor(np.log2(f_hz / 1000.0))
     return f_hz / (2.0 ** k)
 
@@ -230,7 +230,7 @@ if __name__ == "__main__":  # pragma: no cover - manual scan of the real catalog
         tones = np.array(sorted(
             f for f in (fold_to_band(_wavelength_nm_to_hz(w)) for w in lines) if f is not None
         ))
-        p_a = engine.test_A(tones, nulls=500, rng=np.random.default_rng([0, 1]))
-        p_b = engine.test_B(tones, nulls=500, rng=np.random.default_rng([0, 2]))
+        p_a = engine.test_A(tones, nulls=500, rng=derived_null_generator(0, 1))
+        p_b = engine.test_B(tones, nulls=500, rng=derived_null_generator(0, 2))
         sep = bool(p_a < engine.ALPHA and p_b < engine.ALPHA)
         print(f"{name:11s} n={len(lines):2d} lines -> A_p={p_a:.4f} B_p={p_b:.4f} separable={sep}")

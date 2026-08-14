@@ -84,10 +84,11 @@ except Exception:  # pragma: no cover
     _HAS_INTRO = False
 
 try:
-    from aureon.integrations.ollama.ollama_adapter import OllamaLLMAdapter
+    from aureon.integrations.ollama import OllamaLLMAdapter, OllamaModelSwitchboard
     _HAS_OLLAMA = True
 except Exception:  # pragma: no cover
     OllamaLLMAdapter = None  # type: ignore[assignment,misc]
+    OllamaModelSwitchboard = None  # type: ignore[assignment,misc]
     _HAS_OLLAMA = False
 
 try:
@@ -246,8 +247,8 @@ class CognitiveAuthoringLoop:
         # non-trivial skills via llama3.1 (or whichever model is running).
         if _HAS_OLLAMA and self.ollama_adapter is None and self.architect is not None:
             try:
-                model = os.getenv("AUREON_OLLAMA_MODEL", "llama3.1:8b")
-                self.ollama_adapter = OllamaLLMAdapter(model=model)
+                self.ollama_adapter, selection = OllamaModelSwitchboard().adapter_for("coding")
+                model = selection.model
                 # Check health — the bridge returns a falsy response when offline.
                 try:
                     healthy = self.ollama_adapter.bridge.health_check()
@@ -256,7 +257,11 @@ class CognitiveAuthoringLoop:
                 if healthy:
                     self.architect.writer.adapter = self.ollama_adapter
                     self.architect.writer._use_ai = True
-                    logger.info("ollama: online — attached to SkillWriter (%s)", model)
+                    logger.info(
+                        "ollama: online — attached coding nerve to SkillWriter (%s, %s)",
+                        model,
+                        selection.source,
+                    )
                 else:
                     logger.info("ollama: offline — SkillWriter stays in template mode")
             except Exception as e:

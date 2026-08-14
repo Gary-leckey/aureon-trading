@@ -38,9 +38,10 @@ _FS_TO_PRODUCT: Dict[str, str] = {
     "operator": "cognition", "cognition": "cognition", "queen": "cognition",
     "bots_intelligence": "cognition",
     "utils": "security", "bridges": "security", "data_feeds": "security",
+    "governance": "security",
     "autonomous": "self-improvement", "monitors": "self-improvement",
     "command_centers": "self-improvement", "core": "self-improvement",
-    "saas": "self-improvement",
+    "saas": "self-improvement", "observability": "self-improvement",
     # previously-unmapped real packages under aureon/ — categorized so the whole
     # body is surfaced/probed instead of silently defaulting to self-improvement.
     "bio": "research", "alignment": "research", "search": "research",

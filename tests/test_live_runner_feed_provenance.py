@@ -1,293 +1,307 @@
-"""
-The Queen live runner must not manufacture the market it calls live.
+"""Provider-provenance contracts for the Queen live runner.
 
-What it did before this bound, on every 2-second cycle, with no provider connected:
-
-  * ``market.price`` — prices seeded at ``50000 + random()*10000`` and random-walked each
-    tick, plus ``volume_24h = random()*1000000`` and ``change_1h = (random()-0.5)*5``;
-  * ``market.momentum`` — a "top momentum" symbol chosen by ``max(key=lambda s: random())``
-    with a random 1h change and a random volume-surge flag;
-  * ``whale.orderbook`` — random bid/ask depth, an imbalance computed from those random
-    numbers, and two invented "walls";
-  * ``bot.detected`` / ``firm.activity`` / ``counter.strategy`` — trading-firm attribution
-    picked by hashing ``<symbol>_<current minute>``, firing on ~60% of hashes, with a
-    "confidence" of 0.65–0.98 read off the hash's low digits.
-
-All of it went out on the same ThoughtBus topics real market data uses, under the banner
-"REAL INTELLIGENCE MODE", to be read by the system hub dashboard as "live data". Naming a
-real firm as the counterparty to activity nobody observed is the least defensible of these.
-
-Every synthetic value now sits behind ``AUREON_ALLOW_SIMULATED_FEED``, default off. In the
-default mode the runner emits real readings or an honest ``no_data`` with a named blocker;
-in the opt-in mode every synthetic thought is stamped ``test_fixture``.
+The runner is intentionally provider-only: it publishes complete fresh Binance
+observations, emits explicit no_data for unavailable surfaces, and never
+recreates the retired simulated market, whale, or bot feeds.
 """
 
 from __future__ import annotations
 
 import importlib
 import json
+import os
+import time
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
 import pytest
 
 
+@dataclass
+class _RecordingBus:
+    rows: list[dict[str, Any]] = field(default_factory=list)
+
+    def think(self, content: str = "", topic: str = "", source: str = "", **kwargs: Any) -> None:
+        self.rows.append(
+            {
+                "content": content,
+                "topic": topic,
+                "source": source,
+                "payload": kwargs.get("payload"),
+            }
+        )
+
+
 @pytest.fixture
 def runner(tmp_path, monkeypatch):
-    """The runner module with its thought stream pointed at a tmp file."""
     monkeypatch.setenv("AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS", "1")
     monkeypatch.setenv("AUREON_AUDIT_MODE", "1")
     monkeypatch.setenv("AUREON_THOUGHTS_FILE", str(tmp_path / "thoughts.jsonl"))
-    monkeypatch.delenv("AUREON_ALLOW_SIMULATED_FEED", raising=False)
+    monkeypatch.setenv("AUREON_THOUGHT_BUS_PATH", str(tmp_path / "bus.jsonl"))
+    monkeypatch.setenv("AUREON_BUS_TRACE_DIR", str(tmp_path / "bus-traces"))
+    monkeypatch.delenv("AUREON_REDIS_URL", raising=False)
 
     import aureon.trading.aureon_queen_live_runner as lr
 
     importlib.reload(lr)
-    return lr
+    bus = _RecordingBus()
+    lr._thought_bus = bus
+    return lr, bus
 
 
-def _thoughts(lr) -> list[dict]:
-    path = lr.THOUGHTS_FILE
-    if not path.exists():
-        return []
-    out = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.strip():
-            out.append(json.loads(line))
-    return out
+def _observation(lr, symbol: str = "BTC/USD", **overrides: Any):
+    provider_symbol = symbol.replace("/", "").replace("USD", "USDT")
+    now = time.time()
+    values = {
+        "symbol": symbol,
+        "provider_symbol": provider_symbol,
+        "price": 61_234.5,
+        "bid": 61_233.0,
+        "ask": 61_236.0,
+        "base_volume_24h": 123.5,
+        "quote_volume_24h": 7_500_000.0,
+        "change_percent_24h": 1.25,
+        "provider_timestamp": now - 1.0,
+        "collected_at": now,
+        "source_id": lr.BINANCE_SOURCE_ID,
+        "source_url": "https://api.binance.com/api/v3/ticker/24hr",
+        "source_event_id": f"{provider_symbol}:receipt",
+        "freshness_ttl_sec": lr.FRESHNESS_TTL_SECONDS,
+    }
+    values.update(overrides)
+    return lr.MarketObservation(**values)
 
 
-def _by_topic(rows: list[dict], topic: str) -> list[dict]:
-    return [r for r in rows if r.get("topic") == topic]
+def _ticker_rows(lr, *, timestamp: float | None = None) -> list[dict[str, str | int]]:
+    close_time_ms = int((timestamp or time.time()) * 1000)
+    return [
+        {
+            "symbol": provider_symbol,
+            "lastPrice": "100.5",
+            "bidPrice": "100.4",
+            "askPrice": "100.6",
+            "volume": "12.5",
+            "quoteVolume": "1256.25",
+            "priceChangePercent": "1.5",
+            "closeTime": close_time_ms,
+        }
+        for provider_symbol in lr.BinancePublicMarketFeed.SYMBOLS.values()
+    ]
 
 
-# ── the switch ──────────────────────────────────────────────────────────────────
+class _Response:
+    def __init__(self, payload: Any, status: int = 200):
+        self.status = status
+        self._payload = payload
 
-def test_synthetic_feed_is_off_unless_explicitly_asked_for(runner):
-    assert runner.simulated_feed_allowed() is False
+    def __enter__(self):
+        return self
 
+    def __exit__(self, *_args):
+        return False
 
-def test_synthetic_feed_switch_accepts_the_usual_truthy_spellings(runner, monkeypatch):
-    for value in ("1", "true", "YES", "on"):
-        monkeypatch.setenv("AUREON_ALLOW_SIMULATED_FEED", value)
-        assert runner.simulated_feed_allowed() is True
-    for value in ("", "0", "false", "no", "maybe"):
-        monkeypatch.setenv("AUREON_ALLOW_SIMULATED_FEED", value)
-        assert runner.simulated_feed_allowed() is False
-
-
-# ── prices ──────────────────────────────────────────────────────────────────────
-
-def test_no_provider_means_no_price_not_an_invented_one(runner):
-    """The original defect: a fresh process with nothing connected still published prices."""
-    gen = runner.LiveMarketDataGenerator()
-    assert gen.fetch_prices() == {}
-    gen.emit_market_data()
-
-    rows = _thoughts(runner)
-    assert _by_topic(rows, "market.price") == []
-
-    status = _by_topic(rows, "market.feed_status")
-    assert status, "a missing feed must be reported, not passed over in silence"
-    payload = status[-1]["payload"]
-    assert payload["quoted"] == []
-    assert sorted(payload["unquoted"]) == sorted(gen.symbols)
-    assert payload["blocker"], "the blocker must be named"
-    assert status[-1]["truth_status"] == "no_data"
+    def read(self) -> bytes:
+        return json.dumps(self._payload).encode("utf-8")
 
 
-def test_a_real_quote_is_published_and_marked_live(runner, monkeypatch):
-    """The bound must not break the real case."""
-    gen = runner.LiveMarketDataGenerator()
-    monkeypatch.setattr(gen, "symbols", ["BTC/USD"])
-    monkeypatch.setattr(gen, "fetch_prices",
-                        lambda: (gen.real_symbols.add("BTC/USD"), {"BTC/USD": 61234.5})[1])
+def test_thought_stream_override_and_default_match_shared_root(runner, monkeypatch):
+    lr, _ = runner
+    assert Path(os.environ["AUREON_THOUGHTS_FILE"]) == lr.THOUGHTS_FILE
 
-    gen.emit_market_data()
-    prices = _by_topic(_thoughts(runner), "market.price")
-    assert len(prices) == 1
-    assert prices[0]["truth_status"] == "live"
-    assert prices[0]["payload"]["price"] == pytest.approx(61234.5)
+    monkeypatch.delenv("AUREON_THOUGHTS_FILE")
+    assert lr._resolve_thoughts_file() == Path(lr.__file__).resolve().parents[2] / "thoughts.jsonl"
 
 
-def test_volume_and_change_are_withheld_not_fabricated(runner, monkeypatch):
-    """No provider supplies these, so they are named as withheld rather than invented."""
-    gen = runner.LiveMarketDataGenerator()
-    monkeypatch.setattr(gen, "symbols", ["BTC/USD"])
-    monkeypatch.setattr(gen, "fetch_prices",
-                        lambda: (gen.real_symbols.add("BTC/USD"), {"BTC/USD": 61234.5})[1])
+def test_simple_bus_writes_only_to_explicit_path(runner, tmp_path):
+    lr, _ = runner
+    path = tmp_path / "fallback" / "thoughts.jsonl"
+    bus = lr.SimpleThoughtBus(path)
+    bus.think(topic="market.status", source="test", payload={"truth_status": "no_data"})
 
-    gen.emit_market_data()
-    payload = _by_topic(_thoughts(runner), "market.price")[0]["payload"]
-    assert payload["volume_24h"] is None
-    assert payload["change_1h"] is None
-    assert set(payload["withheld"]) == {"volume_24h", "change_1h"}
+    row = json.loads(path.read_text(encoding="utf-8"))
+    assert row["topic"] == "market.status"
+    assert row["source"] == "test"
+    assert row["payload"] == {"truth_status": "no_data"}
 
 
-def test_a_symbol_that_stops_being_quoted_stops_being_published(runner, monkeypatch):
-    """Serving the last known price forever would turn a dead feed into a flat market."""
-    gen = runner.LiveMarketDataGenerator()
-    monkeypatch.setattr(gen, "symbols", ["BTC/USD"])
+def test_provider_feed_parses_complete_fresh_observations(runner, monkeypatch):
+    lr, _ = runner
+    captured: dict[str, Any] = {}
 
-    class _Service:
-        value = 61234.5
+    def fake_urlopen(request, timeout):
+        captured.update(url=request.full_url, timeout=timeout)
+        return _Response(_ticker_rows(lr))
 
-        def get_ticker(self, _symbol):
-            return self.value
+    monkeypatch.setattr(lr.urllib.request, "urlopen", fake_urlopen)
+    observations = lr.BinancePublicMarketFeed(timeout_seconds=3.5).fetch()
 
-    service = _Service()
-    monkeypatch.setitem(
-        __import__("sys").modules, "aureon_central_prefetch_service",
-        type("_M", (), {"prefetch_service": service})(),
+    assert set(observations) == set(lr.BinancePublicMarketFeed.SYMBOLS)
+    assert captured["timeout"] == 3.5
+    assert captured["url"].startswith(f"{lr.BINANCE_API_BASE}/api/v3/ticker/24hr?")
+    btc = observations["BTC/USD"]
+    assert btc.price == pytest.approx(100.5)
+    assert btc.bid == pytest.approx(100.4)
+    assert btc.ask == pytest.approx(100.6)
+    assert btc.truth_status == "live"
+    assert btc.generated is False
+    assert btc.source_id == lr.BINANCE_SOURCE_ID
+    assert btc.source_event_id.startswith("BTCUSDT:")
+
+
+@pytest.mark.parametrize(
+    ("rows_factory", "error"),
+    [
+        (lambda lr: _ticker_rows(lr, timestamp=time.time() - 500), "BINANCE_TICKER_STALE"),
+        (lambda lr: _ticker_rows(lr)[:-1], "BINANCE_TICKERS_MISSING"),
+        (
+            lambda lr: [
+                {**row, "lastPrice": "0"} if row["symbol"] == "BTCUSDT" else row
+                for row in _ticker_rows(lr)
+            ],
+            "BINANCE_TICKER_NONPOSITIVE",
+        ),
+    ],
+)
+def test_provider_feed_rejects_stale_missing_or_nonpositive_rows(
+    runner, monkeypatch, rows_factory, error
+):
+    lr, _ = runner
+    monkeypatch.setattr(
+        lr.urllib.request,
+        "urlopen",
+        lambda *_args, **_kwargs: _Response(rows_factory(lr)),
     )
-    assert gen.fetch_prices() == {"BTC/USD": pytest.approx(61234.5)}
-
-    service.value = None                       # the venue goes quiet
-    assert gen.fetch_prices() == {}
-    assert gen.real_symbols == set()
+    with pytest.raises(RuntimeError, match=error):
+        lr.BinancePublicMarketFeed().fetch()
 
 
-def test_the_synthetic_feed_still_works_but_is_stamped_a_fixture(runner, monkeypatch):
-    """Opt-in demo mode is allowed to invent numbers; it is not allowed to look real."""
-    monkeypatch.setenv("AUREON_ALLOW_SIMULATED_FEED", "1")
-    gen = runner.LiveMarketDataGenerator()
-    assert gen.simulated is True
-    assert len(gen.fetch_prices()) == len(gen.symbols)
+def test_provider_feed_rejects_non_list_and_http_error(runner, monkeypatch):
+    lr, _ = runner
+    monkeypatch.setattr(
+        lr.urllib.request,
+        "urlopen",
+        lambda *_args, **_kwargs: _Response({"symbol": "BTCUSDT"}),
+    )
+    with pytest.raises(RuntimeError, match="BINANCE_TICKER_RESPONSE_INVALID"):
+        lr.BinancePublicMarketFeed().fetch()
 
-    gen.emit_market_data()
-    prices = _by_topic(_thoughts(runner), "market.price")
-    assert prices, "the demo stream must still stream"
-    assert {r["truth_status"] for r in prices} == {"test_fixture"}
-
-
-# ── orderbook depth ─────────────────────────────────────────────────────────────
-
-def test_orderbook_depth_and_walls_are_reported_missing_not_invented(runner):
-    tracker = runner.LiveWhaleTracker()
-    tracker.emit_whale_data({"BTC/USD": 61234.5})
-
-    books = _by_topic(_thoughts(runner), "whale.orderbook")
-    assert len(books) == 1
-    payload = books[0]["payload"]
-    assert payload["bids_depth"] is None
-    assert payload["asks_depth"] is None
-    assert payload["imbalance"] is None
-    assert payload["walls"] == []
-    assert payload["blocker"] == "no_orderbook_feed_connected"
-    assert books[0]["truth_status"] == "no_data"
+    monkeypatch.setattr(
+        lr.urllib.request,
+        "urlopen",
+        lambda *_args, **_kwargs: _Response([], status=503),
+    )
+    with pytest.raises(RuntimeError, match="BINANCE_HTTP_503"):
+        lr.BinancePublicMarketFeed().fetch()
 
 
-# ── firm attribution ────────────────────────────────────────────────────────────
+def test_provider_failure_emits_only_explicit_no_data(runner):
+    lr, bus = runner
 
-def test_no_firm_is_named_without_observed_order_flow(runner):
-    """A hash of symbol+minute is not evidence about Citadel, Jump, or anyone else."""
-    tracker = runner.LiveBotTracker()
-    assert tracker.detect_bots({"BTC/USD": 61234.5, "ETH/USD": 3000.0}) == []
-    for symbol in ("BTC/USD", "ETH/USD", "SOL/USD"):
-        assert tracker._match_firm_pattern(symbol) is None
+    class FailingFeed:
+        def fetch(self):
+            raise TimeoutError("offline")
 
-    tracker.emit_bot_data({"BTC/USD": 61234.5})
-    rows = _thoughts(runner)
-    assert _by_topic(rows, "bot.detected") == []
-    assert _by_topic(rows, "firm.activity") == []
-    assert _by_topic(rows, "counter.strategy") == []
+    result = lr.QueenLiveRunner(feed=FailingFeed()).run_cycle()
 
-    status = _by_topic(rows, "bot.feed_status")
-    assert status, "zero detections must be explained, not left to read as a quiet market"
-    assert status[-1]["truth_status"] == "no_data"
-    assert status[-1]["payload"]["blocker"]
+    assert result["truth_status"] == "no_data"
+    assert result["generated"] is False
+    assert result["reason"] == "MARKET_PROVIDER_UNAVAILABLE:TimeoutError:offline"
+    assert [row["topic"] for row in bus.rows] == ["market.status"]
+    assert bus.rows[0]["payload"] == result
 
 
-def test_firm_attribution_returns_under_the_opt_in_and_is_labelled(runner, monkeypatch):
-    monkeypatch.setenv("AUREON_ALLOW_SIMULATED_FEED", "1")
-    tracker = runner.LiveBotTracker()
-    if not tracker.firm_signatures:
-        pytest.skip("firm signature table unavailable in this environment")
+def test_successful_cycle_preserves_provider_values_and_lineage(runner):
+    lr, bus = runner
+    observations = {
+        "BTC/USD": _observation(lr, "BTC/USD", provider_timestamp=100.0),
+        "ETH/USD": _observation(
+            lr,
+            "ETH/USD",
+            price=3_200.25,
+            provider_timestamp=101.0,
+        ),
+    }
 
-    # The hash fires on ~60% of symbols, so sweep enough to be sure of at least one.
-    symbols = {f"SYM{i}/USD": 1.0 for i in range(20)}
-    bots = tracker.detect_bots(symbols)
-    assert bots, "the demo stream must still produce detections"
+    class Feed:
+        def fetch(self):
+            return observations
 
-    tracker.emit_bot_data(symbols)
-    detected = _by_topic(_thoughts(runner), "bot.detected")
-    assert {r["truth_status"] for r in detected} == {"test_fixture"}
+    heartbeat = lr.QueenLiveRunner(feed=Feed()).run_cycle()
+    prices = [row for row in bus.rows if row["topic"] == "market.price"]
 
-
-# ── momentum ────────────────────────────────────────────────────────────────────
-
-def test_momentum_ranking_is_withheld_without_a_price_history(runner):
-    scanner = runner.LiveScannerEngine()
-    scanner.emit_scanner_data({"BTC/USD": 61234.5, "ETH/USD": 3000.0})
-
-    momentum = _by_topic(_thoughts(runner), "market.momentum")
-    assert len(momentum) == 1
-    assert momentum[0]["payload"]["top_momentum"] is None
-    assert momentum[0]["payload"]["blocker"] == "no_price_history_source"
-    assert momentum[0]["truth_status"] == "no_data"
-
-
-# ── the envelope ────────────────────────────────────────────────────────────────
-
-def test_every_thought_carries_a_contract_truth_status(runner):
-    """A consumer must be able to tell provenance from the envelope alone, without
-    knowing which producer wrote the row."""
-    from aureon.observer.real_data_contract import TRUTH_STATUSES
-
-    gen = runner.LiveMarketDataGenerator()
-    gen.emit_market_data()
-    runner.LiveWhaleTracker().emit_whale_data({"BTC/USD": 61234.5})
-    runner.LiveBotTracker().emit_bot_data({"BTC/USD": 61234.5})
-    runner.LiveScannerEngine().emit_scanner_data({"BTC/USD": 61234.5})
-
-    rows = _thoughts(runner)
-    assert rows
-    for row in rows:
-        assert row.get("truth_status") in TRUTH_STATUSES, row.get("topic")
+    assert len(prices) == 2
+    assert prices[0]["payload"]["price"] == pytest.approx(61_234.5)
+    assert prices[1]["payload"]["price"] == pytest.approx(3_200.25)
+    assert {row["payload"]["truth_status"] for row in prices} == {"live"}
+    assert {row["payload"]["generated"] for row in prices} == {False}
+    assert heartbeat["truth_status"] == "real_derived"
+    assert heartbeat["market_observation_count"] == 2
+    assert heartbeat["source_timestamp"] == 100.0
+    assert heartbeat["source_event_ids"] == sorted(
+        observation.source_event_id for observation in observations.values()
+    )
 
 
-def test_the_thought_stream_is_the_one_the_hub_dashboard_reads(runner, monkeypatch):
-    """These were two different files — aureon/trading/thoughts.jsonl for the runner,
-    aureon/command_centers/thoughts.jsonl for the dashboard that spawns it — so nothing
-    the runner emitted ever arrived."""
-    monkeypatch.delenv("AUREON_THOUGHTS_FILE", raising=False)
-    importlib.reload(runner)
-    runner_path = runner.THOUGHTS_FILE
+def test_unobserved_surfaces_are_no_data_not_measurements(runner):
+    lr, bus = runner
 
-    flask = pytest.importorskip("flask", reason="the hub dashboard requires flask")
-    assert flask
-    psutil = pytest.importorskip("psutil", reason="the hub dashboard requires psutil")
-    assert psutil
-    import aureon.command_centers.aureon_system_hub_dashboard as hub
+    class Feed:
+        def fetch(self):
+            return {"BTC/USD": _observation(lr)}
 
-    importlib.reload(hub)
-    assert runner_path == hub.THOUGHTS_FILE
+    lr.QueenLiveRunner(feed=Feed()).run_cycle()
+    by_topic = {row["topic"]: row["payload"] for row in bus.rows}
 
-
-def test_the_hub_dashboard_points_at_a_runner_that_exists(runner):
-    """The spawn path was Path(__file__).parent / "aureon_queen_live_runner.py" in
-    command_centers/, where no such file has ever existed, so the auto-start silently
-    never fired."""
-    pytest.importorskip("flask", reason="the hub dashboard requires flask")
-    pytest.importorskip("psutil", reason="the hub dashboard requires psutil")
-    import aureon.command_centers.aureon_system_hub_dashboard as hub
-
-    assert hub.LIVE_RUNNER_SCRIPT.exists()
-    assert hub.LIVE_RUNNER_SCRIPT.name == "aureon_queen_live_runner.py"
+    for topic, reason in lr.QueenLiveRunner._unavailable_surfaces():
+        assert by_topic[topic]["truth_status"] == "no_data"
+        assert by_topic[topic]["generated"] is False
+        assert by_topic[topic]["reason"] == reason
+        assert isinstance(by_topic[topic]["collected_at"], float)
+    assert "market.momentum" not in by_topic
+    assert "whale.orderbook" not in by_topic
+    assert "bot.detected" not in by_topic
 
 
-def test_opening_a_dashboard_does_not_launch_a_background_producer(runner, monkeypatch):
-    pytest.importorskip("flask", reason="the hub dashboard requires flask")
-    pytest.importorskip("psutil", reason="the hub dashboard requires psutil")
-    import aureon.command_centers.aureon_system_hub_dashboard as hub
+def test_cycle_topics_and_truth_statuses_are_complete(runner):
+    lr, bus = runner
 
-    monkeypatch.delenv("AUREON_AUTOSTART_LIVE_RUNNER", raising=False)
-    assert hub._autostart_live_runner_allowed() is False
+    class Feed:
+        def fetch(self):
+            return {"BTC/USD": _observation(lr)}
 
-    spawned = []
-    monkeypatch.setattr(hub.subprocess, "Popen", lambda *a, **k: spawned.append(a))
-    monkeypatch.setattr(hub, "_is_process_running", lambda _match: False)
-    assert hub._ensure_live_runner() is False
-    assert spawned == []
+    lr.QueenLiveRunner(feed=Feed()).run_cycle()
+    topics = [row["topic"] for row in bus.rows]
+    assert topics == [
+        "market.price",
+        "scanner.status",
+        "whale.status",
+        "bot.status",
+        "queen.decision",
+        "system.heartbeat",
+    ]
+    assert all(
+        row["payload"]["truth_status"] in {"live", "real_derived", "no_data"}
+        for row in bus.rows
+    )
+    assert all(row["payload"]["generated"] is False for row in bus.rows)
 
-    monkeypatch.setenv("AUREON_AUTOSTART_LIVE_RUNNER", "1")
-    assert hub._ensure_live_runner() is True
-    assert len(spawned) == 1
+
+def test_invalid_interval_is_rejected(runner):
+    lr, _ = runner
+    with pytest.raises(ValueError, match="interval must be positive"):
+        lr.QueenLiveRunner(interval=0)
+
+
+def test_stop_emits_derived_shutdown_without_starting_thread(runner):
+    lr, bus = runner
+    live_runner = lr.QueenLiveRunner(feed=object())
+    live_runner.running = True
+    live_runner.cycle_count = 7
+    live_runner.stop()
+
+    assert live_runner.running is False
+    assert bus.rows[-1]["topic"] == "system.shutdown"
+    assert bus.rows[-1]["payload"]["truth_status"] == "real_derived"
+    assert bus.rows[-1]["payload"]["generated"] is False
+    assert bus.rows[-1]["payload"]["cycles_completed"] == 7

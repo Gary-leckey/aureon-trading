@@ -24,6 +24,7 @@ Gary Leckey · Aureon Institute
 
 from __future__ import annotations
 
+import importlib
 import json
 import logging
 import os
@@ -78,7 +79,7 @@ def _maybe_compact(path: Path, cap: int) -> None:
             return
         tail = lines[-cap:]
         try:
-            import fcntl
+            fcntl: Any = importlib.import_module("fcntl")
 
             with path.open("r+", encoding="utf-8") as fh:
                 fcntl.flock(fh.fileno(), fcntl.LOCK_EX)

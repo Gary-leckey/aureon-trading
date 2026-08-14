@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 import tempfile
+import time
 
 import pytest
 
@@ -28,6 +29,66 @@ def _isolate_bus_trace(tmp_path, monkeypatch):
 
 def _bus():
     return get_thought_bus()
+
+
+def _pulse_payload(symbolic_life_score, coherence_gamma=None, **extra):
+    received_at = time.time()
+    gamma = symbolic_life_score if coherence_gamma is None else coherence_gamma
+    payload = {
+        "data_status": "live",
+        "source": "hnc_live_daemon",
+        "source_id": "aureon:hnc:live_daemon",
+        "source_timestamp": received_at,
+        "received_at": received_at,
+        "ts": received_at,
+        "receipt_id": "hnc:live_field:test-organism",
+        "receipt_type": "hnc_live_field",
+        "provider_receipt_type": "hnc_live_field",
+        "input_receipt_ids": ["test.provider:organism"],
+        "symbolic_life_score": symbolic_life_score,
+        "coherence_gamma": gamma,
+        "consciousness_psi": gamma,
+        "consciousness_level": "AWARE",
+        "lambda_t": symbolic_life_score,
+        "source_count": 1,
+        "truth_status": "real_derived",
+        "generated_values": False,
+        "freshness_status": "fresh",
+        "operational_eligible": False,
+        "provider_eligible": False,
+        "action_eligible": False,
+        "actionable": False,
+        "accounting_eligible": False,
+        "learning_eligible": False,
+        "eligible_for_action": False,
+        "eligible_for_accounting": False,
+        "eligible_for_learning": False,
+        "equation_inputs_complete": True,
+        "action_gate_passed": False,
+        "action_gate_reason": "route_specific_market_link_required",
+    }
+    payload.update(extra)
+    return payload
+
+
+def _pin_minimal_connectome_manifest(connectome):
+    from aureon.core.aureon_organism_spine import OrganismManifest, OrganismNode
+
+    module = "aureon.core.hnc_field"
+    connectome._manifest = OrganismManifest(
+        generated_at=time.time(),
+        repo_root="unit-test",
+        nodes=[OrganismNode(
+            id="aureon.core.hnc.field",
+            name="hnc_field",
+            module=module,
+            path="aureon/core/hnc_field.py",
+            domain="core",
+            organism_topic="organism.core.hnc.field",
+        )],
+        topics={},
+    )
+    return module
 
 
 # ── shape-agnostic accessors ─────────────────────────────────────────────────
@@ -48,11 +109,11 @@ def test_canonical_field_reads_the_shared_pulse():
 
     b = _bus()
     b.publish(Thought(source="hnc_live_daemon", topic="symbolic.life.pulse",
-                      payload={"symbolic_life_score": 0.33, "coherence_gamma": 0.7,
-                               "source": "unit"}))
+                      payload=_pulse_payload(0.33, 0.7)))
     field = read_canonical_field(b)
     assert field.available and field.symbolic_life_score == 0.33
-    assert field.coherence_gamma == 0.7 and field.source == "unit"
+    assert field.coherence_gamma == 0.7 and field.source == "hnc_live_daemon"
+    assert field.evidence_transport == "thought_bus"
 
 
 def test_canonical_field_unavailable_without_pulse(monkeypatch, tmp_path):
@@ -83,10 +144,12 @@ def test_canonical_field_crosses_process_via_trace_file(monkeypatch, tmp_path):
     # live field — see tests/test_hnc_field_freshness.py.
     trace = tmp_path / "hnc_live_trace.jsonl"
     trace.write_text(
-        json.dumps({"symbolic_life_score": 0.1, "coherence_gamma": 0.2,
-                    "ts": time.time()}) + "\n"
-        + json.dumps({"symbolic_life_score": 0.66, "coherence_gamma": 0.7,
-                      "consciousness_level": "AWARE", "ts": time.time()}) + "\n",
+        json.dumps(_pulse_payload(0.1, 0.2)) + "\n"
+        + json.dumps(_pulse_payload(
+            0.66,
+            0.7,
+            consciousness_level="AWARE",
+        )) + "\n",
         encoding="utf-8")
     monkeypatch.setenv("AUREON_HNC_TRACE_PATH", str(trace))
 
@@ -94,7 +157,8 @@ def test_canonical_field_crosses_process_via_trace_file(monkeypatch, tmp_path):
     field = read_canonical_field(ThoughtBus(persist_path=None))
     assert field.available is True
     assert field.symbolic_life_score == 0.66          # the LAST line wins
-    assert field.source == "hnc_trace_file"
+    assert field.source == "hnc_live_daemon"
+    assert field.evidence_transport == "persisted_trace"
 
 
 def test_subfields_publish_and_read_by_source():
@@ -120,7 +184,7 @@ def test_blended_field_is_consensus_with_divergence():
 
     b = ThoughtBus(persist_path=None)   # isolated bus for a clean consensus
     b.publish(Thought(source="hnc_live_daemon", topic="symbolic.life.pulse",
-                      payload={"symbolic_life_score": 0.60, "coherence_gamma": 0.5}))
+                      payload=_pulse_payload(0.60, 0.5)))
 
     class _A:
         symbolic_life_score = 0.40
@@ -141,7 +205,7 @@ def _divided_bus(canonical_sls: float, sub_sls: float):
 
     b = ThoughtBus(persist_path=None)
     b.publish(Thought(source="hnc_live_daemon", topic="symbolic.life.pulse",
-                      payload={"symbolic_life_score": canonical_sls}))
+                      payload=_pulse_payload(canonical_sls)))
 
     class _Sub:
         symbolic_life_score = sub_sls
@@ -202,22 +266,31 @@ def test_divided_field_gates_a_trade_via_the_fallback(monkeypatch):
     assert whisper.verdict == ConscienceVerdict.VETO
 
 
-# ── ConsciousnessModule trading gated by the field (opt-in, fail-open) ────────
+# ── ConsciousnessModule trading gated by the field (default-on, fail-closed) ─
 
-def test_consciousness_trade_gate_optin_veto_and_failopen(monkeypatch):
+def test_consciousness_trade_gate_defaults_on_and_fails_closed(monkeypatch):
     """The ConsciousnessModule's autonomous trading is gateable by the shared
-    field via the conscience — opt-in (default no-op), pausing on VETO,
-    fail-open on error. Tested on the unbound method with a stub (no heavy boot)."""
+    field via the conscience: valid evidence preserves verdict semantics while
+    disabled, missing, and error states deny as no_data. Tested on the unbound
+    method with stubs (no heavy boot)."""
     from types import SimpleNamespace
 
     from aureon.core.aureon_consciousness_module import ConsciousnessModule
 
     gate = ConsciousnessModule._coherence_permits_trading
 
-    # default: env unset → gate disabled → trading permitted (behaviour unchanged)
     monkeypatch.delenv("AUREON_CONSCIOUSNESS_FIELD_GATE", raising=False)
-    ok, reason = gate(SimpleNamespace(bus=None, _trade_conscience=None))
-    assert ok is True and "disabled" in reason
+    approved = SimpleNamespace(verdict=SimpleNamespace(name="APPROVED"), message="coherent")
+    stub_approved = SimpleNamespace(
+        bus=None, _trade_conscience=SimpleNamespace(ask_why=lambda *a, **k: approved)
+    )
+    ok, reason = gate(stub_approved)
+    assert ok is True and "approved" in reason
+
+    monkeypatch.setenv("AUREON_CONSCIOUSNESS_FIELD_GATE", "0")
+    ok_disabled, reason_disabled = gate(stub_approved)
+    assert ok_disabled is False
+    assert "no_data" in reason_disabled and "denied" in reason_disabled
 
     # enabled + conscience VETO → trading paused
     monkeypatch.setenv("AUREON_CONSCIOUSNESS_FIELD_GATE", "1")
@@ -227,13 +300,22 @@ def test_consciousness_trade_gate_optin_veto_and_failopen(monkeypatch):
     ok2, _ = gate(stub_veto)
     assert ok2 is False
 
-    # enabled + conscience raises → fail-open (never wedge trading shut)
+    # enabled + conscience raises → fail-closed no_data
     def _boom(*a, **k):
         raise RuntimeError("conscience down")
 
     stub_err = SimpleNamespace(bus=None, _trade_conscience=SimpleNamespace(ask_why=_boom))
-    ok3, _ = gate(stub_err)
-    assert ok3 is True
+    ok3, reason3 = gate(stub_err)
+    assert ok3 is False
+    assert "no_data" in reason3 and "denied" in reason3
+
+    missing = SimpleNamespace(verdict=None, message="")
+    stub_missing = SimpleNamespace(
+        bus=None, _trade_conscience=SimpleNamespace(ask_why=lambda *a, **k: missing)
+    )
+    ok4, reason4 = gate(stub_missing)
+    assert ok4 is False
+    assert "no_data" in reason4 and "denied" in reason4
 
 
 def test_breathe_field_publishes_whole_body_consensus():
@@ -243,7 +325,7 @@ def test_breathe_field_publishes_whole_body_consensus():
 
     b = ThoughtBus(persist_path=None)
     b.publish(Thought(source="hnc_live_daemon", topic="symbolic.life.pulse",
-                      payload={"symbolic_life_score": 0.7, "coherence_gamma": 0.6}))
+                      payload=_pulse_payload(0.7, 0.6)))
 
     class _S:
         symbolic_life_score = 0.5
@@ -278,7 +360,7 @@ def test_grounded_gate_reads_live_field_under_flood():
 
     b = _bus()
     b.publish(Thought(source="hnc_live_daemon", topic="symbolic.life.pulse",
-                      payload={"symbolic_life_score": 0.07, "coherence_gamma": 0.4}))
+                      payload=_pulse_payload(0.07, 0.4)))
     # bury the pulse under a baton flood — recall() must still find it by topic
     for i in range(300):
         b.publish(Thought(source=f"m{i}", topic="baton.link", payload={"module": f"m{i}"}))
@@ -295,6 +377,7 @@ def test_connectome_baton_ear_reads_payload():
 
     reset_connectome_for_tests()
     c = Connectome(state_path=os.path.join(tempfile.mkdtemp(), "cn.json"))
+    _pin_minimal_connectome_manifest(c)
     before = c.status()["baton_linked"]
     c._on_baton(Thought(source="aureon.z.z", topic="baton.link", payload={"module": "aureon.z.z"}))
     assert c.status()["baton_linked"] == before + 1
@@ -305,22 +388,29 @@ def test_connectome_pulse_publishes_to_bus():
 
     reset_connectome_for_tests()
     c = Connectome(state_path=os.path.join(tempfile.mkdtemp(), "cn.json"))
+    _pin_minimal_connectome_manifest(c)
     c.pulse()
     b = _bus()
     pulses = b.recall("organism.connectome.pulse", limit=1) or []
     assert pulses and "nodes" in payload_of(pulses[-1])
 
 
-def test_connectome_autoweave_graduates_touched_to_woven():
+def test_connectome_autoweave_graduates_touched_to_woven(monkeypatch):
     from aureon.core.aureon_connectome import Connectome, reset_connectome_for_tests
 
     os.environ["AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS"] = "1"
     reset_connectome_for_tests()
     c = Connectome(state_path=os.path.join(tempfile.mkdtemp(), "cn.json"))
-    c.sweep_once(batch_size=20, weave_batch=0)      # touch a batch
+    module = _pin_minimal_connectome_manifest(c)
+    monkeypatch.setattr(
+        "aureon.operator.aureon_operator.join_organism",
+        lambda *_args, **_kwargs: {"mycelium": False, "queen": False},
+    )
+    c.sweep_once(batch_size=1, weave_batch=0)       # touch the bounded fixture
     res = c.sweep_once(batch_size=1, weave_batch=5)  # weave up to 5 touched
     assert res["woven"] >= 1
     assert c.status()["woven"] >= 1
+    assert c.sense(module)["status"] == "woven"
 
 
 # ── mesh delivery actually reaches subsystems ────────────────────────────────
@@ -373,7 +463,12 @@ def test_cognition_folds_field_into_ground_prompt():
 
     b = _bus()
     b.publish(Thought(source="hnc_live_daemon", topic="symbolic.life.pulse",
-                      payload={"symbolic_life_score": 0.61, "coherence_gamma": 0.55}))
-    c = AureonCognition(join_mesh=False)
+                      payload=_pulse_payload(0.61, 0.55)))
+    c = AureonCognition(
+        join_mesh=False,
+        bus=b,
+        allow_repo_grounding=False,
+        allow_organism_context=True,
+    )
     sysp = c._ground("operator veto", CognitionResult(trace_id="t", prompt="p", submitted_at=0.0))
     assert "Organism state" in sysp and "symbolic_life_score=0.610" in sysp

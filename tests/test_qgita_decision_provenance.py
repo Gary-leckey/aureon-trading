@@ -20,7 +20,12 @@ deterministic function of confidence before that.
 
 from __future__ import annotations
 
+import os
+
 import pytest
+
+os.environ.setdefault("AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS", "1")
+os.environ.setdefault("PYTHON_DOTENV_DISABLED", "1")
 
 pytest.importorskip("aureon.exchanges.binance_client",
                     reason="the QGITA trader imports the Binance client at module scope")
@@ -68,7 +73,29 @@ def test_the_simulated_ensemble_still_works_when_asked_for_and_says_so():
     fusion = qgita.DecisionFusion(allow_simulated_models=True)
     signals = fusion.generate_model_signal(_SNAP)
     assert {s["model"] for s in signals} == {"lstm", "randomForest", "xgboost", "transformer"}
+    assert all(s["truth_status"] == "simulated" for s in signals)
+    assert all(s["generated_values"] is True for s in signals)
+    assert all(s["action_eligible"] is False for s in signals)
+    assert signals == fusion.generate_model_signal(_SNAP)
     assert fusion.decide(_SNAP, None)["ensemble"] == "simulated"
+
+
+def test_provider_ensemble_is_never_mislabelled_as_simulated():
+    provider_signal = {
+        "model": "provider-model",
+        "score": 0.4,
+        "confidence": 0.8,
+        "source_id": "provider:model",
+        "source_event_id": "provider:event:1",
+        "source_timestamp": 1_800_000_000.0,
+        "truth_status": "provider_observed",
+        "generated_values": False,
+    }
+    snapshot = {**_SNAP, "model_signals": [provider_signal]}
+
+    decision = qgita.DecisionFusion().decide(snapshot, None)
+
+    assert decision["ensemble"] == "provider_observed"
 
 
 # ── Kelly sizing ────────────────────────────────────────────────────────────────

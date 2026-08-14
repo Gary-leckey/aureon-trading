@@ -26,6 +26,82 @@ import time
 import pytest
 
 
+_CANONICAL_CONTROL_FIELDS = (
+    "operational_eligible",
+    "provider_eligible",
+    "action_eligible",
+    "actionable",
+    "accounting_eligible",
+    "learning_eligible",
+    "eligible_for_action",
+    "eligible_for_accounting",
+    "eligible_for_learning",
+    "action_gate_passed",
+)
+
+
+def _canonical_envelope(now=None, **overrides):
+    received_at = time.time() if now is None else now
+    source_timestamp = received_at - 1.0
+    envelope = {
+        "data_status": "live",
+        "source": "hnc_live_daemon",
+        "source_id": "aureon:hnc:live_daemon",
+        "source_timestamp": source_timestamp,
+        "received_at": received_at,
+        "ts": source_timestamp,
+        "receipt_id": "hnc:live_field:test",
+        "receipt_type": "hnc_live_field",
+        "provider_receipt_type": "hnc_live_field",
+        "truth_status": "real_derived",
+        "generated_values": False,
+        "input_receipt_ids": ["provider:a:1", "provider:b:1"],
+        "freshness_status": "fresh",
+        "operational_eligible": False,
+        "provider_eligible": False,
+        "action_eligible": False,
+        "actionable": False,
+        "accounting_eligible": False,
+        "learning_eligible": False,
+        "eligible_for_action": False,
+        "eligible_for_accounting": False,
+        "eligible_for_learning": False,
+        "equation_inputs_complete": True,
+        "action_gate_passed": False,
+        "action_gate_reason": "route_specific_market_link_required",
+        "symbolic_life_score": 0.9,
+        "coherence_gamma": 0.8,
+        "consciousness_psi": 0.7,
+        "consciousness_level": "CONNECTED",
+        "lambda_t": 0.3,
+        "source_count": 2,
+    }
+    envelope.update(overrides)
+    if "source_timestamp" in overrides and "ts" not in overrides:
+        envelope["ts"] = overrides["source_timestamp"]
+    return envelope
+
+
+def _read_canonical_transport(hf, tmp_path, transport, envelope):
+    if transport == "bus":
+        from aureon.core.aureon_thought_bus import Thought, ThoughtBus
+
+        bus = ThoughtBus()
+        bus.publish(
+            Thought(
+                source="hnc_live_daemon",
+                topic="symbolic.life.pulse",
+                payload=dict(envelope),
+            )
+        )
+        return hf.read_canonical_field(bus)
+    (tmp_path / "hnc_live_trace.jsonl").write_text(
+        json.dumps(envelope) + "\n",
+        encoding="utf-8",
+    )
+    return hf.read_canonical_field()
+
+
 @pytest.fixture
 def field(tmp_path, monkeypatch):
     """hnc_field + bus_trace bound to an isolated trace dir (never the repo's own state/).
@@ -130,26 +206,125 @@ def test_publish_subfield_stamps_a_timestamp(field):
 def test_stale_canonical_trace_is_unavailable(field):
     hf, _bt, tmp = field
     (tmp / "hnc_live_trace.jsonl").write_text(
-        json.dumps({"symbolic_life_score": 0.9, "coherence_gamma": 0.9,
-                    "ts": time.time() - 99999}) + "\n", encoding="utf-8")
+        json.dumps(_canonical_envelope(source_timestamp=time.time() - 99999)) + "\n",
+        encoding="utf-8",
+    )
     assert hf.read_canonical_field().available is False
 
 
-def test_fresh_canonical_trace_is_available(field):
+@pytest.mark.parametrize("transport", ("bus", "trace"))
+def test_complete_canonical_receipt_is_preserved_but_non_actionable(field, transport):
     hf, _bt, tmp = field
-    (tmp / "hnc_live_trace.jsonl").write_text(
-        json.dumps({"symbolic_life_score": 0.9, "coherence_gamma": 0.9,
-                    "ts": time.time()}) + "\n", encoding="utf-8")
-    got = hf.read_canonical_field()
+    envelope = _canonical_envelope()
+    got = _read_canonical_transport(hf, tmp, transport, envelope)
     assert got.available is True
     assert got.symbolic_life_score == pytest.approx(0.9)
+    assert got.evidence_transport == {
+        "bus": "thought_bus",
+        "trace": "persisted_trace",
+    }[transport]
+    preserved = got.to_dict()
+    for name in (
+        "source",
+        "source_id",
+        "source_timestamp",
+        "received_at",
+        "receipt_id",
+        "receipt_type",
+        "provider_receipt_type",
+        "input_receipt_ids",
+        "data_status",
+        "truth_status",
+        "generated_values",
+        "source_count",
+        "freshness_status",
+        "equation_inputs_complete",
+        "action_gate_reason",
+    ):
+        assert preserved[name] == envelope[name]
+    for name in _CANONICAL_CONTROL_FIELDS:
+        assert preserved[name] is False
+
+
+def test_unknown_evidence_transport_is_rejected(field):
+    hf, _bt, _tmp = field
+    got = hf._canonical_field_from_envelope(
+        _canonical_envelope(),
+        evidence_transport="unknown",
+    )
+    assert got.available is False
+    assert got.evidence_transport is None
 
 
 def test_untimestamped_canonical_trace_is_unavailable(field):
     hf, _bt, tmp = field
     (tmp / "hnc_live_trace.jsonl").write_text(
-        json.dumps({"symbolic_life_score": 0.9}) + "\n", encoding="utf-8")
+        json.dumps(_canonical_envelope(source_timestamp=None, ts=None)) + "\n",
+        encoding="utf-8",
+    )
     assert hf.read_canonical_field().available is False
+
+
+@pytest.mark.parametrize("transport", ("bus", "trace"))
+@pytest.mark.parametrize(
+    ("case", "updates"),
+    [
+        ("nonfinite_metric", {"symbolic_life_score": float("nan")}),
+        ("nonfinite_received_at", {"received_at": float("inf")}),
+        ("missing_receipt_id", {"receipt_id": None}),
+        (
+            "missing_receipt_type",
+            {"receipt_type": None, "provider_receipt_type": None},
+        ),
+        ("missing_inputs", {"input_receipt_ids": []}),
+        ("missing_truth", {"truth_status": None}),
+        ("incomplete_equation", {"equation_inputs_complete": False}),
+        ("no_data", {"data_status": "no_data", "truth_status": "no_data"}),
+        ("generated", {"generated_values": True}),
+        ("mismatched_receipt_type", {"provider_receipt_type": "other"}),
+    ]
+    + [
+        (f"{name}_true", {name: True})
+        for name in _CANONICAL_CONTROL_FIELDS
+    ],
+)
+def test_incomplete_or_eligible_canonical_receipts_fail_closed(
+    field,
+    transport,
+    case,
+    updates,
+):
+    del case
+    hf, _bt, tmp = field
+    got = _read_canonical_transport(
+        hf,
+        tmp,
+        transport,
+        _canonical_envelope(**updates),
+    )
+    assert got.available is False
+    assert got.data_status == "no_data"
+    assert got.symbolic_life_score is None
+
+
+@pytest.mark.parametrize("transport", ("bus", "trace"))
+@pytest.mark.parametrize("case", ("stale", "future_source", "future_received", "laundered"))
+def test_canonical_receipt_timestamps_fail_closed(field, transport, case):
+    hf, _bt, tmp = field
+    now = time.time()
+    envelope = _canonical_envelope(now=now)
+    if case == "stale":
+        envelope["source_timestamp"] = now - 99999
+        envelope["ts"] = envelope["source_timestamp"]
+    elif case == "future_source":
+        envelope["source_timestamp"] = now + 10
+        envelope["ts"] = envelope["source_timestamp"]
+    elif case == "future_received":
+        envelope["received_at"] = now + 10
+    else:
+        envelope["source_timestamp"] = now - 99999
+        envelope["ts"] = now
+    assert _read_canonical_transport(hf, tmp, transport, envelope).available is False
 
 
 # ── the window itself ───────────────────────────────────────────────────────────

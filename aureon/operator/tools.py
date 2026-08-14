@@ -27,14 +27,26 @@ from pathlib import Path
 from typing import Any, Dict, Iterable
 
 from aureon.inhouse_ai.llm_adapter import _llm_http_disabled
-from aureon.inhouse_ai.tool_registry import ToolRegistry
+from aureon.inhouse_ai.tool_registry import (
+    ToolAuthorizationVerifier,
+    ToolDispatchAuthorization,
+    ToolDispatchProposal,
+    ToolEffect,
+    ToolRegistry,
+)
 from aureon.operator.repo_index import REPO_ROOT
 from aureon.operator.repo_index import repo_search as _repo_search
 
 logger = logging.getLogger("aureon.operator.tools")
 
 # Tools that can change the world → always guarded before execution.
-CONSEQUENTIAL = {"write_repo_file", "patch_repo_file", "execute_shell"}
+CONSEQUENTIAL = {
+    "execute_shell",
+    "patch_repo_file",
+    "publish_thought",
+    "touch_module",
+    "write_repo_file",
+}
 
 _SENSITIVE_PATH_RE = re.compile(
     r"(^|/)\.env|secret|credential|password|\.git/|supervisord|deploy|"
@@ -70,8 +82,18 @@ def _resolve_in_repo(path: str) -> Path | None:
 class GuardedToolRegistry(ToolRegistry):
     """A ToolRegistry that vets consequential calls against the authority boundary."""
 
-    def __init__(self, include_builtins: bool = True):
-        super().__init__(include_builtins=include_builtins)
+    def __init__(
+        self,
+        include_builtins: bool = True,
+        *,
+        governance_required: bool = False,
+        authorization_verifier: ToolAuthorizationVerifier | None = None,
+    ):
+        super().__init__(
+            include_builtins=include_builtins,
+            governance_required=governance_required,
+            authorization_verifier=authorization_verifier,
+        )
         self.blocked_calls: list = []
         # The coherence membrane (set per turn by cognition): ``None`` means
         # unrestricted; a set means ONLY those tools are within the current
@@ -79,12 +101,50 @@ class GuardedToolRegistry(ToolRegistry):
         self.aperture_allowed: set | None = None
         self.aperture_note: str = ""
 
-    def execute(self, name: str, arguments: Dict[str, Any]) -> str:
+    def execute(
+        self,
+        name: str,
+        arguments: Dict[str, Any],
+        *,
+        proposal: ToolDispatchProposal | None = None,
+        authorization: ToolDispatchAuthorization | None = None,
+        governance_required: bool | None = None,
+    ) -> str:
+        governed = self.governance_required or bool(governance_required)
+        args = arguments or {}
+        # Rebind at this outer dispatch boundary before any handler can run.
+        # ToolRegistry repeats this check before consuming the authorization.
+        if governed:
+            binding_error = self._dispatch_binding_error(name, args, proposal)
+            if binding_error:
+                self.blocked_calls.append({"tool": name, "reason": binding_error})
+                logger.warning("tool %s blocked: %s", name, binding_error)
+                return self._blocked_governed_dispatch(
+                    name=name,
+                    proposal=proposal,
+                    authorization=(
+                        authorization
+                        if isinstance(authorization, ToolDispatchAuthorization)
+                        else None
+                    ),
+                    reason=binding_error,
+                )
         # Outer wall first: the hard authority boundary is absolute.
-        reason = self._guard(name, arguments or {})
+        reason = self._guard(name, args)
         if reason:
             self.blocked_calls.append({"tool": name, "reason": reason})
             logger.warning("tool %s blocked: %s", name, reason)
+            if governed:
+                return self._blocked_governed_dispatch(
+                    name=name,
+                    proposal=proposal,
+                    authorization=(
+                        authorization
+                        if isinstance(authorization, ToolDispatchAuthorization)
+                        else None
+                    ),
+                    reason=reason,
+                )
             return _blocked(reason, tool=name)
         # Inner membrane second: the live-field coherence aperture.
         if self.aperture_allowed is not None and name not in self.aperture_allowed:
@@ -92,8 +152,27 @@ class GuardedToolRegistry(ToolRegistry):
                       f" — '{name}' is outside the field's current reach")
             self.blocked_calls.append({"tool": name, "reason": reason})
             logger.info("tool %s held by the coherence gate: %s", name, reason)
+            if governed:
+                return self._blocked_governed_dispatch(
+                    name=name,
+                    proposal=proposal,
+                    authorization=(
+                        authorization
+                        if isinstance(authorization, ToolDispatchAuthorization)
+                        else None
+                    ),
+                    reason=reason,
+                )
             return _blocked(reason, tool=name)
-        return super().execute(name, arguments or {})
+        if governed:
+            return super().execute(
+                name,
+                args,
+                proposal=proposal,
+                authorization=authorization,
+                governance_required=True,
+            )
+        return super().execute(name, args)
 
     @staticmethod
     def _guard(name: str, args: Dict[str, Any]) -> str | None:
@@ -335,20 +414,27 @@ def build_operator_tools(
     allow_writes: bool = True,
     allow_shell: bool = True,
     allowlist: Iterable[str] | None = None,
+    governance_required: bool = False,
+    authorization_verifier: ToolAuthorizationVerifier | None = None,
 ) -> GuardedToolRegistry:
     """Assemble the cognition's toolbelt. Read tools always on; writes/shell gated.
 
     ``allowlist`` — when given, the finished registry is pruned to exactly these names. Use
     :data:`TENANT_ALLOWED_TOOLS` for any engine driven by a model the caller controls.
     """
-    reg = GuardedToolRegistry(include_builtins=True)
+    reg = GuardedToolRegistry(
+        include_builtins=True,
+        governance_required=governance_required,
+        authorization_verifier=authorization_verifier,
+    )
 
     # Offline-guard the network tools (built-ins don't check the guard today).
     for net in ("web_search", "web_fetch"):
         td = reg.get(net)
         if td and td.handler:
             reg.define_tool(net, td.description + " (offline-guarded)", td.input_schema,
-                            _wrap_offline(td.handler, reg, net))
+                            _wrap_offline(td.handler, reg, net),
+                            effect=td.effect, operation_id=td.operation_id)
 
     # Repo-wide search replaces the built-in docs-only repo_search.
     reg.define_tool(
@@ -359,6 +445,8 @@ def build_operator_tools(
                         "top_k": {"type": "integer", "description": "max results (default 4)"}},
          "required": ["query"], "additionalProperties": False},
         _h_repo_search,
+        effect=ToolEffect.READ_ONLY,
+        operation_id="aureon.operator.repo_search.v1",
     )
     reg.define_tool(
         "read_repo_file",
@@ -366,6 +454,8 @@ def build_operator_tools(
         {"type": "object", "properties": {"path": {"type": "string", "description": "repo-relative path"}},
          "required": ["path"], "additionalProperties": False},
         _h_read_repo_file,
+        effect=ToolEffect.READ_ONLY,
+        operation_id="aureon.operator.read_repo_file.v1",
     )
     reg.define_tool(
         "list_repo",
@@ -373,6 +463,8 @@ def build_operator_tools(
         {"type": "object", "properties": {"path": {"type": "string", "description": "repo-relative dir (default repo root)"}},
          "required": [], "additionalProperties": False},
         _h_list_repo,
+        effect=ToolEffect.READ_ONLY,
+        operation_id="aureon.operator.list_repo.v1",
     )
     reg.define_tool(
         "sense_organism",
@@ -380,6 +472,8 @@ def build_operator_tools(
         "mycelium mesh membership, and honest wiring depth across all ~1,200 modules.",
         {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
         _h_sense_organism,
+        effect=ToolEffect.READ_ONLY,
+        operation_id="aureon.operator.sense_organism.v1",
     )
     reg.define_tool(
         "list_organism",
@@ -392,6 +486,8 @@ def build_operator_tools(
                         "limit": {"type": "integer", "description": "max nodes returned (default 40)"}},
          "required": [], "additionalProperties": False},
         _h_list_organism,
+        effect=ToolEffect.READ_ONLY,
+        operation_id="aureon.operator.list_organism.v1",
     )
     reg.define_tool(
         "touch_module",
@@ -402,6 +498,8 @@ def build_operator_tools(
          "properties": {"module": {"type": "string", "description": "dotted module, e.g. aureon.harmonic.aureon_harmonic_seed"}},
          "required": ["module"], "additionalProperties": False},
         _h_touch_module,
+        effect=ToolEffect.PRIVILEGED,
+        operation_id="aureon.operator.touch_module.v1",
     )
     reg.define_tool(
         "list_skills",
@@ -411,6 +509,8 @@ def build_operator_tools(
          "properties": {"query": {"type": "string", "description": "substring filter (optional)"}},
          "required": [], "additionalProperties": False},
         _h_list_skills,
+        effect=ToolEffect.READ_ONLY,
+        operation_id="aureon.operator.list_skills.v1",
     )
     reg.define_tool(
         "code_validate",
@@ -420,6 +520,8 @@ def build_operator_tools(
                         "sandbox_safe": {"type": "boolean", "description": "also run the sandbox static check"}},
          "required": ["code"], "additionalProperties": False},
         _h_code_validate,
+        effect=ToolEffect.READ_ONLY,
+        operation_id="aureon.operator.code_validate.v1",
     )
 
     if allow_writes:
@@ -430,6 +532,8 @@ def build_operator_tools(
              "properties": {"path": {"type": "string"}, "content": {"type": "string"}},
              "required": ["path", "content"], "additionalProperties": False},
             _h_write_repo_file,
+            effect=ToolEffect.LOCAL_MUTATION,
+            operation_id="aureon.operator.write_repo_file.v1",
         )
         reg.define_tool(
             "patch_repo_file",
@@ -438,6 +542,8 @@ def build_operator_tools(
              "properties": {"path": {"type": "string"}, "old": {"type": "string"}, "new": {"type": "string"}},
              "required": ["path", "old", "new"], "additionalProperties": False},
             _h_patch_repo_file,
+            effect=ToolEffect.LOCAL_MUTATION,
+            operation_id="aureon.operator.patch_repo_file.v1",
         )
 
     if not allow_shell and "execute_shell" in reg:

@@ -1046,7 +1046,9 @@ class OracleOfRunes:
         Supports both single-file traditions and multi-file merged traditions
         (e.g., norse_celtic loads both Futhark runes and Ogham feda as one voice).
         """
-        base = os.path.dirname(os.path.abspath(__file__))
+        # The catalogues are repository assets shared by the Seer and frontend,
+        # not package-private files under aureon/intelligence.
+        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         for tradition, cfg in self._TRADITIONS.items():
             # Multi-file tradition (merged cultures)
             if "files" in cfg:

@@ -1,7 +1,7 @@
 # Go-Live Hardening — the network posture of a live Aureon instance
 
-> What is exposed, to whom, and the env vars that change it. Every control here **defaults to the
-> current behaviour**, so nothing in a running deployment changes until you set something.
+> What is exposed, to whom, and the env vars that change it. The operator is fail-closed in
+> AUREON_OPERATOR_ENV=production; permissive local behavior requires an explicit development/test mode.
 >
 > Companion docs: [`SECURITY_TRADING.md`](SECURITY_TRADING.md) (exchange keys),
 > [`PRODUCTION_CHECKLIST.md`](PRODUCTION_CHECKLIST.md) (readiness),
@@ -61,15 +61,18 @@ Pinned by [`../../tests/test_dashboard_exposure.py`](../../tests/test_dashboard_
 
 ## 2 · The operator / console (`:8790`)
 
-Already the hardened surface, but it is **open by default** so local development works. Turn the
-envelope on for anything internet-facing:
+Production startup requires the authenticated, rate-limited envelope. Local and offline development
+remain available with AUREON_OPERATOR_ENV=development (or test).
 
 | Variable | Effect |
 |:---|:---|
-| `AUREON_OPERATOR_API_KEY` | the operator bearer. **Unset ⇒ no auth at all.** Set it. |
+| `AUREON_OPERATOR_ENV` | `production` enables fail-closed startup; use `development` or `test` explicitly for local/offline work. |
+| `AUREON_OPERATOR_API_KEY` | nonempty operator bearer; empty or whitespace aborts production startup. |
 | `AUREON_SUPABASE_JWT_SECRET` | enables end-user tenancy. Unset ⇒ single-operator, and the per-tenant default-deny never engages. |
-| `AUREON_RATE_ENABLED` / `AUREON_RATE_RPS` / `AUREON_RATE_BURST` | token-bucket rate limit |
-| `AUREON_MAX_BODY_BYTES` | request body cap (default 256 KB) |
+| `AUREON_OPERATOR_RATE_RPS` / `AUREON_OPERATOR_RATE_BURST` | token-bucket rate limit; production rate must be positive. |
+| `AUREON_OPERATOR_MAX_BODY` | request body cap (default 256 KiB). |
+| `AUREON_OPERATOR_TRUSTED_PROXY_CIDRS` | comma-separated exact proxy CIDRs; X-Forwarded-For is ignored when absent or the direct peer does not match. |
+| `AUREON_OPERATOR_HTTP_PROCESSES` / `AUREON_OPERATOR_REPLICAS` | both must equal one in production while limiter state is process-local. |
 | `VITE_REQUIRE_AUTH=1` | the console requires a Supabase login (build-time) |
 
 Two things worth knowing about the shape of that envelope:
@@ -80,6 +83,8 @@ Two things worth knowing about the shape of that envelope:
   publishing something.
 - **Tenant access is default-deny.** A signed-in end user reaches only an explicit allowlist; every
   other `/api` route is operator-only. See the architecture doc for the table.
+- **The limiter is process-local.** Waitress threads share it, but multiple WSGI processes or
+  replicas do not. Do not scale horizontally until a shared limiter/cache is implemented.
 
 ## 3 · The market status server (`:8765` / `:8800`)
 

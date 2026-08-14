@@ -31,6 +31,7 @@ import json
 import logging
 import os
 import threading
+from types import SimpleNamespace
 from typing import Any, Dict
 
 logger = logging.getLogger("aureon.operator.server")
@@ -64,6 +65,11 @@ except Exception as exc:  # noqa: BLE001
         f"{exc}"
     ) from exc
 
+from aureon.observability import (  # noqa: E402
+    current_correlation_id,
+    emit_local_event,
+    install_flask_request_correlation,
+)
 from aureon.operator.aureon_operator import AureonOperator  # noqa: E402  (after guarded flask import)
 from aureon.operator.providers import build_provider_set, describe_provider_set  # noqa: E402
 
@@ -116,8 +122,22 @@ def _test_provider_adapter(info: Any, api_key: str, base_url: Any, model: str) -
             "error": "" if ok else (text[:160] or "no response"),
         }
     except Exception as exc:  # noqa: BLE001 — a failed test is a verdict, not a 500
-        return {"ok": False, "latency_ms": 0, "model": model, "sample": "",
-                "error": f"{type(exc).__name__}: {str(exc)[:140]}"}
+        emit_local_event(
+            logger,
+            logging.WARNING,
+            "operator_provider_test_failure",
+            correlation_id=current_correlation_id(),
+            fields={"component": "provider_test", "model": model},
+            exception=exc,
+        )
+        return {
+            "ok": False,
+            "latency_ms": 0,
+            "model": model,
+            "sample": "",
+            "error": "provider_test_failed",
+            "error_type": type(exc).__name__,
+        }
 
 
 PAGE = """<!doctype html>
@@ -293,9 +313,10 @@ _TENANT_ALLOWED = _TENANT_OWN_PLANE | _TENANT_SHOWCASE
 
 def create_app(operator: AureonOperator | None = None, cognition: Any = None) -> Flask:
     app = Flask("aureon-operator")
+    install_flask_request_correlation(app, logger=logger)
     _operator = operator or AureonOperator()
 
-    # ── Security envelope (auth + rate limit + body cap; off by default) ───────
+    # ── Security envelope (production fail-closed; explicit dev/test is permissive) ──
     from aureon.operator.identity import resolve_identity
     from aureon.operator.security import SecurityConfig, TokenBucket
 
@@ -308,15 +329,46 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
     app.config["MAX_CONTENT_LENGTH"] = _sec.max_body_bytes
     _OPEN_PATHS = ("/", "/healthz", "/readyz", "/metrics", "/favicon.ico")
     def _err(code: int, message: str, **extra):
-        return jsonify({"error": {"code": code, "message": message, **extra}}), code
+        response = jsonify({"error": {"code": code, "message": message, **extra}})
+        response.headers["Cache-Control"] = "no-store"
+        return response, code
+
+    def _record_runtime_exception(
+        event: str,
+        component: str,
+        exc: BaseException,
+        *,
+        level: int = logging.ERROR,
+    ) -> None:
+        emit_local_event(
+            logger,
+            level,
+            event,
+            correlation_id=current_correlation_id(),
+            fields={"component": component, "method": request.method, "path": request.path},
+            exception=exc,
+        )
 
     @app.before_request
     def _gate():
         path = request.path
         if path in _OPEN_PATHS or not (path.startswith("/api/") or path.startswith("/mcp/")):
             return None
-        # Resolve identity once for the whole request. When neither the static key nor the JWT secret
-        # is set, this returns kind="open" (auth disabled) — byte-for-byte the pre-tenancy behavior.
+        # Rate-limit before authentication so invalid bearer attempts cannot
+        # bypass the limiter. Forwarded addresses are resolved only through
+        # explicitly configured trusted proxy networks.
+        if _sec.rate_enabled:
+            client = _sec.client_ip(
+                request.remote_addr,
+                request.headers.get("X-Forwarded-For"),
+            )
+            ok, retry = _bucket.check(client)
+            if not ok:
+                resp = _err(429, "rate limit exceeded", retry_after=retry)
+                resp[0].headers["Retry-After"] = str(int(retry) + 1)
+                return resp
+        # Resolve identity once. In explicit development/test mode, an empty static key and JWT
+        # secret retain the local kind="open" behavior; production validation refuses that state.
         ident = resolve_identity(
             request.headers.get("Authorization"), operator_key=_sec.api_key, jwt_secret=_jwt_secret,
         )
@@ -334,13 +386,6 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
             rule = getattr(request.url_rule, "rule", None)
             if rule is not None and (request.method, rule) not in _TENANT_ALLOWED:
                 return _err(403, "this route is operator-only", plane="admin")
-        if _sec.rate_enabled:
-            client = request.headers.get("X-Forwarded-For", request.remote_addr or "anon").split(",")[0].strip()
-            ok, retry = _bucket.check(client)
-            if not ok:
-                resp = _err(429, "rate limit exceeded", retry_after=retry)
-                resp[0].headers["Retry-After"] = str(int(retry) + 1)
-                return resp
         return None
 
     def _admin_denied():
@@ -371,8 +416,13 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
 
     @app.errorhandler(500)
     def _500(e):
-        logger.exception("unhandled server error")
-        return _err(500, "internal server error")
+        # Flask calls the overridden, sanitized ``app.log_exception`` before
+        # wrapping an unhandled failure as InternalServerError. Avoid emitting
+        # a duplicate record for that path; explicit HTTP 500 responses have no
+        # original exception and still receive one safe local event here.
+        if getattr(e, "original_exception", None) is None:
+            _record_runtime_exception("operator_unhandled_exception", "request", e)
+        return _err(500, "internal server error", request_id=current_correlation_id())
 
     @app.get("/")
     def index():
@@ -436,19 +486,28 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
 
             out["status"] = get_platform_status()
         except Exception as exc:  # noqa: BLE001 — degrade honestly, never 500
-            out["status"] = {"status": "unknown", "error": str(exc)[:200]}
+            _record_runtime_exception(
+                "operator_component_unavailable", "platform_status", exc, level=logging.WARNING
+            )
+            out["status"] = {"status": "unknown", "error": "platform_status_unavailable"}
         try:
             from aureon.saas.gateway import build_organism_payload
 
             out["organism"] = build_organism_payload()
         except Exception as exc:  # noqa: BLE001
-            out["organism"] = {"available": False, "error": str(exc)[:200]}
+            _record_runtime_exception(
+                "operator_component_unavailable", "organism", exc, level=logging.WARNING
+            )
+            out["organism"] = {"available": False, "error": "organism_unavailable"}
         try:  # the human control plane's safety posture, at a glance
             from aureon.operator import feature_switchboard as _sb
 
             out["switchboard"] = _sb.summary()
         except Exception as exc:  # noqa: BLE001
-            out["switchboard"] = {"error": str(exc)[:200]}
+            _record_runtime_exception(
+                "operator_component_unavailable", "switchboard", exc, level=logging.WARNING
+            )
+            out["switchboard"] = {"error": "switchboard_unavailable"}
         # Browser Response.json() rejects bare Infinity/NaN — keep the body spec-clean.
         return jsonify(_json_safe(out))
 
@@ -477,14 +536,23 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
             checks["repo_index"] = True
         except Exception as exc:  # noqa: BLE001
             checks["repo_index"] = False
-            checks["repo_index_error"] = str(exc)
+            checks["repo_index_error"] = "repo_index_unavailable"
+            _record_runtime_exception(
+                "operator_readiness_failure", "repo_index", exc, level=logging.WARNING
+            )
         checks["cognition"] = _cognition["engine"] is not None
         try:
             from aureon.operator.connections_api import _real_data_policy_summary
 
             checks["real_data_policy"] = _real_data_policy_summary()
         except Exception as exc:  # noqa: BLE001
-            checks["real_data_policy"] = {"probe_report_status": "unavailable", "error": str(exc)[:160]}
+            checks["real_data_policy"] = {
+                "probe_report_status": "unavailable",
+                "error": "real_data_policy_unavailable",
+            }
+            _record_runtime_exception(
+                "operator_readiness_failure", "real_data_policy", exc, level=logging.WARNING
+            )
         ready = bool(checks["providers"] and checks["repo_index"])
         return jsonify({"ready": ready, "checks": checks}), (200 if ready else 503)
 
@@ -595,6 +663,21 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
 
     _tenant_conscience: Dict[str, Any] = {}
 
+    class _UnavailableTenantConscience:
+        """Fail-closed verdict source used when the isolated conscience has no evidence."""
+
+        _thought_bus = None
+        available = False
+
+        def ask_why(self, *args: Any, **kwargs: Any) -> Any:
+            return SimpleNamespace(
+                verdict=SimpleNamespace(name="VETO"),
+                message="NO_DATA: tenant-plane conscience unavailable; decision denied",
+                truth_status="no_data",
+                decision_status="denied",
+                generated_values=False,
+            )
+
     def _tenant_plane_conscience() -> Any:
         """One conscience for the whole tenant plane, with bus publishing disabled.
 
@@ -604,12 +687,12 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         instance with ``_thought_bus`` detached: identical judgement, nothing written into shared
         instance memory.
 
-        If a private conscience cannot be built, fall back to **no conscience** (``None`` ⇒ the
-        downstream gate treats the turn as APPROVED without publishing anything) — never to the shared
-        one. Falling back to ``_shared_conscience()`` would cache the INSTANCE's bus-attached object
+        If a private conscience cannot be built, return an isolated unavailable conscience whose
+        only verdict is an explicit ``VETO`` with ``no_data`` provenance — never ``None`` and never
+        the shared one. Falling back to ``_shared_conscience()`` would cache the INSTANCE's bus-attached object
         for the whole tenant plane, so every later tenant verdict would publish the quoted action —
         the user's prompt — straight into shared instance memory, defeating the entire point of this
-        function. A single constructor failure must not silently downgrade the isolation guarantee.
+        function. A constructor failure must not downgrade either isolation or the decision gate.
         """
         if "obj" in _tenant_conscience:
             return _tenant_conscience["obj"]
@@ -624,10 +707,12 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
             # shared bus would hold forever. Detach the subscription, then cut publishing.
             _detach_from_shared_bus(obj)
             obj._thought_bus = None  # verdicts judged, never published to shared memory
-        except Exception:  # noqa: BLE001 — fail CLOSED on isolation, not open
-            logger.warning("tenant-plane conscience unavailable; tenant turns run without one "
+        except Exception:  # noqa: BLE001 — fail closed on both isolation and decision authority
+            logger.warning("tenant-plane conscience unavailable; tenant turns are denied with no_data "
                            "rather than borrowing the instance's bus-attached conscience")
-            obj = None
+            # Do not cache the unavailable sentinel globally: a later tenant build
+            # may recover after a transient constructor failure.
+            return _UnavailableTenantConscience()
         _tenant_conscience["obj"] = obj
         return obj
 
@@ -718,6 +803,9 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
                               mesh_broadcast=False,
                               conscience=_tenant_plane_conscience(), tools=_tenant_tools(),
                               allow_writes=False, allow_shell=False,
+                              allow_repo_grounding=False,
+                              allow_organism_context=False,
+                              governance_enabled=False,
                               source=f"aureon.cognition.tenant:{_tenant_label(tenant)}")
         _lru_put(_tenant_cog, tenant, eng)
         return eng
@@ -733,6 +821,7 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
             return None
         op = AureonOperator(providers=providers, conscience=_tenant_plane_conscience(), join_mesh=False,
                             mesh_broadcast=False, bus=_IsolatedBus(),
+                            allow_repo_grounding=False,
                             source=f"aureon.operator.tenant:{_tenant_label(tenant)}")
         _lru_put(_tenant_op, tenant, op)
         return op

@@ -10,7 +10,6 @@ from Kings_Accounting_Suite.tools.accounting_system_registry import (
     write_registry_artifacts,
 )
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # The combined bank data counts are derived from the operator's REAL statement
@@ -19,6 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 # reports zero sources, so the source-count assertions only run where the
 # corpus exists.
 _CORPUS_PRESENT = (REPO_ROOT / "uploads").exists() or (REPO_ROOT / "bussiness accounts").exists()
+_ACCOUNTING_VAULT_PRESENT = (REPO_ROOT / "accounting").exists()
 
 
 def test_accounting_system_registry_discovers_full_accounting_surface() -> None:
@@ -47,7 +47,10 @@ def test_accounting_system_registry_discovers_full_accounting_surface() -> None:
     assert domains["king_accounting"] >= 1
     assert domains["reports_exports"] >= 1
     assert registry.summary["mirrored_module_count"] >= 8
-    assert registry.summary["nonstandard_surfaces"]["accounting_vault_memory"] is True
+    assert (
+        registry.summary["nonstandard_surfaces"]["accounting_vault_memory"]
+        is _ACCOUNTING_VAULT_PRESENT
+    )
     assert registry.summary["nonstandard_surfaces"]["root_aureon_financial_analytics"] is True
     assert registry.summary["nonstandard_surfaces"]["root_aureon_compound_projection"] is True
     if _CORPUS_PRESENT:
@@ -85,5 +88,5 @@ def test_accounting_system_registry_writes_machine_and_human_reports(tmp_path: P
     assert "Bridge nonstandard and mirrored accounting systems" in markdown
     assert "Complete Accounting Module List" in markdown
     assert "Kings_Accounting_Suite/core/hnc_gateway.py" in markdown
-    assert "accounting/full_accounts_index.md" in markdown
+    assert ("accounting/full_accounts_index.md" in markdown) is _ACCOUNTING_VAULT_PRESENT
     assert "Official filing/payment boundary: manual only" in markdown

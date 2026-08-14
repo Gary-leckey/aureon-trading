@@ -150,9 +150,35 @@ class ToolInvocation:
     tool: str = ""
     arguments: Dict[str, Any] = field(default_factory=dict)
     blocked: bool = False
+    phase: str = ""
+    effect: str = ""
+    operation_id: str = ""
+    proposal_digest: str = ""
+    authorization_digest: str = ""
+    governance_receipt_id: str | None = None
+    governance_decision: str = ""
+    governance_reason: str = ""
+    handler_called: bool = False
+    result_digest: str = ""
+    governance_eligible: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"tool": self.tool, "arguments": self.arguments, "blocked": self.blocked}
+        return {
+            "tool": self.tool,
+            "arguments": self.arguments,
+            "blocked": self.blocked,
+            "phase": self.phase,
+            "effect": self.effect,
+            "operation_id": self.operation_id,
+            "proposal_digest": self.proposal_digest,
+            "authorization_digest": self.authorization_digest,
+            "governance_receipt_id": self.governance_receipt_id,
+            "governance_decision": self.governance_decision,
+            "governance_reason": self.governance_reason,
+            "handler_called": self.handler_called,
+            "result_digest": self.result_digest,
+            "governance_eligible": self.governance_eligible,
+        }
 
 
 @dataclass
@@ -170,6 +196,9 @@ class CognitionResult:
     turns: int = 0
     conscience_verdict: str = "APPROVED"
     conscience_message: str = ""
+    queen_evaluated: bool = False
+    queen_evidence: Dict[str, Any] | None = None
+    governance: Dict[str, Any] | None = None
     blocked: bool = False
     grounded: bool = False           # True when a repo source informed the answer
     elapsed_ms: float = 0.0
@@ -254,6 +283,11 @@ class CognitionResult:
             "sources_statement": (f"{len(sources)} repo packet(s) cited" if sources
                                   else "general knowledge, no repo hit"),
             "conscience": {"verdict": self.conscience_verdict, "blocked": self.blocked},
+            "queen": {
+                "evaluated": self.queen_evaluated,
+                "evidence": dict(self.queen_evidence) if self.queen_evidence else None,
+            },
+            "governance": dict(self.governance) if self.governance else None,
             "capability": {"families": list(cap.get("families", [])),
                            "complex": bool(cap.get("complex", False)),
                            "status": cap.get("status", "unavailable")},
@@ -281,6 +315,9 @@ class CognitionResult:
             "turns": int(self.turns),
             "conscience_verdict": self.conscience_verdict,
             "conscience_message": self.conscience_message,
+            "queen_evaluated": self.queen_evaluated,
+            "queen_evidence": dict(self.queen_evidence) if self.queen_evidence else None,
+            "governance": dict(self.governance) if self.governance else None,
             "blocked": self.blocked,
             "grounded": self.grounded,
             "elapsed_ms": round(float(self.elapsed_ms), 2),

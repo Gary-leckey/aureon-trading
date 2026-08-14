@@ -19,12 +19,24 @@ Key Features:
 Author: Gary Leckey / Aureon System
 Date: November 28, 2025
 """
-from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, sys, json, time, logging, argparse, random, math
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from aureon.exchanges.binance_client import BinanceClient, get_binance_client
 from decimal import Decimal, ROUND_DOWN
+
+_IMPORT_SIDE_EFFECTS_SUPPRESSED = any(
+    os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+    for name in (
+        "AUREON_AUDIT_MODE",
+        "AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS",
+        "PYTHON_DOTENV_DISABLED",
+    )
+)
+if not _IMPORT_SIDE_EFFECTS_SUPPRESSED:
+    from aureon.core.aureon_baton_link import link_system as _baton_link
+
+    _baton_link(__name__)
 
 # Safe print for Windows multi-module imports
 def _safe_print(*args, **kwargs):
@@ -35,6 +47,8 @@ def _safe_print(*args, **kwargs):
 
 # 🪙 PENNY PROFIT ENGINE
 try:
+    if _IMPORT_SIDE_EFFECTS_SUPPRESSED:
+        raise ImportError("audit import")
     from aureon.trading.penny_profit_engine import check_penny_exit, get_penny_engine
     PENNY_PROFIT_AVAILABLE = True
     _penny_engine = get_penny_engine()
@@ -46,6 +60,8 @@ except ImportError:
 
 # 🧠 WISDOM COGNITION ENGINE - 11 Civilizations
 try:
+    if _IMPORT_SIDE_EFFECTS_SUPPRESSED:
+        raise ImportError("audit import")
     from aureon.utils.aureon_miner_brain import WisdomCognitionEngine
     WISDOM_AVAILABLE = True
     _wisdom_engine = WisdomCognitionEngine()
@@ -56,19 +72,21 @@ except ImportError:
     _safe_print("⚠️ Wisdom Engine not available")
 
 try:
-    from dotenv import load_dotenv
-    load_dotenv()
+    if not _IMPORT_SIDE_EFFECTS_SUPPRESSED:
+        from dotenv import load_dotenv
+        load_dotenv()
 except Exception:
     pass
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        logging.FileHandler('qgita.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
+if not _IMPORT_SIDE_EFFECTS_SUPPRESSED:
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(message)s',
+        handlers=[
+            logging.FileHandler('qgita.log'),
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -351,12 +369,9 @@ class QGITAEngine:
 class DecisionFusion:
     """Fuses ensemble model signals with QGITA lighthouse.
 
-    The "ensemble" here is a stand-in, not four trained models: ``generate_model_signal``
-    labels itself a simulation and adds ``(random()-0.5)*0.1`` noise to each score plus a
-    random confidence. It carried 60% of the fused decision weight, and the fused decision
-    sized real Binance orders. A trade taken on noise is not a strategy, so the simulation
-    is now opt-in (``allow_simulated_models``) and the live path refuses it: with no real
-    ensemble connected the fusion runs on the QGITA lighthouse alone, and says so.
+    Model signals are adopted only when the snapshot includes provider-receipted
+    outputs. A deterministic generated ensemble remains available only through
+    the explicit paper-only flag and is marked non-actionable throughout.
     """
 
     def __init__(self, allow_simulated_models: bool = False):
@@ -368,26 +383,54 @@ class DecisionFusion:
         }
 
     def generate_model_signal(self, snapshot: Dict) -> List[Dict]:
-        """Simulated ensemble signals (lstm, rf, xgb, transformer) — opt-in only.
-
-        Returns an empty list unless simulated models were explicitly allowed, so a caller
-        that never opted in cannot be fed invented model output.
-        """
-        if not self.allow_simulated_models:
+        """Return validated provider signals or an explicit paper-only ensemble."""
+        raw_signals = snapshot.get('model_signals')
+        if raw_signals is None and self.allow_simulated_models:
+            try:
+                momentum = float(snapshot.get('momentum', 0.0))
+                volatility = float(snapshot.get('volatility', 0.01))
+            except (TypeError, ValueError):
+                return []
+            if not math.isfinite(momentum) or not math.isfinite(volatility):
+                return []
+            normalized_trend = math.tanh(momentum / volatility) if volatility > 0 else 0.0
+            profiles = (
+                ('lstm', 0.20, 0.72),
+                ('randomForest', -0.10, 0.66),
+                ('xgboost', 0.10, 0.70),
+                ('transformer', 0.00, 0.74),
+            )
+            return [
+                {
+                    'model': model,
+                    'score': max(-1.0, min(1.0, normalized_trend + bias)),
+                    'confidence': confidence,
+                    'source_id': f'qgita:paper_simulation:{model}',
+                    'source_event_id': f'qgita:paper_simulation:{model}:deterministic-v1',
+                    'source_timestamp': None,
+                    'truth_status': 'simulated',
+                    'generated_values': True,
+                    'action_eligible': False,
+                    'economic_eligible': False,
+                }
+                for model, bias, confidence in profiles
+            ]
+        if not isinstance(raw_signals, list):
             return []
-
-        trend = snapshot.get('momentum', 0)
-        volatility = snapshot.get('volatility', 0.01)
-        normalized_trend = math.tanh(trend / volatility) if volatility > 0 else 0
-
-        # Simulate 4 models
-        models = ['lstm', 'randomForest', 'xgboost', 'transformer']
         signals = []
-        for model in models:
-            bias = {'lstm': 0.2, 'randomForest': -0.1, 'xgboost': 0.1, 'transformer': 0}[model]
-            score = normalized_trend + bias + (random.random() - 0.5) * 0.1
-            confidence = max(0.2, min(0.95, 0.4 + random.random() * 0.5 - abs(score) * 0.1))
-            signals.append({'model': model, 'score': score, 'confidence': confidence})
+        for item in raw_signals:
+            if not isinstance(item, dict):
+                continue
+            required = ('model', 'score', 'confidence', 'source_id',
+                        'source_event_id', 'source_timestamp', 'truth_status',
+                        'generated_values')
+            if any(item.get(name) is None for name in required):
+                continue
+            if item['truth_status'] not in {'live', 'provider_observed'}:
+                continue
+            if item['generated_values'] is not False:
+                continue
+            signals.append(item)
         return signals
 
     def decide(self, snapshot: Dict, lighthouse_event: Optional[Dict]) -> Dict:
@@ -437,7 +480,13 @@ class DecisionFusion:
             'action': action,
             'score': final_score,
             'confidence': min(1.0, abs(final_score) + 0.3),
-            'ensemble': 'simulated' if model_signals else 'absent',
+            'ensemble': (
+                'simulated'
+                if model_signals and model_signals[0].get('truth_status') == 'simulated'
+                else 'provider_observed'
+                if model_signals
+                else 'absent'
+            ),
         }
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -778,10 +827,6 @@ class AureonQGITATrader:
                 elif state.tigerCut and pos['cycles'] >= 5:
                     should_exit = True
                     exit_reason = f"🐯 TIGER CUT (phase disruption)"
-            
-            # Random status log
-            if random.random() < 0.02:
-                logger.info(f"📊 {symbol}: Prism={prism} | PnL={pnl_pct*100:.2f}% | State={state.emotionalState}")
             
             if should_exit:
                 logger.info(f"⚡ {symbol}: {exit_reason}")

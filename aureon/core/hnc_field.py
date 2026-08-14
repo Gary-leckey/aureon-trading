@@ -27,6 +27,7 @@ readers report ``available=False``, which is the honest answer.
 
 from __future__ import annotations
 
+import math
 import os
 import time
 from dataclasses import dataclass
@@ -46,6 +47,129 @@ def _max_age_s() -> float:
 
 
 FIELD_MAX_AGE_S = 300.0
+
+_CANONICAL_CONTROL_FIELDS = (
+    "operational_eligible",
+    "provider_eligible",
+    "action_eligible",
+    "actionable",
+    "accounting_eligible",
+    "learning_eligible",
+    "eligible_for_action",
+    "eligible_for_accounting",
+    "eligible_for_learning",
+    "action_gate_passed",
+)
+
+
+def _finite_number(value: Any) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _identifier(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    candidate = value.strip()
+    return candidate or None
+
+
+def _validated_canonical_envelope(
+    row: Any,
+    *,
+    now: float | None = None,
+) -> dict[str, Any] | None:
+    """Validate the daemon's complete evidence-only global field envelope."""
+    if not isinstance(row, dict):
+        return None
+    checked_at = time.time() if now is None else now
+    source_timestamp = _finite_number(row.get("source_timestamp"))
+    received_at = _finite_number(row.get("received_at"))
+    legacy_timestamp = _finite_number(row.get("ts"))
+    metrics = {
+        name: _finite_number(row.get(name))
+        for name in (
+            "symbolic_life_score",
+            "coherence_gamma",
+            "consciousness_psi",
+            "lambda_t",
+            "source_count",
+        )
+    }
+    source_id = _identifier(row.get("source_id"))
+    receipt_id = _identifier(row.get("receipt_id"))
+    receipt_type = _identifier(row.get("receipt_type"))
+    provider_receipt_type = _identifier(row.get("provider_receipt_type"))
+    source = _identifier(row.get("source"))
+    consciousness_level = _identifier(row.get("consciousness_level"))
+    raw_input_ids = row.get("input_receipt_ids")
+    input_receipt_ids = (
+        [_identifier(value) for value in raw_input_ids]
+        if isinstance(raw_input_ids, list)
+        else []
+    )
+    if (
+        row.get("data_status") != "live"
+        or row.get("truth_status") != "real_derived"
+        or row.get("generated_values") is not False
+        or source != "hnc_live_daemon"
+        or source_id != "aureon:hnc:live_daemon"
+        or receipt_id is None
+        or not receipt_id.startswith("hnc:live_field:")
+        or (
+            receipt_type != "hnc_live_field"
+            and provider_receipt_type != "hnc_live_field"
+        )
+        or (
+            receipt_type is not None
+            and provider_receipt_type is not None
+            and receipt_type != provider_receipt_type
+        )
+        or not input_receipt_ids
+        or any(value is None for value in input_receipt_ids)
+        or len(input_receipt_ids) != len(set(input_receipt_ids))
+        or input_receipt_ids != sorted(input_receipt_ids)
+        or source_timestamp is None
+        or received_at is None
+        or legacy_timestamp is None
+        or not math.isclose(
+            legacy_timestamp,
+            source_timestamp,
+            rel_tol=0.0,
+            abs_tol=1e-6,
+        )
+        or source_timestamp > received_at + 5.0
+        or source_timestamp > checked_at + 5.0
+        or received_at > checked_at + 5.0
+        or checked_at - source_timestamp > _max_age_s()
+        or checked_at - received_at > _max_age_s()
+        or any(value is None for value in metrics.values())
+        or metrics["source_count"] <= 0.0
+        or consciousness_level is None
+        or row.get("freshness_status") != "fresh"
+        or row.get("equation_inputs_complete") is not True
+        or row.get("action_gate_reason") != "route_specific_market_link_required"
+        or any(row.get(name) is not False for name in _CANONICAL_CONTROL_FIELDS)
+    ):
+        return None
+    return {
+        **row,
+        **metrics,
+        "source": source,
+        "source_id": source_id,
+        "source_timestamp": source_timestamp,
+        "received_at": received_at,
+        "receipt_id": receipt_id,
+        "receipt_type": receipt_type,
+        "provider_receipt_type": provider_receipt_type,
+        "input_receipt_ids": tuple(str(value) for value in input_receipt_ids),
+        "consciousness_level": consciousness_level,
+    }
 
 
 def _row_is_fresh(row: Any, now: float | None = None) -> bool:
@@ -76,6 +200,31 @@ class CanonicalField:
     consciousness_level: str | None = None
     lambda_t: float | None = None
     source: str | None = None
+    evidence_transport: str | None = None
+    source_id: str | None = None
+    source_timestamp: float | None = None
+    received_at: float | None = None
+    receipt_id: str | None = None
+    receipt_type: str | None = None
+    provider_receipt_type: str | None = None
+    input_receipt_ids: tuple[str, ...] = ()
+    data_status: str = "no_data"
+    truth_status: str | None = None
+    generated_values: bool = False
+    source_count: float | None = None
+    freshness_status: str | None = None
+    operational_eligible: bool = False
+    provider_eligible: bool = False
+    action_eligible: bool = False
+    actionable: bool = False
+    accounting_eligible: bool = False
+    learning_eligible: bool = False
+    eligible_for_action: bool = False
+    eligible_for_accounting: bool = False
+    eligible_for_learning: bool = False
+    equation_inputs_complete: bool = False
+    action_gate_passed: bool = False
+    action_gate_reason: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -86,7 +235,76 @@ class CanonicalField:
             "consciousness_level": self.consciousness_level,
             "lambda_t": self.lambda_t,
             "source": self.source,
+            "evidence_transport": self.evidence_transport,
+            "source_id": self.source_id,
+            "source_timestamp": self.source_timestamp,
+            "received_at": self.received_at,
+            "receipt_id": self.receipt_id,
+            "receipt_type": self.receipt_type,
+            "provider_receipt_type": self.provider_receipt_type,
+            "input_receipt_ids": list(self.input_receipt_ids),
+            "data_status": self.data_status,
+            "truth_status": self.truth_status,
+            "generated_values": self.generated_values,
+            "source_count": self.source_count,
+            "freshness_status": self.freshness_status,
+            "operational_eligible": self.operational_eligible,
+            "provider_eligible": self.provider_eligible,
+            "action_eligible": self.action_eligible,
+            "actionable": self.actionable,
+            "accounting_eligible": self.accounting_eligible,
+            "learning_eligible": self.learning_eligible,
+            "eligible_for_action": self.eligible_for_action,
+            "eligible_for_accounting": self.eligible_for_accounting,
+            "eligible_for_learning": self.eligible_for_learning,
+            "equation_inputs_complete": self.equation_inputs_complete,
+            "action_gate_passed": self.action_gate_passed,
+            "action_gate_reason": self.action_gate_reason,
         }
+
+
+def _canonical_field_from_envelope(
+    row: Any,
+    *,
+    evidence_transport: str,
+) -> CanonicalField:
+    envelope = _validated_canonical_envelope(row)
+    if envelope is None or evidence_transport not in {"thought_bus", "persisted_trace"}:
+        return _EMPTY
+    return CanonicalField(
+        available=True,
+        symbolic_life_score=envelope["symbolic_life_score"],
+        coherence_gamma=envelope["coherence_gamma"],
+        consciousness_psi=envelope["consciousness_psi"],
+        consciousness_level=envelope["consciousness_level"],
+        lambda_t=envelope["lambda_t"],
+        source=envelope["source"],
+        evidence_transport=evidence_transport,
+        source_id=envelope["source_id"],
+        source_timestamp=envelope["source_timestamp"],
+        received_at=envelope["received_at"],
+        receipt_id=envelope["receipt_id"],
+        receipt_type=envelope["receipt_type"],
+        provider_receipt_type=envelope["provider_receipt_type"],
+        input_receipt_ids=envelope["input_receipt_ids"],
+        data_status=envelope["data_status"],
+        truth_status=envelope["truth_status"],
+        generated_values=envelope["generated_values"],
+        source_count=envelope["source_count"],
+        freshness_status=envelope["freshness_status"],
+        operational_eligible=envelope["operational_eligible"],
+        provider_eligible=envelope["provider_eligible"],
+        action_eligible=envelope["action_eligible"],
+        actionable=envelope["actionable"],
+        accounting_eligible=envelope["accounting_eligible"],
+        learning_eligible=envelope["learning_eligible"],
+        eligible_for_action=envelope["eligible_for_action"],
+        eligible_for_accounting=envelope["eligible_for_accounting"],
+        eligible_for_learning=envelope["eligible_for_learning"],
+        equation_inputs_complete=envelope["equation_inputs_complete"],
+        action_gate_passed=envelope["action_gate_passed"],
+        action_gate_reason=envelope["action_gate_reason"],
+    )
 
 
 _EMPTY = CanonicalField()
@@ -114,17 +332,10 @@ def read_canonical_field(bus: Any = None) -> CanonicalField:
             pulses = b.recall("symbolic.life.pulse", limit=1) or []
             if pulses:
                 p = payload_of(pulses[-1])
-                sls = p.get("symbolic_life_score")
-                if sls is not None:
-                    return CanonicalField(
-                        available=True,
-                        symbolic_life_score=float(sls),
-                        coherence_gamma=p.get("coherence_gamma"),
-                        consciousness_psi=p.get("consciousness_psi"),
-                        consciousness_level=p.get("consciousness_level"),
-                        lambda_t=p.get("lambda_t"),
-                        source=p.get("source"),
-                    )
+                return _canonical_field_from_envelope(
+                    p,
+                    evidence_transport="thought_bus",
+                )
     except Exception:  # noqa: BLE001 — a missing field is a value, never a crash
         pass
     # Cross-process fallback: the HNC daemon's persisted trace.
@@ -154,22 +365,12 @@ def _read_field_from_trace() -> CanonicalField:
         if not last:
             return _EMPTY
         row = json.loads(last)
-        sls = row.get("symbolic_life_score")
-        if sls is None:
-            return _EMPTY
         # A trace file cannot say how old it is. Without this the last line written —
         # possibly days ago, by a daemon that has since stopped — was reported as the
         # organism's live field.
-        if not _row_is_fresh(row):
-            return _EMPTY
-        return CanonicalField(
-            available=True,
-            symbolic_life_score=float(sls),
-            coherence_gamma=row.get("coherence_gamma"),
-            consciousness_psi=row.get("consciousness_psi"),
-            consciousness_level=row.get("consciousness_level"),
-            lambda_t=row.get("lambda_t"),
-            source="hnc_trace_file",
+        return _canonical_field_from_envelope(
+            row,
+            evidence_transport="persisted_trace",
         )
     except Exception:  # noqa: BLE001
         return _EMPTY

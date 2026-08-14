@@ -16,8 +16,8 @@ The suite reports *statistical structure in a derived signal only* — it is **N
 claim about any person, makes no cross-modal inference about any source, and carries no
 efficacy claim. Each verdict is exactly what the pre-registered test returned. The four
 adapters covered are those with a deterministic structured/null synthetic contract
-(the proxy's own synthetic adapter, audio, video, UPE); image / sky / market score real
-data and are exercised by their own lanes/benchmarks, not by this synthetic roll-up.
+(the proxy's own synthetic adapter, audio, video, UPE). Image, sky, and market
+adapters ingest separately governed inputs and are excluded from this control roll-up.
 
 Design constraints
 ------------------
@@ -35,6 +35,8 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, Callable, Final
 
+import numpy as np
+
 __all__ = [
     "SUITE_BOUNDARY",
     "SUITE_RUN_TOPIC",
@@ -47,9 +49,24 @@ __all__ = [
     "main",
 ]
 
-SUITE_RUN_TOPIC: Final[str] = "bio.proxy_suite.run"
-SUITE_TRACE_NAME: Final[str] = "signal_adapter_suite"
-_SOURCE: Final[str] = "signal_adapter_suite"
+SUITE_RUN_TOPIC: Final[str] = "bio.control.proxy_suite.run"
+SUITE_TRACE_NAME: Final[str] = "control_signal_adapter_suite"
+_SOURCE: Final[str] = "bio_control.signal_adapter_suite"
+
+_NON_OPERATIONAL_CONTROL: Final[dict[str, Any]] = {
+    "data_origin": "derived_statistical_control",
+    "truth_status": "statistical_control",
+    "control_only": True,
+    "live_data": False,
+    "provider_observation": False,
+    "operational_eligible": False,
+    "actionable": False,
+    "accounting_eligible": False,
+}
+
+
+def _control_metadata() -> dict[str, Any]:
+    return dict(_NON_OPERATIONAL_CONTROL)
 
 SUITE_BOUNDARY: Final[str] = (
     "The signal-adapter conformance suite runs each shipped adapter's synthetic "
@@ -72,11 +89,14 @@ class AdapterReading:
     present_B_p: float | None
     absent_valid: bool
     absent_structure: bool
+    control_provenance_valid: bool
     conforms: bool
     note: str = ""
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload.update(_control_metadata())
+        return payload
 
 
 @dataclass(frozen=True)
@@ -92,12 +112,28 @@ class SuiteReport:
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["readings"] = [r.to_dict() for r in self.readings]
+        d.update(_control_metadata())
         return d
 
 
 # A "spec" is (adapter name, modality, present-signal scorer, null-signal scorer).
 # Each scorer takes (nulls, seed) and returns a ProxyResult through the unchanged pipeline.
 _Scorer = Callable[[int, int], Any]
+
+
+def _audio_null_control(seed: int) -> tuple[np.ndarray, float]:
+    """Seeded white-noise control for the audio adapter; never an observation."""
+    sample_rate_hz = 8000.0
+    samples = np.random.default_rng([int(seed), 11]).standard_normal(8000)
+    return samples, sample_rate_hz
+
+
+def _video_null_control(seed: int) -> tuple[np.ndarray, float]:
+    """Seeded white-noise luminance control for the video adapter."""
+    frame_rate_hz = 4000.0
+    luma = np.random.default_rng([int(seed), 13]).standard_normal(4000)
+    frames = np.repeat(np.repeat(luma[:, None, None], 4, axis=1), 4, axis=2)
+    return frames, frame_rate_hz
 
 
 def _adapter_specs() -> list[tuple[str, str, _Scorer, _Scorer]]:
@@ -125,14 +161,14 @@ def _adapter_specs() -> list[tuple[str, str, _Scorer, _Scorer]]:
             "audio", "audio",
             lambda n, s: asa.score_audio(asa.synthetic_audio("structured", seed=s),
                                         consent=True, provenance=_prov, nulls=n, seed=s),
-            lambda n, s: asa.score_audio(asa.synthetic_audio("noise", seed=s),
+            lambda n, s: asa.score_audio(_audio_null_control(s),
                                         consent=True, provenance=_prov, nulls=n, seed=s),
         ),
         (
             "video", "video",
             lambda n, s: vsa.score_video(vsa.synthetic_video("structured", seed=s),
                                         consent=True, provenance=_prov, nulls=n, seed=s),
-            lambda n, s: vsa.score_video(vsa.synthetic_video("noise", seed=s),
+            lambda n, s: vsa.score_video(_video_null_control(s),
                                         consent=True, provenance=_prov, nulls=n, seed=s),
         ),
         (
@@ -153,19 +189,25 @@ def run_suite(*, nulls: int = 300, seed: int = 0) -> SuiteReport:
     two-sided anchor, both through the unchanged ``score_signal``. Verdicts are reported
     exactly as the pre-registered tests return them.
     """
+    if nulls <= 0:
+        raise ValueError("nulls must be positive")
+
     readings: list[AdapterReading] = []
     for name, modality, present_fn, absent_fn in _adapter_specs():
         pres = present_fn(nulls, seed).to_dict()
         abse = absent_fn(nulls, seed).to_dict()
+        control_provenance_valid = bool(pres.get("control_only") and abse.get("control_only"))
         conforms = bool(
             pres["valid"] and pres["structure_present"]
             and abse["valid"] and not abse["structure_present"]
+            and control_provenance_valid
         )
         readings.append(AdapterReading(
             adapter=name, modality=modality,
             present_valid=bool(pres["valid"]), present_structure=bool(pres["structure_present"]),
             present_A_p=pres["test_A_p"], present_B_p=pres["test_B_p"],
             absent_valid=bool(abse["valid"]), absent_structure=bool(abse["structure_present"]),
+            control_provenance_valid=control_provenance_valid,
             conforms=conforms,
         ))
     return SuiteReport(
@@ -256,27 +298,30 @@ def emit_suite(report: SuiteReport, *, bus: Any | None = None, trace: bool = Tru
         ],
         "boundary": SUITE_BOUNDARY,
     }
-    try:
-        from aureon.core.aureon_thought_bus import Thought, get_thought_bus
+    summary.update(_control_metadata())
+    if bus is not None:
+        try:
+            from aureon.core.aureon_thought_bus import Thought
 
-        target = bus if bus is not None else get_thought_bus()
-        target.publish(
-            Thought(source=_SOURCE, topic=SUITE_RUN_TOPIC, trace_id=uuid.uuid4().hex,
-                    payload=summary)
-        )
-    except Exception:  # noqa: BLE001 - emission is best-effort, never fatal
-        pass
+            bus.publish(
+                Thought(source=_SOURCE, topic=SUITE_RUN_TOPIC, trace_id=uuid.uuid4().hex,
+                        payload=summary)
+            )
+        except Exception:  # noqa: BLE001 - emission is best-effort, never fatal
+            pass
 
     if trace:
         try:
             from aureon.core.bus_trace import append_trace
 
-            append_trace(SUITE_TRACE_NAME, {
+            trace_payload = {
                 "n_adapters": report.n_adapters,
                 "n_conforming": report.n_conforming,
                 "boundary": SUITE_BOUNDARY,
                 "_ts": time.time(),
-            })
+            }
+            trace_payload.update(_control_metadata())
+            append_trace(SUITE_TRACE_NAME, trace_payload)
         except Exception:  # noqa: BLE001 - trace mirror is best-effort
             pass
 

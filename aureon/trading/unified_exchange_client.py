@@ -1,16 +1,20 @@
-from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import logging
 import time
 from typing import Dict, Any, Optional, List, Tuple
 from decimal import Decimal
+from collections.abc import Mapping
+import math
 
-# Load environment variables from .env file FIRST
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
+from aureon.governance.legacy_economic_unity import (
+    LegacyEconomicInvocation,
+    LegacyEconomicUnityGateway,
+)
+from aureon.governance.legacy_unity_composition import (
+    LegacyUnityCompositionHold,
+    LegacyUnityIntentPlan,
+    TrustedLegacyInvocationSupplier,
+)
 
 # Imports deferred to avoid circular dependencies
 # from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
@@ -18,31 +22,143 @@ except ImportError:
 # from aureon.exchanges.alpaca_client import AlpacaClient
 # from aureon.exchanges.capital_client import CapitalClient
 
-# Updated FX rates as of November 2025 (approximate mid-market)
-# These are used for Capital.com equity conversion to base currency
-CAPITAL_FX_RATES: Dict[Tuple[str, str], float] = {
-    ('USD', 'EUR'): 0.94,
-    ('USD', 'GBP'): 0.79,   # $1 = £0.79
-    ('EUR', 'USD'): 1.06,
-    ('EUR', 'GBP'): 0.84,   # €1 = £0.84
-    ('GBP', 'USD'): 1.27,   # £1 = $1.27
-    ('GBP', 'EUR'): 1.19,   # £1 = €1.19
-}
-
 logger = logging.getLogger(__name__)
+MAX_RECEIPT_AGE_SECONDS = 300.0
+
+
+def _finite(value: Any, *, positive: bool = False, nonnegative: bool = False) -> Optional[float]:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(number):
+        return None
+    if positive and number <= 0.0:
+        return None
+    if nonnegative and number < 0.0:
+        return None
+    return number
+
+
+def _no_data(exchange: str, symbol: str, reason: str) -> Dict[str, Any]:
+    return {
+        "exchange": str(exchange or "").lower(),
+        "symbol": str(symbol or "").upper(),
+        "status": "no_data",
+        "data_status": "no_data",
+        "truth_status": "no_data",
+        "reason": reason,
+        "source_id": None,
+        "source_timestamp": None,
+        "received_at": time.time(),
+        "receipt_id": None,
+        "generated_values": False,
+        "actionable": False,
+        "eligible_for_accounting": False,
+        "eligible_for_learning": False,
+    }
+
+
+def _canonical_symbol(value: Any) -> str:
+    symbol = str(value or "").upper().replace("/", "").replace("-", "")
+    if symbol.startswith("XBT"):
+        symbol = "BTC" + symbol[3:]
+    if symbol.startswith("XDG"):
+        symbol = "DOGE" + symbol[3:]
+    return symbol
+
+
+def _fresh_quote(receipt: Any, *, exchange: str, symbol: str) -> Optional[Dict[str, Any]]:
+    if not isinstance(receipt, Mapping):
+        return None
+    now = time.time()
+    price = _finite(receipt.get("price"), positive=True)
+    bid = _finite(receipt.get("bid"), positive=True)
+    ask = _finite(receipt.get("ask"), positive=True)
+    source_timestamp = _finite(receipt.get("source_timestamp"), positive=True)
+    received_at = _finite(receipt.get("received_at"), positive=True)
+    source_id = str(receipt.get("source_id") or "").strip()
+    receipt_id = str(receipt.get("receipt_id") or "").strip()
+    if (
+        receipt.get("data_status") != "live"
+        or receipt.get("truth_status") not in {"real_observed", "real_derived"}
+        or receipt.get("generated_values") is not False
+        or not source_id.lower().startswith(str(exchange).lower())
+        or not receipt_id
+        or _canonical_symbol(receipt.get("symbol")) != _canonical_symbol(symbol)
+        or price is None
+        or bid is None
+        or ask is None
+        or ask < bid
+        or source_timestamp is None
+        or received_at is None
+        or source_timestamp > received_at + 5.0
+        or received_at > now + 5.0
+        or now - source_timestamp > MAX_RECEIPT_AGE_SECONDS
+        or now - received_at > MAX_RECEIPT_AGE_SECONDS
+    ):
+        return None
+    return dict(receipt)
+
+
+def _fresh_balance(receipt: Any, *, exchange: str, asset: str) -> Optional[float]:
+    if not isinstance(receipt, Mapping):
+        return None
+    now = time.time()
+    balances = receipt.get("balances")
+    amount = _finite(
+        balances.get(asset) if isinstance(balances, Mapping) else None,
+        nonnegative=True,
+    )
+    source_timestamp = _finite(receipt.get("source_timestamp"), positive=True)
+    received_at = _finite(receipt.get("received_at"), positive=True)
+    source_id = str(receipt.get("source_id") or "").strip()
+    receipt_id = str(receipt.get("receipt_id") or "").strip()
+    if (
+        receipt.get("data_status") != "live"
+        or receipt.get("truth_status") not in {"real_observed", "real_derived"}
+        or receipt.get("generated_values") is not False
+        or receipt.get("action_eligible") is not True
+        or not source_id.lower().startswith(str(exchange).lower())
+        or not receipt_id
+        or amount is None
+        or source_timestamp is None
+        or received_at is None
+        or source_timestamp > received_at + 5.0
+        or received_at > now + 5.0
+        or now - source_timestamp > MAX_RECEIPT_AGE_SECONDS
+        or now - received_at > MAX_RECEIPT_AGE_SECONDS
+    ):
+        return None
+    return amount
 
 class MultiExchangeClient:
     """
     Manages multiple exchange clients simultaneously.
     Aggregates data and routes orders.
     """
-    def __init__(self):
-        self.clients = {
-            'kraken': UnifiedExchangeClient('kraken'),
-            'binance': UnifiedExchangeClient('binance'),
-            'alpaca': UnifiedExchangeClient('alpaca'),
-            'capital': UnifiedExchangeClient('capital')
-        }
+    def __init__(
+        self,
+        *,
+        legacy_unity_gateway: LegacyEconomicUnityGateway | None = None,
+        legacy_invocation_supplier: TrustedLegacyInvocationSupplier | None = None,
+    ):
+        if (legacy_unity_gateway is None) != (legacy_invocation_supplier is None):
+            raise ValueError("legacy_unity_gateway_and_invocation_supplier_required_together")
+        if legacy_unity_gateway is None:
+            self.clients = {
+                exchange: UnifiedExchangeClient(exchange)
+                for exchange in ('kraken', 'binance', 'alpaca', 'capital')
+            }
+        else:
+            self.clients = {
+                exchange: UnifiedExchangeClient(
+                    exchange,
+                    legacy_unity_gateway=legacy_unity_gateway,
+                    legacy_invocation_supplier=legacy_invocation_supplier,
+                )
+                for exchange in ('kraken', 'binance', 'alpaca', 'capital')
+            }
         self.dry_run = any(c.dry_run for c in self.clients.values())
         logger.info(f"Initialized MultiExchangeClient with {list(self.clients.keys())}")
 
@@ -161,57 +277,102 @@ class MultiExchangeClient:
             return f"{base}{cquote}"
         return s
 
-    def place_market_order(self, exchange: str, symbol: str, side: str, quantity=None, quote_qty=None) -> Dict[str, Any]:
+    def place_market_order(
+        self,
+        exchange: str,
+        symbol: str,
+        side: str,
+        quantity=None,
+        quote_qty=None,
+        *,
+        unity_invocation: LegacyEconomicInvocation | None = None,
+        unity_plan: LegacyUnityIntentPlan | None = None,
+    ) -> Dict[str, Any]:
         if exchange not in self.clients:
             logger.error(f"Unknown exchange: {exchange}")
             return {}
-        return self.clients[exchange].place_market_order(symbol, side, quantity, quote_qty)
+        return self.clients[exchange].place_market_order(
+            symbol,
+            side,
+            quantity,
+            quote_qty,
+            unity_invocation=unity_invocation,
+            unity_plan=unity_plan,
+        )
 
     # ══════════════════════════════════════════════════════════════════════
     # ADVANCED ORDER TYPES - Limit, Stop-Loss, Take-Profit, Trailing Stop
     # ══════════════════════════════════════════════════════════════════════
 
     def place_limit_order(self, exchange: str, symbol: str, side: str, quantity, price, 
-                          post_only: bool = False, time_in_force: str = "GTC") -> Dict[str, Any]:
+                          post_only: bool = False, time_in_force: str = "GTC", *,
+                          unity_invocation: LegacyEconomicInvocation | None = None,
+                          unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Place a limit order on the specified exchange."""
         if exchange not in self.clients:
             logger.error(f"Unknown exchange: {exchange}")
             return {}
-        return self.clients[exchange].place_limit_order(symbol, side, quantity, price, post_only, time_in_force)
+        return self.clients[exchange].place_limit_order(
+            symbol, side, quantity, price, post_only, time_in_force,
+            unity_invocation=unity_invocation,
+            unity_plan=unity_plan,
+        )
 
     def place_stop_loss_order(self, exchange: str, symbol: str, side: str, quantity, 
-                              stop_price, limit_price=None) -> Dict[str, Any]:
+                              stop_price, limit_price=None, *,
+                              unity_invocation: LegacyEconomicInvocation | None = None,
+                              unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Place a stop-loss order (server-side - executes even if bot offline)."""
         if exchange not in self.clients:
             logger.error(f"Unknown exchange: {exchange}")
             return {}
-        return self.clients[exchange].place_stop_loss_order(symbol, side, quantity, stop_price, limit_price)
+        return self.clients[exchange].place_stop_loss_order(
+            symbol, side, quantity, stop_price, limit_price,
+            unity_invocation=unity_invocation,
+            unity_plan=unity_plan,
+        )
 
     def place_take_profit_order(self, exchange: str, symbol: str, side: str, quantity,
-                                take_profit_price, limit_price=None) -> Dict[str, Any]:
+                                take_profit_price, limit_price=None, *,
+                                unity_invocation: LegacyEconomicInvocation | None = None,
+                                unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Place a take-profit order (server-side - executes even if bot offline)."""
         if exchange not in self.clients:
             logger.error(f"Unknown exchange: {exchange}")
             return {}
-        return self.clients[exchange].place_take_profit_order(symbol, side, quantity, take_profit_price, limit_price)
+        return self.clients[exchange].place_take_profit_order(
+            symbol, side, quantity, take_profit_price, limit_price,
+            unity_invocation=unity_invocation,
+            unity_plan=unity_plan,
+        )
 
     def place_trailing_stop_order(self, exchange: str, symbol: str, side: str, quantity,
-                                  trailing_offset, offset_type: str = "percent") -> Dict[str, Any]:
+                                  trailing_offset, offset_type: str = "percent", *,
+                                  unity_invocation: LegacyEconomicInvocation | None = None,
+                                  unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Place a trailing stop order (auto-adjusts as price moves)."""
         if exchange not in self.clients:
             logger.error(f"Unknown exchange: {exchange}")
             return {}
-        return self.clients[exchange].place_trailing_stop_order(symbol, side, quantity, trailing_offset, offset_type)
+        return self.clients[exchange].place_trailing_stop_order(
+            symbol, side, quantity, trailing_offset, offset_type,
+            unity_invocation=unity_invocation,
+            unity_plan=unity_plan,
+        )
 
     def place_order_with_tp_sl(self, exchange: str, symbol: str, side: str, quantity,
                                order_type: str = "market", price=None,
-                               take_profit=None, stop_loss=None) -> Dict[str, Any]:
+                               take_profit=None, stop_loss=None, *,
+                               unity_invocation: LegacyEconomicInvocation | None = None,
+                               unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Place an order with attached Take-Profit and/or Stop-Loss (conditional close)."""
         if exchange not in self.clients:
             logger.error(f"Unknown exchange: {exchange}")
             return {}
         return self.clients[exchange].place_order_with_tp_sl(
-            symbol, side, quantity, order_type, price, take_profit, stop_loss
+            symbol, side, quantity, order_type, price, take_profit, stop_loss,
+            unity_invocation=unity_invocation,
+            unity_plan=unity_plan,
         )
 
     def get_open_orders(self, exchange: str, symbol: str = None) -> List[Dict[str, Any]]:
@@ -220,17 +381,39 @@ class MultiExchangeClient:
             return []
         return self.clients[exchange].get_open_orders(symbol)
 
-    def cancel_order(self, exchange: str, order_id: str) -> Dict[str, Any]:
+    def cancel_order(
+        self,
+        exchange: str,
+        order_id: str,
+        *,
+        unity_invocation: LegacyEconomicInvocation | None = None,
+        unity_plan: LegacyUnityIntentPlan | None = None,
+    ) -> Dict[str, Any]:
         """Cancel a specific order."""
         if exchange not in self.clients:
             return {}
-        return self.clients[exchange].cancel_order(order_id)
+        return self.clients[exchange].cancel_order(
+            order_id,
+            unity_invocation=unity_invocation,
+            unity_plan=unity_plan,
+        )
 
-    def cancel_all_orders(self, exchange: str, symbol: str = None) -> Dict[str, Any]:
+    def cancel_all_orders(
+        self,
+        exchange: str,
+        symbol: str = None,
+        *,
+        unity_invocation: LegacyEconomicInvocation | None = None,
+        unity_plan: LegacyUnityIntentPlan | None = None,
+    ) -> Dict[str, Any]:
         """Cancel all open orders, optionally filtered by symbol."""
         if exchange not in self.clients:
             return {}
-        return self.clients[exchange].cancel_all_orders(symbol)
+        return self.clients[exchange].cancel_all_orders(
+            symbol,
+            unity_invocation=unity_invocation,
+            unity_plan=unity_plan,
+        )
 
     def get_ticker(self, exchange: str, symbol: str) -> Dict[str, float]:
         if exchange not in self.clients:
@@ -318,7 +501,9 @@ class MultiExchangeClient:
     def place_margin_order(self, exchange: str, symbol: str, side: str, quantity,
                            leverage, order_type: str = "market", price=None,
                            take_profit=None, stop_loss=None,
-                           post_only: bool = False) -> Dict[str, Any]:
+                           post_only: bool = False, *,
+                           unity_invocation: LegacyEconomicInvocation | None = None,
+                           unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Place a margin (leveraged) order on the specified exchange."""
         if exchange not in self.clients:
             logger.error(f"Unknown exchange: {exchange}")
@@ -327,18 +512,24 @@ class MultiExchangeClient:
             symbol, side, quantity, leverage,
             order_type=order_type, price=price,
             take_profit=take_profit, stop_loss=stop_loss,
-            post_only=post_only
+            post_only=post_only,
+            unity_invocation=unity_invocation,
+            unity_plan=unity_plan,
         )
 
     def close_margin_position(self, exchange: str, symbol: str, side: str,
-                              volume=None, order_type: str = "market",
-                              price=None, leverage=None) -> Dict[str, Any]:
+                               volume=None, order_type: str = "market",
+                               price=None, leverage=None, *,
+                               unity_invocation: LegacyEconomicInvocation | None = None,
+                               unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Close an open margin position on the specified exchange."""
         if exchange not in self.clients:
             return {}
         return self.clients[exchange].close_margin_position(
             symbol, side, volume=volume,
-            order_type=order_type, price=price, leverage=leverage
+            order_type=order_type, price=price, leverage=leverage,
+            unity_invocation=unity_invocation,
+            unity_plan=unity_plan,
         )
 
         def normalize_symbol(self, exchange: str, symbol: str) -> str:
@@ -377,11 +568,31 @@ class UnifiedExchangeClient:
     Allows the Aureon ecosystem to trade on either platform seamlessly.
     """
     
-    def __init__(self, exchange_id: str = "kraken"):
+    def __init__(
+        self,
+        exchange_id: str = "kraken",
+        *,
+        legacy_unity_gateway: LegacyEconomicUnityGateway | None = None,
+        legacy_invocation_supplier: TrustedLegacyInvocationSupplier | None = None,
+    ):
         self.exchange_id = exchange_id.lower()
         self.client = None
         self.available = False
         self.dry_run = False
+        if legacy_unity_gateway is not None and not isinstance(
+            legacy_unity_gateway,
+            LegacyEconomicUnityGateway,
+        ):
+            raise TypeError("legacy_economic_unity_gateway_required")
+        if legacy_invocation_supplier is not None and not isinstance(
+            legacy_invocation_supplier,
+            TrustedLegacyInvocationSupplier,
+        ):
+            raise TypeError("trusted_legacy_invocation_supplier_required")
+        if (legacy_unity_gateway is None) != (legacy_invocation_supplier is None):
+            raise ValueError("legacy_unity_gateway_and_invocation_supplier_required_together")
+        self._legacy_unity_gateway = legacy_unity_gateway
+        self._legacy_invocation_supplier = legacy_invocation_supplier
         # Kraken has per-pair minimums; apply a conservative global floor to avoid spam errors
         self.kraken_min_notional = float(os.getenv("KRAKEN_MIN_NOTIONAL", "5"))
 
@@ -413,6 +624,87 @@ class UnifiedExchangeClient:
             self.dry_run = bool(getattr(self.client, "dry_run", False))
             
         logger.info(f"Initialized UnifiedExchangeClient for {self.exchange_id} (Dry Run: {self.dry_run})")
+
+    def _execute_optional_legacy_unity(
+        self,
+        invocation: LegacyEconomicInvocation | None,
+        *,
+        plan: LegacyUnityIntentPlan | None = None,
+        transport,
+    ) -> Dict[str, Any]:
+        """Use the unity gateway when installed; otherwise retain compatibility.
+
+        Live provider clients independently enforce their raw transport guard,
+        so the compatibility branch cannot bypass a guarded provider boundary.
+        """
+
+        gateway = self._legacy_unity_gateway
+        supplier = self._legacy_invocation_supplier
+        if invocation is not None and plan is not None:
+            return _no_data(
+                self.exchange_id,
+                plan.symbol,
+                "exactly_one_legacy_unity_invocation_or_plan_required",
+            )
+        if invocation is None and plan is not None:
+            if supplier is None:
+                return _no_data(
+                    self.exchange_id,
+                    plan.symbol,
+                    "trusted_legacy_invocation_supplier_required",
+                )
+            try:
+                invocation = supplier.supply_legacy_invocation(plan)
+            except LegacyUnityCompositionHold as exc:
+                return _no_data(self.exchange_id, plan.symbol, exc.reason_code)
+            except Exception:
+                return _no_data(
+                    self.exchange_id,
+                    plan.symbol,
+                    "trusted_legacy_invocation_resolution_failed",
+                )
+        if gateway is None and invocation is None:
+            return _no_data(
+                self.exchange_id,
+                plan.symbol if plan is not None else "",
+                "canonical_legacy_unity_composition_required",
+            )
+        if gateway is None:
+            return _no_data(
+                self.exchange_id,
+                invocation.intent.symbol if invocation is not None else "",
+                "legacy_unity_gateway_required",
+            )
+        if invocation is None:
+            return _no_data(
+                self.exchange_id,
+                "",
+                "hnc_auris_legacy_unity_invocation_required",
+            )
+        outcome = gateway.execute(invocation, transport=transport)
+        receipt = dict(outcome.receipt)
+        if outcome.status == "EXECUTED":
+            if isinstance(outcome.provider_result, Mapping):
+                result = dict(outcome.provider_result)
+                result["aureon_legacy_unity_receipt"] = receipt
+                return result
+            return {
+                "status": "executed",
+                "provider_result": outcome.provider_result,
+                "aureon_legacy_unity_receipt": receipt,
+            }
+        if outcome.status == "AMBIGUOUS":
+            return {
+                "status": "pending_reconciliation",
+                "reason": receipt["reason"],
+                "aureon_legacy_unity_receipt": receipt,
+            }
+        return {
+            "status": "not_submitted",
+            "reason": receipt["reason"],
+            "rejected": True,
+            "aureon_legacy_unity_receipt": receipt,
+        }
 
     def normalize(self, symbol: str) -> str:
         """Normalize a canonical symbol to this client's exchange format."""
@@ -590,70 +882,6 @@ class UnifiedExchangeClient:
             return {'price': last, 'bid': last, 'ask': last}
         return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
 
-        if self.exchange_id == 'capital':
-            asset = asset.upper()
-            quote = quote.upper()
-            if asset == quote:
-                return amount
-            if amount <= 0:
-                return 0.0
-
-            direct_rate = CAPITAL_FX_RATES.get((asset, quote))
-            if direct_rate:
-                return amount * direct_rate
-
-            # Try two-step conversion via common pivots
-            for pivot in ('USD', 'EUR', 'GBP'):
-                if pivot in (asset, quote):
-                    continue
-                first = CAPITAL_FX_RATES.get((asset, pivot))
-                second = CAPITAL_FX_RATES.get((pivot, quote))
-                if first and second:
-                    return amount * first * second
-
-            try:
-                symbol = f"{asset}{quote}"
-                ticker = self.get_ticker(symbol)
-                price = float(ticker.get('price', 0) or 0)
-                if 0 < price < 1000:  # Sanity cap for currency pairs
-                    return amount * price
-            except Exception:
-                pass
-
-            # Final attempt: convert via USD using static rates
-            to_usd = CAPITAL_FX_RATES.get((asset, 'USD'))
-            from_usd = CAPITAL_FX_RATES.get(('USD', quote))
-            if to_usd and from_usd:
-                return amount * to_usd * from_usd
-            return 0.0
-        
-        # Fallback for BinanceClient if it doesn't have it (it doesn't in the snippet)
-        # We can implement a basic conversion using ticker
-        if asset == quote:
-            return amount
-        
-        try:
-            # Try direct pair
-            print(f"DEBUG: converting {asset} to {quote}")
-            ticker = self.get_ticker(f"{asset}{quote}")
-            if ticker['price'] > 0:
-                return amount * ticker['price']
-                
-            # Try reverse pair (e.g. quote/asset) - unlikely for stablecoins but possible
-            ticker = self.get_ticker(f"{quote}{asset}")
-            if ticker['price'] > 0:
-                return amount / ticker['price']
-                
-            # Try via USDT if quote is not USDT
-            if quote != 'USDT':
-                val_usdt = self.convert_to_quote(asset, amount, 'USDT')
-                if val_usdt > 0:
-                    return self.convert_to_quote('USDT', val_usdt, quote)
-                    
-        except:
-            pass
-        return 0.0
-
     def get_24h_tickers(self) -> List[Dict[str, Any]]:
         """Get 24h ticker statistics for all symbols."""
         if self.client is None:
@@ -806,7 +1034,16 @@ class UnifiedExchangeClient:
 
         return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
 
-    def place_market_order(self, symbol: str, side: str, quantity: float = None, quote_qty: float = None) -> Dict[str, Any]:
+    def place_market_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float = None,
+        quote_qty: float = None,
+        *,
+        unity_invocation: LegacyEconomicInvocation | None = None,
+        unity_plan: LegacyUnityIntentPlan | None = None,
+    ) -> Dict[str, Any]:
         """
         Place a market order.
         side: 'buy' or 'sell'
@@ -824,8 +1061,14 @@ class UnifiedExchangeClient:
             # If only quantity provided, estimate notional using latest price
             if quote_qty is None and quantity is not None:
                 ticker = self.get_ticker(symbol)
-                price = ticker.get('price', 0) or 0
-                est_notional = price * quantity
+                price = _finite(ticker.get('price') if isinstance(ticker, Mapping) else None, positive=True)
+                requested_quantity = _finite(quantity, positive=True)
+                if price is None or requested_quantity is None:
+                    receipt = _no_data(self.exchange_id, symbol, "fresh_price_receipt_required_for_order_preflight")
+                    receipt["status"] = "not_submitted"
+                    receipt["rejected"] = True
+                    return receipt
+                est_notional = price * requested_quantity
                 if est_notional < self.kraken_min_notional:
                     logger.warning(f"Kraken order blocked: est notional {est_notional:.2f} below min {self.kraken_min_notional:.2f} for {symbol}")
                     return {'error': 'min_notional', 'exchange': self.exchange_id}
@@ -833,7 +1076,16 @@ class UnifiedExchangeClient:
         if self.exchange_id == "kraken":
             # Use KrakenClient's place_market_order which returns Binance-compatible format
             try:
-                return self.client.place_market_order(symbol, side, quantity=quantity, quote_qty=quote_qty)
+                return self._execute_optional_legacy_unity(
+                    unity_invocation,
+                    plan=unity_plan,
+                    transport=lambda: self.client.place_market_order(
+                        symbol,
+                        side,
+                        quantity=quantity,
+                        quote_qty=quote_qty,
+                    ),
+                )
             except Exception as e:
                 logger.error(f"Error placing Kraken order: {e}")
                 return {
@@ -849,7 +1101,16 @@ class UnifiedExchangeClient:
 
         elif self.exchange_id == "binance":
             try:
-                return self.client.place_market_order(symbol, side, quantity=quantity, quote_qty=quote_qty)
+                return self._execute_optional_legacy_unity(
+                    unity_invocation,
+                    plan=unity_plan,
+                    transport=lambda: self.client.place_market_order(
+                        symbol,
+                        side,
+                        quantity=quantity,
+                        quote_qty=quote_qty,
+                    ),
+                )
             except Exception as e:
                 logger.error(f"Error placing Binance order: {e}")
                 return {
@@ -869,7 +1130,16 @@ class UnifiedExchangeClient:
                 # Route through AlpacaClient's Kraken-compatible helper which:
                 # - converts quote_qty -> qty
                 # - clamps SELL qty to qty_available (fee-safe)
-                return self.client.place_market_order(symbol, side, quantity=quantity, quote_qty=quote_qty)
+                return self._execute_optional_legacy_unity(
+                    unity_invocation,
+                    plan=unity_plan,
+                    transport=lambda: self.client.place_market_order(
+                        symbol,
+                        side,
+                        quantity=quantity,
+                        quote_qty=quote_qty,
+                    ),
+                )
             except Exception as e:
                 logger.error(f"Error placing Alpaca order: {e}")
                 return {
@@ -887,12 +1157,28 @@ class UnifiedExchangeClient:
             try:
                 # Capital.com uses 'size' (quantity)
                 if quantity:
-                    return self.client.place_market_order(symbol, side, quantity)
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.place_market_order(
+                            symbol,
+                            side,
+                            quantity,
+                        ),
+                    )
                 elif quote_qty:
                     ticker = self.get_ticker(symbol)
                     if ticker['price'] > 0:
                         qty = quote_qty / ticker['price']
-                        return self.client.place_market_order(symbol, side, qty)
+                        return self._execute_optional_legacy_unity(
+                            unity_invocation,
+                            plan=unity_plan,
+                            transport=lambda: self.client.place_market_order(
+                                symbol,
+                                side,
+                                qty,
+                            ),
+                        )
             except Exception as e:
                 logger.error(f"Error placing Capital.com order: {e}")
                 return {
@@ -922,7 +1208,9 @@ class UnifiedExchangeClient:
     # ══════════════════════════════════════════════════════════════════════
 
     def place_limit_order(self, symbol: str, side: str, quantity, price,
-                          post_only: bool = False, time_in_force: str = "GTC") -> Dict[str, Any]:
+                          post_only: bool = False, time_in_force: str = "GTC", *,
+                          unity_invocation: LegacyEconomicInvocation | None = None,
+                          unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Place a limit order. Uses maker fees (0.16% on Kraken vs 0.26% taker)."""
         side = side.lower()
 
@@ -936,7 +1224,13 @@ class UnifiedExchangeClient:
         if self.exchange_id == "kraken":
             if hasattr(self.client, 'place_limit_order'):
                 try:
-                    return self.client.place_limit_order(symbol, side, quantity, price, post_only, time_in_force)
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.place_limit_order(
+                            symbol, side, quantity, price, post_only, time_in_force
+                        ),
+                    )
                 except Exception as e:
                     logger.error(f"Error placing Kraken limit order: {e}")
                     return {}
@@ -945,31 +1239,57 @@ class UnifiedExchangeClient:
                 try:
                     # Alpaca uses lowercase tif: 'gtc', 'day', 'ioc'
                     tif = time_in_force.lower() if time_in_force else 'gtc'
-                    return self.client.place_limit_order(symbol, quantity, side, price, time_in_force=tif)
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.place_limit_order(
+                            symbol, quantity, side, price, time_in_force=tif
+                        ),
+                    )
                 except Exception as e:
                     logger.error(f"Error placing Alpaca limit order: {e}")
                     return {}
         
         # Fallback to market order for exchanges without limit order support
         logger.warning(f"{self.exchange_id} doesn't support limit orders, using market")
-        return self.place_market_order(symbol, side, quantity=quantity)
+        return self.place_market_order(
+            symbol,
+            side,
+            quantity=quantity,
+            unity_invocation=unity_invocation,
+            unity_plan=unity_plan,
+        )
 
     def place_stop_loss_order(self, symbol: str, side: str, quantity,
-                              stop_price, limit_price=None) -> Dict[str, Any]:
+                              stop_price, limit_price=None, *,
+                              unity_invocation: LegacyEconomicInvocation | None = None,
+                              unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Place server-side stop-loss order (executes even if bot offline)."""
         side = side.lower()
         
         if self.exchange_id == "kraken":
             if hasattr(self.client, 'place_stop_loss_order'):
                 try:
-                    return self.client.place_stop_loss_order(symbol, side, quantity, stop_price, limit_price)
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.place_stop_loss_order(
+                            symbol, side, quantity, stop_price, limit_price
+                        ),
+                    )
                 except Exception as e:
                     logger.error(f"Error placing Kraken stop-loss: {e}")
                     return {}
         elif self.exchange_id == "alpaca":
             if hasattr(self.client, 'place_stop_loss_order'):
                 try:
-                    return self.client.place_stop_loss_order(symbol, side, quantity, stop_price, limit_price)
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.place_stop_loss_order(
+                            symbol, side, quantity, stop_price, limit_price
+                        ),
+                    )
                 except Exception as e:
                     logger.error(f"Error placing Alpaca stop-loss: {e}")
                     return {}
@@ -978,21 +1298,35 @@ class UnifiedExchangeClient:
         return {'error': 'Not supported', 'exchange': self.exchange_id}
 
     def place_take_profit_order(self, symbol: str, side: str, quantity,
-                                take_profit_price, limit_price=None) -> Dict[str, Any]:
+                                take_profit_price, limit_price=None, *,
+                                unity_invocation: LegacyEconomicInvocation | None = None,
+                                unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Place server-side take-profit order (executes even if bot offline)."""
         side = side.lower()
         
         if self.exchange_id == "kraken":
             if hasattr(self.client, 'place_take_profit_order'):
                 try:
-                    return self.client.place_take_profit_order(symbol, side, quantity, take_profit_price, limit_price)
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.place_take_profit_order(
+                            symbol, side, quantity, take_profit_price, limit_price
+                        ),
+                    )
                 except Exception as e:
                     logger.error(f"Error placing Kraken take-profit: {e}")
                     return {}
         elif self.exchange_id == "alpaca":
             if hasattr(self.client, 'place_take_profit_order'):
                 try:
-                    return self.client.place_take_profit_order(symbol, side, quantity, take_profit_price, limit_price)
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.place_take_profit_order(
+                            symbol, side, quantity, take_profit_price, limit_price
+                        ),
+                    )
                 except Exception as e:
                     logger.error(f"Error placing Alpaca take-profit: {e}")
                     return {}
@@ -1001,14 +1335,22 @@ class UnifiedExchangeClient:
         return {'error': 'Not supported', 'exchange': self.exchange_id}
 
     def place_trailing_stop_order(self, symbol: str, side: str, quantity,
-                                  trailing_offset, offset_type: str = "percent") -> Dict[str, Any]:
+                                  trailing_offset, offset_type: str = "percent", *,
+                                  unity_invocation: LegacyEconomicInvocation | None = None,
+                                  unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Place trailing stop order (auto-adjusts as price moves)."""
         side = side.lower()
         
         if self.exchange_id == "kraken":
             if hasattr(self.client, 'place_trailing_stop_order'):
                 try:
-                    return self.client.place_trailing_stop_order(symbol, side, quantity, trailing_offset, offset_type)
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.place_trailing_stop_order(
+                            symbol, side, quantity, trailing_offset, offset_type
+                        ),
+                    )
                 except Exception as e:
                     logger.error(f"Error placing Kraken trailing stop: {e}")
                     return {}
@@ -1017,9 +1359,27 @@ class UnifiedExchangeClient:
                 try:
                     # Alpaca uses trail_percent or trail_price
                     if offset_type == '+%':
-                        return self.client.place_trailing_stop_order(symbol, quantity, side, trail_percent=trailing_offset)
+                        return self._execute_optional_legacy_unity(
+                            unity_invocation,
+                            plan=unity_plan,
+                            transport=lambda: self.client.place_trailing_stop_order(
+                                symbol,
+                                quantity,
+                                side,
+                                trail_percent=trailing_offset,
+                            ),
+                        )
                     else:
-                        return self.client.place_trailing_stop_order(symbol, quantity, side, trail_price=trailing_offset)
+                        return self._execute_optional_legacy_unity(
+                            unity_invocation,
+                            plan=unity_plan,
+                            transport=lambda: self.client.place_trailing_stop_order(
+                                symbol,
+                                quantity,
+                                side,
+                                trail_price=trailing_offset,
+                            ),
+                        )
                 except Exception as e:
                     logger.error(f"Error placing Alpaca trailing stop: {e}")
                     return {}
@@ -1029,15 +1389,27 @@ class UnifiedExchangeClient:
 
     def place_order_with_tp_sl(self, symbol: str, side: str, quantity,
                                order_type: str = "market", price=None,
-                               take_profit=None, stop_loss=None) -> Dict[str, Any]:
+                               take_profit=None, stop_loss=None, *,
+                               unity_invocation: LegacyEconomicInvocation | None = None,
+                               unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Place order with attached Take-Profit and/or Stop-Loss (conditional close)."""
         side = side.lower()
         
         if self.exchange_id == "kraken":
             if hasattr(self.client, 'place_order_with_tp_sl'):
                 try:
-                    return self.client.place_order_with_tp_sl(
-                        symbol, side, quantity, order_type, price, take_profit, stop_loss
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.place_order_with_tp_sl(
+                            symbol,
+                            side,
+                            quantity,
+                            order_type,
+                            price,
+                            take_profit,
+                            stop_loss,
+                        ),
                     )
                 except Exception as e:
                     logger.error(f"Error placing Kraken order with TP/SL: {e}")
@@ -1045,25 +1417,36 @@ class UnifiedExchangeClient:
         elif self.exchange_id == "alpaca":
             if hasattr(self.client, 'place_order_with_tp_sl'):
                 try:
-                    return self.client.place_order_with_tp_sl(
-                        symbol, side, quantity, order_type, price, take_profit, stop_loss
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.place_order_with_tp_sl(
+                            symbol,
+                            side,
+                            quantity,
+                            order_type,
+                            price,
+                            take_profit,
+                            stop_loss,
+                        ),
                     )
                 except Exception as e:
                     logger.error(f"Error placing Alpaca order with TP/SL: {e}")
                     return {}
         
-        # Fallback: place entry order, then place separate TP/SL orders
-        logger.info(f"{self.exchange_id}: Placing entry + separate TP/SL orders")
-        entry_result = self.place_market_order(symbol, side, quantity=quantity)
-        
-        if entry_result and not entry_result.get('error'):
-            close_side = 'sell' if side == 'buy' else 'buy'
-            if stop_loss:
-                self.place_stop_loss_order(symbol, close_side, quantity, stop_loss)
-            if take_profit:
-                self.place_take_profit_order(symbol, close_side, quantity, take_profit)
-        
-        return entry_result
+        if take_profit is not None or stop_loss is not None:
+            return _no_data(
+                self.exchange_id,
+                symbol,
+                "native_atomic_tp_sl_or_separate_governed_plans_required",
+            )
+        return self.place_market_order(
+            symbol,
+            side,
+            quantity=quantity,
+            unity_invocation=unity_invocation,
+            unity_plan=unity_plan,
+        )
 
     def get_open_orders(self, symbol: str = None) -> List[Dict[str, Any]]:
         """Get all open orders."""
@@ -1083,37 +1466,65 @@ class UnifiedExchangeClient:
                     return []
         return []
 
-    def cancel_order(self, order_id: str) -> Dict[str, Any]:
+    def cancel_order(
+        self,
+        order_id: str,
+        *,
+        unity_invocation: LegacyEconomicInvocation | None = None,
+        unity_plan: LegacyUnityIntentPlan | None = None,
+    ) -> Dict[str, Any]:
         """Cancel a specific order."""
         if self.exchange_id == "kraken":
             if hasattr(self.client, 'cancel_order'):
                 try:
-                    return self.client.cancel_order(order_id)
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.cancel_order(order_id),
+                    )
                 except Exception as e:
                     logger.error(f"Error cancelling Kraken order: {e}")
                     return {}
         elif self.exchange_id == "alpaca":
             if hasattr(self.client, 'cancel_order'):
                 try:
-                    return self.client.cancel_order(order_id)
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.cancel_order(order_id),
+                    )
                 except Exception as e:
                     logger.error(f"Error cancelling Alpaca order: {e}")
                     return {}
         return {}
 
-    def cancel_all_orders(self, symbol: str = None) -> Dict[str, Any]:
+    def cancel_all_orders(
+        self,
+        symbol: str = None,
+        *,
+        unity_invocation: LegacyEconomicInvocation | None = None,
+        unity_plan: LegacyUnityIntentPlan | None = None,
+    ) -> Dict[str, Any]:
         """Cancel all open orders."""
         if self.exchange_id == "kraken":
             if hasattr(self.client, 'cancel_all_orders'):
                 try:
-                    return self.client.cancel_all_orders(symbol)
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.cancel_all_orders(symbol),
+                    )
                 except Exception as e:
                     logger.error(f"Error cancelling all Kraken orders: {e}")
                     return {}
         elif self.exchange_id == "alpaca":
             if hasattr(self.client, 'cancel_all_orders'):
                 try:
-                    return self.client.cancel_all_orders()  # Alpaca doesn't filter by symbol
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.cancel_all_orders(),
+                    )
                 except Exception as e:
                     logger.error(f"Error cancelling all Alpaca orders: {e}")
                     return {}
@@ -1206,28 +1617,53 @@ class UnifiedExchangeClient:
     def place_margin_order(self, symbol: str, side: str, quantity, leverage,
                            order_type: str = "market", price=None,
                            take_profit=None, stop_loss=None,
-                           post_only: bool = False) -> Dict[str, Any]:
+                           post_only: bool = False, *,
+                           unity_invocation: LegacyEconomicInvocation | None = None,
+                           unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Place a margin (leveraged) order."""
         side = side.lower()
 
         if self.exchange_id == "kraken":
             # Notional floor check
             if order_type.lower() == "limit" and price:
-                notional = float(price) * float(quantity)
+                limit_price = _finite(price, positive=True)
+                requested_quantity = _finite(quantity, positive=True)
+                if limit_price is None or requested_quantity is None:
+                    receipt = _no_data(self.exchange_id, symbol, "finite_limit_price_and_quantity_required")
+                    receipt["status"] = "not_submitted"
+                    receipt["rejected"] = True
+                    return receipt
+                notional = limit_price * requested_quantity
             else:
                 ticker = self.get_ticker(symbol)
-                notional = ticker.get('price', 0) * float(quantity)
+                market_price = _finite(ticker.get('price') if isinstance(ticker, Mapping) else None, positive=True)
+                requested_quantity = _finite(quantity, positive=True)
+                if market_price is None or requested_quantity is None:
+                    receipt = _no_data(self.exchange_id, symbol, "fresh_price_receipt_required_for_margin_preflight")
+                    receipt["status"] = "not_submitted"
+                    receipt["rejected"] = True
+                    return receipt
+                notional = market_price * requested_quantity
             if notional < self.kraken_min_notional:
                 logger.warning(f"Kraken margin order blocked: notional {notional:.2f} below min {self.kraken_min_notional:.2f}")
                 return {'error': 'min_notional', 'exchange': self.exchange_id, 'margin': True}
 
             if hasattr(self.client, 'place_margin_order'):
                 try:
-                    return self.client.place_margin_order(
-                        symbol, side, quantity, leverage,
-                        order_type=order_type, price=price,
-                        take_profit=take_profit, stop_loss=stop_loss,
-                        post_only=post_only
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.place_margin_order(
+                            symbol,
+                            side,
+                            quantity,
+                            leverage,
+                            order_type=order_type,
+                            price=price,
+                            take_profit=take_profit,
+                            stop_loss=stop_loss,
+                            post_only=post_only,
+                        ),
                     )
                 except Exception as e:
                     logger.error(f"Error placing Kraken margin order: {e}")
@@ -1241,17 +1677,27 @@ class UnifiedExchangeClient:
         return {'error': 'not_supported', 'exchange': self.exchange_id, 'margin': True}
 
     def close_margin_position(self, symbol: str, side: str, volume=None,
-                              order_type: str = "market", price=None,
-                              leverage=None) -> Dict[str, Any]:
+                               order_type: str = "market", price=None,
+                               leverage=None, *,
+                               unity_invocation: LegacyEconomicInvocation | None = None,
+                               unity_plan: LegacyUnityIntentPlan | None = None) -> Dict[str, Any]:
         """Close an open margin position."""
         side = side.lower()
 
         if self.exchange_id == "kraken":
             if hasattr(self.client, 'close_margin_position'):
                 try:
-                    return self.client.close_margin_position(
-                        symbol, side, volume=volume,
-                        order_type=order_type, price=price, leverage=leverage
+                    return self._execute_optional_legacy_unity(
+                        unity_invocation,
+                        plan=unity_plan,
+                        transport=lambda: self.client.close_margin_position(
+                            symbol,
+                            side,
+                            volume=volume,
+                            order_type=order_type,
+                            price=price,
+                            leverage=leverage,
+                        ),
                     )
                 except Exception as e:
                     logger.error(f"Error closing Kraken margin position: {e}")

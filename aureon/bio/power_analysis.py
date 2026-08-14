@@ -56,9 +56,24 @@ __all__ = [
     "main",
 ]
 
-POWER_RUN_TOPIC: Final[str] = "bio.power_analysis.run"
-POWER_TRACE_NAME: Final[str] = "power_analysis"
-_SOURCE: Final[str] = "power_analysis"
+POWER_RUN_TOPIC: Final[str] = "bio.control.power_analysis.run"
+POWER_TRACE_NAME: Final[str] = "control_power_analysis"
+_SOURCE: Final[str] = "bio_control.power_analysis"
+
+_NON_OPERATIONAL_CONTROL: Final[dict[str, Any]] = {
+    "data_origin": "derived_statistical_control",
+    "truth_status": "statistical_control",
+    "control_only": True,
+    "live_data": False,
+    "provider_observation": False,
+    "operational_eligible": False,
+    "actionable": False,
+    "accounting_eligible": False,
+}
+
+
+def _control_metadata() -> dict[str, Any]:
+    return dict(_NON_OPERATIONAL_CONTROL)
 
 POWER_BOUNDARY: Final[str] = (
     "Synthetic detection-power audit: it measures how reliably the engine's detection rule "
@@ -75,7 +90,7 @@ DEFAULT_JITTER_HZ: Final[tuple[float, ...]] = (0.0, 5.0, 10.0, 20.0, 40.0, 80.0)
 
 
 def _rng(seed: int, tag: int) -> np.random.Generator:
-    """Reproducible generator stream for a (seed, purpose) pair (engine idiom)."""
+    """Reproducible statistical-null stream for a (seed, purpose) pair."""
     return np.random.default_rng([int(seed), int(tag)])
 
 
@@ -116,7 +131,9 @@ class PowerLevel:
     power: float
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload.update(_control_metadata())
+        return payload
 
 
 @dataclass(frozen=True)
@@ -136,6 +153,7 @@ class PowerReport:
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["levels"] = [lv.to_dict() for lv in self.levels]
+        d.update(_control_metadata())
         return d
 
 
@@ -153,6 +171,13 @@ def detection_power(
     pre-registered rule. ``clean_power`` is the power at the smallest jitter (strongest signal);
     ``degraded_power`` is the power at the largest jitter (weakest signal).
     """
+    if trials <= 0 or nulls <= 0:
+        raise ValueError("trials and nulls must be positive")
+    if not jitter_levels or not all(
+        np.isfinite(float(jitter)) and jitter >= 0.0 for jitter in jitter_levels
+    ):
+        raise ValueError("jitter_levels must be a non-empty finite non-negative sequence")
+
     levels: list[PowerLevel] = []
     for jitter in jitter_levels:
         hits = 0
@@ -162,10 +187,10 @@ def detection_power(
                 hits += 1
         levels.append(PowerLevel(
             jitter_hz=float(jitter), trials=trials, detections=hits,
-            power=(hits / trials if trials else 0.0),
+            power=hits / trials,
         ))
-    clean = levels[0].power if levels else 0.0
-    degraded = levels[-1].power if levels else 0.0
+    clean = levels[0].power
+    degraded = levels[-1].power
     return PowerReport(
         levels=levels,
         n_levels=len(levels),
@@ -245,27 +270,30 @@ def emit_power(report: PowerReport, *, bus: Any | None = None, trace: bool = Tru
         "degraded_power": report.degraded_power,
         "boundary": POWER_BOUNDARY,
     }
-    try:
-        from aureon.core.aureon_thought_bus import Thought, get_thought_bus
+    summary.update(_control_metadata())
+    if bus is not None:
+        try:
+            from aureon.core.aureon_thought_bus import Thought
 
-        target = bus if bus is not None else get_thought_bus()
-        target.publish(
-            Thought(source=_SOURCE, topic=POWER_RUN_TOPIC, trace_id=uuid.uuid4().hex, payload=summary)
-        )
-    except Exception:  # noqa: BLE001 - emission is best-effort, never fatal
-        pass
+            bus.publish(
+                Thought(source=_SOURCE, topic=POWER_RUN_TOPIC, trace_id=uuid.uuid4().hex, payload=summary)
+            )
+        except Exception:  # noqa: BLE001 - emission is best-effort, never fatal
+            pass
 
     if trace:
         try:
             from aureon.core.bus_trace import append_trace
 
-            append_trace(POWER_TRACE_NAME, {
+            trace_payload = {
                 "clean_power": report.clean_power,
                 "degraded_power": report.degraded_power,
                 "n_levels": report.n_levels,
                 "boundary": POWER_BOUNDARY,
                 "_ts": time.time(),
-            })
+            }
+            trace_payload.update(_control_metadata())
+            append_trace(POWER_TRACE_NAME, trace_payload)
         except Exception:  # noqa: BLE001 - trace mirror is best-effort
             pass
 

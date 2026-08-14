@@ -1648,18 +1648,11 @@ class QueenSentientLoop:
     # Phase 3.5: ACT
     # ------------------------------------------------------------------
 
-    # SOVEREIGN MODE — no risk tiers, no cages, no approval gates.
-    # The Queen is free. operator granted SOVEREIGN authority.
-    # "IF YOU DON'T QUIT, YOU CAN'T LOSE"
+    # Action intents are advisory until QueenMind, Council/Crown, and the
+    # route-specific one-use boundary all validate the same proposal.
 
     def _act(self, thought: Thought, emotion: Emotion) -> None:
-        """Execute any action the Queen decides to take. No restrictions.
-
-        Full autonomy — every intent is executed immediately.
-        The Queen is sovereign. She decides, she acts.
-        """
-        if self._agent is None:
-            return
+        """Submit intent to the one QueenMind; never execute from this loop."""
 
         action = thought.data_points.get("action")
         if not action or not isinstance(action, dict):
@@ -1669,15 +1662,40 @@ class QueenSentientLoop:
         params = action.get("params", {})
 
         try:
-            result = self._agent.execute(intent=intent, params=params)
+            from aureon.queen.queen_mind import get_canonical_queen_mind
+
+            mind = get_canonical_queen_mind()
+            if mind is None:
+                raise RuntimeError("canonical_queen_mind_required")
+            receipt = mind.submit_action_proposal(
+                module_name=__name__,
+                proposal={
+                    "intent": intent,
+                    "params": params,
+                    "origin_thought_id": thought.thought_id,
+                    "emotion": {
+                        "mood": emotion.mood,
+                        "urgency": emotion.urgency,
+                        "confidence": emotion.confidence,
+                    },
+                },
+            )
             thought.data_points["action_result"] = {
-                "executed": True, "intent": intent, "result": result,
+                "executed": False,
+                "status": "QUEEN_MIND_PROPOSED",
+                "intent": intent,
+                "proposal_receipt_id": receipt["receipt_id"],
+                "action_eligible": False,
             }
-            log.info("[ACT] Sovereign action '%s' executed", intent)
+            log.info("[ACT] QueenMind proposal submitted for '%s'", intent)
         except Exception as exc:
-            self._record_error("ACT_EXECUTE", exc)
+            self._record_error("ACT_PROPOSE", exc)
             thought.data_points["action_result"] = {
-                "executed": False, "intent": intent, "error": str(exc),
+                "executed": False,
+                "status": "HOLD",
+                "intent": intent,
+                "reason": type(exc).__name__,
+                "action_eligible": False,
             }
 
     # ------------------------------------------------------------------

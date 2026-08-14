@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import logging
 import re
+import sys
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -116,6 +117,14 @@ _OPERATOR_PERSONA = (
     "claims. Do not invent trade executions, balances, filings, or credentials."
 )
 
+_ISOLATED_TENANT_PERSONA = (
+    "You are Aureon answering on an isolated tenant-owned model plane. Answer "
+    "helpfully from the user's prompt and the model's general knowledge. No instance "
+    "repository, research corpus, operator memory, provider credentials, trading state, "
+    "or organism field is available on this plane. Never claim or infer access to it. "
+    "Do not invent trade executions, balances, filings, or credentials."
+)
+
 # Hard authority boundaries (mirrors PUBLIC_BOUNDARIES in the dynamic prompt
 # filter). These are deterministic, prompt-level refusals: the operator will not
 # emit an answer that helps cross them, regardless of the soft conscience verdict.
@@ -151,13 +160,23 @@ def join_organism(subsystem: Any, name: str) -> Dict[str, bool]:
         report["mycelium"] = True
     except Exception as exc:  # noqa: BLE001
         logger.debug("mycelium join skipped for %s: %s", name, exc)
-    try:
-        from aureon.utils.aureon_queen_hive_mind import get_queen
-
-        get_queen()._register_child(name, "OPERATOR", subsystem)
-        report["queen"] = True
-    except Exception as exc:  # noqa: BLE001
-        logger.debug("queen register skipped for %s: %s", name, exc)
+    # Organism membership must not create the Queen as a registration side
+    # effect. Importing this large module can itself import provider clients,
+    # so only consult it when an explicit Queen startup already loaded it.
+    queen_module = sys.modules.get("aureon.utils.aureon_queen_hive_mind")
+    if queen_module is None:
+        logger.debug("queen register deferred for %s: Queen not started", name)
+    else:
+        try:
+            get_existing_queen = getattr(queen_module, "get_existing_queen", None)
+            queen = get_existing_queen() if callable(get_existing_queen) else None
+            if queen is None:
+                logger.debug("queen register deferred for %s: Queen not started", name)
+            else:
+                queen._register_child(name, "OPERATOR", subsystem)
+                report["queen"] = True
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("queen register skipped for %s: %s", name, exc)
     return report
 
 
@@ -204,11 +223,13 @@ class AureonOperator:
         source: str = "aureon.operator",
         join_mesh: bool = False,
         mesh_broadcast: bool = True,
+        allow_repo_grounding: bool = True,
     ) -> None:
         # ``join_mesh`` is inbound membership; ``mesh_broadcast`` is the outbound signal. Kept
         # separate so the default stays exactly today's behavior (this class already ships
         # ``join_mesh=False`` while still broadcasting). A per-tenant operator passes False.
         self._mesh_broadcast = bool(mesh_broadcast)
+        self._allow_repo_grounding = bool(allow_repo_grounding)
         self.config = config or OperatorConfig.from_env()
         self.last_mesh_message: Dict[str, Any] = {}
         if join_mesh:
@@ -373,6 +394,16 @@ class AureonOperator:
         sources: List[Dict[str, str]] = []
         lane = task_family = ""
         filter_block = ""
+        if not self._allow_repo_grounding:
+            resp.grounding = GroundingContext(
+                sources=[],
+                lane="tenant_isolated",
+                task_family="",
+                system_prompt_chars=len(_ISOLATED_TENANT_PERSONA),
+            )
+            self._publish(resp, "ground", resp.grounding.to_dict())
+            return _ISOLATED_TENANT_PERSONA
+
         messages = [{"role": "user", "content": prompt}]
         try:
             from aureon.autonomous.aureon_dynamic_prompt_filter import (

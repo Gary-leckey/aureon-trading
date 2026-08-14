@@ -13,6 +13,7 @@ the architecture table claims only Tier-A-pinned features.
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 
 import pytest
 
@@ -95,11 +96,26 @@ class _Plan:
         yield StreamChunk(done=True)
 
 
+class _ApprovedConscience:
+    def ask_why(self, _action, _context):
+        return SimpleNamespace(
+            verdict=SimpleNamespace(name="APPROVED"),
+            message="approved by deterministic benchmark conscience",
+        )
+
+
 def _cog(adapter):
     from aureon.operator.cognition import AureonCognition
 
-    return AureonCognition(adapter=adapter, join_mesh=False, conscience=None,
-                           mesh_broadcast=False)
+    return AureonCognition(
+        adapter=adapter,
+        join_mesh=False,
+        conscience=_ApprovedConscience(),
+        mesh_broadcast=False,
+        allow_repo_grounding=False,
+        allow_organism_context=False,
+        governance_enabled=False,
+    )
 
 
 def _fixture_ds():

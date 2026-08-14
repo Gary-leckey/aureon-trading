@@ -9,9 +9,9 @@ interface TradeControlsHeaderProps {
   onLaunchAssault: () => void;
   onEmergencyStop: () => void;
   status: 'idle' | 'active' | 'emergency_stopped';
-  tradesExecuted: number;
-  netPnL: number;
-  currentBalance: number;
+  tradesExecuted: number | null;
+  netPnL: number | null;
+  currentBalance: number | null;
 }
 
 export function TradeControlsHeader({
@@ -55,16 +55,31 @@ export function TradeControlsHeader({
           <div className="flex items-center gap-6">
             <div className="text-center">
               <p className="text-xs text-muted-foreground">Balance</p>
-              <p className="text-lg font-bold text-success">${currentBalance.toFixed(2)}</p>
+              <p className="text-lg font-bold text-success">
+                {currentBalance == null ? 'Unavailable' : '$' + currentBalance.toFixed(2)}
+              </p>
             </div>
             <div className="text-center">
               <p className="text-xs text-muted-foreground">Trades</p>
-              <p className="text-lg font-bold text-primary">{tradesExecuted}</p>
+              <p className="text-lg font-bold text-primary">
+                {tradesExecuted == null ? 'Unavailable' : tradesExecuted}
+              </p>
             </div>
             <div className="text-center">
               <p className="text-xs text-muted-foreground">Net P&L</p>
-              <p className={`text-lg font-bold ${netPnL >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {netPnL >= 0 ? '+' : ''}${netPnL.toFixed(2)}
+              <p
+                className={
+                  'text-lg font-bold ' +
+                  (netPnL == null
+                    ? 'text-muted-foreground'
+                    : netPnL >= 0
+                      ? 'text-success'
+                      : 'text-destructive')
+                }
+              >
+                {netPnL == null
+                  ? 'Unavailable'
+                  : (netPnL >= 0 ? '+$' : '-$') + Math.abs(netPnL).toFixed(2)}
               </p>
             </div>
             <div className="text-center">

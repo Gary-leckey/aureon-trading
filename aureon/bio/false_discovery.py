@@ -63,9 +63,24 @@ __all__ = [
     "main",
 ]
 
-FDR_RUN_TOPIC: Final[str] = "bio.false_discovery.run"
-FDR_TRACE_NAME: Final[str] = "false_discovery"
-_SOURCE: Final[str] = "false_discovery"
+FDR_RUN_TOPIC: Final[str] = "bio.control.false_discovery.run"
+FDR_TRACE_NAME: Final[str] = "control_false_discovery"
+_SOURCE: Final[str] = "bio_control.false_discovery"
+
+_NON_OPERATIONAL_CONTROL: Final[dict[str, Any]] = {
+    "data_origin": "derived_statistical_control",
+    "truth_status": "statistical_control",
+    "control_only": True,
+    "live_data": False,
+    "provider_observation": False,
+    "operational_eligible": False,
+    "actionable": False,
+    "accounting_eligible": False,
+}
+
+
+def _control_metadata() -> dict[str, Any]:
+    return dict(_NON_OPERATIONAL_CONTROL)
 
 FALSE_DISCOVERY_BOUNDARY: Final[str] = (
     "Synthetic false-discovery-rate audit: it measures the expected proportion of false positives "
@@ -82,7 +97,7 @@ _LANE_STRIDE: Final[int] = 1_000_003  # keeps per-(trial,lane) seeds disjoint & 
 
 
 def _rng(seed: int, tag: int) -> np.random.Generator:
-    """Reproducible generator stream for a (seed, purpose) pair (engine idiom)."""
+    """Reproducible statistical-null stream for a (seed, purpose) pair."""
     return np.random.default_rng([int(seed), int(tag)])
 
 
@@ -139,7 +154,9 @@ class MethodOutcome:
     controls_fdr: bool
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload.update(_control_metadata())
+        return payload
 
 
 @dataclass(frozen=True)
@@ -166,6 +183,7 @@ class FalseDiscoveryReport:
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["methods"] = [m.to_dict() for m in self.methods]
+        d.update(_control_metadata())
         return d
 
 
@@ -194,6 +212,17 @@ def compute_false_discovery(
     BH is asserted to control the FDR ``≤ q + tolerance`` and, with ``q = α``, to reject a superset of
     what Bonferroni rejects (``bh_dominates_bonferroni``), verified per family.
     """
+    if trials <= 0 or nulls <= 0:
+        raise ValueError("trials and nulls must be positive")
+    if m_null <= 0 or m_signal <= 0:
+        raise ValueError("m_null and m_signal must both be positive")
+    if not all(np.isfinite(float(v)) for v in (jitter_lo, jitter_hi, q, alpha, tolerance)):
+        raise ValueError("jitter, q, alpha, and tolerance values must be finite")
+    if jitter_lo < 0 or jitter_hi < jitter_lo:
+        raise ValueError("jitter bounds must be non-negative and ordered")
+    if not 0.0 < q < 1.0 or not 0.0 < alpha < 1.0 or tolerance < 0.0:
+        raise ValueError("q and alpha must lie in (0, 1), and tolerance must be non-negative")
+
     m = m_null + m_signal
     is_signal = np.zeros(m, dtype=bool)
     is_signal[m_null:] = True
@@ -233,7 +262,7 @@ def compute_false_discovery(
             s = int(np.count_nonzero(mask & is_signal))   # true rejections
             r = v + s
             fdp_sum[name] += v / max(1, r)
-            tpr_sum[name] += (s / m_signal) if m_signal else 0.0
+            tpr_sum[name] += s / m_signal
             rej_sum[name] += r
 
     methods: list[MethodOutcome] = []
@@ -332,27 +361,30 @@ def emit_false_discovery(
         "bonferroni_power": bonf.power if bonf else None,
         "boundary": FALSE_DISCOVERY_BOUNDARY,
     }
-    try:
-        from aureon.core.aureon_thought_bus import Thought, get_thought_bus
+    summary.update(_control_metadata())
+    if bus is not None:
+        try:
+            from aureon.core.aureon_thought_bus import Thought
 
-        target = bus if bus is not None else get_thought_bus()
-        target.publish(
-            Thought(source=_SOURCE, topic=FDR_RUN_TOPIC, trace_id=uuid.uuid4().hex, payload=summary)
-        )
-    except Exception:  # noqa: BLE001 - emission is best-effort, never fatal
-        pass
+            bus.publish(
+                Thought(source=_SOURCE, topic=FDR_RUN_TOPIC, trace_id=uuid.uuid4().hex, payload=summary)
+            )
+        except Exception:  # noqa: BLE001 - emission is best-effort, never fatal
+            pass
 
     if trace:
         try:
             from aureon.core.bus_trace import append_trace
 
-            append_trace(FDR_TRACE_NAME, {
+            trace_payload = {
                 "bh_controls_fdr": report.bh_controls_fdr,
                 "bh_dominates_bonferroni": report.bh_dominates_bonferroni,
                 "n_methods": report.n_methods,
                 "boundary": FALSE_DISCOVERY_BOUNDARY,
                 "_ts": time.time(),
-            })
+            }
+            trace_payload.update(_control_metadata())
+            append_trace(FDR_TRACE_NAME, trace_payload)
         except Exception:  # noqa: BLE001 - trace mirror is best-effort
             pass
 

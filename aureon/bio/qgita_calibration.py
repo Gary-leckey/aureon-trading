@@ -33,6 +33,7 @@ from functools import lru_cache
 from typing import Any
 
 import numpy as np
+from aureon.bio.derived_nulls import derived_null_generator
 
 import phenolic_fingerprint as engine
 from aureon.bio.human_harmonic_proxy import (
@@ -163,16 +164,16 @@ def calibrate_qgita(
     lo, hi = float(lattice.min()), float(lattice.max())
 
     # (a) does the engine's φ-alignment arm detect QGITA's golden lattice?
-    phi_p = engine.test_B(lattice, nulls=nulls, rng=np.random.default_rng([seed, 2]))
+    phi_p = engine.test_B(lattice, nulls=nulls, rng=derived_null_generator(seed, 2))
     phi_detected = phi_p < engine.ALPHA
 
     # (b) envelope-matched random-null false-positive rate at the lattice's scale
-    rng = np.random.default_rng([seed, 909])
+    rng = derived_null_generator(seed, 909)
     hits_a = hits_b = hits_sep = 0
     for trial in range(fpr_trials):
         draw = np.sort(rng.uniform(lo, hi, size=int(n_lattice)))
-        pa = engine.test_A(draw, nulls=nulls, rng=np.random.default_rng([seed, 1, trial]))
-        pb = engine.test_B(draw, nulls=nulls, rng=np.random.default_rng([seed, 2, trial]))
+        pa = engine.test_A(draw, nulls=nulls, rng=derived_null_generator(seed, 1, trial))
+        pb = engine.test_B(draw, nulls=nulls, rng=derived_null_generator(seed, 2, trial))
         hits_a += int(pa < engine.ALPHA)
         hits_b += int(pb < engine.ALPHA)
         hits_sep += int(pa < engine.ALPHA and pb < engine.ALPHA)

@@ -8,6 +8,9 @@ real payload-construction path with a real LighthouseEvent and asserts the
 original keys are unchanged (additive fix) and the signature is present.
 """
 
+import time
+from collections import deque
+
 import numpy as np
 
 from aureon.bridges.aureon_hnc_live_connector import HncLiveConnector
@@ -58,6 +61,7 @@ class _CaptureHub:
 
     def _publish_to_bus(self, topic, data):
         self.published.append((topic, data))
+        return True
 
     def subscribe(self, *a, **k):
         pass
@@ -68,6 +72,16 @@ def test_lighthouse_payload_carries_all_twelve_fields(monkeypatch, tmp_path):
     connector.hub = _CaptureHub()
     connector.thought_bus = None
     connector.bot_shape_scanner = None
+    now = time.time()
+    connector._source_timestamp_history = {
+        "BTC/USD": deque(np.linspace(now - 39, now, 40), maxlen=40),
+    }
+    connector._receipt_id_history = {
+        "BTC/USD": deque([f"receipt-{i}" for i in range(40)], maxlen=40),
+    }
+    connector._last_receipt = {
+        "BTC/USD": {"source_timestamp": now, "receipt_id": "receipt-39"},
+    }
 
     class _Lighthouse:
         def validate_ftcp(self, strongest, values):

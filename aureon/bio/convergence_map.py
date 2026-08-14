@@ -36,6 +36,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from aureon.bio.derived_nulls import DerivedNullGenerator, derived_null_generator
 
 import blueprints
 import phenolic_fingerprint as engine
@@ -113,8 +114,8 @@ class ConvergenceMap:
         }
 
 
-def _rng(seed: int, tag: int) -> np.random.Generator:
-    return np.random.default_rng([int(seed), int(tag)])
+def _rng(seed: int, tag: int) -> DerivedNullGenerator:
+    return derived_null_generator(int(seed), int(tag))
 
 
 def _tile_bounds(w: int, h: int, grid: int) -> list[tuple[int, int, int, int, int, int]]:

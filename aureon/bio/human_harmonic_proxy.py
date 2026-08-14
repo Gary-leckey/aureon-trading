@@ -26,10 +26,9 @@ a provenance string, or it is blocked and scores nothing. The
 
 Design constraints
 ------------------
-Pure stdlib + numpy + the engine. No network, no real-media decoding, no
-import-time side effects (the only import-time action is a guarded, suppressible
-``link_system`` heartbeat). The engine's pre-registered logic and thresholds are
-reused verbatim — nothing here tunes them.
+Pure stdlib + numpy + the engine. No network, no real-media decoding, and no
+import-time organism registration. The engine's pre-registered logic and thresholds
+are reused verbatim — nothing here tunes them.
 
 Note on units: :func:`phenolic_fingerprint.peak_to_modulation_hz` assumes molecular
 ``cm^-1``/``nm`` inputs and a 20–60-octave electromagnetic downconversion, so it is
@@ -58,14 +57,6 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 import phenolic_fingerprint as engine  # noqa: E402
-
-# --- guarded organism link (suppressible; never fatal) ---------------------
-try:  # pragma: no cover - environment-dependent, best-effort
-    from aureon.core.aureon_baton_link import link_system
-
-    link_system(__name__)
-except Exception:  # noqa: BLE001 - the proxy must import in any environment
-    pass
 
 __all__ = [
     "SCIENTIFIC_BOUNDARY",
@@ -98,9 +89,29 @@ TARGET_BAND_HZ: tuple[float, float] = tuple(engine.TARGET_BAND_HZ)  # type: igno
 
 PHI: float = float(engine.PHI)
 
-RUN_TOPIC: str = "bio.human_proxy.run"
-TRACE_NAME: str = "human_harmonic_proxy"
-SOURCE: str = "human_harmonic_proxy"
+RUN_TOPIC: str = "bio.control.human_proxy.run"
+TRACE_NAME: str = "control_human_harmonic_proxy"
+SOURCE: str = "bio_control.human_harmonic_proxy"
+
+# A score is scientific analysis, never a provider receipt, executable signal,
+# or accounting fact. Control results carry a stronger statistical-control
+# origin below; observed-input analyses remain non-operational too.
+_NON_OPERATIONAL_ANALYSIS: dict[str, bool] = {
+    "provider_observation": False,
+    "operational_eligible": False,
+    "actionable": False,
+    "accounting_eligible": False,
+}
+
+
+def _analysis_metadata(*, control_only: bool) -> dict[str, Any]:
+    return {
+        "data_origin": "derived_statistical_control" if control_only else "derived_signal_analysis",
+        "truth_status": "statistical_control" if control_only else "derived_analysis",
+        "control_only": control_only,
+        "live_data": False if control_only else None,
+        **_NON_OPERATIONAL_ANALYSIS,
+    }
 
 
 # ============================================================================
@@ -123,6 +134,7 @@ class HumanSignal:
     consent: bool
     modality: str
     notes: str = ""
+    control_only: bool = False
 
 
 @runtime_checkable
@@ -171,6 +183,7 @@ class SyntheticSignalAdapter:
             consent=True,
             modality=self.modality,
             notes=notes,
+            control_only=True,
         )
 
 
@@ -225,7 +238,7 @@ def _fold_tones(frequencies_hz: tuple[float, ...] | list[float]) -> np.ndarray:
 
 
 def _rng(seed: int, tag: int) -> np.random.Generator:
-    """Reproducible generator stream for a (seed, purpose) pair (engine idiom)."""
+    """Reproducible statistical-null stream for a (seed, purpose) pair."""
     return np.random.default_rng([int(seed), int(tag)])
 
 
@@ -257,6 +270,7 @@ class ProxyResult:
     blocked: bool = False
     reason: str | None = None
     boundary: str = SCIENTIFIC_BOUNDARY
+    control_only: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         """Serialise; positive findings are zeroed out whenever ``blocked``."""
@@ -265,7 +279,7 @@ class ProxyResult:
         p_b: float | None = self.test_B_p
         if self.blocked:
             structure, p_a, p_b = False, None, None
-        return {
+        payload = {
             "valid": self.valid,
             "structure_present": structure,
             "test_A_p": p_a,
@@ -280,6 +294,18 @@ class ProxyResult:
             "reason": self.reason,
             "boundary": self.boundary,
         }
+        payload.update(_analysis_metadata(control_only=self.control_only))
+        return payload
+
+
+def _is_control_signal(signal: HumanSignal) -> bool:
+    provenance = str(signal.provenance).strip().lower()
+    return bool(
+        signal.control_only
+        or "no human subject" in provenance
+        or provenance.startswith("conformance suite")
+        or provenance.startswith("null-calibration audit")
+    )
 
 
 def _blocked_result(
@@ -299,6 +325,7 @@ def _blocked_result(
         label=signal.label,
         blocked=True,
         reason=reason,
+        control_only=_is_control_signal(signal),
     )
 
 
@@ -369,6 +396,11 @@ def score_signal(signal: HumanSignal, *, nulls: int = engine.DEFAULT_NULLS, seed
     hard boundary + conscience veto. Any gate that trips blocks the run and no
     positive finding survives into :meth:`ProxyResult.to_dict`.
     """
+    if int(nulls) <= 0:
+        return _blocked_result(signal, "null-resample count must be positive")
+
+    control_only = _is_control_signal(signal)
+
     # (1) consent / provenance gate
     if signal.consent is not True or not str(signal.provenance).strip():
         return _blocked_result(signal, "consent/provenance required")
@@ -392,10 +424,18 @@ def score_signal(signal: HumanSignal, *, nulls: int = engine.DEFAULT_NULLS, seed
             label=signal.label,
             blocked=False,
             reason=f"control(s) failed: {', '.join(failed)}",
+            control_only=control_only,
         )
 
     # (3) fold + the two pre-registered tests
-    tones = _fold_tones(signal.frequencies_hz)
+    try:
+        tones = _fold_tones(signal.frequencies_hz)
+    except (TypeError, ValueError, OverflowError):
+        return _blocked_result(
+            signal,
+            "frequencies_hz must contain only finite numeric values",
+            controls=controls,
+        )
     if tones.size < 2:
         return ProxyResult(
             valid=True,
@@ -410,6 +450,7 @@ def score_signal(signal: HumanSignal, *, nulls: int = engine.DEFAULT_NULLS, seed
             label=signal.label,
             blocked=False,
             reason="insufficient tones (need >= 2) after octave-fold",
+            control_only=control_only,
         )
     p_a = engine.test_A(tones, nulls=nulls, rng=_rng(seed, 1))
     p_b = engine.test_B(tones, nulls=nulls, rng=_rng(seed, 2))
@@ -428,6 +469,7 @@ def score_signal(signal: HumanSignal, *, nulls: int = engine.DEFAULT_NULLS, seed
         label=signal.label,
         blocked=False,
         reason=None,
+        control_only=control_only,
     )
 
     # (4) Operator authority boundary — the final say on emission
@@ -459,23 +501,23 @@ def emit_proxy_result(result: ProxyResult, *, bus: Any | None = None, trace: boo
     swallowed — emission must never crash a scoring run.
     """
     payload = result.to_dict()
-    try:
-        from aureon.core.aureon_thought_bus import Thought, get_thought_bus
+    # Control/analysis data never enters the process-global bus implicitly. A
+    # caller must provide an explicit telemetry/control bus destination.
+    if bus is not None:
+        try:
+            from aureon.core.aureon_thought_bus import Thought
 
-        target = bus if bus is not None else get_thought_bus()
-        target.publish(
-            Thought(source=SOURCE, topic=RUN_TOPIC, trace_id=uuid.uuid4().hex, payload=payload)
-        )
-    except Exception:  # noqa: BLE001 - emission is best-effort, never fatal
-        pass
+            bus.publish(
+                Thought(source=SOURCE, topic=RUN_TOPIC, trace_id=uuid.uuid4().hex, payload=payload)
+            )
+        except Exception:  # noqa: BLE001 - emission is best-effort, never fatal
+            pass
 
     if trace:
         try:
             from aureon.core.bus_trace import append_trace
 
-            append_trace(
-                TRACE_NAME,
-                {
+            trace_payload = {
                     "valid": payload["valid"],
                     "structure_present": payload["structure_present"],
                     "blocked": payload["blocked"],
@@ -483,8 +525,9 @@ def emit_proxy_result(result: ProxyResult, *, bus: Any | None = None, trace: boo
                     "modality": payload["modality"],
                     "boundary": SCIENTIFIC_BOUNDARY,
                     "_ts": time.time(),
-                },
-            )
+                }
+            trace_payload.update(_analysis_metadata(control_only=result.control_only))
+            append_trace(TRACE_NAME, trace_payload)
         except Exception:  # noqa: BLE001 - trace mirror is best-effort
             pass
 

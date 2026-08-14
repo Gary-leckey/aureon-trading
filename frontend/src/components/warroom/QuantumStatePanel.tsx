@@ -4,17 +4,19 @@ import type { QuantumState } from '@/hooks/useQuantumWarRoom';
 
 interface Props {
   quantumState: QuantumState;
-  hiveMindCoherence: number;
+  hiveMindCoherence: number | null;
 }
 
 export function QuantumStatePanel({ quantumState, hiveMindCoherence }: Props) {
-  const getCoherenceColor = (coherence: number) => {
+  const getCoherenceColor = (coherence: number | null) => {
+    if (coherence == null) return 'text-muted-foreground';
     if (coherence >= 0.945) return 'text-success';
     if (coherence >= 0.85) return 'text-warning';
     return 'text-destructive';
   };
 
-  const getPrismColor = (level: number) => {
+  const getPrismColor = (level: number | null) => {
+    if (level == null) return 'text-muted-foreground';
     if (level >= 4) return 'text-primary';
     if (level >= 3) return 'text-primary';
     if (level >= 2) return 'text-warning';
@@ -39,7 +41,9 @@ export function QuantumStatePanel({ quantumState, hiveMindCoherence }: Props) {
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Coherence (Γ)</p>
             <p className={`text-2xl font-bold ${getCoherenceColor(quantumState.coherence)}`}>
-              {(quantumState.coherence * 100).toFixed(1)}%
+              {quantumState.coherence == null
+                ? 'Unavailable'
+                : (quantumState.coherence * 100).toFixed(1) + '%'}
             </p>
           </div>
 
@@ -47,7 +51,7 @@ export function QuantumStatePanel({ quantumState, hiveMindCoherence }: Props) {
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Lambda Λ(t)</p>
             <p className="text-2xl font-bold text-primary">
-              {quantumState.lambda.toFixed(3)}
+              {quantumState.lambda == null ? 'Unavailable' : quantumState.lambda.toFixed(3)}
             </p>
           </div>
 
@@ -55,7 +59,9 @@ export function QuantumStatePanel({ quantumState, hiveMindCoherence }: Props) {
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Lighthouse (L)</p>
             <p className="text-2xl font-bold text-primary">
-              {quantumState.lighthouseSignal.toFixed(2)}
+              {quantumState.lighthouseSignal == null
+                ? 'Unavailable'
+                : quantumState.lighthouseSignal.toFixed(2)}
             </p>
           </div>
 
@@ -63,7 +69,9 @@ export function QuantumStatePanel({ quantumState, hiveMindCoherence }: Props) {
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Prism Level</p>
             <p className={`text-2xl font-bold ${getPrismColor(quantumState.prismLevel)}`}>
-              {quantumState.prismLevel}/5
+              {quantumState.prismLevel == null
+                ? 'Unavailable'
+                : String(quantumState.prismLevel) + '/5'}
             </p>
           </div>
 
@@ -71,7 +79,7 @@ export function QuantumStatePanel({ quantumState, hiveMindCoherence }: Props) {
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Dominant Node</p>
             <p className="text-lg font-bold text-warning">
-              {quantumState.dominantNode || 'None'}
+              {quantumState.dominantNode || 'Unavailable'}
             </p>
           </div>
 
@@ -79,7 +87,7 @@ export function QuantumStatePanel({ quantumState, hiveMindCoherence }: Props) {
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Prism State</p>
             <Badge variant="outline" className="text-xs">
-              {quantumState.prismState}
+              {quantumState.prismState || 'Unavailable'}
             </Badge>
           </div>
 
@@ -87,7 +95,9 @@ export function QuantumStatePanel({ quantumState, hiveMindCoherence }: Props) {
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Hive Mind</p>
             <p className="text-lg font-bold text-primary">
-              {(hiveMindCoherence * 100).toFixed(0)}%
+              {hiveMindCoherence == null
+                ? 'Unavailable'
+                : (hiveMindCoherence * 100).toFixed(0) + '%'}
             </p>
           </div>
 

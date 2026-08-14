@@ -15,10 +15,15 @@ import json
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Generator, List, Optional
+from typing import Any, Callable, Dict, Generator, List, Mapping
 
 from aureon.inhouse_ai.llm_adapter import LLMAdapter, StreamChunk
-from aureon.inhouse_ai.tool_registry import ToolRegistry
+from aureon.inhouse_ai.tool_registry import (
+    ToolDispatchAuthorization,
+    ToolDispatchProposal,
+    ToolEffect,
+    ToolRegistry,
+)
 
 logger = logging.getLogger("aureon.inhouse_ai.runner")
 
@@ -78,10 +83,16 @@ class AgentRunner:
     def __init__(
         self,
         adapter: LLMAdapter,
-        tools: Optional[ToolRegistry] = None,
+        tools: ToolRegistry | None = None,
         system_prompt: str = "",
         max_turns: int = 8,
         max_history: int = 50,
+        *,
+        governance_required: bool = False,
+        authorize_tool_dispatch: (
+            Callable[[ToolDispatchProposal], ToolDispatchAuthorization | None] | None
+        ) = None,
+        dispatch_context_provider: Callable[[], Mapping[str, Any]] | None = None,
     ):
         self.adapter = adapter
         # `is not None`, NOT `or`: ToolRegistry defines __len__, so an intentionally empty registry is
@@ -91,6 +102,9 @@ class AgentRunner:
         self.system_prompt = system_prompt
         self.max_turns = max_turns
         self.max_history = max_history
+        self.governance_required = bool(governance_required)
+        self.authorize_tool_dispatch = authorize_tool_dispatch
+        self.dispatch_context_provider = dispatch_context_provider
 
         self._history: List[ConversationMessage] = []
         self._messages: List[Dict[str, Any]] = []
@@ -98,13 +112,144 @@ class AgentRunner:
         self._turn_count = 0
 
         # Callbacks
-        self.on_message: Optional[Callable[[str, str], None]] = None
-        self.on_tool_call: Optional[Callable[[str, Dict], None]] = None
-        self.on_error: Optional[Callable[[Exception], None]] = None
+        self.on_message: Callable[[str, str], None] | None = None
+        self.on_tool_call: Callable[[str, Dict], None] | None = None
+        self.on_tool_result: (
+            Callable[
+                [
+                    ToolDispatchProposal | None,
+                    ToolDispatchAuthorization | None,
+                    str,
+                ],
+                None,
+            ]
+            | None
+        ) = None
+        self.on_error: Callable[[Exception], None] | None = None
 
     def set_system(self, prompt: str):
         """Update the system prompt."""
         self.system_prompt = prompt
+
+    @staticmethod
+    def _blocked_tool_result(tool_call_id: str, reason: str) -> Dict[str, str]:
+        return {
+            "type": "tool_result",
+            "tool_use_id": tool_call_id,
+            "content": json.dumps({"blocked": True, "reason": reason}),
+        }
+
+    def _dispatch_tool_calls(
+        self,
+        tool_calls: List[Any],
+        *,
+        runner_turn_index: int,
+        dispatch_mode: str,
+    ) -> List[Dict[str, str]]:
+        """Bound and dispatch one model response identically for turn and stream."""
+        tool_results: List[Dict[str, str]] = []
+        governed = self.governance_required or bool(
+            getattr(self.tools, "governance_required", False)
+        )
+
+        for response_call_index, tc in enumerate(tool_calls):
+            # Tool calls arrive in the MODEL's response, not the caller's request, so
+            # request-body limits do not protect this host. Enforce the same bounds in
+            # both runner paths before callbacks, governance suppliers, or handlers.
+            if response_call_index >= _MAX_TOOL_CALLS_PER_RESPONSE:
+                tool_results.append(self._blocked_tool_result(
+                    tc.id,
+                    "too many tool calls in one response "
+                    f"(limit {_MAX_TOOL_CALLS_PER_RESPONSE})",
+                ))
+                continue
+            if not isinstance(tc.arguments, dict):
+                tool_results.append(self._blocked_tool_result(
+                    tc.id,
+                    "tool arguments must be a JSON object",
+                ))
+                continue
+            oversized = _oversized_argument(tc.arguments)
+            if oversized is not None:
+                tool_results.append(self._blocked_tool_result(
+                    tc.id,
+                    f"argument '{oversized}' exceeds {_MAX_TOOL_ARG_BYTES} bytes",
+                ))
+                continue
+
+            if self.on_tool_call:
+                self.on_tool_call(tc.name, tc.arguments)
+            logger.info("Tool dispatch: %s(%s)", tc.name, tc.arguments)
+
+            proposal: ToolDispatchProposal | None = None
+            authorization: ToolDispatchAuthorization | None = None
+            if governed:
+                try:
+                    supplied_context = (
+                        self.dispatch_context_provider()
+                        if self.dispatch_context_provider is not None
+                        else {}
+                    )
+                    if not isinstance(supplied_context, Mapping):
+                        raise ValueError("dispatch context provider must return a mapping")
+                    context = dict(supplied_context)
+                    context["dispatch_mode"] = dispatch_mode
+                    proposal = self.tools.build_dispatch_proposal(
+                        tool_call_id=tc.id,
+                        runner_turn_index=runner_turn_index,
+                        response_call_index=response_call_index,
+                        name=tc.name,
+                        arguments=tc.arguments,
+                        context=context,
+                    )
+                except Exception as exc:  # noqa: BLE001 - malformed proposals hold
+                    result_str = json.dumps({
+                        "blocked": True,
+                        "reason": f"governance: could not build exact tool proposal: {exc}",
+                        "tool": tc.name,
+                    })
+                else:
+                    # Unknown effects are never sent to an authority supplier. Known
+                    # read-only effects take the registry-recorded bypass. Every other
+                    # effect gets exactly one supplier call for this frozen proposal.
+                    if proposal.effect not in {
+                        ToolEffect.READ_ONLY.value,
+                        ToolEffect.UNKNOWN.value,
+                    } and self.authorize_tool_dispatch is not None:
+                        try:
+                            candidate = self.authorize_tool_dispatch(proposal)
+                            if isinstance(candidate, ToolDispatchAuthorization):
+                                authorization = candidate
+                        except Exception as exc:  # noqa: BLE001 - supplier failure holds
+                            logger.warning("tool authorization supplier failed: %s", exc)
+                    try:
+                        result_str = self.tools.execute(
+                            tc.name,
+                            tc.arguments,
+                            proposal=proposal,
+                            authorization=authorization,
+                            governance_required=True,
+                        )
+                    except Exception as exc:  # noqa: BLE001 - never retry ungoverned
+                        result_str = json.dumps({
+                            "blocked": True,
+                            "reason": f"governance: governed registry dispatch failed: {exc}",
+                            "tool": tc.name,
+                            "proposal_digest": proposal.proposal_digest,
+                        })
+            else:
+                # Compatibility path: existing callers keep the exact two-argument
+                # registry API only when governance is explicitly off at both layers.
+                result_str = self.tools.execute(tc.name, tc.arguments)
+
+            if self.on_tool_result:
+                self.on_tool_result(proposal, authorization, result_str)
+            tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": tc.id,
+                "content": result_str,
+            })
+        return tool_results
 
     def turn(self, message: str) -> str:
         """
@@ -122,7 +267,7 @@ class AgentRunner:
 
         tool_defs = self.tools.list_tools() if self.tools else None
 
-        for turn_idx in range(self.max_turns):
+        for _turn_idx in range(self.max_turns):
             self._turn_count += 1
 
             response = self.adapter.prompt(
@@ -158,46 +303,11 @@ class AgentRunner:
                 self._prune_history()
                 return response.text
 
-            # Dispatch tool calls
-            tool_results = []
-            for idx, tc in enumerate(response.tool_calls):
-                # Tool calls arrive in the MODEL's response, not the caller's request, so the server's
-                # MAX_CONTENT_LENGTH never bounded them. When the model endpoint belongs to the user
-                # (a tenant supplies their own base_url), one reply can therefore ask for unlimited
-                # work on this host: thousands of calls, or a single multi-megabyte argument fed to a
-                # parser. Bound both, and report the refusal as an ordinary tool result so the loop
-                # continues honestly instead of raising.
-                if idx >= _MAX_TOOL_CALLS_PER_RESPONSE:
-                    tool_results.append({
-                        "type": "tool_result", "tool_use_id": tc.id,
-                        "content": json.dumps({
-                            "blocked": True,
-                            "reason": f"too many tool calls in one response "
-                                      f"(limit {_MAX_TOOL_CALLS_PER_RESPONSE})",
-                        }),
-                    })
-                    continue
-                oversized = _oversized_argument(tc.arguments)
-                if oversized is not None:
-                    tool_results.append({
-                        "type": "tool_result", "tool_use_id": tc.id,
-                        "content": json.dumps({
-                            "blocked": True,
-                            "reason": f"argument '{oversized}' exceeds "
-                                      f"{_MAX_TOOL_ARG_BYTES} bytes",
-                        }),
-                    })
-                    continue
-                if self.on_tool_call:
-                    self.on_tool_call(tc.name, tc.arguments)
-                logger.info("Tool dispatch: %s(%s)", tc.name, tc.arguments)
-
-                result_str = self.tools.execute(tc.name, tc.arguments)
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": tc.id,
-                    "content": result_str,
-                })
+            tool_results = self._dispatch_tool_calls(
+                response.tool_calls,
+                runner_turn_index=self._turn_count,
+                dispatch_mode="turn",
+            )
 
             self._messages.append({"role": "user", "content": tool_results})
 
@@ -214,7 +324,8 @@ class AgentRunner:
         self._messages.append({"role": "user", "content": message})
         tool_defs = self.tools.list_tools() if self.tools else None
 
-        for turn_idx in range(self.max_turns):
+        for _turn_idx in range(self.max_turns):
+            self._turn_count += 1
             collected_text = ""
             collected_tool_calls = []
 
@@ -253,15 +364,11 @@ class AgentRunner:
                 })
             self._messages.append({"role": "assistant", "content": content})
 
-            # Dispatch tools
-            tool_results = []
-            for tc in collected_tool_calls:
-                result_str = self.tools.execute(tc.name, tc.arguments)
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": tc.id,
-                    "content": result_str,
-                })
+            tool_results = self._dispatch_tool_calls(
+                collected_tool_calls,
+                runner_turn_index=self._turn_count,
+                dispatch_mode="stream_turn",
+            )
             self._messages.append({"role": "user", "content": tool_results})
 
         yield StreamChunk(done=True, stop_reason="max_turns")
@@ -270,8 +377,8 @@ class AgentRunner:
         self,
         task_fn: Callable[[], str],
         interval: float = 60.0,
-        max_iterations: Optional[int] = None,
-        on_result: Optional[Callable[[str], None]] = None,
+        max_iterations: int | None = None,
+        on_result: Callable[[str], None] | None = None,
     ):
         """
         Run the agent in a continuous loop.

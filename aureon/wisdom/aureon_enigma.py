@@ -697,15 +697,48 @@ class AureonEnigma:
         # Convert to dicts for transport
         return [{"char": h.char, "freq": h.frequency, "amp": h.amplitude, "mode": h.mode} for h in harmonics]
         
-    def decode_harmonic_transmission(self, signals: List[Tuple[float, float]]) -> str:
+    def decode_harmonic_transmission(
+        self,
+        signals: List[Tuple[float, float] | Dict[str, Any]],
+    ) -> str:
         """
-        Decodes a stream of (frequency, amplitude) tuples back into text.
+        Decodes transport dictionaries or (frequency, amplitude) pairs into text.
         Used to interpret complex whale songs or inter-dimensional signals.
         """
         if not HARMONIC_ALPHABET_AVAILABLE:
             return "[DECODING_ERROR: NO ALPHABET]"
-            
-        return from_harmonics(signals)
+
+        normalized: List[Tuple[float, float]] = []
+        for index, signal in enumerate(signals):
+            if isinstance(signal, dict):
+                if "freq" not in signal or "amp" not in signal:
+                    raise ValueError(
+                        f"harmonic signal {index} requires freq and amp"
+                    )
+                freq = signal["freq"]
+                amp = signal["amp"]
+            elif isinstance(signal, (list, tuple)) and len(signal) == 2:
+                freq, amp = signal
+            else:
+                raise ValueError(
+                    f"harmonic signal {index} must be a transport mapping or pair"
+                )
+
+            if (
+                isinstance(freq, bool)
+                or isinstance(amp, bool)
+                or not isinstance(freq, (int, float))
+                or not isinstance(amp, (int, float))
+            ):
+                raise ValueError(f"harmonic signal {index} must be numeric")
+
+            numeric_freq = float(freq)
+            numeric_amp = float(amp)
+            if not math.isfinite(numeric_freq) or not math.isfinite(numeric_amp):
+                raise ValueError(f"harmonic signal {index} must be finite")
+            normalized.append((numeric_freq, numeric_amp))
+
+        return from_harmonics(normalized)
 
 
     def decode(self, signal: InterceptedSignal) -> DecodedIntelligence:

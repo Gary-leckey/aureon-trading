@@ -103,6 +103,12 @@ def test_hybrid_adapter_attaches_dynamic_filter_trace(monkeypatch):
     monkeypatch.setenv("AUREON_AUDIT_MODE", "1")
     monkeypatch.setenv("AUREON_LLM_ALLOW_HTTP_IN_AUDIT", "1")
     monkeypatch.setenv("AUREON_OLLAMA_CONTEXT_WEAVER", "0")
+
+    def _load_offline_brain(self):
+        self._brain = None
+        self._brain_loaded = False
+
+    monkeypatch.setattr(AureonBrainAdapter, "_load_brain", _load_offline_brain)
     # The suite runs with AUREON_LLM_OFFLINE=1, which (correctly) hard-disables
     # the local path regardless of the audit-allow flag. This test exercises
     # the LOCAL reply path with both health_check and prompt patched, so no
